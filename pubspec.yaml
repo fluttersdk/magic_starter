@@ -1,0 +1,20 @@
+name: magic_starter
+description: Starter kit for Magic Framework. Auth, Profile, Teams out of the box.
+version: 0.0.1
+homepage: https://magic.fluttersdk.com
+publish_to: none
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  magic:
+    path: ../magic
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
