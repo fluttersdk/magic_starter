@@ -65,10 +65,6 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
             controller: form['name'],
             label: trans('teams.team_name'),
             validator: rules([Required(), Min(2), Max(255)], field: 'name'),
-            prefix: WIcon(
-              Icons.business_outlined,
-              className: 'text-primary text-xl',
-            ),
             labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),

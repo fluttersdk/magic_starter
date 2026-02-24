@@ -93,10 +93,6 @@ class _MagicStarterForgotPasswordViewState extends MagicStatefulViewState<
               placeholder: trans('fields.email_placeholder'),
               type: InputType.email,
               validator: rules([Required(), Email()], field: 'email'),
-              prefix: WIcon(
-                Icons.mail_outline,
-                className: 'text-primary text-xl',
-              ),
               className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
               labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',

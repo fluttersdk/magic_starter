@@ -75,10 +75,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               controller: form['name'],
               placeholder: trans('fields.name_placeholder'),
               validator: rules([Required(), Min(2)], field: 'name'),
-              prefix: WIcon(
-                Icons.person_outline,
-                className: 'text-primary text-xl',
-              ),
               className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
               labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
@@ -92,10 +88,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               placeholder: trans('fields.email_placeholder'),
               type: InputType.email,
               validator: rules([Required(), Email()], field: 'email'),
-              prefix: WIcon(
-                Icons.mail_outline,
-                className: 'text-primary text-xl',
-              ),
               className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
               labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
@@ -109,10 +101,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               placeholder: trans('fields.password_placeholder'),
               type: _obscurePassword ? InputType.password : InputType.text,
               validator: rules([Required(), Min(8)], field: 'password'),
-              prefix: WIcon(
-                Icons.lock_outline,
-                className: 'text-primary text-xl',
-              ),
               suffix: WAnchor(
                 onTap: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
@@ -134,10 +122,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               placeholder: trans('fields.password_confirmation_placeholder'),
               type: _obscureConfirmation ? InputType.password : InputType.text,
               validator: rules([Required()], field: 'password_confirmation'),
-              prefix: WIcon(
-                Icons.lock_outline,
-                className: 'text-primary text-xl',
-              ),
               suffix: WAnchor(
                 onTap: () => setState(
                     () => _obscureConfirmation = !_obscureConfirmation),
