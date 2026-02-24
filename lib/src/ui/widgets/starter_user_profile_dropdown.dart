@@ -9,13 +9,29 @@ import '../../http/controllers/auth_controller.dart';
 ///
 /// Renders the user's avatar, name, and email, along with profile links.
 class StarterUserProfileDropdown extends StatelessWidget {
+  /// The popover alignment direction.
+  ///
+  /// Defaults to [PopoverAlignment.bottomRight] for header usage.
+  /// Use [PopoverAlignment.topRight] for sidebar bottom placement.
+  final PopoverAlignment alignment;
+
+  /// Custom builder for the trigger widget.
+  ///
+  /// When null, renders the default circular avatar with user initial.
+  /// The builder receives the same `isOpen` and `isHovering` states.
+  final Widget Function(BuildContext context, bool isOpen, bool isHovering)? triggerBuilder;
+
   /// Creates a user profile dropdown.
-  const StarterUserProfileDropdown({super.key});
+  const StarterUserProfileDropdown({
+    super.key,
+    this.alignment = PopoverAlignment.bottomRight,
+    this.triggerBuilder,
+  });
 
   @override
   Widget build(BuildContext context) {
     return WPopover(
-      alignment: PopoverAlignment.bottomRight,
+      alignment: alignment,
       className: '''
                 w-72
                 bg-white dark:bg-gray-800
@@ -25,7 +41,7 @@ class StarterUserProfileDropdown extends StatelessWidget {
                 border border-gray-100 dark:border-gray-700
             ''',
       triggerBuilder: (context, isOpen, isHovering) =>
-          _buildAvatarTrigger(context, isOpen, isHovering),
+          triggerBuilder?.call(context, isOpen, isHovering) ?? _buildAvatarTrigger(context, isOpen, isHovering),
       contentBuilder: (context, close) => _buildMenu(context, close),
     );
   }

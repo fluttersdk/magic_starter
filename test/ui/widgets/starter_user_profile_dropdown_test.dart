@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/widgets/starter_user_profile_dropdown.dart';
 
 class MockGuard implements Guard {
   Authenticatable? _user;
@@ -208,5 +207,37 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(logoutCalled, isTrue);
+  });
+
+  testWidgets('uses default bottomRight alignment', (tester) async {
+    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    final popover = tester.widget<WPopover>(find.byType(WPopover));
+    expect(popover.alignment, PopoverAlignment.bottomRight);
+  });
+
+  testWidgets('accepts custom alignment parameter', (tester) async {
+    await tester.pumpWidget(wrap(
+      const StarterUserProfileDropdown(
+        alignment: PopoverAlignment.topRight,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final popover = tester.widget<WPopover>(find.byType(WPopover));
+    expect(popover.alignment, PopoverAlignment.topRight);
+  });
+
+  testWidgets('uses custom triggerBuilder when provided', (tester) async {
+    await tester.pumpWidget(wrap(
+      StarterUserProfileDropdown(
+        triggerBuilder: (context, isOpen, isHovering) =>
+            const Text('Custom Trigger'),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Custom Trigger'), findsOneWidget);
   });
 }
