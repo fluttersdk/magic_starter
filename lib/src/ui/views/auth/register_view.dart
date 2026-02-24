@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_config.dart';
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/auth_controller.dart';
 import '../../widgets/auth_form_card.dart';
+import '../../widgets/social_login_divider.dart';
 
 class MagicStarterRegisterView
     extends MagicStatefulView<StarterAuthController> {
@@ -75,9 +78,11 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               controller: form['name'],
               placeholder: trans('fields.name_placeholder'),
               validator: rules([Required(), Min(2)], field: 'name'),
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-4'),
 
@@ -88,9 +93,11 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               placeholder: trans('fields.email_placeholder'),
               type: InputType.email,
               validator: rules([Required(), Email()], field: 'email'),
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-4'),
 
@@ -109,9 +116,11 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-4'),
 
@@ -132,9 +141,11 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-6'),
 
@@ -142,10 +153,18 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
             WButton(
               isLoading: isLoading,
               onTap: _submit,
-              className: 'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+              className:
+                  'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
               child:
                   WText(trans('auth.register_title'), className: 'text-center'),
             ),
+
+            // Social login slot
+            if (MagicStarterConfig.hasSocialLoginFeatures() &&
+                MagicStarter.hasSocialLogin) ...[
+              const MagicStarterSocialDivider(),
+              MagicStarter.socialLoginBuilder!(context, isLoading),
+            ],
 
             // Login link
             const WSpacer(className: 'h-6'),
