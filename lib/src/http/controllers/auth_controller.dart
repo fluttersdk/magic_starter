@@ -5,9 +5,9 @@ import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 
 /// Auth controller for Magic Starter plugin.
-class AuthController extends MagicController
+class StarterAuthController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests {
-  static AuthController get instance => Magic.findOrPut(AuthController.new);
+  static StarterAuthController get instance => Magic.findOrPut(StarterAuthController.new);
 
   bool _isSubmitting = false;
 
@@ -65,7 +65,7 @@ class AuthController extends MagicController
       setSuccess(true);
       _navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
-      Log.error('[AuthController.doLogin] $e\n$stackTrace');
+      Log.error('[StarterAuthController.doLogin] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -117,7 +117,7 @@ class AuthController extends MagicController
       setSuccess(true);
       _navigateTo(MagicStarterConfig.loginRoute());
     } catch (e, stackTrace) {
-      Log.error('[AuthController.doRegister] $e\n$stackTrace');
+      Log.error('[StarterAuthController.doRegister] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -147,7 +147,7 @@ class AuthController extends MagicController
 
       setSuccess(true);
     } catch (e, stackTrace) {
-      Log.error('[AuthController.doForgotPassword] $e\n$stackTrace');
+      Log.error('[StarterAuthController.doForgotPassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -187,7 +187,7 @@ class AuthController extends MagicController
 
       setSuccess(true);
     } catch (e, stackTrace) {
-      Log.error('[AuthController.doResetPassword] $e\n$stackTrace');
+      Log.error('[StarterAuthController.doResetPassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

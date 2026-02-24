@@ -4,10 +4,10 @@ import 'package:magic/magic.dart';
 import '../../facades/magic_starter.dart';
 
 /// Profile controller for Magic Starter plugin.
-class ProfileController extends MagicController
+class StarterProfileController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests {
-  static ProfileController get instance =>
-      Magic.findOrPut(ProfileController.new);
+  static StarterProfileController get instance =>
+      Magic.findOrPut(StarterProfileController.new);
 
   bool _isSubmitting = false;
 
@@ -43,7 +43,7 @@ class ProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[ProfileController.doUpdateProfile] $e\n$stackTrace');
+      Log.error('[StarterProfileController.doUpdateProfile] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -84,7 +84,7 @@ class ProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[ProfileController.doUpdatePassword] $e\n$stackTrace');
+      Log.error('[StarterProfileController.doUpdatePassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -116,7 +116,7 @@ class ProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[ProfileController.doDeleteAccount] $e\n$stackTrace');
+      Log.error('[StarterProfileController.doDeleteAccount] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
