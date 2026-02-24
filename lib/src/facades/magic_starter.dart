@@ -129,6 +129,30 @@ class MagicStarter {
     manager.headerBuilder = builder;
   }
 
+  /// Register a custom social login buttons builder.
+  ///
+  /// When set, social login buttons appear on login and register pages
+  /// (requires `magic_starter.features.social_login` to be enabled).
+  ///
+  /// ```dart
+  /// MagicStarter.useSocialLogin((context, isLoading) {
+  ///   return SocialLoginButtons(
+  ///     loadingProvider: controller.socialLoginProvider,
+  ///     onGoogle: () => controller.doSocialLogin('google'),
+  ///   );
+  /// });
+  /// ```
+  static void useSocialLogin(SocialLoginBuilder builder) {
+    manager.socialLoginBuilder = builder;
+  }
+
+  /// Whether social login buttons have been registered.
+  static bool get hasSocialLogin => manager.socialLoginBuilder != null;
+
+  /// Get the social login builder, or null if not registered.
+  static SocialLoginBuilder? get socialLoginBuilder =>
+      manager.socialLoginBuilder;
+
   /// Locale options for language selection.
   static List<SelectOption<String>> get localeOptions => manager.localeOptions;
 
