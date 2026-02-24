@@ -112,9 +112,11 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
               placeholder: trans('fields.email_placeholder'),
               type: InputType.email,
               validator: rules([Required(), Email()], field: 'email'),
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-4'),
 
@@ -133,9 +135,11 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-4'),
 
@@ -156,9 +160,11 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
               placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-6'),
 
@@ -166,7 +172,8 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
             WButton(
               isLoading: isLoading,
               onTap: _submit,
-              className: 'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+              className:
+                  'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
               child: WText(trans('auth.reset_password_button'),
                   className: 'text-center'),
             ),

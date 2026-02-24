@@ -4,7 +4,6 @@ import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/profile_controller.dart';
 
-
 /// Registers profile routes provided by Magic Starter plugin.
 void registerMagicStarterProfileRoutes() {
   MagicRoute.group(

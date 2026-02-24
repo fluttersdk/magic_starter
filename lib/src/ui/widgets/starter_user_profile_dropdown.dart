@@ -19,7 +19,8 @@ class StarterUserProfileDropdown extends StatelessWidget {
   ///
   /// When null, renders the default circular avatar with user initial.
   /// The builder receives the same `isOpen` and `isHovering` states.
-  final Widget Function(BuildContext context, bool isOpen, bool isHovering)? triggerBuilder;
+  final Widget Function(BuildContext context, bool isOpen, bool isHovering)?
+      triggerBuilder;
 
   /// Creates a user profile dropdown.
   const StarterUserProfileDropdown({
@@ -41,7 +42,8 @@ class StarterUserProfileDropdown extends StatelessWidget {
                 border border-gray-100 dark:border-gray-700
             ''',
       triggerBuilder: (context, isOpen, isHovering) =>
-          triggerBuilder?.call(context, isOpen, isHovering) ?? _buildAvatarTrigger(context, isOpen, isHovering),
+          triggerBuilder?.call(context, isOpen, isHovering) ??
+          _buildAvatarTrigger(context, isOpen, isHovering),
       contentBuilder: (context, close) => _buildMenu(context, close),
     );
   }

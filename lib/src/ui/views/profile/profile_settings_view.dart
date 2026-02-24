@@ -116,7 +116,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                       className: 'w-full h-full object-cover',
                     )
                   : WDiv(
-                      className: 'w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center',
+                      className:
+                          'w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center',
                       child: WIcon(
                         Icons.person_outline,
                         className: 'text-gray-400 text-3xl',
@@ -129,7 +130,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             className: 'flex flex-col gap-2 min-w-0',
             children: [
               WDiv(
-                className: 'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3',
+                className:
+                    'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3',
                 children: [
                   WButton(
                     onTap: _handlePhotoUpload,
@@ -180,36 +182,41 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           className: 'flex flex-col gap-4',
           children: [
             // Name
-          WFormInput(
-            controller: profileForm['name'],
-            label: trans('attributes.name'),
-            validator: rules([Required(), Min(2)], field: 'name'),
-            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
+            WFormInput(
+              controller: profileForm['name'],
+              label: trans('attributes.name'),
+              validator: rules([Required(), Min(2)], field: 'name'),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
 
-          // Email
-          WFormInput(
-            controller: profileForm['email'],
-            label: trans('attributes.email'),
-            type: InputType.email,
-            validator: rules([Required(), Email()], field: 'email'),
-            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
+            // Email
+            WFormInput(
+              controller: profileForm['email'],
+              label: trans('attributes.email'),
+              type: InputType.email,
+              validator: rules([Required(), Email()], field: 'email'),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
 
-          WDiv(
-            className: 'flex justify-end',
-            children: [
-              WButton(
-                onTap: _submitProfile,
-                isLoading: controller.isLoading,
-                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(trans('common.save')),
-              ),
-            ],
-          ),
-        ],
+            WDiv(
+              className: 'flex justify-end',
+              children: [
+                WButton(
+                  onTap: _submitProfile,
+                  isLoading: controller.isLoading,
+                  className:
+                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  child: WText(trans('common.save')),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -226,69 +233,78 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           className: 'flex flex-col gap-4',
           children: [
             // Current Password
-          WFormInput(
-            controller: passwordForm['current_password'],
-            label: trans('attributes.current_password'),
-            type: _obscureCurrent ? InputType.password : InputType.text,
-            validator: rules([Required()], field: 'current_password'),
-            suffix: WAnchor(
-              onTap: () => setState(() => _obscureCurrent = !_obscureCurrent),
-              child: WIcon(
-                _obscureCurrent ? Icons.visibility : Icons.visibility_off,
-                className: 'text-gray-400 text-xl',
+            WFormInput(
+              controller: passwordForm['current_password'],
+              label: trans('attributes.current_password'),
+              type: _obscureCurrent ? InputType.password : InputType.text,
+              validator: rules([Required()], field: 'current_password'),
+              suffix: WAnchor(
+                onTap: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                child: WIcon(
+                  _obscureCurrent ? Icons.visibility : Icons.visibility_off,
+                  className: 'text-gray-400 text-xl',
+                ),
               ),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
-            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
 
-          // New Password
-          WFormInput(
-            controller: passwordForm['password'],
-            label: trans('attributes.new_password'),
-            type: _obscureNew ? InputType.password : InputType.text,
-            validator: rules([Required(), Min(8)], field: 'password'),
-            suffix: WAnchor(
-              onTap: () => setState(() => _obscureNew = !_obscureNew),
-              child: WIcon(
-                _obscureNew ? Icons.visibility : Icons.visibility_off,
-                className: 'text-gray-400 text-xl',
+            // New Password
+            WFormInput(
+              controller: passwordForm['password'],
+              label: trans('attributes.new_password'),
+              type: _obscureNew ? InputType.password : InputType.text,
+              validator: rules([Required(), Min(8)], field: 'password'),
+              suffix: WAnchor(
+                onTap: () => setState(() => _obscureNew = !_obscureNew),
+                child: WIcon(
+                  _obscureNew ? Icons.visibility : Icons.visibility_off,
+                  className: 'text-gray-400 text-xl',
+                ),
               ),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
-            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
 
-          // Confirm Password
-          WFormInput(
-            controller: passwordForm['password_confirmation'],
-            label: trans('attributes.password_confirmation'),
-            type: _obscureConfirmation ? InputType.password : InputType.text,
-            validator: rules([Required()], field: 'password_confirmation'),
-            suffix: WAnchor(
-              onTap: () =>
-                  setState(() => _obscureConfirmation = !_obscureConfirmation),
-              child: WIcon(
-                _obscureConfirmation ? Icons.visibility : Icons.visibility_off,
-                className: 'text-gray-400 text-xl',
+            // Confirm Password
+            WFormInput(
+              controller: passwordForm['password_confirmation'],
+              label: trans('attributes.password_confirmation'),
+              type: _obscureConfirmation ? InputType.password : InputType.text,
+              validator: rules([Required()], field: 'password_confirmation'),
+              suffix: WAnchor(
+                onTap: () => setState(
+                    () => _obscureConfirmation = !_obscureConfirmation),
+                child: WIcon(
+                  _obscureConfirmation
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                  className: 'text-gray-400 text-xl',
+                ),
               ),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
-            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
 
-          WDiv(
-            className: 'flex justify-end',
-            children: [
-              WButton(
-                onTap: _submitPassword,
-                isLoading: controller.isLoading,
-                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(trans('profile.update_password')),
-              ),
-            ],
-          ),
-        ],
+            WDiv(
+              className: 'flex justify-end',
+              children: [
+                WButton(
+                  onTap: _submitPassword,
+                  isLoading: controller.isLoading,
+                  className:
+                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  child: WText(trans('profile.update_password')),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

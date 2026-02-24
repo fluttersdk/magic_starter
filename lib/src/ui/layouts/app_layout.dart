@@ -302,7 +302,6 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           onTap: () => MagicRoute.to(MagicStarterConfig.profileRoute()),
           onBeforeTap: onItemTap,
           isActive: currentPath == MagicStarterConfig.profileRoute(),
-
         ),
       ],
     );
@@ -557,5 +556,4 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       ),
     );
   }
-
-  }
+}

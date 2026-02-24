@@ -100,8 +100,10 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               controller: form['name'],
               label: trans('teams.team_name'),
               validator: rules([Required(), Min(2), Max(255)], field: 'name'),
-              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
             WDiv(
               className: 'flex justify-end',
@@ -109,7 +111,8 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                 WButton(
                   onTap: _submit,
                   isLoading: controller.isLoading,
-                  className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  className:
+                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                   child: WText(trans('common.save')),
                 ),
               ],
@@ -189,7 +192,8 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               child: WDiv(
                 className: 'flex flex-col',
                 children: [
-                  ...invitations.map((invitation) => _buildInvitationRow(invitation)),
+                  ...invitations
+                      .map((invitation) => _buildInvitationRow(invitation)),
                 ],
               ),
             );
@@ -202,52 +206,54 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           child: MagicStarterCard(
             title: trans('teams.invite_member'),
             child: WDiv(
-            className: 'flex flex-col gap-4',
-            children: [
-              WFormInput(
-                controller: inviteForm['email'],
-                label: trans('attributes.email'),
-                type: InputType.email,
-                validator: rules([Required(), Email()], field: 'email'),
-                labelClassName:
-                    'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-                className:
-                    'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
-              ),
-              WFormSelect<String>(
-                value: inviteForm.get('role'),
-                label: trans('attributes.role'),
-                options: [
-                  SelectOption(
-                    value: 'member',
-                    label: trans('teams.role_member'),
-                  ),
-                  SelectOption(
-                    value: 'admin',
-                    label: trans('teams.role_admin'),
-                  ),
-                ],
-                onChange: (value) => inviteForm.set('role', value ?? 'member'),
-                labelClassName:
-                    'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-                className:
-                    'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary',
-                menuClassName:
-                    'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
-              ),
-              WDiv(
-                className: 'flex justify-end',
-                children: [
-                  WButton(
-                    onTap: _sendInvite,
-                    isLoading: controller.isLoading,
-                    className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                    child: WText(trans('teams.send_invite')),
-                  ),
-                ],
-              ),
-            ],
-          ),
+              className: 'flex flex-col gap-4',
+              children: [
+                WFormInput(
+                  controller: inviteForm['email'],
+                  label: trans('attributes.email'),
+                  type: InputType.email,
+                  validator: rules([Required(), Email()], field: 'email'),
+                  labelClassName:
+                      'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
+                  className:
+                      'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+                ),
+                WFormSelect<String>(
+                  value: inviteForm.get('role'),
+                  label: trans('attributes.role'),
+                  options: [
+                    SelectOption(
+                      value: 'member',
+                      label: trans('teams.role_member'),
+                    ),
+                    SelectOption(
+                      value: 'admin',
+                      label: trans('teams.role_admin'),
+                    ),
+                  ],
+                  onChange: (value) =>
+                      inviteForm.set('role', value ?? 'member'),
+                  labelClassName:
+                      'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
+                  className:
+                      'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary',
+                  menuClassName:
+                      'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+                ),
+                WDiv(
+                  className: 'flex justify-end',
+                  children: [
+                    WButton(
+                      onTap: _sendInvite,
+                      isLoading: controller.isLoading,
+                      className:
+                          'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                      child: WText(trans('teams.send_invite')),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],

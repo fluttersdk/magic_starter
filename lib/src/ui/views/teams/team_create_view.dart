@@ -61,25 +61,28 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
         child: WDiv(
           className: 'flex flex-col gap-4',
           children: [
-          WFormInput(
-            controller: form['name'],
-            label: trans('teams.team_name'),
-            validator: rules([Required(), Min(2), Max(255)], field: 'name'),
-            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
-          WDiv(
-            className: 'flex justify-end',
-            children: [
-              WButton(
-                onTap: _submit,
-                isLoading: controller.isLoading,
-                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(trans('teams.create_team')),
-              ),
-            ],
-          ),
-        ],
+            WFormInput(
+              controller: form['name'],
+              label: trans('teams.team_name'),
+              validator: rules([Required(), Min(2), Max(255)], field: 'name'),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
+            WDiv(
+              className: 'flex justify-end',
+              children: [
+                WButton(
+                  onTap: _submit,
+                  isLoading: controller.isLoading,
+                  className:
+                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  child: WText(trans('teams.create_team')),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
