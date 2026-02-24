@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
+
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
+import '../../magic_starter_manager.dart';
 import '../../http/controllers/auth_controller.dart';
+import '../../models/starter_nav_item.dart';
 import '../widgets/team_selector.dart';
 
 /// Default App Layout for Magic Starter.
 ///
 /// A generic responsive shell with:
 /// - Sidebar (Desktop) / Drawer (Mobile)
-/// - Header with User/Team info
+/// - Header with User/Team info (customizable via [MagicStarter.useHeader])
+/// - Navigation items (customizable via [MagicStarter.useNavigation])
+/// - Bottom navigation bar for mobile
 /// - Content Area
 class MagicStarterAppLayout extends StatefulWidget {
   final Widget child;
+
   /// Static notifier bumped by [AuthRestored] listener to trigger rebuilds.
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
 
@@ -21,8 +27,10 @@ class MagicStarterAppLayout extends StatefulWidget {
   @override
   State<MagicStarterAppLayout> createState() => _MagicStarterAppLayoutState();
 }
+
 class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -38,16 +46,40 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   void _refresh() {
     if (mounted) setState(() {});
   }
+
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
   }
 
+  String _getCurrentPath(BuildContext context) {
+    try {
+      return GoRouterState.of(context).uri.path;
+    } catch (_) {
+      return '/';
+    }
+  }
+
+  bool _isActive(String path, String currentPath) {
+    if (path == '/') return currentPath == '/';
+    return currentPath.startsWith(path);
+  }
+
+  // -------------------------------------------------------------------------
+  // Build
+  // -------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
+    final currentPath = _getCurrentPath(context);
+    final navConfig = MagicStarter.navigationConfig;
+    final hasBottomNav = navConfig != null && navConfig.bottomItems.isNotEmpty;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = wScreenIs(context, 'lg');
+
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: wColor(
             context,
             'gray',
@@ -55,13 +87,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             darkColorName: 'gray',
             darkShade: 950,
           ),
-          drawer: isDesktop ? null : _buildDrawer(context),
+          drawer: isDesktop ? null : _buildDrawer(context, currentPath),
           body: SafeArea(
             bottom: false,
             child: WDiv(
               className: 'flex flex-row w-full h-full',
               children: [
-                if (isDesktop) _buildSidebar(context),
+                if (isDesktop) _buildSidebar(context, currentPath),
                 WDiv(
                   className: 'flex-1 flex flex-col h-full overflow-hidden',
                   children: [
@@ -76,27 +108,41 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               ],
             ),
           ),
+          bottomNavigationBar: (!isDesktop && hasBottomNav)
+              ? _buildBottomNav(context, currentPath)
+              : null,
         );
       },
     );
   }
 
-  Widget _buildSidebar(BuildContext context) {
+  // -------------------------------------------------------------------------
+  // Sidebar
+  // -------------------------------------------------------------------------
+
+  Widget _buildSidebar(BuildContext context, String currentPath) {
     return WDiv(
-      className:
-          'w-64 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col',
+      className: '''
+                w-64 h-full flex flex-col
+                bg-white dark:bg-gray-900
+                border-r border-gray-200 dark:border-gray-700
+            ''',
       children: [
         _buildBrand(context),
         const WSpacer(className: 'h-4'),
         _buildTeamSelector(context),
         const WSpacer(className: 'h-2'),
-        Expanded(child: _buildNavigation(context)),
+        Expanded(child: _buildNavigation(context, currentPath)),
         _buildUserMenu(context),
       ],
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
+  // -------------------------------------------------------------------------
+  // Drawer
+  // -------------------------------------------------------------------------
+
+  Widget _buildDrawer(BuildContext context, String currentPath) {
     return Drawer(
       backgroundColor: wColor(
         context,
@@ -114,6 +160,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             Expanded(
               child: _buildNavigation(
                 context,
+                currentPath,
                 onItemTap: () => Navigator.of(context).pop(),
               ),
             ),
@@ -124,12 +171,27 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Header
+  // -------------------------------------------------------------------------
+
   Widget _buildHeader(BuildContext context, bool isDesktop) {
+    // 1. Custom header builder takes full control.
+    final headerBuilder = MagicStarter.manager.headerBuilder;
+    if (headerBuilder != null) {
+      return headerBuilder(context, isDesktop);
+    }
+
+    // 2. Default: mobile-only simple header.
     if (isDesktop) return const SizedBox.shrink();
 
     return WDiv(
-      className:
-          'h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between',
+      className: '''
+                h-16 px-4
+                bg-white dark:bg-gray-900
+                border-b border-gray-200 dark:border-gray-700
+                flex items-center justify-between
+            ''',
       children: [
         WAnchor(
           onTap: _openDrawer,
@@ -142,15 +204,21 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           trans('app.name'),
           className: 'font-bold text-lg text-gray-900 dark:text-white',
         ),
-        const SizedBox(width: 24), // Balance menu icon
+        const SizedBox(width: 24),
       ],
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Brand
+  // -------------------------------------------------------------------------
+
   Widget _buildBrand(BuildContext context, {bool showClose = false}) {
     return WDiv(
-      className:
-          'h-14 px-5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800',
+      className: '''
+                h-14 px-5 flex items-center justify-between
+                border-b border-gray-100 dark:border-gray-800
+            ''',
       children: [
         WText(
           trans('app.name'),
@@ -160,8 +228,10 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           WAnchor(
             onTap: () => Navigator.pop(context),
             child: WDiv(
-              className:
-                  'w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800',
+              className: '''
+                                w-8 h-8 rounded-lg flex items-center justify-center
+                                hover:bg-gray-100 dark:hover:bg-gray-800
+                            ''',
               child: WIcon(
                 Icons.close,
                 className: 'text-[18px] text-gray-400 dark:text-gray-500',
@@ -171,6 +241,10 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       ],
     );
   }
+
+  // -------------------------------------------------------------------------
+  // Team Selector
+  // -------------------------------------------------------------------------
 
   Widget _buildTeamSelector(BuildContext context) {
     if (!MagicStarterConfig.hasTeamFeatures()) {
@@ -188,16 +262,30 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildNavigation(BuildContext context, {VoidCallback? onItemTap}) {
-    String currentPath;
-    try {
-      currentPath = GoRouterState.of(context).uri.path;
-    } catch (_) {
-      currentPath = '/';
+  // -------------------------------------------------------------------------
+  // Navigation
+  // -------------------------------------------------------------------------
+
+  Widget _buildNavigation(
+    BuildContext context,
+    String currentPath, {
+    VoidCallback? onItemTap,
+  }) {
+    final navConfig = MagicStarter.navigationConfig;
+
+    // Registered navigation items from the app.
+    if (navConfig != null) {
+      return _buildRegisteredNavigation(
+        context,
+        currentPath,
+        navConfig,
+        onItemTap: onItemTap,
+      );
     }
 
+    // Default fallback: Dashboard + Profile.
     return WDiv(
-      className: 'flex flex-col gap-1',
+      className: 'flex flex-col gap-1 py-2',
       children: [
         _navItem(
           context,
@@ -219,6 +307,63 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     );
   }
 
+  Widget _buildRegisteredNavigation(
+    BuildContext context,
+    String currentPath,
+    StarterNavigationConfig config, {
+    VoidCallback? onItemTap,
+  }) {
+    return WDiv(
+      className: 'flex flex-col py-2 gap-1 w-full',
+      children: [
+        // Main navigation items
+        ...config.mainItems.map(
+          (item) => _navItem(
+            context,
+            icon: item.icon,
+            label: trans(item.labelKey),
+            onTap: () => MagicRoute.to(item.path),
+            onBeforeTap: onItemTap,
+            isActive: _isActive(item.path, currentPath),
+          ),
+        ),
+
+        // System section (if any)
+        if (config.systemItems.isNotEmpty) ...[
+          // Divider
+          WDiv(
+            className: '''
+                            my-2 mx-3
+                            border-t border-gray-100 dark:border-gray-700
+                        ''',
+          ),
+          // Section header
+          WDiv(
+            className: 'mx-3 px-3 pb-1',
+            child: WText(
+              trans('nav.system'),
+              className: '''
+                                text-xs font-bold uppercase tracking-wide
+                                text-gray-400 dark:text-gray-500
+                            ''',
+            ),
+          ),
+          // System items
+          ...config.systemItems.map(
+            (item) => _navItem(
+              context,
+              icon: item.icon,
+              label: trans(item.labelKey),
+              onTap: () => MagicRoute.to(item.path),
+              onBeforeTap: onItemTap,
+              isActive: _isActive(item.path, currentPath),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _navItem(
     BuildContext context, {
     required IconData icon,
@@ -234,8 +379,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       },
       child: WDiv(
         states: {if (isActive) 'active'},
-        className:
-            'mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3 duration-150 text-sm font-medium text-gray-600 dark:text-gray-400 active:text-primary active:bg-primary/10 hover:bg-gray-100 dark:hover:bg-gray-800',
+        className: '''
+                    mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3
+                    duration-150 text-sm font-medium
+                    text-gray-600 dark:text-gray-400
+                    active:text-primary active:bg-primary/10
+                    hover:bg-gray-100 dark:hover:bg-gray-800
+                ''',
         children: [
           WIcon(icon, className: 'text-[20px]'),
           Expanded(
@@ -245,6 +395,77 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       ),
     );
   }
+
+  // -------------------------------------------------------------------------
+  // Bottom Navigation
+  // -------------------------------------------------------------------------
+
+  Widget _buildBottomNav(BuildContext context, String currentPath) {
+    final navConfig = MagicStarter.navigationConfig;
+    if (navConfig == null || navConfig.bottomItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+
+    return WDiv(
+      className: '''
+                bg-white dark:bg-gray-900
+                border-t border-gray-200 dark:border-gray-700
+            ''',
+      children: [
+        WDiv(
+          className: 'flex flex-row justify-between px-4',
+          children: navConfig.bottomItems
+              .map(
+                (item) => _bottomNavItem(
+                  context,
+                  icon: item.icon,
+                  activeIcon: item.activeIcon ?? item.icon,
+                  label: trans(item.labelKey),
+                  path: item.path,
+                  isActive: _isActive(item.path, currentPath),
+                ),
+              )
+              .toList(),
+        ),
+        // Safe area padding for home indicator
+        SizedBox(height: bottomPadding),
+      ],
+    );
+  }
+
+  Widget _bottomNavItem(
+    BuildContext context, {
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required String path,
+    required bool isActive,
+  }) {
+    return WAnchor(
+      onTap: () => MagicRoute.to(path),
+      child: WDiv(
+        className: 'py-2 flex flex-col items-center gap-1',
+        children: [
+          WIcon(
+            isActive ? activeIcon : icon,
+            states: isActive ? {'active'} : {},
+            className: 'text-2xl text-gray-400 active:text-primary',
+          ),
+          WText(
+            label,
+            states: isActive ? {'active'} : {},
+            className: 'text-xs text-gray-400 active:text-primary',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // User Menu
+  // -------------------------------------------------------------------------
 
   Widget _buildUserMenu(BuildContext context) {
     final userName = Auth.user()?.get<String>('name') ?? trans('common.user');
@@ -260,8 +481,10 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         children: [
           // Avatar
           WDiv(
-            className:
-                'w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0',
+            className: '''
+                            w-9 h-9 rounded-full bg-primary/10
+                            flex items-center justify-center flex-shrink-0
+                        ''',
             child: WText(
               initial,
               className: 'text-sm font-bold text-primary',
@@ -274,14 +497,18 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               children: [
                 WText(
                   userName,
-                  className:
-                      'text-sm font-medium text-gray-900 dark:text-white truncate',
+                  className: '''
+                                        text-sm font-medium
+                                        text-gray-900 dark:text-white truncate
+                                    ''',
                 ),
                 if (userEmail.isNotEmpty)
                   WText(
                     userEmail,
-                    className:
-                        'text-xs text-gray-500 dark:text-gray-400 truncate',
+                    className: '''
+                                            text-xs
+                                            text-gray-500 dark:text-gray-400 truncate
+                                        ''',
                   ),
               ],
             ),
@@ -293,8 +520,11 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               WAnchor(
                 onTap: () => context.windTheme.toggleTheme(),
                 child: WDiv(
-                  className:
-                      'w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 duration-150',
+                  className: '''
+                                        w-8 h-8 rounded-lg
+                                        flex items-center justify-center
+                                        hover:bg-gray-100 dark:hover:bg-gray-800 duration-150
+                                    ''',
                   child: WIcon(
                     context.windIsDark
                         ? Icons.light_mode_outlined
@@ -305,14 +535,20 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 ),
               ),
               WAnchor(
-                onTap: () => AuthController.instance.logout(),
+                onTap: () => _handleLogout(),
                 child: WDiv(
-                  className:
-                      'w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 duration-150',
+                  className: '''
+                                        w-8 h-8 rounded-lg
+                                        flex items-center justify-center
+                                        hover:bg-red-50 dark:hover:bg-red-900/20 duration-150
+                                    ''',
                   child: WIcon(
                     Icons.logout_outlined,
-                    className:
-                        'text-[18px] text-gray-400 dark:text-gray-500 hover:text-red-500',
+                    className: '''
+                                            text-[18px]
+                                            text-gray-400 dark:text-gray-500
+                                            hover:text-red-500
+                                        ''',
                   ),
                 ),
               ),
@@ -321,5 +557,20 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         ],
       ),
     );
+  }
+
+  // -------------------------------------------------------------------------
+  // Logout
+  // -------------------------------------------------------------------------
+
+  /// Calls the custom logout callback if registered, otherwise falls back
+  /// to the starter's default [StarterAuthController.instance.logout].
+  Future<void> _handleLogout() async {
+    final customLogout = MagicStarter.manager.onLogout;
+    if (customLogout != null) {
+      await customLogout();
+    } else {
+      await StarterAuthController.instance.logout();
+    }
   }
 }

@@ -12,22 +12,22 @@ void registerMagicStarterAuthRoutes() {
     layout: (child) =>
         MagicStarter.view.makeLayout('layout.guest', child: child),
     routes: () {
-      MagicRoute.page('/login', AuthController.instance.login)
+      MagicRoute.page('/login', StarterAuthController.instance.login)
           .transition(RouteTransition.none);
 
       if (MagicStarterConfig.hasRegistrationFeatures()) {
-        MagicRoute.page('/register', AuthController.instance.register)
+        MagicRoute.page('/register', StarterAuthController.instance.register)
             .transition(RouteTransition.none);
       }
 
       MagicRoute.page(
         '/forgot-password',
-        AuthController.instance.forgotPassword,
+        StarterAuthController.instance.forgotPassword,
       ).transition(RouteTransition.none);
 
       MagicRoute.page(
         '/reset-password',
-        AuthController.instance.resetPassword,
+        StarterAuthController.instance.resetPassword,
       ).transition(RouteTransition.none);
     },
   );

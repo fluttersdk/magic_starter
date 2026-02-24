@@ -67,7 +67,7 @@ class MagicStarterTeamSelector extends StatelessWidget {
   Widget _buildTeamList(
     List<StarterTeam> teams,
     StarterTeam? currentTeam,
-    TeamResolverConfig resolver,
+    StarterTeamResolverConfig resolver,
     VoidCallback close,
   ) {
     return WDiv(

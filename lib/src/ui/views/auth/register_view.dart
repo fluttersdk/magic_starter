@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../http/controllers/auth_controller.dart';
 import '../../widgets/auth_form_card.dart';
 
-class MagicStarterRegisterView extends MagicStatefulView<AuthController> {
+class MagicStarterRegisterView extends MagicStatefulView<StarterAuthController> {
   const MagicStarterRegisterView({super.key});
 
   @override
@@ -13,7 +13,7 @@ class MagicStarterRegisterView extends MagicStatefulView<AuthController> {
 }
 
 class _MagicStarterRegisterViewState
-    extends MagicStatefulViewState<AuthController, MagicStarterRegisterView> {
+    extends MagicStatefulViewState<StarterAuthController, MagicStarterRegisterView> {
   late final form = MagicFormData(
     {
       'name': '',

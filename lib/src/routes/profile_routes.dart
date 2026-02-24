@@ -10,7 +10,7 @@ void registerMagicStarterProfileRoutes() {
     routes: () {
       MagicRoute.page(
         MagicStarterConfig.profileRoute(),
-        ProfileController.instance.profile,
+        StarterProfileController.instance.profile,
       ).transition(RouteTransition.none);
     },
   );

@@ -10,17 +10,17 @@ void registerMagicStarterTeamRoutes() {
     routes: () {
       MagicRoute.page(
         '${MagicStarterConfig.teamsPrefix()}/create',
-        TeamController.instance.create,
+        StarterTeamController.instance.create,
       ).transition(RouteTransition.none);
 
       MagicRoute.page(
         '${MagicStarterConfig.teamsPrefix()}/settings',
-        TeamController.instance.edit,
+        StarterTeamController.instance.edit,
       ).transition(RouteTransition.none);
 
       MagicRoute.page(
         '/invitations/:token',
-        TeamController.instance.acceptInvitation,
+        StarterTeamController.instance.acceptInvitation,
       ).transition(RouteTransition.none);
     },
   );

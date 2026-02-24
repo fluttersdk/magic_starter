@@ -5,7 +5,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/auth_controller.dart';
 import '../../widgets/auth_form_card.dart';
 
-class MagicStarterLoginView extends MagicStatefulView<AuthController> {
+class MagicStarterLoginView extends MagicStatefulView<StarterAuthController> {
   const MagicStarterLoginView({super.key});
 
   @override
@@ -13,7 +13,7 @@ class MagicStarterLoginView extends MagicStatefulView<AuthController> {
 }
 
 class _MagicStarterLoginViewState
-    extends MagicStatefulViewState<AuthController, MagicStarterLoginView> {
+    extends MagicStatefulViewState<StarterAuthController, MagicStarterLoginView> {
   late final form = MagicFormData(
     {
       'email': '',

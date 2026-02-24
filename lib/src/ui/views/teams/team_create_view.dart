@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../http/controllers/team_controller.dart';
 import '../../widgets/starter_page_header.dart';
 
-class MagicStarterTeamCreateView extends MagicStatefulView<TeamController> {
+class MagicStarterTeamCreateView extends MagicStatefulView<StarterTeamController> {
   const MagicStarterTeamCreateView({super.key});
 
   @override
@@ -13,7 +13,7 @@ class MagicStarterTeamCreateView extends MagicStatefulView<TeamController> {
 }
 
 class _MagicStarterTeamCreateViewState
-    extends MagicStatefulViewState<TeamController, MagicStarterTeamCreateView> {
+    extends MagicStatefulViewState<StarterTeamController, MagicStarterTeamCreateView> {
   late final form = MagicFormData(
     {'name': ''},
     controller: controller,

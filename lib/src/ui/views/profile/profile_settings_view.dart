@@ -5,7 +5,7 @@ import '../../../http/controllers/profile_controller.dart';
 import '../../widgets/starter_page_header.dart';
 
 class MagicStarterProfileSettingsView
-    extends MagicStatefulView<ProfileController> {
+    extends MagicStatefulView<StarterProfileController> {
   const MagicStarterProfileSettingsView({super.key});
 
   @override
@@ -14,7 +14,7 @@ class MagicStarterProfileSettingsView
 }
 
 class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
-    ProfileController, MagicStarterProfileSettingsView> {
+    StarterProfileController, MagicStarterProfileSettingsView> {
   late final profileForm = MagicFormData(
     {'name': '', 'email': ''},
     controller: controller,

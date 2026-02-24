@@ -6,7 +6,7 @@ import '../../../http/controllers/team_controller.dart';
 import '../../widgets/auth_form_card.dart';
 
 class MagicStarterTeamInvitationAcceptView
-    extends MagicStatefulView<TeamController> {
+    extends MagicStatefulView<StarterTeamController> {
   const MagicStarterTeamInvitationAcceptView({super.key});
 
   @override
@@ -15,7 +15,7 @@ class MagicStarterTeamInvitationAcceptView
 }
 
 class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
-    TeamController, MagicStarterTeamInvitationAcceptView> {
+    StarterTeamController, MagicStarterTeamInvitationAcceptView> {
   late final _token = MagicRouter.instance.pathParameter('token') ?? '';
 
   @override
