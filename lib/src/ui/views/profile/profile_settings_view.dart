@@ -103,7 +103,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     return MagicStarterCard(
       title: trans('profile.profile_photo'),
       child: WDiv(
-        className: 'flex flex-col sm:flex-row items-center gap-6',
+        className: 'w-full flex flex-col sm:flex-row items-center gap-6',
         children: [
           // Avatar
           ClipOval(

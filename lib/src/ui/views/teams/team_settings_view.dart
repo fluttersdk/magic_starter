@@ -168,7 +168,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
             if (invitations.isEmpty) {
               return MagicStarterCard(
                 child: WDiv(
-                  className: 'flex flex-col items-center gap-2 py-4',
+                  className: 'w-full flex flex-col items-center gap-2 py-4',
                   children: [
                     WIcon(
                       Icons.mail_outline,

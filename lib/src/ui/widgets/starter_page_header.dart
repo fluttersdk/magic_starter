@@ -30,7 +30,7 @@ class MagicStarterPageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final leading = this.leading;
     return WDiv(
-      className: 'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700',
+      className: 'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
       children: [
         WDiv(
           className: 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
