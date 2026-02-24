@@ -71,17 +71,22 @@ class MagicStarter {
   ///   bottomItems: [
   ///     StarterNavItem(icon: Icons.dashboard_outlined, labelKey: 'nav.dashboard', path: '/'),
   ///   ],
+  ///   profileMenuItems: [
+  ///     StarterNavItem(icon: Icons.notifications_outlined, labelKey: 'nav.notifications', path: '/notifications'),
+  ///   ],
   /// );
   /// ```
   static void useNavigation({
     required List<StarterNavItem> mainItems,
     List<StarterNavItem> systemItems = const [],
     List<StarterNavItem> bottomItems = const [],
+    List<StarterNavItem> profileMenuItems = const [],
   }) {
     manager.navigationConfig = StarterNavigationConfig(
       mainItems: mainItems,
       systemItems: systemItems,
       bottomItems: bottomItems,
+      profileMenuItems: profileMenuItems,
     );
   }
 

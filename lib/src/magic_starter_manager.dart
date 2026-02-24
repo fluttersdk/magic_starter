@@ -47,10 +47,18 @@ class StarterNavigationConfig {
   /// Bottom navigation items for mobile (subset of main).
   final List<StarterNavItem> bottomItems;
 
+  /// Profile dropdown menu items.
+  ///
+  /// Host apps can register additional links (e.g. Notifications, Billing)
+  /// that appear in the user profile dropdown between the default
+  /// "Profile Settings" link and the logout action.
+  final List<StarterNavItem> profileMenuItems;
+
   const StarterNavigationConfig({
     required this.mainItems,
     this.systemItems = const [],
     this.bottomItems = const [],
+    this.profileMenuItems = const [],
   });
 }
 
