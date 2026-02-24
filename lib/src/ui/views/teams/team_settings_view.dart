@@ -92,29 +92,30 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
     return MagicForm(
       formData: form,
       child: MagicStarterCard(
+        title: trans('teams.general_settings'),
         child: WDiv(
           className: 'flex flex-col gap-4',
-        children: [
-          WFormInput(
-            controller: form['name'],
-            label: trans('teams.team_name'),
-            validator: rules([Required(), Min(2), Max(255)], field: 'name'),
-            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
-          WDiv(
-            className: 'flex justify-end',
-            children: [
-              WButton(
-                onTap: _submit,
-                isLoading: controller.isLoading,
-                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(trans('common.save')),
-              ),
-            ],
-          ),
-        ],
-      ),
+          children: [
+            WFormInput(
+              controller: form['name'],
+              label: trans('teams.team_name'),
+              validator: rules([Required(), Min(2), Max(255)], field: 'name'),
+              labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
+            WDiv(
+              className: 'flex justify-end',
+              children: [
+                WButton(
+                  onTap: _submit,
+                  isLoading: controller.isLoading,
+                  className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  child: WText(trans('common.save')),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -149,12 +150,12 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
             return MagicStarterCard(
               title: trans('teams.current_members'),
-              className: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden flex flex-col',
+              noPadding: true,
               child: WDiv(
                 className: 'flex flex-col',
                 children: [
-                ...members.map((member) => _buildMemberRow(member)),
-              ],
+                  ...members.map((member) => _buildMemberRow(member)),
+                ],
               ),
             );
           },
@@ -184,13 +185,12 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
             return MagicStarterCard(
               title: trans('teams.pending_invitations'),
-              className: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden flex flex-col',
+              noPadding: true,
               child: WDiv(
                 className: 'flex flex-col',
                 children: [
-                ...invitations
-                    .map((invitation) => _buildInvitationRow(invitation)),
-              ],
+                  ...invitations.map((invitation) => _buildInvitationRow(invitation)),
+                ],
               ),
             );
           },

@@ -5,7 +5,6 @@ import '../../../http/controllers/profile_controller.dart';
 import '../../widgets/starter_page_header.dart';
 import '../../widgets/starter_card.dart';
 import '../../../configuration/magic_starter_config.dart';
-import '../../../models/magic_starter_auth_user.dart';
 
 class MagicStarterProfileSettingsView
     extends MagicStatefulView<StarterProfileController> {
@@ -98,62 +97,65 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       return const SizedBox.shrink();
     }
 
-    final user = Auth.user() as MagicStarterAuthUser?;
-    final photoUrl = user?.profilePhotoUrl;
+    final user = Auth.user();
+    final photoUrl = user?.get<String>('profile_photo_url');
 
     return MagicStarterCard(
       title: trans('profile.profile_photo'),
-      className: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4 mb-6',
       child: WDiv(
-        className: 'flex items-center gap-6',
+        className: 'flex flex-col sm:flex-row items-center gap-6',
         children: [
-            WDiv(
-              className:
-                  'w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 shrink-0',
-              children: [
-                if (photoUrl != null && photoUrl.isNotEmpty)
-                  WImage(
-                    src: photoUrl,
-                    className: 'w-full h-full object-cover',
-                  )
-                else
-                  WIcon(
-                    Icons.person_outline,
-                    className: 'text-gray-400 text-3xl',
-                  ),
-              ],
+          // Avatar
+          ClipOval(
+            child: SizedBox(
+              width: 80,
+              height: 80,
+              child: (photoUrl != null && photoUrl.isNotEmpty)
+                  ? WImage(
+                      src: photoUrl,
+                      className: 'w-full h-full object-cover',
+                    )
+                  : WDiv(
+                      className: 'w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center',
+                      child: WIcon(
+                        Icons.person_outline,
+                        className: 'text-gray-400 text-3xl',
+                      ),
+                    ),
             ),
-            WDiv(
-              className: 'flex flex-col gap-2',
-              children: [
-                WDiv(
-                  className: 'flex items-center gap-3',
-                  children: [
+          ),
+          // Actions
+          WDiv(
+            className: 'flex flex-col gap-2 min-w-0',
+            children: [
+              WDiv(
+                className: 'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3',
+                children: [
+                  WButton(
+                    onTap: _handlePhotoUpload,
+                    isLoading: controller.isLoading,
+                    className:
+                        'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                    child: WText(trans('common.upload')),
+                  ),
+                  if (photoUrl != null && photoUrl.isNotEmpty)
                     WButton(
-                      onTap: _handlePhotoUpload,
+                      onTap: _handlePhotoRemove,
                       isLoading: controller.isLoading,
                       className:
-                          'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-                      child: WText(trans('common.upload')),
+                          'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium',
+                      child: WText(trans('common.remove')),
                     ),
-                    if (photoUrl != null && photoUrl.isNotEmpty)
-                      WButton(
-                        onTap: _handlePhotoRemove,
-                        isLoading: controller.isLoading,
-                        className:
-                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium',
-                        child: WText(trans('common.remove')),
-                      ),
-                  ],
-                ),
-                WText(
-                  trans('profile.photo_requirements'),
-                  className: 'text-xs text-gray-500 dark:text-gray-400',
-                ),
-              ],
-            ),
-          ],
-        ),
+                ],
+              ),
+              WText(
+                trans('profile.photo_requirements'),
+                className: 'text-xs text-gray-500 dark:text-gray-400',
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
