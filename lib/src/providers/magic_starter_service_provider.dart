@@ -31,5 +31,32 @@ class MagicStarterServiceProvider extends ServiceProvider {
         'is configured. Call MagicStarter.useTeamResolver() in your AppServiceProvider.',
       );
     }
+
+    // 1. Check if primary color is defined in Wind UI theme.
+    // 2. If not, register 'indigo' as the fallback primary color.
+    // 3. Emit info log to notify about the fallback.
+    _bootPrimaryColorFallback();
+  }
+
+  /// Boots the primary color fallback mechanism.
+  ///
+  /// If the host app has NOT defined a `primary` color in the Wind UI theme,
+  /// this will automatically register `indigo` as the fallback primary color.
+  void _bootPrimaryColorFallback() {
+    final context = MagicRouter.instance.navigatorKey.currentContext;
+    if (context == null) {
+      return;
+    }
+
+    final windTheme = WindTheme.of(context);
+    if (!windTheme.data.isValidColor('primary')) {
+      Log.info(
+          '[MagicStarter] No primary color defined — using indigo as fallback.');
+      windTheme.updateTheme(
+        colors: {
+          'primary': windTheme.data.colors['indigo']!,
+        },
+      );
+    }
   }
 }
