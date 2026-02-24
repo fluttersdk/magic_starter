@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import 'models/magic_starter_auth_user.dart';
+import 'models/starter_nav_item.dart';
 import 'models/starter_team.dart';
 import 'ui/layouts/app_layout.dart';
 import 'ui/layouts/guest_layout.dart';
@@ -20,15 +21,36 @@ typedef UserModelFactory = Authenticatable Function(Map<String, dynamic> data);
 
 /// Holds team-related callbacks so plugin UI can render team data
 /// without depending on app-specific models.
-class TeamResolverConfig {
+class StarterTeamResolverConfig {
   final StarterTeam? Function() currentTeam;
   final List<StarterTeam> Function() allTeams;
   final Future<void> Function(dynamic teamId) onSwitch;
 
-  const TeamResolverConfig({
+  const StarterTeamResolverConfig({
     required this.currentTeam,
     required this.allTeams,
     required this.onSwitch,
+  });
+}
+
+/// Configuration for app navigation sections.
+///
+/// Apps register these via [MagicStarter.useNavigation] to populate
+/// the sidebar, drawer, and bottom navigation bar.
+class StarterNavigationConfig {
+  /// Primary navigation items (Dashboard, Monitors, etc.).
+  final List<StarterNavItem> mainItems;
+
+  /// Secondary/system navigation items (Team Members, Settings).
+  final List<StarterNavItem> systemItems;
+
+  /// Bottom navigation items for mobile (subset of main).
+  final List<StarterNavItem> bottomItems;
+
+  const StarterNavigationConfig({
+    required this.mainItems,
+    this.systemItems = const [],
+    this.bottomItems = const [],
   });
 }
 
@@ -50,7 +72,16 @@ class MagicStarterManager {
   UserModelFactory userFactory = (data) => MagicStarterAuthUser.fromMap(data);
 
   /// Team resolver callbacks. Null when not configured.
-  TeamResolverConfig? teamResolver;
+  StarterTeamResolverConfig? teamResolver;
+
+  /// Navigation config. Null when not configured (uses defaults).
+  StarterNavigationConfig? navigationConfig;
+
+  /// Custom logout callback. When set, called instead of default logout.
+  Future<void> Function()? onLogout;
+
+  /// Custom header builder. When set, replaces the default header.
+  Widget Function(BuildContext context, bool isDesktop)? headerBuilder;
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
@@ -161,6 +192,9 @@ class MagicStarterManager {
   void reset() {
     userFactory = (data) => MagicStarterAuthUser.fromMap(data);
     teamResolver = null;
+    navigationConfig = null;
+    onLogout = null;
+    headerBuilder = null;
     _localeOptions = null;
     _viewRegistry.clear();
     registerDefaultViews();
