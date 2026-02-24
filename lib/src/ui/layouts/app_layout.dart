@@ -5,7 +5,6 @@ import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
 
-import '../../http/controllers/auth_controller.dart';
 import '../widgets/team_selector.dart';
 import '../widgets/starter_user_profile_dropdown.dart';
 
@@ -481,98 +480,82 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       child: WDiv(
         className: 'flex items-center gap-3',
         children: [
-          // Avatar
-          WDiv(
-            className: '''
-                            w-9 h-9 rounded-full bg-primary/10
-                            flex items-center justify-center flex-shrink-0
-                        ''',
-            child: WText(
-              initial,
-              className: 'text-sm font-bold text-primary',
-            ),
-          ),
-          // Name + Email
+          // User profile dropdown (reuses the same dropdown menu)
           Expanded(
-            child: WDiv(
-              className: 'flex flex-col min-w-0',
-              children: [
-                WText(
-                  userName,
-                  className: '''
-                                        text-sm font-medium
-                                        text-gray-900 dark:text-white truncate
-                                    ''',
-                ),
-                if (userEmail.isNotEmpty)
-                  WText(
-                    userEmail,
+            child: StarterUserProfileDropdown(
+              alignment: PopoverAlignment.topRight,
+              triggerBuilder: (context, isOpen, isHovering) => WDiv(
+                states: {
+                  if (isOpen) 'active',
+                  if (isHovering) 'hover',
+                },
+                className: '''
+                  flex items-center gap-3 px-1 py-1
+                  rounded-lg cursor-pointer
+                  hover:bg-gray-50 dark:hover:bg-gray-800
+                  active:bg-gray-100 dark:active:bg-gray-800
+                  transition-colors duration-150
+                ''',
+                children: [
+                  // Avatar
+                  WDiv(
                     className: '''
-                                            text-xs
-                                            text-gray-500 dark:text-gray-400 truncate
-                                        ''',
+                      w-9 h-9 rounded-full bg-primary/10
+                      flex items-center justify-center flex-shrink-0
+                    ''',
+                    child: WText(
+                      initial,
+                      className: 'text-sm font-bold text-primary',
+                    ),
                   ),
-              ],
+                  // Name + Email
+                  Expanded(
+                    child: WDiv(
+                      className: 'flex flex-col min-w-0',
+                      children: [
+                        WText(
+                          userName,
+                          className: '''
+                            text-sm font-medium
+                            text-gray-900 dark:text-white truncate
+                          ''',
+                        ),
+                        if (userEmail.isNotEmpty)
+                          WText(
+                            userEmail,
+                            className: '''
+                              text-xs
+                              text-gray-500 dark:text-gray-400 truncate
+                            ''',
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          // Action Icons
-          WDiv(
-            className: 'flex items-center gap-1 flex-shrink-0',
-            children: [
-              WAnchor(
-                onTap: () => context.windTheme.toggleTheme(),
-                child: WDiv(
-                  className: '''
-                                        w-8 h-8 rounded-lg
-                                        flex items-center justify-center
-                                        hover:bg-gray-100 dark:hover:bg-gray-800 duration-150
-                                    ''',
-                  child: WIcon(
-                    context.windIsDark
-                        ? Icons.light_mode_outlined
-                        : Icons.dark_mode_outlined,
-                    semanticLabel: trans('common.toggle_theme'),
-                    className: 'text-[18px] text-gray-400 dark:text-gray-500',
-                  ),
-                ),
+          // Theme toggle (standalone)
+          WAnchor(
+            onTap: () => context.windTheme.toggleTheme(),
+            child: WDiv(
+              className: '''
+                w-8 h-8 rounded-lg flex-shrink-0
+                flex items-center justify-center
+                hover:bg-gray-100 dark:hover:bg-gray-800 duration-150
+              ''',
+              child: WIcon(
+                context.windIsDark
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+                semanticLabel: trans('common.toggle_theme'),
+                className: 'text-[18px] text-gray-400 dark:text-gray-500',
               ),
-              WAnchor(
-                onTap: () => _handleLogout(),
-                child: WDiv(
-                  className: '''
-                                        w-8 h-8 rounded-lg
-                                        flex items-center justify-center
-                                        hover:bg-red-50 dark:hover:bg-red-900/20 duration-150
-                                    ''',
-                  child: WIcon(
-                    Icons.logout_outlined,
-                    className: '''
-                                            text-[18px]
-                                            text-gray-400 dark:text-gray-500
-                                            hover:text-red-500
-                                        ''',
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Logout
-  // -------------------------------------------------------------------------
-
-  /// Calls the custom logout callback if registered, otherwise falls back
-  /// to the starter's default [StarterAuthController.instance.logout].
-  Future<void> _handleLogout() async {
-    final customLogout = MagicStarter.manager.onLogout;
-    if (customLogout != null) {
-      await customLogout();
-    } else {
-      await StarterAuthController.instance.logout();
-    }
   }
-}
