@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/team_controller.dart';
 import '../../widgets/starter_page_header.dart';
+import '../../widgets/starter_card.dart';
 
 class MagicStarterTeamCreateView
     extends MagicStatefulView<StarterTeamController> {
@@ -56,10 +57,10 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
   Widget _buildForm() {
     return MagicForm(
       formData: form,
-      child: WDiv(
-        className:
-            'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4',
-        children: [
+      child: MagicStarterCard(
+        child: WDiv(
+          className: 'flex flex-col gap-4',
+          children: [
           WFormInput(
             controller: form['name'],
             label: trans('teams.team_name'),
@@ -68,10 +69,8 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
               Icons.business_outlined,
               className: 'text-primary text-xl',
             ),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
           WDiv(
             className: 'flex justify-end',
@@ -79,13 +78,13 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
               WButton(
                 onTap: _submit,
                 isLoading: controller.isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-medium',
+                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(trans('teams.create_team')),
               ),
             ],
           ),
         ],
+        ),
       ),
     );
   }

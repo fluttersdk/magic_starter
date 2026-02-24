@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/team_controller.dart';
 import '../../widgets/starter_page_header.dart';
+import '../../widgets/starter_card.dart';
 
 class MagicStarterTeamSettingsView
     extends MagicStatefulView<StarterTeamController> {
@@ -90,18 +91,16 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
   Widget _buildGeneralSection() {
     return MagicForm(
       formData: form,
-      child: WDiv(
-        className:
-            'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4',
+      child: MagicStarterCard(
+        child: WDiv(
+          className: 'flex flex-col gap-4',
         children: [
           WFormInput(
             controller: form['name'],
             label: trans('teams.team_name'),
             validator: rules([Required(), Min(2), Max(255)], field: 'name'),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
           WDiv(
             className: 'flex justify-end',
@@ -109,13 +108,13 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               WButton(
                 onTap: _submit,
                 isLoading: controller.isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-medium',
+                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(trans('common.save')),
               ),
             ],
           ),
         ],
+      ),
       ),
     );
   }
@@ -131,9 +130,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           valueListenable: controller.members,
           builder: (context, members, _) {
             if (members.isEmpty) {
-              return WDiv(
-                className:
-                    'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6',
+              return MagicStarterCard(
                 child: WDiv(
                   className: 'flex flex-col items-center gap-2 py-4',
                   children: [
@@ -150,20 +147,15 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               );
             }
 
-            return WDiv(
-              className:
-                  'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden',
-              children: [
-                WDiv(
-                  className: 'px-6 py-4',
-                  child: WText(
-                    trans('teams.current_members'),
-                    className:
-                        'text-lg font-semibold text-gray-900 dark:text-white',
-                  ),
-                ),
+            return MagicStarterCard(
+              title: trans('teams.current_members'),
+              className: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden flex flex-col',
+              child: WDiv(
+                className: 'flex flex-col',
+                children: [
                 ...members.map((member) => _buildMemberRow(member)),
               ],
+              ),
             );
           },
         ),
@@ -173,9 +165,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           valueListenable: controller.invitations,
           builder: (context, invitations, _) {
             if (invitations.isEmpty) {
-              return WDiv(
-                className:
-                    'w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6',
+              return MagicStarterCard(
                 child: WDiv(
                   className: 'flex flex-col items-center gap-2 py-4',
                   children: [
@@ -192,21 +182,16 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               );
             }
 
-            return WDiv(
-              className:
-                  'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden',
-              children: [
-                WDiv(
-                  className: 'px-6 py-4',
-                  child: WText(
-                    trans('teams.pending_invitations'),
-                    className:
-                        'text-lg font-semibold text-gray-900 dark:text-white',
-                  ),
-                ),
+            return MagicStarterCard(
+              title: trans('teams.pending_invitations'),
+              className: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden flex flex-col',
+              child: WDiv(
+                className: 'flex flex-col',
+                children: [
                 ...invitations
                     .map((invitation) => _buildInvitationRow(invitation)),
               ],
+              ),
             );
           },
         ),
@@ -214,15 +199,11 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
         // Invite form
         MagicForm(
           formData: inviteForm,
-          child: WDiv(
-            className:
-                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4',
+          child: MagicStarterCard(
+            title: trans('teams.invite_member'),
+            child: WDiv(
+            className: 'flex flex-col gap-4',
             children: [
-              WText(
-                trans('teams.invite_member'),
-                className:
-                    'text-lg font-semibold text-gray-900 dark:text-white',
-              ),
               WFormInput(
                 controller: inviteForm['email'],
                 label: trans('attributes.email'),
@@ -260,13 +241,13 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   WButton(
                     onTap: _sendInvite,
                     isLoading: controller.isLoading,
-                    className:
-                        'px-4 py-2 rounded-lg bg-primary hover:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-medium',
+                    className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                     child: WText(trans('teams.send_invite')),
                   ),
                 ],
               ),
             ],
+          ),
           ),
         ),
       ],

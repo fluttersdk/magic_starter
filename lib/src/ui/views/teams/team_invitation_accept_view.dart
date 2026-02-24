@@ -59,7 +59,7 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
             onTap: _accept,
             isLoading: controller.isLoading,
             className: '''
-                w-full bg-primary hover:bg-primary-dark
+                w-full bg-primary hover:bg-primary/80
                 text-white text-base font-bold
                 p-4 rounded-xl shadow-lg
               ''',

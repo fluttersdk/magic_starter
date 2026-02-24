@@ -3,6 +3,7 @@ import 'package:magic/magic.dart';
 
 import '../../../http/controllers/profile_controller.dart';
 import '../../widgets/starter_page_header.dart';
+import '../../widgets/starter_card.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../models/magic_starter_auth_user.dart';
 
@@ -100,17 +101,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     final user = Auth.user() as MagicStarterAuthUser?;
     final photoUrl = user?.profilePhotoUrl;
 
-    return WDiv(
-      className:
-          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4 mb-6',
-      children: [
-        WText(
-          trans('profile.profile_photo'),
-          className: 'text-lg font-semibold text-gray-900 dark:text-white',
-        ),
-        WDiv(
-          className: 'flex items-center gap-6',
-          children: [
+    return MagicStarterCard(
+      title: trans('profile.profile_photo'),
+      className: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4 mb-6',
+      child: WDiv(
+        className: 'flex items-center gap-6',
+        children: [
             WDiv(
               className:
                   'w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 shrink-0',
@@ -158,7 +154,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ),
           ],
         ),
-      ],
     );
   }
 
@@ -177,16 +172,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Widget _buildProfileSection() {
     return MagicForm(
       formData: profileForm,
-      child: WDiv(
-        className:
-            'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4',
-        children: [
-          WText(
-            trans('profile.profile_information'),
-            className: 'text-lg font-semibold text-gray-900 dark:text-white',
-          ),
-
-          // Name
+      child: MagicStarterCard(
+        title: trans('profile.profile_information'),
+        child: WDiv(
+          className: 'flex flex-col gap-4',
+          children: [
+            // Name
           WFormInput(
             controller: profileForm['name'],
             label: trans('attributes.name'),
@@ -195,10 +186,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               Icons.person_outline,
               className: 'text-primary text-xl',
             ),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
 
           // Email
@@ -211,10 +200,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               Icons.mail_outline,
               className: 'text-primary text-xl',
             ),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
 
           WDiv(
@@ -223,13 +210,13 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               WButton(
                 onTap: _submitProfile,
                 isLoading: controller.isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-medium',
+                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(trans('common.save')),
               ),
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -239,16 +226,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Widget _buildPasswordSection() {
     return MagicForm(
       formData: passwordForm,
-      child: WDiv(
-        className:
-            'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4',
-        children: [
-          WText(
-            trans('profile.update_password'),
-            className: 'text-lg font-semibold text-gray-900 dark:text-white',
-          ),
-
-          // Current Password
+      child: MagicStarterCard(
+        title: trans('profile.update_password'),
+        child: WDiv(
+          className: 'flex flex-col gap-4',
+          children: [
+            // Current Password
           WFormInput(
             controller: passwordForm['current_password'],
             label: trans('attributes.current_password'),
@@ -265,10 +248,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 className: 'text-gray-400 text-xl',
               ),
             ),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
 
           // New Password
@@ -288,10 +269,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 className: 'text-gray-400 text-xl',
               ),
             ),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
 
           // Confirm Password
@@ -312,10 +291,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 className: 'text-gray-400 text-xl',
               ),
             ),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
+            labelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
 
           WDiv(
@@ -324,13 +301,13 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               WButton(
                 onTap: _submitPassword,
                 isLoading: controller.isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-medium',
+                className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(trans('profile.update_password')),
               ),
             ],
           ),
         ],
+        ),
       ),
     );
   }
