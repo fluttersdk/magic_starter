@@ -6,12 +6,14 @@ import 'package:magic/magic.dart';
 /// - teams: false (opt-in)
 /// - profile_photos: false (opt-in)
 /// - registration: true (enabled by default)
+/// - social_login: false (opt-in)
 class MagicStarterConfig {
   MagicStarterConfig._();
 
   static const bool _defaultTeams = false;
   static const bool _defaultProfilePhotos = false;
   static const bool _defaultRegistration = true;
+  static const bool _defaultSocialLogin = false;
 
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
@@ -42,6 +44,15 @@ class MagicStarterConfig {
           _defaultRegistration,
         ) ??
         _defaultRegistration;
+  }
+
+  /// Returns whether social login starter features are enabled.
+  static bool hasSocialLoginFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.social_login',
+          _defaultSocialLogin,
+        ) ??
+        _defaultSocialLogin;
   }
 
   /// Returns the configured home route path.

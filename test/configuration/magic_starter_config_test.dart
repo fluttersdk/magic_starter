@@ -24,6 +24,10 @@ void main() {
       test('hasRegistrationFeatures() returns true by default', () {
         expect(MagicStarterConfig.hasRegistrationFeatures(), isTrue);
       });
+
+      test('hasSocialLoginFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasSocialLoginFeatures(), isFalse);
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -100,6 +104,12 @@ void main() {
         Config.set('magic_starter.features.registration', false);
 
         expect(MagicStarterConfig.hasRegistrationFeatures(), isFalse);
+      });
+
+      test('hasSocialLoginFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.social_login', true);
+
+        expect(MagicStarterConfig.hasSocialLoginFeatures(), isTrue);
       });
     });
 
