@@ -31,4 +31,5 @@ export 'src/ui/layouts/app_layout.dart';
 export 'src/ui/layouts/guest_layout.dart';
 export 'src/ui/widgets/auth_form_card.dart';
 export 'src/ui/widgets/team_selector.dart';
-export 'src/ui/widgets/starter_page_header.dart';
+export 'src/ui/widgets/starter_card.dart';
+export 'src/ui/widgets/starter_user_profile_dropdown.dart';

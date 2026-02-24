@@ -7,6 +7,7 @@ import '../../magic_starter_manager.dart';
 
 import '../../http/controllers/auth_controller.dart';
 import '../widgets/team_selector.dart';
+import '../widgets/starter_user_profile_dropdown.dart';
 
 /// Default App Layout for Magic Starter.
 ///
@@ -204,7 +205,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           trans('app.name'),
           className: 'font-bold text-lg text-gray-900 dark:text-white',
         ),
-        const SizedBox(width: 24),
+        const StarterUserProfileDropdown(),
       ],
     );
   }
