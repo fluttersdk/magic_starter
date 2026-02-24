@@ -23,8 +23,8 @@ class MagicStarterAuthFormCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return WDiv(
       className: '''
-        rounded-2xl bg-white dark:bg-slate-800
-        border border-slate-200 dark:border-slate-700
+        rounded-2xl bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700
         p-4 lg:p-8
         flex flex-col items-center
       ''',
@@ -52,14 +52,14 @@ class MagicStarterAuthFormCard extends StatelessWidget {
         WText(
           title,
           className:
-              'text-2xl font-bold text-slate-900 dark:text-white text-center',
+              'text-2xl font-bold text-gray-900 dark:text-white text-center',
         ),
         const WSpacer(className: 'h-1'),
 
         // Subtitle
         WText(
           subtitle,
-          className: 'text-sm text-slate-600 dark:text-slate-400 text-center',
+          className: 'text-sm text-gray-600 dark:text-gray-400 text-center',
         ),
         const WSpacer(className: 'h-6'),
 

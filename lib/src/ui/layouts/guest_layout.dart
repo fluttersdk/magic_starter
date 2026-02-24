@@ -14,9 +14,9 @@ class MagicStarterGuestLayout extends StatelessWidget {
     return Scaffold(
       backgroundColor: wColor(
         context,
-        'slate',
+        'gray',
         shade: 50,
-        darkColorName: 'slate',
+        darkColorName: 'gray',
         darkShade: 900,
       ),
       body: Center(
