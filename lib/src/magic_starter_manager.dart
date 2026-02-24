@@ -16,7 +16,10 @@ import 'ui/views/teams/team_create_view.dart';
 import 'ui/views/teams/team_invitation_accept_view.dart';
 import 'ui/views/teams/team_settings_view.dart';
 
-/// Factory type for creating authenticatable user models from API data.
+/// Social login builder type.
+typedef SocialLoginBuilder = Widget Function(
+    BuildContext context, bool isLoading);
+
 typedef UserModelFactory = Authenticatable Function(Map<String, dynamic> data);
 
 /// Holds team-related callbacks so plugin UI can render team data
@@ -90,6 +93,9 @@ class MagicStarterManager {
 
   /// Custom header builder. When set, replaces the default header.
   Widget Function(BuildContext context, bool isDesktop)? headerBuilder;
+
+  /// Social login builder. When set, renders custom social login buttons.
+  SocialLoginBuilder? socialLoginBuilder;
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
@@ -203,6 +209,7 @@ class MagicStarterManager {
     navigationConfig = null;
     onLogout = null;
     headerBuilder = null;
+    socialLoginBuilder = null;
     _localeOptions = null;
     _viewRegistry.clear();
     registerDefaultViews();
