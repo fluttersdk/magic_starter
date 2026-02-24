@@ -7,7 +7,8 @@ import '../../facades/magic_starter.dart';
 /// Auth controller for Magic Starter plugin.
 class StarterAuthController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests {
-  static StarterAuthController get instance => Magic.findOrPut(StarterAuthController.new);
+  static StarterAuthController get instance =>
+      Magic.findOrPut(StarterAuthController.new);
 
   bool _isSubmitting = false;
 

@@ -26,7 +26,7 @@ class StarterProfileController extends MagicController
 
     try {
       final response = await Http.put(
-        '/user/profile-information',
+        '/user/profile',
         data: {'name': name, 'email': email},
       );
 
@@ -101,8 +101,8 @@ class StarterProfileController extends MagicController
 
     try {
       final response = await Http.post(
-        '/user/delete',
-        data: {'password': password},
+        '/user',
+        data: {'_method': 'DELETE', 'password': password},
       );
       if (!response.successful) {
         handleApiError(
@@ -117,6 +117,76 @@ class StarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error('[StarterProfileController.doDeleteAccount] $e\n$stackTrace');
+      setError(trans('errors.unexpected'));
+      return false;
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
+  /// Update profile photo.
+  Future<bool> doUpdateProfilePhoto({required MagicFile file}) async {
+    if (_isSubmitting) return false;
+    _isSubmitting = true;
+    setLoading();
+    clearErrors();
+
+    try {
+      final response = await Http.upload(
+        "/user/profile-photo",
+        data: {},
+        files: {"photo": file},
+      );
+
+      if (!response.successful) {
+        handleApiError(
+          response,
+          fallback: trans('profile.photo_update_failed'),
+        );
+        return false;
+      }
+
+      await Auth.restore();
+      Magic.toast(trans('profile.photo_updated'));
+      setSuccess(true);
+      return true;
+    } catch (e, stackTrace) {
+      Log.error(
+          '[StarterProfileController.doUpdateProfilePhoto] $e\n$stackTrace');
+      setError(trans('errors.unexpected'));
+      return false;
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
+  /// Delete profile photo.
+  Future<bool> doDeleteProfilePhoto() async {
+    if (_isSubmitting) return false;
+    _isSubmitting = true;
+    setLoading();
+    clearErrors();
+
+    try {
+      final response = await Http.delete(
+        '/user/profile-photo',
+      );
+
+      if (!response.successful) {
+        handleApiError(
+          response,
+          fallback: trans('profile.photo_delete_failed'),
+        );
+        return false;
+      }
+
+      await Auth.restore();
+      Magic.toast(trans('profile.photo_deleted'));
+      setSuccess(true);
+      return true;
+    } catch (e, stackTrace) {
+      Log.error(
+          '[StarterProfileController.doDeleteProfilePhoto] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/team_controller.dart';
 import '../../widgets/starter_page_header.dart';
 
-class MagicStarterTeamCreateView extends MagicStatefulView<StarterTeamController> {
+class MagicStarterTeamCreateView
+    extends MagicStatefulView<StarterTeamController> {
   const MagicStarterTeamCreateView({super.key});
 
   @override
@@ -12,8 +14,8 @@ class MagicStarterTeamCreateView extends MagicStatefulView<StarterTeamController
       _MagicStarterTeamCreateViewState();
 }
 
-class _MagicStarterTeamCreateViewState
-    extends MagicStatefulViewState<StarterTeamController, MagicStarterTeamCreateView> {
+class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
+    StarterTeamController, MagicStarterTeamCreateView> {
   late final form = MagicFormData(
     {'name': ''},
     controller: controller,
@@ -33,7 +35,7 @@ class _MagicStarterTeamCreateViewState
 
     final success = await controller.doCreate(name: form.get('name'));
     if (success) {
-      MagicRoute.to('/settings/teams');
+      MagicRoute.to(MagicStarterConfig.teamSettingsRoute());
     }
   }
 

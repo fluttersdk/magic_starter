@@ -1,4 +1,5 @@
 import 'package:magic/magic.dart';
+import '../cli/commands/install_command.dart';
 import '../magic_starter_manager.dart';
 
 /// Service provider for Magic Starter.
@@ -13,8 +14,11 @@ class MagicStarterServiceProvider extends ServiceProvider {
 
   @override
   void register() {
-    // Register manager singleton
+    // Register manager singleton.
     app.singleton('magic_starter', () => MagicStarterManager());
+
+    // Register CLI install command.
+    app.singleton('magic_starter.commands.install', () => InstallCommand());
   }
 
   @override

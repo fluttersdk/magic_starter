@@ -86,7 +86,8 @@ class MagicStarter {
   }
 
   /// Get the navigation config, or null if not registered.
-  static StarterNavigationConfig? get navigationConfig => manager.navigationConfig;
+  static StarterNavigationConfig? get navigationConfig =>
+      manager.navigationConfig;
 
   /// Whether navigation items have been registered.
   static bool get hasNavigation => manager.navigationConfig != null;

@@ -6,7 +6,8 @@ import '../../facades/magic_starter.dart';
 /// Team controller for Magic Starter plugin.
 class StarterTeamController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests {
-  static StarterTeamController get instance => Magic.findOrPut(StarterTeamController.new);
+  static StarterTeamController get instance =>
+      Magic.findOrPut(StarterTeamController.new);
 
   bool _isSubmitting = false;
 
@@ -77,7 +78,8 @@ class StarterTeamController extends MagicController
         setSuccess(true);
       }
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.loadMembersAndInvitations] $e\n$stackTrace');
+      Log.error(
+          '[StarterTeamController.loadMembersAndInvitations] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isLoadingMembers = false;

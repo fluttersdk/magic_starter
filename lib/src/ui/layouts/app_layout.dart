@@ -4,8 +4,9 @@ import 'package:magic/magic.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
+import '../../facades/magic_starter.dart';
+import '../../magic_starter_manager.dart';
 import '../../http/controllers/auth_controller.dart';
-import '../../models/starter_nav_item.dart';
 import '../widgets/team_selector.dart';
 
 /// Default App Layout for Magic Starter.
@@ -299,6 +300,9 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           context,
           icon: Icons.person_outline,
           label: trans('nav.profile'),
+          onTap: () => MagicRoute.to(MagicStarterConfig.profileRoute()),
+          onBeforeTap: onItemTap,
+          isActive: currentPath == MagicStarterConfig.profileRoute(),
           onTap: () => MagicRoute.to('/settings/profile'),
           onBeforeTap: onItemTap,
           isActive: currentPath == '/settings/profile',

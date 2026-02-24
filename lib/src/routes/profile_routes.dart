@@ -1,12 +1,17 @@
 import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_config.dart';
+import '../facades/magic_starter.dart';
+import '../http/controllers/profile_controller.dart';
+
+import '../configuration/magic_starter_config.dart';
 import '../http/controllers/profile_controller.dart';
 
 /// Registers profile routes provided by Magic Starter plugin.
 void registerMagicStarterProfileRoutes() {
   MagicRoute.group(
     middleware: ['auth'],
+    layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(
         MagicStarterConfig.profileRoute(),

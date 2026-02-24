@@ -12,8 +12,8 @@ class MagicStarterLoginView extends MagicStatefulView<StarterAuthController> {
   State<MagicStarterLoginView> createState() => _MagicStarterLoginViewState();
 }
 
-class _MagicStarterLoginViewState
-    extends MagicStatefulViewState<StarterAuthController, MagicStarterLoginView> {
+class _MagicStarterLoginViewState extends MagicStatefulViewState<
+    StarterAuthController, MagicStarterLoginView> {
   late final form = MagicFormData(
     {
       'email': '',

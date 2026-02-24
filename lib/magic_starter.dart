@@ -2,7 +2,11 @@
 
 export 'src/facades/magic_starter.dart';
 export 'src/magic_starter_manager.dart'
-    show MagicStarterManager, UserModelFactory, StarterTeamResolverConfig, StarterNavigationConfig;
+    show
+        MagicStarterManager,
+        UserModelFactory,
+        StarterTeamResolverConfig,
+        StarterNavigationConfig;
 export 'src/providers/magic_starter_service_provider.dart';
 export 'src/ui/view_registry.dart';
 export 'src/configuration/magic_starter_config.dart';

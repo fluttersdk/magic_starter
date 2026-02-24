@@ -19,6 +19,7 @@ class MagicStarterAuthUser extends Model with Authenticatable {
 
   String? get name => get<String>('name');
   String? get email => get<String>('email');
+  String? get profilePhotoUrl => get<String>('profile_photo_url');
 
   /// Create from API data map.
   static MagicStarterAuthUser fromMap(Map<String, dynamic> map) {

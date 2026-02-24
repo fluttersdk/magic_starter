@@ -5,7 +5,8 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/team_controller.dart';
 import '../../widgets/starter_page_header.dart';
 
-class MagicStarterTeamSettingsView extends MagicStatefulView<StarterTeamController> {
+class MagicStarterTeamSettingsView
+    extends MagicStatefulView<StarterTeamController> {
   const MagicStarterTeamSettingsView({super.key});
 
   @override

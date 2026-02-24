@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../models/starter_team.dart';
 import '../../magic_starter_manager.dart';
@@ -78,7 +79,8 @@ class MagicStarterTeamSelector extends StatelessWidget {
           className: 'px-3 pb-1',
           child: WText(
             trans('teams.team').toUpperCase(),
-            className: 'text-xs font-bold tracking-wide text-gray-400 dark:text-gray-500',
+            className:
+                'text-xs font-bold tracking-wide text-gray-400 dark:text-gray-500',
           ),
         ),
         // Team list
@@ -121,13 +123,14 @@ class MagicStarterTeamSelector extends StatelessWidget {
         }),
         // Divider
         WDiv(
-          className: 'my-1.5 mx-3 border-t border-gray-100 dark:border-gray-700',
+          className:
+              'my-1.5 mx-3 border-t border-gray-100 dark:border-gray-700',
         ),
         // Team Settings
         WAnchor(
           onTap: () {
             close();
-            MagicRoute.to('/teams/settings');
+            MagicRoute.to(MagicStarterConfig.teamSettingsRoute());
           },
           child: WDiv(
             className:
@@ -143,7 +146,8 @@ class MagicStarterTeamSelector extends StatelessWidget {
               ),
               WText(
                 trans('teams.settings'),
-                className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
+                className:
+                    'text-sm font-medium text-gray-700 dark:text-gray-300',
               ),
             ],
           ),
@@ -152,7 +156,7 @@ class MagicStarterTeamSelector extends StatelessWidget {
         WAnchor(
           onTap: () {
             close();
-            MagicRoute.to('/teams/create');
+            MagicRoute.to(MagicStarterConfig.teamCreateRoute());
           },
           child: WDiv(
             className:
@@ -168,7 +172,8 @@ class MagicStarterTeamSelector extends StatelessWidget {
               ),
               WText(
                 trans('teams.create_team'),
-                className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
+                className:
+                    'text-sm font-medium text-gray-700 dark:text-gray-300',
               ),
             ],
           ),

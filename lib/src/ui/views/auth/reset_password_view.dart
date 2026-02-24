@@ -4,7 +4,8 @@ import 'package:magic/magic.dart';
 import '../../../http/controllers/auth_controller.dart';
 import '../../widgets/auth_form_card.dart';
 
-class MagicStarterResetPasswordView extends MagicStatefulView<StarterAuthController> {
+class MagicStarterResetPasswordView
+    extends MagicStatefulView<StarterAuthController> {
   const MagicStarterResetPasswordView({super.key});
 
   @override
