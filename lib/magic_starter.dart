@@ -5,6 +5,7 @@ export 'src/magic_starter_manager.dart'
     show
         MagicStarterManager,
         UserModelFactory,
+        SocialLoginBuilder,
         StarterTeamResolverConfig,
         StarterNavigationConfig;
 export 'src/providers/magic_starter_service_provider.dart';
@@ -33,3 +34,4 @@ export 'src/ui/widgets/auth_form_card.dart';
 export 'src/ui/widgets/team_selector.dart';
 export 'src/ui/widgets/starter_card.dart';
 export 'src/ui/widgets/starter_user_profile_dropdown.dart';
+export 'src/ui/widgets/social_login_divider.dart';
