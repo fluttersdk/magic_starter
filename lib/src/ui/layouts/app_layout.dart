@@ -4,8 +4,7 @@ import 'package:magic/magic.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
-import '../../facades/magic_starter.dart';
-import '../../magic_starter_manager.dart';
+
 import '../../http/controllers/auth_controller.dart';
 import '../widgets/team_selector.dart';
 
@@ -303,9 +302,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           onTap: () => MagicRoute.to(MagicStarterConfig.profileRoute()),
           onBeforeTap: onItemTap,
           isActive: currentPath == MagicStarterConfig.profileRoute(),
-          onTap: () => MagicRoute.to('/settings/profile'),
-          onBeforeTap: onItemTap,
-          isActive: currentPath == '/settings/profile',
+
         ),
       ],
     );
