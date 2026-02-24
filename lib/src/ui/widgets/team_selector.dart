@@ -28,14 +28,14 @@ class MagicStarterTeamSelector extends StatelessWidget {
     return WPopover(
       alignment: PopoverAlignment.bottomCenter,
       className: '''
-        w-62
+        w-58
         bg-white dark:bg-gray-800
         border border-gray-200 dark:border-gray-700
         rounded-xl shadow-xl
       ''',
       triggerBuilder: (context, isOpen, isHovering) => WDiv(
         className:
-            'flex flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800',
+            'flex flex-row items-center gap-2 mx-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800',
         children: [
           WDiv(
             className:

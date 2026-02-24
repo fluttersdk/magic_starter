@@ -35,11 +35,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   void initState() {
     super.initState();
     MagicStarterAppLayout.refreshNotifier.addListener(_refresh);
+    Auth.stateNotifier.addListener(_refresh);
   }
 
   @override
   void dispose() {
     MagicStarterAppLayout.refreshNotifier.removeListener(_refresh);
+    Auth.stateNotifier.removeListener(_refresh);
     super.dispose();
   }
 
@@ -256,7 +258,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     }
 
     if (MagicStarter.hasTeamResolver) {
-      return const MagicStarterTeamSelector();
+    return MagicStarterTeamSelector();
     }
 
     return const SizedBox.shrink();
