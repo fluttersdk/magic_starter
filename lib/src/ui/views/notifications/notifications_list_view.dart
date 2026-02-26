@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
+
 import '../../../facades/magic_starter.dart';
 
 /// Full-page view for listing all notifications with mark as read,
@@ -117,18 +118,18 @@ class _MagicStarterNotificationsListViewState
   Widget _buildHeader(BuildContext context, {required bool hasUnread}) {
     return WDiv(
       className: '''
-        w-full
-        flex flex-row items-center justify-between
+        w-full flex flex-col
         gap-4 pb-4 lg:pb-6
         border-b border-gray-200 dark:border-gray-700
       ''',
       children: [
         WDiv(
-          className: 'flex-1 flex flex-row items-center gap-3 min-w-0',
+          className: 'flex flex-row items-center gap-3',
           children: [
             WButton(
               onTap: _handleBack,
-              className: 'p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700',
+              className:
+                  'p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700',
               child: WIcon(
                 Icons.arrow_back,
                 className: 'text-xl text-gray-700 dark:text-gray-300',
@@ -139,11 +140,13 @@ class _MagicStarterNotificationsListViewState
               children: [
                 WText(
                   trans('notifications.title'),
-                  className: 'text-2xl font-bold text-gray-900 dark:text-white truncate',
+                  className:
+                      'text-2xl font-bold text-gray-900 dark:text-white truncate',
                 ),
                 WText(
                   trans('notifications.list_subtitle'),
-                  className: 'text-sm text-gray-600 dark:text-gray-400 truncate',
+                  className:
+                      'text-sm text-gray-600 dark:text-gray-400 truncate',
                 ),
               ],
             ),
@@ -156,25 +159,24 @@ class _MagicStarterNotificationsListViewState
               _loadPage(_currentPage);
             },
             className: '''
-              px-4 py-2 rounded-lg
+              self-start px-4 py-2 rounded-lg
               bg-primary hover:bg-green-600
               text-white font-medium text-sm
-              flex-shrink-0
             ''',
-            child: WDiv(
-              className: 'flex flex-row items-center gap-2',
-              children: [
-                WIcon(Icons.done_all, className: 'text-lg text-white'),
-                WText(trans('notifications.mark_all_read'), className: 'whitespace-nowrap'),
-              ],
+            child: WText(
+              trans('notifications.mark_all_read'),
+              className: 'text-white font-medium text-sm',
             ),
           ),
       ],
     );
   }
 
-  Widget _buildBody(BuildContext context,
-      List<DatabaseNotification> notifications, int totalPages) {
+  Widget _buildBody(
+    BuildContext context,
+    List<DatabaseNotification> notifications,
+    int totalPages,
+  ) {
     if (_isLoading && notifications.isEmpty) {
       return const WDiv(
         className: 'flex items-center justify-center py-20',
@@ -199,10 +201,7 @@ class _MagicStarterNotificationsListViewState
     return WDiv(
       className: 'flex flex-col gap-4',
       children: [
-        ...notifications
-            .asMap()
-            .entries
-            .map((entry) => _buildNotificationItem(entry.value)),
+        ...notifications.map((n) => _buildNotificationItem(n)),
         if (totalPages > 1) _buildPagination(totalPages),
       ],
     );
@@ -212,14 +211,8 @@ class _MagicStarterNotificationsListViewState
     return WDiv(
       className: 'flex flex-col items-center justify-center py-20 gap-4',
       children: [
-        WIcon(
-          icon,
-          className: 'text-6xl text-gray-300 dark:text-gray-600',
-        ),
-        WText(
-          message,
-          className: 'text-gray-500 dark:text-gray-400',
-        ),
+        WIcon(icon, className: 'text-6xl text-gray-300 dark:text-gray-600'),
+        WText(message, className: 'text-gray-500 dark:text-gray-400'),
       ],
     );
   }
@@ -255,7 +248,7 @@ class _MagicStarterNotificationsListViewState
       },
       child: WDiv(
         className:
-            'flex flex-row items-start gap-4 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors duration-150',
+            'flex flex-row items-start gap-4 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl',
         children: [
           WDiv(
             className:
@@ -287,7 +280,8 @@ class _MagicStarterNotificationsListViewState
           ),
           if (!notification.isRead)
             const WDiv(
-              className: 'w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0',
+              className:
+                  'w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0',
               child: SizedBox.shrink(),
             ),
           if (widget.onDelete != null)
@@ -298,7 +292,7 @@ class _MagicStarterNotificationsListViewState
               },
               child: WDiv(
                 className:
-                    'p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150',
+                    'p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20',
                 child: WIcon(
                   Icons.delete_outline,
                   className: 'text-lg text-gray-400 hover:text-red-500',
@@ -319,8 +313,10 @@ class _MagicStarterNotificationsListViewState
           disabled: _currentPage <= 1,
           className:
               'px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-50',
-          child: WIcon(Icons.chevron_left,
-              className: 'text-gray-600 dark:text-gray-300'),
+          child: WIcon(
+            Icons.chevron_left,
+            className: 'text-gray-600 dark:text-gray-300',
+          ),
         ),
         WText(
           trans('common.pagination', {
@@ -336,8 +332,10 @@ class _MagicStarterNotificationsListViewState
           disabled: _currentPage >= totalPages,
           className:
               'px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-50',
-          child: WIcon(Icons.chevron_right,
-              className: 'text-gray-600 dark:text-gray-300'),
+          child: WIcon(
+            Icons.chevron_right,
+            className: 'text-gray-600 dark:text-gray-300',
+          ),
         ),
       ],
     );

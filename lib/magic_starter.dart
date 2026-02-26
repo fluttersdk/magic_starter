@@ -27,7 +27,7 @@ export 'src/ui/views/auth/reset_password_view.dart';
 export 'src/ui/views/profile/profile_settings_view.dart';
 export 'src/ui/views/teams/team_create_view.dart';
 export 'src/ui/views/teams/team_settings_view.dart';
-export 'src/ui/views/teams/team_invitation_accept_view.dart';
+export 'src/ui/views/notifications/notification_preferences_view.dart';
 export 'src/ui/layouts/app_layout.dart';
 export 'src/ui/layouts/guest_layout.dart';
 export 'src/ui/widgets/auth_form_card.dart';
