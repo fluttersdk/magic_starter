@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'facades/magic_starter.dart';
 import 'package:magic/magic.dart';
 
+import 'facades/magic_starter.dart';
 import 'models/magic_starter_auth_user.dart';
 import 'models/starter_nav_item.dart';
 import 'models/starter_team.dart';
@@ -12,6 +12,8 @@ import 'ui/views/auth/forgot_password_view.dart';
 import 'ui/views/auth/login_view.dart';
 import 'ui/views/auth/register_view.dart';
 import 'ui/views/auth/reset_password_view.dart';
+import 'ui/views/notifications/notification_preferences_view.dart';
+import 'ui/views/notifications/notifications_list_view.dart';
 import 'ui/views/profile/profile_settings_view.dart';
 import 'ui/views/teams/team_create_view.dart';
 import 'ui/views/teams/team_invitation_accept_view.dart';
@@ -172,6 +174,14 @@ class MagicStarterManager {
     _registerDefault(
       'teams.invitation_accept',
       () => const MagicStarterTeamInvitationAcceptView(),
+    );
+    _registerDefault(
+      'notifications.list',
+      () => const MagicStarterNotificationsListView(),
+    );
+    _registerDefault(
+      'notifications.preferences',
+      () => const MagicStarterNotificationPreferencesView(),
     );
     // Layouts
     _registerDefaultLayout(

@@ -8,6 +8,7 @@ import '../http/controllers/profile_controller.dart';
 void registerMagicStarterProfileRoutes() {
   MagicRoute.group(
     middleware: ['auth'],
+    layoutId: 'app',
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(

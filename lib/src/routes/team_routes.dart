@@ -8,6 +8,7 @@ import '../http/controllers/team_controller.dart';
 void registerMagicStarterTeamRoutes() {
   MagicRoute.group(
     middleware: ['auth'],
+    layoutId: 'app',
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(
