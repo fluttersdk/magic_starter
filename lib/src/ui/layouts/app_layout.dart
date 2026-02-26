@@ -7,6 +7,8 @@ import '../../magic_starter_manager.dart';
 
 import '../widgets/team_selector.dart';
 import '../widgets/starter_user_profile_dropdown.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+import '../widgets/starter_notification_dropdown.dart';
 
 /// Default App Layout for Magic Starter.
 ///
@@ -36,6 +38,16 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     super.initState();
     MagicStarterAppLayout.refreshNotifier.addListener(_refresh);
     Auth.stateNotifier.addListener(_refresh);
+
+    // Start notification polling when layout mounts (user is authenticated).
+    // startPolling() is idempotent and calls fetchNotifications() immediately.
+    if (MagicStarterConfig.hasNotificationFeatures()) {
+      try {
+        Notify.startPolling();
+      } catch (_) {
+        // Silently fail in test environments where Magic may not be initialized.
+      }
+    }
   }
 
   @override
@@ -206,7 +218,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           trans('app.name'),
           className: 'font-bold text-lg text-gray-900 dark:text-white',
         ),
-        const StarterUserProfileDropdown(),
+        WDiv(
+          className: 'flex items-center gap-1',
+          children: [
+            _buildNotificationBell(),
+            const StarterUserProfileDropdown(),
+          ],
+        ),
       ],
     );
   }
@@ -536,6 +554,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               ),
             ),
           ),
+          // Notification bell (gated by feature toggle)
+          _buildNotificationBell(),
           // Theme toggle (standalone)
           WAnchor(
             onTap: () => context.windTheme.toggleTheme(),
@@ -556,6 +576,30 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           ),
         ],
       ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Notification Bell
+  // -------------------------------------------------------------------------
+
+  /// Builds the notification bell dropdown, or an empty widget when the
+  /// notifications feature is disabled.
+  ///
+  /// Used in both the desktop sidebar [_buildUserMenu] and the mobile
+  /// [_buildHeader] so the configuration is centralised here.
+  Widget _buildNotificationBell() {
+    if (!MagicStarterConfig.hasNotificationFeatures()) {
+      return const SizedBox.shrink();
+    }
+
+    return StarterNotificationDropdown(
+      notificationStream: Notify.notifications(),
+      onMarkAsRead: (id) => Notify.markAsRead(id),
+      onMarkAllAsRead: () => Notify.markAllAsRead(),
+      onNotificationTap: (notification) =>
+          MagicRoute.to(notification.actionUrl ?? '/'),
+      onViewAll: () => MagicRoute.to(MagicStarterConfig.notificationsRoute()),
     );
   }
 }

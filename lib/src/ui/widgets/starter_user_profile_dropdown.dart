@@ -114,16 +114,28 @@ class StarterUserProfileDropdown extends StatelessWidget {
           label: trans('auth.profile'),
           onTap: () {
             close();
-            MagicRouter.instance.push(MagicStarterConfig.profileRoute());
+            MagicRoute.to(MagicStarterConfig.profileRoute());
           },
         ),
+        // App-registered profile menu items.
         for (final item in profileMenuItems)
           _buildMenuItem(
             icon: item.icon,
             label: trans(item.labelKey),
             onTap: () {
               close();
-              MagicRouter.instance.push(item.path);
+              MagicRoute.to(item.path);
+            },
+          ),
+
+        // Auto-injected notification settings when feature is enabled.
+        if (MagicStarterConfig.hasNotificationFeatures())
+          _buildMenuItem(
+            icon: Icons.notifications_outlined,
+            label: trans('notifications.settings'),
+            onTap: () {
+              close();
+              MagicRoute.to(MagicStarterConfig.notificationPreferencesRoute());
             },
           ),
         WDiv(
