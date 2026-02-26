@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'facades/magic_starter.dart';
 import 'package:magic/magic.dart';
 
 import 'models/magic_starter_auth_user.dart';
@@ -96,6 +97,10 @@ class MagicStarterManager {
 
   /// Social login builder. When set, renders custom social login buttons.
   SocialLoginBuilder? socialLoginBuilder;
+
+  /// Custom notification type-to-icon/color mapper.
+  /// When null, notification views use built-in defaults.
+  StarterNotificationTypeMapper? notificationTypeMapper;
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
@@ -210,6 +215,7 @@ class MagicStarterManager {
     onLogout = null;
     headerBuilder = null;
     socialLoginBuilder = null;
+    notificationTypeMapper = null;
     _localeOptions = null;
     _viewRegistry.clear();
     registerDefaultViews();

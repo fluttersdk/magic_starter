@@ -14,6 +14,11 @@ class MagicStarterConfig {
   static const bool _defaultProfilePhotos = false;
   static const bool _defaultRegistration = true;
   static const bool _defaultSocialLogin = false;
+  static const bool _defaultExtendedProfile = false;
+  static const bool _defaultNotifications = false;
+
+  static const String _defaultLocale = 'en';
+  static const String _defaultTimezone = 'UTC';
 
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
@@ -21,6 +26,7 @@ class MagicStarterConfig {
   static const String _defaultAuthPrefix = '/auth';
   static const String _defaultTeamsPrefix = '/teams';
   static const String _defaultProfilePrefix = '/settings';
+  static const String _defaultNotificationsPrefix = '/notifications';
 
   /// Returns whether team-related starter features are enabled.
   static bool hasTeamFeatures() {
@@ -53,6 +59,42 @@ class MagicStarterConfig {
           _defaultSocialLogin,
         ) ??
         _defaultSocialLogin;
+  }
+
+  /// Returns whether extended profile fields (phone, timezone, language) are enabled.
+  static bool hasExtendedProfileFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.extended_profile',
+          _defaultExtendedProfile,
+        ) ??
+        _defaultExtendedProfile;
+  }
+
+  /// Returns whether notification starter features are enabled.
+  static bool hasNotificationFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.notifications',
+          _defaultNotifications,
+        ) ??
+        _defaultNotifications;
+  }
+
+  /// Returns the default locale for new users.
+  static String defaultLocale() {
+    return Config.get<String>(
+          'magic_starter.defaults.locale',
+          _defaultLocale,
+        ) ??
+        _defaultLocale;
+  }
+
+  /// Returns the default timezone for new users.
+  static String defaultTimezone() {
+    return Config.get<String>(
+          'magic_starter.defaults.timezone',
+          _defaultTimezone,
+        ) ??
+        _defaultTimezone;
   }
 
   /// Returns the configured home route path.
@@ -89,6 +131,32 @@ class MagicStarterConfig {
         _defaultProfilePrefix;
   }
 
+  /// Returns the configured notifications route prefix (e.g. `/notifications`).
+  static String notificationsPrefix() {
+    return Config.get<String>(
+          'magic_starter.routes.notifications_prefix',
+          _defaultNotificationsPrefix,
+        ) ??
+        _defaultNotificationsPrefix;
+  }
+
+  // -- Legal links --
+
+  /// Returns the configured Terms of Service URL, or `null` if not set.
+  static String? termsUrl() {
+    return Config.get<String?>('magic_starter.legal.terms_url', null);
+  }
+
+  /// Returns the configured Privacy Policy URL, or `null` if not set.
+  static String? privacyUrl() {
+    return Config.get<String?>('magic_starter.legal.privacy_url', null);
+  }
+
+  /// Returns whether at least one legal link (terms or privacy) is configured.
+  static bool hasLegalLinks() {
+    return termsUrl() != null || privacyUrl() != null;
+  }
+
   // -- Computed route paths --
 
   /// Full path for team creation page.
@@ -99,4 +167,15 @@ class MagicStarterConfig {
 
   /// Full path for profile settings page.
   static String profileRoute() => '${profilePrefix()}/profile';
+
+  /// Full path for invitation acceptance page.
+  static String invitationAcceptRoute(String token) =>
+      '/invitations/$token/accept';
+
+  /// Full path for the notifications list page.
+  static String notificationsRoute() => notificationsPrefix();
+
+  /// Full path for the notification preferences/settings page.
+  static String notificationPreferencesRoute() =>
+      '${profilePrefix()}/notifications';
 }

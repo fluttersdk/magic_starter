@@ -1,10 +1,24 @@
+import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
-import 'package:flutter/widgets.dart';
+
 
 import '../magic_starter_manager.dart';
 import '../models/starter_team.dart';
 import '../models/starter_nav_item.dart';
 import '../ui/view_registry.dart';
+
+/// Maps a notification type string to an icon and color class.
+///
+/// ### Example Usage
+/// ```dart
+/// MagicStarter.useNotificationTypeMapper((type) => switch (type) {
+///   'monitor_down' => (icon: Icons.error_outline, colorClass: 'text-red-500'),
+///   'monitor_up' => (icon: Icons.check_circle_outline, colorClass: 'text-green-500'),
+///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
+/// });
+/// ```
+typedef StarterNotificationTypeMapper = ({IconData icon, String colorClass})
+    Function(String type);
 
 /// Static facade for Magic Starter.
 class MagicStarter {
@@ -152,6 +166,27 @@ class MagicStarter {
   /// Get the social login builder, or null if not registered.
   static SocialLoginBuilder? get socialLoginBuilder =>
       manager.socialLoginBuilder;
+
+  /// Register a custom notification type-to-icon/color mapper.
+  ///
+  /// When set, notification views use this mapper to resolve the icon and
+  /// color class for each notification type (e.g. `monitor_down`, `monitor_up`).
+  /// If not set, views fall back to built-in defaults.
+  ///
+  /// ### Example Usage
+  /// ```dart
+  /// MagicStarter.useNotificationTypeMapper((type) => switch (type) {
+  ///   'monitor_down' => (icon: Icons.error_outline, colorClass: 'text-red-500'),
+  ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
+  /// });
+  /// ```
+  static void useNotificationTypeMapper(StarterNotificationTypeMapper mapper) {
+    manager.notificationTypeMapper = mapper;
+  }
+
+  /// The registered notification type mapper, or `null` if not configured.
+  static StarterNotificationTypeMapper? get notificationTypeMapper =>
+      manager.notificationTypeMapper;
 
   /// Locale options for language selection.
   static List<SelectOption<String>> get localeOptions => manager.localeOptions;

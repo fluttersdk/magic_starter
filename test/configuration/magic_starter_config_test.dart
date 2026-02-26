@@ -28,6 +28,10 @@ void main() {
       test('hasSocialLoginFeatures() returns false by default', () {
         expect(MagicStarterConfig.hasSocialLoginFeatures(), isFalse);
       });
+
+      test('hasNotificationFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasNotificationFeatures(), isFalse);
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -54,6 +58,11 @@ void main() {
       test('profilePrefix() returns "/settings" by default', () {
         expect(MagicStarterConfig.profilePrefix(), equals('/settings'));
       });
+
+      test('notificationsPrefix() returns "/notifications" by default', () {
+        expect(
+            MagicStarterConfig.notificationsPrefix(), equals('/notifications'));
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -79,6 +88,21 @@ void main() {
         expect(
           MagicStarterConfig.profileRoute(),
           equals('/settings/profile'),
+        );
+      });
+
+      test('notificationsRoute() returns "/notifications"', () {
+        expect(
+          MagicStarterConfig.notificationsRoute(),
+          equals('/notifications'),
+        );
+      });
+
+      test('notificationPreferencesRoute() returns "/settings/notifications"',
+          () {
+        expect(
+          MagicStarterConfig.notificationPreferencesRoute(),
+          equals('/settings/notifications'),
         );
       });
     });
@@ -110,6 +134,12 @@ void main() {
         Config.set('magic_starter.features.social_login', true);
 
         expect(MagicStarterConfig.hasSocialLoginFeatures(), isTrue);
+      });
+
+      test('hasNotificationFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.notifications', true);
+
+        expect(MagicStarterConfig.hasNotificationFeatures(), isTrue);
       });
     });
 
@@ -162,6 +192,15 @@ void main() {
           equals('/account'),
         );
       });
+
+      test('notificationsPrefix() returns configured value', () {
+        Config.set('magic_starter.routes.notifications_prefix', '/alerts');
+
+        expect(
+          MagicStarterConfig.notificationsPrefix(),
+          equals('/alerts'),
+        );
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -193,6 +232,24 @@ void main() {
         expect(
           MagicStarterConfig.profileRoute(),
           equals('/account/profile'),
+        );
+      });
+
+      test('notificationsRoute() uses configured notificationsPrefix', () {
+        Config.set('magic_starter.routes.notifications_prefix', '/alerts');
+
+        expect(
+          MagicStarterConfig.notificationsRoute(),
+          equals('/alerts'),
+        );
+      });
+
+      test('notificationPreferencesRoute() uses configured profilePrefix', () {
+        Config.set('magic_starter.routes.profile_prefix', '/account');
+
+        expect(
+          MagicStarterConfig.notificationPreferencesRoute(),
+          equals('/account/notifications'),
         );
       });
     });
