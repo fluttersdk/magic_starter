@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
-import '../../../facades/magic_starter.dart';
+import '../../widgets/starter_card.dart';
+import '../../widgets/starter_page_header.dart';
 
+import '../../../facades/magic_starter.dart';
 /// Full-page view for listing all notifications with mark as read,
 /// delete, pagination, and view all functionality.
 /// Uses server-side pagination for efficiency.
@@ -71,17 +73,6 @@ class _MagicStarterNotificationsListViewState
       });
     }
   }
-
-  void _handleBack() {
-    final canPop =
-        MagicRouter.instance.navigatorKey.currentState?.canPop() ?? false;
-    if (canPop) {
-      MagicRoute.back();
-    } else {
-      MagicRoute.to('/');
-    }
-  }
-
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -106,8 +97,7 @@ class _MagicStarterNotificationsListViewState
     final totalPages = _paginatedData?.lastPage ?? 1;
 
     return WDiv(
-      className: 'overflow-y-auto flex flex-col gap-6 p-4 lg:p-6',
-      scrollPrimary: true,
+      className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
         _buildHeader(context, hasUnread: hasUnread),
         _buildBody(context, notifications, totalPages),
@@ -116,59 +106,29 @@ class _MagicStarterNotificationsListViewState
   }
 
   Widget _buildHeader(BuildContext context, {required bool hasUnread}) {
-    return WDiv(
-      className: '''
-        w-full flex flex-col
-        gap-4 pb-4 lg:pb-6
-        border-b border-gray-200 dark:border-gray-700
-      ''',
-      children: [
-        WDiv(
-          className: 'flex flex-row items-center gap-3',
-          children: [
-            WButton(
-              onTap: _handleBack,
-              className:
-                  'p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700',
-              child: WIcon(
-                Icons.arrow_back,
-                className: 'text-xl text-gray-700 dark:text-gray-300',
+    return MagicStarterPageHeader(
+      title: trans('notifications.title'),
+      subtitle: trans('notifications.list_subtitle'),
+      actions: hasUnread
+          ? [
+              WButton(
+                onTap: () async {
+                  if (widget.onMarkAllAsRead != null) {
+                    await widget.onMarkAllAsRead!.call();
+                  } else {
+                    await Notify.markAllAsRead();
+                  }
+                  _loadPage(_currentPage);
+                },
+                className:
+                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white font-medium text-sm',
+                child: WText(
+                  trans('notifications.mark_all_read'),
+                  className: 'text-white font-medium text-sm',
+                ),
               ),
-            ),
-            WDiv(
-              className: 'flex-1 flex flex-col gap-1 min-w-0',
-              children: [
-                WText(
-                  trans('notifications.title'),
-                  className:
-                      'text-2xl font-bold text-gray-900 dark:text-white truncate',
-                ),
-                WText(
-                  trans('notifications.list_subtitle'),
-                  className:
-                      'text-sm text-gray-600 dark:text-gray-400 truncate',
-                ),
-              ],
-            ),
-          ],
-        ),
-        if (widget.onMarkAllAsRead != null && hasUnread)
-          WButton(
-            onTap: () async {
-              await widget.onMarkAllAsRead?.call();
-              _loadPage(_currentPage);
-            },
-            className: '''
-              self-start px-4 py-2 rounded-lg
-              bg-primary hover:bg-green-600
-              text-white font-medium text-sm
-            ''',
-            child: WText(
-              trans('notifications.mark_all_read'),
-              className: 'text-white font-medium text-sm',
-            ),
-          ),
-      ],
+            ]
+          : null,
     );
   }
 
@@ -178,9 +138,11 @@ class _MagicStarterNotificationsListViewState
     int totalPages,
   ) {
     if (_isLoading && notifications.isEmpty) {
-      return const WDiv(
-        className: 'flex items-center justify-center py-20',
-        child: CircularProgressIndicator(),
+      return const MagicStarterCard(
+        child: WDiv(
+          className: 'flex items-center justify-center py-20',
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
@@ -199,21 +161,29 @@ class _MagicStarterNotificationsListViewState
     }
 
     return WDiv(
-      className: 'flex flex-col gap-4',
+      className: 'flex flex-col gap-6',
       children: [
-        ...notifications.map((n) => _buildNotificationItem(n)),
+        MagicStarterCard(
+          noPadding: true,
+          child: WDiv(
+            className: 'flex flex-col',
+            children: notifications.map((n) => _buildNotificationItem(n)).toList(),
+          ),
+        ),
         if (totalPages > 1) _buildPagination(totalPages),
       ],
     );
   }
 
   Widget _buildEmptyState({required IconData icon, required String message}) {
-    return WDiv(
-      className: 'flex flex-col items-center justify-center py-20 gap-4',
-      children: [
-        WIcon(icon, className: 'text-6xl text-gray-300 dark:text-gray-600'),
-        WText(message, className: 'text-gray-500 dark:text-gray-400'),
-      ],
+    return MagicStarterCard(
+      child: WDiv(
+        className: 'flex flex-col items-center justify-center py-20 gap-4',
+        children: [
+          WIcon(icon, className: 'text-6xl text-gray-300 dark:text-gray-600'),
+          WText(message, className: 'text-gray-500 dark:text-gray-400'),
+        ],
+      ),
     );
   }
 
@@ -239,20 +209,31 @@ class _MagicStarterNotificationsListViewState
 
     return WAnchor(
       onTap: () async {
-        await widget.onMarkAsRead?.call(notification.id);
-        if (notification.actionUrl != null && widget.onNavigate != null) {
-          widget.onNavigate!(notification.actionUrl!);
+        // 1. Mark as read via callback or Notify facade directly.
+        if (widget.onMarkAsRead != null) {
+          await widget.onMarkAsRead!.call(notification.id);
+        } else {
+          await Notify.markAsRead(notification.id);
+        }
+
+        // 2. Navigate to action URL or reload the page.
+        if (notification.actionUrl != null) {
+          if (widget.onNavigate != null) {
+            widget.onNavigate!(notification.actionUrl!);
+          } else {
+            MagicRoute.to(notification.actionUrl!);
+          }
         } else {
           _loadPage(_currentPage);
         }
       },
       child: WDiv(
         className:
-            'flex flex-row items-start gap-4 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl',
+            'px-6 py-4 flex flex-row items-center gap-4 w-full border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50',
         children: [
           WDiv(
             className:
-                'w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0',
+                'w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0',
             child: WIcon(icon, className: 'text-xl $iconColor'),
           ),
           Expanded(
@@ -281,7 +262,7 @@ class _MagicStarterNotificationsListViewState
           if (!notification.isRead)
             const WDiv(
               className:
-                  'w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0',
+                  'w-2 h-2 rounded-full bg-primary flex-shrink-0',
               child: SizedBox.shrink(),
             ),
           if (widget.onDelete != null)
@@ -292,7 +273,7 @@ class _MagicStarterNotificationsListViewState
               },
               child: WDiv(
                 className:
-                    'p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20',
+                    'p-2 ml-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20',
                 child: WIcon(
                   Icons.delete_outline,
                   className: 'text-lg text-gray-400 hover:text-red-500',
@@ -306,7 +287,7 @@ class _MagicStarterNotificationsListViewState
 
   Widget _buildPagination(int totalPages) {
     return WDiv(
-      className: 'flex flex-row items-center justify-center gap-2 mt-4',
+      className: 'w-full flex flex-row items-center justify-center gap-2 mt-4',
       children: [
         WButton(
           onTap: _currentPage > 1 ? () => _loadPage(_currentPage - 1) : null,
@@ -319,10 +300,7 @@ class _MagicStarterNotificationsListViewState
           ),
         ),
         WText(
-          trans('common.pagination', {
-            'current': _currentPage,
-            'total': totalPages,
-          }),
+          '$_currentPage / $totalPages',
           className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
         ),
         WButton(

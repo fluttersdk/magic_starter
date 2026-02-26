@@ -142,7 +142,7 @@ void main() {
       expect(find.text('Mail'), findsOneWidget);
       expect(find.text('Slack'), findsOneWidget);
 
-      // Check for WCheckbox
+      // Check for WCheckbox toggles
       expect(find.byType(WCheckbox), findsNWidgets(2));
     });
 
