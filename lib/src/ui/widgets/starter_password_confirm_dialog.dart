@@ -46,7 +46,6 @@ class _MagicStarterPasswordConfirmDialogState
     extends State<MagicStarterPasswordConfirmDialog> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscure = true;
-  final bool _isLoading = false;
 
   @override
   void dispose() {
@@ -127,7 +126,6 @@ class _MagicStarterPasswordConfirmDialogState
               ),
               WButton(
                 onTap: _onConfirm,
-                isLoading: _isLoading,
                 className:
                     'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(trans('common.confirm')),

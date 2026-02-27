@@ -393,7 +393,6 @@ class StarterProfileController extends MagicController
       }
 
       setSuccess(true);
-      getSessions();
       return true;
     } catch (e, stackTrace) {
       Log.error('[StarterProfileController.doRevokeSession] $e\n$stackTrace');
@@ -427,7 +426,6 @@ class StarterProfileController extends MagicController
       }
 
       setSuccess(true);
-      getSessions();
       return true;
     } catch (e, stackTrace) {
       Log.error('[StarterProfileController.doRevokeOtherSessions] $e\n$stackTrace');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
@@ -526,15 +527,32 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           ),
           WDiv(
             className: 'wrap gap-2',
-            children: recoveryCodes
-                .map(
-                  (code) => WDiv(
+            children: [
+              ...recoveryCodes.map(
+                (code) => WDiv(
+                  className:
+                      'font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded',
+                  child: WText(code),
+                ),
+              ),
+              WDiv(
+                className: 'w-full mt-2',
+                children: [
+                  WButton(
+                    onTap: () async {
+                      final codes = recoveryCodes.join('\n');
+                      await Clipboard.setData(ClipboardData(text: codes));
+                    },
                     className:
-                        'font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded',
-                    child: WText(code),
+                        'text-primary dark:text-primary border border-primary/30 dark:border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg px-4 py-2 text-sm font-medium',
+                    child: WText(
+                      trans('profile.copy_recovery_codes'),
+                      className: 'text-center',
+                    ),
                   ),
-                )
-                .toList(),
+                ],
+              ),
+            ],
           ),
         ],
         WDiv(
@@ -582,15 +600,32 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           ),
           WDiv(
             className: 'wrap gap-2',
-            children: _recoveryCodes
-                .map(
-                  (code) => WDiv(
+            children: [
+              ..._recoveryCodes.map(
+                (code) => WDiv(
+                  className:
+                      'font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded',
+                  child: WText(code),
+                ),
+              ),
+              WDiv(
+                className: 'w-full mt-2',
+                children: [
+                  WButton(
+                    onTap: () async {
+                      final codes = _recoveryCodes.join('\n');
+                      await Clipboard.setData(ClipboardData(text: codes));
+                    },
                     className:
-                        'font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded',
-                    child: WText(code),
+                        'text-primary dark:text-primary border border-primary/30 dark:border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg px-4 py-2 text-sm font-medium',
+                    child: WText(
+                      trans('profile.copy_recovery_codes'),
+                      className: 'text-center',
+                    ),
                   ),
-                )
-                .toList(),
+                ],
+              ),
+            ],
           ),
         ],
         WDiv(
@@ -625,9 +660,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     );
   }
 
-  // -- Sessions Section ------------------------------------------------------
+// -- Sessions Section ------------------------------------------------------
 
-  // -- Sessions Section ------------------------------------------------------
 
   /// Builds the browser sessions management section.
   ///
@@ -650,8 +684,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           if (_sessionsLoading)
             WDiv(
               className: 'flex flex-row justify-center py-4',
-              children: const [
-                CircularProgressIndicator(),
+              children: [
+                WIcon(
+                  Icons.refresh,
+                  className: 'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
+                ),
               ],
             )
           else if (_sessions.isEmpty)
