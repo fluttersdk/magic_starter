@@ -57,7 +57,20 @@ class StarterAuthController extends MagicController
         return;
       }
 
+      // 1. Check if server requires 2FA — navigate to challenge without logging in.
       final data = response['data'] as Map<String, dynamic>?;
+      if (response['two_factor'] == true || data?['two_factor'] == true) {
+        final twoFactorToken = response['two_factor_token'] as String?
+            ?? data?['two_factor_token'] as String?;
+        MagicRoute.to(
+          MagicStarterConfig.twoFactorChallengeRoute(),
+          query: twoFactorToken != null
+              ? {'two_factor_token': twoFactorToken}
+              : null,
+        );
+        return;
+      }
+
       final token = data?['token'] as String?;
       final userData = data?['user'] as Map<String, dynamic>?;
 
@@ -194,6 +207,71 @@ class StarterAuthController extends MagicController
     } catch (e, stackTrace) {
       Log.error('[StarterAuthController.doResetPassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
+  /// Completes the two-factor authentication challenge.
+  ///
+  /// Exactly one of [code] (OTP from authenticator) or [recoveryCode]
+  /// (one of the user's recovery codes) must be non-null.
+  ///
+  /// @param twoFactorToken The encrypted token received from [doLogin].
+  /// @param code           TOTP code from authenticator app (6 digits).
+  /// @param recoveryCode   Recovery code (alphanumeric with hyphens).
+  Future<void> doTwoFactorChallenge({
+    required String twoFactorToken,
+    String? code,
+    String? recoveryCode,
+  }) async {
+    assert(
+      (code == null) != (recoveryCode == null),
+      'Exactly one of code or recoveryCode must be provided.',
+    );
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+
+    setLoading();
+    clearErrors();
+
+    try {
+      final payload = <String, dynamic>{
+        'two_factor_token': twoFactorToken,
+      };
+      if (code != null) {
+        payload['code'] = code;
+      } else {
+        payload['recovery_code'] = recoveryCode;
+      }
+
+      final response = await Http.post(
+        '/auth/two-factor-challenge',
+        data: payload,
+      );
+
+      if (!response.successful) {
+        handleApiError(response, fallback: trans('auth.challenge_failed'));
+        return;
+      }
+
+      // 1. Extract auth data from successful challenge response.
+      final data = response['data'] as Map<String, dynamic>?;
+      final token = data?['token'] as String?;
+      final userData = data?['user'] as Map<String, dynamic>?;
+
+      if (token == null || userData == null) {
+        setError(trans('auth.challenge_failed'));
+        return;
+      }
+
+      // 2. Log the user in and navigate to home.
+      await Auth.login({'token': token}, MagicStarter.createUser(userData));
+      setSuccess(true);
+      _navigateTo(MagicStarterConfig.homeRoute());
+    } catch (e, stackTrace) {
+      Log.error('[StarterAuthController.doTwoFactorChallenge] $e\n$stackTrace');
+      setError(trans('auth.challenge_failed'));
     } finally {
       _isSubmitting = false;
     }

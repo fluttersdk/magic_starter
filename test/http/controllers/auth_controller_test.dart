@@ -325,6 +325,142 @@ void main() {
     });
 
     // ---------------------------------------------------------------------
+    // two factor intercept
+    // ---------------------------------------------------------------------
+
+    group('two factor intercept', () {
+      test('regression: normal login calls Auth.login', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'bearer-tok',
+              'user': {'id': 1, 'name': 'Test', 'email': 'a@b.com'},
+            },
+          },
+        );
+
+        await controller.doLogin(
+          email: 'a@b.com',
+          password: 'pass',
+        );
+
+        expect(controller.isSuccess, isTrue);
+        expect(mockGuard.check(), isTrue);
+      });
+
+      test('intercepts 2fa response at root level', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'two_factor': true,
+            'two_factor_token': 'enc-tok-123',
+          },
+        );
+
+        await controller.doLogin(
+          email: 'a@b.com',
+          password: 'pass',
+        );
+
+        // Auth.login should NOT be called
+        expect(mockGuard.check(), isFalse);
+        expect(mockGuard.lastLoginData, isNull);
+        // Wait for potential async navigation, though our _navigateTo is synchronous in test
+        // But MagicRoute.to actually pushes to the router, so we need to rely on the side effects
+      });
+
+      test('intercepts 2fa response in data key', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'two_factor': true,
+              'two_factor_token': 'enc-tok-123',
+            },
+          },
+        );
+
+        await controller.doLogin(
+          email: 'a@b.com',
+          password: 'pass',
+        );
+
+        // Auth.login should NOT be called
+        expect(mockGuard.check(), isFalse);
+        expect(mockGuard.lastLoginData, isNull);
+      });
+    });
+
+    // ---------------------------------------------------------------------
+    // two factor challenge
+    // ---------------------------------------------------------------------
+
+    group('two factor challenge', () {
+      test('OTP success calls Auth.login', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'new-bearer',
+              'user': {'id': 1, 'name': 'Test', 'email': 'a@b.com'},
+            },
+          },
+        );
+
+        await controller.doTwoFactorChallenge(
+          twoFactorToken: 'tok',
+          code: '123456',
+        );
+
+        expect(controller.isSuccess, isTrue);
+        expect(mockGuard.check(), isTrue);
+        expect(mockDriver.lastUrl, equals('/auth/two-factor-challenge'));
+        expect(mockDriver.lastData?['two_factor_token'], equals('tok'));
+        expect(mockDriver.lastData?['code'], equals('123456'));
+        expect(mockDriver.lastData?.containsKey('recovery_code'), isFalse);
+      });
+
+      test('recovery code success calls Auth.login', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'new-bearer',
+              'user': {'id': 1, 'name': 'Test', 'email': 'a@b.com'},
+            },
+          },
+        );
+
+        await controller.doTwoFactorChallenge(
+          twoFactorToken: 'tok',
+          recoveryCode: 'abcde-12345',
+        );
+
+        expect(controller.isSuccess, isTrue);
+        expect(mockGuard.check(), isTrue);
+        expect(mockDriver.lastData?['two_factor_token'], equals('tok'));
+        expect(mockDriver.lastData?['recovery_code'], equals('abcde-12345'));
+        expect(mockDriver.lastData?.containsKey('code'), isFalse);
+      });
+
+      test('OTP failure sets error state', () async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {'message': 'Invalid code.'},
+        );
+
+        await controller.doTwoFactorChallenge(
+          twoFactorToken: 'tok',
+          code: '123456',
+        );
+
+        expect(controller.isError, isTrue);
+        expect(mockGuard.check(), isFalse);
+      });
+    });
+
+    // ---------------------------------------------------------------------
     // doRegister
     // ---------------------------------------------------------------------
 
