@@ -1,22 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart';
 import 'package:magic_starter/src/ui/widgets/starter_password_confirm_dialog.dart';
 
 void main() {
+  setUp(() async {
+    MagicApp.reset();
+    Magic.flush();
+    Magic.singleton('magic_starter', () => MagicStarterManager());
+    Magic.singleton('log', () => LogManager());
+    Config.set('logging', {
+      'default': 'console',
+      'channels': {
+        'console': {'driver': 'console', 'level': 'debug'},
+      },
+    });
+    Config.set('wind.colors.primary', 'indigo');
+  });
 
   Widget wrap(Widget widget) {
-    return MaterialApp(
-      home: Scaffold(
-        body: widget,
+    final themeData = WindThemeData(
+      colors: {
+        'primary': Colors.indigo,
+      },
+    );
+    return WindTheme(
+      data: themeData,
+      child: MaterialApp(
+        theme: themeData.toThemeData(),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: SizedBox(
+              width: 1200,
+              height: 800,
+              child: widget,
+            ),
+          ),
+        ),
       ),
     );
   }
 
   testWidgets('MagicStarterPasswordConfirmDialog renders correctly',
       (WidgetTester tester) async {
-    await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
 
+    await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
     expect(find.text('profile.confirm_password'), findsOneWidget);
     expect(find.text('profile.confirm_password_description'), findsOneWidget);
     expect(find.text('common.confirm'), findsOneWidget);
@@ -27,6 +60,11 @@ void main() {
 
   testWidgets('MagicStarterPasswordConfirmDialog returns null on cancel',
       (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
+
     String? result = 'not-null';
 
     await tester.pumpWidget(wrap(
@@ -51,6 +89,11 @@ void main() {
 
   testWidgets('MagicStarterPasswordConfirmDialog returns password on confirm',
       (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
+
     String? result;
 
     await tester.pumpWidget(wrap(
