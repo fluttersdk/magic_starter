@@ -24,6 +24,10 @@ class StarterAuthController extends MagicController
   /// Render reset password view via registry key.
   Widget resetPassword() => MagicStarter.view.make('auth.reset_password');
 
+  /// Render two-factor challenge view via registry key.
+  Widget twoFactorChallenge() =>
+      MagicStarter.view.make('auth.two_factor_challenge');
+
   /// Login user with API credentials.
   Future<void> doLogin({
     required String email,

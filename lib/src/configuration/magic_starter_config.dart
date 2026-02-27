@@ -14,6 +14,8 @@ class MagicStarterConfig {
   static const bool _defaultProfilePhotos = false;
   static const bool _defaultRegistration = true;
   static const bool _defaultSocialLogin = false;
+  static const bool _defaultTwoFactor = false;
+  static const bool _defaultSessions = false;
   static const bool _defaultExtendedProfile = false;
   static const bool _defaultNotifications = false;
 
@@ -59,6 +61,24 @@ class MagicStarterConfig {
           _defaultSocialLogin,
         ) ??
         _defaultSocialLogin;
+  }
+
+  /// Returns whether two-factor authentication starter features are enabled.
+  static bool hasTwoFactorFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.two_factor',
+          _defaultTwoFactor,
+        ) ??
+        _defaultTwoFactor;
+  }
+
+  /// Returns whether sessions management starter features are enabled.
+  static bool hasSessionsFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.sessions',
+          _defaultSessions,
+        ) ??
+        _defaultSessions;
   }
 
   /// Returns whether extended profile fields (phone, timezone, language) are enabled.
@@ -178,4 +198,8 @@ class MagicStarterConfig {
   /// Full path for the notification preferences/settings page.
   static String notificationPreferencesRoute() =>
       '${profilePrefix()}/notifications';
+
+  /// Full path for the two-factor challenge page.
+  static String twoFactorChallengeRoute() =>
+      '${authPrefix()}/two-factor-challenge';
 }

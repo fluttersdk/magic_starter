@@ -29,6 +29,13 @@ void registerMagicStarterAuthRoutes() {
         '/reset-password',
         StarterAuthController.instance.resetPassword,
       ).transition(RouteTransition.none);
+
+      if (MagicStarterConfig.hasTwoFactorFeatures()) {
+        MagicRoute.page(
+          '/two-factor-challenge',
+          StarterAuthController.instance.twoFactorChallenge,
+        ).transition(RouteTransition.none);
+      }
     },
   );
 }

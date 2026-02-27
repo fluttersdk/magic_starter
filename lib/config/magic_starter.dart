@@ -10,6 +10,8 @@ Map<String, dynamic> get magicStarterConfig => {
           'teams': false,
           'profile_photos': false,
           'registration': true,
+          'two_factor': false,
+          'sessions': false,
         },
         'routes': {
           'home': '/',

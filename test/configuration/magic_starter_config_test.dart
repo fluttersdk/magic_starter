@@ -29,6 +29,14 @@ void main() {
         expect(MagicStarterConfig.hasSocialLoginFeatures(), isFalse);
       });
 
+      test('hasTwoFactorFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasTwoFactorFeatures(), isFalse);
+      });
+
+      test('hasSessionsFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasSessionsFeatures(), isFalse);
+      });
+
       test('hasNotificationFeatures() returns false by default', () {
         expect(MagicStarterConfig.hasNotificationFeatures(), isFalse);
       });
@@ -105,6 +113,15 @@ void main() {
           equals('/settings/notifications'),
         );
       });
+
+      test(
+          'twoFactorChallengeRoute() returns "/auth/two-factor-challenge" by default',
+          () {
+        expect(
+          MagicStarterConfig.twoFactorChallengeRoute(),
+          equals('/auth/two-factor-challenge'),
+        );
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -134,6 +151,18 @@ void main() {
         Config.set('magic_starter.features.social_login', true);
 
         expect(MagicStarterConfig.hasSocialLoginFeatures(), isTrue);
+      });
+
+      test('hasTwoFactorFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.two_factor', true);
+
+        expect(MagicStarterConfig.hasTwoFactorFeatures(), isTrue);
+      });
+
+      test('hasSessionsFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.sessions', true);
+
+        expect(MagicStarterConfig.hasSessionsFeatures(), isTrue);
       });
 
       test('hasNotificationFeatures() returns true when config is set', () {
