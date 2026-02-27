@@ -58,22 +58,20 @@ class StarterAuthController extends MagicController
       }
 
       // 1. Check if server requires 2FA — navigate to challenge without logging in.
-      final data = response['data'] as Map<String, dynamic>?;
-      if (response['two_factor'] == true || data?['two_factor'] == true) {
-        final twoFactorToken = response['two_factor_token'] as String?
-            ?? data?['two_factor_token'] as String?;
-        MagicRoute.to(
+      final responseData = response.data as Map<String, dynamic>?;
+      final nestedData = responseData?['data'] as Map<String, dynamic>?;
+      if (responseData?['two_factor'] == true || nestedData?['two_factor'] == true) {
+        final twoFactorToken = responseData?['two_factor_token'] as String?
+            ?? nestedData?['two_factor_token'] as String?;
+        _navigateTo(
           MagicStarterConfig.twoFactorChallengeRoute(),
-          query: twoFactorToken != null
-              ? {'two_factor_token': twoFactorToken}
-              : null,
+          arguments: twoFactorToken != null ? {'two_factor_token': twoFactorToken} : null,
         );
         return;
       }
 
-      final token = data?['token'] as String?;
-      final userData = data?['user'] as Map<String, dynamic>?;
-
+      final token = nestedData?['token'] as String?;
+      final userData = nestedData?['user'] as Map<String, dynamic>?;
       if (token == null || userData == null) {
         setError(trans('auth.invalid_response'));
         return;
@@ -256,7 +254,7 @@ class StarterAuthController extends MagicController
       }
 
       // 1. Extract auth data from successful challenge response.
-      final data = response['data'] as Map<String, dynamic>?;
+      final data = response.data?['data'] as Map<String, dynamic>?;
       final token = data?['token'] as String?;
       final userData = data?['user'] as Map<String, dynamic>?;
 
@@ -283,9 +281,9 @@ class StarterAuthController extends MagicController
     _navigateTo(MagicStarterConfig.loginRoute());
   }
 
-  void _navigateTo(String path) {
+  void _navigateTo(String path, {Map<String, String>? arguments}) {
     if (MagicRouter.instance.navigatorKey.currentContext != null) {
-      MagicRoute.to(path);
+      MagicRoute.to(path, query: arguments);
     }
   }
 }

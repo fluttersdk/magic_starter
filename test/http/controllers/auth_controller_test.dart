@@ -389,6 +389,7 @@ void main() {
         // Auth.login should NOT be called
         expect(mockGuard.check(), isFalse);
         expect(mockGuard.lastLoginData, isNull);
+        expect(mockDriver.lastUrl, equals('/auth/login'));
       });
     });
 
@@ -439,6 +440,7 @@ void main() {
 
         expect(controller.isSuccess, isTrue);
         expect(mockGuard.check(), isTrue);
+        expect(mockDriver.lastUrl, equals('/auth/two-factor-challenge'));
         expect(mockDriver.lastData?['two_factor_token'], equals('tok'));
         expect(mockDriver.lastData?['recovery_code'], equals('abcde-12345'));
         expect(mockDriver.lastData?.containsKey('code'), isFalse);
