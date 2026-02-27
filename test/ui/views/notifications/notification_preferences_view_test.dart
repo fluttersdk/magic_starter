@@ -139,11 +139,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Monitor Down Alert'), findsOneWidget);
-      expect(find.text('Mail'), findsOneWidget);
+      expect(find.text('Email'), findsOneWidget);
       expect(find.text('Slack'), findsOneWidget);
 
       // Check for WCheckbox toggles
-      expect(find.byType(WCheckbox), findsNWidgets(2));
+      expect(find.byType(Switch), findsNWidgets(2));
     });
 
     testWidgets('locked channel checkbox is disabled', (tester) async {
@@ -162,8 +162,8 @@ void main() {
           .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
       await tester.pumpAndSettle();
 
-      final checkbox = tester.widget<WCheckbox>(find.byType(WCheckbox));
-      expect(checkbox.onChanged, isNull);
+      final switchWidget = tester.widget<Switch>(find.byType(Switch));
+      expect(switchWidget.onChanged, isNull);
     });
   });
 }

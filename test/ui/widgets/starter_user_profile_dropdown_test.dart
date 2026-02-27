@@ -44,6 +44,9 @@ class MockGuard implements Guard {
 
   @override
   Future<void> restore() async {}
+
+  @override
+  ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
 class MockRouter implements MagicRouter {

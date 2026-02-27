@@ -147,6 +147,13 @@ void main() {
         },
       );
 
+      tester.view.physicalSize = const Size(2048, 1536);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       await tester.pumpWidget(wrap(const MagicStarterNotificationsListView()));
       await tester.pumpAndSettle();
 
@@ -179,6 +186,13 @@ void main() {
           },
         },
       );
+
+      tester.view.physicalSize = const Size(2048, 1536);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
       await tester.pumpWidget(wrap(MagicStarterNotificationsListView(
         onMarkAllAsRead: () async {},

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -198,6 +199,9 @@ class MockGuard implements Guard {
   Future<void> restore() async {
     restoreCalled = true;
   }
+
+  @override
+  ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
 // ---------------------------------------------------------------------------

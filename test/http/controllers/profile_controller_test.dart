@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -186,6 +186,9 @@ class MockGuard implements Guard {
       });
     }
   }
+
+  @override
+  ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
 // ---------------------------------------------------------------------------
