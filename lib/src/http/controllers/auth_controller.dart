@@ -5,6 +5,12 @@ import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 
 /// Auth controller for Magic Starter plugin.
+///
+/// Supports 3 identity modes for login and registration:
+///   - Email-only (default): `auth.email=true`, `auth.phone=false`
+///   - Phone-only: `auth.email=false`, `auth.phone=true`
+///   - Both: `auth.email=true`, `auth.phone=true` — caller selects by passing the
+///     populated field; phone takes precedence when non-empty.
 class StarterAuthController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests {
   static StarterAuthController get instance =>
@@ -29,8 +35,18 @@ class StarterAuthController extends MagicController
       MagicStarter.view.make('auth.two_factor_challenge');
 
   /// Login user with API credentials.
+  ///
+  /// Builds the identity payload dynamically based on [MagicStarterConfig]:
+  ///   - Email-only mode → `email` field is sent.
+  ///   - Phone-only mode → `phone` field is sent.
+  ///   - Both mode → `phone` takes precedence when non-empty; otherwise `email`.
+  ///
+  /// At least one of [email] or [phone] must be provided depending on the
+  /// active identity mode. Providing neither in the applicable mode is a
+  /// programming error and will result in an incomplete payload.
   Future<void> doLogin({
-    required String email,
+    String? email,
+    String? phone,
     required String password,
     bool rememberMe = false,
   }) async {
@@ -40,13 +56,21 @@ class StarterAuthController extends MagicController
     clearErrors();
 
     try {
+      // 1. Build identity payload based on configured identity mode.
+      final Map<String, dynamic> payload = {
+        'password': password,
+        'remember_me': rememberMe,
+      };
+
+      _applyIdentityToPayload(
+        payload,
+        email: email,
+        phone: phone,
+      );
+
       final response = await Http.post(
         '/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-          'remember_me': rememberMe,
-        },
+        data: payload,
       );
 
       if (!response.successful) {
@@ -57,15 +81,18 @@ class StarterAuthController extends MagicController
         return;
       }
 
-      // 1. Check if server requires 2FA — navigate to challenge without logging in.
+      // 2. Check if server requires 2FA — navigate to challenge without logging in.
       final responseData = response.data as Map<String, dynamic>?;
       final nestedData = responseData?['data'] as Map<String, dynamic>?;
-      if (responseData?['two_factor'] == true || nestedData?['two_factor'] == true) {
-        final twoFactorToken = responseData?['two_factor_token'] as String?
-            ?? nestedData?['two_factor_token'] as String?;
+      if (responseData?['two_factor'] == true ||
+          nestedData?['two_factor'] == true) {
+        final twoFactorToken = responseData?['two_factor_token'] as String? ??
+            nestedData?['two_factor_token'] as String?;
         _navigateTo(
           MagicStarterConfig.twoFactorChallengeRoute(),
-          arguments: twoFactorToken != null ? {'two_factor_token': twoFactorToken} : null,
+          arguments: twoFactorToken != null
+              ? {'two_factor_token': twoFactorToken}
+              : null,
         );
         return;
       }
@@ -77,6 +104,7 @@ class StarterAuthController extends MagicController
         return;
       }
 
+      // 3. Authenticate the user and navigate home.
       await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
       _navigateTo(MagicStarterConfig.homeRoute());
@@ -89,12 +117,20 @@ class StarterAuthController extends MagicController
   }
 
   /// Register a new user.
+  ///
+  /// Builds the identity payload dynamically based on [MagicStarterConfig]:
+  ///   - Email-only mode → `email` is sent.
+  ///   - Phone-only mode → `phone` + `phone_country` are sent.
+  ///   - Both mode → `phone` takes precedence when non-empty; otherwise `email`.
+  ///     When phone is sent, `phone_country` is included automatically.
   Future<void> doRegister({
     required String name,
-    required String email,
+    String? email,
+    String? phone,
+    String? phoneCountry,
+    bool subscribeNewsletter = false,
     required String password,
     required String passwordConfirmation,
-    bool? subscribeNewsletter,
   }) async {
     if (_isSubmitting) return;
     _isSubmitting = true;
@@ -102,15 +138,27 @@ class StarterAuthController extends MagicController
     clearErrors();
 
     try {
-      final payload = <String, dynamic>{
+      // 1. Build identity payload based on configured identity mode.
+      final Map<String, dynamic> payload = {
         'name': name,
-        'email': email,
         'password': password,
         'password_confirmation': passwordConfirmation,
       };
 
-      if (MagicStarterConfig.hasNewsletterFeatures()) {
-        payload['subscribe_newsletter'] = subscribeNewsletter ?? false;
+      _applyIdentityToPayload(
+        payload,
+        email: email,
+        phone: phone,
+      );
+
+      // 2. Include phone_country whenever a phone number is in the payload.
+      if (payload.containsKey('phone')) {
+        payload['phone_country'] = phoneCountry ?? '';
+      }
+
+      // 3. Include newsletter subscription flag when feature is active.
+      if (MagicStarterConfig.hasNewsletterFeatures() && subscribeNewsletter) {
+        payload['subscribe_newsletter'] = true;
       }
 
       final response = await Http.post(
@@ -131,12 +179,14 @@ class StarterAuthController extends MagicController
       final userData = data?['user'] as Map<String, dynamic>?;
 
       if (token != null && userData != null) {
+        // 3. Auto-login when the server returns credentials immediately.
         await Auth.login({'token': token}, MagicStarter.createUser(userData));
         setSuccess(true);
         _navigateTo(MagicStarterConfig.homeRoute());
         return;
       }
 
+      // 4. No credentials returned — e.g. email-verification flow.
       setSuccess(true);
       _navigateTo(MagicStarterConfig.loginRoute());
     } catch (e, stackTrace) {
@@ -286,6 +336,38 @@ class StarterAuthController extends MagicController
   Future<void> logout() async {
     await Auth.logout();
     _navigateTo(MagicStarterConfig.loginRoute());
+  }
+
+  /// Applies the correct identity field (email or phone) to [payload] based on
+  /// the active [MagicStarterConfig] identity mode.
+  ///
+  /// Mode resolution:
+  ///   1. Email-only (`emailIdentity=true`, `phoneIdentity=false`) → adds `email`.
+  ///   2. Phone-only (`emailIdentity=false`, `phoneIdentity=true`) → adds `phone`.
+  ///   3. Both → `phone` takes precedence when non-empty; otherwise `email`.
+  void _applyIdentityToPayload(
+    Map<String, dynamic> payload, {
+    String? email,
+    String? phone,
+  }) {
+    final emailMode = MagicStarterConfig.emailIdentity();
+    final phoneMode = MagicStarterConfig.phoneIdentity();
+
+    if (emailMode && !phoneMode) {
+      // Email-only mode.
+      payload['email'] = email ?? '';
+    } else if (!emailMode && phoneMode) {
+      // Phone-only mode.
+      payload['phone'] = phone ?? '';
+    } else {
+      // Both mode — phone takes precedence when non-empty.
+      final resolvedPhone = phone ?? '';
+      if (resolvedPhone.isNotEmpty) {
+        payload['phone'] = resolvedPhone;
+      } else {
+        payload['email'] = email ?? '';
+      }
+    }
   }
 
   void _navigateTo(String path, {Map<String, String>? arguments}) {

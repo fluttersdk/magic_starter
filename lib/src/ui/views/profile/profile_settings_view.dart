@@ -325,9 +325,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Profile Section -------------------------------------------------------
 
   Widget _buildProfileSection() {
-    return MagicForm(
-      formData: profileForm,
-      child: MagicStarterCard(
+    return MagicStarterCard(
         title: trans('profile.profile_information'),
         child: WDiv(
           className: 'flex flex-col gap-4',
@@ -365,6 +363,110 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ),
           ],
         ),
+    );
+  }
+
+
+  static const Map<String, String> _phoneCountryCodes = {
+    'TR': 'Turkey (+90)',
+    'US': 'United States (+1)',
+    'GB': 'United Kingdom (+44)',
+    'DE': 'Germany (+49)',
+    'FR': 'France (+33)',
+    'IT': 'Italy (+39)',
+    'ES': 'Spain (+34)',
+    'NL': 'Netherlands (+31)',
+    'BE': 'Belgium (+32)',
+    'CH': 'Switzerland (+41)',
+    'AU': 'Australia (+61)',
+    'CA': 'Canada (+1)',
+    'BR': 'Brazil (+55)',
+    'MX': 'Mexico (+52)',
+    'AR': 'Argentina (+54)',
+    'SA': 'Saudi Arabia (+966)',
+    'AE': 'UAE (+971)',
+    'IN': 'India (+91)',
+    'JP': 'Japan (+81)',
+    'CN': 'China (+86)',
+  };
+
+  Widget _buildExtendedProfileSection() {
+    if (!MagicStarterConfig.hasExtendedProfileFeatures()) {
+      return const SizedBox.shrink();
+    }
+
+    final timezones = MagicStarter.timezoneOptions ??
+        MagicStarterConfig.supportedTimezones();
+    final locales = MagicStarter.localeOptions;
+    final finalLocales = locales.isNotEmpty
+        ? locales
+        : [
+            SelectOption<String>(value: 'en', label: 'English'),
+            SelectOption<String>(value: 'tr', label: 'Türkçe'),
+          ];
+
+    return MagicStarterCard(
+      key: const Key('extended-profile-section'),
+      title: trans('profile.extended_information'),
+      child: WDiv(
+        className: 'flex flex-col gap-4',
+        children: [
+          WFormInput(
+            controller: profileForm['phone'],
+            label: trans('profile.phone_label'),
+            hint: '+905301234567',
+            labelClassName:
+                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className:
+                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+          ),
+          WFormSelect<String>(
+            value: profileForm.get('phone_country'),
+            onChange: (v) => profileForm.set('phone_country', v ?? ''),
+            label: trans('profile.phone_country_label'),
+            options: _phoneCountryCodes.entries
+                .map((e) => SelectOption<String>(value: e.key, label: e.value))
+                .toList(),
+            labelClassName:
+                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className:
+                'w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+          ),
+          WFormSelect<String>(
+            value: profileForm.get('timezone'),
+            onChange: (v) => profileForm.set('timezone', v ?? ''),
+            label: trans('profile.timezone_label'),
+            options: timezones
+                .map((tz) => SelectOption<String>(value: tz, label: tz))
+                .toList(),
+            labelClassName:
+                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className:
+                'w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+          ),
+          WFormSelect<String>(
+            value: profileForm.get('language'),
+            onChange: (v) => profileForm.set('language', v ?? ''),
+            label: trans('profile.language_label'),
+            options: finalLocales,
+            labelClassName:
+                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className:
+                'w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+          ),
+          WDiv(
+            className: 'flex justify-end mt-2',
+            children: [
+              WButton(
+                onTap: _submitProfile,
+                isLoading: controller.isLoading,
+                className:
+                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                child: WText(trans('common.save')),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
