@@ -16,8 +16,14 @@ class MagicStarterConfig {
   static const bool _defaultSocialLogin = false;
   static const bool _defaultTwoFactor = false;
   static const bool _defaultSessions = false;
-  static const bool _defaultExtendedProfile = false;
+  static const bool _defaultExtendedProfile = true;
   static const bool _defaultNotifications = false;
+  static const bool _defaultGuestAuth = false;
+  static const bool _defaultPhoneOtp = false;
+  static const bool _defaultNewsletter = false;
+  static const bool _defaultEmailVerification = false;
+  static const bool _defaultEmailIdentity = true;
+  static const bool _defaultPhoneIdentity = false;
 
   static const String _defaultLocale = 'en';
   static const String _defaultTimezone = 'UTC';
@@ -29,6 +35,29 @@ class MagicStarterConfig {
   static const String _defaultTeamsPrefix = '/teams';
   static const String _defaultProfilePrefix = '/settings';
   static const String _defaultNotificationsPrefix = '/notifications';
+
+  static const List<String> _defaultSupportedTimezones = [
+    'UTC',
+    'America/New_York',
+    'America/Chicago',
+    'America/Denver',
+    'America/Los_Angeles',
+    'America/Sao_Paulo',
+    'America/Mexico_City',
+    'Canada/Eastern',
+    'Europe/London',
+    'Europe/Paris',
+    'Europe/Berlin',
+    'Europe/Istanbul',
+    'Asia/Dubai',
+    'Asia/Kolkata',
+    'Asia/Shanghai',
+    'Asia/Tokyo',
+    'Asia/Singapore',
+    'Australia/Sydney',
+    'Pacific/Auckland',
+    'Africa/Cairo',
+  ];
 
   /// Returns whether team-related starter features are enabled.
   static bool hasTeamFeatures() {
@@ -99,6 +128,60 @@ class MagicStarterConfig {
         _defaultNotifications;
   }
 
+  /// Returns whether guest authentication starter features are enabled.
+  static bool hasGuestAuthFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.guest_auth',
+          _defaultGuestAuth,
+        ) ??
+        _defaultGuestAuth;
+  }
+
+  /// Returns whether phone OTP starter features are enabled.
+  static bool hasPhoneOtpFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.phone_otp',
+          _defaultPhoneOtp,
+        ) ??
+        _defaultPhoneOtp;
+  }
+
+  /// Returns whether newsletter starter features are enabled.
+  static bool hasNewsletterFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.newsletter',
+          _defaultNewsletter,
+        ) ??
+        _defaultNewsletter;
+  }
+
+  /// Returns whether email verification starter features are enabled.
+  static bool hasEmailVerificationFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.email_verification',
+          _defaultEmailVerification,
+        ) ??
+        _defaultEmailVerification;
+  }
+
+  /// Returns whether email-based identity is enabled.
+  static bool emailIdentity() {
+    return Config.get<bool>(
+          'magic_starter.auth.email',
+          _defaultEmailIdentity,
+        ) ??
+        _defaultEmailIdentity;
+  }
+
+  /// Returns whether phone-based identity is enabled.
+  static bool phoneIdentity() {
+    return Config.get<bool>(
+          'magic_starter.auth.phone',
+          _defaultPhoneIdentity,
+        ) ??
+        _defaultPhoneIdentity;
+  }
+
   /// Returns the default locale for new users.
   static String defaultLocale() {
     return Config.get<String>(
@@ -115,6 +198,15 @@ class MagicStarterConfig {
           _defaultTimezone,
         ) ??
         _defaultTimezone;
+  }
+
+  /// Returns the list of supported timezones.
+  static List<String> supportedTimezones() {
+    return Config.get<List<String>>(
+          'magic_starter.supported_timezones',
+          _defaultSupportedTimezones,
+        ) ??
+        _defaultSupportedTimezones;
   }
 
   /// Returns the configured home route path.

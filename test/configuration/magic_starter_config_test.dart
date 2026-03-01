@@ -40,6 +40,26 @@ void main() {
       test('hasNotificationFeatures() returns false by default', () {
         expect(MagicStarterConfig.hasNotificationFeatures(), isFalse);
       });
+
+      test('hasGuestAuthFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasGuestAuthFeatures(), isFalse);
+      });
+
+      test('hasPhoneOtpFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasPhoneOtpFeatures(), isFalse);
+      });
+
+      test('hasNewsletterFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasNewsletterFeatures(), isFalse);
+      });
+
+      test('hasEmailVerificationFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasEmailVerificationFeatures(), isFalse);
+      });
+
+      test('hasExtendedProfileFeatures() returns true by default', () {
+        expect(MagicStarterConfig.hasExtendedProfileFeatures(), isTrue);
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -172,6 +192,30 @@ void main() {
       });
     });
 
+      test('hasGuestAuthFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.guest_auth', true);
+
+        expect(MagicStarterConfig.hasGuestAuthFeatures(), isTrue);
+      });
+
+      test('hasPhoneOtpFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.phone_otp', true);
+
+        expect(MagicStarterConfig.hasPhoneOtpFeatures(), isTrue);
+      });
+
+      test('hasNewsletterFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.newsletter', true);
+
+        expect(MagicStarterConfig.hasNewsletterFeatures(), isTrue);
+      });
+
+      test('hasEmailVerificationFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.email_verification', true);
+
+        expect(MagicStarterConfig.hasEmailVerificationFeatures(), isTrue);
+      });
+
     // -------------------------------------------------------------------------
     // Route accessors — configured overrides
     // -------------------------------------------------------------------------
@@ -279,6 +323,71 @@ void main() {
         expect(
           MagicStarterConfig.notificationPreferencesRoute(),
           equals('/account/notifications'),
+        );
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // Identity options (email/phone authentication)
+    // -------------------------------------------------------------------------
+
+    group('identity options (defaults)', () {
+      test('emailIdentity() returns true by default', () {
+        expect(MagicStarterConfig.emailIdentity(), isTrue);
+      });
+
+      test('phoneIdentity() returns false by default', () {
+        expect(MagicStarterConfig.phoneIdentity(), isFalse);
+      });
+    });
+
+    group('identity options (configured)', () {
+      test('emailIdentity() returns false when config is set', () {
+        Config.set('magic_starter.auth.email', false);
+
+        expect(MagicStarterConfig.emailIdentity(), isFalse);
+      });
+
+      test('phoneIdentity() returns true when config is set', () {
+        Config.set('magic_starter.auth.phone', true);
+
+        expect(MagicStarterConfig.phoneIdentity(), isTrue);
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // Locale and timezone defaults
+    // -------------------------------------------------------------------------
+
+    group('locale and timezone (defaults)', () {
+      test('defaultLocale() returns "en" by default', () {
+        expect(MagicStarterConfig.defaultLocale(), equals('en'));
+      });
+
+      test('defaultTimezone() returns "UTC" by default', () {
+        expect(MagicStarterConfig.defaultTimezone(), equals('UTC'));
+      });
+
+      test('supportedTimezones() returns non-empty list by default', () {
+        final tzs = MagicStarterConfig.supportedTimezones();
+        expect(tzs, isNotEmpty);
+        expect(tzs.contains('UTC'), isTrue);
+      });
+    });
+
+    group('locale and timezone (configured)', () {
+      test('defaultLocale() returns configured value', () {
+        Config.set('magic_starter.defaults.locale', 'tr');
+
+        expect(MagicStarterConfig.defaultLocale(), equals('tr'));
+      });
+
+      test('defaultTimezone() returns configured value', () {
+        Config.set('magic_starter.defaults.timezone', 'Europe/Istanbul');
+
+        expect(
+          MagicStarterConfig.defaultTimezone(),
+          equals('Europe/Istanbul'),
         );
       });
     });

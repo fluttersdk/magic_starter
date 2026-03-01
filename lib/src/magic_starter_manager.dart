@@ -125,7 +125,8 @@ class MagicStarterManager {
 
   /// Locale options for language selection.
   ///
-  /// Reads from [Lang.supportedLocales] (configured via `localization.supported_locales`)
+  /// Reads from [Lang.supportedLocales] (configured via
+  /// `localization.supported_locales`)
   /// and converts them to [SelectOption] with native language labels.
   /// Override via [localeOptions] setter for custom labels.
   List<SelectOption<String>> get localeOptions {
@@ -146,6 +147,18 @@ class MagicStarterManager {
   }
 
   List<SelectOption<String>>? _localeOptions;
+
+
+  /// Timezone options for timezone selection.
+  /// When null, falls back to config defaults.
+  List<String>? timezoneOptions;
+
+  /// Guest authentication entry point builder.
+  /// When set, renders custom widget for guest/anonymous login flows.
+  Widget Function()? guestAuthEntryBuilder;
+
+  /// Custom label for the newsletter signup feature.
+  String? newsletterLabel;
 
   /// Global view registry used for plugin view overrides.
   MagicStarterViewRegistry get view => _viewRegistry;
@@ -212,7 +225,8 @@ class MagicStarterManager {
   }
 
   /// Check if the starter is ready.
-  /// Returns false when team features are enabled but no team resolver is configured.
+  /// Returns false when team features are enabled but no team resolver
+  /// is configured.
   bool get isReady {
     final teamsEnabled =
         Config.get<bool>('magic_starter.features.teams', false) ?? false;
@@ -232,6 +246,9 @@ class MagicStarterManager {
     socialLoginBuilder = null;
     notificationTypeMapper = null;
     _localeOptions = null;
+    timezoneOptions = null;
+    guestAuthEntryBuilder = null;
+    newsletterLabel = null;
     _viewRegistry.clear();
     registerDefaultViews();
   }
