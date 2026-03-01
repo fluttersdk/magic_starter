@@ -172,18 +172,4 @@ class User extends Model
     final map = jsonDecode(json) as Map<String, dynamic>;
     return User.fromMap(map);
   }
-
-  /// Convert this model to a plain [Map].
-  ///
-  /// ```dart
-  /// final map = user.toMap();
-  /// ```
-  Map<String, dynamic> toMap() => getAttributes();
-
-  /// Serialize this model to a JSON string.
-  ///
-  /// ```dart
-  /// final json = user.toJson();
-  /// ```
-  String toJson() => jsonEncode(toMap());
 }

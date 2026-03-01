@@ -7,9 +7,9 @@ Map<String, dynamic> get magicStarterConfig => {
   'magic_starter': {
     'features': {
       'teams': {{ feature_teams }},
-      'registration': true,
-      'extended_profile': true,
-      'profile_photos': false,
+      'registration': {{ feature_registration }},
+      'extended_profile': {{ feature_extended_profile }},
+      'profile_photos': {{ feature_profile_photos }},
       'social_login': {{ feature_social_login }},
       'two_factor': {{ feature_two_factor }},
       'sessions': {{ feature_sessions }},
@@ -17,7 +17,8 @@ Map<String, dynamic> get magicStarterConfig => {
       'newsletter': {{ feature_newsletter }},
       'notifications': {{ feature_notifications }},
       'email_verification': {{ feature_email_verification }},
-      'guest_auth': false,
+      'guest_auth': {{ feature_guest_auth }},
+      'timezones': {{ feature_timezones }},
     },
     'auth': {
       'email': true,
@@ -48,6 +49,10 @@ Map<String, dynamic> get magicStarterConfig => {
       'Australia/Sydney',
       'Pacific/Auckland',
       'Africa/Cairo',
+    ],
+    'supported_locales': [
+      'en',
+      'tr',
     ],
     'routes': {
       'home': '/',

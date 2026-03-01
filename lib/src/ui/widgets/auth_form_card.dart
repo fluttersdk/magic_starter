@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 /// Consistent card wrapper for all auth forms.
 ///
 /// Provides title, subtitle, optional error banner, theme toggle, and content area.
-/// Matches the Uptizm AuthFormCard pattern — constrained width, centered content.
+/// Matches the Magic Starter AuthFormCard pattern — constrained width, centered content.
 class MagicStarterAuthFormCard extends StatelessWidget {
   final String title;
   final String subtitle;

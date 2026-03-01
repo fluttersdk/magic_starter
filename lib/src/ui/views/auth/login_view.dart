@@ -228,38 +228,75 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
     );
   }
 
-  /// Tab toggle + dynamic input for "both" identity mode.
+  /// Segmented-control toggle + dynamic input for "both" identity mode.
+  ///
+  /// Renders an iOS-style pill selector with icons above the active input.
   Widget _buildIdentityToggle() {
     return WDiv(
-      className: 'space-y-3',
+      className: 'flex flex-col gap-4',
       children: [
-        // Toggle row — [Email] [Phone].
+        // Segmented control track.
         WDiv(
-          className: 'flex flex-row gap-2',
+          className: 'gap-2 flex flex-row',
           children: [
-            WButton(
+            _buildSegment(
+              icon: Icons.email_outlined,
+              label: trans('attributes.email'),
+              isActive: !_usePhone,
               onTap: () => setState(() => _usePhone = false),
-              className: _usePhone
-                  ? 'flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium'
-                  : 'flex-1 py-2 rounded-lg bg-primary dark:bg-primary text-white text-sm font-medium',
-              child: WText(
-                trans('attributes.email'),
-                className: 'text-center',
-              ),
             ),
-            WButton(
+            _buildSegment(
+              icon: Icons.phone_outlined,
+              label: trans('attributes.phone'),
+              isActive: _usePhone,
               onTap: () => setState(() => _usePhone = true),
-              className: _usePhone
-                  ? 'flex-1 py-2 rounded-lg bg-primary dark:bg-primary text-white text-sm font-medium'
-                  : 'flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium',
-              child: WText(
-                trans('attributes.phone'),
-                className: 'text-center',
-              ),
             ),
           ],
         ),
         if (_usePhone) _buildPhoneInput() else _buildEmailInput(),
+      ],
+    );
+  }
+
+  /// Single segment pill inside the identity toggle.
+  Widget _buildSegment({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    // flex-1 must be on a direct Flex child — WAnchor breaks the chain,
+    // so the Expanded wrapper lives outside the gesture detector.
+    return WDiv(
+      className: 'flex-1',
+      children: [
+        WAnchor(
+          onTap: onTap,
+          child: WDiv(
+            className: isActive
+                ? 'py-2.5 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 shadow-sm'
+                : 'py-2.5 px-3 rounded-lg border border-gray-300 dark:border-gray-600',
+            children: [
+              WDiv(
+                className: 'flex flex-row items-center justify-center gap-2',
+                children: [
+                  WIcon(
+                    icon,
+                    className: isActive
+                        ? 'text-primary text-lg'
+                        : 'text-gray-400 dark:text-gray-500 text-lg',
+                  ),
+                  WText(
+                    label,
+                    className: isActive
+                        ? 'text-sm font-semibold text-gray-900 dark:text-white'
+                        : 'text-sm font-medium text-gray-500 dark:text-gray-400',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

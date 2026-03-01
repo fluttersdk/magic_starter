@@ -153,24 +153,6 @@ class Team extends Model with HasTimestamps, InteractsWithPersistence {
   }
 
   // ---------------------------------------------------------------------------
-  // Serialization
-  // ---------------------------------------------------------------------------
-
-  /// Convert this model to a plain [Map].
-  ///
-  /// ```dart
-  /// final map = team.toMap();
-  /// ```
-  Map<String, dynamic> toMap() => getAttributes();
-
-  /// Serialize this model to a JSON string.
-  ///
-  /// ```dart
-  /// final json = team.toJson();
-  /// ```
-  String toJson() => jsonEncode(toMap());
-
-  // ---------------------------------------------------------------------------
   // Plugin Interop
   // ---------------------------------------------------------------------------
 

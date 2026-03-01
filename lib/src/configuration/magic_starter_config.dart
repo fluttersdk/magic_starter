@@ -2,31 +2,35 @@ import 'package:magic/magic.dart';
 
 /// Feature toggle helper for Magic Starter.
 ///
-/// Defaults are intentionally explicit:
-/// - teams: false (opt-in)
-/// - profile_photos: false (opt-in)
-/// - registration: true (enabled by default)
-/// - social_login: false (opt-in)
+/// All opt-in features default to `false` — matching the Laravel backend
+/// where the `features` array is empty by default. Each feature must be
+/// explicitly enabled in the host app's `magic_starter` config.
 class MagicStarterConfig {
   MagicStarterConfig._();
 
   static const bool _defaultTeams = false;
   static const bool _defaultProfilePhotos = false;
-  static const bool _defaultRegistration = true;
+  static const bool _defaultRegistration = false;
   static const bool _defaultSocialLogin = false;
   static const bool _defaultTwoFactor = false;
   static const bool _defaultSessions = false;
-  static const bool _defaultExtendedProfile = true;
+  static const bool _defaultExtendedProfile = false;
   static const bool _defaultNotifications = false;
   static const bool _defaultGuestAuth = false;
   static const bool _defaultPhoneOtp = false;
   static const bool _defaultNewsletter = false;
   static const bool _defaultEmailVerification = false;
+  static const bool _defaultTimezones = false;
   static const bool _defaultEmailIdentity = true;
   static const bool _defaultPhoneIdentity = false;
 
   static const String _defaultLocale = 'en';
   static const String _defaultTimezone = 'UTC';
+
+  static const List<String> _defaultSupportedLocales = [
+    'en',
+    'tr',
+  ];
 
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
@@ -58,6 +62,15 @@ class MagicStarterConfig {
     'Pacific/Auckland',
     'Africa/Cairo',
   ];
+
+  /// Returns whether timezone list features are enabled.
+  static bool hasTimezoneFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.timezones',
+          _defaultTimezones,
+        ) ??
+        _defaultTimezones;
+  }
 
   /// Returns whether team-related starter features are enabled.
   static bool hasTeamFeatures() {
@@ -207,6 +220,15 @@ class MagicStarterConfig {
           _defaultSupportedTimezones,
         ) ??
         _defaultSupportedTimezones;
+  }
+
+  /// Returns the list of supported locales.
+  static List<String> supportedLocales() {
+    return Config.get<List<String>>(
+          'magic_starter.supported_locales',
+          _defaultSupportedLocales,
+        ) ??
+        _defaultSupportedLocales;
   }
 
   /// Returns the configured home route path.

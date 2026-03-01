@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import '../magic_starter_manager.dart';
 
@@ -38,21 +39,28 @@ class MagicStarterServiceProvider extends ServiceProvider {
   ///
   /// If the host app has NOT defined a `primary` color in the Wind UI theme,
   /// this will automatically register `indigo` as the fallback primary color.
+  ///
+  /// Because `boot()` runs during `Magic.init()` — before `runApp()` builds
+  /// the widget tree — the navigator context is not yet available. We defer
+  /// the check to the first post-frame callback, when [WindTheme] is mounted
+  /// and the context is guaranteed to exist.
   void _bootPrimaryColorFallback() {
-    final context = MagicRouter.instance.navigatorKey.currentContext;
-    if (context == null) {
-      return;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = MagicRouter.instance.navigatorKey.currentContext;
+      if (context == null) {
+        return;
+      }
 
-    final windTheme = WindTheme.of(context);
-    if (!windTheme.data.isValidColor('primary')) {
-      Log.info(
-          '[MagicStarter] No primary color defined — using indigo as fallback.');
-      windTheme.updateTheme(
-        colors: {
-          'primary': windTheme.data.colors['indigo']!,
-        },
-      );
-    }
+      final windTheme = WindTheme.of(context);
+      if (!windTheme.data.isValidColor('primary')) {
+        Log.info(
+            '[MagicStarter] No primary color defined — using indigo as fallback.');
+        windTheme.updateTheme(
+          colors: {
+            'primary': windTheme.data.colors['indigo']!,
+          },
+        );
+      }
+    });
   }
 }

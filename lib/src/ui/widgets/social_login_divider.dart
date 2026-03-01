@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 /// Visual divider with "Or continue with" text.
 ///
 /// Appears between the primary auth form and social login buttons.
-/// Follows the Uptizm design system with dark mode support.
+/// Follows the Magic Starter design system with dark mode support.
 class MagicStarterSocialDivider extends StatelessWidget {
   const MagicStarterSocialDivider({super.key});
 

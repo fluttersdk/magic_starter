@@ -43,8 +43,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
 
-  /// Tracks whether the user has toggled to phone input in "both" mode.
-  bool _usePhone = false;
 
   bool _subscribeNewsletter = false;
 
@@ -222,15 +220,23 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
 
   /// Builds the identity input section based on the active mode.
   ///
-  /// - Email-only: renders a single email `WFormInput`.
-  /// - Phone-only: renders phone + phone_country `WFormInput` pair.
-  /// - Both: renders a tab-style toggle and the selected input below.
+  /// - Email-only: renders a single email [WFormInput].
+  /// - Phone-only: renders phone + phone_country [WFormInput] pair.
+  /// - Both: renders email AND phone fields together — the backend
+  ///   validates that at least one is provided.
   Widget _buildIdentityField() {
     final emailMode = MagicStarterConfig.emailIdentity();
     final phoneMode = MagicStarterConfig.phoneIdentity();
 
+    // Both active — show all fields, backend requires at least one.
     if (emailMode && phoneMode) {
-      return _buildIdentityToggle();
+      return WDiv(
+        className: 'space-y-4',
+        children: [
+          _buildEmailInput(),
+          ..._buildPhoneFieldList(),
+        ],
+      );
     }
 
     if (phoneMode) {
@@ -257,71 +263,40 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
     );
   }
 
-  /// Phone input + country code pair.
+  /// Phone input + country code as a column widget.
   Widget _buildPhoneFields() {
     return WDiv(
       className: 'space-y-4',
-      children: [
-        WFormInput(
-          label: trans('attributes.phone'),
-          controller: form['phone'],
-          placeholder: '+905301234567',
-          type: InputType.text,
-          validator: rules([Required()], field: 'phone'),
-          className:
-              'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          placeholderClassName: 'text-gray-400 dark:text-gray-500',
-          labelClassName:
-              'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-        ),
-        WFormInput(
-          label: trans('attributes.phone_country'),
-          controller: form['phone_country'],
-          placeholder: trans('fields.phone_country_placeholder'),
-          validator: rules([Required()], field: 'phone_country'),
-          className:
-              'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          placeholderClassName: 'text-gray-400 dark:text-gray-500',
-          labelClassName:
-              'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-        ),
-      ],
+      children: _buildPhoneFieldList(),
     );
   }
 
-  /// Tab toggle + dynamic input for "both" identity mode.
-  Widget _buildIdentityToggle() {
-    return WDiv(
-      className: 'space-y-3',
-      children: [
-        // Toggle row — [Email] [Phone].
-        WDiv(
-          className: 'flex flex-row gap-2',
-          children: [
-            WButton(
-              onTap: () => setState(() => _usePhone = false),
-              className: _usePhone
-                  ? 'flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium'
-                  : 'flex-1 py-2 rounded-lg bg-primary dark:bg-primary text-white text-sm font-medium',
-              child: WText(
-                trans('attributes.email'),
-                className: 'text-center',
-              ),
-            ),
-            WButton(
-              onTap: () => setState(() => _usePhone = true),
-              className: _usePhone
-                  ? 'flex-1 py-2 rounded-lg bg-primary dark:bg-primary text-white text-sm font-medium'
-                  : 'flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium',
-              child: WText(
-                trans('attributes.phone'),
-                className: 'text-center',
-              ),
-            ),
-          ],
-        ),
-        if (_usePhone) _buildPhoneFields() else _buildEmailInput(),
-      ],
-    );
+  /// Phone input + country code as a flat list (for spreading into parents).
+  List<Widget> _buildPhoneFieldList() {
+    return [
+      WFormInput(
+        label: trans('attributes.phone'),
+        controller: form['phone'],
+        placeholder: '+905301234567',
+        type: InputType.text,
+        validator: rules([Required()], field: 'phone'),
+        className:
+            'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+        placeholderClassName: 'text-gray-400 dark:text-gray-500',
+        labelClassName:
+            'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+      ),
+      WFormInput(
+        label: trans('attributes.phone_country'),
+        controller: form['phone_country'],
+        placeholder: trans('fields.phone_country_placeholder'),
+        validator: rules([Required()], field: 'phone_country'),
+        className:
+            'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+        placeholderClassName: 'text-gray-400 dark:text-gray-500',
+        labelClassName:
+            'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+      ),
+    ];
   }
 }

@@ -252,6 +252,56 @@ void main() {
       expect(factoryCount, 1);
     });
 
+    test('injects WindThemeData with primary color palette into main.dart',
+        () async {
+      setupMagicProjectFiles(tempDir);
+
+      await command.runWith([
+        '--non-interactive',
+      ]);
+
+      final String content =
+          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      expect(content, contains('WindThemeData'));
+      expect(content, contains("'primary'"));
+      expect(content, contains('MaterialColor'));
+      expect(content, contains('windTheme: windTheme'));
+    });
+
+    test('injects WindThemeData import into main.dart', () async {
+      setupMagicProjectFiles(tempDir);
+
+      await command.runWith([
+        '--non-interactive',
+      ]);
+
+      final String content =
+          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      expect(
+        content,
+        contains("import 'package:flutter/material.dart';"),
+      );
+    });
+
+    test(
+        'skips WindThemeData injection when already present (idempotency)',
+        () async {
+      setupMagicProjectFiles(tempDir);
+
+      await command.runWith([
+        '--non-interactive',
+      ]);
+      await command.runWith([
+        '--non-interactive',
+      ]);
+
+      final String content =
+          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final int themeCount =
+          RegExp('WindThemeData').allMatches(content).length;
+      expect(themeCount, 1);
+    });
+
     test('creates ensure_authenticated middleware file', () async {
       setupMagicProjectFiles(tempDir);
 

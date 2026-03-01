@@ -8,6 +8,9 @@ class InstallCommand extends Command {
   /// Dynamic feature keys that can be toggled by user input.
   static const List<String> _dynamicFeatureKeys = [
     'teams',
+    'registration',
+    'extended_profile',
+    'profile_photos',
     'social_login',
     'two_factor',
     'sessions',
@@ -15,6 +18,8 @@ class InstallCommand extends Command {
     'newsletter',
     'notifications',
     'email_verification',
+    'guest_auth',
+    'timezones',
   ];
 
   @override
@@ -176,6 +181,9 @@ class InstallCommand extends Command {
 
     final Map<String, bool> features = {
       'teams': false,
+      'registration': false,
+      'extended_profile': false,
+      'profile_photos': false,
       'social_login': false,
       'two_factor': false,
       'sessions': false,
@@ -183,6 +191,8 @@ class InstallCommand extends Command {
       'newsletter': false,
       'notifications': false,
       'email_verification': false,
+      'guest_auth': false,
+      'timezones': false,
     };
 
     if (nonInteractive) {
@@ -224,16 +234,8 @@ class InstallCommand extends Command {
     final String rendered = StubLoader.replace(
       stub,
       {
-        'feature_teams': (features['teams'] ?? false).toString(),
-        'feature_social_login': (features['social_login'] ?? false).toString(),
-        'feature_two_factor': (features['two_factor'] ?? false).toString(),
-        'feature_sessions': (features['sessions'] ?? false).toString(),
-        'feature_phone_otp': (features['phone_otp'] ?? false).toString(),
-        'feature_newsletter': (features['newsletter'] ?? false).toString(),
-        'feature_notifications':
-            (features['notifications'] ?? false).toString(),
-        'feature_email_verification':
-            (features['email_verification'] ?? false).toString(),
+        for (final String key in _dynamicFeatureKeys)
+          'feature_$key': (features[key] ?? false).toString(),
       },
     );
 
@@ -262,24 +264,94 @@ class InstallCommand extends Command {
     }
   }
 
+  /// Inject config import, config factory, and primary color theme
+  /// into the host application's main.dart.
+  ///
+  /// Steps:
+  /// 1. Add magic_starter config import.
+  /// 2. Add material.dart import (for MaterialColor/Color).
+  /// 3. Inject magicStarterConfig factory into configFactories.
+  /// 4. Inject WindThemeData with default primary color palette.
+  /// 5. Pass windTheme to MagicApplication constructor.
   void _injectIntoMain() {
     final String mainPath = '$projectRoot/lib/main.dart';
     if (!FileHelper.fileExists(mainPath)) {
       return;
     }
 
+    // 1. Add magic_starter config import.
     ConfigEditor.addImportToFile(
       filePath: mainPath,
       importStatement: "import 'config/magic_starter.dart';",
     );
 
-    final String content = FileHelper.readFile(mainPath);
+    // 2. Ensure material.dart import (needed for MaterialColor, Color).
+    ConfigEditor.addImportToFile(
+      filePath: mainPath,
+      importStatement: "import 'package:flutter/material.dart';",
+    );
+
+    // 3. Inject magicStarterConfig factory into configFactories.
+    String content = FileHelper.readFile(mainPath);
     if (!content.contains('magicStarterConfig')) {
       ConfigEditor.insertCodeBeforePattern(
         filePath: mainPath,
         pattern: RegExp(r'^\s+\],\s*$', multiLine: true),
         code: '      () => magicStarterConfig,\n',
       );
+    }
+
+    // 4. Inject WindThemeData with default primary color palette.
+    content = FileHelper.readFile(mainPath);
+    if (!content.contains('WindThemeData')) {
+      _injectWindTheme(mainPath);
+    }
+  }
+
+  /// Inject WindThemeData variable and pass it to MagicApplication.
+  ///
+  /// Inserts the theme variable before `runApp(` and adds the
+  /// `windTheme: windTheme` parameter to the MagicApplication
+  /// constructor call.
+  void _injectWindTheme(String mainPath) {
+    // 1. Insert windTheme variable before runApp(.
+    const String windThemeCode = '''
+  final windTheme = WindThemeData(
+    colors: {
+      'primary': MaterialColor(0xFF7C3AED, <int, Color>{
+        50: Color(0xFFF3F0FF),
+        100: Color(0xFFEDE9FE),
+        200: Color(0xFFDDD6FE),
+        300: Color(0xFFC4B5FD),
+        400: Color(0xFFA78BFA),
+        500: Color(0xFF8B5CF6),
+        600: Color(0xFF7C3AED),
+        700: Color(0xFF6D28D9),
+        800: Color(0xFF5B21B6),
+        900: Color(0xFF4C1D95),
+      }),
+    },
+  );
+
+''';
+    ConfigEditor.insertCodeBeforePattern(
+      filePath: mainPath,
+      pattern: RegExp(r'^\s+runApp\(', multiLine: true),
+      code: windThemeCode,
+    );
+
+    // 2. Add windTheme parameter to MagicApplication constructor.
+    String content = FileHelper.readFile(mainPath);
+    if (content.contains('MagicApplication(') &&
+        !content.contains('windTheme:')) {
+      content = content.replaceFirst(
+        RegExp(r"MagicApplication\(title:\s*'([^']*)'\)"),
+        'MagicApplication(\n'
+            '      title: \'\$1\',\n'
+            '      windTheme: windTheme,\n'
+            '    )',
+      );
+      FileHelper.writeFile(mainPath, content);
     }
   }
 
@@ -447,6 +519,18 @@ class InstallCommand extends Command {
     final String targetPath =
         '$projectRoot/lib/app/providers/app_service_provider.dart';
 
+    // When file already exists and --force is not set, inject essential
+    // starter code into the existing file instead of replacing it entirely.
+    // This handles the typical case where `magic install` has already
+    // created the file with user customizations.
+    if (FileHelper.fileExists(targetPath) && !force) {
+      _injectIntoExistingAppServiceProvider(
+        targetPath: targetPath,
+        features: features,
+      );
+      return;
+    }
+
     final String stub = StubLoader.load(
       'install/app_service_provider',
       searchPaths: getStubSearchPaths(),
@@ -504,19 +588,179 @@ class InstallCommand extends Command {
     );
   }
 
+  /// Injects essential Magic Starter code into an existing AppServiceProvider.
+  ///
+  /// Adds imports and boot-time configuration calls that are required for the
+  /// starter plugin to function. Each injection is idempotent — it checks for
+  /// the presence of a marker string before adding code.
+  void _injectIntoExistingAppServiceProvider({
+    required String targetPath,
+    required Map<String, bool> features,
+  }) {
+    // 1. Add required imports.
+    ConfigEditor.addImportToFile(
+      filePath: targetPath,
+      importStatement: "import 'package:flutter/material.dart';",
+    );
+    ConfigEditor.addImportToFile(
+      filePath: targetPath,
+      importStatement: "import 'package:magic_starter/magic_starter.dart';",
+    );
+    ConfigEditor.addImportToFile(
+      filePath: targetPath,
+      importStatement: "import '../models/user.dart';",
+    );
+
+    // Team model import is only added when the full stub is used (--force).
+    // In inject mode, the user must add team imports when implementing the
+    // team resolver manually.
+
+    // 2. Inject essential boot() code before the closing brace of boot().
+    //    Each block uses a marker to prevent duplicate injection.
+    String content = FileHelper.readFile(targetPath);
+
+    // 2a. setUserFactory + useUserModel
+    //    Check for uncommented call — the magic install stub contains a
+    //    commented-out example that must not trigger the idempotency guard.
+    final bool hasUncommentedSetUserFactory = RegExp(
+      r'^\s*Auth\.manager\.setUserFactory\(',
+      multiLine: true,
+    ).hasMatch(content);
+    if (!hasUncommentedSetUserFactory) {
+      content = _injectBeforeBootClosingBrace(
+        content,
+        '''
+    // Magic Starter: Register user factory for auth session restoration.
+    Auth.manager.setUserFactory((data) => User.fromMap(data));
+    MagicStarter.useUserModel((data) => User.fromMap(data));
+''',
+      );
+    }
+
+    // 2b. useNavigation
+    if (!content.contains('useNavigation')) {
+      content = _injectBeforeBootClosingBrace(
+        content,
+        '''
+
+    // Magic Starter: Navigation items for sidebar and mobile bottom bar.
+    MagicStarter.useNavigation(
+      mainItems: [
+        StarterNavItem(
+          icon: Icons.dashboard_outlined,
+          labelKey: 'nav.dashboard',
+          path: MagicStarterConfig.homeRoute(),
+        ),
+        StarterNavItem(
+          icon: Icons.settings_outlined,
+          labelKey: 'nav.settings',
+          path: MagicStarterConfig.profileRoute(),
+        ),
+      ],
+      bottomItems: [
+        StarterNavItem(
+          icon: Icons.dashboard_outlined,
+          labelKey: 'nav.dashboard',
+          path: MagicStarterConfig.homeRoute(),
+        ),
+        StarterNavItem(
+          icon: Icons.settings_outlined,
+          labelKey: 'nav.settings',
+          path: MagicStarterConfig.profileRoute(),
+        ),
+      ],
+    );
+''',
+      );
+    }
+
+    // 2c. useLogout
+    if (!content.contains('useLogout')) {
+      content = _injectBeforeBootClosingBrace(
+        content,
+        '''
+
+    // Magic Starter: Logout callback.
+    MagicStarter.useLogout(() async {
+      await Auth.logout();
+      MagicRoute.to(MagicStarterConfig.loginRoute());
+    });
+''',
+      );
+    }
+
+    // 2d. useLocaleOptions
+    if (!content.contains('useLocaleOptions')) {
+      content = _injectBeforeBootClosingBrace(
+        content,
+        '''
+
+    // Magic Starter: Supported locale options for profile settings.
+    MagicStarter.useLocaleOptions({
+      'en': 'English',
+    });
+''',
+      );
+    }
+
+    FileHelper.writeFile(targetPath, content);
+    info('Injected: lib/app/providers/app_service_provider.dart');
+  }
+
+  /// Injects [code] before the closing brace of the `boot()` method body.
+  ///
+  /// Finds the last `}` in the file (class closing brace) and the `}` right
+  /// before it (boot method closing brace), then inserts [code] before that.
+  String _injectBeforeBootClosingBrace(String content, String code) {
+    // Find the boot() method and inject before its closing brace.
+    // The pattern: last `}` is the class brace, second-to-last `}` is boot().
+    final List<int> bracePositions = [];
+    for (int i = 0; i < content.length; i++) {
+      if (content[i] == '}') {
+        bracePositions.add(i);
+      }
+    }
+
+    // We need at least 2 closing braces (boot + class).
+    if (bracePositions.length < 2) {
+      return content;
+    }
+
+    // Insert before the second-to-last closing brace (boot method).
+    final int bootBrace = bracePositions[bracePositions.length - 2];
+    return '${content.substring(0, bootBrace)}$code  ${content.substring(bootBrace)}';
+  }
+
   void _createTranslationFile({
     required bool force,
   }) {
-    final String stub = StubLoader.load(
+    final String targetPath = '$projectRoot/assets/lang/en.json';
+    final String relativePath = targetPath.replaceFirst('$projectRoot/', '');
+
+    // 1. Load the stub content as a JSON map.
+    final String stubContent = StubLoader.load(
       'install/en',
       searchPaths: getStubSearchPaths(),
     );
+    final Map<String, dynamic> sourceData =
+        jsonDecode(stubContent) as Map<String, dynamic>;
 
-    _safeWriteFile(
-      path: '$projectRoot/assets/lang/en.json',
-      content: stub,
-      force: force,
-    );
+    // 2. Merge into existing file or write fresh.
+    final bool exists = FileHelper.fileExists(targetPath);
+
+    if (exists && !force) {
+      // Deep-merge — preserves user-customised values, adds new keys.
+      JsonEditor.mergeJsonData(targetPath, sourceData);
+      info('Merged: $relativePath');
+    } else if (exists && force) {
+      // Force — overwrite entirely.
+      JsonEditor.mergeJsonData(targetPath, sourceData, force: true);
+      warn('Overwritten: $relativePath');
+    } else {
+      // Fresh write — target does not exist.
+      JsonEditor.mergeJsonData(targetPath, sourceData);
+      success('Created: $relativePath');
+    }
   }
 
   void _createUserModel({
@@ -599,6 +843,15 @@ class InstallCommand extends Command {
   void _createAppRoutes({
     required bool force,
   }) {
+    final String targetPath = '$projectRoot/lib/routes/app.dart';
+
+    // When routes file already exists and --force is not set, inject the
+    // dashboard imports and layout group into the existing routes file.
+    if (FileHelper.fileExists(targetPath) && !force) {
+      _injectIntoExistingAppRoutes(targetPath: targetPath);
+      return;
+    }
+
     final String stub = StubLoader.load(
       'install/app_routes',
       searchPaths: getStubSearchPaths(),
@@ -607,10 +860,81 @@ class InstallCommand extends Command {
     Directory('$projectRoot/lib/routes').createSync(recursive: true);
 
     _safeWriteFile(
-      path: '$projectRoot/lib/routes/app.dart',
+      path: targetPath,
       content: stub,
       force: force,
     );
+  }
+
+  /// Injects DashboardView import and layout-wrapped route group into an
+  /// existing routes/app.dart file.
+  ///
+  /// Each injection is idempotent — checks for markers before adding code.
+  void _injectIntoExistingAppRoutes({
+    required String targetPath,
+  }) {
+    // 1. Add imports.
+    ConfigEditor.addImportToFile(
+      filePath: targetPath,
+      importStatement:
+          "import 'package:magic_starter/magic_starter.dart';",
+    );
+    ConfigEditor.addImportToFile(
+      filePath: targetPath,
+      importStatement:
+          "import '../resources/views/dashboard_view.dart';",
+    );
+
+    // 2. Inject layout group with dashboard route if not present.
+    String content = FileHelper.readFile(targetPath);
+    if (!content.contains('DashboardView')) {
+      // Find the registerAppRoutes() function body and inject at the start.
+      final RegExp bodyPattern = RegExp(
+        r'(void registerAppRoutes\(\)\s*\{)',
+        multiLine: true,
+      );
+      final Match? match = bodyPattern.firstMatch(content);
+      if (match != null) {
+        final String injection = '''
+
+  // Auth-protected routes with AppLayout
+  MagicRoute.group(
+    layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
+    middleware: ['auth'],
+    layoutId: 'app',
+    routes: () {
+      MagicRoute.page('/', () => const DashboardView());
+    },
+  );
+''';
+        content = content.replaceFirst(
+          match.group(0)!,
+          '${match.group(0)!}$injection',
+        );
+
+        // 3. Comment out the original WelcomeView '/' route to avoid conflict
+        //    with the layout-wrapped DashboardView '/' route above.
+        final RegExp welcomeRoute = RegExp(
+          r"^(\s*)(MagicRoute\.page\('/'.*WelcomeView.*\);)",
+          multiLine: true,
+        );
+        content = content.replaceAllMapped(welcomeRoute, (m) {
+          return '${m.group(1)}// ${m.group(2)} // Replaced by DashboardView';
+        });
+
+        // 4. Comment out the WelcomeView import to avoid unused import warning.
+        final RegExp welcomeImport = RegExp(
+          r"^(import\s+'.*welcome_view\.dart';)",
+          multiLine: true,
+        );
+        content = content.replaceAllMapped(welcomeImport, (m) {
+          return '// ${m.group(1)} // Replaced by DashboardView';
+        });
+
+        FileHelper.writeFile(targetPath, content);
+        info('Injected: lib/routes/app.dart');
+      }
+    }
   }
 
   void _safeWriteFile({

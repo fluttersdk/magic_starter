@@ -53,7 +53,7 @@ void main() {
           findsNothing);
     });
 
-    testWidgets('shows toggle buttons in both mode', (tester) async {
+    testWidgets('shows segmented toggle in both mode', (tester) async {
       Config.set('magic_starter.auth.email', true);
       Config.set('magic_starter.auth.phone', true);
 
@@ -61,10 +61,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(WButton, trans('attributes.email')),
-          findsOneWidget);
-      expect(find.widgetWithText(WButton, trans('attributes.phone')),
-          findsOneWidget);
+      // Segmented control renders labels as WText inside WAnchor.
+      expect(find.text(trans('attributes.email')), findsWidgets);
+      expect(find.text(trans('attributes.phone')), findsWidgets);
     });
 
     testWidgets('switching to phone tab shows phone field in both mode',
@@ -79,8 +78,8 @@ void main() {
       expect(find.widgetWithText(WFormInput, trans('attributes.email')),
           findsOneWidget);
 
-      // Tap phone tab.
-      await tester.tap(find.widgetWithText(WButton, trans('attributes.phone')));
+      // Tap phone segment (WAnchor wrapping the label text).
+      await tester.tap(find.text(trans('attributes.phone')).first);
       await tester.pumpAndSettle();
 
       // Now shows phone field.

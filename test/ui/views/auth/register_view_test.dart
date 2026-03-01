@@ -75,7 +75,8 @@ void main() {
           findsNothing);
     });
 
-    testWidgets('shows toggle buttons in both mode', (tester) async {
+    testWidgets('shows both email and phone fields in both mode',
+        (tester) async {
       Config.set('magic_starter.auth.email', true);
       Config.set('magic_starter.auth.phone', true);
 
@@ -83,9 +84,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(WButton, trans('attributes.email')),
+      // Register shows both fields simultaneously — no toggle.
+      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
           findsOneWidget);
-      expect(find.widgetWithText(WButton, trans('attributes.phone')),
+      expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
           findsOneWidget);
     });
   });

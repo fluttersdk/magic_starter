@@ -21,8 +21,8 @@ void main() {
         expect(MagicStarterConfig.hasProfilePhotoFeatures(), isFalse);
       });
 
-      test('hasRegistrationFeatures() returns true by default', () {
-        expect(MagicStarterConfig.hasRegistrationFeatures(), isTrue);
+      test('hasRegistrationFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasRegistrationFeatures(), isFalse);
       });
 
       test('hasSocialLoginFeatures() returns false by default', () {
@@ -57,11 +57,14 @@ void main() {
         expect(MagicStarterConfig.hasEmailVerificationFeatures(), isFalse);
       });
 
-      test('hasExtendedProfileFeatures() returns true by default', () {
-        expect(MagicStarterConfig.hasExtendedProfileFeatures(), isTrue);
+      test('hasExtendedProfileFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasExtendedProfileFeatures(), isFalse);
+      });
+
+      test('hasTimezoneFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasTimezoneFeatures(), isFalse);
       });
     });
-
     // -------------------------------------------------------------------------
     // Route accessors — default values
     // -------------------------------------------------------------------------
@@ -161,10 +164,10 @@ void main() {
         expect(MagicStarterConfig.hasProfilePhotoFeatures(), isTrue);
       });
 
-      test('hasRegistrationFeatures() returns false when config is set', () {
-        Config.set('magic_starter.features.registration', false);
+      test('hasRegistrationFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.registration', true);
 
-        expect(MagicStarterConfig.hasRegistrationFeatures(), isFalse);
+        expect(MagicStarterConfig.hasRegistrationFeatures(), isTrue);
       });
 
       test('hasSocialLoginFeatures() returns true when config is set', () {
@@ -190,7 +193,6 @@ void main() {
 
         expect(MagicStarterConfig.hasNotificationFeatures(), isTrue);
       });
-    });
 
       test('hasGuestAuthFeatures() returns true when config is set', () {
         Config.set('magic_starter.features.guest_auth', true);
@@ -216,6 +218,12 @@ void main() {
         expect(MagicStarterConfig.hasEmailVerificationFeatures(), isTrue);
       });
 
+      test('hasTimezoneFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.timezones', true);
+
+        expect(MagicStarterConfig.hasTimezoneFeatures(), isTrue);
+      });
+    });
     // -------------------------------------------------------------------------
     // Route accessors — configured overrides
     // -------------------------------------------------------------------------
@@ -372,6 +380,13 @@ void main() {
         final tzs = MagicStarterConfig.supportedTimezones();
         expect(tzs, isNotEmpty);
         expect(tzs.contains('UTC'), isTrue);
+      });
+
+      test('supportedLocales() returns non-empty list by default', () {
+        final locales = MagicStarterConfig.supportedLocales();
+        expect(locales, isNotEmpty);
+        expect(locales.contains('en'), isTrue);
+        expect(locales.contains('tr'), isTrue);
       });
     });
 
