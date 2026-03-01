@@ -3,13 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/profile_controller.dart';
 import '../../widgets/starter_card.dart';
 import '../../widgets/starter_page_header.dart';
 import '../../widgets/starter_password_confirm_dialog.dart';
-import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/newsletter_controller.dart';
-
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
@@ -241,11 +240,13 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             className: 'flex flex-col gap-6',
             children: [
               _buildProfileSection(),
-              if (MagicStarterConfig.hasExtendedProfileFeatures()) _buildExtendedProfileSection(),
+              if (MagicStarterConfig.hasExtendedProfileFeatures())
+                _buildExtendedProfileSection(),
             ],
           ),
         ),
         _buildPasswordSection(),
+        _buildEmailVerificationSection(),
         _buildTwoFactorSection(),
         _buildNewsletterSection(),
         _buildSessionsSection(),
@@ -336,46 +337,47 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   Widget _buildProfileSection() {
     return MagicStarterCard(
-        title: trans('profile.profile_information'),
-        child: WDiv(
-          className: 'flex flex-col gap-4',
-          children: [
-            WFormInput(
-              controller: profileForm['name'],
-              label: trans('attributes.name'),
-              validator: rules([Required(), Min(2)], field: 'name'),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-            ),
-            WFormInput(
-              controller: profileForm['email'],
-              label: trans('attributes.email'),
-              type: InputType.email,
-              validator: rules([Required(), Email()], field: 'email'),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-            ),
-            WDiv(
-              className: 'flex justify-end',
-              children: [
-                WButton(
-                  onTap: _submitProfile,
-                  isLoading: controller.isLoading,
-                  className:
-                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                  child: WText(trans('common.save')),
-                ),
-              ],
-            ),
-          ],
-        ),
+      title: trans('profile.profile_information'),
+      child: WDiv(
+        className: 'flex flex-col gap-4',
+        children: [
+          WFormInput(
+            controller: profileForm['name'],
+            label: trans('attributes.name'),
+            validator: rules([Required(), Min(2)], field: 'name'),
+            labelClassName:
+                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className:
+                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+          ),
+          WFormInput(
+            controller: profileForm['email'],
+            label: trans('attributes.email'),
+            type: InputType.email,
+            validator: rules([Required(), Email()], field: 'email'),
+            labelClassName:
+                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className:
+                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+          ),
+          WDiv(
+            className: 'flex justify-end',
+            children: [
+              WButton(
+                onTap: _submitProfile,
+                isLoading: controller.isLoading,
+                className:
+                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                child: WText(trans('common.save')),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
+  // -- Extended Profile Section ----------------------------------------------
 
   static const Map<String, String> _phoneCountryCodes = {
     'TR': 'Turkey (+90)',
@@ -497,8 +499,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               type: _obscureCurrent ? InputType.password : InputType.text,
               validator: rules([Required()], field: 'current_password'),
               suffix: WAnchor(
-                onTap: () =>
-                    setState(() => _obscureCurrent = !_obscureCurrent),
+                onTap: () => setState(() => _obscureCurrent = !_obscureCurrent),
                 child: WIcon(
                   _obscureCurrent ? Icons.visibility : Icons.visibility_off,
                   className: 'text-gray-400 text-xl',
@@ -560,6 +561,83 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // -- Email Verification Section -------------------------------------------
+
+  /// Builds the email verification status section.
+  ///
+  /// Gated behind [MagicStarterConfig.hasEmailVerificationFeatures].
+  /// Shows a green verified badge when the user's email is confirmed,
+  /// or a yellow warning banner with a resend button when unverified.
+  Widget _buildEmailVerificationSection() {
+    if (!MagicStarterConfig.hasEmailVerificationFeatures()) {
+      return const SizedBox.shrink();
+    }
+
+    if (controller.isEmailVerified) {
+      return MagicStarterCard(
+        title: trans('magic_starter.email_verification.section_title'),
+        child: WDiv(
+          className: 'flex items-center gap-3 py-1',
+          children: [
+            WIcon(
+              Icons.verified,
+              className: 'text-green-500 dark:text-green-400 text-xl',
+            ),
+            WText(
+              trans('magic_starter.email_verification.verified'),
+              className:
+                  'text-sm font-medium text-green-700 dark:text-green-300',
+            ),
+          ],
+        ),
+      );
+    }
+
+    return MagicStarterCard(
+      title: trans('magic_starter.email_verification.section_title'),
+      child: WDiv(
+        className: 'flex flex-col gap-4',
+        children: [
+          WDiv(
+            className:
+                'flex items-start gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20'
+                ' border border-yellow-200 dark:border-yellow-700',
+            children: [
+              WIcon(
+                Icons.warning_amber_rounded,
+                className:
+                    'text-yellow-500 dark:text-yellow-400 text-xl mt-0.5',
+              ),
+              WDiv(
+                className: 'flex flex-col gap-1 flex-1',
+                children: [
+                  WText(
+                    trans('magic_starter.email_verification.unverified_title'),
+                    className:
+                        'text-sm font-semibold text-yellow-800 dark:text-yellow-200',
+                  ),
+                  WText(
+                    trans(
+                        'magic_starter.email_verification.unverified_description'),
+                    className: 'text-sm text-yellow-700 dark:text-yellow-300',
+                  ),
+                ],
+              ),
+            ],
+          ),
+          WButton(
+            onTap: controller.sendEmailVerification,
+            isLoading: controller.isLoading,
+            className:
+                'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+            child:
+                WText(trans('magic_starter.email_verification.resend_button')),
+          ),
+        ],
       ),
     );
   }
@@ -829,8 +907,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                       );
                     },
                     isLoading: newsletterController.isLoading,
-                    className: 'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                    child: WText(trans('magic_starter.newsletter.toggle_button')),
+                    className:
+                        'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                    child:
+                        WText(trans('magic_starter.newsletter.toggle_button')),
                   );
                 },
                 onEmpty: WDiv(
@@ -838,7 +918,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WIcon(
                       Icons.refresh,
-                      className: 'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
+                      className:
+                          'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
                     ),
                   ],
                 ),
@@ -851,7 +932,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   }
 
 // -- Sessions Section ------------------------------------------------------
-
 
   /// Builds the browser sessions management section.
   ///
@@ -877,7 +957,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               children: [
                 WIcon(
                   Icons.refresh,
-                  className: 'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
+                  className:
+                      'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
                 ),
               ],
             )
@@ -995,7 +1076,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ),
             WFormInput(
               controller: deleteAccountForm['password'],
-              label: trans('magic_starter.profile.delete_account.password_label'),
+              label:
+                  trans('magic_starter.profile.delete_account.password_label'),
               type: InputType.password,
               validator: rules(
                 [Required()],
@@ -1034,5 +1116,5 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     );
   }
 
-
+  // -- Email Verification Section -----------------------------------------------
 }
