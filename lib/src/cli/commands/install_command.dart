@@ -134,23 +134,45 @@ class InstallCommand extends Command {
     _injectIntoRouteServiceProvider(features: features);
 
     // 9. Replace AppServiceProvider from stub.
-    _replaceAppServiceProvider(features: features);
+    _replaceAppServiceProvider(
+      features: features,
+      force: force,
+    );
 
-    // 10. Create translations and pubspec asset entry.
-    _createTranslationFile();
+    // 10. Scaffold User model.
+    _createUserModel(
+      force: force,
+      features: features,
+    );
+
+    // 11. Scaffold Team model (only when teams feature is enabled).
+    if (features['teams'] ?? false) {
+      _createTeamModel(force: force);
+    }
+
+    // 12. Scaffold Dashboard view.
+    _createDashboardView(force: force);
+
+    // 13. Scaffold app routes file.
+    _createAppRoutes(force: force);
+
+    // 14. Create translations and pubspec asset entry.
+    _createTranslationFile(force: force);
     _injectTranslationAssetIntoPubspec();
 
-    // 11. Optional notification package setup.
+    // 15. Optional notification package setup.
     await _setupNotifications(features: features);
 
-    // 12. Format host app.
+    // 16. Format host app.
     await runDartFormat(projectRoot);
 
     success('Magic Starter installation completed successfully.');
   }
 
   Map<String, bool> _resolveFeatureSelections() {
-    final bool nonInteractive = arguments['non-interactive'] as bool? ?? false;
+    final bool hasFeatureFlag = (option('features') as String?) != null;
+    final bool nonInteractive =
+        (arguments['non-interactive'] as bool? ?? false) || hasFeatureFlag;
 
     final Map<String, bool> features = {
       'teams': false,
@@ -194,11 +216,6 @@ class InstallCommand extends Command {
   }) {
     final String configPath = '$projectRoot/lib/config/magic_starter.dart';
 
-    if (FileHelper.fileExists(configPath) && !force) {
-      warn('Config already exists. Use --force to overwrite.');
-      return;
-    }
-
     final String stub = StubLoader.load(
       'install/magic_starter_config',
       searchPaths: getStubSearchPaths(),
@@ -220,8 +237,11 @@ class InstallCommand extends Command {
       },
     );
 
-    FileHelper.writeFile(configPath, rendered);
-    success('Created lib/config/magic_starter.dart');
+    _safeWriteFile(
+      path: configPath,
+      content: rendered,
+      force: force,
+    );
   }
 
   void _injectIntoApp() {
@@ -285,16 +305,16 @@ class InstallCommand extends Command {
     required String stubName,
     required String targetPath,
   }) {
-    if (FileHelper.fileExists(targetPath) && !force) {
-      return;
-    }
-
     final String content = StubLoader.load(
       stubName,
       searchPaths: getStubSearchPaths(),
     );
 
-    FileHelper.writeFile(targetPath, content);
+    _safeWriteFile(
+      path: targetPath,
+      content: content,
+      force: force,
+    );
   }
 
   void _injectIntoKernel() {
@@ -303,6 +323,22 @@ class InstallCommand extends Command {
       return;
     }
 
+    // 1. Uncomment 'import package:magic/magic.dart' if it exists as a
+    //    commented line — addImportToFile skips it due to contains() match.
+    String content = FileHelper.readFile(kernelPath);
+    final RegExp commentedMagicImport = RegExp(
+      r"^\s*//\s*import 'package:magic/magic\.dart';\s*$",
+      multiLine: true,
+    );
+    if (commentedMagicImport.hasMatch(content)) {
+      content = content.replaceFirst(
+        commentedMagicImport,
+        "import 'package:magic/magic.dart';",
+      );
+      FileHelper.writeFile(kernelPath, content);
+    }
+
+    // 2. Add imports (addImportToFile is now safe since we uncommented).
     ConfigEditor.addImportToFile(
       filePath: kernelPath,
       importStatement: "import 'package:magic/magic.dart';",
@@ -316,12 +352,18 @@ class InstallCommand extends Command {
       importStatement: "import 'middleware/redirect_if_authenticated.dart';",
     );
 
-    final String content = FileHelper.readFile(kernelPath);
-    if (content.contains("'auth': () => EnsureAuthenticated(),") &&
-        content.contains("'guest': () => RedirectIfAuthenticated(),")) {
+    // 3. Check for UNCOMMENTED Kernel.registerAll — commented code must not
+    //    trigger the idempotency guard.
+    content = FileHelper.readFile(kernelPath);
+    final bool hasUncommentedRegister = RegExp(
+      r"^\s*Kernel\.registerAll\(",
+      multiLine: true,
+    ).hasMatch(content);
+    if (hasUncommentedRegister) {
       return;
     }
 
+    // 4. Inject Kernel.registerAll block before closing brace.
     final String registerBlock = '''
   Kernel.registerAll({
     'auth': () => EnsureAuthenticated(),
@@ -331,7 +373,7 @@ class InstallCommand extends Command {
 
     final String updated = content.replaceFirst(
       RegExp(r'}\s*$'),
-      '$registerBlock\n}',
+      '${registerBlock}\n}',
     );
 
     FileHelper.writeFile(kernelPath, updated);
@@ -393,13 +435,14 @@ class InstallCommand extends Command {
 
     ConfigEditor.insertCodeBeforePattern(
       filePath: filePath,
-      pattern: RegExp(r'\s*registerAppRoutes\(\);'),
+      pattern: RegExp(r'^\s*registerAppRoutes\(\);', multiLine: true),
       code: callCode,
     );
   }
 
   void _replaceAppServiceProvider({
     required Map<String, bool> features,
+    required bool force,
   }) {
     final String targetPath =
         '$projectRoot/lib/app/providers/app_service_provider.dart';
@@ -412,17 +455,34 @@ class InstallCommand extends Command {
     final String teamsBlock = (features['teams'] ?? false)
         ? '''
     // 5. Register team resolver callback.
-    MagicStarter.useTeamResolver((userId) async {
-      return [];
+    MagicStarter.useTeamResolver(
+      currentTeam: () => null, // TODO: return current StarterTeam from Auth.user()
+      allTeams: () => [], // TODO: return list of StarterTeam from Auth.user()
+      onSwitch: (teamId) async {
+        // TODO: implement team switching logic
+      },
+    );
+'''
+        : '';
+
+    final String teamsImport =
+        (features['teams'] ?? false) ? "import '../models/team.dart';" : '';
+
+    final String socialLoginBlock = (features['social_login'] ?? false)
+        ? '''
+    // 6. Register social login button builder.
+    MagicStarter.useSocialLogin((context) {
+      // TODO: return your social login widget.
+      return const SizedBox.shrink();
     });
 '''
         : '';
 
     final String notificationsBlock = (features['notifications'] ?? false)
         ? '''
-    // 6. Register notification type mapper callback.
-    MagicStarter.useNotificationTypeMapper((notification) {
-      return notification.type;
+    // 7. Register notification type mapper callback.
+    MagicStarter.useNotificationTypeMapper((type) {
+      return (icon: Icons.info_outline, colorClass: 'text-blue-500');
     });
 '''
         : '';
@@ -430,24 +490,148 @@ class InstallCommand extends Command {
     final String rendered = StubLoader.replace(
       stub,
       {
+        'teams_import': teamsImport,
         'teams_block': teamsBlock,
+        'social_login_block': socialLoginBlock,
         'notifications_block': notificationsBlock,
       },
     );
 
-    FileHelper.writeFile(targetPath, rendered);
+    _safeWriteFile(
+      path: targetPath,
+      content: rendered,
+      force: force,
+    );
   }
 
-  void _createTranslationFile() {
+  void _createTranslationFile({
+    required bool force,
+  }) {
     final String stub = StubLoader.load(
       'install/en',
       searchPaths: getStubSearchPaths(),
     );
 
-    FileHelper.writeFile(
-      '$projectRoot/assets/lang/en.json',
-      stub,
+    _safeWriteFile(
+      path: '$projectRoot/assets/lang/en.json',
+      content: stub,
+      force: force,
     );
+  }
+
+  void _createUserModel({
+    required bool force,
+    required Map<String, bool> features,
+  }) {
+    final String stub = StubLoader.load(
+      'install/user',
+      searchPaths: getStubSearchPaths(),
+    );
+
+    final String teamsBlock = (features['teams'] ?? false)
+        ? '''
+  /// The user's current team.
+  Team? get currentTeam {
+    final Map<String, dynamic>? data = getAttribute('current_team') as Map<String, dynamic>?;
+    return data != null ? Team.fromMap(data) : null;
+  }
+
+  /// All teams the user belongs to.
+  List<Team> get allTeams {
+    final List<dynamic> data = getAttribute('teams') as List<dynamic>? ?? [];
+    return data.map((t) => Team.fromMap(t as Map<String, dynamic>)).toList();
+  }
+'''
+        : '';
+
+    final String teamsImport =
+        (features['teams'] ?? false) ? "import 'team.dart';" : '';
+
+    final String rendered = StubLoader.replace(
+      stub,
+      {
+        'teams_block': teamsBlock,
+        'teams_import': teamsImport,
+      },
+    );
+
+    Directory('$projectRoot/lib/app/models').createSync(recursive: true);
+
+    _safeWriteFile(
+      path: '$projectRoot/lib/app/models/user.dart',
+      content: rendered,
+      force: force,
+    );
+  }
+
+  void _createTeamModel({
+    required bool force,
+  }) {
+    final String stub = StubLoader.load(
+      'install/team',
+      searchPaths: getStubSearchPaths(),
+    );
+
+    _safeWriteFile(
+      path: '$projectRoot/lib/app/models/team.dart',
+      content: stub,
+      force: force,
+    );
+  }
+
+  void _createDashboardView({
+    required bool force,
+  }) {
+    final String stub = StubLoader.load(
+      'install/dashboard_view',
+      searchPaths: getStubSearchPaths(),
+    );
+
+    Directory('$projectRoot/lib/resources/views').createSync(recursive: true);
+
+    _safeWriteFile(
+      path: '$projectRoot/lib/resources/views/dashboard_view.dart',
+      content: stub,
+      force: force,
+    );
+  }
+
+  void _createAppRoutes({
+    required bool force,
+  }) {
+    final String stub = StubLoader.load(
+      'install/app_routes',
+      searchPaths: getStubSearchPaths(),
+    );
+
+    Directory('$projectRoot/lib/routes').createSync(recursive: true);
+
+    _safeWriteFile(
+      path: '$projectRoot/lib/routes/app.dart',
+      content: stub,
+      force: force,
+    );
+  }
+
+  void _safeWriteFile({
+    required String path,
+    required String content,
+    required bool force,
+  }) {
+    final String relativePath = path.replaceFirst('$projectRoot/', '');
+
+    if (FileHelper.fileExists(path) && !force) {
+      info('Skipped: $relativePath (already exists)');
+      return;
+    }
+
+    if (FileHelper.fileExists(path) && force) {
+      warn('Overwritten: $relativePath');
+    } else {
+      success('Created: $relativePath');
+    }
+
+    FileHelper.writeFile(path, content);
   }
 
   void _injectTranslationAssetIntoPubspec() {
@@ -482,22 +666,21 @@ class InstallCommand extends Command {
     String content,
   ) {
     // Find the flutter: section at the start of a line.
-    final flutterMatch = RegExp(r'^flutter:\s*$', multiLine: true)
-        .firstMatch(content);
+    final flutterMatch =
+        RegExp(r'^flutter:\s*$', multiLine: true).firstMatch(content);
     if (flutterMatch == null) {
       return false;
     }
 
     // Find the next unindented key (start of next section).
     final nextSectionMatch = RegExp(
-      r'^[^ \t]',
+      r'^\S',
       multiLine: true,
-    ).firstMatch(content.substring(flutterMatch.start + 1));
+    ).firstMatch(content.substring(flutterMatch.end));
     final flutterEnd = nextSectionMatch != null
-        ? flutterMatch.start + 1 + nextSectionMatch.start
+        ? flutterMatch.end + nextSectionMatch.start
         : content.length;
-    final flutterSection =
-        content.substring(flutterMatch.start, flutterEnd);
+    final flutterSection = content.substring(flutterMatch.start, flutterEnd);
 
     // Early return if no assets: key in the flutter section.
     if (!flutterSection.contains('assets:')) {
@@ -523,9 +706,7 @@ class InstallCommand extends Command {
 
     // Insertion point: after the last asset item.
     final lastAsset = assetItems.last;
-    final injectionPoint = flutterMatch.start +
-        assetsMatch.end +
-        lastAsset.end;
+    final injectionPoint = flutterMatch.start + assetsMatch.end + lastAsset.end;
 
     // Insert the new asset on a new line.
     final String updated =
@@ -542,22 +723,21 @@ class InstallCommand extends Command {
     String content,
   ) {
     // Find flutter: at the beginning of a line.
-    final flutterMatch = RegExp(r'^flutter:\s*$', multiLine: true)
-        .firstMatch(content);
+    final flutterMatch =
+        RegExp(r'^flutter:\s*$', multiLine: true).firstMatch(content);
     if (flutterMatch == null) {
       return false;
     }
 
     // Find the next unindented key.
     final nextSectionMatch = RegExp(
-      r'^[^ \t]',
+      r'^\S',
       multiLine: true,
-    ).firstMatch(content.substring(flutterMatch.start + 1));
+    ).firstMatch(content.substring(flutterMatch.end));
     final flutterEnd = nextSectionMatch != null
-        ? flutterMatch.start + 1 + nextSectionMatch.start
+        ? flutterMatch.end + nextSectionMatch.start
         : content.length;
-    final flutterSection =
-        content.substring(flutterMatch.start, flutterEnd);
+    final flutterSection = content.substring(flutterMatch.start, flutterEnd);
 
     // Skip if assets: already exists in the flutter section.
     if (flutterSection.contains('assets:')) {
