@@ -1,0 +1,24 @@
+import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart';
+
+import '../resources/views/dashboard_view.dart';
+
+/// Application routes.
+///
+/// Registers auth-protected routes with AppLayout. Add more routes inside the
+/// [MagicRoute.group] routes closure following the pattern below.
+void registerAppRoutes() {
+  // Auth-protected routes with AppLayout
+  MagicRoute.group(
+    layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
+    middleware: ['auth'],
+    layoutId: 'app',
+    routes: () {
+      // Dashboard
+      MagicRoute.page('/', () => const DashboardView());
+
+      // TODO: Add more routes here
+      // MagicRoute.page('/example', () => ExampleController.instance.index());
+    },
+  );
+}

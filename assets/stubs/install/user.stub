@@ -1,0 +1,189 @@
+import 'dart:convert';
+
+import 'package:magic/magic.dart';
+
+{{ teams_import }}
+/// User model.
+///
+/// Represents the authenticated user in the application. Extends the Magic
+/// ORM [Model] with [HasTimestamps], [InteractsWithPersistence], and
+/// [Authenticatable] mixins to provide full persistence, timestamp tracking,
+/// and authentication support.
+///
+/// ## Usage with Typed Accessors
+///
+/// ```dart
+/// final user = await User.find('abc123');
+/// Log.debug(user?.name); // Uses typed accessor
+/// user?.name = 'Updated Name';
+/// await user?.save();
+/// ```
+///
+/// ## Usage with Convenient get/set
+///
+/// ```dart
+/// final user = await User.find('abc123');
+/// Log.debug(user?.get<String>('name', defaultValue: 'Unknown'));
+/// user?.set('name', 'Updated Name');
+/// await user?.save();
+/// ```
+///
+/// ## Accessing the Authenticated User
+///
+/// ```dart
+/// final user = User.current;
+/// Log.debug(user.name);
+/// ```
+class User extends Model
+    with HasTimestamps, InteractsWithPersistence, Authenticatable {
+  /// The table associated with the model.
+  @override
+  String get table => 'users';
+
+  /// The API resource for remote operations.
+  @override
+  String get resource => 'users';
+
+  /// Whether the primary key is auto-incrementing.
+  ///
+  /// Set to false because this app uses string UUIDs as primary keys.
+  @override
+  bool get incrementing => false;
+
+  /// The attributes that are mass assignable.
+  @override
+  List<String> get fillable => [
+    'name',
+    'email',
+    'phone',
+    'timezone',
+    'language',
+  ];
+
+  /// The attributes that should be cast.
+  @override
+  Map<String, String> get casts => {};
+
+  // ---------------------------------------------------------------------------
+  // Typed Accessors
+  // ---------------------------------------------------------------------------
+
+  /// Get the user's ID.
+  @override
+  String get id => getAttribute('id')?.toString() ?? '';
+
+  /// Get the user's name.
+  String? get name => getAttribute('name') as String?;
+
+  /// Set the user's name.
+  set name(String? value) => setAttribute('name', value);
+
+  /// Get the user's email address.
+  String? get email => getAttribute('email') as String?;
+
+  /// Set the user's email address.
+  set email(String? value) => setAttribute('email', value);
+
+  /// Get the user's phone number.
+  String? get phone => getAttribute('phone') as String?;
+
+  /// Set the user's phone number.
+  set phone(String? value) => setAttribute('phone', value);
+
+  /// Get the user's timezone identifier (e.g. `America/New_York`).
+  String? get timezone => getAttribute('timezone') as String?;
+
+  /// Set the user's timezone identifier.
+  set timezone(String? value) => setAttribute('timezone', value);
+
+  /// Get the user's preferred language code (e.g. `en`, `tr`).
+  String? get language => getAttribute('language') as String?;
+
+  /// Set the user's preferred language code.
+  set language(String? value) => setAttribute('language', value);
+
+  /// Get the URL of the user's profile photo.
+  String? get profilePhotoUrl => getAttribute('profile_photo_url') as String?;
+
+{{ teams_block }}
+  // ---------------------------------------------------------------------------
+  // Static Helpers
+  // ---------------------------------------------------------------------------
+
+  /// Find a user by ID.
+  ///
+  /// Returns `null` if no user with the given [id] exists.
+  ///
+  /// ```dart
+  /// final user = await User.find('abc123');
+  /// ```
+  static Future<User?> find(dynamic id) =>
+      InteractsWithPersistence.findById<User>(id, User.new);
+
+  /// Get all users.
+  ///
+  /// ```dart
+  /// final users = await User.all();
+  /// ```
+  static Future<List<User>> all() =>
+      InteractsWithPersistence.allModels<User>(User.new);
+
+  /// Get the currently authenticated user.
+  ///
+  /// Returns an empty [User] instance when no user is authenticated. Callers
+  /// should prefer `Auth.check()` before accessing user data to avoid
+  /// operating on an empty model.
+  ///
+  /// ```dart
+  /// if (Auth.check()) {
+  ///   final user = User.current;
+  ///   Log.debug(user.name);
+  /// }
+  /// ```
+  static User get current => Auth.user<User>() ?? User();
+
+  // ---------------------------------------------------------------------------
+  // Flutter-Familiar Factory Methods
+  // ---------------------------------------------------------------------------
+
+  /// Create a [User] from a [Map].
+  ///
+  /// Uses [setRawAttributes] to hydrate the model directly from raw API data,
+  /// bypassing mass-assignment protection. The [exists] flag is set based on
+  /// whether the map contains an `id` key.
+  ///
+  /// ```dart
+  /// final user = User.fromMap({'id': 'abc123', 'name': 'Jane', 'email': 'jane@example.com'});
+  /// ```
+  static User fromMap(Map<String, dynamic> map) {
+    return User()
+      ..setRawAttributes(map, sync: true)
+      ..exists = map.containsKey('id');
+  }
+
+  /// Create a [User] from a JSON string.
+  ///
+  /// Decodes [json] and delegates to [fromMap].
+  ///
+  /// ```dart
+  /// final user = User.fromJson('{"id":"abc123","name":"Jane"}');
+  /// ```
+  static User fromJson(String json) {
+    final map = jsonDecode(json) as Map<String, dynamic>;
+    return User.fromMap(map);
+  }
+
+  /// Convert this model to a plain [Map].
+  ///
+  /// ```dart
+  /// final map = user.toMap();
+  /// ```
+  Map<String, dynamic> toMap() => getAttributes();
+
+  /// Serialize this model to a JSON string.
+  ///
+  /// ```dart
+  /// final json = user.toJson();
+  /// ```
+  String toJson() => jsonEncode(toMap());
+}

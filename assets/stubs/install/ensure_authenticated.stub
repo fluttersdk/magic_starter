@@ -13,11 +13,11 @@ import 'package:magic_starter/magic_starter.dart';
 /// ```
 class EnsureAuthenticated extends MagicMiddleware {
   @override
-  Future<void> handle(MagicRequest request, Function next) async {
+  Future<void> handle(void Function() next) async {
     if (!Auth.check()) {
-      MagicRoute.offAllNamed(MagicStarterConfig.loginRoute());
+      MagicRoute.to(MagicStarterConfig.loginRoute());
       return;
     }
-    await next();
+    next();
   }
 }

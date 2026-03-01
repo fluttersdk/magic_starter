@@ -1,46 +1,77 @@
+import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import '../models/user.dart';
+{{ teams_import }}
 
 /// Application Service Provider.
 ///
-/// Bootstrap Magic Starter facade configuration.
+/// Bootstraps Magic Starter by registering user model, navigation, logout,
+/// locale options, and any optional feature integrations (teams, social login,
+/// notifications). Call order matters — user factory must be set before any
+/// Auth restoration attempt.
 class AppServiceProvider extends ServiceProvider {
-  AppServiceProvider(super.app);
+    AppServiceProvider(super.app);
 
-  @override
-  void register() {
-    // Bind your services here (sync only — do not resolve other services).
-  }
+    @override
+    void register() {
+        // Bind your application services here (sync only — do not resolve other
+        // services or call facades in this method).
+    }
 
-  @override
-  Future<void> boot() async {
-    // 1. Set the user factory so Auth.user<T>() returns your model.
-    Auth.manager.setUserFactory((data) => MagicStarterAuthUser.fromMap(data));
+    @override
+    Future<void> boot() async {
+        // 1. Register user factory so Auth.user<User>() returns your model and
+        //    session restoration works after token refresh.
+        Auth.manager.setUserFactory((data) => User.fromMap(data));
 
-    // 2. Register navigation items for the app layout.
-    MagicStarter.useNavigation(
-      mainItems: [
-        StarterNavItem(
-          label: 'Dashboard',
-          route: MagicStarterConfig.homeRoute(),
-        ),
-      ],
-    );
+        // 2. Register the same factory with Magic Starter so the plugin's own
+        //    profile/team views receive a typed user instance.
+        MagicStarter.useUserModel((data) => User.fromMap(data));
 
-    // 3. Register logout callback.
-    MagicStarter.useLogout(() async {
-      await Auth.logout();
-      MagicRoute.offAllNamed(MagicStarterConfig.loginRoute());
-    });
+        // 3. Register navigation items for both the desktop sidebar (mainItems)
+        //    and the mobile bottom bar (bottomItems).
+        MagicStarter.useNavigation(
+            mainItems: [
+                StarterNavItem(
+                    icon: Icons.dashboard_outlined,
+                    labelKey: 'nav.dashboard',
+                    path: MagicStarterConfig.homeRoute(),
+                ),
+                StarterNavItem(
+                    icon: Icons.settings_outlined,
+                    labelKey: 'nav.settings',
+                    path: MagicStarterConfig.profileRoute(),
+                ),
+            ],
+            bottomItems: [
+                StarterNavItem(
+                    icon: Icons.dashboard_outlined,
+                    labelKey: 'nav.dashboard',
+                    path: MagicStarterConfig.homeRoute(),
+                ),
+                StarterNavItem(
+                    icon: Icons.settings_outlined,
+                    labelKey: 'nav.settings',
+                    path: MagicStarterConfig.profileRoute(),
+                ),
+            ],
+        );
 
-    // 4. Register locale options.
-    MagicStarter.useLocaleOptions({
-      'en': 'English',
-      'tr': 'Türkçe',
-    });
+        // 4. Register logout callback — clear session and redirect to login.
+        MagicStarter.useLogout(() async {
+            await Auth.logout();
+            MagicRoute.to(MagicStarterConfig.loginRoute());
+        });
+
+        // 5. Register supported locale options for language selection in the
+        //    profile settings view.
+        MagicStarter.useLocaleOptions({
+            'en': 'English',
+        });
 
 {{ teams_block }}
-
+{{ social_login_block }}
 {{ notifications_block }}
-  }
+    }
 }
