@@ -373,7 +373,7 @@ class InstallCommand extends Command {
 
     final String updated = content.replaceFirst(
       RegExp(r'}\s*$'),
-      '${registerBlock}\n}',
+      '$registerBlock\n}',
     );
 
     FileHelper.writeFile(kernelPath, updated);

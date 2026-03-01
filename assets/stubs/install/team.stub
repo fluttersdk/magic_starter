@@ -28,169 +28,169 @@ import 'package:magic_starter/magic_starter.dart';
 /// final starterTeam = team.toStarterTeam();
 /// ```
 class Team extends Model with HasTimestamps, InteractsWithPersistence {
-    /// The table associated with the model.
-    @override
-    String get table => 'teams';
+  /// The table associated with the model.
+  @override
+  String get table => 'teams';
 
-    /// The API resource for remote operations.
-    @override
-    String get resource => 'teams';
+  /// The API resource for remote operations.
+  @override
+  String get resource => 'teams';
 
-    /// Whether the primary key is auto-incrementing.
-    ///
-    /// Set to false because this app uses string UUIDs as primary keys.
-    @override
-    bool get incrementing => false;
+  /// Whether the primary key is auto-incrementing.
+  ///
+  /// Set to false because this app uses string UUIDs as primary keys.
+  @override
+  bool get incrementing => false;
 
-    /// The attributes that are mass assignable.
-    @override
-    List<String> get fillable => [
-        'name',
-    ];
+  /// The attributes that are mass assignable.
+  @override
+  List<String> get fillable => [
+      'name',
+  ];
 
-    /// The attributes that should be cast.
-    @override
-    Map<String, String> get casts => {};
+  /// The attributes that should be cast.
+  @override
+  Map<String, String> get casts => {};
 
-    // ---------------------------------------------------------------------------
-    // Typed Accessors
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Typed Accessors
+  // ---------------------------------------------------------------------------
 
-    /// Get the team's ID.
-    @override
-    String get id => getAttribute('id')?.toString() ?? '';
+  /// Get the team's ID.
+  @override
+  String get id => getAttribute('id')?.toString() ?? '';
 
-    /// Get the team name.
-    String? get name => getAttribute('name') as String?;
+  /// Get the team name.
+  String? get name => getAttribute('name') as String?;
 
-    /// Set the team name.
-    set name(String? value) => setAttribute('name', value);
+  /// Set the team name.
+  set name(String? value) => setAttribute('name', value);
 
-    /// Get the URL of the team's profile photo.
-    String? get profilePhotoUrl => getAttribute('profile_photo_url') as String?;
+  /// Get the URL of the team's profile photo.
+  String? get profilePhotoUrl => getAttribute('profile_photo_url') as String?;
 
-    /// Set the URL of the team's profile photo.
-    set profilePhotoUrl(String? value) => setAttribute('profile_photo_url', value);
+  /// Set the URL of the team's profile photo.
+  set profilePhotoUrl(String? value) => setAttribute('profile_photo_url', value);
 
-    /// Check if this is a personal team (automatically created for the owner).
-    bool get isPersonalTeam => getAttribute('personal_team') == true;
+  /// Check if this is a personal team (automatically created for the owner).
+  bool get isPersonalTeam => getAttribute('personal_team') == true;
 
-    /// Get the ID of the team's owner.
-    String? get ownerId => getAttribute('owner_id')?.toString();
+  /// Get the ID of the team's owner.
+  String? get ownerId => getAttribute('owner_id')?.toString();
 
-    /// Current authenticated user's role in this team (from API response).
-    ///
-    /// Typical values: `'owner'`, `'admin'`, `'editor'`, `'member'`.
-    String? get userRole => getAttribute('user_role') as String?;
+  /// Current authenticated user's role in this team (from API response).
+  ///
+  /// Typical values: `'owner'`, `'admin'`, `'editor'`, `'member'`.
+  String? get userRole => getAttribute('user_role') as String?;
 
-    // ---------------------------------------------------------------------------
-    // Permission Helpers
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Permission Helpers
+  // ---------------------------------------------------------------------------
 
-    /// Whether the current user can manage team members (owner or admin).
-    bool get canManageMembers => userRole == 'owner' || userRole == 'admin';
+  /// Whether the current user can manage team members (owner or admin).
+  bool get canManageMembers => userRole == 'owner' || userRole == 'admin';
 
-    /// Whether the current user can edit team settings.
-    ///
-    /// Restricted to the owner only. Use [canManageMembers] for broader
-    /// write access that includes admins.
-    bool get canEdit => isOwner;
+  /// Whether the current user can edit team settings.
+  ///
+  /// Restricted to the owner only. Use [canManageMembers] for broader
+  /// write access that includes admins.
+  bool get canEdit => isOwner;
 
-    /// Whether the current authenticated user is the owner of this team.
-    bool get isOwner => Auth.id() == ownerId;
+  /// Whether the current authenticated user is the owner of this team.
+  bool get isOwner => Auth.id() == ownerId;
 
-    // ---------------------------------------------------------------------------
-    // Static Helpers
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Static Helpers
+  // ---------------------------------------------------------------------------
 
-    /// Find a team by ID.
-    ///
-    /// Returns `null` if no team with the given [id] exists.
-    ///
-    /// ```dart
-    /// final team = await Team.find('abc123');
-    /// ```
-    static Future<Team?> find(dynamic id) =>
-        InteractsWithPersistence.findById<Team>(id, Team.new);
+  /// Find a team by ID.
+  ///
+  /// Returns `null` if no team with the given [id] exists.
+  ///
+  /// ```dart
+  /// final team = await Team.find('abc123');
+  /// ```
+  static Future<Team?> find(dynamic id) =>
+      InteractsWithPersistence.findById<Team>(id, Team.new);
 
-    /// Get all teams.
-    ///
-    /// ```dart
-    /// final teams = await Team.all();
-    /// ```
-    static Future<List<Team>> all() =>
-        InteractsWithPersistence.allModels<Team>(Team.new);
+  /// Get all teams.
+  ///
+  /// ```dart
+  /// final teams = await Team.all();
+  /// ```
+  static Future<List<Team>> all() =>
+      InteractsWithPersistence.allModels<Team>(Team.new);
 
-    // ---------------------------------------------------------------------------
-    // Factory Methods
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Factory Methods
+  // ---------------------------------------------------------------------------
 
-    /// Create a [Team] from a [Map].
-    ///
-    /// Uses [setRawAttributes] to hydrate the model directly from raw API data,
-    /// bypassing mass-assignment protection. The [exists] flag is set based on
-    /// whether the map contains an `id` key.
-    ///
-    /// ```dart
-    /// final team = Team.fromMap({'id': 'abc123', 'name': 'Acme Corp'});
-    /// ```
-    static Team fromMap(Map<String, dynamic> map) {
-        return Team()
-            ..setRawAttributes(map, sync: true)
-            ..exists = map.containsKey('id');
-    }
+  /// Create a [Team] from a [Map].
+  ///
+  /// Uses [setRawAttributes] to hydrate the model directly from raw API data,
+  /// bypassing mass-assignment protection. The [exists] flag is set based on
+  /// whether the map contains an `id` key.
+  ///
+  /// ```dart
+  /// final team = Team.fromMap({'id': 'abc123', 'name': 'Acme Corp'});
+  /// ```
+  static Team fromMap(Map<String, dynamic> map) {
+      return Team()
+          ..setRawAttributes(map, sync: true)
+          ..exists = map.containsKey('id');
+  }
 
-    /// Create a [Team] from a JSON string.
-    ///
-    /// Decodes [json] and delegates to [fromMap].
-    ///
-    /// ```dart
-    /// final team = Team.fromJson('{"id":"abc123","name":"Acme Corp"}');
-    /// ```
-    static Team fromJson(String json) {
-        final map = jsonDecode(json) as Map<String, dynamic>;
-        return Team.fromMap(map);
-    }
+  /// Create a [Team] from a JSON string.
+  ///
+  /// Decodes [json] and delegates to [fromMap].
+  ///
+  /// ```dart
+  /// final team = Team.fromJson('{"id":"abc123","name":"Acme Corp"}');
+  /// ```
+  static Team fromJson(String json) {
+      final map = jsonDecode(json) as Map<String, dynamic>;
+      return Team.fromMap(map);
+  }
 
-    // ---------------------------------------------------------------------------
-    // Serialization
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Serialization
+  // ---------------------------------------------------------------------------
 
-    /// Convert this model to a plain [Map].
-    ///
-    /// ```dart
-    /// final map = team.toMap();
-    /// ```
-    Map<String, dynamic> toMap() => getAttributes();
+  /// Convert this model to a plain [Map].
+  ///
+  /// ```dart
+  /// final map = team.toMap();
+  /// ```
+  Map<String, dynamic> toMap() => getAttributes();
 
-    /// Serialize this model to a JSON string.
-    ///
-    /// ```dart
-    /// final json = team.toJson();
-    /// ```
-    String toJson() => jsonEncode(toMap());
+  /// Serialize this model to a JSON string.
+  ///
+  /// ```dart
+  /// final json = team.toJson();
+  /// ```
+  String toJson() => jsonEncode(toMap());
 
-    // ---------------------------------------------------------------------------
-    // Plugin Interop
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Plugin Interop
+  // ---------------------------------------------------------------------------
 
-    /// Convert to [StarterTeam] for the magic_starter plugin's team resolver.
-    ///
-    /// Used by [MagicStarter.useTeamResolver] so the plugin can access
-    /// team data without depending on the host app's concrete [Team] class.
-    ///
-    /// ```dart
-    /// MagicStarter.useTeamResolver(
-    ///   currentTeam: () async => (await Team.find(currentId))?.toStarterTeam(),
-    ///   allTeams: () async => (await Team.all()).map((t) => t.toStarterTeam()).toList(),
-    /// );
-    /// ```
-    StarterTeam toStarterTeam() {
-        return StarterTeam(
-            id: id,
-            name: name ?? '',
-            photoUrl: profilePhotoUrl,
-            isPersonalTeam: isPersonalTeam,
-        );
-    }
+  /// Convert to [StarterTeam] for the magic_starter plugin's team resolver.
+  ///
+  /// Used by [MagicStarter.useTeamResolver] so the plugin can access
+  /// team data without depending on the host app's concrete [Team] class.
+  ///
+  /// ```dart
+  /// MagicStarter.useTeamResolver(
+  ///   currentTeam: () async => (await Team.find(currentId))?.toStarterTeam(),
+  ///   allTeams: () async => (await Team.all()).map((t) => t.toStarterTeam()).toList(),
+  /// );
+  /// ```
+  StarterTeam toStarterTeam() {
+      return StarterTeam(
+          id: id,
+          name: name ?? '',
+          photoUrl: profilePhotoUrl,
+          isPersonalTeam: isPersonalTeam,
+      );
+  }
 }
