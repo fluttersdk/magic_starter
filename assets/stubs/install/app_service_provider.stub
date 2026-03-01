@@ -1,0 +1,46 @@
+import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart';
+
+/// Application Service Provider.
+///
+/// Bootstrap Magic Starter facade configuration.
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  void register() {
+    // Bind your services here (sync only — do not resolve other services).
+  }
+
+  @override
+  Future<void> boot() async {
+    // 1. Set the user factory so Auth.user<T>() returns your model.
+    Auth.manager.setUserFactory((data) => MagicStarterAuthUser.fromMap(data));
+
+    // 2. Register navigation items for the app layout.
+    MagicStarter.useNavigation(
+      mainItems: [
+        StarterNavItem(
+          label: 'Dashboard',
+          route: MagicStarterConfig.homeRoute(),
+        ),
+      ],
+    );
+
+    // 3. Register logout callback.
+    MagicStarter.useLogout(() async {
+      await Auth.logout();
+      MagicRoute.offAllNamed(MagicStarterConfig.loginRoute());
+    });
+
+    // 4. Register locale options.
+    MagicStarter.useLocaleOptions({
+      'en': 'English',
+      'tr': 'Türkçe',
+    });
+
+{{ teams_block }}
+
+{{ notifications_block }}
+  }
+}

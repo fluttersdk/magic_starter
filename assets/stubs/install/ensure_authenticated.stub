@@ -1,0 +1,23 @@
+import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart';
+
+/// Middleware that redirects unauthenticated users to the login page.
+///
+/// Use this in auth-only route groups:
+///
+/// ```dart
+/// MagicRoute.group(
+///   middleware: [EnsureAuthenticated()],
+///   routes: () { /* protected routes */ },
+/// );
+/// ```
+class EnsureAuthenticated extends MagicMiddleware {
+  @override
+  Future<void> handle(MagicRequest request, Function next) async {
+    if (!Auth.check()) {
+      MagicRoute.offAllNamed(MagicStarterConfig.loginRoute());
+      return;
+    }
+    await next();
+  }
+}
