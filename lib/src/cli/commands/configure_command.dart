@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:magic_cli/magic_cli.dart';
 
@@ -101,7 +100,7 @@ class ConfigureCommand extends Command {
     }
 
     // 5. Write the updated content back to the config file.
-    File(_configPath).writeAsStringSync(updated);
+    FileHelper.writeFile(_configPath, updated);
 
     success('Configuration updated successfully.');
   }

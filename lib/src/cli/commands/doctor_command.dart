@@ -140,7 +140,7 @@ class DoctorCommand extends Command {
         .contains('registerMagicStarterAuthRoutes');
   }
 
-  /// Check that `MagicStarter.useUserModel` is configured in `app_service_provider.dart`.
+  /// Check that `MagicStarter.useNavigation` is configured in `app_service_provider.dart`.
   ///
   /// Returns `false` when the file is absent or does not contain the facade setup.
   bool checkFacadeSetup(String root) {
@@ -153,7 +153,7 @@ class DoctorCommand extends Command {
 
     return File(providerPath)
         .readAsStringSync()
-        .contains('MagicStarter.useUserModel');
+        .contains('MagicStarter.useNavigation');
   }
 
   /// Check that the translation file `assets/lang/en.json` exists.

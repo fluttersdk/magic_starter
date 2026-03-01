@@ -274,6 +274,12 @@ class UninstallCommand extends Command {
       '',
     );
 
+    // Remove the empty Kernel.registerAll({}) block if all aliases were removed.
+    content = content.replaceAll(
+      RegExp(r'\s*Kernel\.registerAll\(\{\s*\}\);\n?'),
+      '',
+    );
+
     FileHelper.writeFile(kernelPath, content);
     success(
         'Removed Magic Starter middleware entries from lib/app/kernel.dart');

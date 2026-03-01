@@ -456,22 +456,137 @@ class InstallCommand extends Command {
       return;
     }
 
-    final String content = FileHelper.readFile(pubspecPath);
+    String content = FileHelper.readFile(pubspecPath);
     if (content.contains('- assets/lang/en.json')) {
       return;
     }
 
-    if (content.contains('flutter:\n  assets:')) {
-      final String updated = content.replaceFirst(
-        'flutter:\n  assets:\n',
-        'flutter:\n  assets:\n    - assets/lang/en.json\n',
-      );
-      FileHelper.writeFile(pubspecPath, updated);
+    // 1. Attempt to inject into existing flutter: section with assets: list.
+    if (_tryInjectIntoFlutterAssets(pubspecPath, content)) {
       return;
     }
 
+    // 2. Attempt to create assets: list in existing flutter: section.
+    if (_tryCreateAssetsInFlutterSection(pubspecPath, content)) {
+      return;
+    }
+
+    // 3. No flutter: section at all — append a new one.
+    _appendFlutterSection(pubspecPath, content);
+  }
+
+  /// Injects the asset into an existing flutter: section that has an
+  /// assets: list. Returns true if successful, false otherwise.
+  bool _tryInjectIntoFlutterAssets(
+    String pubspecPath,
+    String content,
+  ) {
+    // Find the flutter: section at the start of a line.
+    final flutterMatch = RegExp(r'^flutter:\s*$', multiLine: true)
+        .firstMatch(content);
+    if (flutterMatch == null) {
+      return false;
+    }
+
+    // Find the next unindented key (start of next section).
+    final nextSectionMatch = RegExp(
+      r'^[^ \t]',
+      multiLine: true,
+    ).firstMatch(content.substring(flutterMatch.start + 1));
+    final flutterEnd = nextSectionMatch != null
+        ? flutterMatch.start + 1 + nextSectionMatch.start
+        : content.length;
+    final flutterSection =
+        content.substring(flutterMatch.start, flutterEnd);
+
+    // Early return if no assets: key in the flutter section.
+    if (!flutterSection.contains('assets:')) {
+      return false;
+    }
+
+    // Find the position of 'assets:' within the flutter section.
+    final assetsMatch =
+        RegExp(r'^  assets:\s*$', multiLine: true).firstMatch(flutterSection);
+    if (assetsMatch == null) {
+      return false;
+    }
+
+    // Find all asset items (lines starting with '    - ').
+    final List<Match> assetItems = RegExp(
+      r'^    - .+$',
+      multiLine: true,
+    ).allMatches(flutterSection.substring(assetsMatch.end)).toList();
+
+    if (assetItems.isEmpty) {
+      return false;
+    }
+
+    // Insertion point: after the last asset item.
+    final lastAsset = assetItems.last;
+    final injectionPoint = flutterMatch.start +
+        assetsMatch.end +
+        lastAsset.end;
+
+    // Insert the new asset on a new line.
     final String updated =
-        '$content\nflutter:\n  assets:\n    - assets/lang/en.json\n';
+        '${content.substring(0, injectionPoint)}\n    - assets/lang/en.json${content.substring(injectionPoint)}';
+
+    FileHelper.writeFile(pubspecPath, updated);
+    return true;
+  }
+
+  /// Creates an assets: list in an existing flutter: section that lacks one.
+  /// Returns true if successful, false otherwise.
+  bool _tryCreateAssetsInFlutterSection(
+    String pubspecPath,
+    String content,
+  ) {
+    // Find flutter: at the beginning of a line.
+    final flutterMatch = RegExp(r'^flutter:\s*$', multiLine: true)
+        .firstMatch(content);
+    if (flutterMatch == null) {
+      return false;
+    }
+
+    // Find the next unindented key.
+    final nextSectionMatch = RegExp(
+      r'^[^ \t]',
+      multiLine: true,
+    ).firstMatch(content.substring(flutterMatch.start + 1));
+    final flutterEnd = nextSectionMatch != null
+        ? flutterMatch.start + 1 + nextSectionMatch.start
+        : content.length;
+    final flutterSection =
+        content.substring(flutterMatch.start, flutterEnd);
+
+    // Skip if assets: already exists in the flutter section.
+    if (flutterSection.contains('assets:')) {
+      return false;
+    }
+
+    // Find the end of the 'flutter:' line.
+    final flutterLineEnd = content.indexOf('\n', flutterMatch.end);
+    if (flutterLineEnd == -1) {
+      return false;
+    }
+
+    // Insert new assets list after 'flutter:' line.
+    final String updated =
+        '${content.substring(0, flutterLineEnd + 1)}  assets:\n    - assets/lang/en.json\n${content.substring(flutterLineEnd + 1)}';
+
+    FileHelper.writeFile(pubspecPath, updated);
+    return true;
+  }
+
+  /// Appends a new flutter: section to the end of the pubspec.yaml.
+  void _appendFlutterSection(
+    String pubspecPath,
+    String content,
+  ) {
+    final String trailing = content.endsWith('\n') ? '' : '\n';
+    final String updated =
+        '$content${trailing}flutter:\n  assets:\n    - assets/lang/en.json\n';
+
     FileHelper.writeFile(pubspecPath, updated);
   }
 
