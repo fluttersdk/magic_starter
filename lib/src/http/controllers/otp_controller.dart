@@ -134,11 +134,13 @@ class StarterOtpController extends MagicController
       final token = data?['token'] as String?;
       final userData = data?['user'] as Map<String, dynamic>?;
 
-      if (token != null) {
-        final user =
-            userData != null ? MagicStarter.createUser(userData) : null;
-
-        await Auth.login({'token': token}, user!);
+      if (token != null && userData != null) {
+        await Auth.login(
+          {
+            'token': token,
+          },
+          MagicStarter.createUser(userData),
+        );
       }
 
       // 3. Navigate home on successful authentication.

@@ -22,6 +22,8 @@ class StarterProfileController extends MagicController
     String? phoneCountry,
     String? timezone,
     String? language,
+    String? password,
+    String? passwordConfirmation,
   }) async {
     if (_isSubmitting) return false;
     _isSubmitting = true;
@@ -37,6 +39,9 @@ class StarterProfileController extends MagicController
           'phone_country': phoneCountry,
         if (timezone != null && timezone.isNotEmpty) 'timezone': timezone,
         if (language != null && language.isNotEmpty) 'language': language,
+        if (password != null && password.isNotEmpty) 'password': password,
+        if (passwordConfirmation != null && passwordConfirmation.isNotEmpty)
+          'password_confirmation': passwordConfirmation,
       };
 
       final response = await Http.put(

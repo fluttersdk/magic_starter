@@ -162,20 +162,15 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               WDiv(
                 className: 'flex flex-row items-center gap-2 mb-6',
                 children: [
-                  Checkbox(
+                  WFormCheckbox(
                     value: _subscribeNewsletter,
-                    onChanged: (val) =>
-                        setState(() => _subscribeNewsletter = val ?? false),
-                    activeColor: Theme.of(context).primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  Expanded(
-                    child: WText(
+                    onChanged: (value) =>
+                        setState(() => _subscribeNewsletter = value),
+                    label: WText(
                       MagicStarter.manager.newsletterLabel ??
                           trans('magic_starter.newsletter.subscribe_label'),
-                      className: 'text-sm text-gray-600 dark:text-gray-400',
+                      className:
+                          'text-sm text-gray-600 dark:text-gray-400 ml-1',
                     ),
                   ),
                 ],

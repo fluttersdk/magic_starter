@@ -1170,7 +1170,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             WFormInput(
               controller: upgradeForm['password'],
               label: trans('attributes.password'),
-              type: _obscureUpgradePassword ? InputType.password : InputType.text,
+              type:
+                  _obscureUpgradePassword ? InputType.password : InputType.text,
               validator: rules([Required(), Min(8)], field: 'password'),
               suffix: WAnchor(
                 onTap: () => setState(
@@ -1237,6 +1238,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       phoneCountry: profileForm.get('phone_country'),
       timezone: profileForm.get('timezone'),
       language: profileForm.get('language'),
+      password: upgradeForm.get('password'),
+      passwordConfirmation: upgradeForm.get('password_confirmation'),
     );
   }
 }

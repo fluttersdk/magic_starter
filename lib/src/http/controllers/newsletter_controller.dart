@@ -1,9 +1,8 @@
 import 'package:magic/magic.dart';
 
-import '../../facades/magic_starter.dart';
-
 /// Controller for newsletter subscription management.
-class StarterNewsletterController extends MagicController with MagicStateMixin, ValidatesRequests {
+class StarterNewsletterController extends MagicController
+    with MagicStateMixin, ValidatesRequests {
   /// Singleton accessor — use this instead of constructing directly.
   static StarterNewsletterController get instance =>
       Magic.findOrPut(StarterNewsletterController.new);

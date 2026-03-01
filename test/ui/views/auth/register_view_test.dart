@@ -32,7 +32,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byType(Checkbox), findsOneWidget);
+      expect(find.byType(WFormCheckbox), findsOneWidget);
     });
 
     testWidgets('hides newsletter checkbox when feature disabled',
@@ -43,7 +43,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byType(Checkbox), findsNothing);
+      expect(find.byType(WFormCheckbox), findsNothing);
     });
 
     testWidgets('shows email field in email-only mode (default)',

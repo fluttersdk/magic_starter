@@ -119,7 +119,6 @@ class MockNetworkDriver implements NetworkDriver {
   }) async =>
       _respond('UPLOAD', url, data: data);
 
-  @override
   bool get hasInterceptors => false;
 }
 
