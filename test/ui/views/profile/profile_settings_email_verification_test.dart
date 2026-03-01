@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -114,7 +115,7 @@ class MockNetworkDriver implements NetworkDriver {
   Future<MagicResponse> upload(
     String url, {
     dynamic data,
-    required Map<String, MagicFile> files,
+    required Map<String, dynamic> files,
     Map<String, String>? headers,
   }) async =>
       _respond('UPLOAD', url, data: data);
@@ -129,6 +130,7 @@ class MockNetworkDriver implements NetworkDriver {
 
 class MockGuard implements Guard {
   Map<String, dynamic>? _userData;
+  String? _token = 'mock-token';
 
   void setVerifiedUser() {
     _userData = {
@@ -149,28 +151,48 @@ class MockGuard implements Guard {
   }
 
   @override
-  Future<bool> check() async => _userData != null;
-
-  @override
-  bool get isAuthenticated => _userData != null;
-
-  @override
-  Map<String, dynamic>? attempt(dynamic credentials) {
-    _userData = {
-      'id': 1,
-      'name': 'Test User',
-      'email': 'test@example.com',
-    };
-    return _userData;
+  Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
+    _token = data['token'] as String?;
   }
 
   @override
-  void logout() {
+  Future<void> logout() async {
     _userData = null;
+    _token = null;
   }
 
   @override
-  Map<String, dynamic>? user() => _userData;
+  bool check() => _userData != null;
+
+  @override
+  bool get guest => !check();
+
+  @override
+  T? user<T extends Model>() {
+    if (_userData == null) return null;
+    return MagicStarterAuthUser.fromMap(_userData!) as T?;
+  }
+
+  @override
+  dynamic id() => _userData?['id'];
+
+  @override
+  void setUser(Authenticatable user) {}
+
+  @override
+  Future<bool> hasToken() async => _token != null;
+
+  @override
+  Future<String?> getToken() async => _token;
+
+  @override
+  Future<bool> refreshToken() async => true;
+
+  @override
+  Future<void> restore() async {}
+
+  @override
+  ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
 // ---------------------------------------------------------------------------
@@ -215,6 +237,9 @@ void main() {
       Auth.manager.forgetGuards();
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
+      Config.set('auth.guards', {
+        'mock': {'driver': 'mock'},
+      });
 
       // 4. Set authenticated user with no email_verified_at.
       mockGuard.setUnverifiedUser();
@@ -251,7 +276,7 @@ void main() {
           find.byWidgetPredicate(
             (widget) =>
                 widget is WText &&
-                widget.content ==
+                widget.data ==
                     trans('magic_starter.email_verification.unverified_title'),
           ),
           findsNothing,
@@ -274,7 +299,7 @@ void main() {
           find.byWidgetPredicate(
             (widget) =>
                 widget is WText &&
-                widget.content ==
+                widget.data ==
                     trans('magic_starter.email_verification.unverified_title'),
           ),
           findsOneWidget,
@@ -297,7 +322,7 @@ void main() {
             (widget) =>
                 widget is WButton &&
                 widget.child is WText &&
-                (widget.child as WText).content ==
+                (widget.child as WText).data ==
                     trans('magic_starter.email_verification.resend_button'),
           ),
           findsOneWidget,
@@ -319,7 +344,7 @@ void main() {
           find.byWidgetPredicate(
             (widget) =>
                 widget is WText &&
-                widget.content ==
+                widget.data ==
                     trans('magic_starter.email_verification.verified'),
           ),
           findsOneWidget,
@@ -342,11 +367,13 @@ void main() {
           (widget) =>
               widget is WButton &&
               widget.child is WText &&
-              (widget.child as WText).content ==
+              (widget.child as WText).data ==
                   trans('magic_starter.email_verification.resend_button'),
         );
 
         expect(resendButton, findsOneWidget);
+        await tester.ensureVisible(resendButton);
+        await tester.pumpAndSettle();
         await tester.tap(resendButton);
         await tester.pumpAndSettle();
 

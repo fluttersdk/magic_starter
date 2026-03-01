@@ -18,6 +18,10 @@ class StarterProfileController extends MagicController
   Future<bool> doUpdateProfile({
     required String name,
     required String email,
+    String? phone,
+    String? phoneCountry,
+    String? timezone,
+    String? language,
   }) async {
     if (_isSubmitting) return false;
     _isSubmitting = true;
@@ -25,9 +29,19 @@ class StarterProfileController extends MagicController
     clearErrors();
 
     try {
+      final data = <String, dynamic>{
+        'name': name,
+        'email': email,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+        if (phoneCountry != null && phoneCountry.isNotEmpty)
+          'phone_country': phoneCountry,
+        if (timezone != null && timezone.isNotEmpty) 'timezone': timezone,
+        if (language != null && language.isNotEmpty) 'language': language,
+      };
+
       final response = await Http.put(
         '/user/profile',
-        data: {'name': name, 'email': email},
+        data: data,
       );
 
       if (!response.successful) {
@@ -193,6 +207,7 @@ class StarterProfileController extends MagicController
       _isSubmitting = false;
     }
   }
+
   /// Enables two-factor authentication for the current user.
   ///
   /// Returns a map containing [secret], [qr_url], [qr_svg], and [recovery_codes]
@@ -250,7 +265,8 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doConfirmTwoFactor] $e\n$stackTrace');
+      Log.error(
+          '[StarterProfileController.doConfirmTwoFactor] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -282,7 +298,8 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doDisableTwoFactor] $e\n$stackTrace');
+      Log.error(
+          '[StarterProfileController.doDisableTwoFactor] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -326,7 +343,8 @@ class StarterProfileController extends MagicController
       if (!response.successful) {
         handleApiError(
           response,
-          fallback: trans('profile.two_factor_recovery_codes_regenerate_failed'),
+          fallback:
+              trans('profile.two_factor_recovery_codes_regenerate_failed'),
         );
         return null;
       }
@@ -335,13 +353,15 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return data?.map((e) => e.toString()).toList();
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doRegenerateRecoveryCodes] $e\n$stackTrace');
+      Log.error(
+          '[StarterProfileController.doRegenerateRecoveryCodes] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return null;
     } finally {
       _isSubmitting = false;
     }
   }
+
   /// Retrieves the current browser sessions.
   Future<List<Map<String, dynamic>>?> getSessions() async {
     if (!MagicStarterConfig.hasSessionsFeatures()) return null;
@@ -428,7 +448,8 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doRevokeOtherSessions] $e\n$stackTrace');
+      Log.error(
+          '[StarterProfileController.doRevokeOtherSessions] $e\n$stackTrace');
       setError(trans('profile.other_sessions_revoke_error'));
       return false;
     } finally {
@@ -462,7 +483,8 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       Magic.toast(trans('magic_starter.email_verification.sent'));
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.sendEmailVerification] $e\n$stackTrace');
+      Log.error(
+          '[StarterProfileController.sendEmailVerification] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     }
   }

@@ -568,7 +568,8 @@ void main() {
           expect(result, isTrue);
           expect(controller.isSuccess, isTrue);
           expect(mockDriver.lastMethod, equals('POST'));
-          expect(mockDriver.lastUrl, equals('/two-factor-authentication/confirm'));
+          expect(
+              mockDriver.lastUrl, equals('/two-factor-authentication/confirm'));
           expect(mockDriver.lastData, equals({'code': '123456'}));
         });
 
@@ -577,7 +578,11 @@ void main() {
             statusCode: 422,
             data: {
               'message': 'Invalid code',
-              'errors': {'code': ['The provided two factor authentication code was invalid.']}
+              'errors': {
+                'code': [
+                  'The provided two factor authentication code was invalid.'
+                ]
+              }
             },
           );
 
@@ -595,13 +600,15 @@ void main() {
             data: {'message': 'Two-factor authentication disabled.'},
           );
 
-          final result = await controller.doDisableTwoFactor(password: 'mysecretpass');
+          final result =
+              await controller.doDisableTwoFactor(password: 'mysecretpass');
 
           expect(result, isTrue);
           expect(controller.isSuccess, isTrue);
           expect(mockDriver.lastMethod, equals('POST'));
           expect(mockDriver.lastUrl, equals('/two-factor-authentication'));
-          expect(mockDriver.lastData, equals({'_method': 'DELETE', 'password': 'mysecretpass'}));
+          expect(mockDriver.lastData,
+              equals({'_method': 'DELETE', 'password': 'mysecretpass'}));
         });
 
         test('failure (422) — returns false', () async {
@@ -609,11 +616,14 @@ void main() {
             statusCode: 422,
             data: {
               'message': 'Invalid password',
-              'errors': {'password': ['The password is incorrect.']}
+              'errors': {
+                'password': ['The password is incorrect.']
+              }
             },
           );
 
-          final result = await controller.doDisableTwoFactor(password: 'wrongpass');
+          final result =
+              await controller.doDisableTwoFactor(password: 'wrongpass');
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);
@@ -692,7 +702,8 @@ void main() {
       });
 
       group('getSessions', () {
-        test('success (200) — returns list of sessions when feature enabled', () async {
+        test('success (200) — returns list of sessions when feature enabled',
+            () async {
           mockDriver.mockResponse(
             statusCode: 200,
             data: {
@@ -749,7 +760,9 @@ void main() {
       });
 
       group('doRevokeSession', () {
-        test('success (200) — returns true and calls DELETE on /sessions/{tokenId}', () async {
+        test(
+            'success (200) — returns true and calls DELETE on /sessions/{tokenId}',
+            () async {
           mockDriver.mockResponse(
             statusCode: 200,
             data: {'message': 'Session revoked successfully.'},
@@ -761,7 +774,7 @@ void main() {
           expect(controller.isSuccess, isTrue);
           expect(mockDriver.lastMethod, equals('DELETE'));
           // note: the secondary call inside getSessions() overrides the lastMethod/lastUrl
-          // expect(mockDriver.lastUrl, equals('/sessions/tok-abc')); 
+          // expect(mockDriver.lastUrl, equals('/sessions/tok-abc'));
         });
 
         test('failure (422) — returns false', () async {
@@ -775,7 +788,8 @@ void main() {
             },
           );
 
-          final result = await controller.doRevokeSession(tokenId: 'invalid-tok');
+          final result =
+              await controller.doRevokeSession(tokenId: 'invalid-tok');
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);
@@ -783,13 +797,16 @@ void main() {
       });
 
       group('doRevokeOtherSessions', () {
-        test('success (200) — returns true and sends password to /sessions/other', () async {
+        test(
+            'success (200) — returns true and sends password to /sessions/other',
+            () async {
           mockDriver.mockResponse(
             statusCode: 200,
             data: {'message': 'Other sessions revoked successfully.'},
           );
 
-          final result = await controller.doRevokeOtherSessions(password: 'mysecretpass');
+          final result =
+              await controller.doRevokeOtherSessions(password: 'mysecretpass');
 
           expect(result, isTrue);
           expect(controller.isSuccess, isTrue);
@@ -809,10 +826,101 @@ void main() {
             },
           );
 
-          final result = await controller.doRevokeOtherSessions(password: 'wrongpass');
+          final result =
+              await controller.doRevokeOtherSessions(password: 'wrongpass');
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);
+        });
+      });
+    });
+    // -----------------------------------------------------------------------
+    // sendEmailVerification / isEmailVerified
+    // -----------------------------------------------------------------------
+
+    group('email verification', () {
+      setUp(() {
+        Config.set('magic_starter.features.email_verification', true);
+      });
+
+      group('sendEmailVerification', () {
+        test('success (202) — calls correct endpoint and sets success',
+            () async {
+          mockDriver.mockResponse(statusCode: 202, data: {});
+
+          await controller.sendEmailVerification();
+
+          expect(mockDriver.lastMethod, equals('POST'));
+          expect(
+              mockDriver.lastUrl, equals('/email/verification-notification'));
+          expect(controller.isSuccess, isTrue);
+        });
+
+        test('error (500) — sets error state', () async {
+          mockDriver.mockResponse(
+            statusCode: 500,
+            data: {'message': 'Server error'},
+          );
+
+          await controller.sendEmailVerification();
+
+          expect(controller.isError, isTrue);
+        });
+
+        test('error (429) — sets error state (rate limited)', () async {
+          mockDriver.mockResponse(
+            statusCode: 429,
+            data: {'message': 'Too many requests.'},
+          );
+
+          await controller.sendEmailVerification();
+
+          expect(controller.isError, isTrue);
+        });
+
+        test('prevents duplicate submission while loading', () async {
+          mockDriver.mockResponse(statusCode: 202, data: {});
+
+          final first = controller.sendEmailVerification();
+          // Second call while first is in-flight — should be a no-op.
+          await controller.sendEmailVerification();
+          await first;
+
+          // Only one HTTP call should have been made.
+          expect(
+              mockDriver.lastUrl, equals('/email/verification-notification'));
+        });
+      });
+
+      group('isEmailVerified', () {
+        test('returns false when no user is authenticated', () {
+          expect(controller.isEmailVerified, isFalse);
+        });
+
+        test('returns false when email_verified_at is null', () {
+          mockGuard.setUser(
+            MagicStarterAuthUser.fromMap({
+              'id': 1,
+              'name': 'Alice',
+              'email': 'alice@example.com',
+              'email_verified_at': null,
+            }),
+          );
+
+          expect(controller.isEmailVerified, isFalse);
+        });
+
+        test('returns true when email_verified_at has a value', () {
+          mockGuard.setUser(
+            MagicStarterAuthUser.fromMap({
+              'id': 1,
+              'name': 'Alice',
+              'email': 'alice@example.com',
+              'email_verified_at': '2025-01-15T10:00:00.000000Z',
+            }),
+          );
+
+          expect(controller.isEmailVerified, isTrue);
         });
       });
     });
