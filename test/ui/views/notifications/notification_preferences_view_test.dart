@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/src/http/controllers/notification_controller.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 class MockNetworkDriver implements NetworkDriver {

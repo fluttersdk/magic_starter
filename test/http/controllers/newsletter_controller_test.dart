@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/http/controllers/newsletter_controller.dart';
 
 // ---------------------------------------------------------------------------
 // Mock NetworkDriver — intercepts all Http facade calls

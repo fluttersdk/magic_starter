@@ -156,7 +156,7 @@ class _MagicStarterNotificationPreferencesViewState
         ),
         Switch.adaptive(
           value: isEnabled,
-          activeColor: Theme.of(context).colorScheme.onPrimary,
+          activeThumbColor: Theme.of(context).colorScheme.onPrimary,
           activeTrackColor: Theme.of(context).colorScheme.primary,
           onChanged: isLocked
               ? null
