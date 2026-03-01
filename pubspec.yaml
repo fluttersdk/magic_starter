@@ -13,10 +13,22 @@ dependencies:
     sdk: flutter
   magic:
     path: ../magic
+  magic_cli:
+    path: ../magic/plugins/magic_cli
   url_launcher: ^6.3.0
+  args: ^2.7.0
   magic_notifications:
     path: ../magic_notifications
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  test: ^1.25.0
   flutter_lints: ^6.0.0
+
+executables:
+  magic_starter: magic_starter
+
+flutter:
+  assets:
+    - assets/stubs/install/
