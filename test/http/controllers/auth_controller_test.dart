@@ -635,5 +635,215 @@ void main() {
         expect(mockGuard.logoutCalled, isTrue);
       });
     });
+
+    // -------------------------------------------------------------------------
+    // doLogin — identity mode tests
+    // -------------------------------------------------------------------------
+
+    group('doLogin — email-only mode (default)', () {
+      setUp(() {
+        Config.set('magic_starter.auth.email', true);
+        Config.set('magic_starter.auth.phone', false);
+      });
+
+      test('sends email in payload, no phone field', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'tok-email',
+              'user': {'id': 1, 'name': 'Alice', 'email': 'test@example.com'},
+            },
+          },
+        );
+
+        await controller.doLogin(
+          email: 'test@example.com',
+          password: 'secret',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['email'], equals('test@example.com'));
+        expect(body?.containsKey('phone'), isFalse);
+        expect(controller.isSuccess, isTrue);
+      });
+    });
+
+    group('doLogin — phone-only mode', () {
+      setUp(() {
+        Config.set('magic_starter.auth.email', false);
+        Config.set('magic_starter.auth.phone', true);
+      });
+
+      test('sends phone in payload, no email field', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'tok-phone',
+              'user': {'id': 1, 'name': 'Alice'},
+            },
+          },
+        );
+
+        await controller.doLogin(
+          phone: '+905301234567',
+          password: 'secret',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['phone'], equals('+905301234567'));
+        expect(body?.containsKey('email'), isFalse);
+        expect(controller.isSuccess, isTrue);
+      });
+    });
+
+    group('doLogin — both mode (email or phone)', () {
+      setUp(() {
+        Config.set('magic_starter.auth.email', true);
+        Config.set('magic_starter.auth.phone', true);
+      });
+
+      test('sends phone when phone field has value', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'tok-both-phone',
+              'user': {'id': 1, 'name': 'Alice'},
+            },
+          },
+        );
+
+        await controller.doLogin(
+          phone: '+905301234567',
+          password: 'secret',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['phone'], equals('+905301234567'));
+        expect(body?.containsKey('email'), isFalse);
+      });
+
+      test('sends email when phone field is empty', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'tok-both-email',
+              'user': {'id': 1, 'name': 'Alice', 'email': 'a@b.com'},
+            },
+          },
+        );
+
+        await controller.doLogin(
+          email: 'a@b.com',
+          password: 'secret',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['email'], equals('a@b.com'));
+        expect(body?.containsKey('phone'), isFalse);
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // doRegister — identity mode tests
+    // -------------------------------------------------------------------------
+
+    group('doRegister — email-only mode (default)', () {
+      setUp(() {
+        Config.set('magic_starter.auth.email', true);
+        Config.set('magic_starter.auth.phone', false);
+      });
+
+      test('sends email in payload, no phone or phone_country field', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'reg-tok',
+              'user': {'id': 1, 'name': 'Bob', 'email': 'bob@example.com'},
+            },
+          },
+        );
+
+        await controller.doRegister(
+          name: 'Bob',
+          email: 'bob@example.com',
+          password: 'secret123',
+          passwordConfirmation: 'secret123',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['email'], equals('bob@example.com'));
+        expect(body?.containsKey('phone'), isFalse);
+        expect(body?.containsKey('phone_country'), isFalse);
+      });
+    });
+
+    group('doRegister — phone-only mode', () {
+      setUp(() {
+        Config.set('magic_starter.auth.email', false);
+        Config.set('magic_starter.auth.phone', true);
+      });
+
+      test('sends phone and phone_country in payload, no email field', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'reg-tok-phone',
+              'user': {'id': 1, 'name': 'Bob'},
+            },
+          },
+        );
+
+        await controller.doRegister(
+          name: 'Bob',
+          phone: '+905301234567',
+          phoneCountry: 'TR',
+          password: 'secret123',
+          passwordConfirmation: 'secret123',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['phone'], equals('+905301234567'));
+        expect(body?['phone_country'], equals('TR'));
+        expect(body?.containsKey('email'), isFalse);
+      });
+    });
+
+    group('doRegister — both mode', () {
+      setUp(() {
+        Config.set('magic_starter.auth.email', true);
+        Config.set('magic_starter.auth.phone', true);
+      });
+
+      test('sends phone and phone_country when phone field has value', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'reg-tok-both',
+              'user': {'id': 1, 'name': 'Bob'},
+            },
+          },
+        );
+
+        await controller.doRegister(
+          name: 'Bob',
+          phone: '+905301234567',
+          phoneCountry: 'TR',
+          password: 'secret123',
+          passwordConfirmation: 'secret123',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['phone'], equals('+905301234567'));
+        expect(body?['phone_country'], equals('TR'));
+        expect(body?.containsKey('email'), isFalse);
+      });
+    });
   });
 }

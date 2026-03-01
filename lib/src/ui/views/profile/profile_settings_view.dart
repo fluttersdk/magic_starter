@@ -7,7 +7,9 @@ import '../../../http/controllers/profile_controller.dart';
 import '../../widgets/starter_card.dart';
 import '../../widgets/starter_page_header.dart';
 import '../../widgets/starter_password_confirm_dialog.dart';
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/newsletter_controller.dart';
+
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
@@ -233,8 +235,16 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           subtitle: trans('profile.settings_subtitle'),
         ),
         _buildProfilePhotoSection(),
-        _buildProfileSection(),
-        if (MagicStarterConfig.hasExtendedProfileFeatures()) _buildExtendedProfileSection(),
+        MagicForm(
+          formData: profileForm,
+          child: WDiv(
+            className: 'flex flex-col gap-6',
+            children: [
+              _buildProfileSection(),
+              if (MagicStarterConfig.hasExtendedProfileFeatures()) _buildExtendedProfileSection(),
+            ],
+          ),
+        ),
         _buildPasswordSection(),
         _buildTwoFactorSection(),
         _buildNewsletterSection(),
@@ -395,9 +405,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       return const SizedBox.shrink();
     }
 
-    final timezones = MagicStarter.timezoneOptions ??
+    final timezones = MagicStarter.manager.timezoneOptions ??
         MagicStarterConfig.supportedTimezones();
-    final locales = MagicStarter.localeOptions;
+    final locales = MagicStarter.manager.localeOptions;
     final finalLocales = locales.isNotEmpty
         ? locales
         : [
@@ -1024,16 +1034,5 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     );
   }
 
-  /// Builds the extended profile section (phone, timezone, language).  
-  ///
-  /// Returns an empty widget when the extended-profile feature is disabled;
-  /// full implementation is added by the extended-profile task.
-  Widget _buildExtendedProfileSection() {
-    if (!MagicStarterConfig.hasExtendedProfileFeatures()) {
-      return const SizedBox.shrink();
-    }
-    // TODO(extended-profile): implement phone, timezone, language fields.
-    return const SizedBox.shrink();
-  }
 
 }
