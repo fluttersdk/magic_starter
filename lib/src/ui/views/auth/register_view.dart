@@ -30,6 +30,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
 
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
+  bool _subscribeNewsletter = false;
 
   @override
   void onInit() {
@@ -48,6 +49,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
       email: form.get('email'),
       password: form.get('password'),
       passwordConfirmation: form.get('password_confirmation'),
+      subscribeNewsletter: _subscribeNewsletter,
     );
   }
 
@@ -148,6 +150,26 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                   'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             ),
             const WSpacer(className: 'h-6'),
+
+            if (MagicStarterConfig.hasNewsletterFeatures()) ...[
+              WDiv(
+                className: 'flex flex-row items-center gap-2 mb-6',
+                children: [
+                  Checkbox(
+                    value: _subscribeNewsletter,
+                    onChanged: (val) => setState(() => _subscribeNewsletter = val ?? false),
+                    activeColor: Theme.of(context).primaryColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  ),
+                  Expanded(
+                    child: WText(
+                      MagicStarter.manager.newsletterLabel ?? trans('magic_starter.newsletter.subscribe_label'),
+                      className: 'text-sm text-gray-600 dark:text-gray-400',
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
             // Submit
             WButton(

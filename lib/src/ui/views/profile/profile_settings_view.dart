@@ -7,6 +7,7 @@ import '../../../http/controllers/profile_controller.dart';
 import '../../widgets/starter_card.dart';
 import '../../widgets/starter_page_header.dart';
 import '../../widgets/starter_password_confirm_dialog.dart';
+import '../../../http/controllers/newsletter_controller.dart';
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
@@ -30,7 +31,14 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Profile & password forms -----------------------------------------------
 
   late final profileForm = MagicFormData(
-    {'name': '', 'email': ''},
+    {
+      'name': '',
+      'email': '',
+      'phone': '',
+      'phone_country': '',
+      'timezone': '',
+      'language': '',
+    },
     controller: controller,
   );
 
@@ -40,6 +48,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       'password': '',
       'password_confirmation': '',
     },
+    controller: controller,
+  );
+
+  late final deleteAccountForm = MagicFormData(
+    {'password': ''},
     controller: controller,
   );
 
@@ -67,6 +80,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     if (user != null) {
       profileForm.set('name', user.get<String>('name') ?? '');
       profileForm.set('email', user.get<String>('email') ?? '');
+      profileForm.set('phone', user.get<String>('phone') ?? '');
+      profileForm.set('phone_country', user.get<String>('phone_country') ?? '');
+      profileForm.set('timezone', user.get<String>('timezone') ?? '');
+      profileForm.set('language', user.get<String>('language') ?? '');
     }
     controller.clearErrors();
     controller.setEmpty();
@@ -74,12 +91,17 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     if (MagicStarterConfig.hasSessionsFeatures()) {
       _loadSessions();
     }
+
+    if (MagicStarterConfig.hasNewsletterFeatures()) {
+      StarterNewsletterController.instance.getNewsletterStatus();
+    }
   }
 
   @override
   void onClose() {
     profileForm.dispose();
     passwordForm.dispose();
+    deleteAccountForm.dispose();
     _otpController.dispose();
   }
 
@@ -90,6 +112,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     await controller.doUpdateProfile(
       name: profileForm.get('name'),
       email: profileForm.get('email'),
+      phone: profileForm.get('phone'),
+      phoneCountry: profileForm.get('phone_country'),
+      timezone: profileForm.get('timezone'),
+      language: profileForm.get('language'),
     );
   }
 
@@ -208,13 +234,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         ),
         _buildProfilePhotoSection(),
         _buildProfileSection(),
+        if (MagicStarterConfig.hasExtendedProfileFeatures()) _buildExtendedProfileSection(),
         _buildPasswordSection(),
         _buildTwoFactorSection(),
+        _buildNewsletterSection(),
         _buildSessionsSection(),
+        _buildDeleteAccountSection(),
       ],
     );
   }
-
   // -- Profile Photo Section -------------------------------------------------
 
   Widget _buildProfilePhotoSection() {
@@ -660,6 +688,56 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     );
   }
 
+// -- Newsletter Section ------------------------------------------------------
+
+  Widget _buildNewsletterSection() {
+    if (!MagicStarterConfig.hasNewsletterFeatures()) {
+      return const SizedBox.shrink();
+    }
+
+    return MagicStarterCard(
+      title: trans('magic_starter.newsletter.section_title'),
+      child: WDiv(
+        className: 'flex flex-col gap-4',
+        children: [
+          WText(
+            trans('magic_starter.newsletter.section_description'),
+            className: 'text-sm text-gray-600 dark:text-gray-400',
+          ),
+          Builder(
+            builder: (context) {
+              final newsletterController = StarterNewsletterController.instance;
+              return newsletterController.renderState(
+                (data) {
+                  final isSubscribed = data?['subscribed'] as bool? ?? false;
+                  return WButton(
+                    onTap: () async {
+                      await newsletterController.updateNewsletterSubscription(
+                        subscribe: !isSubscribed,
+                      );
+                    },
+                    isLoading: newsletterController.isLoading,
+                    className: 'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                    child: WText(trans('magic_starter.newsletter.toggle_button')),
+                  );
+                },
+                onEmpty: WDiv(
+                  className: 'flex items-center justify-start py-2',
+                  children: [
+                    WIcon(
+                      Icons.refresh,
+                      className: 'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
 // -- Sessions Section ------------------------------------------------------
 
 
@@ -786,4 +864,74 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       ],
     );
   }
+
+  /// Builds the delete account section with password confirmation.
+  ///
+  /// Displays a red-themed card with warning, password input,
+  /// and delete button that calls [StarterProfileController.doDeleteAccount].
+  Widget _buildDeleteAccountSection() {
+    return MagicForm(
+      formData: deleteAccountForm,
+      child: MagicStarterCard(
+        title: trans('magic_starter.profile.delete_account.title'),
+        child: WDiv(
+          className: 'flex flex-col gap-4',
+          children: [
+            WText(
+              trans('magic_starter.profile.delete_account.description'),
+              className: 'text-sm text-gray-600 dark:text-gray-400',
+            ),
+            WFormInput(
+              controller: deleteAccountForm['password'],
+              label: trans('magic_starter.profile.delete_account.password_label'),
+              type: InputType.password,
+              validator: rules(
+                [Required()],
+                field: 'password',
+              ),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
+            WDiv(
+              className: 'flex justify-end',
+              children: [
+                WButton(
+                  onTap: () => _submitDeleteAccount(),
+                  isLoading: controller.isLoading,
+                  className:
+                      'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white text-sm font-medium',
+                  child: WText(
+                    trans('magic_starter.profile.delete_account.button'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Submit delete account form.
+  Future<void> _submitDeleteAccount() async {
+    if (!deleteAccountForm.validate()) return;
+    await controller.doDeleteAccount(
+      password: deleteAccountForm.get('password'),
+    );
+  }
+
+  /// Builds the extended profile section (phone, timezone, language).  
+  ///
+  /// Returns an empty widget when the extended-profile feature is disabled;
+  /// full implementation is added by the extended-profile task.
+  Widget _buildExtendedProfileSection() {
+    if (!MagicStarterConfig.hasExtendedProfileFeatures()) {
+      return const SizedBox.shrink();
+    }
+    // TODO(extended-profile): implement phone, timezone, language fields.
+    return const SizedBox.shrink();
+  }
+
 }

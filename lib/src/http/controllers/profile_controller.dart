@@ -435,4 +435,46 @@ class StarterProfileController extends MagicController
       _isSubmitting = false;
     }
   }
+
+  /// Sends a verification email to the authenticated user's email address.
+  ///
+  /// Calls `POST /email/verification-notification`. On success, shows a toast
+  /// confirmation and sets success state. On error, delegates to
+  /// [handleApiError] with a localised fallback message.
+  Future<void> sendEmailVerification() async {
+    if (isLoading) return;
+    setLoading();
+
+    try {
+      final response = await Http.post(
+        '/email/verification-notification',
+        data: {},
+      );
+
+      if (!response.successful) {
+        handleApiError(
+          response,
+          fallback: trans('magic_starter.email_verification.send_error'),
+        );
+        return;
+      }
+
+      setSuccess(true);
+      Magic.toast(trans('magic_starter.email_verification.sent'));
+    } catch (e, stackTrace) {
+      Log.error('[StarterProfileController.sendEmailVerification] $e\n$stackTrace');
+      setError(trans('errors.unexpected'));
+    }
+  }
+
+  /// Returns whether the authenticated user's email address has been verified.
+  ///
+  /// Reads `email_verified_at` from the current [Auth.user()] — returns `true`
+  /// only when the field resolves to a non-null, non-empty string.
+  bool get isEmailVerified {
+    final user = Auth.user();
+    if (user == null) return false;
+    final verifiedAt = user.get<String?>('email_verified_at');
+    return verifiedAt != null && verifiedAt.isNotEmpty;
+  }
 }

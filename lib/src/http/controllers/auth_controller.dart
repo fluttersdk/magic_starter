@@ -94,6 +94,7 @@ class StarterAuthController extends MagicController
     required String email,
     required String password,
     required String passwordConfirmation,
+    bool? subscribeNewsletter,
   }) async {
     if (_isSubmitting) return;
     _isSubmitting = true;
@@ -101,14 +102,20 @@ class StarterAuthController extends MagicController
     clearErrors();
 
     try {
+      final payload = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      };
+
+      if (MagicStarterConfig.hasNewsletterFeatures()) {
+        payload['subscribe_newsletter'] = subscribeNewsletter ?? false;
+      }
+
       final response = await Http.post(
         '/auth/register',
-        data: {
-          'name': name,
-          'email': email,
-          'password': password,
-          'password_confirmation': passwordConfirmation,
-        },
+        data: payload,
       );
 
       if (!response.successful) {
