@@ -13,6 +13,7 @@ import 'ui/views/auth/login_view.dart';
 import 'ui/views/auth/register_view.dart';
 import 'ui/views/auth/reset_password_view.dart';
 import 'ui/views/auth/two_factor_challenge_view.dart';
+import 'ui/views/auth/otp_verify_view.dart';
 import 'ui/views/notifications/notification_preferences_view.dart';
 import 'ui/views/notifications/notifications_list_view.dart';
 import 'ui/views/profile/profile_settings_view.dart';
@@ -179,6 +180,10 @@ class MagicStarterManager {
     _registerDefault(
       'auth.two_factor_challenge',
       () => const MagicStarterTwoFactorChallengeView(),
+    );
+    _registerDefault(
+      'auth.otp_verify',
+      () => const MagicStarterOtpVerifyView(),
     );
     _registerDefault(
       'profile.settings',
