@@ -3,6 +3,7 @@ import 'package:magic/magic.dart';
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/auth_controller.dart';
+import '../http/controllers/otp_controller.dart';
 
 /// Registers auth routes provided by Magic Starter plugin.
 void registerMagicStarterAuthRoutes() {
@@ -34,6 +35,13 @@ void registerMagicStarterAuthRoutes() {
         MagicRoute.page(
           '/two-factor-challenge',
           StarterAuthController.instance.twoFactorChallenge,
+        ).transition(RouteTransition.none);
+      }
+
+      if (MagicStarterConfig.hasPhoneOtpFeatures()) {
+        MagicRoute.page(
+          '/otp',
+          StarterOtpController.instance.otpVerify,
         ).transition(RouteTransition.none);
       }
     },

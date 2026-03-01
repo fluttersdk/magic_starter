@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import 'configuration/magic_starter_config.dart';
 import 'facades/magic_starter.dart';
 import 'models/magic_starter_auth_user.dart';
 import 'models/starter_nav_item.dart';
@@ -181,10 +182,12 @@ class MagicStarterManager {
       'auth.two_factor_challenge',
       () => const MagicStarterTwoFactorChallengeView(),
     );
-    _registerDefault(
-      'auth.otp_verify',
-      () => const MagicStarterOtpVerifyView(),
-    );
+    if (MagicStarterConfig.hasPhoneOtpFeatures()) {
+      _registerDefault(
+        'auth.otp_verify',
+        () => const MagicStarterOtpVerifyView(),
+      );
+    }
     _registerDefault(
       'profile.settings',
       () => const MagicStarterProfileSettingsView(),

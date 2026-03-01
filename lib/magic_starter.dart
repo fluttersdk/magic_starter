@@ -14,6 +14,8 @@ export 'src/http/controllers/team_controller.dart';
 export 'src/http/controllers/notification_controller.dart';
 export 'src/http/controllers/otp_controller.dart';
 export 'src/http/controllers/guest_auth_controller.dart';
+
+export 'src/http/controllers/newsletter_controller.dart';
 export 'src/routes/auth_routes.dart';
 export 'src/routes/profile_routes.dart';
 export 'src/routes/team_routes.dart';
