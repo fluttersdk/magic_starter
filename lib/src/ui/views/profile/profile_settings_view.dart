@@ -57,6 +57,18 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     controller: controller,
   );
 
+  late final upgradeForm = MagicFormData(
+    {
+      'email': '',
+      'password': '',
+      'password_confirmation': '',
+    },
+    controller: controller,
+  );
+
+  bool _obscureUpgradePassword = true;
+  bool _obscureUpgradeConfirmation = true;
+
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirmation = true;
@@ -103,6 +115,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     profileForm.dispose();
     passwordForm.dispose();
     deleteAccountForm.dispose();
+    upgradeForm.dispose();
     _otpController.dispose();
   }
 
@@ -249,6 +262,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         _buildEmailVerificationSection(),
         _buildTwoFactorSection(),
         _buildNewsletterSection(),
+        _buildGuestUpgradeSection(),
         _buildSessionsSection(),
         _buildDeleteAccountSection(),
       ],
@@ -1117,4 +1131,112 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   }
 
   // -- Email Verification Section -----------------------------------------------
+
+  // -- Guest Upgrade Section --------------------------------------------------
+
+  /// Builds the guest account upgrade section.
+  ///
+  /// Visible only when the current user's `is_guest` attribute is `true`.
+  /// Allows the guest to set an email and password to convert their account.
+  Widget _buildGuestUpgradeSection() {
+    final user = Auth.user();
+    final isGuest = user?.get<bool>('is_guest') ?? false;
+
+    if (!isGuest) {
+      return const SizedBox.shrink();
+    }
+
+    return MagicForm(
+      formData: upgradeForm,
+      child: MagicStarterCard(
+        title: trans('magic_starter.guest_upgrade.title'),
+        child: WDiv(
+          className: 'flex flex-col gap-4',
+          children: [
+            WText(
+              trans('magic_starter.guest_upgrade.description'),
+              className: 'text-sm text-gray-600 dark:text-gray-400',
+            ),
+            WFormInput(
+              controller: upgradeForm['email'],
+              label: trans('attributes.email'),
+              type: InputType.email,
+              validator: rules([Required(), Email()], field: 'email'),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
+            WFormInput(
+              controller: upgradeForm['password'],
+              label: trans('attributes.password'),
+              type: _obscureUpgradePassword ? InputType.password : InputType.text,
+              validator: rules([Required(), Min(8)], field: 'password'),
+              suffix: WAnchor(
+                onTap: () => setState(
+                    () => _obscureUpgradePassword = !_obscureUpgradePassword),
+                child: WIcon(
+                  _obscureUpgradePassword
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                  className: 'text-gray-400 text-xl',
+                ),
+              ),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
+            WFormInput(
+              controller: upgradeForm['password_confirmation'],
+              label: trans('attributes.password_confirmation'),
+              type: _obscureUpgradeConfirmation
+                  ? InputType.password
+                  : InputType.text,
+              validator: rules([Required()], field: 'password_confirmation'),
+              suffix: WAnchor(
+                onTap: () => setState(() =>
+                    _obscureUpgradeConfirmation = !_obscureUpgradeConfirmation),
+                child: WIcon(
+                  _obscureUpgradeConfirmation
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                  className: 'text-gray-400 text-xl',
+                ),
+              ),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
+            WDiv(
+              className: 'flex justify-end',
+              children: [
+                WButton(
+                  onTap: _submitGuestUpgrade,
+                  isLoading: controller.isLoading,
+                  className:
+                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  child: WText(trans('magic_starter.guest_upgrade.button')),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Submits the guest upgrade form — converts the guest to a full account.
+  Future<void> _submitGuestUpgrade() async {
+    if (!upgradeForm.validate()) return;
+    await controller.doUpdateProfile(
+      name: profileForm.get('name'),
+      email: upgradeForm.get('email'),
+      phone: profileForm.get('phone'),
+      phoneCountry: profileForm.get('phone_country'),
+      timezone: profileForm.get('timezone'),
+      language: profileForm.get('language'),
+    );
+  }
 }

@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/auth_controller.dart';
+import '../../../http/controllers/guest_auth_controller.dart';
 import '../../widgets/auth_form_card.dart';
 import '../../widgets/social_login_divider.dart';
 
@@ -131,6 +132,19 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
                   'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
               child: WText(trans('auth.login_title'), className: 'text-center'),
             ),
+            if (MagicStarterConfig.hasGuestAuthFeatures()) ...[
+              const WSpacer(className: 'h-4'),
+              WButton(
+                onTap: StarterGuestAuthController.instance.doGuestLogin,
+                isLoading: isLoading,
+                className:
+                    'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium',
+                child: WText(
+                  trans('magic_starter.auth.continue_as_guest'),
+                  className: 'text-center',
+                ),
+              ),
+            ],
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
                 MagicStarter.hasSocialLogin) ...[
               const MagicStarterSocialDivider(),
