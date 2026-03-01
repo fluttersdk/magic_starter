@@ -32,9 +32,9 @@ class StarterNotificationController extends MagicController {
     try {
       final response = await Http.get('/notification-preferences');
       if (response.successful) {
-        final data = response.data['data'] as Map<String, dynamic>?;
-        if (data != null) {
-          matrixNotifier.value = data;
+        final data = response.data['data'];
+        if (data is Map) {
+          matrixNotifier.value = _normalizeMap(data);
         }
       }
     } catch (e, stackTrace) {
@@ -43,6 +43,16 @@ class StarterNotificationController extends MagicController {
     } finally {
       isLoadingNotifier.value = false;
     }
+  }
+
+  /// Normalize dynamic map payloads to `Map<String, dynamic>` recursively.
+  Map<String, dynamic> _normalizeMap(Map<dynamic, dynamic> source) {
+    return source.map(
+      (key, value) => MapEntry(
+        key.toString(),
+        value is Map ? _normalizeMap(value) : value,
+      ),
+    );
   }
 
   /// Update a single channel preference with optimistic UI update.

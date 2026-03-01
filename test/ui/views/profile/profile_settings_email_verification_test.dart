@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -114,14 +113,11 @@ class MockNetworkDriver implements NetworkDriver {
   @override
   Future<MagicResponse> upload(
     String url, {
-    dynamic data,
+    required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
   }) async =>
       _respond('UPLOAD', url, data: data);
-
-  @override
-  bool get hasInterceptors => false;
 }
 
 // ---------------------------------------------------------------------------
