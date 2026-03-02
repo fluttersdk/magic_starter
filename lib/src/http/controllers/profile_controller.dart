@@ -537,4 +537,14 @@ class StarterProfileController extends MagicController
     final verifiedAt = user.get<String?>('email_verified_at');
     return verifiedAt != null && verifiedAt.isNotEmpty;
   }
+
+  /// Whether the authenticated user has two-factor authentication enabled.
+  ///
+  /// Reads [two_factor_enabled] from the current [Auth.user()] model.
+  /// Returns [false] when no user is authenticated or the field is absent.
+  bool get isTwoFactorEnabled {
+    final user = Auth.user();
+    if (user == null) return false;
+    return user.get<bool>('two_factor_enabled') ?? false;
+  }
 }

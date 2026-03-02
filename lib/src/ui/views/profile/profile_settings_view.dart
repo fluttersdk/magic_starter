@@ -127,6 +127,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     if (MagicStarterConfig.hasNewsletterFeatures()) {
       StarterNewsletterController.instance.getNewsletterStatus();
     }
+    if (controller.isTwoFactorEnabled) {
+      _twoFactorState = 'enabled';
+    }
   }
 
   @override
