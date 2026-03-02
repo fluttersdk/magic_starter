@@ -358,6 +358,8 @@ class StarterProfileController extends MagicController
 
   /// Retrieves the current two-factor authentication recovery codes.
   Future<List<String>?> getRecoveryCodes() async {
+    if (_isSubmitting) return null;
+    _isSubmitting = true;
     setLoading();
     clearErrors();
 
@@ -376,6 +378,8 @@ class StarterProfileController extends MagicController
       Log.error('[StarterProfileController.getRecoveryCodes] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return null;
+    } finally {
+      _isSubmitting = false;
     }
   }
 
@@ -512,7 +516,8 @@ class StarterProfileController extends MagicController
   /// confirmation and sets success state. On error, delegates to
   /// [handleApiError] with a localised fallback message.
   Future<void> sendEmailVerification() async {
-    if (isLoading) return;
+    if (_isSubmitting) return;
+    _isSubmitting = true;
     setLoading();
 
     try {
@@ -535,6 +540,8 @@ class StarterProfileController extends MagicController
       Log.error(
           '[StarterProfileController.sendEmailVerification] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
+    } finally {
+      _isSubmitting = false;
     }
   }
 

@@ -6,10 +6,12 @@ class StarterNewsletterController extends MagicController
   /// Singleton accessor — use this instead of constructing directly.
   static StarterNewsletterController get instance =>
       Magic.findOrPut(StarterNewsletterController.new);
+  bool _isSubmitting = false;
 
   /// Fetches the current newsletter subscription status.
   Future<void> getNewsletterStatus() async {
-    if (isLoading) return;
+    if (_isSubmitting) return;
+    _isSubmitting = true;
     setLoading();
 
     try {
@@ -26,12 +28,15 @@ class StarterNewsletterController extends MagicController
       Log.error(
           '[StarterNewsletterController.getNewsletterStatus] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
+    } finally {
+      _isSubmitting = false;
     }
   }
 
   /// Updates the newsletter subscription.
   Future<void> updateNewsletterSubscription({required bool subscribe}) async {
-    if (isLoading) return;
+    if (_isSubmitting) return;
+    _isSubmitting = true;
     setLoading();
 
     try {
@@ -51,6 +56,8 @@ class StarterNewsletterController extends MagicController
       Log.error(
           '[StarterNewsletterController.updateNewsletterSubscription] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
+    } finally {
+      _isSubmitting = false;
     }
   }
 }
