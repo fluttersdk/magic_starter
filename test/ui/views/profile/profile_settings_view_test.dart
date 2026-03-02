@@ -246,7 +246,8 @@ void main() {
         // All five fields should be present: name, email, phone (inputs)
         // + timezone, language (selects).
         expect(find.byType(WFormInput), findsWidgets);
-        expect(find.byType(WFormSelect<String>), findsNWidgets(2));
+        expect(find.byType(WFormSelect<String>), findsOneWidget);
+        expect(find.byType(MagicStarterTimezoneSelect), findsOneWidget);
       },
     );
 
@@ -270,6 +271,7 @@ void main() {
 
         // Timezone and language selects should NOT be rendered.
         expect(find.byType(WFormSelect<String>), findsNothing);
+        expect(find.byType(MagicStarterTimezoneSelect), findsNothing);
 
         // Core fields (name, email) should still be present.
         expect(find.text('attributes.name'), findsOneWidget);

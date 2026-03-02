@@ -9,6 +9,7 @@ import '../../widgets/starter_card.dart';
 import '../../widgets/starter_page_header.dart';
 import '../../widgets/starter_password_confirm_dialog.dart';
 import '../../../http/controllers/newsletter_controller.dart';
+import '../../widgets/magic_starter_timezone_select.dart';
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
@@ -449,10 +450,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Profile Section -------------------------------------------------------
 
   Widget _buildProfileSection() {
-    // Resolve timezone and locale options for extended profile fields.
-    final timezones = MagicStarter.manager.timezoneOptions ??
-        MagicStarterConfig.supportedTimezones();
+    // Resolve locale options for extended profile fields.
     final locales = MagicStarter.manager.localeOptions;
+
     final finalLocales = locales.isNotEmpty
         ? locales
         : [
@@ -500,21 +500,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               className:
                   'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
-          if (hasExtended)
-            WFormSelect<String>(
+          if (MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures())
+            MagicStarterTimezoneSelect(
               value: profileForm.get('timezone'),
-              onChange: (v) => profileForm.set('timezone', v ?? ''),
+              onChanged: (v) => profileForm.set('timezone', v ?? ''),
               label: trans('profile.timezone_label'),
-              searchable: true,
-              options: timezones
-                  .map((tz) => SelectOption<String>(value: tz, label: tz))
-                  .toList(),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
-              menuClassName:
-                  'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
             ),
           if (hasExtended)
             WFormSelect<String>(
