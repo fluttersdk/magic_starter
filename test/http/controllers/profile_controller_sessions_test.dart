@@ -127,7 +127,7 @@ void main() {
     });
 
     group('doRevokeSession', () {
-      test('revokes a single session on success', () async {
+      test('revokes a single session and sends password payload', () async {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
@@ -137,12 +137,42 @@ void main() {
 
         final bool result = await controller.doRevokeSession(
           tokenId: 'session-id-1',
+          password: 'my-secret-password',
         );
 
         expect(result, isTrue);
         expect(controller.isSuccess, isTrue);
-        expect(mockDriver.lastMethod, equals('DELETE'));
+        expect(mockDriver.lastMethod, equals('POST'));
         expect(mockDriver.lastUrl, equals('/sessions/session-id-1'));
+        expect(
+          mockDriver.lastData,
+          equals({
+            '_method': 'DELETE',
+            'password': 'my-secret-password',
+          }),
+        );
+      });
+
+      test('returns false and sets error for wrong password', () async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The password is incorrect.',
+            'errors': {
+              'password': [
+                'The provided password does not match your current password.',
+              ],
+            },
+          },
+        );
+
+        final bool result = await controller.doRevokeSession(
+          tokenId: 'session-id-1',
+          password: 'wrong-password',
+        );
+
+        expect(result, isFalse);
+        expect(controller.isError, isTrue);
       });
 
       test('returns false and sets error state on revoke failure', () async {
@@ -160,6 +190,7 @@ void main() {
 
         final bool result = await controller.doRevokeSession(
           tokenId: 'invalid-token',
+          password: 'my-secret-password',
         );
 
         expect(result, isFalse);

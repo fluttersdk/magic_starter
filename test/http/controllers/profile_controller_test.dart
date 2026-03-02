@@ -809,35 +809,38 @@ void main() {
 
       group('doRevokeSession', () {
         test(
-            'success (200) — returns true and calls DELETE on /sessions/{tokenId}',
+            'success (200) — returns true and sends password to /sessions/{tokenId}',
             () async {
           mockDriver.mockResponse(
             statusCode: 200,
             data: {'message': 'Session revoked successfully.'},
           );
 
-          final result = await controller.doRevokeSession(tokenId: 'tok-abc');
+          final result = await controller.doRevokeSession(
+            tokenId: 'tok-abc',
+            password: 'mysecretpass',
+          );
 
           expect(result, isTrue);
           expect(controller.isSuccess, isTrue);
-          expect(mockDriver.lastMethod, equals('DELETE'));
-          // note: the secondary call inside getSessions() overrides the lastMethod/lastUrl
-          // expect(mockDriver.lastUrl, equals('/sessions/tok-abc'));
+          expect(mockDriver.lastMethod, equals('POST'));
         });
 
-        test('failure (422) — returns false', () async {
+        test('failure (422) — returns false for wrong password', () async {
           mockDriver.mockResponse(
             statusCode: 422,
             data: {
-              'message': 'Invalid session',
+              'message': 'Invalid password',
               'errors': {
-                'token': ['The selected token is invalid.']
-              }
+                'password': ['The password is incorrect.'],
+              },
             },
           );
 
-          final result =
-              await controller.doRevokeSession(tokenId: 'invalid-tok');
+          final result = await controller.doRevokeSession(
+            tokenId: 'tok-abc',
+            password: 'wrongpass',
+          );
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);

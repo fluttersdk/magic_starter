@@ -472,7 +472,12 @@ class StarterProfileController extends MagicController
   }
 
   /// Revokes a specific browser session by its token ID.
-  Future<bool> doRevokeSession({required String tokenId}) async {
+  ///
+  /// Requires the user's current password for sudo-mode validation.
+  Future<bool> doRevokeSession({
+    required String tokenId,
+    required String password,
+  }) async {
     if (!MagicStarterConfig.hasSessionsFeatures()) return false;
     if (_isSubmitting) return false;
     _isSubmitting = true;
@@ -480,7 +485,10 @@ class StarterProfileController extends MagicController
     clearErrors();
 
     try {
-      final response = await Http.delete('/sessions/$tokenId');
+      final response = await Http.post(
+        '/sessions/$tokenId',
+        data: {'_method': 'DELETE', 'password': password},
+      );
 
       if (!response.successful) {
         handleApiError(

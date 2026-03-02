@@ -334,11 +334,29 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     });
   }
 
-  Future<void> _revokeSession(String tokenId) async {
-    final success = await _trackLoading(
-      _sessionActionLoading,
-      () => controller.doRevokeSession(tokenId: tokenId),
+  Future<void> _revokeSession(BuildContext context, String tokenId) async {
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
+
+    final success = await MagicStarterPasswordConfirmDialog.show(
+      context,
+      onConfirm: (password) async {
+        final ok = await _trackLoading(
+          _sessionActionLoading,
+          () => controller.doRevokeSession(
+            tokenId: tokenId,
+            password: password,
+          ),
+        );
+        if (!ok) {
+          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          controller.clearErrors();
+          return error;
+        }
+        return null;
+      },
     );
+
     if (success) {
       _loadSessions();
     }
@@ -356,7 +374,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           () => controller.doRevokeOtherSessions(password: password),
         );
         if (!ok) {
-          return controller.rxStatus.message ?? trans('common.error_occurred');
+          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          controller.clearErrors();
+          return error;
         }
         return null;
       },
@@ -1067,7 +1087,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           MagicBuilder<bool>(
             listenable: _sessionActionLoading,
             builder: (isLoading) => WButton(
-              onTap: isLoading ? null : () => _revokeSession(tokenId),
+              onTap: isLoading ? null : () => _revokeSession(context, tokenId),
               isLoading: isLoading,
               className:
                   'text-red-600 dark:text-red-400 text-sm px-3 py-1 rounded border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20',
