@@ -8,7 +8,8 @@ import '../../facades/magic_starter.dart';
 /// Manages notification preferences state and delegates view rendering
 /// to the ViewRegistry. Follows the same singleton + MagicController pattern
 /// as [StarterAuthController] and [StarterTeamController].
-class StarterNotificationController extends MagicController {
+class StarterNotificationController extends MagicController
+    with MagicStateMixin<bool>, ValidatesRequests {
   /// Singleton accessor.
   static StarterNotificationController get instance =>
       Magic.findOrPut(StarterNotificationController.new);
@@ -17,8 +18,8 @@ class StarterNotificationController extends MagicController {
   /// Structure: { "type_key": { "label": "...", "channels": { "channel": { "enabled": bool, "locked": bool } } } }
   final matrixNotifier = ValueNotifier<Map<String, dynamic>>({});
 
-  final isLoadingNotifier = ValueNotifier<bool>(false);
-  final isSavingNotifier = ValueNotifier<bool>(false);
+  bool _isSubmitting = false;
+  bool _isSaving = false;
 
   /// Render notifications list view via registry key.
   Widget index() => MagicStarter.view.make('notifications.list');
@@ -28,20 +29,33 @@ class StarterNotificationController extends MagicController {
 
   /// Fetch notification preferences from API.
   Future<void> fetchPreferences() async {
-    isLoadingNotifier.value = true;
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+    setLoading();
+
     try {
+      // 1. Fetch the current notification preference matrix.
       final response = await Http.get('/notification-preferences');
-      if (response.successful) {
-        final data = response.data['data'];
-        if (data is Map) {
-          matrixNotifier.value = _normalizeMap(data);
-        }
+
+      // 2. Stop early when backend returns an unsuccessful response.
+      if (!response.successful) {
+        setError(trans('magic_starter.notifications.fetch_error'));
+        return;
       }
+
+      // 3. Normalize and publish matrix payload for reactive UI updates.
+      final data = response.data['data'];
+      if (data is Map) {
+        matrixNotifier.value = _normalizeMap(data);
+      }
+      setSuccess(true);
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterNotificationController.fetchPreferences] $e\n$stackTrace');
+        '[StarterNotificationController.fetchPreferences] $e\n$stackTrace',
+      );
+      setError(trans('errors.unexpected'));
     } finally {
-      isLoadingNotifier.value = false;
+      _isSubmitting = false;
     }
   }
 
@@ -66,31 +80,36 @@ class StarterNotificationController extends MagicController {
     String channel,
     bool isEnabled,
   ) async {
+    if (_isSaving) return;
+    _isSaving = true;
+
     // 1. Snapshot for rollback.
     final oldMatrix = Map<String, dynamic>.from(matrixNotifier.value);
 
-    // 2. Apply optimistic update.
-    final newMatrix = Map<String, dynamic>.from(matrixNotifier.value);
-    if (newMatrix.containsKey(type)) {
-      final typeData =
-          Map<String, dynamic>.from(newMatrix[type] as Map<String, dynamic>);
-      if (typeData.containsKey('channels')) {
-        final channelsData = Map<String, dynamic>.from(
-            typeData['channels'] as Map<String, dynamic>);
-        if (channelsData.containsKey(channel)) {
-          final channelData = Map<String, dynamic>.from(
-              channelsData[channel] as Map<String, dynamic>);
-          channelData['enabled'] = isEnabled;
-          channelsData[channel] = channelData;
-        }
-        typeData['channels'] = channelsData;
-      }
-      newMatrix[type] = typeData;
-    }
-    matrixNotifier.value = newMatrix;
-
-    // 3. Send to backend.
     try {
+      // 2. Apply optimistic update.
+      final newMatrix = Map<String, dynamic>.from(matrixNotifier.value);
+      if (newMatrix.containsKey(type)) {
+        final typeData =
+            Map<String, dynamic>.from(newMatrix[type] as Map<String, dynamic>);
+        if (typeData.containsKey('channels')) {
+          final channelsData = Map<String, dynamic>.from(
+            typeData['channels'] as Map<String, dynamic>,
+          );
+          if (channelsData.containsKey(channel)) {
+            final channelData = Map<String, dynamic>.from(
+              channelsData[channel] as Map<String, dynamic>,
+            );
+            channelData['enabled'] = isEnabled;
+            channelsData[channel] = channelData;
+          }
+          typeData['channels'] = channelsData;
+        }
+        newMatrix[type] = typeData;
+      }
+      matrixNotifier.value = newMatrix;
+
+      // 3. Send to backend.
       final response = await Http.put(
         '/notification-preferences',
         data: {
@@ -104,20 +123,22 @@ class StarterNotificationController extends MagicController {
       if (!response.successful) {
         matrixNotifier.value = oldMatrix;
         Log.error(
-            '[StarterNotificationController.updateTypePreference] PUT failed: ${response.statusCode}');
+          '[StarterNotificationController.updateTypePreference] PUT failed: ${response.statusCode}',
+        );
       }
     } catch (e, stackTrace) {
       matrixNotifier.value = oldMatrix;
       Log.error(
-          '[StarterNotificationController.updateTypePreference] $e\n$stackTrace');
+        '[StarterNotificationController.updateTypePreference] $e\n$stackTrace',
+      );
+    } finally {
+      _isSaving = false;
     }
   }
 
   @override
   void dispose() {
     matrixNotifier.dispose();
-    isLoadingNotifier.dispose();
-    isSavingNotifier.dispose();
     super.dispose();
   }
 }
