@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../facades/magic_starter.dart';
 import '../magic_starter_manager.dart';
 
 /// Service provider for Magic Starter.
@@ -23,7 +24,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
   Future<void> boot() async {
     final teamsEnabled =
         Config.get<bool>('magic_starter.features.teams', false) ?? false;
-    if (teamsEnabled && MagicStarterManager().teamResolver == null) {
+    if (teamsEnabled && MagicStarter.manager.teamResolver == null) {
       Log.warning(
         '[MagicStarter] Teams feature is enabled but no team resolver '
         'is configured. Call MagicStarter.useTeamResolver() in your AppServiceProvider.',

@@ -73,13 +73,11 @@ class StarterNavigationConfig {
 
 /// Manager for Magic Starter.
 class MagicStarterManager {
-  static final MagicStarterManager _instance = MagicStarterManager._internal();
-
-  factory MagicStarterManager() {
-    return _instance;
-  }
-
-  MagicStarterManager._internal() {
+  /// Creates a new manager instance and registers default views.
+  ///
+  /// Intended to be instantiated by [MagicStarterServiceProvider] and
+  /// resolved via IoC: `Magic.make<MagicStarterManager>('magic_starter')`.
+  MagicStarterManager() {
     registerDefaultViews();
   }
 
@@ -151,9 +149,6 @@ class MagicStarterManager {
   List<SelectOption<String>>? _localeOptions;
 
 
-  /// Timezone options for timezone selection.
-  /// When null, falls back to config defaults.
-
   /// Guest authentication entry point builder.
   /// When set, renders custom widget for guest/anonymous login flows.
   Widget Function()? guestAuthEntryBuilder;
@@ -177,37 +172,55 @@ class MagicStarterManager {
       'auth.reset_password',
       () => const MagicStarterResetPasswordView(),
     );
-    _registerDefault(
-      'auth.two_factor_challenge',
-      () => const MagicStarterTwoFactorChallengeView(),
-    );
+    // Two-factor challenge — conditional on feature flag.
+    if (MagicStarterConfig.hasTwoFactorFeatures()) {
+      _registerDefault(
+        'auth.two_factor_challenge',
+        () => const MagicStarterTwoFactorChallengeView(),
+      );
+    }
+
+    // Phone OTP — conditional on feature flag.
     if (MagicStarterConfig.hasPhoneOtpFeatures()) {
       _registerDefault(
         'auth.otp_verify',
         () => const MagicStarterOtpVerifyView(),
       );
     }
+
+    // Profile — always registered.
     _registerDefault(
       'profile.settings',
       () => const MagicStarterProfileSettingsView(),
     );
-    _registerDefault('teams.create', () => const MagicStarterTeamCreateView());
-    _registerDefault(
-      'teams.settings',
-      () => const MagicStarterTeamSettingsView(),
-    );
-    _registerDefault(
-      'teams.invitation_accept',
-      () => const MagicStarterTeamInvitationAcceptView(),
-    );
-    _registerDefault(
-      'notifications.list',
-      () => const MagicStarterNotificationsListView(),
-    );
-    _registerDefault(
-      'notifications.preferences',
-      () => const MagicStarterNotificationPreferencesView(),
-    );
+
+    // Teams — conditional on feature flag.
+    if (MagicStarterConfig.hasTeamFeatures()) {
+      _registerDefault(
+        'teams.create',
+        () => const MagicStarterTeamCreateView(),
+      );
+      _registerDefault(
+        'teams.settings',
+        () => const MagicStarterTeamSettingsView(),
+      );
+      _registerDefault(
+        'teams.invitation_accept',
+        () => const MagicStarterTeamInvitationAcceptView(),
+      );
+    }
+
+    // Notifications — conditional on feature flag.
+    if (MagicStarterConfig.hasNotificationFeatures()) {
+      _registerDefault(
+        'notifications.list',
+        () => const MagicStarterNotificationsListView(),
+      );
+      _registerDefault(
+        'notifications.preferences',
+        () => const MagicStarterNotificationPreferencesView(),
+      );
+    }
     // Layouts
     _registerDefaultLayout(
       'layout.guest',
