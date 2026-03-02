@@ -5,7 +5,12 @@ import '../facades/magic_starter.dart';
 import '../http/controllers/team_controller.dart';
 
 /// Registers team routes provided by Magic Starter plugin.
+///
+/// Routes are only registered when `magic_starter.features.teams` is enabled.
+/// When disabled, calling this function is a no-op.
 void registerMagicStarterTeamRoutes() {
+  if (!MagicStarterConfig.hasTeamFeatures()) return;
+
   MagicRoute.group(
     middleware: ['auth'],
     layoutId: 'app',
@@ -22,7 +27,7 @@ void registerMagicStarterTeamRoutes() {
       ).transition(RouteTransition.none);
 
       MagicRoute.page(
-        '/invitations/:token',
+        '/invitations/:token/accept',
         StarterTeamController.instance.acceptInvitation,
       ).transition(RouteTransition.none);
     },
