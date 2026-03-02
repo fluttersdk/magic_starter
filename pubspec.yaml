@@ -15,7 +15,6 @@ dependencies:
     path: ../magic
   magic_cli:
     path: ../magic/plugins/magic_cli
-  url_launcher: ^6.3.0
   args: ^2.7.0
   magic_notifications:
     path: ../magic_notifications

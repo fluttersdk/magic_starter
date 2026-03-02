@@ -12,7 +12,14 @@ class MagicStarterAuthUser extends Model with Authenticatable {
   String get resource => 'users';
 
   @override
-  List<String> get fillable => ['name', 'email'];
+  List<String> get fillable => [
+    'name',
+    'email',
+    'phone',
+    'timezone',
+    'language',
+    'profile_photo_url',
+  ];
 
   @override
   String? get id => getAttribute('id')?.toString();

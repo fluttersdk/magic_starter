@@ -42,3 +42,5 @@ export 'src/ui/widgets/starter_notification_dropdown.dart';
 export 'src/ui/widgets/starter_password_confirm_dialog.dart';
 export 'src/ui/widgets/magic_starter_two_factor_modal.dart';
 export 'src/ui/widgets/magic_starter_timezone_select.dart';
+export 'src/ui/widgets/starter_page_header.dart';
+export 'src/ui/views/teams/team_invitation_accept_view.dart';
