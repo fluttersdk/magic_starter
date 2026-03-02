@@ -16,23 +16,34 @@ class MagicStarterPasswordConfirmDialog extends StatefulWidget {
   /// Defaults to `trans('profile.confirm_password_description')`.
   final String? description;
 
+  /// Optional inline error message rendered below the password input.
+  final String? errorMessage;
+
   const MagicStarterPasswordConfirmDialog({
     super.key,
     this.title,
     this.description,
+    this.errorMessage,
   });
 
   /// Helper method to display the password confirmation dialog.
   ///
   /// Returns a `Future<String?>` which resolves to the entered password
   /// on confirmation, or `null` on cancellation.
-  static Future<String?> show(BuildContext context,
-      {String? title, String? description}) {
+  ///
+  /// Set [errorMessage] to show an inline API error in the dialog.
+  static Future<String?> show(
+    BuildContext context, {
+    String? title,
+    String? description,
+    String? errorMessage,
+  }) {
     return showDialog<String?>(
       context: context,
       builder: (_) => MagicStarterPasswordConfirmDialog(
         title: title,
         description: description,
+        errorMessage: errorMessage,
       ),
     );
   }
@@ -117,6 +128,15 @@ class _MagicStarterPasswordConfirmDialogState
                   ),
                 ],
               ),
+
+              if (widget.errorMessage != null)
+                WDiv(
+                  className: 'px-6 pb-4',
+                  child: WText(
+                    widget.errorMessage!,
+                    className: 'text-sm text-red-600 dark:text-red-400',
+                  ),
+                ),
 
               // Footer
               WDiv(

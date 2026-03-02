@@ -86,6 +86,21 @@ void main() {
     expect(result, isNull);
   });
 
+  testWidgets('renders errorMessage when provided', (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(wrap(
+      const MagicStarterPasswordConfirmDialog(
+        errorMessage: 'The password is incorrect.',
+      ),
+    ));
+
+    expect(find.text('The password is incorrect.'), findsOneWidget);
+  });
+
   testWidgets('MagicStarterPasswordConfirmDialog returns password on confirm',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 800);
