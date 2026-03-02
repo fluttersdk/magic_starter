@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:magic/magic.dart';
 
+import 'concerns/navigates_routes.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../models/magic_starter_auth_user.dart';
@@ -17,10 +18,11 @@ import '../../models/magic_starter_auth_user.dart';
 /// await StarterGuestAuthController.instance.doGuestLogin();
 /// ```
 class StarterGuestAuthController extends MagicController
-    with MagicStateMixin<bool>, ValidatesRequests {
+    with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
   /// Singleton accessor — follows the Magic Framework controller pattern.
   static StarterGuestAuthController get instance =>
       Magic.findOrPut(StarterGuestAuthController.new);
+  bool _isSubmitting = false;
 
   /// Vault key used to persist the guest device identifier across sessions.
   static const String _deviceIdKey = 'guest_device_id';
@@ -38,7 +40,8 @@ class StarterGuestAuthController extends MagicController
   ///   4. Store the returned auth token via [Auth.login].
   ///   5. Navigate to the home route on success.
   Future<void> doGuestLogin() async {
-    if (isLoading) return;
+    if (_isSubmitting) return;
+    _isSubmitting = true;
     setLoading();
     clearErrors();
 
@@ -82,10 +85,12 @@ class StarterGuestAuthController extends MagicController
       setSuccess(true);
 
       // 5. Navigate home.
-      _navigateTo(MagicStarterConfig.homeRoute());
+      navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
       Log.error('[StarterGuestAuthController.doGuestLogin] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
+    } finally {
+      _isSubmitting = false;
     }
   }
 
@@ -129,12 +134,5 @@ class StarterGuestAuthController extends MagicController
       bytes.sublist(8, 10).map(hex).join(),
       bytes.sublist(10, 16).map(hex).join(),
     ].join('-');
-  }
-
-  /// Navigates to [path] when a navigator context is available.
-  void _navigateTo(String path) {
-    if (MagicRouter.instance.navigatorKey.currentContext != null) {
-      MagicRoute.to(path);
-    }
   }
 }

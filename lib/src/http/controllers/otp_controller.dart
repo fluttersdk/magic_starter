@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import 'concerns/navigates_routes.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 
@@ -26,7 +27,7 @@ enum OtpStep {
 ///
 /// Gated by [MagicStarterConfig.hasPhoneOtpFeatures].
 class StarterOtpController extends MagicController
-    with MagicStateMixin, ValidatesRequests {
+    with MagicStateMixin, ValidatesRequests, NavigatesRoutes {
   /// Singleton accessor via IoC container.
   static StarterOtpController get instance =>
       Magic.findOrPut(StarterOtpController.new);
@@ -145,7 +146,7 @@ class StarterOtpController extends MagicController
 
       // 3. Navigate home on successful authentication.
       setSuccess(data);
-      _navigateTo(MagicStarterConfig.homeRoute());
+      navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
       Log.error('[StarterOtpController.verifyOtp] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
@@ -165,10 +166,4 @@ class StarterOtpController extends MagicController
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
-
-  void _navigateTo(String path) {
-    if (MagicRouter.instance.navigatorKey.currentContext != null) {
-      MagicRoute.to(path);
-    }
-  }
 }

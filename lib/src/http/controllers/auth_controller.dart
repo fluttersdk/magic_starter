@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import 'concerns/navigates_routes.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 
@@ -12,7 +13,7 @@ import '../../facades/magic_starter.dart';
 ///   - Both: `auth.email=true`, `auth.phone=true` — caller selects by passing the
 ///     populated field; phone takes precedence when non-empty.
 class StarterAuthController extends MagicController
-    with MagicStateMixin<bool>, ValidatesRequests {
+    with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
   static StarterAuthController get instance =>
       Magic.findOrPut(StarterAuthController.new);
 
@@ -88,9 +89,9 @@ class StarterAuthController extends MagicController
           nestedData?['two_factor'] == true) {
         final twoFactorToken = responseData?['two_factor_token'] as String? ??
             nestedData?['two_factor_token'] as String?;
-        _navigateTo(
+        navigateTo(
           MagicStarterConfig.twoFactorChallengeRoute(),
-          arguments: twoFactorToken != null
+          query: twoFactorToken != null
               ? {'two_factor_token': twoFactorToken}
               : null,
         );
@@ -107,7 +108,7 @@ class StarterAuthController extends MagicController
       // 3. Authenticate the user and navigate home.
       await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
-      _navigateTo(MagicStarterConfig.homeRoute());
+      navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
       Log.error('[StarterAuthController.doLogin] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
@@ -182,13 +183,13 @@ class StarterAuthController extends MagicController
         // 3. Auto-login when the server returns credentials immediately.
         await Auth.login({'token': token}, MagicStarter.createUser(userData));
         setSuccess(true);
-        _navigateTo(MagicStarterConfig.homeRoute());
+        navigateTo(MagicStarterConfig.homeRoute());
         return;
       }
 
       // 4. No credentials returned — e.g. email-verification flow.
       setSuccess(true);
-      _navigateTo(MagicStarterConfig.loginRoute());
+      navigateTo(MagicStarterConfig.loginRoute());
     } catch (e, stackTrace) {
       Log.error('[StarterAuthController.doRegister] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
@@ -323,7 +324,7 @@ class StarterAuthController extends MagicController
       // 2. Log the user in and navigate to home.
       await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
-      _navigateTo(MagicStarterConfig.homeRoute());
+      navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
       Log.error('[StarterAuthController.doTwoFactorChallenge] $e\n$stackTrace');
       setError(trans('auth.challenge_failed'));
@@ -335,7 +336,7 @@ class StarterAuthController extends MagicController
   /// Logout user.
   Future<void> logout() async {
     await Auth.logout();
-    _navigateTo(MagicStarterConfig.loginRoute());
+    navigateTo(MagicStarterConfig.loginRoute());
   }
 
   /// Applies the correct identity field (email or phone) to [payload] based on
@@ -367,12 +368,6 @@ class StarterAuthController extends MagicController
       } else {
         payload['email'] = email ?? '';
       }
-    }
-  }
-
-  void _navigateTo(String path, {Map<String, String>? arguments}) {
-    if (MagicRouter.instance.navigatorKey.currentContext != null) {
-      MagicRoute.to(path, query: arguments);
     }
   }
 }
