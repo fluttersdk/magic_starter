@@ -212,72 +212,70 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Enable 2FA flow with password confirmation and setup modal.
   Future<void> _enableTwoFactor(BuildContext context) async {
-    String? errorMessage;
+    Map<String, dynamic>? setupData;
 
-    while (true) {
-      // ignore: use_build_context_synchronously
-      if (!context.mounted) return;
-      final password = await MagicStarterPasswordConfirmDialog.show(
-        context,
-        errorMessage: errorMessage,
-      );
-      if (password == null) return;
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
 
-      final data = await _trackLoading(
-        _twoFactorLoading,
-        () => controller.doEnableTwoFactor(password: password),
-      );
+    await MagicStarterPasswordConfirmDialog.show(
+      context,
+      onConfirm: (password) async {
+        final data = await _trackLoading(
+          _twoFactorLoading,
+          () => controller.doEnableTwoFactor(password: password),
+        );
+        if (data == null) {
+          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          controller.clearErrors();
+          return error;
+        }
+        setupData = data;
+        return null;  // success → dialog closes
+      },
+    );
 
-      if (data == null) {
-        errorMessage = controller.rxStatus.message;
-        continue;
-      }
+    if (setupData == null) return;  // user cancelled or all attempts failed
 
-      // ignore: use_build_context_synchronously
-      if (!context.mounted) return;
-      final confirmed = await MagicStarterTwoFactorModal.show(
-        context,
-        setupData: data,
-        onConfirm: (code) => controller.doConfirmTwoFactor(code: code),
-      );
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
 
-      if (confirmed) {
-        setState(() => _twoFactorState = 'enabled');
-      }
+    final confirmed = await MagicStarterTwoFactorModal.show(
+      context,
+      setupData: setupData!,
+      onConfirm: (code) => controller.doConfirmTwoFactor(code: code),
+    );
 
-      return;
+    if (confirmed) {
+      setState(() => _twoFactorState = 'enabled');
     }
   }
 
   /// Disable 2FA --- requires password confirmation.
   Future<void> _disableTwoFactor(BuildContext context) async {
-    String? errorMessage;
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
 
-    while (true) {
-      // ignore: use_build_context_synchronously
-      if (!context.mounted) return;
-      final password = await MagicStarterPasswordConfirmDialog.show(
-        context,
-        errorMessage: errorMessage,
-      );
-      if (password == null) return;
+    final success = await MagicStarterPasswordConfirmDialog.show(
+      context,
+      onConfirm: (password) async {
+        final ok = await _trackLoading(
+          _twoFactorLoading,
+          () => controller.doDisableTwoFactor(password: password),
+        );
+        if (!ok) {
+          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          controller.clearErrors();
+          return error;
+        }
+        return null;
+      },
+    );
 
-      final success = await _trackLoading(
-        _twoFactorLoading,
-        () => controller.doDisableTwoFactor(password: password),
-      );
-
-      if (!success) {
-        errorMessage = controller.rxStatus.message;
-        continue;
-      }
-
+    if (success) {
       setState(() {
         _twoFactorState = 'disabled';
         _recoveryCodes = [];
       });
-
-      return;
     }
   }
 
@@ -325,12 +323,23 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   }
 
   Future<void> _revokeOtherSessions(BuildContext context) async {
-    final password = await MagicStarterPasswordConfirmDialog.show(context);
-    if (password == null) return;
-    final success = await _trackLoading(
-      _sessionActionLoading,
-      () => controller.doRevokeOtherSessions(password: password),
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
+
+    final success = await MagicStarterPasswordConfirmDialog.show(
+      context,
+      onConfirm: (password) async {
+        final ok = await _trackLoading(
+          _sessionActionLoading,
+          () => controller.doRevokeOtherSessions(password: password),
+        );
+        if (!ok) {
+          return controller.rxStatus.message ?? trans('common.error_occurred');
+        }
+        return null;
+      },
     );
+
     if (success) {
       _loadSessions();
     }
