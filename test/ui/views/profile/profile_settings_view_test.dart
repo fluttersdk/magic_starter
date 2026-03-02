@@ -208,10 +208,23 @@ void main() {
 
       // 6. Create and inject controller.
       Magic.put(StarterProfileController());
+
+      // 7. Register Gate abilities — non-guest user has all abilities.
+      Gate.flush();
+      Gate.define('starter.update-profile-photo', (user, [_]) => true);
+      Gate.define('starter.update-email', (user, [_]) => true);
+      Gate.define('starter.update-phone', (user, [_]) => true);
+      Gate.define('starter.update-password', (user, [_]) => true);
+      Gate.define('starter.verify-email', (user, [_]) => true);
+      Gate.define('starter.manage-two-factor', (user, [_]) => true);
+      Gate.define('starter.manage-newsletter', (user, [_]) => true);
+      Gate.define('starter.logout-sessions', (user, [_]) => true);
+      Gate.define('starter.delete-account', (user, [_]) => true);
     });
 
     tearDown(() {
       Auth.manager.forgetGuards();
+      Gate.flush();
     });
 
     testWidgets('extended profile section renders when feature enabled',

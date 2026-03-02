@@ -118,6 +118,8 @@
       "delete_account": {
         "button": "Delete Account",
         "description": "Permanently delete your account and all associated data. This action cannot be undone.",
+        "guest_upgrade_description": "Convert your guest account to a full account to manage or delete your data.",
+        "guest_upgrade_title": "Account Upgrade Required",
         "password_label": "Confirm your password",
         "title": "Delete Account"
       }

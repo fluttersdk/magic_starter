@@ -12,12 +12,13 @@ import '../../../http/controllers/newsletter_controller.dart';
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
-/// Sections are gated behind [MagicStarterConfig] feature toggles:
-/// - Profile photo (hasProfilePhotoFeatures)
-/// - Profile information (always visible)
-/// - Password update (always visible)
-/// - Two-factor authentication (hasTwoFactorFeatures)
-/// - Browser sessions (hasSessionsFeatures)
+/// Sections are gated by two mechanisms:
+///
+/// 1. **Feature toggles** via [MagicStarterConfig] (e.g. `hasProfilePhotoFeatures`)
+/// 2. **Gate abilities** (e.g. `starter.update-password`) — guests are denied by
+///    default; host apps can override by re-defining any `starter.*` ability.
+///
+/// See [MagicStarterServiceProvider] for the default Gate ability definitions.
 class MagicStarterProfileSettingsView
     extends MagicStatefulView<StarterProfileController> {
   const MagicStarterProfileSettingsView({super.key});
@@ -246,7 +247,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           title: trans('profile.settings'),
           subtitle: trans('profile.settings_subtitle'),
         ),
-        _buildProfilePhotoSection(),
+        if (MagicStarterConfig.hasProfilePhotoFeatures() &&
+            Gate.allows('starter.update-profile-photo'))
+          _buildProfilePhotoSection(),
         MagicForm(
           formData: profileForm,
           child: WDiv(
@@ -258,12 +261,21 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ],
           ),
         ),
-        _buildPasswordSection(),
-        _buildEmailVerificationSection(),
-        _buildTwoFactorSection(),
-        _buildNewsletterSection(),
-        _buildGuestUpgradeSection(),
-        _buildSessionsSection(),
+        if (Gate.allows('starter.update-password'))
+          _buildPasswordSection(),
+        if (MagicStarterConfig.hasEmailVerificationFeatures() &&
+            Gate.allows('starter.verify-email'))
+          _buildEmailVerificationSection(),
+        if (MagicStarterConfig.hasTwoFactorFeatures() &&
+            Gate.allows('starter.manage-two-factor'))
+          _buildTwoFactorSection(),
+        if (MagicStarterConfig.hasNewsletterFeatures() &&
+            Gate.allows('starter.manage-newsletter'))
+          _buildNewsletterSection(),
+        if (Gate.denies('starter.delete-account'))
+          _buildGuestUpgradeSection(),
+        if (MagicStarterConfig.hasSessionsFeatures())
+          _buildSessionsSection(),
         _buildDeleteAccountSection(),
       ],
     );
@@ -271,9 +283,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Profile Photo Section -------------------------------------------------
 
   Widget _buildProfilePhotoSection() {
-    if (!MagicStarterConfig.hasProfilePhotoFeatures()) {
-      return const SizedBox.shrink();
-    }
 
     final user = Auth.user();
     final photoUrl = user?.get<String>('profile_photo_url');
@@ -364,16 +373,18 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             className:
                 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
           ),
-          WFormInput(
-            controller: profileForm['email'],
-            label: trans('attributes.email'),
-            type: InputType.email,
-            validator: rules([Required(), Email()], field: 'email'),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
+          // Gate: guests cannot see/edit their email.
+          if (Gate.allows('starter.update-email'))
+            WFormInput(
+              controller: profileForm['email'],
+              label: trans('attributes.email'),
+              type: InputType.email,
+              validator: rules([Required(), Email()], field: 'email'),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
           WDiv(
             className: 'flex justify-end',
             children: [
@@ -437,29 +448,32 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       child: WDiv(
         className: 'flex flex-col gap-4',
         children: [
-          WFormInput(
-            controller: profileForm['phone'],
-            label: trans('profile.phone_label'),
-            hint: '+905301234567',
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-          ),
-          WFormSelect<String>(
-            value: profileForm.get('phone_country'),
-            onChange: (v) => profileForm.set('phone_country', v ?? ''),
-            label: trans('profile.phone_country_label'),
-            options: _phoneCountryCodes.entries
-                .map((e) => SelectOption<String>(value: e.key, label: e.value))
-                .toList(),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
-            menuClassName:
-                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
-          ),
+          // Gate: guests cannot edit phone or country code.
+          if (Gate.allows('starter.update-phone')) ...[
+            WFormInput(
+              controller: profileForm['phone'],
+              label: trans('profile.phone_label'),
+              hint: '+905301234567',
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            ),
+            WFormSelect<String>(
+              value: profileForm.get('phone_country'),
+              onChange: (v) => profileForm.set('phone_country', v ?? ''),
+              label: trans('profile.phone_country_label'),
+              options: _phoneCountryCodes.entries
+                  .map((e) => SelectOption<String>(value: e.key, label: e.value))
+                  .toList(),
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
+              menuClassName:
+                  'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
+            ),
+          ],
           WFormSelect<String>(
             value: profileForm.get('timezone'),
             onChange: (v) => profileForm.set('timezone', v ?? ''),
@@ -594,10 +608,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Shows a green verified badge when the user's email is confirmed,
   /// or a yellow warning banner with a resend button when unverified.
   Widget _buildEmailVerificationSection() {
-    if (!MagicStarterConfig.hasEmailVerificationFeatures()) {
-      return const SizedBox.shrink();
-    }
-
     if (controller.isEmailVerified) {
       return MagicStarterCard(
         title: trans('magic_starter.email_verification.section_title'),
@@ -670,10 +680,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Gated behind [MagicStarterConfig.hasTwoFactorFeatures].
   /// Renders one of three states: disabled, setup (QR + confirm), enabled.
   Widget _buildTwoFactorSection() {
-    if (!MagicStarterConfig.hasTwoFactorFeatures()) {
-      return const SizedBox.shrink();
-    }
-
     return MagicStarterCard(
       title: trans('profile.two_factor_authentication'),
       child: WDiv(
@@ -902,10 +908,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 // -- Newsletter Section ------------------------------------------------------
 
   Widget _buildNewsletterSection() {
-    if (!MagicStarterConfig.hasNewsletterFeatures()) {
-      return const SizedBox.shrink();
-    }
-
     return MagicStarterCard(
       title: trans('magic_starter.newsletter.section_title'),
       child: WDiv(
@@ -959,10 +961,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Gated behind [MagicStarterConfig.hasSessionsFeatures].
   /// Shows a loading indicator, empty state, or a list of active sessions.
   Widget _buildSessionsSection() {
-    if (!MagicStarterConfig.hasSessionsFeatures()) {
-      return const SizedBox.shrink();
-    }
-
     return MagicStarterCard(
       title: trans('profile.browser_sessions'),
       child: WDiv(
@@ -994,20 +992,22 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               className: 'flex flex-col gap-3',
               children: _sessions.map(_buildSessionItem).toList(),
             ),
-          WDiv(
-            className: 'mt-2',
-            children: [
-              Builder(
-                builder: (context) => WButton(
-                  onTap: () => _revokeOtherSessions(context),
-                  isLoading: controller.isLoading,
-                  className:
-                      'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 w-full flex justify-center',
-                  child: WText(trans('profile.logout_other_sessions')),
+          // Gate: guests cannot logout/revoke sessions.
+          if (Gate.allows('starter.logout-sessions'))
+            WDiv(
+              className: 'mt-2',
+              children: [
+                Builder(
+                  builder: (context) => WButton(
+                    onTap: () => _revokeOtherSessions(context),
+                    isLoading: controller.isLoading,
+                    className:
+                        'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 w-full flex justify-center',
+                    child: WText(trans('profile.logout_other_sessions')),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -1080,9 +1080,51 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Builds the delete account section with password confirmation.
   ///
-  /// Displays a red-themed card with warning, password input,
-  /// and delete button that calls [StarterProfileController.doDeleteAccount].
+  /// When the user is a guest (denied `starter.delete-account`), renders an
+  /// upgrade prompt instead of the destructive delete form.
   Widget _buildDeleteAccountSection() {
+    // Gate: guests see an upgrade prompt instead of the delete form.
+    if (Gate.denies('starter.delete-account')) {
+      return MagicStarterCard(
+        title: trans('magic_starter.profile.delete_account.title'),
+        child: WDiv(
+          className: 'flex flex-col gap-4',
+          children: [
+            WDiv(
+              className:
+                  'flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20'
+                  ' border border-blue-200 dark:border-blue-700',
+              children: [
+                WIcon(
+                  Icons.info_outline,
+                  className:
+                      'text-blue-500 dark:text-blue-400 text-xl mt-0.5',
+                ),
+                WDiv(
+                  className: 'flex flex-col gap-1 flex-1',
+                  children: [
+                    WText(
+                      trans(
+                        'magic_starter.profile.delete_account.guest_upgrade_title',
+                      ),
+                      className:
+                          'text-sm font-semibold text-blue-800 dark:text-blue-200',
+                    ),
+                    WText(
+                      trans(
+                        'magic_starter.profile.delete_account.guest_upgrade_description',
+                      ),
+                      className: 'text-sm text-blue-700 dark:text-blue-300',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return MagicForm(
       formData: deleteAccountForm,
       child: MagicStarterCard(
@@ -1142,13 +1184,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Builds the guest account upgrade section.
   ///
-  /// Visible only when the current user's `is_guest` attribute is `true`.
-  /// Allows the guest to set an email and password to convert their account.
+  /// Visible only when the user is denied `starter.delete-account` (i.e. is a
+  /// guest). Allows the guest to set an email and password to convert their
+  /// account into a full membership.
   Widget _buildGuestUpgradeSection() {
-    final user = Auth.user();
-    final isGuest = user?.get<bool>('is_guest') ?? false;
-
-    if (!isGuest) {
+    // Only show for guests — inverse of the delete-account Gate.
+    if (Gate.allows('starter.delete-account')) {
       return const SizedBox.shrink();
     }
 
