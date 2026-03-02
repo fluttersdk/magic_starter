@@ -276,11 +276,13 @@ void main() {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
-            'token': 'guest-token-abc',
-            'user': {
-              'id': 99,
-              'name': 'Guest User',
-              'is_guest': true,
+            'data': {
+              'token': 'guest-token-abc',
+              'user': {
+                'id': 99,
+                'name': 'Guest User',
+                'is_guest': true,
+              },
             },
           },
         );
@@ -309,11 +311,13 @@ void main() {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
-            'token': 'guest-token-abc',
-            'user': {
-              'id': 99,
-              'name': 'Guest User',
-              'is_guest': true,
+            'data': {
+              'token': 'guest-token-abc',
+              'user': {
+                'id': 99,
+                'name': 'Guest User',
+                'is_guest': true,
+              },
             },
           },
         );
@@ -335,11 +339,13 @@ void main() {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
-            'token': 'guest-token-xyz',
-            'user': {
-              'id': 99,
-              'name': 'Guest User',
-              'is_guest': true,
+            'data': {
+              'token': 'guest-token-xyz',
+              'user': {
+                'id': 99,
+                'name': 'Guest User',
+                'is_guest': true,
+              },
             },
           },
         );
@@ -361,11 +367,13 @@ void main() {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
-            'token': 'guest-token-reused',
-            'user': {
-              'id': 99,
-              'name': 'Guest User',
-              'is_guest': true,
+            'data': {
+              'token': 'guest-token-reused',
+              'user': {
+                'id': 99,
+                'name': 'Guest User',
+                'is_guest': true,
+              },
             },
           },
         );
@@ -406,11 +414,13 @@ void main() {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
-            'token': 'guest-token-abc',
-            'user': {
-              'id': 99,
-              'name': 'Guest User',
-              'is_guest': true,
+            'data': {
+              'token': 'guest-token-abc',
+              'user': {
+                'id': 99,
+                'name': 'Guest User',
+                'is_guest': true,
+              },
             },
           },
         );

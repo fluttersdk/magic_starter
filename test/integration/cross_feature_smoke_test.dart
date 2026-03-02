@@ -61,11 +61,13 @@ void main() {
       mockDriver.mockResponse(
         statusCode: 200,
         data: {
-          'token': 'guest-token',
-          'user': {
-            'id': 99,
-            'name': 'Guest User',
-            'is_guest': true,
+          'data': {
+            'token': 'guest-token',
+            'user': {
+              'id': 99,
+              'name': 'Guest User',
+              'is_guest': true,
+            },
           },
         },
       );

@@ -65,16 +65,17 @@ class StarterGuestAuthController extends MagicController
       }
 
       // 4. Store the auth token and set the authenticated user.
-      final data = response.data as Map<String, dynamic>?;
-      final token = data?['token'] as String?;
-      final userData = data?['user'] as Map<String, dynamic>?;
+      final responseData = response.data as Map<String, dynamic>?;
+      final nestedData = responseData?['data'] as Map<String, dynamic>?;
+      final token = nestedData?['token'] as String?;
+      final userData = nestedData?['user'] as Map<String, dynamic>?;
 
       if (token != null) {
         await Auth.login(
           {'token': token},
           userData != null
               ? MagicStarter.createUser(userData)
-              : MagicStarterAuthUser.fromMap(data ?? {}),
+              : MagicStarterAuthUser.fromMap(nestedData ?? {}),
         );
       }
 
