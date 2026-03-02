@@ -103,7 +103,10 @@
       "section_description": "Receive product updates and announcements by email.",
       "section_title": "Newsletter Preferences",
       "subscribe_label": "Subscribe to product updates and news",
+      "subscribed_status": "You are currently subscribed.",
       "toggle_button": "Save Preferences",
+      "toggle_label": "Receive Newsletter",
+      "unsubscribed_status": "You are not subscribed.",
       "update_error": "Failed to update newsletter preferences."
     },
     "otp": {

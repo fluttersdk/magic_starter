@@ -96,6 +96,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       ValueNotifier<bool>(false);
   final ValueNotifier<bool> _twoFactorLoading = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _sessionActionLoading = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _newsletterLoading = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _profileSaveLoading = ValueNotifier<bool>(false);
 
   // -- Sessions state --------------------------------------------------------
@@ -140,6 +141,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     _twoFactorLoading.dispose();
     _sessionActionLoading.dispose();
     _profileSaveLoading.dispose();
+    _newsletterLoading.dispose();
   }
 
   // -- Profile actions --------------------------------------------------------
@@ -919,6 +921,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
 // -- Newsletter Section ------------------------------------------------------
 
+  /// Builds the newsletter subscription toggle section.
+  ///
+  /// Gated behind [MagicStarterConfig.hasNewsletterFeatures] and
+  /// the `starter.manage-newsletter` Gate ability.
   Widget _buildNewsletterSection() {
     return MagicStarterCard(
       title: trans('magic_starter.newsletter.section_title'),
@@ -935,17 +941,64 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               return newsletterController.renderState(
                 (data) {
                   final isSubscribed = data?['subscribed'] as bool? ?? false;
-                  return WButton(
-                    onTap: () async {
-                      await newsletterController.updateNewsletterSubscription(
-                        subscribe: !isSubscribed,
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: _newsletterLoading,
+                    builder: (context, isLoading, _) {
+                      return WDiv(
+                        className: 'flex flex-col gap-3',
+                        children: [
+                          WDiv(
+                            className:
+                                'flex flex-row items-center justify-between',
+                            children: [
+                              WDiv(
+                                className: 'flex flex-col gap-1 flex-1',
+                                children: [
+                                  WText(
+                                    trans(
+                                      'magic_starter.newsletter.toggle_label',
+                                    ),
+                                    className:
+                                        'text-sm font-medium text-gray-900 dark:text-white',
+                                  ),
+                                  WText(
+                                    isSubscribed
+                                        ? trans(
+                                            'magic_starter.newsletter.subscribed_status',
+                                          )
+                                        : trans(
+                                            'magic_starter.newsletter.unsubscribed_status',
+                                          ),
+                                    className:
+                                        'text-xs text-gray-500 dark:text-gray-400',
+                                  ),
+                                ],
+                              ),
+                              Switch.adaptive(
+                                value: isSubscribed,
+                                activeThumbColor: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimary,
+                                activeTrackColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary,
+                                onChanged: isLoading
+                                    ? null
+                                    : (newValue) async {
+                                        await _trackLoading(
+                                          _newsletterLoading,
+                                          () => newsletterController
+                                              .updateNewsletterSubscription(
+                                            subscribe: newValue,
+                                          ),
+                                        );
+                                      },
+                              ),
+                            ],
+                          ),
+                        ],
                       );
                     },
-                    isLoading: newsletterController.isLoading,
-                    className:
-                        'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                    child:
-                        WText(trans('magic_starter.newsletter.toggle_button')),
                   );
                 },
                 onEmpty: WDiv(
