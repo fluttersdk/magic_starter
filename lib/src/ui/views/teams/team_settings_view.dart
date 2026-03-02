@@ -313,7 +313,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           children: [
             WDiv(
               className: isOwner
-                  ? 'px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary'
+                  ? 'px-2 py-1 rounded-md text-xs font-medium bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary'
                   : 'px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
               child: WText(_roleLabel(role)),
             ),

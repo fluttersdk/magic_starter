@@ -403,7 +403,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                     mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3
                     duration-150 text-sm font-medium
                     text-gray-600 dark:text-gray-400
-                    active:text-primary active:bg-primary/10
+                    active:text-primary active:bg-primary/10 dark:active:bg-primary/10
                     hover:bg-gray-100 dark:hover:bg-gray-800
                 ''',
         children: [
@@ -519,7 +519,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                   // Avatar
                   WDiv(
                     className: '''
-                      w-9 h-9 rounded-full bg-primary/10
+                      w-9 h-9 rounded-full bg-primary/10 dark:bg-primary/10
                       flex items-center justify-center flex-shrink-0
                     ''',
                     child: WText(

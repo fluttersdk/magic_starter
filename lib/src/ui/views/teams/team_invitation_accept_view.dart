@@ -49,7 +49,7 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
         children: [
           WDiv(
             className:
-                'w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center',
+                'w-16 h-16 rounded-full bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
             child: WIcon(
               Icons.group_add_outlined,
               className: 'text-[32px] text-primary',
