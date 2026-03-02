@@ -37,7 +37,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       'name': '',
       'email': '',
       'phone': '',
-      'phone_country': '',
       'timezone': '',
       'language': '',
     },
@@ -100,8 +99,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       ValueNotifier<bool>(false);
   final ValueNotifier<bool> _profileSaveLoading =
       ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _extendedProfileSaveLoading =
-      ValueNotifier<bool>(false);
 
   // -- Sessions state --------------------------------------------------------
 
@@ -116,7 +113,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       profileForm.set('name', user.get<String>('name') ?? '');
       profileForm.set('email', user.get<String>('email') ?? '');
       profileForm.set('phone', user.get<String>('phone') ?? '');
-      profileForm.set('phone_country', user.get<String>('phone_country') ?? '');
       profileForm.set('timezone', user.get<String>('timezone') ?? '');
       profileForm.set('language', user.get<String>('locale') ?? '');
     }
@@ -144,7 +140,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     _twoFactorLoading.dispose();
     _sessionActionLoading.dispose();
     _profileSaveLoading.dispose();
-    _extendedProfileSaveLoading.dispose();
   }
 
   // -- Profile actions --------------------------------------------------------
@@ -163,6 +158,20 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       notifier.value = false;
     }
   }
+  /// Triggers a rebuild when [controller.withoutNotifying] suppresses the
+  /// [notifyListeners] call inside [handleApiError] / [setErrorsFromResponse].
+  ///
+  /// Without this, validation errors are set on the controller but the UI
+  /// never rebuilds to display them.
+  void _rebuildIfValidationErrors() {
+    if (controller.hasErrors) {
+      setState(() {});
+      // Re-trigger form validators so FormField picks up server errors
+      // via controller.getError(field) inside the rules() helper.
+      profileForm.formKey.currentState?.validate();
+    }
+  }
+
 
   Future<void> _submitProfile() async {
     if (!profileForm.validate()) return;
@@ -173,30 +182,14 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           name: profileForm.get('name'),
           email: profileForm.get('email'),
           phone: profileForm.get('phone'),
-          phoneCountry: profileForm.get('phone_country'),
           timezone: profileForm.get('timezone'),
           language: profileForm.get('language'),
         ),
       ),
     );
+    _rebuildIfValidationErrors();
   }
 
-  Future<void> _submitExtendedProfile() async {
-    if (!profileForm.validate()) return;
-    await _trackLoading(
-      _extendedProfileSaveLoading,
-      () => controller.withoutNotifying(
-        () => controller.doUpdateProfile(
-          name: profileForm.get('name'),
-          email: profileForm.get('email'),
-          phone: profileForm.get('phone'),
-          phoneCountry: profileForm.get('phone_country'),
-          timezone: profileForm.get('timezone'),
-          language: profileForm.get('language'),
-        ),
-      ),
-    );
-  }
 
   Future<void> _submitPassword() async {
     if (!passwordForm.validate()) return;
@@ -207,6 +200,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         passwordConfirmation: passwordForm.get('password_confirmation'),
       ),
     ));
+    _rebuildIfValidationErrors();
     if (success) {
       passwordForm.set('current_password', '');
       passwordForm.set('password', '');
@@ -337,21 +331,21 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         if (MagicStarterConfig.hasProfilePhotoFeatures() &&
             Gate.allows('starter.update-profile-photo'))
           _buildProfilePhotoSection(),
+        // Email verification banner right after photo when unverified.
+        if (MagicStarterConfig.hasEmailVerificationFeatures() &&
+            Gate.allows('starter.verify-email') &&
+            !controller.isEmailVerified)
+          _buildEmailVerificationSection(),
         MagicForm(
           formData: profileForm,
-          child: WDiv(
-            className: 'flex flex-col gap-6',
-            children: [
-              _buildProfileSection(),
-              if (MagicStarterConfig.hasExtendedProfileFeatures())
-                _buildExtendedProfileSection(),
-            ],
-          ),
+          child: _buildProfileSection(),
         ),
         if (Gate.allows('starter.update-password'))
           _buildPasswordSection(),
+        // Verified badge shown inline (not at top).
         if (MagicStarterConfig.hasEmailVerificationFeatures() &&
-            Gate.allows('starter.verify-email'))
+            Gate.allows('starter.verify-email') &&
+            controller.isEmailVerified)
           _buildEmailVerificationSection(),
         if (MagicStarterConfig.hasTwoFactorFeatures() &&
             Gate.allows('starter.manage-two-factor'))
@@ -455,6 +449,18 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Profile Section -------------------------------------------------------
 
   Widget _buildProfileSection() {
+    // Resolve timezone and locale options for extended profile fields.
+    final timezones = MagicStarter.manager.timezoneOptions ??
+        MagicStarterConfig.supportedTimezones();
+    final locales = MagicStarter.manager.localeOptions;
+    final finalLocales = locales.isNotEmpty
+        ? locales
+        : [
+            SelectOption<String>(value: 'en', label: 'English'),
+            SelectOption<String>(value: 'tr', label: 'Türkçe'),
+          ];
+    final hasExtended = MagicStarterConfig.hasExtendedProfileFeatures();
+
     return MagicStarterCard(
       title: trans('profile.profile_information'),
       child: WDiv(
@@ -481,89 +487,27 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               className:
                   'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
-          WDiv(
-            className: 'flex justify-end',
-            children: [
-              MagicBuilder<bool>(
-                listenable: _profileSaveLoading,
-                builder: (isProcessing) => WButton(
-                  onTap: isProcessing ? null : _submitProfile,
-                  isLoading: isProcessing,
-                  className:
-                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                  child: WText(trans('common.save')),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // -- Extended Profile Section ----------------------------------------------
-
-  static const Map<String, String> _phoneCountryCodes = {
-    'TR': 'Turkey (+90)',
-    'US': 'United States (+1)',
-    'GB': 'United Kingdom (+44)',
-    'DE': 'Germany (+49)',
-    'FR': 'France (+33)',
-    'IT': 'Italy (+39)',
-    'ES': 'Spain (+34)',
-    'NL': 'Netherlands (+31)',
-    'BE': 'Belgium (+32)',
-    'CH': 'Switzerland (+41)',
-    'AU': 'Australia (+61)',
-    'CA': 'Canada (+1)',
-    'BR': 'Brazil (+55)',
-    'MX': 'Mexico (+52)',
-    'AR': 'Argentina (+54)',
-    'SA': 'Saudi Arabia (+966)',
-    'AE': 'UAE (+971)',
-    'IN': 'India (+91)',
-    'JP': 'Japan (+81)',
-    'CN': 'China (+86)',
-  };
-
-  Widget _buildExtendedProfileSection() {
-    if (!MagicStarterConfig.hasExtendedProfileFeatures()) {
-      return const SizedBox.shrink();
-    }
-
-    final timezones = MagicStarter.manager.timezoneOptions ??
-        MagicStarterConfig.supportedTimezones();
-    final locales = MagicStarter.manager.localeOptions;
-    final finalLocales = locales.isNotEmpty
-        ? locales
-        : [
-            SelectOption<String>(value: 'en', label: 'English'),
-            SelectOption<String>(value: 'tr', label: 'Türkçe'),
-          ];
-
-    return MagicStarterCard(
-      key: const Key('extended-profile-section'),
-      title: trans('profile.extended_information'),
-      child: WDiv(
-        className: 'flex flex-col gap-4',
-        children: [
-          // Gate: guests cannot edit phone or country code.
-          if (Gate.allows('starter.update-phone')) ...[
+          // Extended fields: phone, timezone, language — feature-gated.
+          if (hasExtended &&
+              Gate.allows('starter.update-phone'))
             WFormInput(
               controller: profileForm['phone'],
               label: trans('profile.phone_label'),
-              hint: '+905301234567',
+              placeholder: '+905301234567',
+              validator: rules([], field: 'phone'),
               labelClassName:
                   'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
               className:
                   'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
+          if (hasExtended)
             WFormSelect<String>(
-              value: profileForm.get('phone_country'),
-              onChange: (v) => profileForm.set('phone_country', v ?? ''),
-              label: trans('profile.phone_country_label'),
-              options: _phoneCountryCodes.entries
-                  .map((e) => SelectOption<String>(value: e.key, label: e.value))
+              value: profileForm.get('timezone'),
+              onChange: (v) => profileForm.set('timezone', v ?? ''),
+              label: trans('profile.timezone_label'),
+              searchable: true,
+              options: timezones
+                  .map((tz) => SelectOption<String>(value: tz, label: tz))
                   .toList(),
               labelClassName:
                   'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
@@ -572,43 +516,26 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               menuClassName:
                   'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
             ),
-          ],
-          WFormSelect<String>(
-            value: profileForm.get('timezone'),
-            onChange: (v) => profileForm.set('timezone', v ?? ''),
-            label: trans('profile.timezone_label'),
-            searchable: true,
-            options: timezones
-                .map((tz) => SelectOption<String>(value: tz, label: tz))
-                .toList(),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
-            menuClassName:
-                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
-          ),
-          WFormSelect<String>(
-            value: profileForm.get('language'),
-            onChange: (v) => profileForm.set('language', v ?? ''),
-            label: trans('profile.language_label'),
-            options: finalLocales,
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
-            menuClassName:
-                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
-          ),
+          if (hasExtended)
+            WFormSelect<String>(
+              value: profileForm.get('language'),
+              onChange: (v) => profileForm.set('language', v ?? ''),
+              label: trans('profile.language_label'),
+              options: finalLocales,
+              labelClassName:
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className:
+                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
+              menuClassName:
+                  'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
+            ),
           WDiv(
-            className: 'flex justify-end mt-2',
+            className: 'flex justify-end',
             children: [
               MagicBuilder<bool>(
-                listenable: _extendedProfileSaveLoading,
+                listenable: _profileSaveLoading,
                 builder: (isProcessing) => WButton(
-                  onTap: isProcessing
-                      ? null
-                      : _submitExtendedProfile,
+                  onTap: isProcessing ? null : _submitProfile,
                   isLoading: isProcessing,
                   className:
                       'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
@@ -1423,17 +1350,21 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Submits the guest upgrade form — converts the guest to a full account.
   Future<void> _submitGuestUpgrade() async {
     if (!upgradeForm.validate()) return;
-    await upgradeForm.process(() => controller.withoutNotifying(
+    final success = await upgradeForm.process(() => controller.withoutNotifying(
       () => controller.doUpdateProfile(
         name: profileForm.get('name'),
         email: upgradeForm.get('email'),
         phone: profileForm.get('phone'),
-        phoneCountry: profileForm.get('phone_country'),
         timezone: profileForm.get('timezone'),
         language: profileForm.get('language'),
         password: upgradeForm.get('password'),
         passwordConfirmation: upgradeForm.get('password_confirmation'),
       ),
     ));
+    if (success) {
+      Magic.reload();
+      return;
+    }
+    _rebuildIfValidationErrors();
   }
 }

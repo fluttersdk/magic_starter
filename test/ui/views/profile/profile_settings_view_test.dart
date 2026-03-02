@@ -194,7 +194,6 @@ void main() {
           'name': 'Test User',
           'email': 'test@example.com',
           'phone': '+905301234567',
-          'phone_country': 'TR',
           'timezone': 'Europe/Istanbul',
           'language': 'tr',
         }),
@@ -227,29 +226,90 @@ void main() {
       Gate.flush();
     });
 
-    testWidgets('extended profile section renders when feature enabled',
-        (tester) async {
-      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+    // -----------------------------------------------------------------------
+    // Merged profile section tests
+    // -----------------------------------------------------------------------
 
-      // Verify extended profile section exists.
-      expect(find.byKey(const Key('extended-profile-section')), findsOneWidget);
+    testWidgets(
+      'merged profile section renders all fields in a single card',
+      (tester) async {
+        await tester.pumpWidget(
+          wrap(const MagicStarterProfileSettingsView()),
+        );
 
-      // We use WFormInput, so let's find input by hint text or label.
-      // Phone is in the form input controller, so it should be findable by text if value is rendered
-      // 'name' and 'email' inputs should also exist
-      expect(find.byType(WFormInput), findsWidgets);
+        // The old separate "extended-profile-section" card must NOT exist.
+        expect(
+          find.byKey(const Key('extended-profile-section')),
+          findsNothing,
+        );
 
-      // Look for WFormSelect instances
-      expect(find.byType(WFormSelect<String>), findsNWidgets(3));
-    });
+        // All five fields should be present: name, email, phone (inputs)
+        // + timezone, language (selects).
+        expect(find.byType(WFormInput), findsWidgets);
+        expect(find.byType(WFormSelect<String>), findsNWidgets(2));
+      },
+    );
 
-    testWidgets('extended profile section hides when feature disabled',
-        (tester) async {
-      Config.set('magic_starter.features.extended_profile', false);
-      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+    testWidgets(
+      'extended fields hidden when feature disabled but core fields remain',
+      (tester) async {
+        Config.set('magic_starter.features.extended_profile', false);
 
-      // Verify extended profile section does not exist.
-      expect(find.byKey(const Key('extended-profile-section')), findsNothing);
-    });
+        await tester.pumpWidget(
+          wrap(const MagicStarterProfileSettingsView()),
+        );
+
+        // No separate extended section card.
+        expect(
+          find.byKey(const Key('extended-profile-section')),
+          findsNothing,
+        );
+
+        // Phone field should NOT be rendered.
+        expect(find.text('profile.phone_label'), findsNothing);
+
+        // Timezone and language selects should NOT be rendered.
+        expect(find.byType(WFormSelect<String>), findsNothing);
+
+        // Core fields (name, email) should still be present.
+        expect(find.text('attributes.name'), findsOneWidget);
+        expect(find.text('attributes.email'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'backend validation errors display on form fields after failed submit',
+      (tester) async {
+        // Mock a 422 validation error for the 'name' field.
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The given data was invalid.',
+            'errors': {
+              'name': ['The name field is required.'],
+            },
+          },
+        );
+
+        await tester.pumpWidget(
+          wrap(const MagicStarterProfileSettingsView()),
+        );
+
+        // Scroll to and tap the profile save button.
+        final saveButtons = find.widgetWithText(WButton, 'common.save');
+        expect(saveButtons, findsWidgets);
+
+        await tester.ensureVisible(saveButtons.first);
+        await tester.pumpAndSettle();
+        await tester.tap(saveButtons.first);
+        await tester.pumpAndSettle();
+
+        // The backend validation error message should now be visible.
+        expect(
+          find.text('The name field is required.'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

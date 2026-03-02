@@ -55,7 +55,6 @@ class StarterProfileController extends MagicController
     required String name,
     required String email,
     String? phone,
-    String? phoneCountry,
     String? timezone,
     String? language,
     String? password,
@@ -71,8 +70,6 @@ class StarterProfileController extends MagicController
         'name': name,
         'email': email,
         if (phone != null && phone.isNotEmpty) 'phone': phone,
-        if (phoneCountry != null && phoneCountry.isNotEmpty)
-          'phone_country': phoneCountry,
         if (timezone != null && timezone.isNotEmpty) 'timezone': timezone,
         if (language != null && language.isNotEmpty) 'language': language,
         if (password != null && password.isNotEmpty) 'password': password,
