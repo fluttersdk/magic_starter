@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -96,12 +95,12 @@ void main() {
   // Test 1: Step 1 renders QR code, secret key, and code input
   // -------------------------------------------------------------------------
   testWidgets(
-    'Step 1 renders QR code via SvgPicture, secret key, and 6-digit input',
+    'Step 1 renders QR code via WSvg with preserve-colors, secret key, and 6-digit input',
     (WidgetTester tester) async {
       await pumpModal(tester);
 
-      // QR code must be rendered as SvgPicture.string (NOT WSvg).
-      expect(find.byType(SvgPicture), findsOneWidget);
+      // QR code must be rendered as WSvg with preserve-colors (NOT raw SvgPicture).
+      expect(find.byType(WSvg), findsOneWidget);
 
       // Secret key text must be visible.
       expect(find.text('ABCDEFGHIJK'), findsOneWidget);
@@ -115,19 +114,19 @@ void main() {
   );
 
   // -------------------------------------------------------------------------
-  // Test 2: QR code uses SvgPicture, NOT WSvg
+  // Test 2: QR code uses WSvg with preserve-colors
   // -------------------------------------------------------------------------
   testWidgets(
-    'Step 1 does NOT use WSvg for QR code — SvgPicture.string renders directly',
+    'Step 1 uses WSvg with preserve-colors for QR code — ColorFilter is bypassed',
     (WidgetTester tester) async {
       await pumpModal(tester);
 
-      // SvgPicture MUST be present — it is the correct widget.
-      expect(find.byType(SvgPicture), findsOneWidget);
+      // WSvg MUST be present — it bypasses ColorFilter for multi-colour SVGs.
+      expect(find.byType(WSvg), findsOneWidget);
 
-      // WSvg MUST NOT be present for the QR code — ColorFilter would
-      // turn the QR into a solid black rectangle.
-      expect(find.byType(WSvg), findsNothing);
+      // The WSvg className must include preserve-colors so no tint is applied.
+      final wsv = tester.widget<WSvg>(find.byType(WSvg));
+      expect(wsv.className, contains('preserve-colors'));
     },
   );
 
@@ -174,8 +173,8 @@ void main() {
         onConfirm: (_) async => true,
       );
 
-      // Step 1 landmark: SvgPicture (QR) is visible.
-      expect(find.byType(SvgPicture), findsOneWidget);
+      // Step 1 landmark: WSvg (QR) is visible.
+      expect(find.byType(WSvg), findsOneWidget);
 
       // Simulate entering a 6-digit OTP and confirming.
       await tester.enterText(find.byType(TextField), '654321');
@@ -185,7 +184,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Step 2 landmark: QR code is gone, recovery codes appear.
-      expect(find.byType(SvgPicture), findsNothing);
+      expect(find.byType(WSvg), findsNothing);
       expect(find.text('code-1'), findsOneWidget);
     },
   );
@@ -216,7 +215,7 @@ void main() {
       );
 
       // Modal must remain on Step 1 — QR code is still visible.
-      expect(find.byType(SvgPicture), findsOneWidget);
+      expect(find.byType(WSvg), findsOneWidget);
 
       // Recovery codes must NOT be visible yet.
       expect(find.text('code-1'), findsNothing);
@@ -296,8 +295,8 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Modal is open — QR code must be visible.
-      expect(find.byType(SvgPicture), findsOneWidget);
+      // Modal is open — QR code must be visible as WSvg.
+      expect(find.byType(WSvg), findsOneWidget);
 
       // Enter OTP and confirm.
       await tester.enterText(find.byType(TextField), '123456');

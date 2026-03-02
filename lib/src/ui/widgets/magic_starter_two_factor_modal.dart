@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// ignore: depend_on_referenced_packages
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:magic/magic.dart';
 
 /// A multi-step wizard modal widget for Two-Factor Authentication (2FA) setup.
@@ -126,10 +124,9 @@ class _MagicStarterTwoFactorModalState
             child: WDiv(
               className:
                   'p-3 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-gray-200',
-              child: SvgPicture.string(
+              child: WSvg.string(
                 qrSvg,
-                width: 192,
-                height: 192,
+                className: 'preserve-colors w-48 h-48',
               ),
             ),
           ),
