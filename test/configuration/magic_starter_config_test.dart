@@ -223,6 +223,123 @@ void main() {
 
         expect(MagicStarterConfig.hasTimezoneFeatures(), isTrue);
       });
+
+
+      test('hasExtendedProfileFeatures() returns true when config is set', () {
+
+        Config.set('magic_starter.features.extended_profile', true);
+
+
+
+        expect(
+
+          MagicStarterConfig.hasExtendedProfileFeatures(),
+
+          isTrue,
+
+        );
+
+      });
+
+
+
+      test(
+
+        'hasTimezoneOrExtendedProfileFeatures() returns false by default',
+
+        () {
+
+          expect(
+
+            MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
+
+            isFalse,
+
+          );
+
+        },
+
+      );
+
+
+
+      test(
+
+        'hasTimezoneOrExtendedProfileFeatures() returns true when '
+
+        'timezone feature is enabled',
+
+        () {
+
+          Config.set('magic_starter.features.timezones', true);
+
+
+
+          expect(
+
+            MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
+
+            isTrue,
+
+          );
+
+        },
+
+      );
+
+
+
+      test(
+
+        'hasTimezoneOrExtendedProfileFeatures() returns true when '
+
+        'extended profile feature is enabled',
+
+        () {
+
+          Config.set('magic_starter.features.extended_profile', true);
+
+
+
+          expect(
+
+            MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
+
+            isTrue,
+
+          );
+
+        },
+
+      );
+
+
+
+      test(
+
+        'hasTimezoneOrExtendedProfileFeatures() returns true when both '
+
+        'timezone and extended profile features are enabled',
+
+        () {
+
+          Config.set('magic_starter.features.timezones', true);
+
+          Config.set('magic_starter.features.extended_profile', true);
+
+
+
+          expect(
+
+            MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
+
+            isTrue,
+
+          );
+
+        },
+
+      );
     });
     // -------------------------------------------------------------------------
     // Route accessors — configured overrides
