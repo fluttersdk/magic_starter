@@ -94,12 +94,12 @@ class _MagicStarterTimezoneSelectState
   /// Fetch timezones from the API with an optional search query.
   Future<List<SelectOption<String>>> _fetchTimezones(String query) async {
     try {
-      final response = await Http.get('/timezones?q=$query&limit=20');
-      if (response.statusCode == 200) {
+      final response = await Http.get('/timezones?search=$query&per_page=20');
+      if (response.successful) {
         final data = response.data['data'] as List;
         return data.map((tz) {
           return SelectOption<String>(
-            value: tz['value'] as String,
+            value: tz['identifier'] as String,
             label: tz['label'] as String,
           );
         }).toList();
