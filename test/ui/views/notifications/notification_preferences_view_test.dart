@@ -84,11 +84,14 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SizedBox(
-            width: 1024,
-            height: 768,
-            child: widget,
+        child: MediaQuery(
+          data: const MediaQueryData(size: Size(1280, 800)),
+          child: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 800,
+              child: widget,
+            ),
           ),
         ),
       ),
@@ -99,7 +102,7 @@ void main() {
     testWidgets('renders loading state when preferences are loading',
         (tester) async {
       // Set loading state before pumping to avoid race condition with onInit
-      controller.isLoadingNotifier.value = true;
+      controller.setLoading();
 
       await tester
           .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
@@ -116,11 +119,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-          find.text('No notification preferences available.'), findsOneWidget);
+          find.text(trans('notifications.no_preferences')), findsOneWidget);
     });
 
     testWidgets('renders matrix with checkboxes for each type and channel',
         (tester) async {
+      // Widen the test surface so untranslated trans() keys fit without overflow.
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
       final matrix = {
         'monitor_down': {
           'label': 'Monitor Down Alert',
@@ -138,7 +148,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Monitor Down Alert'), findsOneWidget);
-      expect(find.text('Email'), findsOneWidget);
+      expect(find.text(trans('notifications.channel_email')), findsOneWidget);
       expect(find.text('Slack'), findsOneWidget);
 
       // Check for WCheckbox toggles
@@ -146,6 +156,13 @@ void main() {
     });
 
     testWidgets('locked channel checkbox is disabled', (tester) async {
+      // Widen the test surface so untranslated trans() keys fit without overflow.
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
       final matrix = {
         'monitor_down': {
           'label': 'Monitor Down Alert',
