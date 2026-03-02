@@ -566,5 +566,45 @@ void main() {
         expect(controller.isError, isTrue);
       });
     });
+
+    group('isTwoFactorEnabled getter', () {
+      test('returns true when user has two_factor_enabled: true', () {
+        mockGuard.setUser(
+          MagicStarterAuthUser.fromMap(
+            <String, dynamic>{
+              'id': 1,
+              'name': 'Test User',
+              'two_factor_enabled': true,
+            },
+          ),
+        );
+        expect(controller.isTwoFactorEnabled, isTrue);
+      });
+
+      test('returns false when user has two_factor_enabled: false', () {
+        mockGuard.setUser(
+          MagicStarterAuthUser.fromMap(
+            <String, dynamic>{
+              'id': 1,
+              'name': 'Test User',
+              'two_factor_enabled': false,
+            },
+          ),
+        );
+        expect(controller.isTwoFactorEnabled, isFalse);
+      });
+
+      test('returns false when user has no two_factor_enabled field', () {
+        mockGuard.setUser(
+          MagicStarterAuthUser.fromMap(
+            <String, dynamic>{
+              'id': 1,
+              'name': 'Test User',
+            },
+          ),
+        );
+        expect(controller.isTwoFactorEnabled, isFalse);
+      });
+    });
   });
 }
