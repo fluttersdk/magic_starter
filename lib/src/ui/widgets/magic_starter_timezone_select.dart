@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
@@ -58,11 +60,19 @@ class _MagicStarterTimezoneSelectState
     extends State<MagicStarterTimezoneSelect> {
   List<SelectOption<String>> _allOptions = [];
   bool _isInitializing = true;
+  Timer? _debounceTimer;
+  Completer<List<SelectOption<String>>>? _searchCompleter;
 
   @override
   void initState() {
     super.initState();
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 
   /// Load default timezones and ensure the current value is included.
@@ -110,25 +120,53 @@ class _MagicStarterTimezoneSelectState
     return [];
   }
 
-  /// Handle search requests, always preserving the current selection.
-  Future<List<SelectOption<String>>> _handleSearch(String query) async {
-    final results = await _fetchTimezones(query);
-
-    // Always include the currently selected value in results.
-    if (widget.value != null && widget.value!.isNotEmpty) {
-      final selectedExists = results.any(
-        (opt) => opt.value == widget.value,
-      );
-      if (!selectedExists) {
-        final selectedInAll =
-            _allOptions.where((opt) => opt.value == widget.value).toList();
-        if (selectedInAll.isNotEmpty) {
-          results.insert(0, selectedInAll.first);
-        }
-      }
+  /// Handle search requests with debounce to prevent excessive API calls.
+  ///
+  /// Cancels any pending debounced search and waits [_debounceDuration]
+  /// before firing the API request. Returns the current options immediately
+  /// via a [Completer] that resolves after the debounce window.
+  Future<List<SelectOption<String>>> _handleSearch(String query) {
+    // 1. Cancel any previous pending debounce timer.
+    _debounceTimer?.cancel();
+    if (_searchCompleter != null && !_searchCompleter!.isCompleted) {
+      _searchCompleter!.complete(_allOptions);
     }
 
-    return results;
+    // 2. Create a new completer for this search request.
+    final completer = Completer<List<SelectOption<String>>>();
+    _searchCompleter = completer;
+
+    // 3. Start a debounce timer — only fire API after 300ms of inactivity.
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        final results = await _fetchTimezones(query);
+
+        // Always include the currently selected value in results.
+        if (widget.value != null && widget.value!.isNotEmpty) {
+          final selectedExists = results.any(
+            (opt) => opt.value == widget.value,
+          );
+          if (!selectedExists) {
+            final selectedInAll = _allOptions
+                .where((opt) => opt.value == widget.value)
+                .toList();
+            if (selectedInAll.isNotEmpty) {
+              results.insert(0, selectedInAll.first);
+            }
+          }
+        }
+
+        if (!completer.isCompleted) {
+          completer.complete(results);
+        }
+      } catch (e) {
+        if (!completer.isCompleted) {
+          completer.complete(_allOptions);
+        }
+      }
+    });
+
+    return completer.future;
   }
 
   /// Handle value changes, updating the local cache when needed.

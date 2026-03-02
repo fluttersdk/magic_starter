@@ -230,5 +230,74 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'debounces search requests — only fires API after 300ms of inactivity',
+      (tester) async {
+        // 1. Queue enough responses for init + debounced search result.
+        mockDriver.queueResponse(
+          statusCode: 200,
+          data: {'data': []},
+        );
+        mockDriver.queueResponse(
+          statusCode: 200,
+          data: {
+            'data': [
+              {
+                'identifier': 'Europe/Istanbul',
+                'label': 'Istanbul (GMT+3)',
+              },
+            ],
+          },
+        );
+
+        await tester.pumpWidget(
+          wrapWithTheme(
+            MagicStarterTimezoneSelect(
+              value: null,
+              onChanged: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 2. Record URL count after initialization.
+        final urlCountAfterInit = mockDriver.requestedUrls.length;
+
+        // 3. Get the onSearch callback from WFormSelect.
+        final select = tester.widget<WFormSelect<String>>(
+          find.byType(WFormSelect<String>),
+        );
+        final onSearch = select.onSearch!;
+
+        // 4. Fire multiple rapid searches (simulates typing 'i', 'is', 'ist').
+        onSearch('i');
+        onSearch('is');
+        onSearch('ist');
+
+        // 5. Before 300ms — no new API calls should have fired.
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          mockDriver.requestedUrls.length,
+          equals(urlCountAfterInit),
+          reason: 'No API call should fire before debounce window expires',
+        );
+
+        // 6. After 300ms — only the final search ('ist') should fire.
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpAndSettle();
+
+        expect(
+          mockDriver.requestedUrls.length,
+          equals(urlCountAfterInit + 1),
+          reason: 'Only one API call should fire after debounce',
+        );
+        expect(
+          mockDriver.requestedUrls.last,
+          contains('search=ist'),
+          reason: 'The debounced call should use the final query',
+        );
+      },
+    );
   });
 }
