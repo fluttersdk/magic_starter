@@ -28,27 +28,22 @@ class _MagicStarterNotificationPreferencesViewState
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: controller.isLoadingNotifier,
-      builder: (context, isLoading, _) {
-        if (isLoading) {
-          return const WDiv(
-            className: 'py-12 flex items-center justify-center',
-            child: CircularProgressIndicator(),
-          );
-        }
+    if (controller.isLoading) {
+      return const WDiv(
+        className: 'py-12 flex items-center justify-center',
+        child: CircularProgressIndicator(),
+      );
+    }
 
-        return WDiv(
-          className: 'p-4 lg:p-6 flex flex-col gap-6',
-          children: [
-            MagicStarterPageHeader(
-              title: trans('notifications.preferences_title'),
-              subtitle: trans('notifications.preferences_description'),
-            ),
-            _buildMatrixSettings(),
-          ],
-        );
-      },
+    return WDiv(
+      className: 'p-4 lg:p-6 flex flex-col gap-6',
+      children: [
+        MagicStarterPageHeader(
+          title: trans('notifications.preferences_title'),
+          subtitle: trans('notifications.preferences_description'),
+        ),
+        _buildMatrixSettings(),
+      ],
     );
   }
 
@@ -59,15 +54,15 @@ class _MagicStarterNotificationPreferencesViewState
         if (matrix.isEmpty) {
           return MagicStarterCard(
             title: '',
-            child: const WDiv(
-              className: 'py-12 flex flex-col items-center justify-center gap-3',
+            child: WDiv(
+              className: 'w-full py-12 flex flex-col items-center justify-center gap-3',
               children: [
                 WIcon(
                   Icons.notifications_off_outlined,
                   className: 'text-4xl text-gray-300 dark:text-gray-600',
                 ),
                 WText(
-                  'No notification preferences available.',
+                  trans('notifications.no_preferences'),
                   className: 'text-sm text-gray-500 dark:text-gray-400',
                 ),
               ],
@@ -138,7 +133,7 @@ class _MagicStarterNotificationPreferencesViewState
             WDiv(
               className: '''
                 w-10 h-10 rounded-full flex items-center justify-center
-                ${isEnabled && !isLocked ? 'bg-primary/10' : 'bg-gray-100 dark:bg-gray-700'}
+                ${isEnabled && !isLocked ? 'bg-primary/10 dark:bg-primary/10' : 'bg-gray-100 dark:bg-gray-700'}
               ''',
               child: WIcon(
                 isLocked ? Icons.lock_outline : icon,
@@ -185,9 +180,9 @@ class _MagicStarterNotificationPreferencesViewState
   /// Returns a user-friendly label for a notification channel.
   String _channelLabel(String channel) {
     return switch (channel.toLowerCase()) {
-      'mail' => 'Email',
-      'database' => 'In-App',
-      'push' => 'Push',
+      'mail' => trans('notifications.channel_email'),
+      'database' => trans('notifications.channel_in_app'),
+      'push' => trans('notifications.channel_push'),
       _ => _capitalize(channel),
     };
   }

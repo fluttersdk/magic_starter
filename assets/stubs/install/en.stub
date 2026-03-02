@@ -64,7 +64,8 @@
     "upload": "Upload",
     "user": "User",
     "done": "Done",
-    "error_occurred": "An unexpected error occurred. Please try again."
+    "error_occurred": "An unexpected error occurred. Please try again.",
+    "page_of": ":current / :total"
   },
   "errors": {
     "unexpected": "An unexpected error occurred. Please try again."
@@ -74,7 +75,9 @@
     "name_placeholder": "Enter your full name",
     "password_confirmation_placeholder": "Repeat your password",
     "password_placeholder": "At least 8 characters",
-    "phone_country_placeholder": "Select country code"
+    "phone_country_placeholder": "Select country code",
+    "phone_placeholder": "+905301234567",
+    "otp_placeholder": "123456"
   },
   "magic_starter": {
     "auth": {
@@ -141,7 +144,12 @@
     "preferences_title": "Notification Preferences",
     "settings": "Notification Settings",
     "title": "Notifications",
-    "view_all": "View all notifications"
+    "view_all": "View all notifications",
+    "badge_overflow": "9+",
+    "no_preferences": "No notification preferences available.",
+    "channel_email": "Email",
+    "channel_in_app": "In-App",
+    "channel_push": "Push"
   },
   "profile": {
     "browser_sessions": "Browser Sessions",
@@ -248,6 +256,24 @@
     "days_ago": ":days d ago",
     "hours_ago": ":hours h ago",
     "just_now": "Just now",
-    "minutes_ago": ":minutes m ago"
+    "minutes_ago": ":minutes m ago",
+    "date_format": ":day/:month/:year"
+  },
+  "validation": {
+    "accepted": "The :attribute must be accepted.",
+    "confirmed": "The :attribute confirmation does not match.",
+    "email": "The :attribute must be a valid email address.",
+    "max": {
+      "list": "The :attribute must not have more than :max items.",
+      "numeric": "The :attribute must not be greater than :max.",
+      "string": "The :attribute must not be greater than :max characters."
+    },
+    "min": {
+      "list": "The :attribute must have at least :min items.",
+      "numeric": "The :attribute must be at least :min.",
+      "string": "The :attribute must be at least :min characters."
+    },
+    "required": "The :attribute field is required.",
+    "same": "The :attribute and :other must match."
   }
 }

@@ -118,7 +118,7 @@ class StarterNotificationDropdown extends StatelessWidget {
                 // animate-bounce duration-500
               ''',
               child: WText(
-                unreadCount > 9 ? '9+' : unreadCount.toString(),
+                unreadCount > 9 ? trans('notifications.badge_overflow') : unreadCount.toString(),
                 className: 'text-[9px] font-bold text-white',
               ),
             ),
@@ -327,7 +327,7 @@ class StarterNotificationDropdown extends StatelessWidget {
         children: [
           WIcon(Icons.error_outline, className: 'text-4xl text-red-500'),
           WText(
-            'Failed to load notifications',
+            trans('notifications.load_failed'),
             className: 'text-sm text-gray-600 dark:text-gray-400',
           ),
         ],
@@ -368,13 +368,17 @@ class StarterNotificationDropdown extends StatelessWidget {
     if (difference.inMinutes < 1) {
       return trans('time.just_now');
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return trans('time.minutes_ago', {'minutes': difference.inMinutes});
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return trans('time.hours_ago', {'hours': difference.inHours});
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return trans('time.days_ago', {'days': difference.inDays});
     } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      return trans('time.date_format', {
+        'day': dateTime.day,
+        'month': dateTime.month,
+        'year': dateTime.year,
+      });
     }
   }
 }

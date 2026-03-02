@@ -102,7 +102,7 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
             WFormInput(
               label: trans('attributes.phone'),
               controller: _phoneForm['phone'],
-              placeholder: '+905301234567',
+              placeholder: trans('fields.phone_placeholder'),
               type: InputType.text,
               validator: rules([Required()], field: 'phone'),
               className:
@@ -161,7 +161,7 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
             WFormInput(
               label: trans('magic_starter.otp.code_label'),
               controller: _codeForm['code'],
-              placeholder: '123456',
+              placeholder: trans('fields.otp_placeholder'),
               type: InputType.number,
               inputFormatters: [LengthLimitingTextInputFormatter(6)],
               validator: rules(

@@ -277,7 +277,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
       WFormInput(
         label: trans('attributes.phone'),
         controller: form['phone'],
-        placeholder: '+905301234567',
+        placeholder: trans('fields.phone_placeholder'),
         type: InputType.text,
         validator: rules([Required()], field: 'phone'),
         className:

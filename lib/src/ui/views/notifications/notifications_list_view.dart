@@ -86,7 +86,11 @@ class _MagicStarterNotificationsListViewState
     } else if (difference.inDays < 7) {
       return trans('time.days_ago', {'days': difference.inDays});
     } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      return trans('time.date_format', {
+        'day': dateTime.day,
+        'month': dateTime.month,
+        'year': dateTime.year,
+      });
     }
   }
 
@@ -300,7 +304,10 @@ class _MagicStarterNotificationsListViewState
           ),
         ),
         WText(
-          '$_currentPage / $totalPages',
+          trans('common.page_of', {
+            'current': _currentPage,
+            'total': totalPages,
+          }),
           className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
         ),
         WButton(
