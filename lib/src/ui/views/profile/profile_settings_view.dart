@@ -8,6 +8,7 @@ import '../../../http/controllers/profile_controller.dart';
 import '../../widgets/starter_card.dart';
 import '../../widgets/starter_page_header.dart';
 import '../../widgets/starter_password_confirm_dialog.dart';
+import '../../widgets/magic_starter_two_factor_modal.dart';
 import '../../../http/controllers/newsletter_controller.dart';
 import '../../widgets/magic_starter_timezone_select.dart';
 
@@ -74,12 +75,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   bool _obscureNew = true;
   bool _obscureConfirmation = true;
 
-  // -- 2FA UI state: 'disabled' | 'setup' | 'enabled' ------------------------
+  // -- 2FA UI state: 'disabled' | 'enabled' ----------------------------------
 
   String _twoFactorState = 'disabled';
-  Map<String, dynamic>? _twoFactorSetupData;
   List<String> _recoveryCodes = [];
-  final TextEditingController _otpController = TextEditingController();
 
   // -- Section-level loading notifiers (isolated per section) ----------------
 
@@ -96,10 +95,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   final ValueNotifier<bool> _emailVerificationLoading =
       ValueNotifier<bool>(false);
   final ValueNotifier<bool> _twoFactorLoading = ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _sessionActionLoading =
-      ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _profileSaveLoading =
-      ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _sessionActionLoading = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _profileSaveLoading = ValueNotifier<bool>(false);
 
   // -- Sessions state --------------------------------------------------------
 
@@ -138,7 +135,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     passwordForm.dispose();
     deleteAccountForm.dispose();
     upgradeForm.dispose();
-    _otpController.dispose();
     _photoLoading.dispose();
     _emailVerificationLoading.dispose();
     _twoFactorLoading.dispose();
@@ -162,6 +158,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       notifier.value = false;
     }
   }
+
   /// Triggers a rebuild when [controller.withoutNotifying] suppresses the
   /// [notifyListeners] call inside [handleApiError] / [setErrorsFromResponse].
   ///
@@ -175,7 +172,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       profileForm.formKey.currentState?.validate();
     }
   }
-
 
   Future<void> _submitProfile() async {
     if (!profileForm.validate()) return;
@@ -194,16 +190,16 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     _rebuildIfValidationErrors();
   }
 
-
   Future<void> _submitPassword() async {
     if (!passwordForm.validate()) return;
-    final success = await passwordForm.process(() => controller.withoutNotifying(
-      () => controller.doUpdatePassword(
-        currentPassword: passwordForm.get('current_password'),
-        password: passwordForm.get('password'),
-        passwordConfirmation: passwordForm.get('password_confirmation'),
-      ),
-    ));
+    final success =
+        await passwordForm.process(() => controller.withoutNotifying(
+              () => controller.doUpdatePassword(
+                currentPassword: passwordForm.get('current_password'),
+                password: passwordForm.get('password'),
+                passwordConfirmation: passwordForm.get('password_confirmation'),
+              ),
+            ));
     _rebuildIfValidationErrors();
     if (success) {
       passwordForm.set('current_password', '');
@@ -214,38 +210,29 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   // -- 2FA actions -----------------------------------------------------------
 
-  /// Enable 2FA --- fetches QR setup data from the server.
-  Future<void> _enableTwoFactor() async {
+  /// Enable 2FA flow with password confirmation and setup modal.
+  Future<void> _enableTwoFactor(BuildContext context) async {
+    final password = await MagicStarterPasswordConfirmDialog.show(context);
+    if (password == null) return;
+
     final data = await _trackLoading(
       _twoFactorLoading,
       () => controller.doEnableTwoFactor(),
     );
-    if (data != null) {
-      setState(() {
-        _twoFactorSetupData = data;
-        _twoFactorState = 'setup';
-      });
-    }
-  }
+    if (data == null) return;
 
-  /// Confirm 2FA setup with the OTP entered by the user.
-  Future<void> _confirmTwoFactor() async {
-    final success = await _trackLoading(
-      _twoFactorLoading,
-      () => controller.doConfirmTwoFactor(
-        code: _otpController.text.trim(),
-      ),
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
+
+    final confirmed = await MagicStarterTwoFactorModal.show(
+      context,
+      setupData: data,
+      onConfirm: (code) => controller.doConfirmTwoFactor(code: code),
     );
-    if (success) {
-      final codes = (_twoFactorSetupData?['recovery_codes'] as List<dynamic>?)
-                  ?.map((e) => e.toString())
-                  .toList() ??
-              [];
+
+    if (confirmed) {
       setState(() {
         _twoFactorState = 'enabled';
-        _recoveryCodes = codes;
-        _twoFactorSetupData = null;
-        _otpController.clear();
       });
     }
   }
@@ -344,8 +331,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           formData: profileForm,
           child: _buildProfileSection(),
         ),
-        if (Gate.allows('starter.update-password'))
-          _buildPasswordSection(),
+        if (Gate.allows('starter.update-password')) _buildPasswordSection(),
         // Verified badge shown inline (not at top).
         if (MagicStarterConfig.hasEmailVerificationFeatures() &&
             Gate.allows('starter.verify-email') &&
@@ -357,10 +343,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         if (MagicStarterConfig.hasNewsletterFeatures() &&
             Gate.allows('starter.manage-newsletter'))
           _buildNewsletterSection(),
-        if (Gate.denies('starter.delete-account'))
-          _buildGuestUpgradeSection(),
-        if (MagicStarterConfig.hasSessionsFeatures())
-          _buildSessionsSection(),
+        if (Gate.denies('starter.delete-account')) _buildGuestUpgradeSection(),
+        if (MagicStarterConfig.hasSessionsFeatures()) _buildSessionsSection(),
         _buildDeleteAccountSection(),
       ],
     );
@@ -368,7 +352,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Profile Photo Section -------------------------------------------------
 
   Widget _buildProfilePhotoSection() {
-
     final user = Auth.user();
     final photoUrl = user?.get<String>('profile_photo_url');
 
@@ -491,8 +474,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
             ),
           // Extended fields: phone, timezone, language — feature-gated.
-          if (hasExtended &&
-              Gate.allows('starter.update-phone'))
+          if (hasExtended && Gate.allows('starter.update-phone'))
             WFormInput(
               controller: profileForm['phone'],
               label: trans('profile.phone_label'),
@@ -716,7 +698,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Builds the two-factor authentication management section.
   ///
   /// Gated behind [MagicStarterConfig.hasTwoFactorFeatures].
-  /// Renders one of three states: disabled, setup (QR + confirm), enabled.
+  /// Renders one of two states: disabled, enabled.
   Widget _buildTwoFactorSection() {
     return MagicStarterCard(
       title: trans('profile.two_factor_authentication'),
@@ -724,7 +706,6 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         className: 'flex flex-col gap-4',
         children: [
           if (_twoFactorState == 'disabled') _buildTwoFactorDisabled(),
-          if (_twoFactorState == 'setup') _buildTwoFactorSetup(),
           if (_twoFactorState == 'enabled') _buildTwoFactorEnabled(),
         ],
       ),
@@ -742,119 +723,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         ),
         MagicBuilder<bool>(
           listenable: _twoFactorLoading,
-          builder: (isLoading) => WButton(
-            onTap: isLoading ? null : _enableTwoFactor,
-            isLoading: isLoading,
-            className:
-                'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-            child: WText(trans('profile.two_factor_enable')),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Setup state: QR code, secret, OTP input, recovery codes, Confirm button.
-  Widget _buildTwoFactorSetup() {
-    final qrSvg = _twoFactorSetupData?['qr_svg'] as String?;
-    final secret = _twoFactorSetupData?['secret'] as String?;
-    final recoveryCodes =
-        (_twoFactorSetupData?['recovery_codes'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [];
-
-    return WDiv(
-      className: 'flex flex-col gap-5',
-      children: [
-        WText(
-          trans('profile.two_factor_setup_description'),
-          className: 'text-sm text-gray-600 dark:text-gray-400',
-        ),
-        if (qrSvg != null && qrSvg.isNotEmpty)
-          WDiv(
-            className: 'flex justify-center',
-            child: WDiv(
+          builder: (isLoading) => Builder(
+            builder: (context) => WButton(
+              onTap: isLoading ? null : () => _enableTwoFactor(context),
+              isLoading: isLoading,
               className:
-                  'p-3 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-gray-700',
-              child: WSvg.string(
-                qrSvg,
-                className: 'w-48 h-48',
-              ),
+                  'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+              child: WText(trans('profile.two_factor_enable')),
             ),
           ),
-        if (secret != null) ...[
-          WText(
-            trans('profile.two_factor_manual_entry'),
-            className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
-          ),
-          WDiv(
-            className: 'bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-3',
-            child: WText(
-              secret,
-              className: 'font-mono text-sm text-gray-800 dark:text-gray-200',
-            ),
-          ),
-        ],
-        WFormInput(
-          controller: _otpController,
-          label: trans('profile.two_factor_code_label'),
-          placeholder: trans('profile.two_factor_code_placeholder'),
-          type: InputType.number,
-          labelClassName:
-              'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-          className:
-              'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
-        ),
-        if (recoveryCodes.isNotEmpty) ...[
-          WText(
-            trans('profile.two_factor_recovery_codes_description'),
-            className: 'text-sm text-gray-600 dark:text-gray-400',
-          ),
-          WDiv(
-            className: 'wrap gap-2',
-            children: [
-              ...recoveryCodes.map(
-                (code) => WDiv(
-                  className:
-                      'font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded',
-                  child: WText(code),
-                ),
-              ),
-              WDiv(
-                className: 'w-full mt-2',
-                children: [
-                  WButton(
-                    onTap: () async {
-                      final codes = recoveryCodes.join('\n');
-                      await Clipboard.setData(ClipboardData(text: codes));
-                    },
-                    className:
-                        'text-primary dark:text-primary border border-primary/30 dark:border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg px-4 py-2 text-sm font-medium',
-                    child: WText(
-                      trans('profile.copy_recovery_codes'),
-                      className: 'text-center',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-        WDiv(
-          className: 'flex justify-end',
-          children: [
-            MagicBuilder<bool>(
-              listenable: _twoFactorLoading,
-              builder: (isLoading) => WButton(
-                onTap: isLoading ? null : _confirmTwoFactor,
-                isLoading: isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(trans('profile.two_factor_confirm')),
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -920,27 +797,25 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         MagicBuilder<bool>(
           listenable: _twoFactorLoading,
           builder: (isLoading) => WDiv(
-            className: 'flex flex-row flex-wrap gap-3',
+            className: 'wrap gap-3',
             children: [
               WButton(
                 onTap: isLoading ? null : _showRecoveryCodes,
                 isLoading: isLoading,
                 className:
                     'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-              child: WText(trans('profile.two_factor_show_recovery_codes')),
+                child: WText(trans('profile.two_factor_show_recovery_codes')),
               ),
               WButton(
                 onTap: isLoading ? null : _regenerateRecoveryCodes,
                 isLoading: isLoading,
                 className:
                     'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-              child: WText(trans('profile.two_factor_regenerate_codes')),
+                child: WText(trans('profile.two_factor_regenerate_codes')),
               ),
               Builder(
                 builder: (context) => WButton(
-                  onTap: isLoading
-                      ? null
-                      : () => _disableTwoFactor(context),
+                  onTap: isLoading ? null : () => _disableTwoFactor(context),
                   isLoading: isLoading,
                   className:
                       'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 text-sm font-medium',
@@ -1056,7 +931,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                       isLoading: isLoading,
                       className:
                           'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 w-full flex justify-center',
-                    child: WText(trans('profile.logout_other_sessions')),
+                      child: WText(trans('profile.logout_other_sessions')),
                     ),
                   ),
                 ],
@@ -1154,8 +1029,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               children: [
                 WIcon(
                   Icons.info_outline,
-                  className:
-                      'text-blue-500 dark:text-blue-400 text-xl mt-0.5',
+                  className: 'text-blue-500 dark:text-blue-400 text-xl mt-0.5',
                 ),
                 WDiv(
                   className: 'flex flex-col gap-1 flex-1',
@@ -1234,10 +1108,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Future<void> _submitDeleteAccount() async {
     if (!deleteAccountForm.validate()) return;
     await deleteAccountForm.process(() => controller.withoutNotifying(
-      () => controller.doDeleteAccount(
-        password: deleteAccountForm.get('password'),
-      ),
-    ));
+          () => controller.doDeleteAccount(
+            password: deleteAccountForm.get('password'),
+          ),
+        ));
   }
 
   // -- Email Verification Section -----------------------------------------------
@@ -1344,16 +1218,16 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Future<void> _submitGuestUpgrade() async {
     if (!upgradeForm.validate()) return;
     final success = await upgradeForm.process(() => controller.withoutNotifying(
-      () => controller.doUpdateProfile(
-        name: profileForm.get('name'),
-        email: upgradeForm.get('email'),
-        phone: profileForm.get('phone'),
-        timezone: profileForm.get('timezone'),
-        language: profileForm.get('language'),
-        password: upgradeForm.get('password'),
-        passwordConfirmation: upgradeForm.get('password_confirmation'),
-      ),
-    ));
+          () => controller.doUpdateProfile(
+            name: profileForm.get('name'),
+            email: upgradeForm.get('email'),
+            phone: profileForm.get('phone'),
+            timezone: profileForm.get('timezone'),
+            language: profileForm.get('language'),
+            password: upgradeForm.get('password'),
+            passwordConfirmation: upgradeForm.get('password_confirmation'),
+          ),
+        ));
     if (success) {
       Magic.reload();
       return;

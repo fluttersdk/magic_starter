@@ -261,6 +261,9 @@ void main() {
       Auth.manager.forgetGuards();
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
+      Config.set('auth.guards', <String, dynamic>{
+        'mock': <String, dynamic>{'driver': 'mock'},
+      });
 
       Magic.singleton('magic_starter', () => MagicStarterManager());
       controller = StarterProfileController();
