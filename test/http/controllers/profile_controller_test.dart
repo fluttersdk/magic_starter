@@ -924,5 +924,153 @@ void main() {
         });
       });
     });
+
+    // -----------------------------------------------------------------------
+    // withoutNotifying
+    // -----------------------------------------------------------------------
+
+    group('withoutNotifying', () {
+      test('suppresses notifyListeners during action', () async {
+        // 1. Attach a listener to the controller to count notifications.
+        var notificationCount = 0;
+        controller.addListener(() => notificationCount++);
+
+        // 2. Mock a successful response for doUpdateProfile.
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Profile updated'},
+        );
+
+        // 3. Call doUpdateProfile WITHIN withoutNotifying.
+        await controller.withoutNotifying(
+          () => controller.doUpdateProfile(
+            name: 'Alice',
+            email: 'alice@example.com',
+          ),
+        );
+
+        // 4. No notifications should have been fired.
+        expect(notificationCount, equals(0));
+      });
+
+      test('still updates internal state when suppressed', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Profile updated'},
+        );
+
+        await controller.withoutNotifying(
+          () => controller.doUpdateProfile(
+            name: 'Alice',
+            email: 'alice@example.com',
+          ),
+        );
+
+        // State is updated even though notifications were suppressed.
+        expect(controller.isSuccess, isTrue);
+        expect(controller.rxState, isTrue);
+      });
+
+      test('re-enables notifications after action completes', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Profile updated'},
+        );
+
+        // 1. Run suppressed action.
+        await controller.withoutNotifying(
+          () => controller.doUpdateProfile(
+            name: 'Alice',
+            email: 'alice@example.com',
+          ),
+        );
+
+        // 2. Attach listener AFTER suppressed call.
+        var notifiedAfter = false;
+        controller.addListener(() => notifiedAfter = true);
+
+        // 3. Make another call WITHOUT withoutNotifying.
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Password updated'},
+        );
+        await controller.doUpdatePassword(
+          currentPassword: 'oldpass',
+          password: 'newpass',
+          passwordConfirmation: 'newpass',
+        );
+
+        // 4. Notifications should fire normally again.
+        expect(notifiedAfter, isTrue);
+      });
+
+      test('re-enables notifications even on exception', () async {
+        // 1. Force an exception inside the controller method.
+        // Use a null response to trigger a 500 → catch block → setError.
+        mockDriver.mockResponse(
+          statusCode: 500,
+          data: {'message': 'Server error'},
+        );
+
+        // 2. withoutNotifying should NOT leak the suppression flag.
+        await controller.withoutNotifying(
+          () => controller.doUpdateProfile(
+            name: 'Alice',
+            email: 'alice@example.com',
+          ),
+        );
+
+        // 3. Subsequent calls should notify normally.
+        var notifiedAfter = false;
+        controller.addListener(() => notifiedAfter = true);
+
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Password updated'},
+        );
+        await controller.doUpdatePassword(
+          currentPassword: 'oldpass',
+          password: 'newpass',
+          passwordConfirmation: 'newpass',
+        );
+
+        expect(notifiedAfter, isTrue);
+      });
+
+      test('returns the action result', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Profile updated'},
+        );
+
+        final result = await controller.withoutNotifying(
+          () => controller.doUpdateProfile(
+            name: 'Alice',
+            email: 'alice@example.com',
+          ),
+        );
+
+        expect(result, isTrue);
+      });
+
+      test('direct calls still trigger notifications (backward compat)', () async {
+        var notificationCount = 0;
+        controller.addListener(() => notificationCount++);
+
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Profile updated'},
+        );
+
+        // Direct call WITHOUT withoutNotifying — should notify as before.
+        await controller.doUpdateProfile(
+          name: 'Alice',
+          email: 'alice@example.com',
+        );
+
+        // At least 1 notification (setLoading + setSuccess = 2 minimum).
+        expect(notificationCount, greaterThanOrEqualTo(1));
+      });
+    });
   });
 }

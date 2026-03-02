@@ -81,11 +81,32 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   List<String> _recoveryCodes = [];
   final TextEditingController _otpController = TextEditingController();
 
+  // -- Section-level loading notifiers (isolated per section) ----------------
+
+  /// Per-section loading notifiers prevent cross-section spinner leaks.
+  ///
+  /// The profile page shares a single [StarterProfileController] whose
+  /// [MagicStateMixin.isLoading] flag is global. When any controller
+  /// method calls [setLoading], the parent [MagicStarterAppLayout]
+  /// rebuilds (via [Auth.stateNotifier] bumped by [Auth.restore]),
+  /// causing every button bound to [controller.isLoading] to show a
+  /// spinner simultaneously. These per-section notifiers decouple each
+  /// section's loading indicator from the controller's global state.
+  final ValueNotifier<bool> _photoLoading = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _emailVerificationLoading =
+      ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _twoFactorLoading = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _sessionActionLoading =
+      ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _profileSaveLoading =
+      ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _extendedProfileSaveLoading =
+      ValueNotifier<bool>(false);
+
   // -- Sessions state --------------------------------------------------------
 
   List<Map<String, dynamic>> _sessions = [];
   bool _sessionsLoading = false;
-
   // -- Lifecycle -------------------------------------------------------------
 
   @override
@@ -97,7 +118,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       profileForm.set('phone', user.get<String>('phone') ?? '');
       profileForm.set('phone_country', user.get<String>('phone_country') ?? '');
       profileForm.set('timezone', user.get<String>('timezone') ?? '');
-      profileForm.set('language', user.get<String>('language') ?? '');
+      profileForm.set('language', user.get<String>('locale') ?? '');
     }
     controller.clearErrors();
     controller.setEmpty();
@@ -118,29 +139,74 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     deleteAccountForm.dispose();
     upgradeForm.dispose();
     _otpController.dispose();
+    _photoLoading.dispose();
+    _emailVerificationLoading.dispose();
+    _twoFactorLoading.dispose();
+    _sessionActionLoading.dispose();
+    _profileSaveLoading.dispose();
+    _extendedProfileSaveLoading.dispose();
   }
 
   // -- Profile actions --------------------------------------------------------
 
+  /// Execute [action] while driving the given [notifier] to `true`/`false`.
+  ///
+  /// Wraps the action in a try/finally so the notifier resets even on error.
+  /// Use this instead of [controller.isLoading] to isolate loading indicators
+  /// to a single section of the profile page.
+  Future<T> _trackLoading<T>(
+      ValueNotifier<bool> notifier, Future<T> Function() action) async {
+    notifier.value = true;
+    try {
+      return await action();
+    } finally {
+      notifier.value = false;
+    }
+  }
+
   Future<void> _submitProfile() async {
     if (!profileForm.validate()) return;
-    await controller.doUpdateProfile(
-      name: profileForm.get('name'),
-      email: profileForm.get('email'),
-      phone: profileForm.get('phone'),
-      phoneCountry: profileForm.get('phone_country'),
-      timezone: profileForm.get('timezone'),
-      language: profileForm.get('language'),
+    await _trackLoading(
+      _profileSaveLoading,
+      () => controller.withoutNotifying(
+        () => controller.doUpdateProfile(
+          name: profileForm.get('name'),
+          email: profileForm.get('email'),
+          phone: profileForm.get('phone'),
+          phoneCountry: profileForm.get('phone_country'),
+          timezone: profileForm.get('timezone'),
+          language: profileForm.get('language'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitExtendedProfile() async {
+    if (!profileForm.validate()) return;
+    await _trackLoading(
+      _extendedProfileSaveLoading,
+      () => controller.withoutNotifying(
+        () => controller.doUpdateProfile(
+          name: profileForm.get('name'),
+          email: profileForm.get('email'),
+          phone: profileForm.get('phone'),
+          phoneCountry: profileForm.get('phone_country'),
+          timezone: profileForm.get('timezone'),
+          language: profileForm.get('language'),
+        ),
+      ),
     );
   }
 
   Future<void> _submitPassword() async {
     if (!passwordForm.validate()) return;
-    final success = await controller.doUpdatePassword(
-      currentPassword: passwordForm.get('current_password'),
-      password: passwordForm.get('password'),
-      passwordConfirmation: passwordForm.get('password_confirmation'),
-    );
+    final success = await passwordForm.process(() => controller.withoutNotifying(
+      () => controller.doUpdatePassword(
+        currentPassword: passwordForm.get('current_password'),
+        password: passwordForm.get('password'),
+        passwordConfirmation: passwordForm.get('password_confirmation'),
+      ),
+    ));
     if (success) {
       passwordForm.set('current_password', '');
       passwordForm.set('password', '');
@@ -152,7 +218,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Enable 2FA --- fetches QR setup data from the server.
   Future<void> _enableTwoFactor() async {
-    final data = await controller.doEnableTwoFactor();
+    final data = await _trackLoading(
+      _twoFactorLoading,
+      () => controller.doEnableTwoFactor(),
+    );
     if (data != null) {
       setState(() {
         _twoFactorSetupData = data;
@@ -163,14 +232,17 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Confirm 2FA setup with the OTP entered by the user.
   Future<void> _confirmTwoFactor() async {
-    final success = await controller.doConfirmTwoFactor(
-      code: _otpController.text.trim(),
+    final success = await _trackLoading(
+      _twoFactorLoading,
+      () => controller.doConfirmTwoFactor(
+        code: _otpController.text.trim(),
+      ),
     );
     if (success) {
       final codes = (_twoFactorSetupData?['recovery_codes'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [];
+                  ?.map((e) => e.toString())
+                  .toList() ??
+              [];
       setState(() {
         _twoFactorState = 'enabled';
         _recoveryCodes = codes;
@@ -184,7 +256,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Future<void> _disableTwoFactor(BuildContext context) async {
     final password = await MagicStarterPasswordConfirmDialog.show(context);
     if (password == null) return;
-    final success = await controller.doDisableTwoFactor(password: password);
+    final success = await _trackLoading(
+      _twoFactorLoading,
+      () => controller.doDisableTwoFactor(password: password),
+    );
     if (success) {
       setState(() {
         _twoFactorState = 'disabled';
@@ -195,7 +270,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Show current recovery codes from server.
   Future<void> _showRecoveryCodes() async {
-    final codes = await controller.getRecoveryCodes();
+    final codes = await _trackLoading(
+      _twoFactorLoading,
+      () => controller.getRecoveryCodes(),
+    );
     if (codes != null) {
       setState(() => _recoveryCodes = codes);
     }
@@ -203,7 +281,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Regenerate recovery codes on the server.
   Future<void> _regenerateRecoveryCodes() async {
-    final codes = await controller.doRegenerateRecoveryCodes();
+    final codes = await _trackLoading(
+      _twoFactorLoading,
+      () => controller.doRegenerateRecoveryCodes(),
+    );
     if (codes != null) {
       setState(() => _recoveryCodes = codes);
     }
@@ -221,7 +302,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   }
 
   Future<void> _revokeSession(String tokenId) async {
-    final success = await controller.doRevokeSession(tokenId: tokenId);
+    final success = await _trackLoading(
+      _sessionActionLoading,
+      () => controller.doRevokeSession(tokenId: tokenId),
+    );
     if (success) {
       _loadSessions();
     }
@@ -230,7 +314,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Future<void> _revokeOtherSessions(BuildContext context) async {
     final password = await MagicStarterPasswordConfirmDialog.show(context);
     if (password == null) return;
-    final success = await controller.doRevokeOtherSessions(password: password);
+    final success = await _trackLoading(
+      _sessionActionLoading,
+      () => controller.doRevokeOtherSessions(password: password),
+    );
     if (success) {
       _loadSessions();
     }
@@ -314,26 +401,29 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           WDiv(
             className: 'flex flex-col gap-2 min-w-0',
             children: [
-              WDiv(
-                className:
-                    'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3',
-                children: [
-                  WButton(
-                    onTap: _handlePhotoUpload,
-                    isLoading: controller.isLoading,
-                    className:
-                        'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-                    child: WText(trans('common.upload')),
-                  ),
-                  if (photoUrl != null && photoUrl.isNotEmpty)
+              MagicBuilder<bool>(
+                listenable: _photoLoading,
+                builder: (isLoading) => WDiv(
+                  className:
+                      'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3',
+                  children: [
                     WButton(
-                      onTap: _handlePhotoRemove,
-                      isLoading: controller.isLoading,
+                      onTap: isLoading ? null : _handlePhotoUpload,
+                      isLoading: isLoading,
                       className:
-                          'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium',
-                      child: WText(trans('common.remove')),
+                          'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                      child: WText(trans('common.upload')),
                     ),
-                ],
+                    if (photoUrl != null && photoUrl.isNotEmpty)
+                      WButton(
+                        onTap: isLoading ? null : _handlePhotoRemove,
+                        isLoading: isLoading,
+                        className:
+                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium',
+                        child: WText(trans('common.remove')),
+                      ),
+                  ],
+                ),
               ),
               WText(
                 trans('profile.photo_requirements'),
@@ -349,11 +439,17 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Future<void> _handlePhotoUpload() async {
     final file = await Pick.image();
     if (file == null) return;
-    await controller.doUpdateProfilePhoto(file: file);
+    await _trackLoading(
+      _photoLoading,
+      () => controller.doUpdateProfilePhoto(file: file),
+    );
   }
 
   Future<void> _handlePhotoRemove() async {
-    await controller.doDeleteProfilePhoto();
+    await _trackLoading(
+      _photoLoading,
+      () => controller.doDeleteProfilePhoto(),
+    );
   }
 
   // -- Profile Section -------------------------------------------------------
@@ -388,12 +484,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           WDiv(
             className: 'flex justify-end',
             children: [
-              WButton(
-                onTap: _submitProfile,
-                isLoading: controller.isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(trans('common.save')),
+              MagicBuilder<bool>(
+                listenable: _profileSaveLoading,
+                builder: (isProcessing) => WButton(
+                  onTap: isProcessing ? null : _submitProfile,
+                  isLoading: isProcessing,
+                  className:
+                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  child: WText(trans('common.save')),
+                ),
               ),
             ],
           ),
@@ -504,12 +603,17 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           WDiv(
             className: 'flex justify-end mt-2',
             children: [
-              WButton(
-                onTap: _submitProfile,
-                isLoading: controller.isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(trans('common.save')),
+              MagicBuilder<bool>(
+                listenable: _extendedProfileSaveLoading,
+                builder: (isProcessing) => WButton(
+                  onTap: isProcessing
+                      ? null
+                      : _submitExtendedProfile,
+                  isLoading: isProcessing,
+                  className:
+                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                  child: WText(trans('common.save')),
+                ),
               ),
             ],
           ),
@@ -585,12 +689,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             WDiv(
               className: 'flex justify-end',
               children: [
-                WButton(
-                  onTap: _submitPassword,
-                  isLoading: controller.isLoading,
-                  className:
-                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                  child: WText(trans('profile.update_password')),
+                MagicBuilder<bool>(
+                  listenable: passwordForm.processingListenable,
+                  builder: (isProcessing) => WButton(
+                    onTap: isProcessing ? null : _submitPassword,
+                    isLoading: isProcessing,
+                    className:
+                        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                    child: WText(trans('profile.update_password')),
+                  ),
                 ),
               ],
             ),
@@ -660,16 +767,27 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               ),
             ],
           ),
-          WButton(
-            onTap: controller.sendEmailVerification,
-            isLoading: controller.isLoading,
-            className:
-                'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-            child:
-                WText(trans('magic_starter.email_verification.resend_button')),
+          MagicBuilder<bool>(
+            listenable: _emailVerificationLoading,
+            builder: (isLoading) => WButton(
+              onTap: isLoading ? null : _handleSendEmailVerification,
+              isLoading: isLoading,
+              className:
+                  'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+              child: WText(
+                  trans('magic_starter.email_verification.resend_button')),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Sends email verification with isolated loading state.
+  Future<void> _handleSendEmailVerification() async {
+    await _trackLoading(
+      _emailVerificationLoading,
+      () => controller.sendEmailVerification(),
     );
   }
 
@@ -702,12 +820,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           trans('profile.two_factor_disabled_description'),
           className: 'text-sm text-gray-600 dark:text-gray-400',
         ),
-        WButton(
-          onTap: _enableTwoFactor,
-          isLoading: controller.isLoading,
-          className:
-              'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-          child: WText(trans('profile.two_factor_enable')),
+        MagicBuilder<bool>(
+          listenable: _twoFactorLoading,
+          builder: (isLoading) => WButton(
+            onTap: isLoading ? null : _enableTwoFactor,
+            isLoading: isLoading,
+            className:
+                'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+            child: WText(trans('profile.two_factor_enable')),
+          ),
         ),
       ],
     );
@@ -803,12 +924,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         WDiv(
           className: 'flex justify-end',
           children: [
-            WButton(
-              onTap: _confirmTwoFactor,
-              isLoading: controller.isLoading,
-              className:
-                  'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-              child: WText(trans('profile.two_factor_confirm')),
+            MagicBuilder<bool>(
+              listenable: _twoFactorLoading,
+              builder: (isLoading) => WButton(
+                onTap: isLoading ? null : _confirmTwoFactor,
+                isLoading: isLoading,
+                className:
+                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                child: WText(trans('profile.two_factor_confirm')),
+              ),
             ),
           ],
         ),
@@ -873,33 +997,38 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ],
           ),
         ],
-        WDiv(
-          className: 'flex flex-row flex-wrap gap-3',
-          children: [
-            WButton(
-              onTap: _showRecoveryCodes,
-              isLoading: controller.isLoading,
-              className:
-                  'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-              child: WText(trans('profile.two_factor_show_recovery_codes')),
-            ),
-            WButton(
-              onTap: _regenerateRecoveryCodes,
-              isLoading: controller.isLoading,
-              className:
-                  'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-              child: WText(trans('profile.two_factor_regenerate_codes')),
-            ),
-            Builder(
-              builder: (context) => WButton(
-                onTap: () => _disableTwoFactor(context),
-                isLoading: controller.isLoading,
+        MagicBuilder<bool>(
+          listenable: _twoFactorLoading,
+          builder: (isLoading) => WDiv(
+            className: 'flex flex-row flex-wrap gap-3',
+            children: [
+              WButton(
+                onTap: isLoading ? null : _showRecoveryCodes,
+                isLoading: isLoading,
                 className:
-                    'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 text-sm font-medium',
-                child: WText(trans('profile.two_factor_disable')),
+                    'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+              child: WText(trans('profile.two_factor_show_recovery_codes')),
               ),
-            ),
-          ],
+              WButton(
+                onTap: isLoading ? null : _regenerateRecoveryCodes,
+                isLoading: isLoading,
+                className:
+                    'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+              child: WText(trans('profile.two_factor_regenerate_codes')),
+              ),
+              Builder(
+                builder: (context) => WButton(
+                  onTap: isLoading
+                      ? null
+                      : () => _disableTwoFactor(context),
+                  isLoading: isLoading,
+                  className:
+                      'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 text-sm font-medium',
+                  child: WText(trans('profile.two_factor_disable')),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -994,19 +1123,24 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ),
           // Gate: guests cannot logout/revoke sessions.
           if (Gate.allows('starter.logout-sessions'))
-            WDiv(
-              className: 'mt-2',
-              children: [
-                Builder(
-                  builder: (context) => WButton(
-                    onTap: () => _revokeOtherSessions(context),
-                    isLoading: controller.isLoading,
-                    className:
-                        'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 w-full flex justify-center',
+            MagicBuilder<bool>(
+              listenable: _sessionActionLoading,
+              builder: (isLoading) => WDiv(
+                className: 'mt-2',
+                children: [
+                  Builder(
+                    builder: (context) => WButton(
+                      onTap: isLoading
+                          ? null
+                          : () => _revokeOtherSessions(context),
+                      isLoading: isLoading,
+                      className:
+                          'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 w-full flex justify-center',
                     child: WText(trans('profile.logout_other_sessions')),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
         ],
       ),
@@ -1067,12 +1201,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           ],
         ),
         if (!isCurrent)
-          WButton(
-            onTap: () => _revokeSession(tokenId),
-            isLoading: controller.isLoading,
-            className:
-                'text-red-600 dark:text-red-400 text-sm px-3 py-1 rounded border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20',
-            child: WText(trans('profile.revoke')),
+          MagicBuilder<bool>(
+            listenable: _sessionActionLoading,
+            builder: (isLoading) => WButton(
+              onTap: isLoading ? null : () => _revokeSession(tokenId),
+              isLoading: isLoading,
+              className:
+                  'text-red-600 dark:text-red-400 text-sm px-3 py-1 rounded border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20',
+              child: WText(trans('profile.revoke')),
+            ),
           ),
       ],
     );
@@ -1153,13 +1290,16 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             WDiv(
               className: 'flex justify-end',
               children: [
-                WButton(
-                  onTap: () => _submitDeleteAccount(),
-                  isLoading: controller.isLoading,
-                  className:
-                      'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white text-sm font-medium',
-                  child: WText(
-                    trans('magic_starter.profile.delete_account.button'),
+                MagicBuilder<bool>(
+                  listenable: deleteAccountForm.processingListenable,
+                  builder: (isProcessing) => WButton(
+                    onTap: isProcessing ? null : _submitDeleteAccount,
+                    isLoading: isProcessing,
+                    className:
+                        'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white text-sm font-medium',
+                    child: WText(
+                      trans('magic_starter.profile.delete_account.button'),
+                    ),
                   ),
                 ),
               ],
@@ -1173,9 +1313,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Submit delete account form.
   Future<void> _submitDeleteAccount() async {
     if (!deleteAccountForm.validate()) return;
-    await controller.doDeleteAccount(
-      password: deleteAccountForm.get('password'),
-    );
+    await deleteAccountForm.process(() => controller.withoutNotifying(
+      () => controller.doDeleteAccount(
+        password: deleteAccountForm.get('password'),
+      ),
+    ));
   }
 
   // -- Email Verification Section -----------------------------------------------
@@ -1260,12 +1402,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             WDiv(
               className: 'flex justify-end',
               children: [
-                WButton(
-                  onTap: _submitGuestUpgrade,
-                  isLoading: controller.isLoading,
-                  className:
-                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                  child: WText(trans('magic_starter.guest_upgrade.button')),
+                MagicBuilder<bool>(
+                  listenable: upgradeForm.processingListenable,
+                  builder: (isProcessing) => WButton(
+                    onTap: isProcessing ? null : _submitGuestUpgrade,
+                    isLoading: isProcessing,
+                    className:
+                        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                    child: WText(trans('magic_starter.guest_upgrade.button')),
+                  ),
                 ),
               ],
             ),
@@ -1278,15 +1423,17 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Submits the guest upgrade form — converts the guest to a full account.
   Future<void> _submitGuestUpgrade() async {
     if (!upgradeForm.validate()) return;
-    await controller.doUpdateProfile(
-      name: profileForm.get('name'),
-      email: upgradeForm.get('email'),
-      phone: profileForm.get('phone'),
-      phoneCountry: profileForm.get('phone_country'),
-      timezone: profileForm.get('timezone'),
-      language: profileForm.get('language'),
-      password: upgradeForm.get('password'),
-      passwordConfirmation: upgradeForm.get('password_confirmation'),
-    );
+    await upgradeForm.process(() => controller.withoutNotifying(
+      () => controller.doUpdateProfile(
+        name: profileForm.get('name'),
+        email: upgradeForm.get('email'),
+        phone: profileForm.get('phone'),
+        phoneCountry: profileForm.get('phone_country'),
+        timezone: profileForm.get('timezone'),
+        language: profileForm.get('language'),
+        password: upgradeForm.get('password'),
+        passwordConfirmation: upgradeForm.get('password_confirmation'),
+      ),
+    ));
   }
 }

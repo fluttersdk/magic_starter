@@ -11,8 +11,44 @@ class StarterProfileController extends MagicController
       Magic.findOrPut(StarterProfileController.new);
   bool _isSubmitting = false;
 
+  /// Whether controller notifications are temporarily suppressed.
+  ///
+  /// When `true`, [notifyListeners] calls are silently discarded.
+  /// Used by [withoutNotifying] to prevent full-page rebuilds when
+  /// form-level loading state (via [MagicFormData.process]) is sufficient.
+  bool _suppressNotifications = false;
+
   /// Render profile settings view via registry key.
   Widget profile() => MagicStarter.view.make('profile.settings');
+
+  /// Execute [action] without triggering UI notifications.
+  ///
+  /// All [setLoading], [setSuccess], [setError], [handleApiError],
+  /// and [clearErrors] calls within [action] will update internal
+  /// state but skip [notifyListeners], preventing full-page rebuilds.
+  ///
+  /// Use when form-level loading (via [MagicFormData.process]) already
+  /// drives the submit button's loading indicator.
+  ///
+  /// ```dart
+  /// await form.process(() => controller.withoutNotifying(
+  ///     () => controller.doUpdateProfile(name: 'Alice', email: 'a@b.com'),
+  /// ));
+  /// ```
+  Future<T> withoutNotifying<T>(Future<T> Function() action) async {
+    _suppressNotifications = true;
+    try {
+      return await action();
+    } finally {
+      _suppressNotifications = false;
+    }
+  }
+
+  @override
+  void notifyListeners() {
+    if (_suppressNotifications) return;
+    super.notifyListeners();
+  }
 
   /// Update profile information.
   Future<bool> doUpdateProfile({
