@@ -209,20 +209,6 @@ class MagicStarter {
         .toList(growable: false);
   }
 
-  /// Register custom timezone options.
-  ///
-  /// ```dart
-  /// MagicStarter.useTimezoneOptions(
-  ///   ['UTC', 'America/New_York', 'Europe/London'],
-  /// );
-  /// ```
-  static void useTimezoneOptions(List<String>? timezones) {
-    manager.timezoneOptions = timezones;
-  }
-
-  /// Get the registered timezone options, or `null` if not configured.
-  static List<String>? get timezoneOptions => manager.timezoneOptions;
-
   /// Register a guest authentication entry point builder.
   ///
   /// When set, renders a custom widget for guest/anonymous login flows.

@@ -40,30 +40,15 @@ class MagicStarterConfig {
   static const String _defaultProfilePrefix = '/settings';
   static const String _defaultNotificationsPrefix = '/notifications';
 
-  static const List<String> _defaultSupportedTimezones = [
-    'UTC',
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Los_Angeles',
-    'America/Sao_Paulo',
-    'America/Mexico_City',
-    'Canada/Eastern',
-    'Europe/London',
-    'Europe/Paris',
-    'Europe/Berlin',
-    'Europe/Istanbul',
-    'Asia/Dubai',
-    'Asia/Kolkata',
-    'Asia/Shanghai',
-    'Asia/Tokyo',
-    'Asia/Singapore',
-    'Australia/Sydney',
-    'Pacific/Auckland',
-    'Africa/Cairo',
-  ];
 
   /// Returns whether timezone list features are enabled.
+  /// Returns whether timezone selection should be shown.
+  /// True when either the dedicated timezones feature or
+  /// the extended-profile feature (which includes timezone) is enabled.
+  static bool hasTimezoneOrExtendedProfileFeatures() {
+    return hasTimezoneFeatures() || hasExtendedProfileFeatures();
+  }
+
   static bool hasTimezoneFeatures() {
     return Config.get<bool>(
           'magic_starter.features.timezones',
@@ -213,14 +198,6 @@ class MagicStarterConfig {
         _defaultTimezone;
   }
 
-  /// Returns the list of supported timezones.
-  static List<String> supportedTimezones() {
-    return Config.get<List<String>>(
-          'magic_starter.supported_timezones',
-          _defaultSupportedTimezones,
-        ) ??
-        _defaultSupportedTimezones;
-  }
 
   /// Returns the list of supported locales.
   static List<String> supportedLocales() {

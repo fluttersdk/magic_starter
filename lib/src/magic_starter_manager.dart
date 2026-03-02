@@ -153,7 +153,6 @@ class MagicStarterManager {
 
   /// Timezone options for timezone selection.
   /// When null, falls back to config defaults.
-  List<String>? timezoneOptions;
 
   /// Guest authentication entry point builder.
   /// When set, renders custom widget for guest/anonymous login flows.
@@ -254,7 +253,6 @@ class MagicStarterManager {
     socialLoginBuilder = null;
     notificationTypeMapper = null;
     _localeOptions = null;
-    timezoneOptions = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;
     _viewRegistry.clear();

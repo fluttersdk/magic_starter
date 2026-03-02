@@ -376,11 +376,7 @@ void main() {
         expect(MagicStarterConfig.defaultTimezone(), equals('UTC'));
       });
 
-      test('supportedTimezones() returns non-empty list by default', () {
-        final tzs = MagicStarterConfig.supportedTimezones();
-        expect(tzs, isNotEmpty);
-        expect(tzs.contains('UTC'), isTrue);
-      });
+
 
       test('supportedLocales() returns non-empty list by default', () {
         final locales = MagicStarterConfig.supportedLocales();
