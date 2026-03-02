@@ -79,6 +79,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   String _twoFactorState = 'disabled';
   List<String> _recoveryCodes = [];
+  String? _twoFactorError;
 
   // -- Section-level loading notifiers (isolated per section) ----------------
 
@@ -212,6 +213,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Enable 2FA flow with password confirmation and setup modal.
   Future<void> _enableTwoFactor(BuildContext context) async {
+    setState(() => _twoFactorError = null);
     final password = await MagicStarterPasswordConfirmDialog.show(context);
     if (password == null) return;
 
@@ -219,7 +221,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       _twoFactorLoading,
       () => controller.doEnableTwoFactor(password: password),
     );
-    if (data == null) return;
+    if (data == null) {
+      setState(() => _twoFactorError = controller.rxStatus.message);
+      return;
+    }
+    setState(() => _twoFactorError = null);
 
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
@@ -239,6 +245,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Disable 2FA --- requires password confirmation.
   Future<void> _disableTwoFactor(BuildContext context) async {
+    setState(() => _twoFactorError = null);
     final password = await MagicStarterPasswordConfirmDialog.show(context);
     if (password == null) return;
     final success = await _trackLoading(
@@ -250,6 +257,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         _twoFactorState = 'disabled';
         _recoveryCodes = [];
       });
+    } else {
+      setState(() => _twoFactorError = controller.rxStatus.message);
     }
   }
 
@@ -721,6 +730,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           trans('profile.two_factor_disabled_description'),
           className: 'text-sm text-gray-600 dark:text-gray-400',
         ),
+        if (_twoFactorError != null)
+          WText(
+            _twoFactorError!,
+            className: 'text-sm text-red-600 dark:text-red-400',
+          ),
         MagicBuilder<bool>(
           listenable: _twoFactorLoading,
           builder: (isLoading) => Builder(
@@ -759,6 +773,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           trans('profile.two_factor_enabled_description'),
           className: 'text-sm text-gray-600 dark:text-gray-400',
         ),
+        if (_twoFactorError != null)
+          WText(
+            _twoFactorError!,
+            className: 'text-sm text-red-600 dark:text-red-400',
+          ),
         if (_recoveryCodes.isNotEmpty) ...[
           WText(
             trans('profile.two_factor_recovery_codes_description'),
