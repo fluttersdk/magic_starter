@@ -166,12 +166,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   ///
   /// Without this, validation errors are set on the controller but the UI
   /// never rebuilds to display them.
-  void _rebuildIfValidationErrors() {
+  void _rebuildIfValidationErrors([MagicFormData? form]) {
     if (controller.hasErrors) {
       setState(() {});
       // Re-trigger form validators so FormField picks up server errors
       // via controller.getError(field) inside the rules() helper.
-      profileForm.formKey.currentState?.validate();
+      (form ?? profileForm).formKey.currentState?.validate();
     }
   }
 
@@ -202,7 +202,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 passwordConfirmation: passwordForm.get('password_confirmation'),
               ),
             ));
-    _rebuildIfValidationErrors();
+    _rebuildIfValidationErrors(passwordForm);
     if (success) {
       passwordForm.set('current_password', '');
       passwordForm.set('password', '');
@@ -1253,6 +1253,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             password: deleteAccountForm.get('password'),
           ),
         ));
+    _rebuildIfValidationErrors(deleteAccountForm);
   }
 
   // -- Email Verification Section -----------------------------------------------

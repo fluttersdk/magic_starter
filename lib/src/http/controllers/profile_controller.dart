@@ -3,10 +3,11 @@ import 'package:magic/magic.dart';
 
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
+import 'concerns/navigates_routes.dart';
 
 /// Profile controller for Magic Starter plugin.
 class StarterProfileController extends MagicController
-    with MagicStateMixin<bool>, ValidatesRequests {
+    with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
   static StarterProfileController get instance =>
       Magic.findOrPut(StarterProfileController.new);
   bool _isSubmitting = false;
@@ -165,6 +166,7 @@ class StarterProfileController extends MagicController
       }
 
       await Auth.logout();
+      navigateTo(MagicStarterConfig.loginRoute());
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
