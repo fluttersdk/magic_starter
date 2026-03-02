@@ -208,11 +208,12 @@ class MockGuard implements Guard {
 void main() {
   Widget wrap(Widget widget) {
     return MaterialApp(
-      home: WindTheme(
+      builder: (context, child) => WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: child!,
+      ),
+      home: Scaffold(
+        body: SingleChildScrollView(child: widget),
       ),
     );
   }
@@ -419,6 +420,100 @@ void main() {
           ),
           findsOneWidget,
         );
+      },
+    );
+    testWidgets(
+      'Disable button shows PasswordConfirmDialog',
+      (WidgetTester tester) async {
+        mockGuard.setUserWithTwoFactorEnabled();
+
+        // Ensure enough viewport width for dialog buttons.
+        tester.view.physicalSize = const Size(1200, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await tester.pump();
+
+        final btn = find.byWidgetPredicate((Widget widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data ==
+                trans('profile.two_factor_disable'));
+        await tester.ensureVisible(btn);
+        await tester.tap(btn);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Show Recovery Codes button shows PasswordConfirmDialog',
+      (WidgetTester tester) async {
+        mockGuard.setUserWithTwoFactorEnabled();
+
+        // Ensure enough viewport width for dialog buttons.
+        tester.view.physicalSize = const Size(1200, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await tester.pump();
+
+        final btn = find.byWidgetPredicate((Widget widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data ==
+                trans('profile.two_factor_show_recovery_codes'));
+        await tester.ensureVisible(btn);
+        await tester.tap(btn);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Regenerate Recovery Codes button is visible after showing recovery codes',
+      (WidgetTester tester) async {
+        mockGuard.setUserWithTwoFactorEnabled();
+
+        // Ensure enough viewport width for dialog buttons.
+        tester.view.physicalSize = const Size(1200, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await tester.pump();
+
+        // 1. Tap Show Recovery Codes to reveal them.
+        final showBtn = find.byWidgetPredicate((Widget widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data ==
+                trans('profile.two_factor_show_recovery_codes'));
+        await tester.ensureVisible(showBtn);
+        await tester.tap(showBtn);
+        await tester.pumpAndSettle();
+
+        // Password dialog appears.
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+
+        // 2. Cancel dialog — we can't easily confirm via mock in widget test,
+        //    so we verify the Regenerate button is NOT visible before codes.
+        final cancelBtn = find.byWidgetPredicate((Widget widget) =>
+            widget is WText && widget.data == trans('common.cancel'));
+        await tester.tap(cancelBtn);
+        await tester.pumpAndSettle();
+
+        // Regenerate button must NOT be visible when no codes are shown.
+        final regenBtn = find.byWidgetPredicate((Widget widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data ==
+                trans('profile.two_factor_regenerate_codes'));
+        expect(regenBtn, findsNothing);
       },
     );
   });

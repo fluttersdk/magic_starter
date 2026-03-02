@@ -27,6 +27,12 @@ class MockNetworkDriver implements NetworkDriver {
     );
   }
 
+  List<MagicResponse> responseQueue = [];
+
+  void mockQueue(List<MagicResponse> responses) {
+    responseQueue = List.from(responses);
+  }
+
   MagicResponse _respond(
     String method,
     String url, {
@@ -38,6 +44,9 @@ class MockNetworkDriver implements NetworkDriver {
     lastData = data;
     if (files != null) {
       lastFiles = files;
+    }
+    if (responseQueue.isNotEmpty) {
+      return responseQueue.removeAt(0);
     }
     return nextResponse ?? MagicResponse(data: {}, statusCode: 500);
   }
@@ -595,10 +604,12 @@ void main() {
 
       group('doDisableTwoFactor', () {
         test('success (200) — returns true', () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {'message': 'Two-factor authentication disabled.'},
-          );
+          mockDriver.mockQueue([
+            MagicResponse(
+              statusCode: 200,
+              data: {'message': 'Two-factor authentication disabled.'},
+            ),
+          ]);
 
           final result =
               await controller.doDisableTwoFactor(password: 'mysecretpass');
@@ -608,22 +619,40 @@ void main() {
           expect(mockDriver.lastMethod, equals('POST'));
           expect(mockDriver.lastUrl, equals('/two-factor-authentication'));
           expect(mockDriver.lastData,
-              equals({'_method': 'DELETE', 'password': 'mysecretpass'}));
+            equals({
+              '_method': 'DELETE',
+              'password': 'mysecretpass',
+            }),
+          );
         });
 
-        test('failure (422) — returns false', () async {
-          mockDriver.mockResponse(
-            statusCode: 422,
-            data: {
-              'message': 'Invalid password',
-              'errors': {
-                'password': ['The password is incorrect.']
-              }
-            },
-          );
+        test('failure (422 confirm password) — returns false', () async {
+          mockDriver.mockQueue([
+            MagicResponse(
+              statusCode: 422,
+              data: {
+                'message': 'Invalid password',
+                'errors': {
+                  'password': ['The password is incorrect.']
+                }
+              },
+            ),
+          ]);
 
           final result =
               await controller.doDisableTwoFactor(password: 'wrongpass');
+
+          expect(result, isFalse);
+          expect(controller.isSuccess, isFalse);
+        });
+
+        test('failure (500 on disable) — returns false', () async {
+          mockDriver.mockQueue([
+            MagicResponse(statusCode: 500, data: {}),
+          ]);
+
+          final result =
+              await controller.doDisableTwoFactor(password: 'mysecretpass');
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);
@@ -632,44 +661,55 @@ void main() {
 
       group('getRecoveryCodes', () {
         test('success (200) — returns list of codes', () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {
-              'data': ['code1', 'code2', 'code3']
-            },
-          );
+          mockDriver.mockQueue([
+            MagicResponse(
+              statusCode: 200,
+              data: {
+                'data': ['code1', 'code2', 'code3']
+              },
+            ),
+          ]);
 
-          final result = await controller.getRecoveryCodes();
+          final result = await controller.getRecoveryCodes(password: 'mysecretpass');
 
           expect(result, isNotNull);
           expect(result!.length, equals(3));
           expect(result.first, equals('code1'));
-          expect(mockDriver.lastMethod, equals('GET'));
-          expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes'));
+          expect(mockDriver.lastMethod, equals('POST'));
+          expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes/show'));
+          expect(
+            mockDriver.lastData,
+            equals({
+              'password': 'mysecretpass',
+            }),
+          );
         });
 
         test('failure (500) — returns null', () async {
-          mockDriver.mockResponse(
-            statusCode: 500,
-            data: {'message': 'Server error'},
-          );
+          mockDriver.mockQueue([
+            MagicResponse(
+              statusCode: 500,
+              data: {'message': 'Server error'},
+            ),
+          ]);
 
-          final result = await controller.getRecoveryCodes();
+          final result = await controller.getRecoveryCodes(password: 'mysecretpass');
 
           expect(result, isNull);
         });
-      });
-
+    });
       group('doRegenerateRecoveryCodes', () {
         test('success (200) — returns list of new codes', () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {
-              'data': ['new1', 'new2', 'new3']
-            },
-          );
+          mockDriver.mockQueue([
+            MagicResponse(
+              statusCode: 200,
+              data: {
+                'data': ['new1', 'new2', 'new3']
+              },
+            ),
+          ]);
 
-          final result = await controller.doRegenerateRecoveryCodes();
+          final result = await controller.doRegenerateRecoveryCodes(password: 'mysecretpass');
 
           expect(result, isNotNull);
           expect(result!.length, equals(3));
@@ -677,20 +717,28 @@ void main() {
           expect(controller.isSuccess, isTrue);
           expect(mockDriver.lastMethod, equals('POST'));
           expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes'));
+          expect(
+            mockDriver.lastData,
+            equals({
+              'password': 'mysecretpass',
+            }),
+          );
         });
 
         test('failure (500) — returns null', () async {
-          mockDriver.mockResponse(
-            statusCode: 500,
-            data: {'message': 'Server error'},
-          );
+          mockDriver.mockQueue([
+            MagicResponse(
+              statusCode: 500,
+              data: {'message': 'Server error'},
+            ),
+          ]);
 
-          final result = await controller.doRegenerateRecoveryCodes();
+          final result = await controller.doRegenerateRecoveryCodes(password: 'mysecretpass');
 
           expect(result, isNull);
           expect(controller.isSuccess, isFalse);
         });
-      });
+    });
     });
     // -----------------------------------------------------------------------
     // Sessions

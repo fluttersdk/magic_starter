@@ -280,25 +280,47 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   }
 
   /// Show current recovery codes from server.
-  Future<void> _showRecoveryCodes() async {
-    final codes = await _trackLoading(
-      _twoFactorLoading,
-      () => controller.getRecoveryCodes(),
+  Future<void> _showRecoveryCodes(BuildContext context) async {
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
+    await MagicStarterPasswordConfirmDialog.show(
+      context,
+      onConfirm: (password) async {
+        final codes = await _trackLoading(
+          _twoFactorLoading,
+          () => controller.getRecoveryCodes(password: password),
+        );
+        if (codes == null) {
+          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          controller.clearErrors();
+          return error;
+        }
+        setState(() => _recoveryCodes = codes);
+        return null;
+      },
     );
-    if (codes != null) {
-      setState(() => _recoveryCodes = codes);
-    }
   }
 
   /// Regenerate recovery codes on the server.
-  Future<void> _regenerateRecoveryCodes() async {
-    final codes = await _trackLoading(
-      _twoFactorLoading,
-      () => controller.doRegenerateRecoveryCodes(),
+  Future<void> _regenerateRecoveryCodes(BuildContext context) async {
+    // ignore: use_build_context_synchronously
+    if (!context.mounted) return;
+    await MagicStarterPasswordConfirmDialog.show(
+      context,
+      onConfirm: (password) async {
+        final codes = await _trackLoading(
+          _twoFactorLoading,
+          () => controller.doRegenerateRecoveryCodes(password: password),
+        );
+        if (codes == null) {
+          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          controller.clearErrors();
+          return error;
+        }
+        setState(() => _recoveryCodes = codes);
+        return null;
+      },
     );
-    if (codes != null) {
-      setState(() => _recoveryCodes = codes);
-    }
   }
 
   // -- Sessions actions -------------------------------------------------------
@@ -374,12 +396,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             Gate.allows('starter.verify-email') &&
             controller.isEmailVerified)
           _buildEmailVerificationSection(),
-        if (MagicStarterConfig.hasTwoFactorFeatures() &&
-            Gate.allows('starter.manage-two-factor'))
-          _buildTwoFactorSection(),
         if (MagicStarterConfig.hasNewsletterFeatures() &&
             Gate.allows('starter.manage-newsletter'))
           _buildNewsletterSection(),
+        if (MagicStarterConfig.hasTwoFactorFeatures() &&
+            Gate.allows('starter.manage-two-factor'))
+          _buildTwoFactorSection(),
         if (Gate.denies('starter.delete-account')) _buildGuestUpgradeSection(),
         if (MagicStarterConfig.hasSessionsFeatures()) _buildSessionsSection(),
         _buildDeleteAccountSection(),
@@ -812,7 +834,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 ),
               ),
               WDiv(
-                className: 'w-full mt-2',
+                className: 'w-full mt-2 flex flex-row gap-2 wrap',
                 children: [
                   WButton(
                     onTap: () async {
@@ -826,6 +848,20 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                       className: 'text-center',
                     ),
                   ),
+                  MagicBuilder<bool>(
+                    listenable: _twoFactorLoading,
+                    builder: (isLoading) => Builder(
+                      builder: (context) => WButton(
+                        onTap: isLoading
+                            ? null
+                            : () => _regenerateRecoveryCodes(context),
+                        isLoading: isLoading,
+                        className:
+                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                        child: WText(trans('profile.two_factor_regenerate_codes')),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -836,19 +872,14 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           builder: (isLoading) => WDiv(
             className: 'wrap gap-3',
             children: [
-              WButton(
-                onTap: isLoading ? null : _showRecoveryCodes,
-                isLoading: isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-                child: WText(trans('profile.two_factor_show_recovery_codes')),
-              ),
-              WButton(
-                onTap: isLoading ? null : _regenerateRecoveryCodes,
-                isLoading: isLoading,
-                className:
-                    'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-                child: WText(trans('profile.two_factor_regenerate_codes')),
+              Builder(
+                builder: (context) => WButton(
+                  onTap: isLoading ? null : () => _showRecoveryCodes(context),
+                  isLoading: isLoading,
+                  className:
+                      'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                  child: WText(trans('profile.two_factor_show_recovery_codes')),
+                ),
               ),
               Builder(
                 builder: (context) => WButton(

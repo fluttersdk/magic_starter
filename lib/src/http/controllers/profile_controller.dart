@@ -323,7 +323,10 @@ class StarterProfileController extends MagicController
     }
   }
 
-  /// Disables two-factor authentication. Requires current password.
+  /// Disables two-factor authentication.
+  ///
+  /// Requires the current account [password] for sudo-mode confirmation.
+  /// The password is sent directly to the endpoint (no separate confirm call).
   Future<bool> doDisableTwoFactor({required String password}) async {
     if (_isSubmitting) return false;
     _isSubmitting = true;
@@ -333,7 +336,10 @@ class StarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-authentication',
-        data: {'_method': 'DELETE', 'password': password},
+        data: {
+          '_method': 'DELETE',
+          'password': password,
+        },
       );
 
       if (!response.successful) {
@@ -357,17 +363,28 @@ class StarterProfileController extends MagicController
   }
 
   /// Retrieves the current two-factor authentication recovery codes.
-  Future<List<String>?> getRecoveryCodes() async {
+  ///
+  /// Requires the current account [password] for sudo-mode confirmation.
+  /// Uses `POST /two-factor-recovery-codes/show` with password in body.
+  Future<List<String>?> getRecoveryCodes({required String password}) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
     setLoading();
     clearErrors();
 
     try {
-      final response = await Http.get('/two-factor-recovery-codes');
+      final response = await Http.post(
+        '/two-factor-recovery-codes/show',
+        data: {
+          'password': password,
+        },
+      );
 
       if (!response.successful) {
-        setError(trans('profile.two_factor_recovery_codes_fetch_failed'));
+        handleApiError(
+          response,
+          fallback: trans('profile.two_factor_recovery_codes_fetch_failed'),
+        );
         return null;
       }
 
@@ -384,14 +401,22 @@ class StarterProfileController extends MagicController
   }
 
   /// Regenerates two-factor authentication recovery codes.
-  Future<List<String>?> doRegenerateRecoveryCodes() async {
+  ///
+  /// Requires the current account [password] for sudo-mode confirmation.
+  /// The password is sent directly to the endpoint (no separate confirm call).
+  Future<List<String>?> doRegenerateRecoveryCodes({required String password}) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
     setLoading();
     clearErrors();
 
     try {
-      final response = await Http.post('/two-factor-recovery-codes', data: {});
+      final response = await Http.post(
+        '/two-factor-recovery-codes',
+        data: {
+          'password': password,
+        },
+      );
 
       if (!response.successful) {
         handleApiError(

@@ -37,7 +37,7 @@ class MockNetworkDriver implements NetworkDriver {
         statusCode: statusCode,
       ),
     );
-    _pendingResponse = null;
+    // _pendingResponse = null;
   }
 
   Future<MagicResponse> _respond(
@@ -48,11 +48,9 @@ class MockNetworkDriver implements NetworkDriver {
     lastMethod = method;
     lastUrl = url;
     lastData = data;
-
     if (_pendingResponse != null) {
       return _pendingResponse!.future;
     }
-
     return nextResponse ??
         MagicResponse(
           data: <String, dynamic>{},
@@ -498,7 +496,7 @@ void main() {
       test('success: loading to success and returns codes', () async {
         mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future = controller.getRecoveryCodes();
+        final Future<List<String>?> future = controller.getRecoveryCodes(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -522,16 +520,24 @@ void main() {
         expect(result, isNotNull);
         expect(result?.length, equals(2));
         expect(result?[0], contains('rc-1'));
-        expect(mockDriver.lastMethod, equals('GET'));
-        expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes'));
+        expect(mockDriver.lastMethod, equals('POST'));
+        expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes/show'));
         expect(controller.isLoading, isFalse);
         expect(controller.isSuccess, isTrue);
+        expect(
+          mockDriver.lastData,
+          equals(
+            <String, dynamic>{
+              'password': 'secret123',
+            },
+          ),
+        );
       });
 
       test('failure: loading to error and returns null', () async {
         mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future = controller.getRecoveryCodes();
+        final Future<List<String>?> future = controller.getRecoveryCodes(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -555,7 +561,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<List<String>?> future =
-            controller.doRegenerateRecoveryCodes();
+            controller.doRegenerateRecoveryCodes(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -586,13 +592,21 @@ void main() {
         expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes'));
         expect(controller.isLoading, isFalse);
         expect(controller.isSuccess, isTrue);
+        expect(
+          mockDriver.lastData,
+          equals(
+            <String, dynamic>{
+              'password': 'secret123',
+            },
+          ),
+        );
       });
 
       test('failure: loading to error and returns null', () async {
         mockDriver.startPendingResponse();
 
         final Future<List<String>?> future =
-            controller.doRegenerateRecoveryCodes();
+            controller.doRegenerateRecoveryCodes(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
