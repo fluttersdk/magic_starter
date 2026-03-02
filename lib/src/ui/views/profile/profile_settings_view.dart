@@ -456,19 +456,24 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             labelClassName:
                 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             className:
-                'w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
+            menuClassName:
+                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
           ),
           WFormSelect<String>(
             value: profileForm.get('timezone'),
             onChange: (v) => profileForm.set('timezone', v ?? ''),
             label: trans('profile.timezone_label'),
+            searchable: true,
             options: timezones
                 .map((tz) => SelectOption<String>(value: tz, label: tz))
                 .toList(),
             labelClassName:
                 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             className:
-                'w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
+            menuClassName:
+                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
           ),
           WFormSelect<String>(
             value: profileForm.get('language'),
@@ -478,7 +483,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             labelClassName:
                 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
             className:
-                'w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
+            menuClassName:
+                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
           ),
           WDiv(
             className: 'flex justify-end mt-2',
@@ -988,8 +995,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               children: _sessions.map(_buildSessionItem).toList(),
             ),
           WDiv(
-            className:
-                'pt-2 border-t border-gray-200 dark:border-gray-700 mt-2',
+            className: 'mt-2',
             children: [
               Builder(
                 builder: (context) => WButton(

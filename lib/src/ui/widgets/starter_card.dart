@@ -60,8 +60,8 @@ class MagicStarterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String defaultClassName = noPadding
-        ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden flex flex-col'
-        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4';
+        ? 'w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden flex flex-col'
+        : 'w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4';
 
     return WDiv(
       className: className ?? defaultClassName,
