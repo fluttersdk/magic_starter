@@ -248,22 +248,33 @@ class StarterProfileController extends MagicController
 
   /// Enables two-factor authentication for the current user.
   ///
+  /// Requires the current account [password] for confirmation.
+  ///
   /// Returns a map containing [secret], [qr_url], [qr_svg], and [recovery_codes]
   /// on success, or null on failure.
-  Future<Map<String, dynamic>?> doEnableTwoFactor() async {
+  Future<Map<String, dynamic>?> doEnableTwoFactor(
+      {required String password}) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
     setLoading();
     clearErrors();
 
     try {
-      final response = await Http.post('/two-factor-authentication', data: {});
+      final response = await Http.post(
+        '/two-factor-authentication',
+        data: {
+          'password': password,
+        },
+      );
 
       if (!response.successful) {
         handleApiError(
           response,
           fallback: trans('profile.two_factor_enable_failed'),
         );
+        if (!isError) {
+          setError(trans('profile.two_factor_enable_failed'));
+        }
         return null;
       }
 

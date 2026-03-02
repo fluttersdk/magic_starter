@@ -217,7 +217,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     final data = await _trackLoading(
       _twoFactorLoading,
-      () => controller.doEnableTwoFactor(),
+      () => controller.doEnableTwoFactor(password: password),
     );
     if (data == null) return;
 

@@ -534,7 +534,7 @@ void main() {
             },
           );
 
-          final result = await controller.doEnableTwoFactor();
+          final result = await controller.doEnableTwoFactor(password: 'secret');
 
           expect(result, isNotNull);
           expect(result!['secret'], equals('BASE32SECRET'));
@@ -549,7 +549,7 @@ void main() {
             data: {'message': 'Server error'},
           );
 
-          final result = await controller.doEnableTwoFactor();
+          final result = await controller.doEnableTwoFactor(password: 'wrong');
 
           expect(result, isNull);
           expect(controller.isSuccess, isFalse);

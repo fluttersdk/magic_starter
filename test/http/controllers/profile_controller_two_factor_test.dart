@@ -279,7 +279,9 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<Map<String, dynamic>?> future =
-            controller.doEnableTwoFactor();
+            controller.doEnableTwoFactor(
+          password: 'secret123',
+        );
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -304,15 +306,53 @@ void main() {
         expect(result?['recovery_codes'], isA<List<String>>());
         expect(mockDriver.lastMethod, equals('POST'));
         expect(mockDriver.lastUrl, equals('/two-factor-authentication'));
+        expect(
+          mockDriver.lastData,
+          equals(
+            <String, dynamic>{
+              'password': 'secret123',
+            },
+          ),
+        );
         expect(controller.isLoading, isFalse);
         expect(controller.isSuccess, isTrue);
+      });
+
+      test('failure: 422 on wrong password returns null and sets error',
+          () async {
+        mockDriver.startPendingResponse();
+
+        final Future<Map<String, dynamic>?> future =
+            controller.doEnableTwoFactor(
+          password: 'wrong-password',
+        );
+        expect(controller.isLoading, isTrue);
+
+        mockDriver.completePendingResponse(
+          statusCode: 422,
+          data: <String, dynamic>{
+            'errors': <String, dynamic>{
+              'password': <String>[
+                'The password is incorrect.',
+              ],
+            },
+          },
+        );
+
+        final Map<String, dynamic>? result = await future;
+
+        expect(result, isNull);
+        expect(controller.isLoading, isFalse);
+        expect(controller.isError, isTrue);
       });
 
       test('failure: loading to error and returns null', () async {
         mockDriver.startPendingResponse();
 
         final Future<Map<String, dynamic>?> future =
-            controller.doEnableTwoFactor();
+            controller.doEnableTwoFactor(
+          password: 'secret123',
+        );
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
