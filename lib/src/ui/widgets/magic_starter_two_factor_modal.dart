@@ -136,10 +136,10 @@ class _MagicStarterTwoFactorModalState
             className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
           ),
           WDiv(
-            className: 'bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-3',
+            className: 'w-full bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-3',
             child: WText(
               secret,
-              className: 'font-mono text-sm text-gray-800 dark:text-gray-200',
+              className: 'font-mono text-sm text-gray-800 dark:text-gray-200 selectable',
             ),
           ),
         ],

@@ -3,10 +3,17 @@ import 'package:magic/magic.dart';
 
 /// A reusable dialog widget that prompts the user to confirm their password.
 ///
-/// This dialog maintains its own standalone state for the password input and visibility
-/// toggle. It uses Wind UI exclusively for styling and layout.
+/// This dialog maintains its own standalone state for the password input,
+/// visibility toggle, and async confirm flow. It shows a loading spinner during
+/// the API call and displays inline errors without closing.
 ///
-/// Returns the entered password as a [String] if confirmed, or `null` if cancelled.
+/// The [onConfirm] callback receives the entered password and should return:
+/// - `null` on success (dialog closes automatically)
+/// - An error string on failure (error displayed inline, dialog remains open)
+///
+/// Uses Wind UI exclusively for styling and layout.
+///
+/// Returns `true` if confirmed, `false` if cancelled.
 class MagicStarterPasswordConfirmDialog extends StatefulWidget {
   /// Optional custom title for the dialog.
   /// Defaults to `trans('profile.confirm_password')`.
@@ -16,36 +23,38 @@ class MagicStarterPasswordConfirmDialog extends StatefulWidget {
   /// Defaults to `trans('profile.confirm_password_description')`.
   final String? description;
 
-  /// Optional inline error message rendered below the password input.
-  final String? errorMessage;
+  /// Called with the entered password. Return null on success, error string on
+  /// failure.
+  final Future<String?> Function(String password)? onConfirm;
 
   const MagicStarterPasswordConfirmDialog({
     super.key,
     this.title,
     this.description,
-    this.errorMessage,
+    this.onConfirm,
   });
 
   /// Helper method to display the password confirmation dialog.
   ///
-  /// Returns a `Future<String?>` which resolves to the entered password
-  /// on confirmation, or `null` on cancellation.
+  /// Returns a `Future<bool>` which resolves to `true` if confirmed
+  /// (password validated via [onConfirm]), or `false` if cancelled.
   ///
-  /// Set [errorMessage] to show an inline API error in the dialog.
-  static Future<String?> show(
+  /// The dialog stays open during loading and displays API errors inline.
+  static Future<bool> show(
     BuildContext context, {
     String? title,
     String? description,
-    String? errorMessage,
+    Future<String?> Function(String password)? onConfirm,
   }) {
-    return showDialog<String?>(
+    return showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (_) => MagicStarterPasswordConfirmDialog(
         title: title,
         description: description,
-        errorMessage: errorMessage,
+        onConfirm: onConfirm,
       ),
-    );
+    ).then((v) => v ?? false);
   }
 
   @override
@@ -57,6 +66,8 @@ class _MagicStarterPasswordConfirmDialogState
     extends State<MagicStarterPasswordConfirmDialog> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscure = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -64,17 +75,33 @@ class _MagicStarterPasswordConfirmDialogState
     super.dispose();
   }
 
-  void _onConfirm() {
-    // Basic validation could happen here before closing
-    final password = _passwordController.text;
-    if (password.isEmpty) {
+  Future<void> _onConfirm() async {
+    final password = _passwordController.text.trim();
+    if (password.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final error = await widget.onConfirm?.call(password);
+
+    if (!mounted) return;
+
+    if (error != null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = error;
+      });
       return;
     }
-    Navigator.of(context).pop(password);
+
+    Navigator.of(context).pop(true);
   }
 
   void _onCancel() {
-    Navigator.of(context).pop();
+    if (_isLoading) return;
+    Navigator.of(context).pop(false);
   }
 
   @override
@@ -111,7 +138,7 @@ class _MagicStarterPasswordConfirmDialogState
 
               // Body
               WDiv(
-                className: 'px-6 pb-6',
+                className: 'px-6 pb-4',
                 children: [
                   WFormInput(
                     controller: _passwordController,
@@ -129,11 +156,12 @@ class _MagicStarterPasswordConfirmDialogState
                 ],
               ),
 
-              if (widget.errorMessage != null)
+              // Inline error message (from async onConfirm)
+              if (_errorMessage != null)
                 WDiv(
                   className: 'px-6 pb-4',
                   child: WText(
-                    widget.errorMessage!,
+                    _errorMessage!,
                     className: 'text-sm text-red-600 dark:text-red-400',
                   ),
                 ),
@@ -141,21 +169,28 @@ class _MagicStarterPasswordConfirmDialogState
               // Footer
               WDiv(
                 className:
-                    'px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex flex-row justify-end gap-2 wrap',
+                    'px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex flex-row gap-2 w-full',
                 children: [
-                  WAnchor(
-                    onTap: _onCancel,
-                    child: WDiv(
-                      className:
-                          'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-                      child: WText(trans('common.cancel')),
+                  WDiv(
+                    className: 'flex-1',
+                    child: WAnchor(
+                      onTap: _isLoading ? null : _onCancel,
+                      child: WDiv(
+                        className:
+                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium text-center',
+                        child: WText(trans('common.cancel')),
+                      ),
                     ),
                   ),
-                  WButton(
-                    onTap: _onConfirm,
-                    className:
-                        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                    child: WText(trans('common.confirm')),
+                  WDiv(
+                    className: 'flex-1',
+                    child: WButton(
+                      onTap: _isLoading ? null : _onConfirm,
+                      isLoading: _isLoading,
+                      className:
+                          'w-full px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                      child: WText(trans('common.confirm')),
+                    ),
                   ),
                 ],
               ),

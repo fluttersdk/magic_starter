@@ -57,14 +57,14 @@ void main() {
     expect(find.byType(WButton), findsOneWidget);
   });
 
-  testWidgets('MagicStarterPasswordConfirmDialog returns null on cancel',
+  testWidgets('MagicStarterPasswordConfirmDialog returns false on cancel',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
     addTearDown(() => tester.view.resetDevicePixelRatio());
 
-    String? result = 'not-null';
+    bool result = true;
 
     await tester.pumpWidget(wrap(
       Builder(
@@ -83,38 +83,61 @@ void main() {
     await tester.tap(find.text('common.cancel'));
     await tester.pumpAndSettle();
 
-    expect(result, isNull);
+    expect(result, isFalse);
   });
 
-  testWidgets('renders errorMessage when provided', (tester) async {
+  testWidgets('displays error from onConfirm callback', (tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(wrap(
-      const MagicStarterPasswordConfirmDialog(
-        errorMessage: 'The password is incorrect.',
+      Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () async {
+            await MagicStarterPasswordConfirmDialog.show(
+              context,
+              onConfirm: (password) async => 'Invalid password',
+            );
+          },
+          child: const Text('Show'),
+        ),
       ),
     ));
 
-    expect(find.text('The password is incorrect.'), findsOneWidget);
+    await tester.tap(find.text('Show'));
+    await tester.pumpAndSettle();
+
+    // Enter password and tap confirm
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, 'wrongpass');
+    await tester.tap(find.text('common.confirm'));
+    await tester.pumpAndSettle();
+
+    // Error message should appear inline
+    expect(find.text('Invalid password'), findsOneWidget);
+    // Dialog should still be open
+    expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
   });
 
-  testWidgets('MagicStarterPasswordConfirmDialog returns password on confirm',
+  testWidgets('MagicStarterPasswordConfirmDialog returns true on confirm',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
     addTearDown(() => tester.view.resetDevicePixelRatio());
 
-    String? result;
+    bool result = false;
 
     await tester.pumpWidget(wrap(
       Builder(
         builder: (context) => ElevatedButton(
           onPressed: () async {
-            result = await MagicStarterPasswordConfirmDialog.show(context);
+            result = await MagicStarterPasswordConfirmDialog.show(
+              context,
+              onConfirm: (password) async => null,  // success
+            );
           },
           child: const Text('Show'),
         ),
@@ -132,6 +155,6 @@ void main() {
     await tester.tap(find.text('common.confirm'));
     await tester.pumpAndSettle();
 
-    expect(result, 'secretpassword');
+    expect(result, isTrue);
   });
 }

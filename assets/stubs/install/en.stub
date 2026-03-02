@@ -62,7 +62,9 @@
     "toggle_theme": "Toggle theme",
     "unknown": "Unknown",
     "upload": "Upload",
-    "user": "User"
+    "user": "User",
+    "done": "Done",
+    "error_occurred": "An unexpected error occurred. Please try again."
   },
   "errors": {
     "unexpected": "An unexpected error occurred. Please try again."
@@ -194,7 +196,13 @@
     "two_factor_show_recovery_codes": "Show Recovery Codes",
     "update_failed": "Failed to update profile. Please try again.",
     "update_password": "Update Password",
-    "updated": "Profile updated successfully."
+    "updated": "Profile updated successfully.",
+    "copy_recovery_codes_success": "Recovery codes copied to clipboard.",
+    "two_factor_auth": "Two-Factor Authentication",
+    "two_factor": {
+      "copy_codes": "Copy All Codes",
+      "invalid_code": "The provided two-factor authentication code was invalid."
+    }
   },
   "teams": {
     "accept_invitation": "Accept Invitation",
