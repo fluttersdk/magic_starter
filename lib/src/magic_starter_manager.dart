@@ -4,23 +4,23 @@ import 'package:magic/magic.dart';
 import 'configuration/magic_starter_config.dart';
 import 'facades/magic_starter.dart';
 import 'models/magic_starter_auth_user.dart';
-import 'models/starter_nav_item.dart';
-import 'models/starter_team.dart';
-import 'ui/layouts/app_layout.dart';
-import 'ui/layouts/guest_layout.dart';
-import 'ui/view_registry.dart';
-import 'ui/views/auth/forgot_password_view.dart';
-import 'ui/views/auth/login_view.dart';
-import 'ui/views/auth/register_view.dart';
-import 'ui/views/auth/reset_password_view.dart';
-import 'ui/views/auth/two_factor_challenge_view.dart';
-import 'ui/views/auth/otp_verify_view.dart';
-import 'ui/views/notifications/notification_preferences_view.dart';
-import 'ui/views/notifications/notifications_list_view.dart';
-import 'ui/views/profile/profile_settings_view.dart';
-import 'ui/views/teams/team_create_view.dart';
-import 'ui/views/teams/team_invitation_accept_view.dart';
-import 'ui/views/teams/team_settings_view.dart';
+import 'models/magic_starter_nav_item.dart';
+import 'models/magic_starter_team.dart';
+import 'ui/layouts/magic_starter_app_layout.dart';
+import 'ui/layouts/magic_starter_guest_layout.dart';
+import 'ui/magic_starter_view_registry.dart';
+import 'ui/views/auth/magic_starter_forgot_password_view.dart';
+import 'ui/views/auth/magic_starter_login_view.dart';
+import 'ui/views/auth/magic_starter_register_view.dart';
+import 'ui/views/auth/magic_starter_reset_password_view.dart';
+import 'ui/views/auth/magic_starter_two_factor_challenge_view.dart';
+import 'ui/views/auth/magic_starter_otp_verify_view.dart';
+import 'ui/views/notifications/magic_starter_notification_preferences_view.dart';
+import 'ui/views/notifications/magic_starter_notifications_list_view.dart';
+import 'ui/views/profile/magic_starter_profile_settings_view.dart';
+import 'ui/views/teams/magic_starter_team_create_view.dart';
+import 'ui/views/teams/magic_starter_team_invitation_accept_view.dart';
+import 'ui/views/teams/magic_starter_team_settings_view.dart';
 
 /// Social login builder type.
 typedef SocialLoginBuilder = Widget Function(
@@ -30,12 +30,12 @@ typedef UserModelFactory = Authenticatable Function(Map<String, dynamic> data);
 
 /// Holds team-related callbacks so plugin UI can render team data
 /// without depending on app-specific models.
-class StarterTeamResolverConfig {
-  final StarterTeam? Function() currentTeam;
-  final List<StarterTeam> Function() allTeams;
+class MagicStarterTeamResolverConfig {
+  final MagicStarterTeam? Function() currentTeam;
+  final List<MagicStarterTeam> Function() allTeams;
   final Future<void> Function(dynamic teamId) onSwitch;
 
-  const StarterTeamResolverConfig({
+  const MagicStarterTeamResolverConfig({
     required this.currentTeam,
     required this.allTeams,
     required this.onSwitch,
@@ -46,24 +46,24 @@ class StarterTeamResolverConfig {
 ///
 /// Apps register these via [MagicStarter.useNavigation] to populate
 /// the sidebar, drawer, and bottom navigation bar.
-class StarterNavigationConfig {
+class MagicStarterNavigationConfig {
   /// Primary navigation items (Dashboard, Monitors, etc.).
-  final List<StarterNavItem> mainItems;
+  final List<MagicStarterNavItem> mainItems;
 
   /// Secondary/system navigation items (Team Members, Settings).
-  final List<StarterNavItem> systemItems;
+  final List<MagicStarterNavItem> systemItems;
 
   /// Bottom navigation items for mobile (subset of main).
-  final List<StarterNavItem> bottomItems;
+  final List<MagicStarterNavItem> bottomItems;
 
   /// Profile dropdown menu items.
   ///
   /// Host apps can register additional links (e.g. Notifications, Billing)
   /// that appear in the user profile dropdown between the default
   /// "Profile Settings" link and the logout action.
-  final List<StarterNavItem> profileMenuItems;
+  final List<MagicStarterNavItem> profileMenuItems;
 
-  const StarterNavigationConfig({
+  const MagicStarterNavigationConfig({
     required this.mainItems,
     this.systemItems = const [],
     this.bottomItems = const [],
@@ -87,10 +87,10 @@ class MagicStarterManager {
   UserModelFactory userFactory = (data) => MagicStarterAuthUser.fromMap(data);
 
   /// Team resolver callbacks. Null when not configured.
-  StarterTeamResolverConfig? teamResolver;
+  MagicStarterTeamResolverConfig? teamResolver;
 
   /// Navigation config. Null when not configured (uses defaults).
-  StarterNavigationConfig? navigationConfig;
+  MagicStarterNavigationConfig? navigationConfig;
 
   /// Custom logout callback. When set, called instead of default logout.
   Future<void> Function()? onLogout;
@@ -103,7 +103,7 @@ class MagicStarterManager {
 
   /// Custom notification type-to-icon/color mapper.
   /// When null, notification views use built-in defaults.
-  StarterNotificationTypeMapper? notificationTypeMapper;
+  MagicStarterNotificationTypeMapper? notificationTypeMapper;
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
@@ -198,15 +198,15 @@ class MagicStarterManager {
     if (MagicStarterConfig.hasTeamFeatures()) {
       _registerDefault(
         'teams.create',
-        () => const MagicStarterTeamCreateView(),
+        () => const MagicMagicStarterTeamCreateView(),
       );
       _registerDefault(
         'teams.settings',
-        () => const MagicStarterTeamSettingsView(),
+        () => const MagicMagicStarterTeamSettingsView(),
       );
       _registerDefault(
         'teams.invitation_accept',
-        () => const MagicStarterTeamInvitationAcceptView(),
+        () => const MagicMagicStarterTeamInvitationAcceptView(),
       );
     }
 

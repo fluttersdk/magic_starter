@@ -2,14 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 void main() {
-  group('StarterTeam', () {
+  group('MagicStarterTeam', () {
     // ---------------------------------------------------------------------
     // fromMap — basic parsing
     // ---------------------------------------------------------------------
 
     group('fromMap', () {
       test('parses id and name correctly', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
         });
@@ -19,7 +19,7 @@ void main() {
       });
 
       test('id preserves dynamic type (string)', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 'uuid-abc',
           'name': 'Acme',
         });
@@ -28,7 +28,7 @@ void main() {
       });
 
       test('name is null when missing', () {
-        final team = StarterTeam.fromMap({'id': 1});
+        final team = MagicStarterTeam.fromMap({'id': 1});
 
         expect(team.name, isNull);
       });
@@ -40,7 +40,7 @@ void main() {
 
     group('isPersonalTeam', () {
       test('is false by default', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
         });
@@ -49,7 +49,7 @@ void main() {
       });
 
       test('is true when personal_team is true (bool)', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
           'personal_team': true,
@@ -59,7 +59,7 @@ void main() {
       });
 
       test('is true when personal_team is 1 (int)', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
           'personal_team': 1,
@@ -69,7 +69,7 @@ void main() {
       });
 
       test('is false when personal_team is false', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
           'personal_team': false,
@@ -79,7 +79,7 @@ void main() {
       });
 
       test('is false when personal_team is 0', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
           'personal_team': 0,
@@ -95,7 +95,7 @@ void main() {
 
     group('photoUrl', () {
       test('is null when profile_photo_url is missing', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
         });
@@ -104,7 +104,7 @@ void main() {
       });
 
       test('returns URL when profile_photo_url is present', () {
-        final team = StarterTeam.fromMap({
+        final team = MagicStarterTeam.fromMap({
           'id': 1,
           'name': 'Acme',
           'profile_photo_url': 'https://example.com/team.jpg',
@@ -123,7 +123,7 @@ void main() {
 
     group('constructor', () {
       test('creates team with required and optional params', () {
-        const team = StarterTeam(
+        const team = MagicStarterTeam(
           id: 5,
           name: 'Test Team',
           photoUrl: 'https://test.com/photo.png',
@@ -137,7 +137,7 @@ void main() {
       });
 
       test('defaults isPersonalTeam to false', () {
-        const team = StarterTeam(id: 1);
+        const team = MagicStarterTeam(id: 1);
 
         expect(team.isPersonalTeam, isFalse);
         expect(team.name, isNull);
