@@ -3,9 +3,9 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
-import '../../../http/controllers/auth_controller.dart';
-import '../../widgets/auth_form_card.dart';
-import '../../widgets/social_login_divider.dart';
+import '../../../http/controllers/magic_starter_auth_controller.dart';
+import '../../widgets/magic_starter_auth_form_card.dart';
+import '../../widgets/magic_starter_social_divider.dart';
 
 /// Registration view with dynamic identity field support.
 ///
@@ -16,7 +16,7 @@ import '../../widgets/social_login_divider.dart';
 /// When phone mode is active, `phone_country` is automatically shown and
 /// included in the registration payload.
 class MagicStarterRegisterView
-    extends MagicStatefulView<StarterAuthController> {
+    extends MagicStatefulView<MagicStarterAuthController> {
   const MagicStarterRegisterView({super.key});
 
   @override
@@ -25,7 +25,7 @@ class MagicStarterRegisterView
 }
 
 class _MagicStarterRegisterViewState extends MagicStatefulViewState<
-    StarterAuthController, MagicStarterRegisterView> {
+    MagicStarterAuthController, MagicStarterRegisterView> {
   /// Both email and phone fields are always declared — the controller decides
   /// which one to include in the payload based on identity mode.
   late final form = MagicFormData(

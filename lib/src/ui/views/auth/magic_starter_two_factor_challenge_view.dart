@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
-import '../../../http/controllers/auth_controller.dart';
-import '../../widgets/auth_form_card.dart';
+import '../../../http/controllers/magic_starter_auth_controller.dart';
+import '../../widgets/magic_starter_auth_form_card.dart';
 
 /// The Two-Factor Authentication challenge page.
 ///
-/// Rendered after [StarterAuthController.doLogin] detects a `two_factor: true`
+/// Rendered after [MagicStarterAuthController.doLogin] detects a `two_factor: true`
 /// response. The encrypted `two_factor_token` is received via the route's
 /// query parameter `two_factor_token`.
 ///
@@ -14,7 +14,7 @@ import '../../widgets/auth_form_card.dart';
 /// - **OTP mode** (default): enter 6-digit TOTP code from authenticator app.
 /// - **Recovery code mode**: enter a single-use alphanumeric recovery code.
 class MagicStarterTwoFactorChallengeView
-    extends MagicStatefulView<StarterAuthController> {
+    extends MagicStatefulView<MagicStarterAuthController> {
   const MagicStarterTwoFactorChallengeView({super.key});
 
   @override
@@ -23,7 +23,7 @@ class MagicStarterTwoFactorChallengeView
 }
 
 class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
-    StarterAuthController, MagicStarterTwoFactorChallengeView> {
+    MagicStarterAuthController, MagicStarterTwoFactorChallengeView> {
   bool _useRecoveryCode = false;
   final TextEditingController _codeController = TextEditingController();
 

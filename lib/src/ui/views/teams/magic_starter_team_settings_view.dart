@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
-import '../../../http/controllers/team_controller.dart';
-import '../../widgets/starter_page_header.dart';
-import '../../widgets/starter_card.dart';
+import '../../../http/controllers/magic_starter_team_controller.dart';
+import '../../widgets/magic_starter_page_header.dart';
+import '../../widgets/magic_starter_card.dart';
 
-class MagicStarterTeamSettingsView
-    extends MagicStatefulView<StarterTeamController> {
-  const MagicStarterTeamSettingsView({super.key});
+class MagicMagicStarterTeamSettingsView
+    extends MagicStatefulView<MagicStarterTeamController> {
+  const MagicMagicStarterTeamSettingsView({super.key});
 
   @override
-  State<MagicStarterTeamSettingsView> createState() =>
-      _MagicStarterTeamSettingsViewState();
+  State<MagicMagicStarterTeamSettingsView> createState() =>
+      _MagicMagicStarterTeamSettingsViewState();
 }
 
-class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
-    StarterTeamController, MagicStarterTeamSettingsView> {
+class _MagicMagicStarterTeamSettingsViewState extends MagicStatefulViewState<
+    MagicStarterTeamController, MagicMagicStarterTeamSettingsView> {
   late final MagicFormData form = MagicFormData(
     {'name': ''},
     controller: controller,

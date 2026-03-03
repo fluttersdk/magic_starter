@@ -3,12 +3,12 @@ import 'package:magic/magic.dart';
 
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
-import '../../http/controllers/auth_controller.dart';
+import '../../http/controllers/magic_starter_auth_controller.dart';
 
 /// A dropdown widget for the user profile.
 ///
 /// Renders the user's avatar, name, and email, along with profile links.
-class StarterUserProfileDropdown extends StatelessWidget {
+class MagicStarterUserProfileDropdown extends StatelessWidget {
   /// The popover alignment direction.
   ///
   /// Defaults to [PopoverAlignment.bottomRight] for header usage.
@@ -23,7 +23,7 @@ class StarterUserProfileDropdown extends StatelessWidget {
       triggerBuilder;
 
   /// Creates a user profile dropdown.
-  const StarterUserProfileDropdown({
+  const MagicStarterUserProfileDropdown({
     super.key,
     this.alignment = PopoverAlignment.bottomRight,
     this.triggerBuilder,
@@ -218,6 +218,6 @@ class StarterUserProfileDropdown extends StatelessWidget {
       return;
     }
 
-    await StarterAuthController.instance.logout();
+    await MagicStarterAuthController.instance.logout();
   }
 }

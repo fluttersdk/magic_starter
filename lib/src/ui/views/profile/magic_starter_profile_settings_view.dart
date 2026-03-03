@@ -4,12 +4,12 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
-import '../../../http/controllers/profile_controller.dart';
-import '../../widgets/starter_card.dart';
-import '../../widgets/starter_page_header.dart';
-import '../../widgets/starter_password_confirm_dialog.dart';
+import '../../../http/controllers/magic_starter_profile_controller.dart';
+import '../../widgets/magic_starter_card.dart';
+import '../../widgets/magic_starter_page_header.dart';
+import '../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../widgets/magic_starter_two_factor_modal.dart';
-import '../../../http/controllers/newsletter_controller.dart';
+import '../../../http/controllers/magic_starter_newsletter_controller.dart';
 import '../../widgets/magic_starter_timezone_select.dart';
 
 /// Profile settings view --- multi-section page for managing user profile.
@@ -22,7 +22,7 @@ import '../../widgets/magic_starter_timezone_select.dart';
 ///
 /// See [MagicStarterServiceProvider] for the default Gate ability definitions.
 class MagicStarterProfileSettingsView
-    extends MagicStatefulView<StarterProfileController> {
+    extends MagicStatefulView<MagicStarterProfileController> {
   const MagicStarterProfileSettingsView({super.key});
 
   @override
@@ -31,7 +31,7 @@ class MagicStarterProfileSettingsView
 }
 
 class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
-    StarterProfileController, MagicStarterProfileSettingsView> {
+    MagicStarterProfileController, MagicStarterProfileSettingsView> {
   // -- Profile & password forms -----------------------------------------------
 
   late final profileForm = MagicFormData(
@@ -84,7 +84,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   /// Per-section loading notifiers prevent cross-section spinner leaks.
   ///
-  /// The profile page shares a single [StarterProfileController] whose
+  /// The profile page shares a single [MagicStarterProfileController] whose
   /// [MagicStateMixin.isLoading] flag is global. When any controller
   /// method calls [setLoading], the parent [MagicStarterAppLayout]
   /// rebuilds (via [Auth.stateNotifier] bumped by [Auth.restore]),
@@ -123,7 +123,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     }
 
     if (MagicStarterConfig.hasNewsletterFeatures()) {
-      StarterNewsletterController.instance.getNewsletterStatus();
+      MagicStarterNewsletterController.instance.getNewsletterStatus();
     }
     if (controller.isTwoFactorEnabled) {
       _twoFactorState = 'enabled';
@@ -937,7 +937,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           ),
           Builder(
             builder: (context) {
-              final newsletterController = StarterNewsletterController.instance;
+              final newsletterController = MagicStarterNewsletterController.instance;
               return newsletterController.renderState(
                 (data) {
                   final isSubscribed = data?['subscribed'] as bool? ?? false;

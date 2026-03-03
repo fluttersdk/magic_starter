@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
-import '../../../http/controllers/auth_controller.dart';
-import '../../widgets/auth_form_card.dart';
+import '../../../http/controllers/magic_starter_auth_controller.dart';
+import '../../widgets/magic_starter_auth_form_card.dart';
 
 class MagicStarterForgotPasswordView
-    extends MagicStatefulView<StarterAuthController> {
+    extends MagicStatefulView<MagicStarterAuthController> {
   const MagicStarterForgotPasswordView({super.key});
 
   @override
@@ -14,7 +14,7 @@ class MagicStarterForgotPasswordView
 }
 
 class _MagicStarterForgotPasswordViewState extends MagicStatefulViewState<
-    StarterAuthController, MagicStarterForgotPasswordView> {
+    MagicStarterAuthController, MagicStarterForgotPasswordView> {
   late final form = MagicFormData(
     {'email': ''},
     controller: controller,

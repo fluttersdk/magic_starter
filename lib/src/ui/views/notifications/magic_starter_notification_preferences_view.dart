@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
-import '../../widgets/starter_page_header.dart';
-import '../../widgets/starter_card.dart';
-import '../../../http/controllers/notification_controller.dart';
+import '../../widgets/magic_starter_page_header.dart';
+import '../../widgets/magic_starter_card.dart';
+import '../../../http/controllers/magic_starter_notification_controller.dart';
 
 /// Notification preferences view for Magic Starter.
 ///
-/// Displays a type × channel preference matrix loaded from [StarterNotificationController].
+/// Displays a type × channel preference matrix loaded from [MagicStarterNotificationController].
 /// Each notification type shows its available channels as toggle switches with icons.
 class MagicStarterNotificationPreferencesView
-    extends MagicStatefulView<StarterNotificationController> {
+    extends MagicStatefulView<MagicStarterNotificationController> {
   const MagicStarterNotificationPreferencesView({super.key});
 
   @override
@@ -18,7 +18,7 @@ class MagicStarterNotificationPreferencesView
 }
 
 class _MagicStarterNotificationPreferencesViewState
-    extends MagicStatefulViewState<StarterNotificationController,
+    extends MagicStatefulViewState<MagicStarterNotificationController,
         MagicStarterNotificationPreferencesView> {
   @override
   void onInit() {

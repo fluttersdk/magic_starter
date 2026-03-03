@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:magic/magic.dart';
 
-import '../../../http/controllers/otp_controller.dart';
-import '../../widgets/auth_form_card.dart';
+import '../../../http/controllers/magic_starter_otp_controller.dart';
+import '../../widgets/magic_starter_auth_form_card.dart';
 
 /// Multi-step view for phone OTP authentication.
 ///
 /// Renders two distinct steps:
 ///   - **Step 1** ([OtpStep.phoneInput]): user enters their E.164 phone
-///     number and taps "Send Code" to trigger [StarterOtpController.sendOtp].
+///     number and taps "Send Code" to trigger [MagicStarterOtpController.sendOtp].
 ///   - **Step 2** ([OtpStep.codeInput]): user enters the 6-digit code
 ///     received via SMS and taps "Verify" to trigger
-///     [StarterOtpController.verifyOtp]. A "Back" link lets the user return
-///     to step 1 via [StarterOtpController.resetToPhoneInput].
+///     [MagicStarterOtpController.verifyOtp]. A "Back" link lets the user return
+///     to step 1 via [MagicStarterOtpController.resetToPhoneInput].
 ///
 /// Gated at the route level by [MagicStarterConfig.hasPhoneOtpFeatures].
 /// Must be registered in the ViewRegistry under the `auth.otp_verify` key.
 class MagicStarterOtpVerifyView
-    extends MagicStatefulView<StarterOtpController> {
+    extends MagicStatefulView<MagicStarterOtpController> {
   const MagicStarterOtpVerifyView({super.key});
 
   @override
@@ -27,7 +27,7 @@ class MagicStarterOtpVerifyView
 }
 
 class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
-    StarterOtpController, MagicStarterOtpVerifyView> {
+    MagicStarterOtpController, MagicStarterOtpVerifyView> {
   // -------------------------------------------------------------------------
   // Form state — both forms declared upfront; only the active one is rendered.
   // -------------------------------------------------------------------------
@@ -74,7 +74,7 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
     );
   }
 
-  /// Delegates to the correct step widget based on [StarterOtpController.step].
+  /// Delegates to the correct step widget based on [MagicStarterOtpController.step].
   Widget _buildCurrentStep({String? errorMessage}) {
     return switch (controller.step) {
       OtpStep.phoneInput => _buildPhoneInputStep(errorMessage: errorMessage),
@@ -221,13 +221,13 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
   // Actions
   // -------------------------------------------------------------------------
 
-  /// Validates the phone form and invokes [StarterOtpController.sendOtp].
+  /// Validates the phone form and invokes [MagicStarterOtpController.sendOtp].
   Future<void> _submitPhone() async {
     if (!_phoneForm.validate()) return;
     await controller.sendOtp(phone: _phoneForm.get('phone'));
   }
 
-  /// Validates the code form and invokes [StarterOtpController.verifyOtp].
+  /// Validates the code form and invokes [MagicStarterOtpController.verifyOtp].
   ///
   /// The phone is sourced from the controller (stored during [_submitPhone]).
   Future<void> _submitCode() async {

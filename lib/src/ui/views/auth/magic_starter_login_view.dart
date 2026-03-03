@@ -3,17 +3,17 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
-import '../../../http/controllers/auth_controller.dart';
-import '../../../http/controllers/guest_auth_controller.dart';
-import '../../widgets/auth_form_card.dart';
-import '../../widgets/social_login_divider.dart';
+import '../../../http/controllers/magic_starter_auth_controller.dart';
+import '../../../http/controllers/magic_starter_guest_auth_controller.dart';
+import '../../widgets/magic_starter_auth_form_card.dart';
+import '../../widgets/magic_starter_social_divider.dart';
 
 /// Login view with dynamic identity field support.
 ///
 /// Renders the appropriate identity input (email, phone, or a toggle between
 /// both) based on [MagicStarterConfig.emailIdentity] and
 /// [MagicStarterConfig.phoneIdentity] at runtime.
-class MagicStarterLoginView extends MagicStatefulView<StarterAuthController> {
+class MagicStarterLoginView extends MagicStatefulView<MagicStarterAuthController> {
   const MagicStarterLoginView({super.key});
 
   @override
@@ -21,7 +21,7 @@ class MagicStarterLoginView extends MagicStatefulView<StarterAuthController> {
 }
 
 class _MagicStarterLoginViewState extends MagicStatefulViewState<
-    StarterAuthController, MagicStarterLoginView> {
+    MagicStarterAuthController, MagicStarterLoginView> {
   /// Both email and phone fields are always declared — the controller decides
   /// which one to include in the payload based on identity mode.
   late final form = MagicFormData(
@@ -135,7 +135,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
             if (MagicStarterConfig.hasGuestAuthFeatures()) ...[
               const WSpacer(className: 'h-4'),
               WButton(
-                onTap: StarterGuestAuthController.instance.doGuestLogin,
+                onTap: MagicStarterGuestAuthController.instance.doGuestLogin,
                 isLoading: isLoading,
                 className:
                     'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium',

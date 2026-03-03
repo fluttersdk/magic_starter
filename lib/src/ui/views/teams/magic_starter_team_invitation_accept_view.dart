@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
-import '../../../http/controllers/team_controller.dart';
-import '../../widgets/auth_form_card.dart';
+import '../../../http/controllers/magic_starter_team_controller.dart';
+import '../../widgets/magic_starter_auth_form_card.dart';
 
-class MagicStarterTeamInvitationAcceptView
-    extends MagicStatefulView<StarterTeamController> {
-  const MagicStarterTeamInvitationAcceptView({super.key});
+class MagicMagicStarterTeamInvitationAcceptView
+    extends MagicStatefulView<MagicStarterTeamController> {
+  const MagicMagicStarterTeamInvitationAcceptView({super.key});
 
   @override
-  State<MagicStarterTeamInvitationAcceptView> createState() =>
-      _MagicStarterTeamInvitationAcceptViewState();
+  State<MagicMagicStarterTeamInvitationAcceptView> createState() =>
+      _MagicMagicStarterTeamInvitationAcceptViewState();
 }
 
-class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
-    StarterTeamController, MagicStarterTeamInvitationAcceptView> {
+class _MagicMagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
+    MagicStarterTeamController, MagicMagicStarterTeamInvitationAcceptView> {
   late final _token = MagicRouter.instance.pathParameter('token') ?? '';
 
   @override

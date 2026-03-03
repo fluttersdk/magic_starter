@@ -9,7 +9,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 ///
 /// ### Example Usage
 /// ```dart
-/// StarterNotificationDropdown(
+/// MagicStarterNotificationDropdown(
 ///   notificationStream: Notify.notifications(),
 ///   onMarkAsRead: (id) => Notify.markAsRead(id),
 ///   onMarkAllAsRead: () => Notify.markAllAsRead(),
@@ -17,7 +17,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 ///   onViewAll: () => MagicRoute.to(MagicStarterConfig.notificationsRoute()),
 /// )
 /// ```
-class StarterNotificationDropdown extends StatelessWidget {
+class MagicStarterNotificationDropdown extends StatelessWidget {
   /// Stream of notifications to display.
   final Stream<List<DatabaseNotification>> notificationStream;
 
@@ -34,7 +34,7 @@ class StarterNotificationDropdown extends StatelessWidget {
   final VoidCallback? onViewAll;
 
   /// Creates a notification dropdown.
-  const StarterNotificationDropdown({
+  const MagicStarterNotificationDropdown({
     super.key,
     required this.notificationStream,
     this.onMarkAsRead,

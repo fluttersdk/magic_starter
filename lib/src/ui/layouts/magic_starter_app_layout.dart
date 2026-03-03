@@ -5,10 +5,10 @@ import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
 
-import '../widgets/team_selector.dart';
-import '../widgets/starter_user_profile_dropdown.dart';
+import '../widgets/magic_starter_team_selector.dart';
+import '../widgets/magic_starter_user_profile_dropdown.dart';
 import 'package:magic_notifications/magic_notifications.dart';
-import '../widgets/starter_notification_dropdown.dart';
+import '../widgets/magic_starter_notification_dropdown.dart';
 
 /// Default App Layout for Magic Starter.
 ///
@@ -222,7 +222,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           className: 'flex items-center gap-1',
           children: [
             _buildNotificationBell(),
-            const StarterUserProfileDropdown(),
+            const MagicStarterUserProfileDropdown(),
           ],
         ),
       ],
@@ -276,7 +276,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     }
 
     if (MagicStarter.hasTeamResolver) {
-    return MagicStarterTeamSelector();
+    return MagicMagicStarterTeamSelector();
     }
 
     return const SizedBox.shrink();
@@ -330,7 +330,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   Widget _buildRegisteredNavigation(
     BuildContext context,
     String currentPath,
-    StarterNavigationConfig config, {
+    MagicStarterNavigationConfig config, {
     VoidCallback? onItemTap,
   }) {
     return WDiv(
@@ -501,7 +501,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         children: [
           // User profile dropdown (reuses the same dropdown menu)
           Expanded(
-            child: StarterUserProfileDropdown(
+            child: MagicStarterUserProfileDropdown(
               alignment: PopoverAlignment.topRight,
               triggerBuilder: (context, isOpen, isHovering) => WDiv(
                 states: {
@@ -593,7 +593,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       return const SizedBox.shrink();
     }
 
-    return StarterNotificationDropdown(
+    return MagicStarterNotificationDropdown(
       notificationStream: Notify.notifications(),
       onMarkAsRead: (id) => Notify.markAsRead(id),
       onMarkAllAsRead: () => Notify.markAllAsRead(),
