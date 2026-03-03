@@ -757,7 +757,7 @@ void main() {
         Config.set('magic_starter.auth.phone', false);
       });
 
-      test('sends email in payload, no phone or phone_country field', () async {
+      test('sends email in payload, no phone field', () async {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
@@ -788,7 +788,7 @@ void main() {
         Config.set('magic_starter.auth.phone', true);
       });
 
-      test('sends phone and phone_country in payload, no email field', () async {
+      test('sends phone in payload, no email field', () async {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
@@ -802,14 +802,13 @@ void main() {
         await controller.doRegister(
           name: 'Bob',
           phone: '+905301234567',
-          phoneCountry: 'TR',
           password: 'secret123',
           passwordConfirmation: 'secret123',
         );
 
         final body = mockDriver.lastData as Map<String, dynamic>?;
         expect(body?['phone'], equals('+905301234567'));
-        expect(body?['phone_country'], equals('TR'));
+        expect(body?.containsKey('phone_country'), isFalse);
         expect(body?.containsKey('email'), isFalse);
       });
     });
@@ -820,12 +819,12 @@ void main() {
         Config.set('magic_starter.auth.phone', true);
       });
 
-      test('sends phone and phone_country when phone field has value', () async {
+      test('sends phone when phone field has value', () async {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
             'data': {
-              'token': 'reg-tok-both',
+              'token': 'reg-tok-both-phone',
               'user': {'id': 1, 'name': 'Bob'},
             },
           },
@@ -834,15 +833,38 @@ void main() {
         await controller.doRegister(
           name: 'Bob',
           phone: '+905301234567',
-          phoneCountry: 'TR',
           password: 'secret123',
           passwordConfirmation: 'secret123',
         );
 
         final body = mockDriver.lastData as Map<String, dynamic>?;
         expect(body?['phone'], equals('+905301234567'));
-        expect(body?['phone_country'], equals('TR'));
         expect(body?.containsKey('email'), isFalse);
+        expect(body?.containsKey('phone_country'), isFalse);
+      });
+
+      test('sends email when phone field is empty', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'reg-tok-both-email',
+              'user': {'id': 1, 'name': 'Bob', 'email': 'bob@example.com'},
+            },
+          },
+        );
+
+        await controller.doRegister(
+          name: 'Bob',
+          email: 'bob@example.com',
+          password: 'secret123',
+          passwordConfirmation: 'secret123',
+        );
+
+        final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['email'], equals('bob@example.com'));
+        expect(body?.containsKey('phone'), isFalse);
+        expect(body?.containsKey('phone_country'), isFalse);
       });
     });
   });

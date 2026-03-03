@@ -121,14 +121,12 @@ class MagicStarterAuthController extends MagicController
   ///
   /// Builds the identity payload dynamically based on [MagicStarterConfig]:
   ///   - Email-only mode → `email` is sent.
-  ///   - Phone-only mode → `phone` + `phone_country` are sent.
+  ///   - Phone-only mode → `phone` is sent.
   ///   - Both mode → `phone` takes precedence when non-empty; otherwise `email`.
-  ///     When phone is sent, `phone_country` is included automatically.
   Future<void> doRegister({
     required String name,
     String? email,
     String? phone,
-    String? phoneCountry,
     bool subscribeNewsletter = false,
     required String password,
     required String passwordConfirmation,
@@ -152,12 +150,7 @@ class MagicStarterAuthController extends MagicController
         phone: phone,
       );
 
-      // 2. Include phone_country whenever a phone number is in the payload.
-      if (payload.containsKey('phone')) {
-        payload['phone_country'] = phoneCountry ?? '';
-      }
-
-      // 3. Include newsletter subscription flag when feature is active.
+      // 2. Include newsletter subscription flag when feature is active.
       if (MagicStarterConfig.hasNewsletterFeatures() && subscribeNewsletter) {
         payload['subscribe_newsletter'] = true;
       }
