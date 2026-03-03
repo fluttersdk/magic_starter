@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:magic_starter/src/cli/commands/publish_command.dart';
+import 'package:magic_starter/src/cli/commands/magic_starter_publish_command.dart';
 import 'package:test/test.dart';
 
-class TestPublishCommand extends PublishCommand {
+class TestMagicStarterPublishCommand extends MagicStarterPublishCommand {
   final String _projectRoot;
   final String _pluginSourceDir;
 
-  TestPublishCommand(
+  TestMagicStarterPublishCommand(
     this._projectRoot,
     this._pluginSourceDir,
   );
@@ -22,7 +22,7 @@ class TestPublishCommand extends PublishCommand {
 void main() {
   late Directory tempDir;
   late Directory pluginDir;
-  late TestPublishCommand command;
+  late TestMagicStarterPublishCommand command;
 
   void createPluginFile(
     String relativePath,
@@ -45,7 +45,7 @@ void main() {
     tempDir = Directory.systemTemp.createTempSync('publish_test_');
     pluginDir = Directory.systemTemp.createTempSync('plugin_source_');
 
-    command = TestPublishCommand(
+    command = TestMagicStarterPublishCommand(
       tempDir.path,
       pluginDir.path,
     );
@@ -61,7 +61,7 @@ void main() {
     }
   });
 
-  group('PublishCommand', () {
+  group('MagicStarterPublishCommand', () {
     test('name is publish', () {
       expect(command.name, 'publish');
     });
@@ -121,7 +121,7 @@ void main() {
     test('--tag=views copies view files to lib/resources/views/starter/',
         () async {
       createPluginFile(
-        'lib/src/ui/views/auth/login_view.dart',
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
         'class LoginView {}',
       );
       createPluginFile(
@@ -134,7 +134,7 @@ void main() {
       ]);
 
       expect(
-        hostFileExists('lib/resources/views/starter/auth/login_view.dart'),
+        hostFileExists('lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         isTrue,
       );
       expect(
@@ -143,7 +143,7 @@ void main() {
         isTrue,
       );
       expect(
-        readHostFile('lib/resources/views/starter/auth/login_view.dart'),
+        readHostFile('lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         'class LoginView {}',
       );
     });
@@ -198,7 +198,7 @@ void main() {
         'config-content',
       );
       createPluginFile(
-        'lib/src/ui/views/teams/team_settings_view.dart',
+        'lib/src/ui/views/teams/magic_starter_team_settings_view.dart',
         'class TeamSettingsView {}',
       );
       createPluginFile(
@@ -219,7 +219,7 @@ void main() {
       expect(hostFileExists('lib/config/magic_starter.dart'), isTrue);
       expect(
         hostFileExists(
-            'lib/resources/views/starter/teams/team_settings_view.dart'),
+            'lib/resources/views/starter/teams/magic_starter_team_settings_view.dart'),
         isTrue,
       );
       expect(hostFileExists('assets/lang/en.json'), isTrue);

@@ -122,14 +122,14 @@ void main() {
       'email': 'john@example.com',
     }));
 
-    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     expect(find.text('J'), findsOneWidget);
   });
 
   testWidgets('renders fallback initial when no user', (tester) async {
-    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     expect(find.text('C'), findsOneWidget); // trans('common.user')[0]
@@ -142,7 +142,7 @@ void main() {
       'email': 'john@example.com',
     }));
 
-    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     // Tap avatar trigger
@@ -156,7 +156,7 @@ void main() {
   });
 
   testWidgets('shows profile settings menu item in dropdown', (tester) async {
-    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     // Tap avatar trigger
@@ -171,7 +171,7 @@ void main() {
     MagicStarter.useNavigation(
       mainItems: [],
       profileMenuItems: [
-        StarterNavItem(
+        MagicStarterNavItem(
           icon: Icons.notifications_outlined,
           labelKey: 'Notifications',
           path: '/notifications',
@@ -179,7 +179,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     // Tap avatar trigger
@@ -196,7 +196,7 @@ void main() {
       logoutCalled = true;
     };
 
-    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     // Tap avatar trigger
@@ -213,7 +213,7 @@ void main() {
   });
 
   testWidgets('uses default bottomRight alignment', (tester) async {
-    await tester.pumpWidget(wrap(const StarterUserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     final popover = tester.widget<WPopover>(find.byType(WPopover));
@@ -222,7 +222,7 @@ void main() {
 
   testWidgets('accepts custom alignment parameter', (tester) async {
     await tester.pumpWidget(wrap(
-      const StarterUserProfileDropdown(
+      const MagicStarterUserProfileDropdown(
         alignment: PopoverAlignment.topRight,
       ),
     ));
@@ -234,7 +234,7 @@ void main() {
 
   testWidgets('uses custom triggerBuilder when provided', (tester) async {
     await tester.pumpWidget(wrap(
-      StarterUserProfileDropdown(
+      MagicStarterUserProfileDropdown(
         triggerBuilder: (context, isOpen, isHovering) =>
             const Text('Custom Trigger'),
       ),

@@ -214,11 +214,11 @@ class MockVaultService extends MagicVaultService {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('StarterGuestAuthController', () {
+  group('MagicStarterGuestAuthController', () {
     late MockNetworkDriver mockDriver;
     late MockGuard mockGuard;
     late MockVaultService mockVault;
-    late StarterGuestAuthController controller;
+    late MagicStarterGuestAuthController controller;
 
     setUp(() {
       // 1. Reset IoC container.
@@ -256,7 +256,7 @@ void main() {
       Magic.singleton('vault', () => mockVault);
 
       // 7. Create a fresh controller instance.
-      controller = StarterGuestAuthController();
+      controller = MagicStarterGuestAuthController();
 
       // 8. Resolve the mock driver for response setup.
       mockDriver = Magic.make<NetworkDriver>('network') as MockNetworkDriver;

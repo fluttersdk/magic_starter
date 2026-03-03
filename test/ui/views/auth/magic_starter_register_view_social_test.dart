@@ -21,7 +21,7 @@ void main() {
       Magic.flush();
       Magic.singleton('magic_starter', () => MagicStarterManager());
       Magic.singleton('log', () => LogManager());
-      Magic.put(StarterAuthController());
+      Magic.put(MagicStarterAuthController());
     });
 
     testWidgets('does not show social login when feature disabled (default)',

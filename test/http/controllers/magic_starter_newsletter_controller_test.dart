@@ -118,9 +118,9 @@ class MockNetworkDriver implements NetworkDriver {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('StarterNewsletterController', () {
+  group('MagicStarterNewsletterController', () {
     late MockNetworkDriver mockDriver;
-    late StarterNewsletterController controller;
+    late MagicStarterNewsletterController controller;
 
     setUp(() {
       MagicApp.reset();
@@ -137,7 +137,7 @@ void main() {
 
       Magic.singleton('magic_starter', () => MagicStarterManager());
 
-      controller = StarterNewsletterController.instance;
+      controller = MagicStarterNewsletterController.instance;
       mockDriver = Magic.make<NetworkDriver>('network') as MockNetworkDriver;
     });
 

@@ -206,7 +206,7 @@ void main() {
       );
 
       // 6. Create and inject controller.
-      Magic.put(StarterProfileController());
+      Magic.put(MagicStarterProfileController());
 
       // 7. Register Gate abilities — non-guest user has all abilities.
       Gate.flush();

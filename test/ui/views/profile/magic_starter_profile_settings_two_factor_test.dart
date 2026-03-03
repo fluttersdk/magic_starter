@@ -264,7 +264,7 @@ void main() {
       );
 
       // 7. Create and inject controller.
-      Magic.put(StarterProfileController());
+      Magic.put(MagicStarterProfileController());
 
       // 8. Register Gate abilities.
       Gate.flush();

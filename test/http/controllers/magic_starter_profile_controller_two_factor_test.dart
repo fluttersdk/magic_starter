@@ -242,10 +242,10 @@ class MockGuard implements Guard {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('StarterProfileController two-factor methods', () {
+  group('MagicStarterProfileController two-factor methods', () {
     late MockNetworkDriver mockDriver;
     late MockGuard mockGuard;
-    late StarterProfileController controller;
+    late MagicStarterProfileController controller;
 
     setUp(() {
       MagicApp.reset();
@@ -264,7 +264,7 @@ void main() {
       });
 
       Magic.singleton('magic_starter', () => MagicStarterManager());
-      controller = StarterProfileController();
+      controller = MagicStarterProfileController();
     });
 
     tearDown(() {

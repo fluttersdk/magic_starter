@@ -67,7 +67,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockNetworkDriver mockDriver;
-  late StarterNotificationController controller;
+  late MagicStarterNotificationController controller;
 
   setUp(() {
     MagicApp.reset();
@@ -77,7 +77,7 @@ void main() {
     Magic.singleton('log', () => LogManager());
     Magic.singleton('magic_starter', () => MagicStarterManager());
 
-    controller = StarterNotificationController.instance;
+    controller = MagicStarterNotificationController.instance;
   });
 
   Widget wrap(Widget widget) {

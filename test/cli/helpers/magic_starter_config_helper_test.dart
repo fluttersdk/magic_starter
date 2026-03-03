@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:magic_starter/src/cli/helpers/starter_config_helper.dart';
+import 'package:magic_starter/src/cli/helpers/magic_starter_config_helper.dart';
 
 void main() {
   group(
-    'StarterConfigHelper',
+    'MagicStarterConfigHelper',
     () {
       group(
         'parseFeatures',
@@ -23,7 +23,7 @@ Map<String, dynamic> get magicStarterConfig => {
       },
     };
 """;
-              final features = StarterConfigHelper.parseFeatures(content);
+              final features = MagicStarterConfigHelper.parseFeatures(content);
               expect(features['teams'], true);
               expect(features['registration'], false);
             },
@@ -52,7 +52,7 @@ Map<String, dynamic> get magicStarterConfig => {
       },
     };
 """;
-              final features = StarterConfigHelper.parseFeatures(content);
+              final features = MagicStarterConfigHelper.parseFeatures(content);
               expect(features['teams'], true);
               expect(features['registration'], false);
               expect(features['extended_profile'], true);
@@ -72,7 +72,7 @@ Map<String, dynamic> get magicStarterConfig => {
             'returns empty map if no features found',
             () {
               const content = "// No features here";
-              final features = StarterConfigHelper.parseFeatures(content);
+              final features = MagicStarterConfigHelper.parseFeatures(content);
               expect(features, isEmpty);
             },
           );
@@ -95,12 +95,12 @@ Map<String, dynamic> get magicStarterConfig => {
       },
     };
 """;
-              final updated = StarterConfigHelper.updateFeature(
+              final updated = MagicStarterConfigHelper.updateFeature(
                 content,
                 'teams',
                 true,
               );
-              final features = StarterConfigHelper.parseFeatures(updated);
+              final features = MagicStarterConfigHelper.parseFeatures(updated);
               expect(features['teams'], true);
               expect(features['registration'], true);
             },
@@ -119,12 +119,12 @@ Map<String, dynamic> get magicStarterConfig => {
       },
     };
 """;
-              final updated = StarterConfigHelper.updateFeature(
+              final updated = MagicStarterConfigHelper.updateFeature(
                 content,
                 'social_login',
                 false,
               );
-              final features = StarterConfigHelper.parseFeatures(updated);
+              final features = MagicStarterConfigHelper.parseFeatures(updated);
               expect(features['social_login'], false);
               expect(features['registration'], true);
             },
@@ -143,12 +143,12 @@ Map<String, dynamic> get magicStarterConfig => {
       },
     };
 """;
-              final updated1 = StarterConfigHelper.updateFeature(
+              final updated1 = MagicStarterConfigHelper.updateFeature(
                 content,
                 'teams',
                 true,
               );
-              final updated2 = StarterConfigHelper.updateFeature(
+              final updated2 = MagicStarterConfigHelper.updateFeature(
                 updated1,
                 'teams',
                 true,
@@ -171,12 +171,12 @@ Map<String, dynamic> get magicStarterConfig => {
       },
     };
 """;
-              final updated = StarterConfigHelper.updateFeature(
+              final updated = MagicStarterConfigHelper.updateFeature(
                 content,
                 'teams',
                 true,
               );
-              final features = StarterConfigHelper.parseFeatures(updated);
+              final features = MagicStarterConfigHelper.parseFeatures(updated);
               expect(features['teams'], true);
               expect(features['registration'], true);
               expect(features['two_factor'], false);
@@ -202,7 +202,7 @@ Map<String, dynamic> get magicStarterConfig => {
                 await configFile.writeAsString(
                     "Map<String, dynamic> get magicStarterConfig => {'magic_starter': {'features': {'teams': true}}};");
 
-                final content = StarterConfigHelper.readConfigContent(
+                final content = MagicStarterConfigHelper.readConfigContent(
                   tempDir.path,
                 );
                 expect(content, isNotNull);
@@ -218,7 +218,7 @@ Map<String, dynamic> get magicStarterConfig => {
             () {
               final tempDir = Directory.systemTemp.createTempSync();
               try {
-                final content = StarterConfigHelper.readConfigContent(
+                final content = MagicStarterConfigHelper.readConfigContent(
                   tempDir.path,
                 );
                 expect(content, isNull);
@@ -244,7 +244,7 @@ Map<String, dynamic> get magicStarterConfig => {
                 final configFile = File('${configDir.path}/magic_starter.dart');
                 await configFile.writeAsString('// config');
 
-                final exists = StarterConfigHelper.configExists(tempDir.path);
+                final exists = MagicStarterConfigHelper.configExists(tempDir.path);
                 expect(exists, true);
               } finally {
                 tempDir.deleteSync(recursive: true);
@@ -257,7 +257,7 @@ Map<String, dynamic> get magicStarterConfig => {
             () {
               final tempDir = Directory.systemTemp.createTempSync();
               try {
-                final exists = StarterConfigHelper.configExists(tempDir.path);
+                final exists = MagicStarterConfigHelper.configExists(tempDir.path);
                 expect(exists, false);
               } finally {
                 tempDir.deleteSync(recursive: true);
@@ -299,7 +299,7 @@ Map<String, dynamic> get magicStarterConfig => {
                 }''',
                 );
 
-                final result = StarterConfigHelper.resolvePluginSourceDir(
+                final result = MagicStarterConfigHelper.resolvePluginSourceDir(
                   projectRoot: tempDir.path,
                 );
                 expect(result, isNotNull);
@@ -320,7 +320,7 @@ Map<String, dynamic> get magicStarterConfig => {
             () {
               final tempDir = Directory.systemTemp.createTempSync();
               try {
-                final result = StarterConfigHelper.resolvePluginSourceDir(
+                final result = MagicStarterConfigHelper.resolvePluginSourceDir(
                   projectRoot: tempDir.path,
                 );
                 expect(result, isNull);
@@ -354,7 +354,7 @@ Map<String, dynamic> get magicStarterConfig => {
                 }''',
                 );
 
-                final result = StarterConfigHelper.resolvePluginSourceDir(
+                final result = MagicStarterConfigHelper.resolvePluginSourceDir(
                   projectRoot: tempDir.path,
                 );
                 expect(result, isNull);

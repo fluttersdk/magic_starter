@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/src/ui/widgets/starter_card.dart';
+import 'package:magic_starter/src/ui/widgets/magic_starter_card.dart';
 
 void main() {
   Widget wrap(Widget widget) {

@@ -55,7 +55,7 @@ void main() {
   }
 
   testWidgets('renders bell icon', (tester) async {
-    await tester.pumpWidget(wrap(StarterNotificationDropdown(
+    await tester.pumpWidget(wrap(MagicStarterNotificationDropdown(
       notificationStream: streamController.stream,
     )));
 
@@ -71,7 +71,7 @@ void main() {
   });
 
   testWidgets('shows unread badge when unread count > 0', (tester) async {
-    await tester.pumpWidget(wrap(StarterNotificationDropdown(
+    await tester.pumpWidget(wrap(MagicStarterNotificationDropdown(
       notificationStream: streamController.stream,
     )));
 
@@ -87,7 +87,7 @@ void main() {
   });
 
   testWidgets('hides badge when all notifications are read', (tester) async {
-    await tester.pumpWidget(wrap(StarterNotificationDropdown(
+    await tester.pumpWidget(wrap(MagicStarterNotificationDropdown(
       notificationStream: streamController.stream,
     )));
 
@@ -104,7 +104,7 @@ void main() {
   });
 
   testWidgets('renders empty state in popover content', (tester) async {
-    await tester.pumpWidget(wrap(StarterNotificationDropdown(
+    await tester.pumpWidget(wrap(MagicStarterNotificationDropdown(
       notificationStream: streamController.stream,
     )));
 

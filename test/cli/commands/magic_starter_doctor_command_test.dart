@@ -1,14 +1,14 @@
 import 'dart:io';
 
 import 'package:magic_cli/magic_cli.dart';
-import 'package:magic_starter/src/cli/commands/doctor_command.dart';
+import 'package:magic_starter/src/cli/commands/magic_starter_doctor_command.dart';
 import 'package:test/test.dart';
 
 /// Test double that overrides [getProjectRoot] to use a temp directory.
-class _TestDoctorCommand extends DoctorCommand {
+class _TestMagicStarterDoctorCommand extends MagicStarterDoctorCommand {
   final String _root;
 
-  _TestDoctorCommand(this._root);
+  _TestMagicStarterDoctorCommand(this._root);
 
   @override
   String getProjectRoot() => _root;
@@ -79,11 +79,11 @@ void _setupFullInstall(Directory dir) {
 
 void main() {
   late Directory tempDir;
-  late _TestDoctorCommand command;
+  late _TestMagicStarterDoctorCommand command;
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('doctor_cmd_test_');
-    command = _TestDoctorCommand(tempDir.path);
+    command = _TestMagicStarterDoctorCommand(tempDir.path);
   });
 
   tearDown(() {
@@ -96,7 +96,7 @@ void main() {
   // Metadata
   // -------------------------------------------------------------------------
 
-  group('DoctorCommand metadata', () {
+  group('MagicStarterDoctorCommand metadata', () {
     test('name is "doctor"', () {
       expect(command.name, equals('doctor'));
     });

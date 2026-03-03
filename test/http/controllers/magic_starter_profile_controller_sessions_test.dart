@@ -2,15 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
-import 'auth_controller_test.dart' show MockGuard, MockNetworkDriver;
+import 'magic_starter_auth_controller_test.dart' show MockGuard, MockNetworkDriver;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('StarterProfileController sessions', () {
+  group('MagicStarterProfileController sessions', () {
     late MockNetworkDriver mockDriver;
     late MockGuard mockGuard;
-    late StarterProfileController controller;
+    late MagicStarterProfileController controller;
 
     final Map<String, dynamic> mockSession = {
       'id': 'session-id-1',
@@ -46,7 +46,7 @@ void main() {
       Config.set('magic_starter.features.sessions', true);
 
       Magic.singleton('magic_starter', () => MagicStarterManager());
-      controller = StarterProfileController();
+      controller = MagicStarterProfileController();
     });
 
     tearDown(() {

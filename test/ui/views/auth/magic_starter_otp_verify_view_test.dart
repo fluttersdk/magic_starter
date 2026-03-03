@@ -21,11 +21,11 @@ void main() {
       Magic.flush();
       Magic.singleton('log', () => LogManager());
       Magic.singleton('magic_starter', () => MagicStarterManager());
-      Magic.put(StarterOtpController());
+      Magic.put(MagicStarterOtpController());
     });
 
     tearDown(() {
-      Magic.delete<StarterOtpController>();
+      Magic.delete<MagicStarterOtpController>();
     });
 
     // -----------------------------------------------------------------------
@@ -78,7 +78,7 @@ void main() {
         'step 2: renders code input field when controller is on codeInput step',
         (tester) async {
       // Advance controller to step 2 without network call.
-      final controller = Magic.find<StarterOtpController>();
+      final controller = Magic.find<MagicStarterOtpController>();
       // ignore: invalid_use_of_protected_member
       // Advance step by setting success (simulates sendOtp completing).
       controller.setSuccess(null);

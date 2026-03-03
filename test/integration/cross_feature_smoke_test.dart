@@ -2,9 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
-import '../http/controllers/auth_controller_test.dart'
+import '../http/controllers/magic_starter_auth_controller_test.dart'
     show MockGuard, MockNetworkDriver;
-import '../http/controllers/guest_auth_controller_test.dart'
+import '../http/controllers/magic_starter_guest_auth_controller_test.dart'
     show MockVaultService;
 
 void main() {
@@ -72,8 +72,8 @@ void main() {
         },
       );
 
-      final guestController = trackController<StarterGuestAuthController>(
-          StarterGuestAuthController());
+      final guestController = trackController<MagicStarterGuestAuthController>(
+          MagicStarterGuestAuthController());
 
       await guestController.doGuestLogin();
 
@@ -90,7 +90,7 @@ void main() {
       );
 
       final profileController =
-          trackController<StarterProfileController>(StarterProfileController());
+          trackController<MagicStarterProfileController>(MagicStarterProfileController());
 
       final upgraded = await profileController.doUpdateProfile(
         name: 'Upgraded User',
@@ -128,7 +128,7 @@ void main() {
       );
 
       final authController =
-          trackController<StarterAuthController>(StarterAuthController());
+          trackController<MagicStarterAuthController>(MagicStarterAuthController());
 
       await authController.doLogin(
         email: 'email@example.com',
@@ -146,7 +146,7 @@ void main() {
       Config.set('magic_starter.features.phone_otp', true);
 
       final otpController =
-          trackController<StarterOtpController>(StarterOtpController());
+          trackController<MagicStarterOtpController>(MagicStarterOtpController());
 
       mockDriver.mockResponse(
         statusCode: 200,
@@ -217,7 +217,7 @@ void main() {
       );
 
       final authController =
-          trackController<StarterAuthController>(StarterAuthController());
+          trackController<MagicStarterAuthController>(MagicStarterAuthController());
 
       await authController.doRegister(
         name: 'Newsletter User',
@@ -240,8 +240,8 @@ void main() {
         },
       );
 
-      final newsletterController = trackController<StarterNewsletterController>(
-          StarterNewsletterController());
+      final newsletterController = trackController<MagicStarterNewsletterController>(
+          MagicStarterNewsletterController());
 
       await newsletterController.getNewsletterStatus();
 

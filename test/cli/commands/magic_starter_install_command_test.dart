@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:magic_starter/src/cli/commands/install_command.dart';
+import 'package:magic_starter/src/cli/commands/magic_starter_install_command.dart';
 import 'package:test/test.dart';
 
-class TestInstallCommand extends InstallCommand {
-  TestInstallCommand({
+class TestMagicStarterInstallCommand extends MagicStarterInstallCommand {
+  TestMagicStarterInstallCommand({
     required this.projectRoot,
     required this.stubsDir,
   });
@@ -81,15 +81,15 @@ class TestInstallCommand extends InstallCommand {
 }
 
 void main() {
-  group('InstallCommand', () {
+  group('MagicStarterInstallCommand', () {
     late Directory tempDir;
-    late TestInstallCommand command;
+    late TestMagicStarterInstallCommand command;
     late String stubsPath;
 
     setUp(() {
       tempDir = Directory.systemTemp.createTempSync('magic_starter_install_');
       stubsPath = '${Directory.current.path}/assets/stubs';
-      command = TestInstallCommand(
+      command = TestMagicStarterInstallCommand(
         projectRoot: tempDir.path,
         stubsDir: stubsPath,
       );
@@ -420,7 +420,7 @@ void main() {
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
               .readAsStringSync();
-      expect(content, contains('registerMagicStarterTeamRoutes();'));
+      expect(content, contains('registerMagicMagicStarterTeamRoutes();'));
     });
 
     test('does not inject team routes when teams feature disabled', () async {
@@ -434,7 +434,7 @@ void main() {
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
               .readAsStringSync();
-      expect(content, isNot(contains('registerMagicStarterTeamRoutes();')));
+      expect(content, isNot(contains('registerMagicMagicStarterTeamRoutes();')));
     });
 
     test('replaces app_service_provider.dart content', () async {
@@ -487,7 +487,7 @@ void main() {
       expect(redirectContent, isNot(contains('await next()')));
     });
 
-    test('app_service_provider uses correct StarterNavItem params', () async {
+    test('app_service_provider uses correct MagicStarterNavItem params', () async {
       setupMagicProjectFiles(tempDir);
 
       await command.runWith([
@@ -499,7 +499,7 @@ void main() {
           File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
               .readAsStringSync();
 
-      // Must use correct StarterNavItem constructor params.
+      // Must use correct MagicStarterNavItem constructor params.
       expect(content, contains('icon:'));
       expect(content, contains('labelKey:'));
       expect(content, contains('path:'));

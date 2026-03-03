@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -24,11 +24,7 @@ class MockNetworkDriver implements NetworkDriver {
     );
   }
 
-  MagicResponse _respond(
-    String method,
-    String url, {
-    dynamic data,
-  }) {
+  MagicResponse _respond(String method, String url, {dynamic data}) {
     lastMethod = method;
     lastUrl = url;
     lastData = data;
@@ -118,22 +114,21 @@ class MockNetworkDriver implements NetworkDriver {
     Map<String, String>? headers,
   }) async =>
       _respond('UPLOAD', url, data: data);
-
-  bool get hasInterceptors => false;
 }
 
 // ---------------------------------------------------------------------------
-// Mock Guard — tracks auth state
+// Mock Guard — tracks Auth.login() / Auth.logout() calls
 // ---------------------------------------------------------------------------
 
 class MockGuard implements Guard {
   Authenticatable? _user;
   bool logoutCalled = false;
-  bool restoreCalled = false;
+  Map<String, dynamic>? lastLoginData;
   String? mockToken = 'mock-token';
 
   @override
   Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
+    lastLoginData = data;
     mockToken = data['token'] as String?;
     _user = user;
   }
@@ -171,7 +166,6 @@ class MockGuard implements Guard {
 
   @override
   Future<void> restore() async {
-    restoreCalled = true;
     if (mockToken != null) {
       _user = MagicStarterAuthUser.fromMap({
         'id': 1,
@@ -181,100 +175,152 @@ class MockGuard implements Guard {
   }
 
   @override
-  ValueNotifier<int> get stateNotifier => ValueNotifier(0);
+  ValueNotifier<int> get stateNotifier => ValueNotifier<int>(0);
 }
 
-// ---------------------------------------------------------------------------
-// Test Suite
-// ---------------------------------------------------------------------------
-
 void main() {
-  Widget wrap(Widget widget) {
-    return MaterialApp(
-      home: WindTheme(
-        data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
-      ),
-    );
-  }
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('MagicStarterProfileSettingsView — delete account section', () {
+  group('MagicStarterNotificationController', () {
     late MockNetworkDriver mockDriver;
     late MockGuard mockGuard;
+    late MagicStarterNotificationController controller;
 
     setUp(() {
-      TestWidgetsFlutterBinding.ensureInitialized();
-
       MagicApp.reset();
       Magic.flush();
 
-      // 1. Bind mock network driver.
-      mockDriver = MockNetworkDriver();
-      Magic.singleton('network', () => mockDriver);
-
-      // 2. Bind log manager.
+      Magic.singleton('network', () => MockNetworkDriver());
       Magic.singleton('log', () => LogManager());
+      Config.set('logging', {
+        'default': 'console',
+        'channels': {
+          'console': {
+            'driver': 'console',
+            'level': 'debug',
+          },
+        },
+      });
 
-      // 3. Bind auth with mock guard.
       mockGuard = MockGuard();
       Auth.manager.forgetGuards();
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
+      Config.set('auth.guards', {
+        'mock': {
+          'driver': 'mock',
+        },
+      });
 
-      // 4. Set authenticated user.
-      mockGuard.setUser(
-        MagicStarterAuthUser.fromMap({
-          'id': 1,
-          'name': 'Test User',
-          'email': 'test@example.com',
-        }),
-      );
-
-      // 5. Bind MagicStarterManager.
-      Magic.singleton(
-        'magic_starter',
-        () => MagicStarterManager(),
-      );
-
-      // 6. Create and inject controller.
-      Magic.put(StarterProfileController());
-
-      // 7. Register Gate abilities — non-guest user has all abilities.
-      Gate.flush();
-      Gate.define('starter.update-profile-photo', (user, [_]) => true);
-      Gate.define('starter.update-email', (user, [_]) => true);
-      Gate.define('starter.update-phone', (user, [_]) => true);
-      Gate.define('starter.update-password', (user, [_]) => true);
-      Gate.define('starter.verify-email', (user, [_]) => true);
-      Gate.define('starter.manage-two-factor', (user, [_]) => true);
-      Gate.define('starter.manage-newsletter', (user, [_]) => true);
-      Gate.define('starter.logout-sessions', (user, [_]) => true);
-      Gate.define('starter.delete-account', (user, [_]) => true);
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      controller = MagicStarterNotificationController();
+      mockDriver = Magic.make<NetworkDriver>('network') as MockNetworkDriver;
     });
 
     tearDown(() {
+      controller.dispose();
       Auth.manager.forgetGuards();
-      Gate.flush();
     });
 
-    testWidgets(
-      'delete account section renders with password input and button',
-      (tester) async {
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+    test('index() returns a Widget (view registry resolves)', () {
+      MagicStarter.view.register('notifications.list', () => const SizedBox());
+      final widget = controller.index();
+      expect(widget, isA<Widget>());
+    });
 
-        // Verify WFormInput widgets exist (password input).
-        expect(find.byType(WFormInput), findsWidgets);
+    test('preferences() returns a Widget (view registry resolves)', () {
+      MagicStarter.view
+          .register('notifications.preferences', () => const SizedBox());
+      final widget = controller.preferences();
+      expect(widget, isA<Widget>());
+    });
 
-        // Verify WButton widgets exist (action buttons including delete).
-        expect(find.byType(WButton), findsWidgets);
+    test('fetchPreferences success — populates matrixNotifier', () async {
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: {
+          'data': {
+            'monitor_down': {
+              'label': 'Monitor Down',
+              'channels': {
+                'mail': {
+                  'enabled': true,
+                  'locked': false,
+                },
+              },
+            },
+          },
+        },
+      );
 
-        // Verify the delete card exists (MagicStarterCard).
-        expect(find.byType(MagicStarterCard), findsWidgets);
-      },
-    );
+      await controller.fetchPreferences();
+
+      expect(controller.matrixNotifier.value['monitor_down'], isNotNull);
+      expect(
+        controller.matrixNotifier.value['monitor_down']['channels']['mail']
+            ['enabled'],
+        isTrue,
+      );
+    });
+
+    test('fetchPreferences error (500) — keeps matrixNotifier empty', () async {
+      mockDriver.mockResponse(statusCode: 500);
+
+      await controller.fetchPreferences();
+
+      expect(controller.matrixNotifier.value.isEmpty, isTrue);
+    });
+
+    test('updateTypePreference success — matrix updated optimistically',
+        () async {
+      controller.matrixNotifier.value = {
+        'monitor_down': {
+          'label': 'Monitor Down',
+          'channels': {
+            'mail': {
+              'enabled': true,
+              'locked': false,
+            },
+          },
+        },
+      };
+
+      mockDriver.mockResponse(statusCode: 200);
+
+      await controller.updateTypePreference('monitor_down', 'mail', false);
+
+      expect(
+        controller.matrixNotifier.value['monitor_down']['channels']['mail']
+            ['enabled'],
+        isFalse,
+      );
+      expect(mockDriver.lastMethod, equals('PUT'));
+      expect(mockDriver.lastUrl, equals('/notification-preferences'));
+    });
+
+    test('updateTypePreference failure — reverts to original matrix', () async {
+      final originalMatrix = {
+        'monitor_down': {
+          'label': 'Monitor Down',
+          'channels': {
+            'mail': {
+              'enabled': true,
+              'locked': false,
+            },
+          },
+        },
+      };
+      controller.matrixNotifier.value = originalMatrix;
+
+      mockDriver.mockResponse(statusCode: 422);
+
+      await controller.updateTypePreference('monitor_down', 'mail', false);
+
+      expect(
+        controller.matrixNotifier.value['monitor_down']['channels']['mail']
+            ['enabled'],
+        isTrue,
+      );
+    });
   });
 }

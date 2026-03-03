@@ -1,14 +1,14 @@
 import 'dart:io';
 
-import 'package:magic_starter/src/cli/commands/configure_command.dart';
+import 'package:magic_starter/src/cli/commands/magic_starter_configure_command.dart';
 import 'package:test/test.dart';
 
-/// Test double that overrides [ConfigureCommand.getProjectRoot] to point at a
+/// Test double that overrides [MagicStarterConfigureCommand.getProjectRoot] to point at a
 /// temporary directory, isolating all file I/O from the real file system.
-class _TestConfigureCommand extends ConfigureCommand {
+class _TestMagicStarterConfigureCommand extends MagicStarterConfigureCommand {
   final String _root;
 
-  _TestConfigureCommand(this._root);
+  _TestMagicStarterConfigureCommand(this._root);
 
   @override
   String getProjectRoot() => _root;
@@ -49,11 +49,11 @@ Map<String, dynamic> get magicStarterConfig => {
 
 void main() {
   late Directory tempDir;
-  late _TestConfigureCommand command;
+  late _TestMagicStarterConfigureCommand command;
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('configure_command_test_');
-    command = _TestConfigureCommand(tempDir.path);
+    command = _TestMagicStarterConfigureCommand(tempDir.path);
     _setupConfigFile(tempDir);
   });
 

@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:magic_starter/src/cli/commands/uninstall_command.dart';
+import 'package:magic_starter/src/cli/commands/magic_starter_uninstall_command.dart';
 import 'package:test/test.dart';
 
-class TestUninstallCommand extends UninstallCommand {
-  TestUninstallCommand(this._projectRoot);
+class TestMagicStarterUninstallCommand extends MagicStarterUninstallCommand {
+  TestMagicStarterUninstallCommand(this._projectRoot);
 
   final String _projectRoot;
 
@@ -37,13 +37,13 @@ class TestUninstallCommand extends UninstallCommand {
 }
 
 void main() {
-  group('UninstallCommand', () {
+  group('MagicStarterUninstallCommand', () {
     late Directory tempDir;
-    late TestUninstallCommand command;
+    late TestMagicStarterUninstallCommand command;
 
     setUp(() {
       tempDir = Directory.systemTemp.createTempSync('magic_starter_uninstall_');
-      command = TestUninstallCommand(tempDir.path);
+      command = TestMagicStarterUninstallCommand(tempDir.path);
     });
 
     tearDown(() {
@@ -162,7 +162,7 @@ void main() {
 
       expect(content, isNot(contains('registerMagicStarterAuthRoutes();')));
       expect(content, isNot(contains('registerMagicStarterProfileRoutes();')));
-      expect(content, isNot(contains('registerMagicStarterTeamRoutes();')));
+      expect(content, isNot(contains('registerMagicMagicStarterTeamRoutes();')));
       expect(
         content,
         isNot(contains('registerMagicStarterNotificationRoutes();')),
@@ -343,7 +343,7 @@ class RouteServiceProvider extends ServiceProvider {
   Future<void> boot() async {
     registerMagicStarterAuthRoutes();
     registerMagicStarterProfileRoutes();
-    registerMagicStarterTeamRoutes();
+    registerMagicMagicStarterTeamRoutes();
     registerMagicStarterNotificationRoutes();
     registerAppRoutes();
   }

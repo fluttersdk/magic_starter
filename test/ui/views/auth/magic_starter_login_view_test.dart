@@ -21,7 +21,7 @@ void main() {
       Magic.flush();
       Magic.singleton('log', () => LogManager());
       Magic.singleton('magic_starter', () => MagicStarterManager());
-      Magic.put(StarterAuthController());
+      Magic.put(MagicStarterAuthController());
     });
 
     testWidgets('shows email field in email-only mode (default)',

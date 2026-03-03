@@ -206,10 +206,10 @@ class MockGuard implements Guard {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  group('StarterProfileController', () {
+  group('MagicStarterProfileController', () {
     late MockNetworkDriver mockDriver;
     late MockGuard mockGuard;
-    late StarterProfileController controller;
+    late MagicStarterProfileController controller;
 
     setUp(() {
       // 1. Reset IoC container.
@@ -243,7 +243,7 @@ void main() {
       Magic.singleton('magic_starter', () => MagicStarterManager());
 
       // 5. Create a fresh controller instance.
-      controller = StarterProfileController();
+      controller = MagicStarterProfileController();
 
       // 6. Resolve the mock driver for response setup.
       mockDriver = Magic.make<NetworkDriver>('network') as MockNetworkDriver;
