@@ -9,12 +9,9 @@ import '../../widgets/magic_starter_social_divider.dart';
 
 /// Registration view with dynamic identity field support.
 ///
-/// Renders the appropriate identity input (email, phone with country, or a
-/// toggle between both) based on [MagicStarterConfig.emailIdentity] and
+/// Renders the appropriate identity input (email, phone, or both fields
+/// together) based on [MagicStarterConfig.emailIdentity] and
 /// [MagicStarterConfig.phoneIdentity] at runtime.
-///
-/// When phone mode is active, `phone_country` is automatically shown and
-/// included in the registration payload.
 class MagicStarterRegisterView
     extends MagicStatefulView<MagicStarterAuthController> {
   const MagicStarterRegisterView({super.key});
@@ -33,7 +30,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
       'name': '',
       'email': '',
       'phone': '',
-      'phone_country': '',
       'password': '',
       'password_confirmation': '',
     },
@@ -42,7 +38,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
 
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
-
 
   bool _subscribeNewsletter = false;
 
@@ -62,7 +57,6 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
       name: form.get('name'),
       email: form.get('email'),
       phone: form.get('phone'),
-      phoneCountry: form.get('phone_country'),
       subscribeNewsletter: _subscribeNewsletter,
       password: form.get('password'),
       passwordConfirmation: form.get('password_confirmation'),
@@ -175,6 +169,10 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               ),
             ],
 
+            // Legal links (Terms / Privacy)
+            _buildLegalLinks(),
+            const WSpacer(className: 'h-6'),
+
             // Submit
             WButton(
               isLoading: isLoading,
@@ -221,26 +219,25 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
   /// Builds the identity input section based on the active mode.
   ///
   /// - Email-only: renders a single email [WFormInput].
-  /// - Phone-only: renders phone + phone_country [WFormInput] pair.
-  /// - Both: renders email AND phone fields together — the backend
-  ///   validates that at least one is provided.
+  /// - Phone-only: renders a single phone [WFormInput].
+  /// - Both: renders email AND phone fields together and lets backend enforce
+  ///   either-or requirement.
   Widget _buildIdentityField() {
     final emailMode = MagicStarterConfig.emailIdentity();
     final phoneMode = MagicStarterConfig.phoneIdentity();
 
-    // Both active — show all fields, backend requires at least one.
     if (emailMode && phoneMode) {
       return WDiv(
         className: 'space-y-4',
         children: [
-          _buildEmailInput(),
-          ..._buildPhoneFieldList(),
+          _buildEmailInput(required: false),
+          _buildPhoneInput(required: false),
         ],
       );
     }
 
     if (phoneMode) {
-      return _buildPhoneFields();
+      return _buildPhoneInput();
     }
 
     // Default: email-only.
@@ -248,13 +245,16 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
   }
 
   /// Email input field.
-  Widget _buildEmailInput() {
+  Widget _buildEmailInput({bool required = true}) {
     return WFormInput(
       label: trans('attributes.email'),
       controller: form['email'],
       placeholder: trans('fields.email_placeholder'),
       type: InputType.email,
-      validator: rules([Required(), Email()], field: 'email'),
+      validator: rules(
+        required ? [Required(), Email()] : [Email()],
+        field: 'email',
+      ),
       className:
           'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
       placeholderClassName: 'text-gray-400 dark:text-gray-500',
@@ -263,40 +263,67 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
     );
   }
 
-  /// Phone input + country code as a column widget.
-  Widget _buildPhoneFields() {
-    return WDiv(
-      className: 'space-y-4',
-      children: _buildPhoneFieldList(),
+  /// Phone input field.
+  Widget _buildPhoneInput({bool required = true}) {
+    return WFormInput(
+      label: trans('attributes.phone'),
+      controller: form['phone'],
+      placeholder: trans('fields.phone_placeholder'),
+      type: InputType.text,
+      validator: rules(
+        required ? [Required()] : [],
+        field: 'phone',
+      ),
+      className:
+          'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+      placeholderClassName: 'text-gray-400 dark:text-gray-500',
+      labelClassName:
+          'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
     );
   }
 
-  /// Phone input + country code as a flat list (for spreading into parents).
-  List<Widget> _buildPhoneFieldList() {
-    return [
-      WFormInput(
-        label: trans('attributes.phone'),
-        controller: form['phone'],
-        placeholder: trans('fields.phone_placeholder'),
-        type: InputType.text,
-        validator: rules([Required()], field: 'phone'),
-        className:
-            'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-        placeholderClassName: 'text-gray-400 dark:text-gray-500',
-        labelClassName:
-            'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-      ),
-      WFormInput(
-        label: trans('attributes.phone_country'),
-        controller: form['phone_country'],
-        placeholder: trans('fields.phone_country_placeholder'),
-        validator: rules([Required()], field: 'phone_country'),
-        className:
-            'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-        placeholderClassName: 'text-gray-400 dark:text-gray-500',
-        labelClassName:
-            'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-      ),
-    ];
+  /// Builds the legal links section (Terms of Service / Privacy Policy).
+  ///
+  /// Returns [SizedBox.shrink] when no legal URLs are configured.
+  Widget _buildLegalLinks() {
+    if (!MagicStarterConfig.hasLegalLinks()) {
+      return const SizedBox.shrink();
+    }
+
+    final termsUrl = MagicStarterConfig.termsUrl();
+    final privacyUrl = MagicStarterConfig.privacyUrl();
+
+    return WDiv(
+      className: 'flex flex-row justify-center gap-1 wrap',
+      children: [
+        WText(
+          trans('auth.agree_to_legal'),
+          className: 'text-xs text-gray-500 dark:text-gray-400',
+        ),
+        if (termsUrl != null)
+          WAnchor(
+            onTap: () => MagicRoute.to(termsUrl),
+            child: WText(
+              trans('auth.terms_of_service'),
+              className:
+                  'text-xs font-semibold text-primary dark:text-primary/80',
+            ),
+          ),
+        if (termsUrl != null && privacyUrl != null)
+          WText(
+            trans('auth.legal_and'),
+            className: 'text-xs text-gray-500 dark:text-gray-400',
+          ),
+        if (privacyUrl != null)
+          WAnchor(
+            onTap: () => MagicRoute.to(privacyUrl),
+            child: WText(
+              trans('auth.privacy_policy'),
+              className:
+                  'text-xs font-semibold text-primary dark:text-primary/80',
+            ),
+          ),
+      ],
+    );
   }
 }

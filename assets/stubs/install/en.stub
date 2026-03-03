@@ -51,7 +51,11 @@
     "two_factor_recovery_description": "Please confirm access to your account by entering one of your emergency recovery codes.",
     "use_authentication_code": "Use an authentication code",
     "use_recovery_code": "Use a recovery code",
-    "verify": "Verify"
+    "verify": "Verify",
+    "agree_to_legal": "By creating an account, you agree to our",
+    "terms_of_service": "Terms of Service",
+    "privacy_policy": "Privacy Policy",
+    "legal_and": "and"
   },
   "common": {
     "cancel": "Cancel",

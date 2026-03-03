@@ -61,7 +61,8 @@ void main() {
           findsNothing);
     });
 
-    testWidgets('shows phone field in phone-only mode', (tester) async {
+    testWidgets('shows phone field without country code in phone-only mode',
+        (tester) async {
       Config.set('magic_starter.auth.email', false);
       Config.set('magic_starter.auth.phone', true);
 
@@ -71,11 +72,14 @@ void main() {
 
       expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
           findsOneWidget);
+      expect(find.widgetWithText(WFormInput, trans('attributes.phone_country')),
+          findsNothing);
       expect(find.widgetWithText(WFormInput, trans('attributes.email')),
           findsNothing);
     });
 
-    testWidgets('shows both email and phone fields in both mode',
+    testWidgets(
+        'shows both email and phone fields without country code in both mode',
         (tester) async {
       Config.set('magic_starter.auth.email', true);
       Config.set('magic_starter.auth.phone', true);
@@ -89,6 +93,61 @@ void main() {
           findsOneWidget);
       expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
           findsOneWidget);
+      expect(find.widgetWithText(WFormInput, trans('attributes.phone_country')),
+          findsNothing);
+    });
+
+    testWidgets('hides legal links when no URLs configured', (tester) async {
+      // No legal config set — should not show any legal text.
+      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text(trans('auth.terms_of_service')), findsNothing);
+      expect(find.text(trans('auth.privacy_policy')), findsNothing);
+    });
+
+    testWidgets('shows terms link when terms_url is configured',
+        (tester) async {
+      Config.set('magic_starter.legal.terms_url', 'https://example.com/terms');
+
+      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text(trans('auth.agree_to_legal')), findsOneWidget);
+      expect(find.text(trans('auth.terms_of_service')), findsOneWidget);
+      expect(find.text(trans('auth.privacy_policy')), findsNothing);
+    });
+
+    testWidgets('shows privacy link when privacy_url is configured',
+        (tester) async {
+      Config.set(
+        'magic_starter.legal.privacy_url',
+        'https://example.com/privacy',
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text(trans('auth.agree_to_legal')), findsOneWidget);
+      expect(find.text(trans('auth.privacy_policy')), findsOneWidget);
+      expect(find.text(trans('auth.terms_of_service')), findsNothing);
+    });
+
+    testWidgets('shows both legal links when both URLs are configured',
+        (tester) async {
+      Config.set('magic_starter.legal.terms_url', 'https://example.com/terms');
+      Config.set(
+        'magic_starter.legal.privacy_url',
+        'https://example.com/privacy',
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text(trans('auth.agree_to_legal')), findsOneWidget);
+      expect(find.text(trans('auth.terms_of_service')), findsOneWidget);
+      expect(find.text(trans('auth.privacy_policy')), findsOneWidget);
+      expect(find.text(trans('auth.legal_and')), findsOneWidget);
     });
   });
 }

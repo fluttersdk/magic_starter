@@ -212,7 +212,8 @@ void main() {
         expect(MagicStarterConfig.hasNewsletterFeatures(), isTrue);
       });
 
-      test('hasEmailVerificationFeatures() returns true when config is set', () {
+      test('hasEmailVerificationFeatures() returns true when config is set',
+          () {
         Config.set('magic_starter.features.email_verification', true);
 
         expect(MagicStarterConfig.hasEmailVerificationFeatures(), isTrue);
@@ -224,121 +225,64 @@ void main() {
         expect(MagicStarterConfig.hasTimezoneFeatures(), isTrue);
       });
 
-
       test('hasExtendedProfileFeatures() returns true when config is set', () {
-
         Config.set('magic_starter.features.extended_profile', true);
 
-
-
         expect(
-
           MagicStarterConfig.hasExtendedProfileFeatures(),
-
           isTrue,
-
         );
-
       });
 
-
-
       test(
-
         'hasTimezoneOrExtendedProfileFeatures() returns false by default',
-
         () {
-
           expect(
-
             MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
-
             isFalse,
-
           );
-
         },
-
       );
 
-
-
       test(
-
         'hasTimezoneOrExtendedProfileFeatures() returns true when '
-
         'timezone feature is enabled',
-
         () {
-
           Config.set('magic_starter.features.timezones', true);
 
-
-
           expect(
-
             MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
-
             isTrue,
-
           );
-
         },
-
       );
 
-
-
       test(
-
         'hasTimezoneOrExtendedProfileFeatures() returns true when '
-
         'extended profile feature is enabled',
-
         () {
-
           Config.set('magic_starter.features.extended_profile', true);
 
-
-
           expect(
-
             MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
-
             isTrue,
-
           );
-
         },
-
       );
 
-
-
       test(
-
         'hasTimezoneOrExtendedProfileFeatures() returns true when both '
-
         'timezone and extended profile features are enabled',
-
         () {
-
           Config.set('magic_starter.features.timezones', true);
 
           Config.set('magic_starter.features.extended_profile', true);
 
-
-
           expect(
-
             MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
-
             isTrue,
-
           );
-
         },
-
       );
     });
     // -------------------------------------------------------------------------
@@ -493,8 +437,6 @@ void main() {
         expect(MagicStarterConfig.defaultTimezone(), equals('UTC'));
       });
 
-
-
       test('supportedLocales() returns non-empty list by default', () {
         final locales = MagicStarterConfig.supportedLocales();
         expect(locales, isNotEmpty);
@@ -517,6 +459,73 @@ void main() {
           MagicStarterConfig.defaultTimezone(),
           equals('Europe/Istanbul'),
         );
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // Legal links — default values and configuration
+    // -------------------------------------------------------------------------
+
+    group('legal links', () {
+      test('termsUrl() returns null by default', () {
+        expect(MagicStarterConfig.termsUrl(), isNull);
+      });
+
+      test('privacyUrl() returns null by default', () {
+        expect(MagicStarterConfig.privacyUrl(), isNull);
+      });
+
+      test('hasLegalLinks() returns false by default', () {
+        expect(MagicStarterConfig.hasLegalLinks(), isFalse);
+      });
+
+      test('termsUrl() returns configured value', () {
+        Config.set(
+            'magic_starter.legal.terms_url', 'https://example.com/terms');
+
+        expect(
+          MagicStarterConfig.termsUrl(),
+          equals('https://example.com/terms'),
+        );
+      });
+
+      test('privacyUrl() returns configured value', () {
+        Config.set(
+          'magic_starter.legal.privacy_url',
+          'https://example.com/privacy',
+        );
+
+        expect(
+          MagicStarterConfig.privacyUrl(),
+          equals('https://example.com/privacy'),
+        );
+      });
+
+      test('hasLegalLinks() returns true when terms_url is set', () {
+        Config.set(
+            'magic_starter.legal.terms_url', 'https://example.com/terms');
+
+        expect(MagicStarterConfig.hasLegalLinks(), isTrue);
+      });
+
+      test('hasLegalLinks() returns true when privacy_url is set', () {
+        Config.set(
+          'magic_starter.legal.privacy_url',
+          'https://example.com/privacy',
+        );
+
+        expect(MagicStarterConfig.hasLegalLinks(), isTrue);
+      });
+
+      test('hasLegalLinks() returns true when both URLs are set', () {
+        Config.set(
+            'magic_starter.legal.terms_url', 'https://example.com/terms');
+        Config.set(
+          'magic_starter.legal.privacy_url',
+          'https://example.com/privacy',
+        );
+
+        expect(MagicStarterConfig.hasLegalLinks(), isTrue);
       });
     });
   });
