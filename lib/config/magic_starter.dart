@@ -42,5 +42,9 @@ Map<String, dynamic> get magicStarterConfig => {
           'profile_prefix': '/settings',
           'notifications_prefix': '/notifications',
         },
+        'legal': {
+          'terms_url': null,
+          'privacy_url': null,
+        },
       },
     };
