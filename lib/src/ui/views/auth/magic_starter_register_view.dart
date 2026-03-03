@@ -302,7 +302,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
         ),
         if (termsUrl != null)
           WAnchor(
-            onTap: () => MagicRoute.to(termsUrl),
+            onTap: () => Launch.url(termsUrl),
             child: WText(
               trans('auth.terms_of_service'),
               className:
@@ -316,7 +316,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
           ),
         if (privacyUrl != null)
           WAnchor(
-            onTap: () => MagicRoute.to(privacyUrl),
+            onTap: () => Launch.url(privacyUrl),
             child: WText(
               trans('auth.privacy_policy'),
               className:
