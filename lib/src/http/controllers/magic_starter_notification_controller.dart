@@ -7,12 +7,12 @@ import '../../facades/magic_starter.dart';
 ///
 /// Manages notification preferences state and delegates view rendering
 /// to the ViewRegistry. Follows the same singleton + MagicController pattern
-/// as [StarterAuthController] and [StarterTeamController].
-class StarterNotificationController extends MagicController
+/// as [MagicStarterAuthController] and [MagicStarterTeamController].
+class MagicStarterNotificationController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests {
   /// Singleton accessor.
-  static StarterNotificationController get instance =>
-      Magic.findOrPut(StarterNotificationController.new);
+  static MagicStarterNotificationController get instance =>
+      Magic.findOrPut(MagicStarterNotificationController.new);
 
   /// Preference matrix from backend.
   /// Structure: { "type_key": { "label": "...", "channels": { "channel": { "enabled": bool, "locked": bool } } } }
@@ -51,7 +51,7 @@ class StarterNotificationController extends MagicController
       setSuccess(true);
     } catch (e, stackTrace) {
       Log.error(
-        '[StarterNotificationController.fetchPreferences] $e\n$stackTrace',
+        '[MagicStarterNotificationController.fetchPreferences] $e\n$stackTrace',
       );
       setError(trans('errors.unexpected'));
     } finally {
@@ -123,13 +123,13 @@ class StarterNotificationController extends MagicController
       if (!response.successful) {
         matrixNotifier.value = oldMatrix;
         Log.error(
-          '[StarterNotificationController.updateTypePreference] PUT failed: ${response.statusCode}',
+          '[MagicStarterNotificationController.updateTypePreference] PUT failed: ${response.statusCode}',
         );
       }
     } catch (e, stackTrace) {
       matrixNotifier.value = oldMatrix;
       Log.error(
-        '[StarterNotificationController.updateTypePreference] $e\n$stackTrace',
+        '[MagicStarterNotificationController.updateTypePreference] $e\n$stackTrace',
       );
     } finally {
       _isSaving = false;

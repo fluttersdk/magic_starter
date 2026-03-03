@@ -2,7 +2,7 @@ import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
-import '../http/controllers/profile_controller.dart';
+import '../http/controllers/magic_starter_profile_controller.dart';
 
 /// Registers profile routes provided by Magic Starter plugin.
 void registerMagicStarterProfileRoutes() {
@@ -13,7 +13,7 @@ void registerMagicStarterProfileRoutes() {
     routes: () {
       MagicRoute.page(
         MagicStarterConfig.profileRoute(),
-        StarterProfileController.instance.profile,
+        MagicStarterProfileController.instance.profile,
       ).transition(RouteTransition.none);
     },
   );

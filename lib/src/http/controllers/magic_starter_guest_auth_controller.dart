@@ -15,13 +15,13 @@ import '../../models/magic_starter_auth_user.dart';
 ///
 /// ### Typical usage
 /// ```dart
-/// await StarterGuestAuthController.instance.doGuestLogin();
+/// await MagicStarterGuestAuthController.instance.doGuestLogin();
 /// ```
-class StarterGuestAuthController extends MagicController
+class MagicStarterGuestAuthController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
   /// Singleton accessor — follows the Magic Framework controller pattern.
-  static StarterGuestAuthController get instance =>
-      Magic.findOrPut(StarterGuestAuthController.new);
+  static MagicStarterGuestAuthController get instance =>
+      Magic.findOrPut(MagicStarterGuestAuthController.new);
   bool _isSubmitting = false;
 
   /// Vault key used to persist the guest device identifier across sessions.
@@ -87,7 +87,7 @@ class StarterGuestAuthController extends MagicController
       // 5. Navigate home.
       navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
-      Log.error('[StarterGuestAuthController.doGuestLogin] $e\n$stackTrace');
+      Log.error('[MagicStarterGuestAuthController.doGuestLogin] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

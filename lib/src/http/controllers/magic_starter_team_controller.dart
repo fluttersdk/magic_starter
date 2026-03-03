@@ -4,10 +4,10 @@ import 'package:magic/magic.dart';
 import '../../facades/magic_starter.dart';
 
 /// Team controller for Magic Starter plugin.
-class StarterTeamController extends MagicController
+class MagicStarterTeamController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests {
-  static StarterTeamController get instance =>
-      Magic.findOrPut(StarterTeamController.new);
+  static MagicStarterTeamController get instance =>
+      Magic.findOrPut(MagicStarterTeamController.new);
 
   bool _isSubmitting = false;
 
@@ -79,7 +79,7 @@ class StarterTeamController extends MagicController
       }
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterTeamController.loadMembersAndInvitations] $e\n$stackTrace');
+          '[MagicStarterTeamController.loadMembersAndInvitations] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isLoadingMembers = false;
@@ -119,7 +119,7 @@ class StarterTeamController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.cancelInvitation] $e\n$stackTrace');
+      Log.error('[MagicStarterTeamController.cancelInvitation] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -157,7 +157,7 @@ class StarterTeamController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.doCreate] $e\n$stackTrace');
+      Log.error('[MagicStarterTeamController.doCreate] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -196,7 +196,7 @@ class StarterTeamController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.doUpdate] $e\n$stackTrace');
+      Log.error('[MagicStarterTeamController.doUpdate] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -240,7 +240,7 @@ class StarterTeamController extends MagicController
       await loadMembersAndInvitations();
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.doInvite] $e\n$stackTrace');
+      Log.error('[MagicStarterTeamController.doInvite] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -281,7 +281,7 @@ class StarterTeamController extends MagicController
       members.value = members.value.where((m) => m['id'] != memberId).toList();
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.removeMember] $e\n$stackTrace');
+      Log.error('[MagicStarterTeamController.removeMember] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -315,7 +315,7 @@ class StarterTeamController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.switchTeam] $e\n$stackTrace');
+      Log.error('[MagicStarterTeamController.switchTeam] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -346,7 +346,7 @@ class StarterTeamController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterTeamController.doAcceptInvitation] $e\n$stackTrace');
+      Log.error('[MagicStarterTeamController.doAcceptInvitation] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {

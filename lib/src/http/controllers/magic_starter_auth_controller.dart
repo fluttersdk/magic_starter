@@ -12,10 +12,10 @@ import '../../facades/magic_starter.dart';
 ///   - Phone-only: `auth.email=false`, `auth.phone=true`
 ///   - Both: `auth.email=true`, `auth.phone=true` — caller selects by passing the
 ///     populated field; phone takes precedence when non-empty.
-class StarterAuthController extends MagicController
+class MagicStarterAuthController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
-  static StarterAuthController get instance =>
-      Magic.findOrPut(StarterAuthController.new);
+  static MagicStarterAuthController get instance =>
+      Magic.findOrPut(MagicStarterAuthController.new);
 
   bool _isSubmitting = false;
 
@@ -110,7 +110,7 @@ class StarterAuthController extends MagicController
       setSuccess(true);
       navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
-      Log.error('[StarterAuthController.doLogin] $e\n$stackTrace');
+      Log.error('[MagicStarterAuthController.doLogin] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -191,7 +191,7 @@ class StarterAuthController extends MagicController
       setSuccess(true);
       navigateTo(MagicStarterConfig.loginRoute());
     } catch (e, stackTrace) {
-      Log.error('[StarterAuthController.doRegister] $e\n$stackTrace');
+      Log.error('[MagicStarterAuthController.doRegister] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -221,7 +221,7 @@ class StarterAuthController extends MagicController
 
       setSuccess(true);
     } catch (e, stackTrace) {
-      Log.error('[StarterAuthController.doForgotPassword] $e\n$stackTrace');
+      Log.error('[MagicStarterAuthController.doForgotPassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -261,7 +261,7 @@ class StarterAuthController extends MagicController
 
       setSuccess(true);
     } catch (e, stackTrace) {
-      Log.error('[StarterAuthController.doResetPassword] $e\n$stackTrace');
+      Log.error('[MagicStarterAuthController.doResetPassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -326,7 +326,7 @@ class StarterAuthController extends MagicController
       setSuccess(true);
       navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
-      Log.error('[StarterAuthController.doTwoFactorChallenge] $e\n$stackTrace');
+      Log.error('[MagicStarterAuthController.doTwoFactorChallenge] $e\n$stackTrace');
       setError(trans('auth.challenge_failed'));
     } finally {
       _isSubmitting = false;

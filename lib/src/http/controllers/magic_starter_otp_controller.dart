@@ -26,11 +26,11 @@ enum OtpStep {
 ///      calls [Auth.login] with the returned token and navigates home.
 ///
 /// Gated by [MagicStarterConfig.hasPhoneOtpFeatures].
-class StarterOtpController extends MagicController
+class MagicStarterOtpController extends MagicController
     with MagicStateMixin, ValidatesRequests, NavigatesRoutes {
   /// Singleton accessor via IoC container.
-  static StarterOtpController get instance =>
-      Magic.findOrPut(StarterOtpController.new);
+  static MagicStarterOtpController get instance =>
+      Magic.findOrPut(MagicStarterOtpController.new);
 
   /// Submit-guard prevents concurrent requests.
   bool _isSubmitting = false;
@@ -85,7 +85,7 @@ class StarterOtpController extends MagicController
       _step = OtpStep.codeInput;
       setSuccess(null);
     } catch (e, stackTrace) {
-      Log.error('[StarterOtpController.sendOtp] $e\n$stackTrace');
+      Log.error('[MagicStarterOtpController.sendOtp] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -148,7 +148,7 @@ class StarterOtpController extends MagicController
       setSuccess(data);
       navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
-      Log.error('[StarterOtpController.verifyOtp] $e\n$stackTrace');
+      Log.error('[MagicStarterOtpController.verifyOtp] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

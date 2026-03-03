@@ -2,7 +2,7 @@ import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
-import '../http/controllers/notification_controller.dart';
+import '../http/controllers/magic_starter_notification_controller.dart';
 
 /// Registers notification routes provided by Magic Starter plugin.
 ///
@@ -18,11 +18,11 @@ void registerMagicStarterNotificationRoutes() {
     routes: () {
       MagicRoute.page(
         MagicStarterConfig.notificationsRoute(),
-        StarterNotificationController.instance.index,
+        MagicStarterNotificationController.instance.index,
       ).transition(RouteTransition.none);
       MagicRoute.page(
         MagicStarterConfig.notificationPreferencesRoute(),
-        StarterNotificationController.instance.preferences,
+        MagicStarterNotificationController.instance.preferences,
       ).transition(RouteTransition.none);
     },
   );

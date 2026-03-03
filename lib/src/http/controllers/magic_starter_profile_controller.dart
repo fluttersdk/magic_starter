@@ -6,10 +6,10 @@ import '../../facades/magic_starter.dart';
 import 'concerns/navigates_routes.dart';
 
 /// Profile controller for Magic Starter plugin.
-class StarterProfileController extends MagicController
+class MagicStarterProfileController extends MagicController
     with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
-  static StarterProfileController get instance =>
-      Magic.findOrPut(StarterProfileController.new);
+  static MagicStarterProfileController get instance =>
+      Magic.findOrPut(MagicStarterProfileController.new);
   bool _isSubmitting = false;
 
   /// Whether controller notifications are temporarily suppressed.
@@ -96,7 +96,7 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doUpdateProfile] $e\n$stackTrace');
+      Log.error('[MagicStarterProfileController.doUpdateProfile] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -137,7 +137,7 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doUpdatePassword] $e\n$stackTrace');
+      Log.error('[MagicStarterProfileController.doUpdatePassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -170,7 +170,7 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doDeleteAccount] $e\n$stackTrace');
+      Log.error('[MagicStarterProfileController.doDeleteAccount] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -206,7 +206,7 @@ class StarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterProfileController.doUpdateProfilePhoto] $e\n$stackTrace');
+          '[MagicStarterProfileController.doUpdateProfilePhoto] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -240,7 +240,7 @@ class StarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterProfileController.doDeleteProfilePhoto] $e\n$stackTrace');
+          '[MagicStarterProfileController.doDeleteProfilePhoto] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -284,7 +284,7 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return data;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doEnableTwoFactor] $e\n$stackTrace');
+      Log.error('[MagicStarterProfileController.doEnableTwoFactor] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -317,7 +317,7 @@ class StarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterProfileController.doConfirmTwoFactor] $e\n$stackTrace');
+          '[MagicStarterProfileController.doConfirmTwoFactor] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -356,7 +356,7 @@ class StarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterProfileController.doDisableTwoFactor] $e\n$stackTrace');
+          '[MagicStarterProfileController.doDisableTwoFactor] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -394,7 +394,7 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return data?.map((e) => e.toString()).toList();
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.getRecoveryCodes] $e\n$stackTrace');
+      Log.error('[MagicStarterProfileController.getRecoveryCodes] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -434,7 +434,7 @@ class StarterProfileController extends MagicController
       return data?.map((e) => e.toString()).toList();
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterProfileController.doRegenerateRecoveryCodes] $e\n$stackTrace');
+          '[MagicStarterProfileController.doRegenerateRecoveryCodes] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -465,7 +465,7 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return data?.map((e) => e as Map<String, dynamic>).toList();
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.getSessions] $e\n$stackTrace');
+      Log.error('[MagicStarterProfileController.getSessions] $e\n$stackTrace');
       setError(trans('profile.sessions_fetch_error'));
       return null;
     } finally {
@@ -503,7 +503,7 @@ class StarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[StarterProfileController.doRevokeSession] $e\n$stackTrace');
+      Log.error('[MagicStarterProfileController.doRevokeSession] $e\n$stackTrace');
       setError(trans('profile.session_revoke_error'));
       return false;
     } finally {
@@ -537,7 +537,7 @@ class StarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterProfileController.doRevokeOtherSessions] $e\n$stackTrace');
+          '[MagicStarterProfileController.doRevokeOtherSessions] $e\n$stackTrace');
       setError(trans('profile.other_sessions_revoke_error'));
       return false;
     } finally {
@@ -573,7 +573,7 @@ class StarterProfileController extends MagicController
       Magic.toast(trans('magic_starter.email_verification.sent'));
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterProfileController.sendEmailVerification] $e\n$stackTrace');
+          '[MagicStarterProfileController.sendEmailVerification] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

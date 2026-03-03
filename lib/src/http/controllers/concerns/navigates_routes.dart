@@ -4,8 +4,8 @@ import 'package:magic/magic.dart';
 ///
 /// Provides a safe [navigateTo] method that checks for navigator context
 /// before navigating. Extracted from duplicated `_navigateTo` methods
-/// across [StarterAuthController], [StarterGuestAuthController],
-/// and [StarterOtpController].
+/// across [MagicStarterAuthController], [MagicStarterGuestAuthController],
+/// and [MagicStarterOtpController].
 mixin NavigatesRoutes {
   /// Navigate to [path] when a navigator context is available.
   ///

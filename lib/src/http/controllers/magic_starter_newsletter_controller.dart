@@ -1,11 +1,11 @@
 import 'package:magic/magic.dart';
 
 /// Controller for newsletter subscription management.
-class StarterNewsletterController extends MagicController
+class MagicStarterNewsletterController extends MagicController
     with MagicStateMixin, ValidatesRequests {
   /// Singleton accessor — use this instead of constructing directly.
-  static StarterNewsletterController get instance =>
-      Magic.findOrPut(StarterNewsletterController.new);
+  static MagicStarterNewsletterController get instance =>
+      Magic.findOrPut(MagicStarterNewsletterController.new);
   bool _isSubmitting = false;
 
   /// Fetches the current newsletter subscription status.
@@ -26,7 +26,7 @@ class StarterNewsletterController extends MagicController
       setSuccess(response.data as Map<String, dynamic>?);
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterNewsletterController.getNewsletterStatus] $e\n$stackTrace');
+          '[MagicStarterNewsletterController.getNewsletterStatus] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -54,7 +54,7 @@ class StarterNewsletterController extends MagicController
       setSuccess(response.data as Map<String, dynamic>?);
     } catch (e, stackTrace) {
       Log.error(
-          '[StarterNewsletterController.updateNewsletterSubscription] $e\n$stackTrace');
+          '[MagicStarterNewsletterController.updateNewsletterSubscription] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
