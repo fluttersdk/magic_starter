@@ -122,7 +122,7 @@ class MagicStarterAuthController extends MagicController
   /// Builds the identity payload dynamically based on [MagicStarterConfig]:
   ///   - Email-only mode → `email` is sent.
   ///   - Phone-only mode → `phone` is sent.
-  ///   - Both mode → `phone` takes precedence when non-empty; otherwise `email`.
+  ///   - Both mode → sends both `email` and `phone` when non-empty.
   Future<void> doRegister({
     required String name,
     String? email,
@@ -332,13 +332,13 @@ class MagicStarterAuthController extends MagicController
     navigateTo(MagicStarterConfig.loginRoute());
   }
 
-  /// Applies the correct identity field (email or phone) to [payload] based on
-  /// the active [MagicStarterConfig] identity mode.
+  /// Applies the correct identity fields (email and/or phone) to [payload]
+  /// based on the active [MagicStarterConfig] identity mode.
   ///
   /// Mode resolution:
   ///   1. Email-only (`emailIdentity=true`, `phoneIdentity=false`) → adds `email`.
   ///   2. Phone-only (`emailIdentity=false`, `phoneIdentity=true`) → adds `phone`.
-  ///   3. Both → `phone` takes precedence when non-empty; otherwise `email`.
+  ///   3. Both → sends every non-empty field so the backend receives both.
   void _applyIdentityToPayload(
     Map<String, dynamic> payload, {
     String? email,
@@ -354,12 +354,15 @@ class MagicStarterAuthController extends MagicController
       // Phone-only mode.
       payload['phone'] = phone ?? '';
     } else {
-      // Both mode — phone takes precedence when non-empty.
+      // Both mode — send every non-empty identity field.
+      final resolvedEmail = email ?? '';
       final resolvedPhone = phone ?? '';
+
+      if (resolvedEmail.isNotEmpty) {
+        payload['email'] = resolvedEmail;
+      }
       if (resolvedPhone.isNotEmpty) {
         payload['phone'] = resolvedPhone;
-      } else {
-        payload['email'] = email ?? '';
       }
     }
   }

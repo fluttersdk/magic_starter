@@ -819,12 +819,12 @@ void main() {
         Config.set('magic_starter.auth.phone', true);
       });
 
-      test('sends phone when phone field has value', () async {
+      test('sends both email and phone when both fields have values', () async {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
             'data': {
-              'token': 'reg-tok-both-phone',
+              'token': 'reg-tok-both',
               'user': {'id': 1, 'name': 'Bob'},
             },
           },
@@ -832,14 +832,15 @@ void main() {
 
         await controller.doRegister(
           name: 'Bob',
+          email: 'bob@example.com',
           phone: '+905301234567',
           password: 'secret123',
           passwordConfirmation: 'secret123',
         );
 
         final body = mockDriver.lastData as Map<String, dynamic>?;
+        expect(body?['email'], equals('bob@example.com'));
         expect(body?['phone'], equals('+905301234567'));
-        expect(body?.containsKey('email'), isFalse);
         expect(body?.containsKey('phone_country'), isFalse);
       });
 
