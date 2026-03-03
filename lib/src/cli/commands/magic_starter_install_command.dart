@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:magic_cli/magic_cli.dart';
 
 /// Installs and configures Magic Starter inside a host Magic application.
-class InstallCommand extends Command {
+class MagicStarterInstallCommand extends Command {
   /// Dynamic feature keys that can be toggled by user input.
   static const List<String> _dynamicFeatureKeys = [
     'teams',
@@ -481,8 +481,8 @@ class InstallCommand extends Command {
     if (features['teams'] ?? false) {
       _insertCallIfMissing(
         filePath: providerPath,
-        callCode: '    registerMagicStarterTeamRoutes();\n',
-        marker: 'registerMagicStarterTeamRoutes();',
+        callCode: '    registerMagicMagicStarterTeamRoutes();\n',
+        marker: 'registerMagicMagicStarterTeamRoutes();',
       );
     }
 
@@ -540,8 +540,8 @@ class InstallCommand extends Command {
         ? '''
     // 5. Register team resolver callback.
     MagicStarter.useTeamResolver(
-      currentTeam: () => null, // TODO: return current StarterTeam from Auth.user()
-      allTeams: () => [], // TODO: return list of StarterTeam from Auth.user()
+      currentTeam: () => null, // TODO: return current MagicStarterTeam from Auth.user()
+      allTeams: () => [], // TODO: return list of MagicStarterTeam from Auth.user()
       onSwitch: (teamId) async {
         // TODO: implement team switching logic
       },
@@ -646,24 +646,24 @@ class InstallCommand extends Command {
     // Magic Starter: Navigation items for sidebar and mobile bottom bar.
     MagicStarter.useNavigation(
       mainItems: [
-        StarterNavItem(
+        MagicStarterNavItem(
           icon: Icons.dashboard_outlined,
           labelKey: 'nav.dashboard',
           path: MagicStarterConfig.homeRoute(),
         ),
-        StarterNavItem(
+        MagicStarterNavItem(
           icon: Icons.settings_outlined,
           labelKey: 'nav.settings',
           path: MagicStarterConfig.profileRoute(),
         ),
       ],
       bottomItems: [
-        StarterNavItem(
+        MagicStarterNavItem(
           icon: Icons.dashboard_outlined,
           labelKey: 'nav.dashboard',
           path: MagicStarterConfig.homeRoute(),
         ),
-        StarterNavItem(
+        MagicStarterNavItem(
           icon: Icons.settings_outlined,
           labelKey: 'nav.settings',
           path: MagicStarterConfig.profileRoute(),

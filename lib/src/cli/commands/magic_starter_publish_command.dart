@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:magic_cli/magic_cli.dart';
 
-import '../helpers/starter_config_helper.dart';
+import '../helpers/magic_starter_config_helper.dart';
 
 /// Publish Magic Starter files into the host application for customization.
 ///
 /// This command is the Magic Starter equivalent of Laravel's `vendor:publish`.
 /// It copies real plugin source files into the host app so users can edit them.
-class PublishCommand extends Command {
+class MagicStarterPublishCommand extends Command {
   @override
   String get name => 'publish';
 
@@ -48,7 +48,7 @@ class PublishCommand extends Command {
   ///
   /// Overridable in tests.
   String? getPluginSourceDir() {
-    return StarterConfigHelper.resolvePluginSourceDir(
+    return MagicStarterConfigHelper.resolvePluginSourceDir(
       projectRoot: getProjectRoot(),
     );
   }

@@ -1,13 +1,13 @@
 
 import 'package:magic_cli/magic_cli.dart';
 
-import '../helpers/starter_config_helper.dart';
+import '../helpers/magic_starter_config_helper.dart';
 
 /// CLI command for reading and updating Magic Starter feature configuration.
 ///
 /// Reads `lib/config/magic_starter.dart` and allows toggling individual
 /// feature flags without modifying any other file. All file I/O is delegated
-/// through [StarterConfigHelper] so tests can isolate execution by overriding
+/// through [MagicStarterConfigHelper] so tests can isolate execution by overriding
 /// [getProjectRoot].
 ///
 /// Usage:
@@ -15,7 +15,7 @@ import '../helpers/starter_config_helper.dart';
 /// dart run magic_starter configure --show
 /// dart run magic_starter configure --teams --no-social-login
 /// ```
-class ConfigureCommand extends Command {
+class MagicStarterConfigureCommand extends Command {
   /// The feature flag definitions: CLI flag name → config key name.
   ///
   /// CLI flags use kebab-case; config keys use snake_case.
@@ -66,7 +66,7 @@ class ConfigureCommand extends Command {
   @override
   Future<void> handle() async {
     // 1. Attempt to read config — bail early if missing.
-    final String? content = StarterConfigHelper.readConfigContent(projectRoot);
+    final String? content = MagicStarterConfigHelper.readConfigContent(projectRoot);
     if (content == null) {
       error('Configuration file not found: $_configPath');
       info('Run installation first: dart run magic_starter install');
@@ -92,7 +92,7 @@ class ConfigureCommand extends Command {
     // 4. Apply each update sequentially to the content string.
     String updated = content;
     for (final entry in updates.entries) {
-      updated = StarterConfigHelper.updateFeature(
+      updated = MagicStarterConfigHelper.updateFeature(
         updated,
         entry.key,
         entry.value,
@@ -129,11 +129,11 @@ class ConfigureCommand extends Command {
 
   /// Prints a formatted table of the current feature toggles.
   ///
-  /// Parses [content] via [StarterConfigHelper.parseFeatures] and delegates
+  /// Parses [content] via [MagicStarterConfigHelper.parseFeatures] and delegates
   /// display to the base [Command.table] helper.
   void _showConfig(String content) {
     final Map<String, bool> features =
-        StarterConfigHelper.parseFeatures(content);
+        MagicStarterConfigHelper.parseFeatures(content);
 
     info('Current Magic Starter Feature Configuration:\n');
 

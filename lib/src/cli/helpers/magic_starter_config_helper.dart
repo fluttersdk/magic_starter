@@ -6,7 +6,7 @@ import 'dart:io';
 /// Provides utilities to read, parse, and update feature toggles in the
 /// `lib/config/magic_starter.dart` configuration file. All methods are
 /// static and do not require instantiation.
-abstract class StarterConfigHelper {
+abstract class MagicStarterConfigHelper {
   /// List of all feature toggle keys in magic_starter config.
   static const featureKeys = [
     'teams',
@@ -44,7 +44,7 @@ abstract class StarterConfigHelper {
   ///   },
   /// };
   /// """;
-  /// final features = StarterConfigHelper.parseFeatures(content);
+  /// final features = MagicStarterConfigHelper.parseFeatures(content);
   /// print(features['teams']); // false
   /// print(features['registration']); // true
   /// ```
@@ -82,7 +82,7 @@ abstract class StarterConfigHelper {
   /// Example:
   /// ```dart
   /// final content = "'teams': false,";
-  /// final updated = StarterConfigHelper.updateFeature(content, 'teams', true);
+  /// final updated = MagicStarterConfigHelper.updateFeature(content, 'teams', true);
   /// print(updated); // "'teams': true,"
   /// ```
   static String updateFeature(

@@ -14,7 +14,7 @@ import 'package:magic_cli/magic_cli.dart';
 /// dart run magic_starter doctor
 /// dart run magic_starter doctor --verbose
 /// ```
-class DoctorCommand extends Command {
+class MagicStarterDoctorCommand extends Command {
   @override
   String get name => 'doctor';
 

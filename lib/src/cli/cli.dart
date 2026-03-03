@@ -11,11 +11,11 @@
 /// void main(List<String> args) {
 ///   final kernel = Kernel()
 ///     ..registerMany([
-///       InstallCommand(),
-///       PublishCommand(),
-///       ConfigureCommand(),
-///       DoctorCommand(),
-///       UninstallCommand(),
+///       MagicStarterInstallCommand(),
+///       MagicStarterPublishCommand(),
+///       MagicStarterConfigureCommand(),
+///       MagicStarterDoctorCommand(),
+///       MagicStarterUninstallCommand(),
 ///     ]);
 ///   kernel.handle(args);
 /// }
@@ -23,9 +23,9 @@
 library;
 
 export 'package:magic_cli/magic_cli.dart' hide InstallCommand;
-export 'commands/install_command.dart';
-export 'commands/publish_command.dart';
-export 'commands/configure_command.dart';
-export 'commands/doctor_command.dart';
-export 'commands/uninstall_command.dart';
-export 'helpers/starter_config_helper.dart';
+export 'commands/magic_starter_install_command.dart';
+export 'commands/magic_starter_publish_command.dart';
+export 'commands/magic_starter_configure_command.dart';
+export 'commands/magic_starter_doctor_command.dart';
+export 'commands/magic_starter_uninstall_command.dart';
+export 'helpers/magic_starter_config_helper.dart';

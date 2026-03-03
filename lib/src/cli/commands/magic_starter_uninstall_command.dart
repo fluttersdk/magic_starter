@@ -7,7 +7,7 @@ import 'package:magic_cli/magic_cli.dart';
 /// This command performs a safe reverse of `install` by removing generated
 /// configuration/injection lines and dependency entries while keeping user code
 /// intact whenever possible.
-class UninstallCommand extends Command {
+class MagicStarterUninstallCommand extends Command {
   @override
   String get name => 'uninstall';
 
@@ -322,7 +322,7 @@ class UninstallCommand extends Command {
     );
 
     content = content.replaceAll(
-      RegExp(r'\s*registerMagicStarterTeamRoutes\([^)]*\);\n?'),
+      RegExp(r'\s*registerMagicMagicStarterTeamRoutes\([^)]*\);\n?'),
       '',
     );
 
