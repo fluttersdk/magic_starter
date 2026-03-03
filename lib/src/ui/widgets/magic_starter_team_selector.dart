@@ -10,10 +10,10 @@ import '../../magic_starter_manager.dart';
 ///
 /// Displays the current team and allows switching between teams.
 /// Uses the team resolver registered via `MagicStarter.useTeamResolver()`.
-class MagicMagicStarterTeamSelector extends StatelessWidget {
+class MagicStarterTeamSelector extends StatelessWidget {
   final bool compact;
 
-  const MagicMagicStarterTeamSelector({super.key, this.compact = false});
+  const MagicStarterTeamSelector({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context) {

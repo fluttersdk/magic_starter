@@ -162,7 +162,7 @@ void main() {
 
       expect(content, isNot(contains('registerMagicStarterAuthRoutes();')));
       expect(content, isNot(contains('registerMagicStarterProfileRoutes();')));
-      expect(content, isNot(contains('registerMagicMagicStarterTeamRoutes();')));
+      expect(content, isNot(contains('registerMagicStarterTeamRoutes();')));
       expect(
         content,
         isNot(contains('registerMagicStarterNotificationRoutes();')),
@@ -343,7 +343,7 @@ class RouteServiceProvider extends ServiceProvider {
   Future<void> boot() async {
     registerMagicStarterAuthRoutes();
     registerMagicStarterProfileRoutes();
-    registerMagicMagicStarterTeamRoutes();
+    registerMagicStarterTeamRoutes();
     registerMagicStarterNotificationRoutes();
     registerAppRoutes();
   }

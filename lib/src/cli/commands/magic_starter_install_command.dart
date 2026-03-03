@@ -481,8 +481,8 @@ class MagicStarterInstallCommand extends Command {
     if (features['teams'] ?? false) {
       _insertCallIfMissing(
         filePath: providerPath,
-        callCode: '    registerMagicMagicStarterTeamRoutes();\n',
-        marker: 'registerMagicMagicStarterTeamRoutes();',
+        callCode: '    registerMagicStarterTeamRoutes();\n',
+        marker: 'registerMagicStarterTeamRoutes();',
       );
     }
 

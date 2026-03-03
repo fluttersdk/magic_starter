@@ -420,7 +420,7 @@ void main() {
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
               .readAsStringSync();
-      expect(content, contains('registerMagicMagicStarterTeamRoutes();'));
+      expect(content, contains('registerMagicStarterTeamRoutes();'));
     });
 
     test('does not inject team routes when teams feature disabled', () async {
@@ -434,7 +434,7 @@ void main() {
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
               .readAsStringSync();
-      expect(content, isNot(contains('registerMagicMagicStarterTeamRoutes();')));
+      expect(content, isNot(contains('registerMagicStarterTeamRoutes();')));
     });
 
     test('replaces app_service_provider.dart content', () async {

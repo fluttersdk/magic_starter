@@ -8,7 +8,7 @@ import '../http/controllers/magic_starter_team_controller.dart';
 ///
 /// Routes are only registered when `magic_starter.features.teams` is enabled.
 /// When disabled, calling this function is a no-op.
-void registerMagicMagicStarterTeamRoutes() {
+void registerMagicStarterTeamRoutes() {
   if (!MagicStarterConfig.hasTeamFeatures()) return;
 
   MagicRoute.group(

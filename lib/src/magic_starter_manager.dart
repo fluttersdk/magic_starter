@@ -198,15 +198,15 @@ class MagicStarterManager {
     if (MagicStarterConfig.hasTeamFeatures()) {
       _registerDefault(
         'teams.create',
-        () => const MagicMagicStarterTeamCreateView(),
+        () => const MagicStarterTeamCreateView(),
       );
       _registerDefault(
         'teams.settings',
-        () => const MagicMagicStarterTeamSettingsView(),
+        () => const MagicStarterTeamSettingsView(),
       );
       _registerDefault(
         'teams.invitation_accept',
-        () => const MagicMagicStarterTeamInvitationAcceptView(),
+        () => const MagicStarterTeamInvitationAcceptView(),
       );
     }
 

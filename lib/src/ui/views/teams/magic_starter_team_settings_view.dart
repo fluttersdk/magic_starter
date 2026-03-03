@@ -6,17 +6,17 @@ import '../../../http/controllers/magic_starter_team_controller.dart';
 import '../../widgets/magic_starter_page_header.dart';
 import '../../widgets/magic_starter_card.dart';
 
-class MagicMagicStarterTeamSettingsView
+class MagicStarterTeamSettingsView
     extends MagicStatefulView<MagicStarterTeamController> {
-  const MagicMagicStarterTeamSettingsView({super.key});
+  const MagicStarterTeamSettingsView({super.key});
 
   @override
-  State<MagicMagicStarterTeamSettingsView> createState() =>
-      _MagicMagicStarterTeamSettingsViewState();
+  State<MagicStarterTeamSettingsView> createState() =>
+      _MagicStarterTeamSettingsViewState();
 }
 
-class _MagicMagicStarterTeamSettingsViewState extends MagicStatefulViewState<
-    MagicStarterTeamController, MagicMagicStarterTeamSettingsView> {
+class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
+    MagicStarterTeamController, MagicStarterTeamSettingsView> {
   late final MagicFormData form = MagicFormData(
     {'name': ''},
     controller: controller,

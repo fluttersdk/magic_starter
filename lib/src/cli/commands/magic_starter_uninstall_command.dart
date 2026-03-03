@@ -322,7 +322,7 @@ class MagicStarterUninstallCommand extends Command {
     );
 
     content = content.replaceAll(
-      RegExp(r'\s*registerMagicMagicStarterTeamRoutes\([^)]*\);\n?'),
+      RegExp(r'\s*registerMagicStarterTeamRoutes\([^)]*\);\n?'),
       '',
     );
 

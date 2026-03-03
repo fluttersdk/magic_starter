@@ -276,7 +276,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     }
 
     if (MagicStarter.hasTeamResolver) {
-    return MagicMagicStarterTeamSelector();
+    return MagicStarterTeamSelector();
     }
 
     return const SizedBox.shrink();
