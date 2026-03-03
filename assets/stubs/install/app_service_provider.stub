@@ -33,24 +33,24 @@ class AppServiceProvider extends ServiceProvider {
         //    and the mobile bottom bar (bottomItems).
         MagicStarter.useNavigation(
             mainItems: [
-                StarterNavItem(
+                MagicStarterNavItem(
                     icon: Icons.dashboard_outlined,
                     labelKey: 'nav.dashboard',
                     path: MagicStarterConfig.homeRoute(),
                 ),
-                StarterNavItem(
+                MagicStarterNavItem(
                     icon: Icons.settings_outlined,
                     labelKey: 'nav.settings',
                     path: MagicStarterConfig.profileRoute(),
                 ),
             ],
             bottomItems: [
-                StarterNavItem(
+                MagicStarterNavItem(
                     icon: Icons.dashboard_outlined,
                     labelKey: 'nav.dashboard',
                     path: MagicStarterConfig.homeRoute(),
                 ),
-                StarterNavItem(
+                MagicStarterNavItem(
                     icon: Icons.settings_outlined,
                     labelKey: 'nav.settings',
                     path: MagicStarterConfig.profileRoute(),

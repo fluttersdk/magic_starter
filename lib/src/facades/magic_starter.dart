@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../magic_starter_manager.dart';
-import '../models/starter_team.dart';
-import '../models/starter_nav_item.dart';
-import '../ui/view_registry.dart';
+import '../models/magic_starter_team.dart';
+import '../models/magic_starter_nav_item.dart';
+import '../ui/magic_starter_view_registry.dart';
 
 /// Maps a notification type string to an icon and color class.
 ///
@@ -16,7 +16,7 @@ import '../ui/view_registry.dart';
 ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
 /// });
 /// ```
-typedef StarterNotificationTypeMapper = ({IconData icon, String colorClass})
+typedef MagicStarterNotificationTypeMapper = ({IconData icon, String colorClass})
     Function(String type);
 
 /// Static facade for Magic Starter.
@@ -48,17 +48,17 @@ class MagicStarter {
   ///
   /// ```dart
   /// MagicStarter.useTeamResolver(
-  ///   currentTeam: () => User.current.currentTeam?.toStarterTeam(),
-  ///   allTeams: () => User.current.allTeams.map((t) => t.toStarterTeam()).toList(),
-  ///   onSwitch: (id) => StarterTeamController.instance.switchTeam(id),
+  ///   currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
+  ///   allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
+  ///   onSwitch: (id) => MagicStarterTeamController.instance.switchTeam(id),
   /// );
   /// ```
   static void useTeamResolver({
-    required StarterTeam? Function() currentTeam,
-    required List<StarterTeam> Function() allTeams,
+    required MagicStarterTeam? Function() currentTeam,
+    required List<MagicStarterTeam> Function() allTeams,
     required Future<void> Function(dynamic teamId) onSwitch,
   }) {
-    manager.teamResolver = StarterTeamResolverConfig(
+    manager.teamResolver = MagicStarterTeamResolverConfig(
       currentTeam: currentTeam,
       allTeams: allTeams,
       onSwitch: onSwitch,
@@ -66,7 +66,7 @@ class MagicStarter {
   }
 
   /// Get the team resolver config, or null if not registered.
-  static StarterTeamResolverConfig? get teamResolver => manager.teamResolver;
+  static MagicStarterTeamResolverConfig? get teamResolver => manager.teamResolver;
 
   /// Whether a team resolver has been registered.
   static bool get hasTeamResolver => manager.teamResolver != null;
@@ -76,26 +76,26 @@ class MagicStarter {
   /// ```dart
   /// MagicStarter.useNavigation(
   ///   mainItems: [
-  ///     StarterNavItem(icon: Icons.dashboard, labelKey: 'nav.dashboard', path: '/'),
+  ///     MagicStarterNavItem(icon: Icons.dashboard, labelKey: 'nav.dashboard', path: '/'),
   ///   ],
   ///   systemItems: [
-  ///     StarterNavItem(icon: Icons.people_outline, labelKey: 'nav.members', path: '/teams/members'),
+  ///     MagicStarterNavItem(icon: Icons.people_outline, labelKey: 'nav.members', path: '/teams/members'),
   ///   ],
   ///   bottomItems: [
-  ///     StarterNavItem(icon: Icons.dashboard_outlined, labelKey: 'nav.dashboard', path: '/'),
+  ///     MagicStarterNavItem(icon: Icons.dashboard_outlined, labelKey: 'nav.dashboard', path: '/'),
   ///   ],
   ///   profileMenuItems: [
-  ///     StarterNavItem(icon: Icons.notifications_outlined, labelKey: 'nav.notifications', path: '/notifications'),
+  ///     MagicStarterNavItem(icon: Icons.notifications_outlined, labelKey: 'nav.notifications', path: '/notifications'),
   ///   ],
   /// );
   /// ```
   static void useNavigation({
-    required List<StarterNavItem> mainItems,
-    List<StarterNavItem> systemItems = const [],
-    List<StarterNavItem> bottomItems = const [],
-    List<StarterNavItem> profileMenuItems = const [],
+    required List<MagicStarterNavItem> mainItems,
+    List<MagicStarterNavItem> systemItems = const [],
+    List<MagicStarterNavItem> bottomItems = const [],
+    List<MagicStarterNavItem> profileMenuItems = const [],
   }) {
-    manager.navigationConfig = StarterNavigationConfig(
+    manager.navigationConfig = MagicStarterNavigationConfig(
       mainItems: mainItems,
       systemItems: systemItems,
       bottomItems: bottomItems,
@@ -104,7 +104,7 @@ class MagicStarter {
   }
 
   /// Get the navigation config, or null if not registered.
-  static StarterNavigationConfig? get navigationConfig =>
+  static MagicStarterNavigationConfig? get navigationConfig =>
       manager.navigationConfig;
 
   /// Whether navigation items have been registered.
@@ -113,7 +113,7 @@ class MagicStarter {
   /// Register a custom logout callback.
   ///
   /// When set, the app layout's logout button calls this instead of
-  /// the default `StarterAuthController.instance.logout()`.
+  /// the default `MagicStarterAuthController.instance.logout()`.
   ///
   /// ```dart
   /// MagicStarter.useLogout(() async {
@@ -179,12 +179,12 @@ class MagicStarter {
   ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
   /// });
   /// ```
-  static void useNotificationTypeMapper(StarterNotificationTypeMapper mapper) {
+  static void useNotificationTypeMapper(MagicStarterNotificationTypeMapper mapper) {
     manager.notificationTypeMapper = mapper;
   }
 
   /// The registered notification type mapper, or `null` if not configured.
-  static StarterNotificationTypeMapper? get notificationTypeMapper =>
+  static MagicStarterNotificationTypeMapper? get notificationTypeMapper =>
       manager.notificationTypeMapper;
 
   /// Locale options for language selection.

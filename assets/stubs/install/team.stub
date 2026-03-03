@@ -24,8 +24,8 @@ import 'package:magic_starter/magic_starter.dart';
 /// ## Plugin Interop
 ///
 /// ```dart
-/// // Convert to StarterTeam for the magic_starter team resolver
-/// final starterTeam = team.toStarterTeam();
+/// // Convert to MagicStarterTeam for the magic_starter team resolver
+/// final magicStarterTeam = team.toMagicStarterTeam();
 /// ```
 class Team extends Model with HasTimestamps, InteractsWithPersistence {
   /// The table associated with the model.
@@ -156,19 +156,19 @@ class Team extends Model with HasTimestamps, InteractsWithPersistence {
   // Plugin Interop
   // ---------------------------------------------------------------------------
 
-  /// Convert to [StarterTeam] for the magic_starter plugin's team resolver.
+  /// Convert to [MagicStarterTeam] for the magic_starter plugin's team resolver.
   ///
   /// Used by [MagicStarter.useTeamResolver] so the plugin can access
   /// team data without depending on the host app's concrete [Team] class.
   ///
   /// ```dart
   /// MagicStarter.useTeamResolver(
-  ///   currentTeam: () async => (await Team.find(currentId))?.toStarterTeam(),
-  ///   allTeams: () async => (await Team.all()).map((t) => t.toStarterTeam()).toList(),
+  ///   currentTeam: () async => (await Team.find(currentId))?.toMagicStarterTeam(),
+  ///   allTeams: () async => (await Team.all()).map((t) => t.toMagicStarterTeam()).toList(),
   /// );
   /// ```
-  StarterTeam toStarterTeam() {
-      return StarterTeam(
+  MagicStarterTeam toMagicStarterTeam() {
+      return MagicStarterTeam(
           id: id,
           name: name ?? '',
           photoUrl: profilePhotoUrl,
