@@ -344,10 +344,10 @@ class MagicStarterInstallCommand extends Command {
     String content = FileHelper.readFile(mainPath);
     if (content.contains('MagicApplication(') &&
         !content.contains('windTheme:')) {
-      content = content.replaceFirst(
+      content = content.replaceFirstMapped(
         RegExp(r"MagicApplication\(title:\s*'([^']*)'\)"),
-        'MagicApplication(\n'
-            '      title: \'\$1\',\n'
+        (Match m) => 'MagicApplication(\n'
+            '      title: \'${m[1]}\',\n'
             '      windTheme: windTheme,\n'
             '    )',
       );
@@ -540,17 +540,14 @@ class MagicStarterInstallCommand extends Command {
         ? '''
     // 5. Register team resolver callback.
     MagicStarter.useTeamResolver(
-      currentTeam: () => null, // TODO: return current MagicStarterTeam from Auth.user()
-      allTeams: () => [], // TODO: return list of MagicStarterTeam from Auth.user()
-      onSwitch: (teamId) async {
-        // TODO: implement team switching logic
-      },
+      currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
+      allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
+      onSwitch: (teamId) => MagicStarterTeamController.instance.switchTeam(teamId),
     );
 '''
         : '';
 
-    final String teamsImport =
-        (features['teams'] ?? false) ? "import '../models/team.dart';" : '';
+    final String teamsImport = '';
 
     final String socialLoginBlock = (features['social_login'] ?? false)
         ? '''
@@ -703,6 +700,22 @@ class MagicStarterInstallCommand extends Command {
       );
     }
 
+    // 2e. useTeamResolver (only when teams feature is enabled)
+    if ((features['teams'] ?? false) && !content.contains('useTeamResolver')) {
+      content = _injectBeforeBootClosingBrace(
+        content,
+        '''
+
+    // Magic Starter: Team resolver for sidebar team switcher.
+    MagicStarter.useTeamResolver(
+      currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
+      allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
+      onSwitch: (teamId) => MagicStarterTeamController.instance.switchTeam(teamId),
+    );
+''',
+      );
+    }
+
     FileHelper.writeFile(targetPath, content);
     info('Injected: lib/app/providers/app_service_provider.dart');
   }
@@ -782,7 +795,7 @@ class MagicStarterInstallCommand extends Command {
 
   /// All teams the user belongs to.
   List<Team> get allTeams {
-    final List<dynamic> data = getAttribute('teams') as List<dynamic>? ?? [];
+    final List<dynamic> data = getAttribute('all_teams') as List<dynamic>? ?? [];
     return data.map((t) => Team.fromMap(t as Map<String, dynamic>)).toList();
   }
 '''
