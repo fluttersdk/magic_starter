@@ -136,6 +136,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "profile": "Profile",
+    "settings": "Settings",
     "system": "System"
   },
   "notifications": {
