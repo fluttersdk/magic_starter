@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
 
 import 'concerns/navigates_routes.dart';
 import '../../configuration/magic_starter_config.dart';
@@ -214,7 +215,8 @@ class MagicStarterAuthController extends MagicController
 
       setSuccess(true);
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterAuthController.doForgotPassword] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterAuthController.doForgotPassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -319,7 +321,8 @@ class MagicStarterAuthController extends MagicController
       setSuccess(true);
       navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterAuthController.doTwoFactorChallenge] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterAuthController.doTwoFactorChallenge] $e\n$stackTrace');
       setError(trans('auth.challenge_failed'));
     } finally {
       _isSubmitting = false;
@@ -327,7 +330,24 @@ class MagicStarterAuthController extends MagicController
   }
 
   /// Logout user.
+  ///
+  /// 1. Stop notification services when the feature is active.
+  /// 2. Clear authentication tokens and navigate to login.
   Future<void> logout() async {
+    // 1. Stop notification services when the feature is active.
+    if (MagicStarterConfig.hasNotificationFeatures()) {
+      try {
+        await Notify.logoutPush();
+        Notify.stopPolling();
+      } catch (e, stackTrace) {
+        Log.error(
+          '[MagicStarterAuthController.logout] '
+          'Notification cleanup failed: $e\n$stackTrace',
+        );
+      }
+    }
+
+    // 2. Clear authentication tokens and navigate to login.
     await Auth.logout();
     navigateTo(MagicStarterConfig.loginRoute());
   }

@@ -54,6 +54,16 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   void dispose() {
     MagicStarterAppLayout.refreshNotifier.removeListener(_refresh);
     Auth.stateNotifier.removeListener(_refresh);
+
+    // Stop notification polling when layout unmounts (safety net).
+    if (MagicStarterConfig.hasNotificationFeatures()) {
+      try {
+        Notify.stopPolling();
+      } catch (_) {
+        // Silently fail — dispose must never throw.
+      }
+    }
+
     super.dispose();
   }
 
@@ -276,7 +286,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     }
 
     if (MagicStarter.hasTeamResolver) {
-    return MagicStarterTeamSelector();
+      return MagicStarterTeamSelector();
     }
 
     return const SizedBox.shrink();
