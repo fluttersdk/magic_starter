@@ -552,7 +552,7 @@ class MagicStarterInstallCommand extends Command {
     final String socialLoginBlock = (features['social_login'] ?? false)
         ? '''
     // 6. Register social login button builder.
-    MagicStarter.useSocialLogin((context) {
+    MagicStarter.useSocialLogin((context, isLoading) {
       // TODO: return your social login widget.
       return const SizedBox.shrink();
     });
@@ -889,13 +889,11 @@ class MagicStarterInstallCommand extends Command {
     // 1. Add imports.
     ConfigEditor.addImportToFile(
       filePath: targetPath,
-      importStatement:
-          "import 'package:magic_starter/magic_starter.dart';",
+      importStatement: "import 'package:magic_starter/magic_starter.dart';",
     );
     ConfigEditor.addImportToFile(
       filePath: targetPath,
-      importStatement:
-          "import '../resources/views/dashboard_view.dart';",
+      importStatement: "import '../resources/views/dashboard_view.dart';",
     );
 
     // 2. Inject layout group with dashboard route if not present.
