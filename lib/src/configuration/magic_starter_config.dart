@@ -40,6 +40,9 @@ class MagicStarterConfig {
   static const String _defaultProfilePrefix = '/settings';
   static const String _defaultNotificationsPrefix = '/notifications';
 
+  // -- HTTP Configuration --
+  static const int _defaultRequestTimeoutSeconds = 30;
+  static const int _defaultMaxRetries = 3;
 
   /// Returns whether timezone list features are enabled.
   /// Returns whether timezone selection should be shown.
@@ -198,7 +201,6 @@ class MagicStarterConfig {
         _defaultTimezone;
   }
 
-
   /// Returns the list of supported locales.
   static List<String> supportedLocales() {
     return Config.get<List<String>>(
@@ -249,6 +251,26 @@ class MagicStarterConfig {
           _defaultNotificationsPrefix,
         ) ??
         _defaultNotificationsPrefix;
+  }
+
+  // -- HTTP Configuration --
+
+  /// Returns the configured request timeout in seconds.
+  static int requestTimeoutSeconds() {
+    return Config.get<int>(
+          'magic_starter.http.timeout_seconds',
+          _defaultRequestTimeoutSeconds,
+        ) ??
+        _defaultRequestTimeoutSeconds;
+  }
+
+  /// Returns the configured maximum number of retries for failed requests.
+  static int maxRetries() {
+    return Config.get<int>(
+          'magic_starter.http.max_retries',
+          _defaultMaxRetries,
+        ) ??
+        _defaultMaxRetries;
   }
 
   // -- Legal links --
