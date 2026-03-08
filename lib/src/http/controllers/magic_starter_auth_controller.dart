@@ -183,7 +183,7 @@ class MagicStarterAuthController extends MagicController
       }
 
       final response = await Http.post(
-        '/auth/login',
+        '/auth/register',
         data: payload,
       );
 
