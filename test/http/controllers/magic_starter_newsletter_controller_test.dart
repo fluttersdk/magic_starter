@@ -155,7 +155,6 @@ void main() {
       expect(mockDriver.lastUrl, '/user/newsletter');
       expect(mockDriver.lastMethod, 'GET');
       expect(controller.isSuccess, isTrue);
-      
     });
 
     test(
@@ -166,14 +165,12 @@ void main() {
       expect(mockDriver.lastUrl, '/user/newsletter');
       expect(mockDriver.lastMethod, 'PUT');
       expect(mockDriver.lastData?['subscribe'], isTrue);
-      
     });
 
     test('updateNewsletterSubscription — unsubscribe: sends false', () async {
       mockDriver.mockResponse(statusCode: 200, data: {'subscribed': false});
       await controller.updateNewsletterSubscription(subscribe: false);
       expect(mockDriver.lastData?['subscribe'], isFalse);
-      
     });
 
     test('getNewsletterStatus — API error: sets error state', () async {

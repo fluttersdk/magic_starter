@@ -136,7 +136,7 @@ void main() {
           onPressed: () async {
             result = await MagicStarterPasswordConfirmDialog.show(
               context,
-              onConfirm: (password) async => null,  // success
+              onConfirm: (password) async => null, // success
             );
           },
           child: const Text('Show'),

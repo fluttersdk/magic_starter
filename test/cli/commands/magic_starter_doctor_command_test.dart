@@ -480,7 +480,9 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('--verbose flag', () {
-    test('verbose flag is registered on the parser without throwing ArgParserException', () {
+    test(
+        'verbose flag is registered on the parser without throwing ArgParserException',
+        () {
       // Verify the ArgParser accepts --verbose without raising an exception.
       // We parse args directly to avoid handle() calling exit().
       final parser = ArgParser();

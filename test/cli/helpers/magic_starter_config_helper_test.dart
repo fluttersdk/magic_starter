@@ -244,7 +244,8 @@ Map<String, dynamic> get magicStarterConfig => {
                 final configFile = File('${configDir.path}/magic_starter.dart');
                 await configFile.writeAsString('// config');
 
-                final exists = MagicStarterConfigHelper.configExists(tempDir.path);
+                final exists =
+                    MagicStarterConfigHelper.configExists(tempDir.path);
                 expect(exists, true);
               } finally {
                 tempDir.deleteSync(recursive: true);
@@ -257,7 +258,8 @@ Map<String, dynamic> get magicStarterConfig => {
             () {
               final tempDir = Directory.systemTemp.createTempSync();
               try {
-                final exists = MagicStarterConfigHelper.configExists(tempDir.path);
+                final exists =
+                    MagicStarterConfigHelper.configExists(tempDir.path);
                 expect(exists, false);
               } finally {
                 tempDir.deleteSync(recursive: true);

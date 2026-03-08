@@ -496,7 +496,8 @@ void main() {
       test('success: loading to success and returns codes', () async {
         mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future = controller.getRecoveryCodes(password: 'secret123');
+        final Future<List<String>?> future =
+            controller.getRecoveryCodes(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -537,7 +538,8 @@ void main() {
       test('failure: loading to error and returns null', () async {
         mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future = controller.getRecoveryCodes(password: 'secret123');
+        final Future<List<String>?> future =
+            controller.getRecoveryCodes(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(

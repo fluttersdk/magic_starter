@@ -283,8 +283,7 @@ void main() {
       );
     });
 
-    test(
-        'skips WindThemeData injection when already present (idempotency)',
+    test('skips WindThemeData injection when already present (idempotency)',
         () async {
       setupMagicProjectFiles(tempDir);
 
@@ -297,8 +296,7 @@ void main() {
 
       final String content =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      final int themeCount =
-          RegExp('WindThemeData').allMatches(content).length;
+      final int themeCount = RegExp('WindThemeData').allMatches(content).length;
       expect(themeCount, 1);
     });
 
@@ -487,7 +485,8 @@ void main() {
       expect(redirectContent, isNot(contains('await next()')));
     });
 
-    test('app_service_provider uses correct MagicStarterNavItem params', () async {
+    test('app_service_provider uses correct MagicStarterNavItem params',
+        () async {
       setupMagicProjectFiles(tempDir);
 
       await command.runWith([

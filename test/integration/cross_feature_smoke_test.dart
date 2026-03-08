@@ -89,8 +89,8 @@ void main() {
         },
       );
 
-      final profileController =
-          trackController<MagicStarterProfileController>(MagicStarterProfileController());
+      final profileController = trackController<MagicStarterProfileController>(
+          MagicStarterProfileController());
 
       final upgraded = await profileController.doUpdateProfile(
         name: 'Upgraded User',
@@ -127,8 +127,8 @@ void main() {
         },
       );
 
-      final authController =
-          trackController<MagicStarterAuthController>(MagicStarterAuthController());
+      final authController = trackController<MagicStarterAuthController>(
+          MagicStarterAuthController());
 
       await authController.doLogin(
         email: 'email@example.com',
@@ -145,8 +145,8 @@ void main() {
     test('OTP flow send then verify authenticates the user', () async {
       Config.set('magic_starter.features.phone_otp', true);
 
-      final otpController =
-          trackController<MagicStarterOtpController>(MagicStarterOtpController());
+      final otpController = trackController<MagicStarterOtpController>(
+          MagicStarterOtpController());
 
       mockDriver.mockResponse(
         statusCode: 200,
@@ -216,8 +216,8 @@ void main() {
         },
       );
 
-      final authController =
-          trackController<MagicStarterAuthController>(MagicStarterAuthController());
+      final authController = trackController<MagicStarterAuthController>(
+          MagicStarterAuthController());
 
       await authController.doRegister(
         name: 'Newsletter User',
@@ -240,8 +240,9 @@ void main() {
         },
       );
 
-      final newsletterController = trackController<MagicStarterNewsletterController>(
-          MagicStarterNewsletterController());
+      final newsletterController =
+          trackController<MagicStarterNewsletterController>(
+              MagicStarterNewsletterController());
 
       await newsletterController.getNewsletterStatus();
 

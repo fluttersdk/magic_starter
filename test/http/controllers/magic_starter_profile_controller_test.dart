@@ -618,7 +618,8 @@ void main() {
           expect(controller.isSuccess, isTrue);
           expect(mockDriver.lastMethod, equals('POST'));
           expect(mockDriver.lastUrl, equals('/two-factor-authentication'));
-          expect(mockDriver.lastData,
+          expect(
+            mockDriver.lastData,
             equals({
               '_method': 'DELETE',
               'password': 'mysecretpass',
@@ -670,7 +671,8 @@ void main() {
             ),
           ]);
 
-          final result = await controller.getRecoveryCodes(password: 'mysecretpass');
+          final result =
+              await controller.getRecoveryCodes(password: 'mysecretpass');
 
           expect(result, isNotNull);
           expect(result!.length, equals(3));
@@ -693,11 +695,12 @@ void main() {
             ),
           ]);
 
-          final result = await controller.getRecoveryCodes(password: 'mysecretpass');
+          final result =
+              await controller.getRecoveryCodes(password: 'mysecretpass');
 
           expect(result, isNull);
         });
-    });
+      });
       group('doRegenerateRecoveryCodes', () {
         test('success (200) — returns list of new codes', () async {
           mockDriver.mockQueue([
@@ -709,7 +712,8 @@ void main() {
             ),
           ]);
 
-          final result = await controller.doRegenerateRecoveryCodes(password: 'mysecretpass');
+          final result = await controller.doRegenerateRecoveryCodes(
+              password: 'mysecretpass');
 
           expect(result, isNotNull);
           expect(result!.length, equals(3));
@@ -733,12 +737,13 @@ void main() {
             ),
           ]);
 
-          final result = await controller.doRegenerateRecoveryCodes(password: 'mysecretpass');
+          final result = await controller.doRegenerateRecoveryCodes(
+              password: 'mysecretpass');
 
           expect(result, isNull);
           expect(controller.isSuccess, isFalse);
         });
-    });
+      });
     });
     // -----------------------------------------------------------------------
     // Sessions
@@ -1104,7 +1109,8 @@ void main() {
         expect(result, isTrue);
       });
 
-      test('direct calls still trigger notifications (backward compat)', () async {
+      test('direct calls still trigger notifications (backward compat)',
+          () async {
         var notificationCount = 0;
         controller.addListener(() => notificationCount++);
 

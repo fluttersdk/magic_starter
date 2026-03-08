@@ -202,9 +202,9 @@ void main() {
       mockGuard = MockGuard();
       Auth.manager.forgetGuards();
       Auth.manager.extend('mock', (_) => mockGuard);
-Config.set('auth.defaults.guard', 'mock');
+      Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-          'mock': {'driver': 'mock'},
+        'mock': {'driver': 'mock'},
       });
 
       // 5. Bind MagicStarterManager.

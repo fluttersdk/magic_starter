@@ -134,7 +134,8 @@ void main() {
       ]);
 
       expect(
-        hostFileExists('lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         isTrue,
       );
       expect(
@@ -143,7 +144,8 @@ void main() {
         isTrue,
       );
       expect(
-        readHostFile('lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        readHostFile(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         'class LoginView {}',
       );
     });

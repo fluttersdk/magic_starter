@@ -118,8 +118,7 @@ void main() {
           .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
       await tester.pumpAndSettle();
 
-      expect(
-          find.text(trans('notifications.no_preferences')), findsOneWidget);
+      expect(find.text(trans('notifications.no_preferences')), findsOneWidget);
     });
 
     testWidgets('renders matrix with checkboxes for each type and channel',
