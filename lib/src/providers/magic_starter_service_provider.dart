@@ -4,6 +4,15 @@ import 'package:magic/magic.dart';
 import '../facades/magic_starter.dart';
 import '../magic_starter_manager.dart';
 
+/// Listener to reload app when auth is restored (e.g., after team switch)
+class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
+  @override
+  Future<void> handle(AuthRestored event) async {
+    // Soft reload the app to refresh all team-scoped data
+    Magic.reload();
+  }
+}
+
 /// Service provider for Magic Starter.
 ///
 /// Register in your app's kernel:
@@ -18,6 +27,10 @@ class MagicStarterServiceProvider extends ServiceProvider {
   void register() {
     // Register manager singleton.
     app.singleton('magic_starter', () => MagicStarterManager());
+
+    // Register event listener to reload app after team switch
+    EventDispatcher.instance
+        .register(AuthRestored, [() => _ReloadOnAuthRestored()]);
   }
 
   @override
