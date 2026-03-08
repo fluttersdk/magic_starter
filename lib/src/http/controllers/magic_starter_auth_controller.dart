@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
@@ -53,6 +56,21 @@ class MagicStarterAuthController extends MagicController
     bool rememberMe = false,
   }) async {
     if (_isSubmitting) return;
+
+    // Input validation
+    if (password.isEmpty) {
+      setError(trans('validation.required', {'attribute': 'password'}));
+      return;
+    }
+
+    final hasEmail = email?.isNotEmpty ?? false;
+    final hasPhone = phone?.isNotEmpty ?? false;
+
+    if (!hasEmail && !hasPhone) {
+      setError(trans('auth.login_failed'));
+      return;
+    }
+
     _isSubmitting = true;
     setLoading();
     clearErrors();
@@ -110,6 +128,14 @@ class MagicStarterAuthController extends MagicController
       await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
       navigateTo(MagicStarterConfig.homeRoute());
+    } on TimeoutException catch (e, stackTrace) {
+      Log.error(
+          '[MagicStarterAuthController.doLogin] Timeout: $e\n$stackTrace');
+      setError(trans('errors.network_timeout'));
+    } on SocketException catch (e, stackTrace) {
+      Log.error(
+          '[MagicStarterAuthController.doLogin] Network error: $e\n$stackTrace');
+      setError(trans('errors.network_error'));
     } catch (e, stackTrace) {
       Log.error('[MagicStarterAuthController.doLogin] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
@@ -157,7 +183,7 @@ class MagicStarterAuthController extends MagicController
       }
 
       final response = await Http.post(
-        '/auth/register',
+        '/auth/login',
         data: payload,
       );
 
