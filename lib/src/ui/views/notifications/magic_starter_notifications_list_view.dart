@@ -6,6 +6,7 @@ import '../../widgets/magic_starter_card.dart';
 import '../../widgets/magic_starter_page_header.dart';
 
 import '../../../facades/magic_starter.dart';
+
 /// Full-page view for listing all notifications with mark as read,
 /// delete, pagination, and view all functionality.
 /// Uses server-side pagination for efficiency.
@@ -73,6 +74,7 @@ class _MagicStarterNotificationsListViewState
       });
     }
   }
+
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -171,7 +173,8 @@ class _MagicStarterNotificationsListViewState
           noPadding: true,
           child: WDiv(
             className: 'flex flex-col',
-            children: notifications.map((n) => _buildNotificationItem(n)).toList(),
+            children:
+                notifications.map((n) => _buildNotificationItem(n)).toList(),
           ),
         ),
         if (totalPages > 1) _buildPagination(totalPages),
@@ -265,8 +268,7 @@ class _MagicStarterNotificationsListViewState
           ),
           if (!notification.isRead)
             const WDiv(
-              className:
-                  'w-2 h-2 rounded-full bg-primary flex-shrink-0',
+              className: 'w-2 h-2 rounded-full bg-primary flex-shrink-0',
               child: SizedBox.shrink(),
             ),
           if (widget.onDelete != null)

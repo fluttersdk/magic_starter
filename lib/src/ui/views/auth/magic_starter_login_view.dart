@@ -13,7 +13,8 @@ import '../../widgets/magic_starter_social_divider.dart';
 /// Renders the appropriate identity input (email, phone, or a toggle between
 /// both) based on [MagicStarterConfig.emailIdentity] and
 /// [MagicStarterConfig.phoneIdentity] at runtime.
-class MagicStarterLoginView extends MagicStatefulView<MagicStarterAuthController> {
+class MagicStarterLoginView
+    extends MagicStatefulView<MagicStarterAuthController> {
   const MagicStarterLoginView({super.key});
 
   @override

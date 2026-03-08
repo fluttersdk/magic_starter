@@ -227,16 +227,17 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           () => controller.doEnableTwoFactor(password: password),
         );
         if (data == null) {
-          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          final error =
+              controller.rxStatus.message ?? trans('common.error_occurred');
           controller.clearErrors();
           return error;
         }
         setupData = data;
-        return null;  // success → dialog closes
+        return null; // success → dialog closes
       },
     );
 
-    if (setupData == null) return;  // user cancelled or all attempts failed
+    if (setupData == null) return; // user cancelled or all attempts failed
 
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
@@ -265,7 +266,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           () => controller.doDisableTwoFactor(password: password),
         );
         if (!ok) {
-          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          final error =
+              controller.rxStatus.message ?? trans('common.error_occurred');
           controller.clearErrors();
           return error;
         }
@@ -293,7 +295,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           () => controller.getRecoveryCodes(password: password),
         );
         if (codes == null) {
-          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          final error =
+              controller.rxStatus.message ?? trans('common.error_occurred');
           controller.clearErrors();
           return error;
         }
@@ -315,7 +318,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           () => controller.doRegenerateRecoveryCodes(password: password),
         );
         if (codes == null) {
-          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          final error =
+              controller.rxStatus.message ?? trans('common.error_occurred');
           controller.clearErrors();
           return error;
         }
@@ -351,7 +355,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           ),
         );
         if (!ok) {
-          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          final error =
+              controller.rxStatus.message ?? trans('common.error_occurred');
           controller.clearErrors();
           return error;
         }
@@ -376,7 +381,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           () => controller.doRevokeOtherSessions(password: password),
         );
         if (!ok) {
-          final error = controller.rxStatus.message ?? trans('common.error_occurred');
+          final error =
+              controller.rxStatus.message ?? trans('common.error_occurred');
           controller.clearErrors();
           return error;
         }
@@ -880,7 +886,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                         isLoading: isLoading,
                         className:
                             'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-                        child: WText(trans('profile.two_factor_regenerate_codes')),
+                        child:
+                            WText(trans('profile.two_factor_regenerate_codes')),
                       ),
                     ),
                   ),
@@ -937,7 +944,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           ),
           Builder(
             builder: (context) {
-              final newsletterController = MagicStarterNewsletterController.instance;
+              final newsletterController =
+                  MagicStarterNewsletterController.instance;
               return newsletterController.renderState(
                 (data) {
                   final isSubscribed = data?['subscribed'] as bool? ?? false;
@@ -976,12 +984,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                               ),
                               Switch.adaptive(
                                 value: isSubscribed,
-                                activeThumbColor: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary,
-                                activeTrackColor: Theme.of(context)
-                                    .colorScheme
-                                    .primary,
+                                activeThumbColor:
+                                    Theme.of(context).colorScheme.onPrimary,
+                                activeTrackColor:
+                                    Theme.of(context).colorScheme.primary,
                                 onChanged: isLoading
                                     ? null
                                     : (newValue) async {

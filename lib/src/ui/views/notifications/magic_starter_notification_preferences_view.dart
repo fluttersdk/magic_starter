@@ -55,7 +55,8 @@ class _MagicStarterNotificationPreferencesViewState
           return MagicStarterCard(
             title: '',
             child: WDiv(
-              className: 'w-full py-12 flex flex-col items-center justify-center gap-3',
+              className:
+                  'w-full py-12 flex flex-col items-center justify-center gap-3',
               children: [
                 WIcon(
                   Icons.notifications_off_outlined,
