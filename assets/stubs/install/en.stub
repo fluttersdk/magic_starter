@@ -104,6 +104,9 @@
       "description": "Create a permanent account to keep your data and unlock all features.",
       "title": "Upgrade Your Guest Account"
     },
+    "notifications": {
+      "fetch_error": "Failed to load notification preferences."
+    },
     "newsletter": {
       "fetch_error": "Failed to load newsletter preferences.",
       "section_description": "Receive product updates and announcements by email.",
