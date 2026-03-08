@@ -177,7 +177,7 @@ class _MagicStarterPasswordConfirmDialogState
                       onTap: _isLoading ? null : _onCancel,
                       child: WDiv(
                         className:
-                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium flex items-center justify-center text-center',
+                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium text-center',
                         child: WText(trans('common.cancel')),
                       ),
                     ),
@@ -188,7 +188,7 @@ class _MagicStarterPasswordConfirmDialogState
                       onTap: _isLoading ? null : _onConfirm,
                       isLoading: _isLoading,
                       className:
-                          'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium flex items-center justify-center text-center',
+                          'w-full px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium text-center',
                       child: WText(trans('common.confirm')),
                     ),
                   ),
