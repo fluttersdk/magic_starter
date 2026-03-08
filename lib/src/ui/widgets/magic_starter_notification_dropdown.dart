@@ -118,7 +118,9 @@ class MagicStarterNotificationDropdown extends StatelessWidget {
                 // animate-bounce duration-500
               ''',
               child: WText(
-                unreadCount > 9 ? trans('notifications.badge_overflow') : unreadCount.toString(),
+                unreadCount > 9
+                    ? trans('notifications.badge_overflow')
+                    : unreadCount.toString(),
                 className: 'text-[9px] font-bold text-white',
               ),
             ),

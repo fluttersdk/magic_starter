@@ -147,9 +147,8 @@ class _MagicStarterTimezoneSelectState
             (opt) => opt.value == widget.value,
           );
           if (!selectedExists) {
-            final selectedInAll = _allOptions
-                .where((opt) => opt.value == widget.value)
-                .toList();
+            final selectedInAll =
+                _allOptions.where((opt) => opt.value == widget.value).toList();
             if (selectedInAll.isNotEmpty) {
               results.insert(0, selectedInAll.first);
             }
