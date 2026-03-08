@@ -17,7 +17,8 @@ void registerMagicStarterAuthRoutes() {
           .transition(RouteTransition.none);
 
       if (MagicStarterConfig.hasRegistrationFeatures()) {
-        MagicRoute.page('/register', MagicStarterAuthController.instance.register)
+        MagicRoute.page(
+                '/register', MagicStarterAuthController.instance.register)
             .transition(RouteTransition.none);
       }
 

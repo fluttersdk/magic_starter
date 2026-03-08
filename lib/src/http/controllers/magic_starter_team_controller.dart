@@ -119,7 +119,8 @@ class MagicStarterTeamController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterTeamController.cancelInvitation] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterTeamController.cancelInvitation] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -346,7 +347,8 @@ class MagicStarterTeamController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterTeamController.doAcceptInvitation] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterTeamController.doAcceptInvitation] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {

@@ -96,7 +96,8 @@ class MagicStarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterProfileController.doUpdateProfile] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterProfileController.doUpdateProfile] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -137,7 +138,8 @@ class MagicStarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterProfileController.doUpdatePassword] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterProfileController.doUpdatePassword] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -170,7 +172,8 @@ class MagicStarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterProfileController.doDeleteAccount] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterProfileController.doDeleteAccount] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -284,7 +287,8 @@ class MagicStarterProfileController extends MagicController
       setSuccess(true);
       return data;
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterProfileController.doEnableTwoFactor] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterProfileController.doEnableTwoFactor] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -394,7 +398,8 @@ class MagicStarterProfileController extends MagicController
       setSuccess(true);
       return data?.map((e) => e.toString()).toList();
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterProfileController.getRecoveryCodes] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterProfileController.getRecoveryCodes] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -406,7 +411,8 @@ class MagicStarterProfileController extends MagicController
   ///
   /// Requires the current account [password] for sudo-mode confirmation.
   /// The password is sent directly to the endpoint (no separate confirm call).
-  Future<List<String>?> doRegenerateRecoveryCodes({required String password}) async {
+  Future<List<String>?> doRegenerateRecoveryCodes(
+      {required String password}) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
     setLoading();
@@ -503,7 +509,8 @@ class MagicStarterProfileController extends MagicController
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterProfileController.doRevokeSession] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterProfileController.doRevokeSession] $e\n$stackTrace');
       setError(trans('profile.session_revoke_error'));
       return false;
     } finally {

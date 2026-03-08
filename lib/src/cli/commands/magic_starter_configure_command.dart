@@ -1,4 +1,3 @@
-
 import 'package:magic_cli/magic_cli.dart';
 
 import '../helpers/magic_starter_config_helper.dart';
@@ -66,7 +65,8 @@ class MagicStarterConfigureCommand extends Command {
   @override
   Future<void> handle() async {
     // 1. Attempt to read config — bail early if missing.
-    final String? content = MagicStarterConfigHelper.readConfigContent(projectRoot);
+    final String? content =
+        MagicStarterConfigHelper.readConfigContent(projectRoot);
     if (content == null) {
       error('Configuration file not found: $_configPath');
       info('Run installation first: dart run magic_starter install');

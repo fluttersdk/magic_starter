@@ -87,7 +87,8 @@ class MagicStarterGuestAuthController extends MagicController
       // 5. Navigate home.
       navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterGuestAuthController.doGuestLogin] $e\n$stackTrace');
+      Log.error(
+          '[MagicStarterGuestAuthController.doGuestLogin] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

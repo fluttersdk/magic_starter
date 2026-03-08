@@ -16,8 +16,8 @@ import '../ui/magic_starter_view_registry.dart';
 ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
 /// });
 /// ```
-typedef MagicStarterNotificationTypeMapper = ({IconData icon, String colorClass})
-    Function(String type);
+typedef MagicStarterNotificationTypeMapper
+    = ({IconData icon, String colorClass}) Function(String type);
 
 /// Static facade for Magic Starter.
 class MagicStarter {
@@ -66,7 +66,8 @@ class MagicStarter {
   }
 
   /// Get the team resolver config, or null if not registered.
-  static MagicStarterTeamResolverConfig? get teamResolver => manager.teamResolver;
+  static MagicStarterTeamResolverConfig? get teamResolver =>
+      manager.teamResolver;
 
   /// Whether a team resolver has been registered.
   static bool get hasTeamResolver => manager.teamResolver != null;
@@ -179,7 +180,8 @@ class MagicStarter {
   ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
   /// });
   /// ```
-  static void useNotificationTypeMapper(MagicStarterNotificationTypeMapper mapper) {
+  static void useNotificationTypeMapper(
+      MagicStarterNotificationTypeMapper mapper) {
     manager.notificationTypeMapper = mapper;
   }
 

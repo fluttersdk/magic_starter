@@ -148,7 +148,6 @@ class MagicStarterManager {
 
   List<SelectOption<String>>? _localeOptions;
 
-
   /// Guest authentication entry point builder.
   /// When set, renders custom widget for guest/anonymous login flows.
   Widget Function()? guestAuthEntryBuilder;
