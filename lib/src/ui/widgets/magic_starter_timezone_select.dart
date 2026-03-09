@@ -109,7 +109,7 @@ class _MagicStarterTimezoneSelectState
         final data = response.data['data'] as List;
         return data.map((tz) {
           return SelectOption<String>(
-            value: tz['identifier'] as String,
+            value: tz['value'] as String,
             label: tz['label'] as String,
           );
         }).toList();
