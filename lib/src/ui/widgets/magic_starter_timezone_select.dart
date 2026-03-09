@@ -106,9 +106,16 @@ class _MagicStarterTimezoneSelectState
     try {
       final response = await Http.get('/timezones?search=$query&per_page=20');
       if (response.successful) {
-        final data = response.data['data'] as List;
+        final data = response.data['data'];
+        if (data == null || data is! List) {
+          return [];
+        }
         return data
-            .where((tz) => tz['value'] != null && tz['label'] != null)
+            .where((tz) =>
+                tz != null &&
+                tz is Map &&
+                tz['value'] != null &&
+                tz['label'] != null)
             .map((tz) {
           return SelectOption<String>(
             value: tz['value'] as String,
