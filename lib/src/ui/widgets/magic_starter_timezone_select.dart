@@ -114,11 +114,11 @@ class _MagicStarterTimezoneSelectState
             .where((tz) =>
                 tz != null &&
                 tz is Map &&
-                tz['value'] != null &&
+                tz['identifier'] != null &&
                 tz['label'] != null)
             .map((tz) {
           return SelectOption<String>(
-            value: tz['value'] as String,
+            value: tz['identifier'] as String,
             label: tz['label'] as String,
           );
         }).toList();
