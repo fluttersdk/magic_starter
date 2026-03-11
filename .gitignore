@@ -36,6 +36,5 @@ coverage/
 
 # AI coding tools
 AGENTS.md
-.claude/
 .opencode/
 .sisyphus/
