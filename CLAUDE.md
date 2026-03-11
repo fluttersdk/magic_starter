@@ -6,7 +6,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 | Command | Description |
 |---------|-------------|
-| `dart test` | Run all tests (37 files, 543 cases) |
+| `dart test` | Run all tests (~40 files, ~630+ cases) |
 | `dart test test/http/controllers/` | Run controller tests only |
 | `dart test --name "pattern"` | Run tests matching pattern |
 | `dart analyze` | Static analysis (flutter_lints ^6.0) |
@@ -17,19 +17,19 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ```
 lib/
-├── magic_starter.dart              # Public API — all exports
+├── magic_starter.dart              # Public API barrel — 46 exports
 ├── src/
 │   ├── magic_starter_manager.dart  # Singleton registry: user model, team resolver, nav, views
-│   ├── configuration/              # Feature flags (all default false, opt-in)
-│   ├── providers/                  # IoC registration, Gate abilities, boot logic
+│   ├── configuration/              # 13 feature toggles (all default false, opt-in)
+│   ├── providers/                  # IoC registration, 9 Gate abilities, boot logic
 │   ├── facades/                    # Static API: MagicStarter.useUserModel(), .view.make()
-│   ├── http/controllers/           # MagicController + mixins, thin wrappers around API
-│   │   └── concerns/              # Shared mixins (NavigatesRoutes)
+│   ├── http/controllers/           # 7 controllers + NavigatesRoutes mixin
+│   │   └── concerns/              # Shared mixins
 │   ├── routes/                     # Per-module route registration (feature-gated)
 │   ├── ui/
 │   │   ├── layouts/               # AppLayout (authenticated), GuestLayout (auth pages)
 │   │   ├── views/                 # auth/, profile/, teams/, notifications/
-│   │   └── widgets/               # Reusable components (Wind UI / Tailwind-like)
+│   │   └── widgets/               # 10 reusable components (Wind UI / Tailwind-like)
 │   ├── models/                     # AuthUser, Team, NavItem
 │   └── cli/                        # install, configure, doctor, publish, uninstall
 ├── config/                         # Laravel-bound config stub
@@ -41,9 +41,9 @@ SDK: Dart >=3.6.0, Flutter >=3.27.0.
 ## Key Files
 
 - `lib/src/magic_starter_manager.dart` — Central singleton holding all customization registrations
-- `lib/src/configuration/magic_starter_config.dart` — Feature flag queries and route path builders
-- `lib/src/providers/magic_starter_service_provider.dart` — IoC boot: registers manager, defines Gate abilities
-- `lib/src/ui/magic_starter_view_registry.dart` — String-keyed view builders, host app can override
+- `lib/src/configuration/magic_starter_config.dart` — 13 feature flag queries and route path builders
+- `lib/src/providers/magic_starter_service_provider.dart` — IoC boot: registers manager, defines 9 Gate abilities
+- `lib/src/ui/magic_starter_view_registry.dart` — String-keyed view builders, host app can override any screen
 - `lib/src/http/controllers/concerns/navigates_routes.dart` — Safe navigation mixin for controllers
 
 ## Code Style
@@ -52,6 +52,8 @@ SDK: Dart >=3.6.0, Flutter >=3.27.0.
 - Static `.instance` getter via `Magic.findOrPut(ControllerName.new)` — no manual instantiation
 - State flow: `setLoading()` → `setSuccess()`/`setError()` → `notifyListeners()`
 - Guard `_isSubmitting` with early return to prevent double-submit
+- `_suppressNotifications` pattern: suppress `notifyListeners()` during form-level loading, restore in finally
+- `ValueNotifier<T>` for fine-grained reactive state beyond MagicStateMixin (teams, notifications, profile sections)
 - 73-char ASCII comment dividers for section grouping in controllers
 - Wind UI classes for styling (`WDiv(className: 'flex flex-col gap-4 p-6')`) — no Material widgets in layouts
 - Views extend `MagicStatefulView<ControllerType>` — UI only, no business logic
@@ -73,3 +75,5 @@ SDK: Dart >=3.6.0, Flutter >=3.27.0.
 - Feature-gated routes throw `StateError` if called when feature is disabled — always check config first
 - Theme access in `boot()` requires `addPostFrameCallback` — navigator context unavailable during boot phase
 - `MagicStarterAppLayout.refreshNotifier` triggers layout rebuilds on auth change — don't poke manually
+- `ValueNotifier` in controllers requires manual disposal in tearDown
+- `NotificationController._normalizeMap()` is critical — backend returns mixed-case keys needing normalization
