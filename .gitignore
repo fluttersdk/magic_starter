@@ -34,6 +34,9 @@ pubspec.lock
 # Test coverage
 coverage/
 
+# Environment
+.env
+
 # AI coding tools
 AGENTS.md
 .opencode/

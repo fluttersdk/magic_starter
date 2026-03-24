@@ -1,0 +1,458 @@
+# Views and Layouts
+
+- [Introduction](#introduction)
+- [MagicStatefulView](#magicstatefulview)
+- [View Lifecycle](#view-lifecycle)
+- [State Rendering](#state-rendering)
+- [Form Handling](#form-handling)
+- [AppLayout](#applayout)
+- [GuestLayout](#guestlayout)
+- [Wind UI System](#wind-ui-system)
+- [Dark Mode](#dark-mode)
+- [View Registry](#view-registry)
+- [Layout Registry](#layout-registry)
+- [Feature-Gated Rendering](#feature-gated-rendering)
+- [Zero Business Logic](#zero-business-logic)
+
+<a name="introduction"></a>
+## Introduction
+
+Magic Starter's view layer follows a strict separation of concerns: views handle rendering, controllers handle state and business logic. Every page-level view extends `MagicStatefulView<ControllerType>`, which binds the view to its controller singleton and provides lifecycle hooks. Two layout shells — `AppLayout` for authenticated pages and `GuestLayout` for auth pages — wrap all views. The entire UI is built with Wind UI components exclusively, with no direct Material widget usage beyond `Icons.*` references.
+
+All views and layouts are registered in a string-keyed registry, making every screen overridable by the host application.
+
+<a name="magicstatefulview"></a>
+## MagicStatefulView
+
+Page-level views extend `MagicStatefulView<ControllerType>` with a state class that extends `MagicStatefulViewState`:
+
+```dart
+class MagicStarterLoginView
+    extends MagicStatefulView<MagicStarterAuthController> {
+  const MagicStarterLoginView({super.key});
+
+  @override
+  State<MagicStarterLoginView> createState() => _MagicStarterLoginViewState();
+}
+
+class _MagicStarterLoginViewState extends MagicStatefulViewState<
+    MagicStarterAuthController, MagicStarterLoginView> {
+
+  @override
+  void onInit() {
+    controller.clearErrors();
+    controller.setEmpty();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return controller.renderState(
+      (_) => _buildForm(),
+      onEmpty: _buildForm(),
+      onError: (message) => _buildForm(errorMessage: message),
+    );
+  }
+}
+```
+
+The `MagicStatefulViewState` base class provides access to the controller singleton via `controller` and lifecycle hooks via `onInit()` and `onClose()`.
+
+> [!NOTE]
+> Views are NOT widgets like `MagicStarterNotificationDropdown` — those extend `StatelessWidget` or `StatefulWidget` directly. Only full-page views that need a controller binding use `MagicStatefulView`.
+
+<a name="view-lifecycle"></a>
+## View Lifecycle
+
+Two lifecycle hooks are available in `MagicStatefulViewState`:
+
+**`onInit()`** — Called once when the state is initialized. Use it to clear errors, set initial state, or trigger data fetches:
+
+```dart
+@override
+void onInit() {
+  controller.clearErrors();
+  controller.setEmpty();
+}
+```
+
+**`onClose()`** — Called when the state is disposed. Use it to clean up form data or local notifiers:
+
+```dart
+@override
+void onClose() => form.dispose();
+```
+
+> [!TIP]
+> For views with multiple forms (like the profile settings page), dispose all `MagicFormData` instances in `onClose()`. Field names must not collide across forms in the same view.
+
+<a name="state-rendering"></a>
+## State Rendering
+
+Views delegate state-based rendering to `controller.renderState()`, which selects the appropriate builder based on the controller's current `MagicStateMixin` state:
+
+```dart
+@override
+Widget build(BuildContext context) {
+  return controller.renderState(
+    (_) => _buildForm(),
+    onEmpty: _buildForm(),
+    onError: (message) => _buildForm(errorMessage: message),
+  );
+}
+```
+
+The first positional argument handles the success state (receives the state value). Named parameters:
+
+| Parameter | When | Typical use |
+|-----------|------|-------------|
+| `onEmpty` | No data loaded yet | Show empty form or placeholder |
+| `onError` | Controller called `setError()` | Show form with error banner |
+
+Extract loading state at the top of your build method for conditional UI:
+
+```dart
+Widget _buildForm({String? errorMessage}) {
+  final isLoading = controller.isLoading;
+
+  return WDiv(
+    className: 'flex flex-col gap-4 p-6',
+    children: [
+      if (errorMessage != null)
+        WText(errorMessage, className: 'text-sm text-red-500'),
+      // ... form fields
+      WButton(
+        onTap: isLoading ? null : _submit,
+        className: 'w-full py-3 rounded-lg bg-primary text-white',
+        child: WText(isLoading ? trans('common.loading') : trans('auth.login')),
+      ),
+    ],
+  );
+}
+```
+
+<a name="form-handling"></a>
+## Form Handling
+
+Forms are declared as `MagicFormData` instances with empty string defaults for text fields and typed defaults for non-string fields:
+
+```dart
+late final form = MagicFormData(
+  {
+    'email': '',
+    'phone': '',
+    'password': '',
+    'remember_me': false,
+  },
+  controller: controller,
+);
+```
+
+Access values with type-safe extraction:
+
+```dart
+// String fields
+final email = form.get('email');
+
+// Non-string fields — use value<T>()
+final rememberMe = form.value<bool>('remember_me');
+```
+
+Form fields render with `WFormInput`:
+
+```dart
+WFormInput(
+  form: form,
+  name: 'email',
+  label: trans('auth.email'),
+  keyboardType: TextInputType.emailAddress,
+)
+```
+
+Validate and submit:
+
+```dart
+Future<void> _submit() async {
+  if (!form.validate()) return;
+  await controller.doLogin(
+    email: form.get('email'),
+    password: form.get('password'),
+    rememberMe: form.value<bool>('remember_me'),
+  );
+}
+```
+
+> [!NOTE]
+> Query parameters needed before calling the controller (like password reset tokens) should be extracted in the view: `MagicRouter.instance.queryParameter('token') ?? ''`.
+
+<a name="applayout"></a>
+## AppLayout
+
+`MagicStarterAppLayout` is the authenticated shell used for all protected pages. It provides a responsive layout with:
+
+- **Desktop:** Sidebar with brand, team selector, navigation items, and user menu
+- **Mobile:** Hamburger menu with drawer, header bar, and bottom navigation
+
+```dart
+MagicStarter.view.registerLayout(
+  'layout.app',
+  (child) => MagicStarterAppLayout(child: child),
+);
+```
+
+The layout automatically starts notification polling when mounted (if notifications are enabled) and rebuilds on auth state changes via `MagicStarterAppLayout.refreshNotifier` and `Auth.stateNotifier`.
+
+Key customization points:
+
+```dart
+// Custom header — replaces the default mobile header
+MagicStarter.useHeader((context, isDesktop) {
+  return MyCustomHeader(showMenuButton: !isDesktop);
+});
+
+// Custom navigation items
+MagicStarter.useNavigation(
+  mainItems: [
+    MagicStarterNavItem(
+      icon: Icons.dashboard_outlined,
+      labelKey: 'nav.dashboard',
+      path: '/',
+    ),
+  ],
+  systemItems: [...],
+  bottomItems: [...],
+);
+```
+
+> [!TIP]
+> `MagicStarterAppLayout.refreshNotifier` is a static `ValueNotifier<int>` that triggers layout rebuilds. It is bumped automatically by auth state changes. Do not poke it manually unless you have a specific reason to force a layout rebuild.
+
+<a name="guestlayout"></a>
+## GuestLayout
+
+`MagicStarterGuestLayout` is a minimal centered wrapper for authentication pages (login, register, forgot password, reset password). It constrains content to 480px max width and provides scrolling:
+
+```dart
+MagicStarter.view.registerLayout(
+  'layout.guest',
+  (child) => MagicStarterGuestLayout(child: child),
+);
+```
+
+The layout uses `wColor()` for theme-aware background colors and wraps content in `WDiv(className: 'p-4 lg:p-8')` for responsive padding.
+
+> [!NOTE]
+> Guest routes use `RouteTransition.none` — there is no animation between auth screens (login to register, etc.). This is intentional for a seamless form-flow experience.
+
+<a name="wind-ui-system"></a>
+## Wind UI System
+
+All Magic Starter views use Wind UI components exclusively. The framework provides Tailwind-like utility classes through a `className` property:
+
+| Component | Purpose | Example |
+|-----------|---------|---------|
+| `WDiv` | Container/layout | `WDiv(className: 'flex flex-col gap-4 p-6')` |
+| `WText` | Typography | `WText('Title', className: 'text-lg font-bold text-gray-900')` |
+| `WFormInput` | Form field | `WFormInput(form: form, name: 'email')` |
+| `WButton` | Interactive button | `WButton(onTap: submit, className: 'bg-primary text-white')` |
+| `WIcon` | Icon display | `WIcon(Icons.mail_outline, className: 'text-xl text-gray-500')` |
+| `WAnchor` | Tap target | `WAnchor(onTap: () => ..., child: ...)` |
+| `WSpacer` | Spacing | `WSpacer(className: 'h-4')` |
+| `WPopover` | Overlay dropdown | `WPopover(triggerBuilder: ..., contentBuilder: ...)` |
+
+For long class lists, use triple-quoted strings:
+
+```dart
+WDiv(
+  className: '''
+    rounded-2xl bg-white dark:bg-gray-800
+    border border-gray-200 dark:border-gray-700
+    shadow-sm p-6
+  ''',
+  child: ...,
+)
+```
+
+> [!NOTE]
+> Never use Material widgets (`Container`, `Text`, `ElevatedButton`, etc.) in Magic Starter views. The only exception is `Icons.*` for icon data references and `Switch.adaptive` where Wind UI does not yet provide a toggle.
+
+<a name="dark-mode"></a>
+## Dark Mode
+
+Always pair light and dark mode classes. Wind UI supports the `dark:` prefix for dark mode variants:
+
+```dart
+WText(
+  'Hello',
+  className: 'text-gray-900 dark:text-white',
+)
+
+WDiv(
+  className: '''
+    bg-white dark:bg-gray-800
+    border border-gray-200 dark:border-gray-700
+  ''',
+)
+```
+
+Common pairings used throughout Magic Starter:
+
+| Light | Dark |
+|-------|------|
+| `bg-white` | `dark:bg-gray-800` |
+| `bg-gray-50` | `dark:bg-gray-900` |
+| `text-gray-900` | `dark:text-white` |
+| `text-gray-500` | `dark:text-gray-400` |
+| `text-gray-400` | `dark:text-gray-500` |
+| `border-gray-200` | `dark:border-gray-700` |
+| `border-gray-100` | `dark:border-gray-700` |
+| `hover:bg-gray-100` | `dark:hover:bg-gray-800` |
+
+> [!TIP]
+> Theme toggling is available in the app layout sidebar via `context.windTheme.toggleTheme()`. Check the current mode with `context.windIsDark`.
+
+<a name="view-registry"></a>
+## View Registry
+
+All views are registered by string key in `MagicStarterViewRegistry`. The host application can override any screen by re-registering under the same key:
+
+```dart
+// Register a view
+MagicStarter.view.register(
+  'auth.login',
+  () => const MagicStarterLoginView(),
+);
+
+// Override with custom view
+MagicStarter.view.register(
+  'auth.login',
+  () => const MyCustomLoginView(),
+);
+
+// Build a view by key
+final widget = MagicStarter.view.make('auth.login');
+```
+
+Built-in view keys:
+
+| Key | View |
+|-----|------|
+| `auth.login` | Login page |
+| `auth.register` | Registration page |
+| `auth.forgot_password` | Forgot password page |
+| `auth.reset_password` | Reset password page |
+| `auth.otp_verify` | OTP verification page |
+| `auth.two_factor_challenge` | Two-factor challenge page |
+| `profile.settings` | Profile settings page |
+| `teams.create` | Team creation page |
+| `teams.settings` | Team settings page |
+| `teams.invitation_accept` | Team invitation acceptance page |
+| `notifications.list` | Notification list page |
+| `notifications.preferences` | Notification preferences page |
+
+> [!NOTE]
+> `MagicStarter.view.make(key)` throws `StateError` when the key is not registered. Always ensure views are registered before routes reference them.
+
+<a name="layout-registry"></a>
+## Layout Registry
+
+Layouts follow the same registry pattern with a `child` parameter for wrapping content:
+
+```dart
+// Register a layout
+MagicStarter.view.registerLayout(
+  'layout.app',
+  (child) => MagicStarterAppLayout(child: child),
+);
+
+// Override with custom layout
+MagicStarter.view.registerLayout(
+  'layout.app',
+  (child) => MyCustomAppLayout(child: child),
+);
+
+// Build a layout wrapping content
+final widget = MagicStarter.view.makeLayout(
+  'layout.guest',
+  child: loginView,
+);
+```
+
+Built-in layout keys:
+
+| Key | Layout |
+|-----|--------|
+| `layout.app` | Authenticated layout with sidebar/nav |
+| `layout.guest` | Centered guest layout for auth pages |
+
+> [!TIP]
+> To test views in isolation, register a minimal layout: `MagicStarter.view.registerLayout('layout.guest', (child) => child);`
+
+<a name="feature-gated-rendering"></a>
+## Feature-Gated Rendering
+
+Use conditional spreads to show or hide UI sections based on feature flags at build time:
+
+```dart
+WDiv(
+  className: 'flex flex-col gap-4',
+  children: [
+    _buildEmailField(),
+    _buildPasswordField(),
+    if (MagicStarterConfig.hasRegistrationFeatures()) ...[
+      WSpacer(className: 'h-2'),
+      WAnchor(
+        onTap: () => MagicRoute.to(MagicStarterConfig.registerPath()),
+        child: WText(
+          trans('auth.register_link'),
+          className: 'text-sm text-primary',
+        ),
+      ),
+    ],
+    if (MagicStarterConfig.hasSocialLoginFeatures() &&
+        MagicStarter.hasSocialLogin) ...[
+      const MagicStarterSocialDivider(),
+      MagicStarter.socialLoginBuilder!(context, isLoading),
+    ],
+  ],
+)
+```
+
+> [!NOTE]
+> Feature checks in views are read-only queries against the config. The view never toggles features — that is the domain of the CLI configure command or direct config edits.
+
+<a name="zero-business-logic"></a>
+## Zero Business Logic
+
+Views must contain zero business logic. All rules:
+
+- **No async operations** in views — `_submit()` calls a controller method and returns
+- **No state decisions** — the controller decides what happens after a form submit (navigation, error handling)
+- **No HTTP calls** — all API communication lives in controllers via `Http.post()`, `Http.get()`, etc.
+- **No direct navigation** — controllers use `NavigatesRoutes` mixin; views never call `context.go()`
+- **Local UI state only** — password visibility toggles (`_obscurePassword`), phone/email toggle in "both" mode, section-level loading spinners via local `ValueNotifier<bool>` fields
+
+```dart
+// CORRECT: view delegates to controller
+Future<void> _submit() async {
+  if (!form.validate()) return;
+  await controller.doLogin(
+    email: form.get('email'),
+    password: form.get('password'),
+  );
+}
+
+// WRONG: view makes API call
+Future<void> _submit() async {
+  final response = await Http.post('/auth/login', data: {...}); // Never do this
+}
+```
+
+---
+
+**Related Links:**
+
+- [Controllers](https://magic.fluttersdk.com/packages/starter/basics/controllers)
+- [Notifications](https://magic.fluttersdk.com/packages/starter/basics/notifications)
+- [Routes](https://magic.fluttersdk.com/packages/starter/basics/routes)
+- [Configuration](https://magic.fluttersdk.com/packages/starter/getting-started/configuration)
+- [Wind UI](https://magic.fluttersdk.com/packages/wind)
