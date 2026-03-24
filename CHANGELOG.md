@@ -4,14 +4,6 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### 📚 Documentation
-- **README**: Full pub.dev-ready README with badges, features table, quick start guide
-- **doc/ folder**: Comprehensive documentation (installation, configuration, authentication, profile, teams, notifications, views, CLI, architecture)
-- **CLAUDE.md**: Rewrite to match Magic ecosystem format
-
-### 🔧 Improvements
-- **Publishing**: Prepare package metadata, CI/CD workflows, and issue templates for pub.dev
-
 ## [0.0.1-alpha.1] - 2026-03-25
 
 ### ✨ Core Features
@@ -32,3 +24,20 @@ All notable changes to this project will be documented in this file.
 - **2 Layouts**: AppLayout (authenticated) and GuestLayout (auth pages)
 - **12 Views**: 6 auth, 1 profile, 3 teams, 2 notifications
 - **10 Widgets**: Reusable Wind UI components (auth form card, card, password confirm dialog, team selector, notification dropdown, two-factor modal, timezone select, user profile dropdown, social divider, page header)
+
+### 🐛 Bug Fixes
+- **Timezone**: Fix API field name and add comprehensive null safety checks
+- **Auth**: Correct register endpoint from `/auth/login` to `/auth/register`
+- **UI**: Remove flex Row from password confirm dialog buttons to prevent overflow
+
+### 🔧 Improvements
+- **Auth Events**: Add auth restored listener for app reload on team switch
+- **Validation**: Add input validation and network error handling to auth controllers
+- **Config**: Add HTTP timeout and retry configuration
+- **i18n**: Add notification and network error translation keys to en.stub
+
+### 📚 Documentation
+- **README**: Full pub.dev-ready README with badges, features table, quick start guide
+- **doc/ folder**: Comprehensive documentation (installation, configuration, authentication, profile, teams, notifications, views, CLI, architecture)
+- **CLAUDE.md**: Rewrite to match Magic ecosystem format
+- **Publishing**: Package metadata, CI/CD workflows, issue templates, LICENSE
