@@ -42,6 +42,103 @@ class MagicStarterTeamResolverConfig {
   });
 }
 
+/// Theme configuration for navigation colors and styling.
+///
+/// Allows consumer apps to override the default Wind UI `text-primary` tokens
+/// with custom colors, gradients, or light/dark mode-independent class names.
+///
+/// All fields are optional — defaults preserve the current behavior with no
+/// breaking changes.
+///
+/// ### Example
+/// ```dart
+/// MagicStarter.useNavigationTheme(
+///   MagicStarterNavigationTheme(
+///     activeItemClassName:
+///         'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
+///     brandClassName:
+///         'text-lg font-bold bg-gradient-to-r from-primary-400 to-accent-500 bg-clip-text text-transparent',
+///     bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
+///     avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
+///     avatarTextClassName: 'text-sm font-bold text-amber-600 dark:text-amber-400',
+///   ),
+/// );
+/// ```
+class MagicStarterNavigationTheme {
+  /// Active sidebar/drawer nav item className tokens.
+  ///
+  /// Applied to the `WDiv` that has `states: {if (isActive) 'active'}`. Each
+  /// token must include the `active:` prefix so the Wind CSS state system
+  /// activates it only when the item is selected.
+  ///
+  /// Defaults to `'active:text-primary active:bg-primary/10 dark:active:bg-primary/10'`.
+  final String activeItemClassName;
+
+  /// Hover className for sidebar/drawer nav items.
+  ///
+  /// Defaults to `'hover:bg-gray-100 dark:hover:bg-gray-800'`.
+  final String hoverItemClassName;
+
+  /// Brand/logo text className. Used when [brandBuilder] is `null`.
+  ///
+  /// Supports gradient text by combining Tailwind-like tokens, e.g.
+  /// `'text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent'`.
+  ///
+  /// Defaults to `'text-lg font-bold text-primary'`.
+  final String brandClassName;
+
+  /// Custom brand/logo widget builder.
+  ///
+  /// When set, renders this widget instead of the default app name text.
+  /// Receives the current [BuildContext] and should return any widget
+  /// (image, SVG, styled text, etc.). When `null`, falls back to a [WText]
+  /// using [brandClassName].
+  ///
+  /// ```dart
+  /// brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
+  /// ```
+  final Widget Function(BuildContext context)? brandBuilder;
+
+  /// Active bottom navigation item className tokens.
+  ///
+  /// Applied to both the icon and label [WIcon]/[WText] widgets that have
+  /// `states: isActive ? {'active'} : {}`. Each token must include the
+  /// `active:` prefix.
+  ///
+  /// Defaults to `'active:text-primary'`.
+  final String bottomNavActiveClassName;
+
+  /// Avatar background className for the sidebar user menu.
+  ///
+  /// Defaults to `'bg-primary/10 dark:bg-primary/10'`.
+  final String avatarClassName;
+
+  /// Avatar text/initial color className for the sidebar user menu.
+  ///
+  /// Defaults to `'text-sm font-bold text-primary'`.
+  final String avatarTextClassName;
+
+  /// Profile dropdown trigger avatar background className.
+  ///
+  /// Used for the default circular avatar rendered in
+  /// [MagicStarterUserProfileDropdown] when no custom [triggerBuilder] is set.
+  ///
+  /// Defaults to `'bg-gradient-to-tr from-primary to-gray-200'`.
+  final String dropdownAvatarClassName;
+
+  const MagicStarterNavigationTheme({
+    this.activeItemClassName =
+        'active:text-primary active:bg-primary/10 dark:active:bg-primary/10',
+    this.hoverItemClassName = 'hover:bg-gray-100 dark:hover:bg-gray-800',
+    this.brandClassName = 'text-lg font-bold text-primary',
+    this.brandBuilder,
+    this.bottomNavActiveClassName = 'active:text-primary',
+    this.avatarClassName = 'bg-primary/10 dark:bg-primary/10',
+    this.avatarTextClassName = 'text-sm font-bold text-primary',
+    this.dropdownAvatarClassName = 'bg-gradient-to-tr from-primary to-gray-200',
+  });
+}
+
 /// Configuration for app navigation sections.
 ///
 /// Apps register these via [MagicStarter.useNavigation] to populate
@@ -104,6 +201,10 @@ class MagicStarterManager {
   /// Custom notification type-to-icon/color mapper.
   /// When null, notification views use built-in defaults.
   MagicStarterNotificationTypeMapper? notificationTypeMapper;
+
+  /// Navigation theme configuration. Holds color/className overrides for the
+  /// app layout navigation elements (active item, brand, bottom nav, avatar).
+  MagicStarterNavigationTheme navigationTheme = const MagicStarterNavigationTheme();
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
@@ -264,6 +365,7 @@ class MagicStarterManager {
     headerBuilder = null;
     socialLoginBuilder = null;
     notificationTypeMapper = null;
+    navigationTheme = const MagicStarterNavigationTheme();
     _localeOptions = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;

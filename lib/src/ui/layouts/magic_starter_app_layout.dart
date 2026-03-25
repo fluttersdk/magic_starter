@@ -244,16 +244,19 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // -------------------------------------------------------------------------
 
   Widget _buildBrand(BuildContext context, {bool showClose = false}) {
+    final navTheme = MagicStarter.navigationTheme;
     return WDiv(
       className: '''
                 h-14 px-5 flex items-center justify-between
                 border-b border-gray-100 dark:border-gray-800
             ''',
       children: [
-        WText(
-          trans('app.name'),
-          className: 'text-lg font-bold text-primary',
-        ),
+        navTheme.brandBuilder != null
+            ? navTheme.brandBuilder!(context)
+            : WText(
+                trans('app.name'),
+                className: navTheme.brandClassName,
+              ),
         if (showClose)
           WAnchor(
             onTap: () => Navigator.pop(context),
@@ -402,6 +405,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     VoidCallback? onBeforeTap,
     bool isActive = false,
   }) {
+    final navTheme = MagicStarter.navigationTheme;
     return WAnchor(
       onTap: () {
         onBeforeTap?.call();
@@ -413,8 +417,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                     mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3
                     duration-150 text-sm font-medium
                     text-gray-600 dark:text-gray-400
-                    active:text-primary active:bg-primary/10 dark:active:bg-primary/10
-                    hover:bg-gray-100 dark:hover:bg-gray-800
+                    ${navTheme.activeItemClassName}
+                    ${navTheme.hoverItemClassName}
                 ''',
         children: [
           WIcon(icon, className: 'text-[20px]'),
@@ -473,6 +477,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     required String path,
     required bool isActive,
   }) {
+    final navTheme = MagicStarter.navigationTheme;
     return WAnchor(
       onTap: () => MagicRoute.to(path),
       child: WDiv(
@@ -481,12 +486,12 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           WIcon(
             isActive ? activeIcon : icon,
             states: isActive ? {'active'} : {},
-            className: 'text-2xl text-gray-400 active:text-primary',
+            className: 'text-2xl text-gray-400 ${navTheme.bottomNavActiveClassName}',
           ),
           WText(
             label,
             states: isActive ? {'active'} : {},
-            className: 'text-xs text-gray-400 active:text-primary',
+            className: 'text-xs text-gray-400 ${navTheme.bottomNavActiveClassName}',
           ),
         ],
       ),
@@ -503,6 +508,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     final initial = userName.isNotEmpty
         ? userName[0].toUpperCase()
         : trans('common.unknown');
+    final navTheme = MagicStarter.navigationTheme;
 
     return WDiv(
       className: 'p-3 border-t border-gray-100 dark:border-gray-800',
@@ -529,12 +535,12 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                   // Avatar
                   WDiv(
                     className: '''
-                      w-9 h-9 rounded-full bg-primary/10 dark:bg-primary/10
+                      w-9 h-9 rounded-full ${navTheme.avatarClassName}
                       flex items-center justify-center flex-shrink-0
                     ''',
                     child: WText(
                       initial,
-                      className: 'text-sm font-bold text-primary',
+                      className: navTheme.avatarTextClassName,
                     ),
                   ),
                   // Name + Email
