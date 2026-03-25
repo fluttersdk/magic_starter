@@ -238,6 +238,34 @@ class MagicStarter {
   /// Get the registered newsletter label, or `null` if not configured.
   static String? get newsletterLabel => manager.newsletterLabel;
 
+  /// Register a custom navigation theme.
+  ///
+  /// When set, overrides the default Wind UI `text-primary` tokens used for
+  /// active nav items, brand/logo, bottom nav, and user avatar colors.
+  ///
+  /// All fields in [MagicStarterNavigationTheme] are optional — pass only the
+  /// values you want to customise.
+  ///
+  /// ```dart
+  /// MagicStarter.useNavigationTheme(
+  ///   MagicStarterNavigationTheme(
+  ///     activeItemClassName:
+  ///         'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
+  ///     brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
+  ///   ),
+  /// );
+  /// ```
+  static void useNavigationTheme(MagicStarterNavigationTheme theme) {
+    manager.navigationTheme = theme;
+  }
+
+  /// Get the active navigation theme.
+  ///
+  /// Returns the theme registered via [useNavigationTheme], or a default
+  /// [MagicStarterNavigationTheme] instance when not configured.
+  static MagicStarterNavigationTheme get navigationTheme =>
+      manager.navigationTheme;
+
   /// Check if the starter is ready.
   static bool get isReady => manager.isReady;
 }

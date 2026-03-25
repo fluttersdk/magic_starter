@@ -28,10 +28,10 @@ lib/
 ├── config/
 │   └── magic_starter.dart          # Configuration template stub
 └── src/
-    ├── magic_starter_manager.dart  # Singleton registry: user model, team resolver, nav, views
+    ├── magic_starter_manager.dart  # Singleton registry: user model, team resolver, nav, navigation theme, views
     ├── configuration/              # 13 feature toggles (all default false, opt-in)
     ├── providers/                  # IoC registration, 9 Gate abilities, boot logic
-    ├── facades/                    # Static API: MagicStarter.useUserModel(), .view.make()
+    ├── facades/                    # Static API: MagicStarter.useUserModel(), .useNavigationTheme(), .view.make()
     ├── http/controllers/           # 7 controllers + NavigatesRoutes mixin
     │   └── concerns/              # Shared mixins (navigates_routes.dart)
     ├── routes/                     # Per-module route registration (feature-gated)
@@ -101,6 +101,8 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | Unnormalized notification keys | `NotificationController._normalizeMap()` is critical — backend returns mixed-case keys |
 | `MagicStarterCard` title padding in `noPadding` mode | When `noPadding: true`, title gets `px-6 pt-6 pb-3` — do NOT add extra padding around it manually |
 | `CardVariant` import | `CardVariant` is exported from the main barrel; import `package:magic_starter/magic_starter.dart` — no direct widget file import needed |
+| Navigation theme not affecting UI | `MagicStarter.useNavigationTheme()` must be called before the app layout is first painted — ideally in `AppServiceProvider.boot()` |
+| `brandBuilder` + `brandClassName` both set | `brandBuilder` wins — `brandClassName` is ignored when a builder is registered |
 
 ## Skills & Extensions
 

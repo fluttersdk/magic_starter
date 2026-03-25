@@ -7,6 +7,16 @@ All notable changes to this project will be documented in this file.
 ### ✨ New Features
 - **MagicStarterCard**: Added `CardVariant` enum (`surface`, `inset`, `elevated`) and a `variant` parameter so consumer apps can choose the card's visual style. Default is `CardVariant.surface`, which reproduces the original flat-border appearance and is fully backward-compatible.
 - **MagicStarterPageHeader**: Existing `actions` (List<Widget>) and `subtitle` support documented; added widget tests covering all parameters including responsive `sm:flex-row` layout.
+- **Configurable navigation theme**: Added `MagicStarterNavigationTheme` class and `MagicStarter.useNavigationTheme()` to allow consumer apps to override navigation colors and styles without breaking changes.
+  - `activeItemClassName` — sidebar/drawer active item tokens (default: `active:text-primary active:bg-primary/10 dark:active:bg-primary/10`)
+  - `hoverItemClassName` — sidebar/drawer hover tokens (default: `hover:bg-gray-100 dark:hover:bg-gray-800`)
+  - `brandClassName` — brand/logo text className including gradient support (default: `text-lg font-bold text-primary`)
+  - `brandBuilder` — custom brand widget builder (image/SVG/styled text); overrides `brandClassName` when set
+  - `bottomNavActiveClassName` — bottom nav active icon/label tokens (default: `active:text-primary`)
+  - `avatarClassName` — sidebar user menu avatar background (default: `bg-primary/10 dark:bg-primary/10`)
+  - `avatarTextClassName` — sidebar user menu avatar initial color (default: `text-sm font-bold text-primary`)
+  - `dropdownAvatarClassName` — profile dropdown trigger avatar background (default: `bg-gradient-to-tr from-primary to-gray-200`)
+  - All fields optional — zero breaking changes, existing apps continue to work unchanged
 
 ## [0.0.1-alpha.2] - 2026-03-25
 
