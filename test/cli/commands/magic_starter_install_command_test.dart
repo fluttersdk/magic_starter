@@ -922,6 +922,34 @@ flutter:
         );
       });
     });
+
+    test(
+      'notifications feature adds magic_notifications as version dependency, '
+      'not path dependency',
+      () async {
+        setupMagicProjectFiles(tempDir);
+
+        await command.runWith([
+          '--non-interactive',
+          '--features=notifications',
+          '--force',
+        ]);
+
+        final String pubspecContent =
+            File('${tempDir.path}/pubspec.yaml').readAsStringSync();
+
+        expect(
+          pubspecContent,
+          contains('magic_notifications'),
+          reason: 'magic_notifications dependency should be added to pubspec',
+        );
+        expect(
+          pubspecContent,
+          isNot(contains('path: ../magic_notifications')),
+          reason: 'magic_notifications must not be a hardcoded path dependency',
+        );
+      },
+    );
   });
 }
 

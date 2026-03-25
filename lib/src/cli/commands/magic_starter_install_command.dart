@@ -1115,10 +1115,10 @@ class MagicStarterInstallCommand extends Command {
     final String pubspecPath = '$projectRoot/pubspec.yaml';
     if (FileHelper.fileExists(pubspecPath)) {
       try {
-        ConfigEditor.addPathDependencyToPubspec(
+        ConfigEditor.addDependencyToPubspec(
           pubspecPath: pubspecPath,
           name: 'magic_notifications',
-          path: '../magic_notifications',
+          version: '^0.0.1-alpha.1',
         );
       } catch (_) {
         // Ignore YAML update failures to keep install resilient.
