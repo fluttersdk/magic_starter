@@ -53,6 +53,7 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
       BuildContext context, bool isOpen, bool isHovering) {
     final userName = Auth.user()?.get<String>('name') ?? trans('common.user');
     final initial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
+    final navTheme = MagicStarter.navigationTheme;
 
     return WDiv(
       states: {
@@ -62,7 +63,7 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
       className: '''
                 w-8 h-8
                 rounded-full
-                bg-gradient-to-tr from-primary to-gray-200
+                ${navTheme.dropdownAvatarClassName}
                 flex items-center justify-center
                 cursor-pointer
                 shadow-sm
