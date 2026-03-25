@@ -1,10 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+/// Visual style variants for [MagicStarterCard].
+///
+/// - [surface] — Default flat card: white/gray-800 background with a subtle border.
+/// - [inset] — Recessed appearance: slightly darker background (gray-50/gray-900)
+///   with the same border, useful for secondary or nested content sections.
+/// - [elevated] — Raised appearance: white/gray-800 background with a drop
+///   shadow instead of a border, making the card float above the page.
+enum CardVariant {
+  /// Default flat card with border (no shadow).
+  surface,
+
+  /// Slightly recessed card with a darker background and border.
+  inset,
+
+  /// Floating card with a drop shadow and no border.
+  elevated,
+}
+
 /// A reusable card component for Magic Starter views.
 ///
 /// Provides a consistent background, border, and padding.
 /// Optionally includes a title at the top.
+///
+/// ### Variant styles
+///
+/// Pass [variant] to control the visual appearance of the card:
+///
+/// ```dart
+/// MagicStarterCard(
+///   variant: CardVariant.elevated,
+///   child: ...,
+/// )
+/// ```
 ///
 /// When [noPadding] is `true`, the card omits its default `p-6` padding from
 /// the body so that full-bleed content (e.g. list rows that span edge-to-edge)
@@ -38,7 +67,7 @@ class MagicStarterCard extends StatelessWidget {
   /// The main content of the card.
   final Widget child;
 
-  /// Optional className to override the default card styling.
+  /// Optional className to override the default card styling entirely.
   final String? className;
 
   /// When `true`, removes the default `p-6 gap-4` padding from the card body
@@ -48,6 +77,12 @@ class MagicStarterCard extends StatelessWidget {
   /// aligns visually with padded row content (`px-6`).
   final bool noPadding;
 
+  /// The visual style variant for this card.
+  ///
+  /// Defaults to [CardVariant.surface] which reproduces the original card
+  /// appearance (white/gray-800 background, subtle border, no shadow).
+  final CardVariant variant;
+
   /// Creates a [MagicStarterCard].
   const MagicStarterCard({
     super.key,
@@ -55,16 +90,31 @@ class MagicStarterCard extends StatelessWidget {
     this.title,
     this.className,
     this.noPadding = false,
+    this.variant = CardVariant.surface,
   });
+
+  String get _variantClasses {
+    switch (variant) {
+      case CardVariant.surface:
+        return 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+      case CardVariant.inset:
+        return 'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700';
+      case CardVariant.elevated:
+        return 'bg-white dark:bg-gray-800 shadow-md';
+    }
+  }
+
+  String get _defaultClassName {
+    final v = _variantClasses;
+    return noPadding
+        ? 'w-full $v rounded-2xl overflow-hidden flex flex-col'
+        : 'w-full $v rounded-2xl p-6 flex flex-col gap-4';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final String defaultClassName = noPadding
-        ? 'w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden flex flex-col'
-        : 'w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col gap-4';
-
     return WDiv(
-      className: className ?? defaultClassName,
+      className: className ?? _defaultClassName,
       children: [
         if (title != null)
           if (noPadding)
