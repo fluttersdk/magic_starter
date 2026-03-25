@@ -13,6 +13,7 @@
 - [Layout Registry](#layout-registry)
 - [Feature-Gated Rendering](#feature-gated-rendering)
 - [Zero Business Logic](#zero-business-logic)
+- [Reusable Widgets](#reusable-widgets)
 
 <a name="introduction"></a>
 ## Introduction
@@ -456,3 +457,132 @@ Future<void> _submit() async {
 - [Routes](https://magic.fluttersdk.com/packages/starter/basics/routes)
 - [Configuration](https://magic.fluttersdk.com/packages/starter/getting-started/configuration)
 - [Wind UI](https://magic.fluttersdk.com/packages/wind)
+
+---
+
+<a name="reusable-widgets"></a>
+## Reusable Widgets
+
+Magic Starter exports standalone UI widgets that consumer apps can import and use directly without duplicating them locally. None of these widgets depend on internal controllers — they accept plain callbacks.
+
+All widgets are exported from `package:magic_starter/magic_starter.dart`.
+
+### MagicStarterPageHeader
+
+Full-width page header with responsive `sm:flex-row` layout and a `border-b` separator. All parameters beyond `title` are optional:
+
+```dart
+MagicStarterPageHeader(
+  title: trans('projects.title'),
+  subtitle: trans('projects.manage_subtitle'),  // optional
+  leading: const BackButton(),                  // optional
+  actions: [                                    // optional
+    WButton(onTap: _onCreate, child: WText(trans('projects.new'))),
+  ],
+)
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `title` | `String` | ✅ | Main heading text |
+| `subtitle` | `String?` | — | Secondary line below the title |
+| `leading` | `Widget?` | — | Widget placed before the title (e.g. back button) |
+| `actions` | `List<Widget>?` | — | Row of trailing action widgets (e.g. buttons) |
+
+### MagicStarterCard
+
+Card wrapper with an optional `title` slot, `noPadding` mode for full-bleed content, and three visual variants:
+
+| Variant | Background | Border | Shadow |
+|---------|-----------|--------|--------|
+| `CardVariant.surface` _(default)_ | `bg-white dark:bg-gray-800` | ✅ `border-gray-200` | — |
+| `CardVariant.inset` | `bg-gray-50 dark:bg-gray-900` | ✅ `border-gray-200` | — |
+| `CardVariant.elevated` | `bg-white dark:bg-gray-800` | — | ✅ `shadow-md` |
+
+```dart
+// Default padded surface card with title
+MagicStarterCard(
+  title: 'Team Members',
+  child: memberList,
+)
+
+// Full-bleed elevated card (e.g. data table)
+MagicStarterCard(
+  variant: CardVariant.elevated,
+  noPadding: true,
+  child: dataTable,
+)
+
+// Inset danger-zone card
+MagicStarterCard(
+  variant: CardVariant.inset,
+  title: 'Danger Zone',
+  child: deleteButton,
+)
+```
+
+When `noPadding` is `true` and a `title` is provided, the title automatically receives `px-6 pt-6 pb-3` spacing so it aligns with full-bleed row content that uses `px-6`.
+
+### MagicStarterPasswordConfirmDialog
+
+Standalone password-confirmation dialog. Pass an `onConfirm` callback that returns `null` on success or an error string to display inline. The dialog stays open on error; it closes automatically on success and returns `true`.
+
+```dart
+final confirmed = await MagicStarterPasswordConfirmDialog.show(
+  context,
+  title: trans('projects.delete_title'),
+  description: trans('projects.delete_description'),
+  onConfirm: (password) async {
+    // Return null to confirm, or an error string on failure.
+    return await ProjectService.delete(id, password: password);
+  },
+);
+
+if (confirmed) _removeProject();
+```
+
+Use with no `onConfirm` if you only need a confirmation gate (e.g. before a local-only destructive action):
+
+```dart
+final confirmed = await MagicStarterPasswordConfirmDialog.show(context);
+```
+
+> [!NOTE]
+> Without an `onConfirm` callback, the dialog closes with `true` as soon as the user taps Confirm (no async validation is performed).
+
+### MagicStarterTwoFactorModal
+
+Multi-step 2FA wizard modal. Step 1 displays the QR code and OTP input; Step 2 displays recovery codes with a copy button. The modal advances to Step 2 only when `onConfirm` returns `true`.
+
+```dart
+final success = await MagicStarterTwoFactorModal.show(
+  context,
+  setupData: {
+    'secret': '...',
+    'qr_svg': '...',         // raw SVG string
+    'recovery_codes': [...], // list of strings
+  },
+  onConfirm: (code) async {
+    return await TwoFactorService.confirmSetup(code);
+  },
+);
+```
+
+| `setupData` key | Type | Description |
+|-----------------|------|-------------|
+| `secret` | `String` | Manual entry key shown below the QR code |
+| `qr_svg` | `String` | Raw SVG markup rendered via `WSvg` with `preserve-colors` |
+| `recovery_codes` | `List<dynamic>` | Backup codes displayed on Step 2 |
+
+The modal can also be used for standalone re-authentication (e.g. before a sensitive action) by supplying minimal `setupData` with only the fields the flow needs.
+
+### Other Exported Widgets
+
+| Widget | Description |
+|--------|-------------|
+| `MagicStarterAuthFormCard` | Centered card wrapper (max 480 px) for auth-adjacent screens — invite accept, onboarding, etc. Accepts `title`, `subtitle`, optional `errorMessage`, and a theme-toggle button. |
+| `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones?search=...`. Debounces search at 300 ms and always includes the pre-selected value in options. |
+| `MagicStarterTeamSelector` | Current-team switcher dropdown. Requires `MagicStarter.teamResolver` to be registered. `compact` mode hides the team name label. |
+| `MagicStarterUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, and logout. Supports a custom `triggerBuilder`. |
+| `MagicStarterNotificationDropdown` | Bell-icon dropdown backed by a `Stream<List<DatabaseNotification>>`. Displays live unread badge, color-coded icons, and mark-as-read callbacks. |
+| `MagicStarterSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |

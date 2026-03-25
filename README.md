@@ -52,6 +52,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :bell: | **Notifications** | Real-time polling, mark read/unread, preference matrix |
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
+| :package: | **Reusable Widgets** | PageHeader, Card (3 variants), PasswordConfirmDialog, TwoFactorModal — all standalone |
 | :gear: | **13 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
@@ -171,6 +172,104 @@ MagicStarter.view.register('layout.guest', (context, {required child}) {
 ```
 
 All views are resolved through `MagicStarter.view.make('auth.login')` — the registry always wins over defaults.
+
+---
+
+## Reusable Widgets
+
+Magic Starter exports a set of standalone UI widgets that consumer apps can use directly — no internal controller coupling required.
+
+### MagicStarterPageHeader
+
+Full-width page header with title, optional subtitle, optional leading widget, and an `actions` list. Renders `sm:flex-row` responsive layout with a `border-b` divider:
+
+```dart
+MagicStarterPageHeader(
+  title: trans('projects.title'),
+  subtitle: trans('projects.manage_subtitle'),
+  leading: BackButton(),
+  actions: [
+    PrimaryButton(label: trans('projects.new'), onTap: _onCreate),
+  ],
+)
+```
+
+### MagicStarterCard
+
+Card wrapper with optional `title` slot, `noPadding` mode for full-bleed content, and three visual `variant` styles:
+
+| Variant | Appearance |
+|---------|-----------|
+| `CardVariant.surface` _(default)_ | White background, subtle border |
+| `CardVariant.inset` | Gray-50 recessed background, border |
+| `CardVariant.elevated` | White background, drop shadow — no border |
+
+```dart
+// Default surface card with title
+MagicStarterCard(
+  title: 'Team Members',
+  child: memberList,
+)
+
+// Full-bleed elevated card
+MagicStarterCard(
+  variant: CardVariant.elevated,
+  noPadding: true,
+  child: dataTable,
+)
+
+// Inset section card
+MagicStarterCard(
+  variant: CardVariant.inset,
+  title: 'Danger Zone',
+  child: deleteAccountButton,
+)
+```
+
+### MagicStarterPasswordConfirmDialog
+
+Standalone password-confirmation dialog. Pass an `onConfirm` callback that returns `null` on success or an error string to show inline. Works independently of any controller:
+
+```dart
+final confirmed = await MagicStarterPasswordConfirmDialog.show(
+  context,
+  title: trans('projects.delete_confirm_title'),
+  description: trans('projects.delete_confirm_description'),
+  onConfirm: (password) async {
+    final error = await ProjectService.deleteProject(id, password: password);
+    return error; // null = success, string = show error inline
+  },
+);
+
+if (confirmed) _removeProject();
+```
+
+### MagicStarterTwoFactorModal
+
+Multi-step 2FA wizard modal. Pass `setupData` (from the enable-2FA endpoint) and an `onConfirm` callback. Works for both initial setup and standalone re-authentication flows:
+
+```dart
+final success = await MagicStarterTwoFactorModal.show(
+  context,
+  setupData: response.data, // {secret, qr_svg, recovery_codes}
+  onConfirm: (code) async {
+    return await TwoFactorService.verify(code);
+  },
+);
+```
+
+### Other Exported Widgets
+
+| Widget | Purpose |
+|--------|---------|
+| `MagicStarterAuthFormCard` | Centered card wrapper for auth-adjacent screens (invite accept, onboarding) |
+| `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
+| `MagicStarterTeamSelector` | Current-team switcher dropdown with create/settings links |
+| `MagicStarterUserProfileDropdown` | User avatar menu with profile links and logout |
+| `MagicStarterNotificationDropdown` | Bell-icon dropdown with live unread badge and mark-as-read |
+| `MagicStarterSocialDivider` | "Or continue with" divider for auth forms |
+
+All widgets are exported from `package:magic_starter/magic_starter.dart`.
 
 ---
 
