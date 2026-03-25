@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.2] - 2026-03-25
+
+### 🐛 Bug Fixes
+- **Install Command**: Use version dependency (`^0.0.1-alpha.1`) for `magic_notifications` instead of hardcoded relative path that only works in monorepo development environment
+
 ## [0.0.1-alpha.1] - 2026-03-25
 
 ### ✨ Core Features
