@@ -99,10 +99,13 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | Manual `refreshNotifier` poke | `MagicStarterAppLayout.refreshNotifier` triggers layout rebuilds on auth change — don't poke manually |
 | Missing ValueNotifier disposal | Controllers with `ValueNotifier` fields must have `notifier.dispose()` in tearDown |
 | Unnormalized notification keys | `NotificationController._normalizeMap()` is critical — backend returns mixed-case keys |
+| `MagicStarterCard` title padding in `noPadding` mode | When `noPadding: true`, title gets `px-6 pt-6 pb-3` — do NOT add extra padding around it manually |
+| `CardVariant` import | `CardVariant` is exported from the main barrel; import `package:magic_starter/magic_starter.dart` — no direct widget file import needed |
 
 ## Skills & Extensions
 
 - `fluttersdk:magic-framework` — Magic Framework patterns: facades, service providers, IoC, Eloquent ORM, controllers, routing. Use for ANY code touching Magic APIs.
+- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MagicStarterCard` (with `CardVariant` enum: surface/inset/elevated), `MagicStarterPageHeader` (title, subtitle, leading, actions), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`. All accept plain callbacks — no internal controller coupling required.
 
 ## CI
 
