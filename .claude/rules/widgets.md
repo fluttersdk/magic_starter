@@ -16,5 +16,6 @@ path: "lib/src/ui/widgets/**/*.dart"
 - Social divider: `WDiv` + `WText('or')` centered — used between form and social login buttons
 - Page header: `WText` with consistent title styling, optional subtitle and action widget
 - User profile dropdown: `PopupMenuButton` with avatar, name, role — navigates to profile/logout
+- User profile dropdown avatar: uses `MagicStarter.navigationTheme.dropdownAvatarClassName` for the trigger avatar background — override via `MagicStarter.useNavigationTheme()`
 - Wind UI exclusively — no Material widgets except `Icons.*` for icon references
 - Dark mode: always pair light/dark classes: `bg-white dark:bg-gray-800`
