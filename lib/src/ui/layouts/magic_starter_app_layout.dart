@@ -486,12 +486,14 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           WIcon(
             isActive ? activeIcon : icon,
             states: isActive ? {'active'} : {},
-            className: 'text-2xl text-gray-400 ${navTheme.bottomNavActiveClassName}',
+            className:
+                'text-2xl text-gray-400 ${navTheme.bottomNavActiveClassName}',
           ),
           WText(
             label,
             states: isActive ? {'active'} : {},
-            className: 'text-xs text-gray-400 ${navTheme.bottomNavActiveClassName}',
+            className:
+                'text-xs text-gray-400 ${navTheme.bottomNavActiveClassName}',
           ),
         ],
       ),

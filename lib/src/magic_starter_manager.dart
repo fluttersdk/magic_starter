@@ -204,7 +204,8 @@ class MagicStarterManager {
 
   /// Navigation theme configuration. Holds color/className overrides for the
   /// app layout navigation elements (active item, brand, bottom nav, avatar).
-  MagicStarterNavigationTheme navigationTheme = const MagicStarterNavigationTheme();
+  MagicStarterNavigationTheme navigationTheme =
+      const MagicStarterNavigationTheme();
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].

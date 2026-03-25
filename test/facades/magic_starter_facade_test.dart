@@ -121,10 +121,13 @@ void main() {
         const customActive = 'active:text-purple-500 active:bg-purple-500/10';
         const customHover = 'hover:bg-purple-50 dark:hover:bg-purple-900/20';
         const customBrand = 'text-xl font-black text-purple-600';
-        const customBottomNav = 'active:text-purple-500 dark:active:text-purple-400';
+        const customBottomNav =
+            'active:text-purple-500 dark:active:text-purple-400';
         const customAvatar = 'bg-purple-500/10 dark:bg-purple-400/10';
-        const customAvatarText = 'text-sm font-bold text-purple-600 dark:text-purple-400';
-        const customDropdown = 'bg-gradient-to-tr from-purple-500 to-purple-300';
+        const customAvatarText =
+            'text-sm font-bold text-purple-600 dark:text-purple-400';
+        const customDropdown =
+            'bg-gradient-to-tr from-purple-500 to-purple-300';
 
         final theme = MagicStarterNavigationTheme(
           activeItemClassName: customActive,
