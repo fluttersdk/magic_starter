@@ -132,8 +132,7 @@ void main() {
     expect(card.variant, CardVariant.surface);
   });
 
-  testWidgets(
-      'CardVariant.inset with noPadding produces overflow-hidden class',
+  testWidgets('CardVariant.inset with noPadding produces overflow-hidden class',
       (tester) async {
     await tester.pumpWidget(
       wrap(
