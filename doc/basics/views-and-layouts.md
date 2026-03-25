@@ -221,6 +221,17 @@ MagicStarter.useNavigation(
   systemItems: [...],
   bottomItems: [...],
 );
+
+// Custom navigation colors and brand
+MagicStarter.useNavigationTheme(
+  MagicStarterNavigationTheme(
+    activeItemClassName:
+        'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
+    brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
+    bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
+    avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
+  ),
+);
 ```
 
 > [!TIP]

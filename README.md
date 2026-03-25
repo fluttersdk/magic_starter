@@ -174,6 +174,41 @@ All views are resolved through `MagicStarter.view.make('auth.login')` — the re
 
 ---
 
+## Navigation Theme
+
+Customize navigation colors, the brand/logo, and avatar styles without overriding any screens:
+
+```dart
+MagicStarter.useNavigationTheme(
+  MagicStarterNavigationTheme(
+    // Active nav item — supports independent light/dark tokens
+    activeItemClassName:
+        'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
+
+    // Brand: gradient text
+    brandClassName:
+        'text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+
+    // Brand: image/SVG logo (overrides brandClassName when set)
+    brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
+
+    // Bottom nav active color
+    bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
+
+    // Sidebar user menu avatar
+    avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
+    avatarTextClassName: 'text-sm font-bold text-amber-600 dark:text-amber-400',
+
+    // Profile dropdown trigger avatar
+    dropdownAvatarClassName: 'bg-gradient-to-tr from-amber-500 to-amber-300',
+  ),
+);
+```
+
+All fields are optional — defaults preserve the current `text-primary` / `bg-primary/10` behavior.
+
+---
+
 ## CLI Tools
 
 | Command | Description |

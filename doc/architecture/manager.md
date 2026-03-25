@@ -5,6 +5,7 @@
 - [User Model Registration](#user-model-registration)
 - [Team Resolver](#team-resolver)
 - [Navigation Configuration](#navigation-configuration)
+- [Navigation Theme](#navigation-theme)
 - [Header Builder](#header-builder)
 - [Logout Callback](#logout-callback)
 - [Notification Type Mapper](#notification-type-mapper)
@@ -132,6 +133,45 @@ The items are stored in `MagicStarterNavigationConfig`:
 | `bottomItems` | No | Mobile bottom navigation bar items (subset of main) |
 | `profileMenuItems` | No | Extra links in the profile dropdown, between "Profile Settings" and logout |
 
+<a name="navigation-theme"></a>
+## Navigation Theme
+
+`MagicStarterNavigationTheme` overrides the default Wind UI `text-primary` tokens used for active nav items, the brand/logo, bottom navigation, and user avatar colors — without requiring any view overrides.
+
+```dart
+MagicStarter.useNavigationTheme(
+  MagicStarterNavigationTheme(
+    activeItemClassName:
+        'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
+    brandClassName:
+        'text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+    brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
+    bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
+    avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
+    avatarTextClassName: 'text-sm font-bold text-amber-600 dark:text-amber-400',
+    dropdownAvatarClassName: 'bg-gradient-to-tr from-amber-500 to-amber-300',
+  ),
+);
+```
+
+All fields are optional — omitted fields fall back to the current defaults.
+
+| Field | Default | Controls |
+|-------|---------|---------|
+| `activeItemClassName` | `active:text-primary active:bg-primary/10 dark:active:bg-primary/10` | Sidebar/drawer active nav item |
+| `hoverItemClassName` | `hover:bg-gray-100 dark:hover:bg-gray-800` | Sidebar/drawer hover state |
+| `brandClassName` | `text-lg font-bold text-primary` | Brand/logo text style (supports gradient tokens) |
+| `brandBuilder` | `null` | Custom brand widget builder (image, SVG, etc.) — overrides `brandClassName` when set |
+| `bottomNavActiveClassName` | `active:text-primary` | Bottom nav active icon and label |
+| `avatarClassName` | `bg-primary/10 dark:bg-primary/10` | Sidebar user menu avatar background |
+| `avatarTextClassName` | `text-sm font-bold text-primary` | Sidebar user menu avatar initial color |
+| `dropdownAvatarClassName` | `bg-gradient-to-tr from-primary to-gray-200` | Profile dropdown trigger avatar gradient |
+
+The theme is stored on `MagicStarterManager` as `navigationTheme` and reset to defaults by `manager.reset()`. The active theme is read at widget build time, so `useNavigationTheme()` can be called at any point before the layout is first painted.
+
+> [!NOTE]
+> When `brandBuilder` is set, `brandClassName` is ignored. The builder receives the current `BuildContext` and should return any widget — `Image.asset`, `SvgPicture.asset`, a styled `WText`, etc.
+
 <a name="header-builder"></a>
 ## Header Builder
 
@@ -251,6 +291,7 @@ Default layouts:
 | `MagicStarter.createUser(data)` | `manager.userFactory(data)` |
 | `MagicStarter.useTeamResolver(...)` | `manager.teamResolver = config` |
 | `MagicStarter.useNavigation(...)` | `manager.navigationConfig = config` |
+| `MagicStarter.useNavigationTheme(theme)` | `manager.navigationTheme = theme` |
 | `MagicStarter.useHeader(builder)` | `manager.headerBuilder = builder` |
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |
 | `MagicStarter.useSocialLogin(builder)` | `manager.socialLoginBuilder = builder` |
