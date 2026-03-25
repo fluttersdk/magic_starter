@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.3] - 2026-03-26
+
 ### ✨ New Features
 - **MagicStarterCard**: Added `CardVariant` enum (`surface`, `inset`, `elevated`) and a `variant` parameter so consumer apps can choose the card's visual style. Default is `CardVariant.surface`, which reproduces the original flat-border appearance and is fully backward-compatible.
 - **MagicStarterPageHeader**: Existing `actions` (List<Widget>) and `subtitle` support documented; added widget tests covering all parameters including responsive `sm:flex-row` layout.
