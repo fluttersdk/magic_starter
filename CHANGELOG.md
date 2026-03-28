@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.4] - 2026-03-29
+
 ### ✨ New Features
 - **MagicStarterModalTheme**: Added configurable modal theme system via `MagicStarter.useModalTheme()` with 13 Wind UI className token fields (containerClassName, headerClassName, bodyClassName, footerClassName, titleClassName, descriptionClassName, primaryButtonClassName, secondaryButtonClassName, dangerButtonClassName, warningButtonClassName, errorClassName, inputClassName, maxWidth). All fields optional — zero breaking changes.
 - **MagicStarterConfirmDialog**: Generic confirmation dialog with `ConfirmDialogVariant` enum (`primary`, `danger`, `warning`). Static `show()` factory supports async `onConfirm` callback, custom labels, and description. Exported from barrel.
