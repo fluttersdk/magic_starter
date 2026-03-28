@@ -534,6 +534,44 @@ MagicStarterCard(
 
 When `noPadding` is `true` and a `title` is provided, the title automatically receives `px-6 pt-6 pb-3` spacing so it aligns with full-bleed row content that uses `px-6`.
 
+### MagicStarterConfirmDialog
+
+Generic confirmation dialog with variant-driven styling. Uses `MagicStarterDialogShell` internally for sticky header/footer layout. All classNames are read from `MagicStarter.manager.modalTheme` at build time.
+
+```dart
+final confirmed = await MagicStarterConfirmDialog.show(
+  context,
+  title: trans('teams.remove_member_label'),
+  description: trans('teams.confirm_remove_member'),
+  confirmLabel: trans('teams.remove'),
+  variant: ConfirmDialogVariant.danger,
+  onConfirm: () async {
+    await TeamService.removeMember(memberId);
+  },
+);
+
+if (confirmed) _refreshMembers();
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `title` | `String` | **required** | Dialog title text |
+| `description` | `String?` | `null` | Optional description below the title |
+| `confirmLabel` | `String?` | `trans('common.confirm')` | Confirm button label |
+| `cancelLabel` | `String?` | `trans('common.cancel')` | Cancel button label |
+| `variant` | `ConfirmDialogVariant` | `.primary` | Button styling variant |
+| `onConfirm` | `Future<void> Function()?` | `null` | Async action on confirm — dialog shows loading state |
+
+**Variants:**
+
+| Variant | Use case | Confirm button style |
+|---------|----------|---------------------|
+| `ConfirmDialogVariant.primary` | Neutral confirmations | `theme.primaryButtonClassName` |
+| `ConfirmDialogVariant.danger` | Destructive actions (delete, remove, revoke) | `theme.dangerButtonClassName` |
+| `ConfirmDialogVariant.warning` | Caution actions (leave, archive) | `theme.warningButtonClassName` |
+
+Returns `true` when confirmed, `false` when cancelled or dismissed.
+
 ### MagicStarterPasswordConfirmDialog
 
 Standalone password-confirmation dialog. Pass an `onConfirm` callback that returns `null` on success or an error string to display inline. The dialog stays open on error; it closes automatically on success and returns `true`.

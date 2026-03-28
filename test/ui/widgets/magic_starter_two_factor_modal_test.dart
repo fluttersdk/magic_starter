@@ -313,4 +313,30 @@ void main() {
       expect(dialogResult, isTrue);
     },
   );
+
+  // -------------------------------------------------------------------------
+  // Modal theme integration
+  // -------------------------------------------------------------------------
+  group('modal theme integration', () {
+    testWidgets('uses custom containerClassName from modal theme',
+        (WidgetTester tester) async {
+      MagicStarter.useModalTheme(
+        const MagicStarterModalTheme(
+          containerClassName: 'bg-custom-test-container rounded-3xl',
+        ),
+      );
+
+      await pumpModal(tester);
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv &&
+              widget.className != null &&
+              widget.className!.contains('bg-custom-test-container'),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
 }

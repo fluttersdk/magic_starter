@@ -160,5 +160,75 @@ void main() {
         );
       });
     });
+
+    // -------------------------------------------------------------------------
+    // modal registry
+    // -------------------------------------------------------------------------
+
+    group('modal registry', () {
+      test(
+          'registerModal() stores a builder that can be retrieved via makeModal()',
+          () {
+        const expected = SizedBox(key: Key('modal-widget'));
+        registry.registerModal('confirm', () => expected);
+
+        final Widget result = registry.makeModal('confirm');
+
+        expect(result, same(expected));
+      });
+
+      test('hasModal() returns true for registered key', () {
+        registry.registerModal('confirm', () => const SizedBox());
+
+        expect(registry.hasModal('confirm'), isTrue);
+      });
+
+      test('hasModal() returns false for unregistered key', () {
+        expect(registry.hasModal('non-existent'), isFalse);
+      });
+
+      test('makeModal() returns widget from registered builder', () {
+        registry.registerModal('alert', () => const Placeholder());
+
+        final Widget result = registry.makeModal('alert');
+
+        expect(result, isA<Placeholder>());
+      });
+
+      test('makeModal() throws StateError for unregistered key', () {
+        expect(
+          () => registry.makeModal('missing'),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('missing'),
+            ),
+          ),
+        );
+      });
+
+      test(
+          'clear() clears modal builders — hasModal() returns false after clear()',
+          () {
+        registry.registerModal('confirm', () => const SizedBox());
+        registry.registerModal('alert', () => const Placeholder());
+
+        registry.clear();
+
+        expect(registry.hasModal('confirm'), isFalse);
+        expect(registry.hasModal('alert'), isFalse);
+      });
+
+      test('makeModal() throws after clear()', () {
+        registry.registerModal('confirm', () => const SizedBox());
+        registry.clear();
+
+        expect(
+          () => registry.makeModal('confirm'),
+          throwsA(isA<StateError>()),
+        );
+      });
+    });
   });
 }

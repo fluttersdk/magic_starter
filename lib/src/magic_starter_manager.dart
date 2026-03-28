@@ -8,6 +8,9 @@ import 'models/magic_starter_nav_item.dart';
 import 'models/magic_starter_team.dart';
 import 'ui/layouts/magic_starter_app_layout.dart';
 import 'ui/layouts/magic_starter_guest_layout.dart';
+import 'ui/widgets/magic_starter_confirm_dialog.dart';
+import 'ui/widgets/magic_starter_password_confirm_dialog.dart';
+import 'ui/widgets/magic_starter_two_factor_modal.dart';
 import 'ui/magic_starter_view_registry.dart';
 import 'ui/views/auth/magic_starter_forgot_password_view.dart';
 import 'ui/views/auth/magic_starter_login_view.dart';
@@ -139,6 +142,119 @@ class MagicStarterNavigationTheme {
   });
 }
 
+/// Theme configuration for modal/dialog colors and styling.
+///
+/// Allows consumer apps to override the default Wind UI class names used for
+/// modal containers, headers, bodies, footers, buttons, inputs, and typography.
+///
+/// All fields are optional — defaults preserve a sensible dark-mode-aware style
+/// with no breaking changes.
+///
+/// ### Example
+/// ```dart
+/// MagicStarter.useModalTheme(
+///   MagicStarterModalTheme(
+///     containerClassName: 'bg-zinc-900 rounded-2xl border border-zinc-700',
+///     primaryButtonClassName:
+///         'px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
+///     maxWidth: 560.0,
+///   ),
+/// );
+/// ```
+class MagicStarterModalTheme {
+  /// Container/dialog background and border-radius className.
+  ///
+  /// Defaults to `'bg-white dark:bg-gray-800 rounded-2xl'`.
+  final String containerClassName;
+
+  /// Header section className (wraps title + description).
+  ///
+  /// Defaults to `'px-6 pt-6 pb-4'`.
+  final String headerClassName;
+
+  /// Body section className (main content area).
+  ///
+  /// Defaults to `'px-6 pb-4'`.
+  final String bodyClassName;
+
+  /// Footer section className (action buttons row).
+  ///
+  /// Defaults to `'px-6 py-4 bg-gray-50 dark:bg-gray-800/50'`.
+  final String footerClassName;
+
+  /// Title text className.
+  ///
+  /// Defaults to `'text-xl font-semibold text-gray-900 dark:text-white mb-2'`.
+  final String titleClassName;
+
+  /// Description/subtitle text className.
+  ///
+  /// Defaults to `'text-sm text-gray-600 dark:text-gray-400'`.
+  final String descriptionClassName;
+
+  /// Primary action button className.
+  ///
+  /// Defaults to
+  /// `'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium'`.
+  final String primaryButtonClassName;
+
+  /// Secondary/cancel action button className.
+  ///
+  /// Defaults to
+  /// `'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium'`.
+  final String secondaryButtonClassName;
+
+  /// Destructive/danger action button className.
+  ///
+  /// Defaults to
+  /// `'px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium'`.
+  final String dangerButtonClassName;
+
+  /// Warning action button className.
+  ///
+  /// Defaults to
+  /// `'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium'`.
+  final String warningButtonClassName;
+
+  /// Inline error message text className.
+  ///
+  /// Defaults to `'text-sm text-red-600 dark:text-red-400'`.
+  final String errorClassName;
+
+  /// Text input field className.
+  ///
+  /// Defaults to
+  /// `'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary'`.
+  final String inputClassName;
+
+  /// Maximum width of the modal dialog in logical pixels.
+  ///
+  /// Defaults to `448.0`.
+  final double maxWidth;
+
+  const MagicStarterModalTheme({
+    this.containerClassName = 'bg-white dark:bg-gray-800 rounded-2xl',
+    this.headerClassName = 'px-6 pt-6 pb-4',
+    this.bodyClassName = 'px-6 pb-4',
+    this.footerClassName = 'px-6 py-4 bg-gray-50 dark:bg-gray-800/50',
+    this.titleClassName =
+        'text-xl font-semibold text-gray-900 dark:text-white mb-2',
+    this.descriptionClassName = 'text-sm text-gray-600 dark:text-gray-400',
+    this.primaryButtonClassName =
+        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+    this.secondaryButtonClassName =
+        'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+    this.dangerButtonClassName =
+        'px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium',
+    this.warningButtonClassName =
+        'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium',
+    this.errorClassName = 'text-sm text-red-600 dark:text-red-400',
+    this.inputClassName =
+        'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
+    this.maxWidth = 448.0,
+  });
+}
+
 /// Configuration for app navigation sections.
 ///
 /// Apps register these via [MagicStarter.useNavigation] to populate
@@ -206,6 +322,10 @@ class MagicStarterManager {
   /// app layout navigation elements (active item, brand, bottom nav, avatar).
   MagicStarterNavigationTheme navigationTheme =
       const MagicStarterNavigationTheme();
+
+  /// Modal theme configuration. Holds className overrides for modal containers,
+  /// headers, bodies, footers, buttons, inputs, and typography.
+  MagicStarterModalTheme modalTheme = const MagicStarterModalTheme();
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
@@ -331,6 +451,22 @@ class MagicStarterManager {
       'layout.app',
       (child) => MagicStarterAppLayout(child: child),
     );
+    // Modals
+    _registerDefaultModal(
+      'modal.confirm',
+      () => MagicStarterConfirmDialog(title: trans('common.confirm')),
+    );
+    _registerDefaultModal(
+      'modal.password_confirm',
+      () => const MagicStarterPasswordConfirmDialog(),
+    );
+    _registerDefaultModal(
+      'modal.two_factor',
+      () => MagicStarterTwoFactorModal(
+        setupData: const {},
+        onConfirm: (_) async => false,
+      ),
+    );
   }
 
   void _registerDefault(String key, Widget Function() builder) {
@@ -342,6 +478,12 @@ class MagicStarterManager {
   void _registerDefaultLayout(String key, Widget Function(Widget) builder) {
     if (!_viewRegistry.hasLayout(key)) {
       _viewRegistry.registerLayout(key, builder);
+    }
+  }
+
+  void _registerDefaultModal(String key, Widget Function() builder) {
+    if (!_viewRegistry.hasModal(key)) {
+      _viewRegistry.registerModal(key, builder);
     }
   }
 
@@ -367,6 +509,7 @@ class MagicStarterManager {
     socialLoginBuilder = null;
     notificationTypeMapper = null;
     navigationTheme = const MagicStarterNavigationTheme();
+    modalTheme = const MagicStarterModalTheme();
     _localeOptions = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;

@@ -3,8 +3,9 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
-import '../../widgets/magic_starter_page_header.dart';
 import '../../widgets/magic_starter_card.dart';
+import '../../widgets/magic_starter_confirm_dialog.dart';
+import '../../widgets/magic_starter_page_header.dart';
 
 class MagicStarterTeamSettingsView
     extends MagicStatefulView<MagicStarterTeamController> {
@@ -320,24 +321,12 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
             if (!isOwner)
               WAnchor(
                 onTap: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(trans('teams.remove_member_label')),
-                      content: Text(trans('teams.confirm_remove_member')),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: Text(trans('common.cancel')),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          style:
-                              TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: Text(trans('teams.remove_member_label')),
-                        ),
-                      ],
-                    ),
+                  final confirmed = await MagicStarterConfirmDialog.show(
+                    context,
+                    title: trans('teams.remove_member_label'),
+                    description: trans('teams.confirm_remove_member'),
+                    confirmLabel: trans('teams.remove'),
+                    variant: ConfirmDialogVariant.danger,
                   );
                   if (confirmed == true) {
                     controller.removeMember(memberId);
@@ -407,24 +396,11 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
             ),
             WAnchor(
               onTap: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(trans('teams.cancel_invite_label')),
-                    content: Text(trans('teams.confirm_cancel_invite')),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: Text(trans('common.cancel')),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style:
-                            TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: Text(trans('teams.cancel_invite_label')),
-                      ),
-                    ],
-                  ),
+                final confirmed = await MagicStarterConfirmDialog.show(
+                  context,
+                  title: trans('teams.cancel_invite_label'),
+                  description: trans('teams.confirm_cancel_invite'),
+                  variant: ConfirmDialogVariant.danger,
                 );
                 if (confirmed == true) {
                   controller.cancelInvitation(invitationId);

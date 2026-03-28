@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:magic/magic.dart';
 
+import '../../facades/magic_starter.dart';
+
 /// A multi-step wizard modal widget for Two-Factor Authentication (2FA) setup.
 ///
 /// Handles displaying the QR code, confirming the initial OTP, and subsequently
@@ -108,6 +110,7 @@ class _MagicStarterTwoFactorModalState
   }
 
   Widget _buildSetupStep() {
+    final theme = MagicStarter.manager.modalTheme;
     final qrSvg = widget.setupData['qr_svg'] as String?;
     final secret = widget.setupData['secret'] as String?;
 
@@ -116,7 +119,7 @@ class _MagicStarterTwoFactorModalState
       children: [
         WText(
           trans('profile.two_factor_setup_description'),
-          className: 'text-sm text-gray-600 dark:text-gray-400',
+          className: theme.descriptionClassName,
         ),
         if (qrSvg != null && qrSvg.isNotEmpty)
           WDiv(
@@ -152,13 +155,12 @@ class _MagicStarterTwoFactorModalState
           type: InputType.number,
           labelClassName:
               'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-          className:
-              'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
+          className: theme.inputClassName,
         ),
         if (_errorMessage != null)
           WText(
             _errorMessage!,
-            className: 'text-red-500 dark:text-red-400 text-sm',
+            className: theme.errorClassName,
           ),
         WDiv(
           className: 'flex flex-row justify-end gap-2 wrap mt-2',
@@ -166,16 +168,14 @@ class _MagicStarterTwoFactorModalState
             WAnchor(
               onTap: _handleCancel,
               child: WDiv(
-                className:
-                    'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                className: theme.secondaryButtonClassName,
                 child: WText(trans('common.cancel')),
               ),
             ),
             WButton(
               onTap: _isLoading ? null : _handleConfirm,
               isLoading: _isLoading,
-              className:
-                  'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+              className: theme.primaryButtonClassName,
               child: WText(trans('common.confirm')),
             ),
           ],
@@ -185,6 +185,7 @@ class _MagicStarterTwoFactorModalState
   }
 
   Widget _buildRecoveryStep() {
+    final theme = MagicStarter.manager.modalTheme;
     final recoveryCodes = (widget.setupData['recovery_codes'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
@@ -195,7 +196,7 @@ class _MagicStarterTwoFactorModalState
       children: [
         WText(
           trans('profile.two_factor_recovery_codes_description'),
-          className: 'text-sm text-gray-600 dark:text-gray-400',
+          className: theme.descriptionClassName,
         ),
         WDiv(
           className: 'wrap gap-2',
@@ -232,8 +233,7 @@ class _MagicStarterTwoFactorModalState
           children: [
             WButton(
               onTap: _handleDone,
-              className:
-                  'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+              className: theme.primaryButtonClassName,
               child: WText(trans('common.done')),
             ),
           ],
@@ -244,26 +244,27 @@ class _MagicStarterTwoFactorModalState
 
   @override
   Widget build(BuildContext context) {
+    final theme = MagicStarter.manager.modalTheme;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 448,
+        constraints: BoxConstraints(
+          maxWidth: theme.maxWidth,
           maxHeight: 800,
         ),
         child: SingleChildScrollView(
           child: WDiv(
             className:
-                'bg-white dark:bg-gray-800 rounded-2xl flex flex-col w-full overflow-hidden',
+                '${theme.containerClassName} flex flex-col w-full overflow-hidden',
             children: [
               WDiv(
-                className: 'px-6 pt-6 pb-4',
+                className: theme.headerClassName,
                 children: [
                   WText(
                     trans('profile.two_factor_auth'),
-                    className:
-                        'text-xl font-semibold text-gray-900 dark:text-white mb-2',
+                    className: theme.titleClassName,
                   ),
                 ],
               ),

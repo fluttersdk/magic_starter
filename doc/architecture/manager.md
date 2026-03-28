@@ -6,6 +6,7 @@
 - [Team Resolver](#team-resolver)
 - [Navigation Configuration](#navigation-configuration)
 - [Navigation Theme](#navigation-theme)
+- [Modal Theme](#modal-theme)
 - [Header Builder](#header-builder)
 - [Logout Callback](#logout-callback)
 - [Notification Type Mapper](#notification-type-mapper)
@@ -172,6 +173,49 @@ The theme is stored on `MagicStarterManager` as `navigationTheme` and reset to d
 > [!NOTE]
 > When `brandBuilder` is set, `brandClassName` is ignored. The builder receives the current `BuildContext` and should return any widget — `Image.asset`, `SvgPicture.asset`, a styled `WText`, etc.
 
+<a name="modal-theme"></a>
+## Modal Theme
+
+`MagicStarterModalTheme` overrides the default Wind UI tokens used for all modal dialogs — confirmation dialogs, password prompts, and two-factor modals. Works the same way as `NavigationTheme`: register once, all modals pick up the tokens at build time.
+
+```dart
+MagicStarter.useModalTheme(
+  MagicStarterModalTheme(
+    containerClassName: 'rounded-2xl bg-white dark:bg-gray-900',
+    titleClassName: 'text-lg font-semibold text-gray-900 dark:text-white',
+    descriptionClassName: 'text-sm text-gray-500 dark:text-gray-400',
+    primaryButtonClassName: 'bg-primary hover:bg-primary/90 text-white',
+    dangerButtonClassName: 'bg-red-600 hover:bg-red-700 text-white',
+    warningButtonClassName: 'bg-amber-500 hover:bg-amber-600 text-white',
+    inputClassName: 'rounded-lg border border-gray-300 dark:border-gray-600',
+    maxWidth: 480,
+  ),
+);
+```
+
+All fields are optional — omitted fields fall back to the current defaults.
+
+| Field | Default | Controls |
+|-------|---------|---------|
+| `containerClassName` | Default dialog container | Outer dialog container background, border-radius, border |
+| `headerClassName` | Default header | Dialog header section (sticky top) |
+| `bodyClassName` | Default body | Scrollable body section |
+| `footerClassName` | Default footer | Dialog footer section (sticky bottom) |
+| `titleClassName` | Default title | Dialog title text style |
+| `descriptionClassName` | Default description | Dialog description/subtitle text style |
+| `primaryButtonClassName` | Default primary | Primary action button (confirm, save) |
+| `secondaryButtonClassName` | Default secondary | Secondary action button (cancel, dismiss) |
+| `dangerButtonClassName` | Default danger | Danger action button (delete, destroy) |
+| `warningButtonClassName` | Default warning | Warning action button |
+| `errorClassName` | Default error | Inline error message text style |
+| `inputClassName` | Default input | Text input fields inside dialogs |
+| `maxWidth` | `448.0` | Maximum dialog width in logical pixels |
+
+The theme is stored on `MagicStarterManager` as `modalTheme` and reset to defaults by `manager.reset()`. The active theme is read at widget build time, so `useModalTheme()` can be called at any point before a dialog is shown.
+
+> [!TIP]
+> Register your modal theme in `AppServiceProvider.boot()` alongside `useNavigationTheme()`. Both follow the same pattern — register once, all widgets read the tokens at build time.
+
 <a name="header-builder"></a>
 ## Header Builder
 
@@ -292,6 +336,7 @@ Default layouts:
 | `MagicStarter.useTeamResolver(...)` | `manager.teamResolver = config` |
 | `MagicStarter.useNavigation(...)` | `manager.navigationConfig = config` |
 | `MagicStarter.useNavigationTheme(theme)` | `manager.navigationTheme = theme` |
+| `MagicStarter.useModalTheme(theme)` | `manager.modalTheme = theme` |
 | `MagicStarter.useHeader(builder)` | `manager.headerBuilder = builder` |
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |
 | `MagicStarter.useSocialLogin(builder)` | `manager.socialLoginBuilder = builder` |

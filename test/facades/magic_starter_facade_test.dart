@@ -170,5 +170,193 @@ void main() {
         );
       });
     });
+
+    group('modal theme', () {
+      test('modalTheme returns default instance when not configured', () {
+        final theme = MagicStarter.modalTheme;
+
+        expect(
+          theme.containerClassName,
+          'bg-white dark:bg-gray-800 rounded-2xl',
+        );
+        expect(
+          theme.headerClassName,
+          'px-6 pt-6 pb-4',
+        );
+        expect(
+          theme.bodyClassName,
+          'px-6 pb-4',
+        );
+        expect(
+          theme.footerClassName,
+          'px-6 py-4 bg-gray-50 dark:bg-gray-800/50',
+        );
+        expect(
+          theme.titleClassName,
+          'text-xl font-semibold text-gray-900 dark:text-white mb-2',
+        );
+        expect(
+          theme.descriptionClassName,
+          'text-sm text-gray-600 dark:text-gray-400',
+        );
+        expect(
+          theme.primaryButtonClassName,
+          'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+        );
+        expect(
+          theme.secondaryButtonClassName,
+          'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+        );
+        expect(
+          theme.dangerButtonClassName,
+          'px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium',
+        );
+        expect(
+          theme.warningButtonClassName,
+          'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium',
+        );
+        expect(
+          theme.errorClassName,
+          'text-sm text-red-600 dark:text-red-400',
+        );
+        expect(
+          theme.inputClassName,
+          'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
+        );
+        expect(theme.maxWidth, 448.0);
+      });
+
+      test('useModalTheme() stores theme on manager', () {
+        const customTheme = MagicStarterModalTheme(
+          containerClassName: 'bg-gray-900 rounded-xl',
+        );
+
+        MagicStarter.useModalTheme(customTheme);
+
+        expect(MagicStarter.manager.modalTheme, equals(customTheme));
+      });
+
+      test('modalTheme getter returns the registered theme', () {
+        const customTheme = MagicStarterModalTheme(
+          containerClassName: 'bg-slate-800 rounded-3xl',
+          titleClassName: 'text-2xl font-bold text-white',
+        );
+
+        MagicStarter.useModalTheme(customTheme);
+
+        expect(MagicStarter.modalTheme, equals(customTheme));
+        expect(
+          MagicStarter.modalTheme.containerClassName,
+          'bg-slate-800 rounded-3xl',
+        );
+        expect(
+          MagicStarter.modalTheme.titleClassName,
+          'text-2xl font-bold text-white',
+        );
+      });
+
+      test('MagicStarterModalTheme preserves all custom field values', () {
+        const customContainer =
+            'bg-zinc-900 rounded-2xl border border-zinc-700';
+        const customHeader = 'px-8 pt-8 pb-6';
+        const customBody = 'px-8 pb-6';
+        const customFooter = 'px-8 py-6 bg-zinc-800';
+        const customTitle = 'text-2xl font-black text-white';
+        const customDescription = 'text-base text-zinc-400';
+        const customPrimary =
+            'px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold';
+        const customSecondary =
+            'px-6 py-3 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white font-semibold';
+        const customDanger =
+            'px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold';
+        const customWarning =
+            'px-6 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-semibold';
+        const customError = 'text-base text-rose-400';
+        const customInput =
+            'w-full px-4 py-4 rounded-xl bg-zinc-800 border border-zinc-600 text-white';
+        const customMaxWidth = 560.0;
+
+        const theme = MagicStarterModalTheme(
+          containerClassName: customContainer,
+          headerClassName: customHeader,
+          bodyClassName: customBody,
+          footerClassName: customFooter,
+          titleClassName: customTitle,
+          descriptionClassName: customDescription,
+          primaryButtonClassName: customPrimary,
+          secondaryButtonClassName: customSecondary,
+          dangerButtonClassName: customDanger,
+          warningButtonClassName: customWarning,
+          errorClassName: customError,
+          inputClassName: customInput,
+          maxWidth: customMaxWidth,
+        );
+
+        expect(theme.containerClassName, customContainer);
+        expect(theme.headerClassName, customHeader);
+        expect(theme.bodyClassName, customBody);
+        expect(theme.footerClassName, customFooter);
+        expect(theme.titleClassName, customTitle);
+        expect(theme.descriptionClassName, customDescription);
+        expect(theme.primaryButtonClassName, customPrimary);
+        expect(theme.secondaryButtonClassName, customSecondary);
+        expect(theme.dangerButtonClassName, customDanger);
+        expect(theme.warningButtonClassName, customWarning);
+        expect(theme.errorClassName, customError);
+        expect(theme.inputClassName, customInput);
+        expect(theme.maxWidth, customMaxWidth);
+      });
+
+      test('manager reset() restores default modal theme', () {
+        MagicStarter.useModalTheme(
+          const MagicStarterModalTheme(
+            containerClassName: 'bg-custom rounded-none',
+          ),
+        );
+
+        expect(
+          MagicStarter.modalTheme.containerClassName,
+          'bg-custom rounded-none',
+        );
+
+        MagicStarter.manager.reset();
+
+        expect(
+          MagicStarter.modalTheme.containerClassName,
+          'bg-white dark:bg-gray-800 rounded-2xl',
+        );
+      });
+    });
+
+    group('modal registry defaults', () {
+      test('default modal.confirm is registered after manager init', () {
+        expect(MagicStarter.view.hasModal('modal.confirm'), isTrue);
+      });
+
+      test('default modal.password_confirm is registered', () {
+        expect(MagicStarter.view.hasModal('modal.password_confirm'), isTrue);
+      });
+
+      test('default modal.two_factor is registered', () {
+        expect(MagicStarter.view.hasModal('modal.two_factor'), isTrue);
+      });
+
+      test(
+          'manager.reset() clears consumer overrides and re-registers defaults',
+          () {
+        // Consumer override is lost on reset — default is re-registered
+        MagicStarter.view
+            .registerModal('modal.confirm', () => const SizedBox());
+        MagicStarter.manager.reset();
+        expect(MagicStarter.view.hasModal('modal.confirm'), isTrue);
+      });
+
+      test('manager.reset() re-registers default modals', () {
+        MagicStarter.manager.reset();
+        expect(MagicStarter.view.hasModal('modal.confirm'), isTrue);
+        expect(MagicStarter.view.hasModal('modal.password_confirm'), isTrue);
+        expect(MagicStarter.view.hasModal('modal.two_factor'), isTrue);
+      });
+    });
   });
 }

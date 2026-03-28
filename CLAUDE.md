@@ -2,7 +2,7 @@
 
 Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & Notifications — 13 opt-in features, every screen overridable via Wind UI.
 
-**Version:** 0.0.1-alpha.3 · **Dart:** >=3.6.0 · **Flutter:** >=3.27.0
+**Version:** 0.0.1-alpha.4 · **Dart:** >=3.6.0 · **Flutter:** >=3.27.0
 
 ## Commands
 
@@ -103,11 +103,13 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | `CardVariant` import | `CardVariant` is exported from the main barrel; import `package:magic_starter/magic_starter.dart` — no direct widget file import needed |
 | Navigation theme not affecting UI | `MagicStarter.useNavigationTheme()` must be called before the app layout is first painted — ideally in `AppServiceProvider.boot()` |
 | `brandBuilder` + `brandClassName` both set | `brandBuilder` wins — `brandClassName` is ignored when a builder is registered |
+| Modal theme not affecting dialogs | `MagicStarter.useModalTheme()` must be called before any dialog is shown — ideally in `AppServiceProvider.boot()` |
+| Hardcoding dialog classNames | All modal classNames must come from `MagicStarter.manager.modalTheme` — never hardcode in widget build methods |
 
 ## Skills & Extensions
 
 - `fluttersdk:magic-framework` — Magic Framework patterns: facades, service providers, IoC, Eloquent ORM, controllers, routing. Use for ANY code touching Magic APIs.
-- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MagicStarterCard` (with `CardVariant` enum: surface/inset/elevated), `MagicStarterPageHeader` (title, subtitle, leading, actions), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`. All accept plain callbacks — no internal controller coupling required.
+- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MagicStarterCard` (with `CardVariant` enum: surface/inset/elevated), `MagicStarterPageHeader` (title, subtitle, leading, actions), `MagicStarterConfirmDialog` (with `ConfirmDialogVariant` enum: primary/danger/warning), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`. All accept plain callbacks — no internal controller coupling required. All modals read `MagicStarterModalTheme` tokens at build time.
 
 ## CI
 
