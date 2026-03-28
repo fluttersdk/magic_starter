@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 typedef MagicStarterViewBuilder = Widget Function();
 typedef MagicStarterLayoutBuilder = Widget Function(Widget child);
+typedef MagicStarterModalBuilder = Widget Function();
 
 /// Registry for starter view builders.
 ///
@@ -11,6 +12,8 @@ class MagicStarterViewRegistry {
       <String, MagicStarterViewBuilder>{};
   final Map<String, MagicStarterLayoutBuilder> _layouts =
       <String, MagicStarterLayoutBuilder>{};
+  final Map<String, MagicStarterModalBuilder> _modals =
+      <String, MagicStarterModalBuilder>{};
 
   /// Register a builder under the given key.
   void register(String key, MagicStarterViewBuilder builder) {
@@ -54,9 +57,31 @@ class MagicStarterViewRegistry {
     return builder(child);
   }
 
+  /// Register a modal builder under the given key.
+  void registerModal(String key, MagicStarterModalBuilder builder) {
+    _modals[key] = builder;
+  }
+
+  /// Returns true when a modal builder exists for [key].
+  bool hasModal(String key) => _modals.containsKey(key);
+
+  /// Build a modal widget by [key].
+  ///
+  /// Throws [StateError] when the key is not registered.
+  Widget makeModal(String key) {
+    final builder = _modals[key];
+
+    if (builder == null) {
+      throw StateError('No modal builder registered for key "$key".');
+    }
+
+    return builder();
+  }
+
   /// Remove all builders (useful for tests).
   void clear() {
     _builders.clear();
     _layouts.clear();
+    _modals.clear();
   }
 }

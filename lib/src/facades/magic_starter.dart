@@ -266,6 +266,34 @@ class MagicStarter {
   static MagicStarterNavigationTheme get navigationTheme =>
       manager.navigationTheme;
 
+  /// Register a custom modal theme.
+  ///
+  /// When set, overrides the default Wind UI class names used for modal
+  /// containers, headers, bodies, footers, buttons, inputs, and typography.
+  ///
+  /// All fields in [MagicStarterModalTheme] are optional — pass only the
+  /// values you want to customise.
+  ///
+  /// ```dart
+  /// MagicStarter.useModalTheme(
+  ///   MagicStarterModalTheme(
+  ///     containerClassName: 'bg-zinc-900 rounded-2xl border border-zinc-700',
+  ///     primaryButtonClassName:
+  ///         'px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
+  ///     maxWidth: 560.0,
+  ///   ),
+  /// );
+  /// ```
+  static void useModalTheme(MagicStarterModalTheme theme) {
+    manager.modalTheme = theme;
+  }
+
+  /// Get the active modal theme.
+  ///
+  /// Returns the theme registered via [useModalTheme], or a default
+  /// [MagicStarterModalTheme] instance when not configured.
+  static MagicStarterModalTheme get modalTheme => manager.modalTheme;
+
   /// Check if the starter is ready.
   static bool get isReady => manager.isReady;
 }

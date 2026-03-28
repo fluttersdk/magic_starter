@@ -4,13 +4,16 @@
 - [MagicStarterViewRegistry Class](#magicstarterviewregistry-class)
     - [Registering Views](#registering-views)
     - [Registering Layouts](#registering-layouts)
+    - [Registering Modals](#registering-modals)
     - [Checking Existence](#checking-existence)
     - [Building Widgets](#building-widgets)
     - [Clearing the Registry](#clearing-the-registry)
 - [Default View Keys](#default-view-keys)
 - [Default Layout Keys](#default-layout-keys)
+- [Default Modal Keys](#default-modal-keys)
 - [Overriding Views](#overriding-views)
 - [Overriding Layouts](#overriding-layouts)
+- [Overriding Modals](#overriding-modals)
 - [Route Integration](#route-integration)
 - [Testing](#testing)
 - [Related](#related)
@@ -25,11 +28,12 @@ The registry lives at `lib/src/ui/magic_starter_view_registry.dart` and is held 
 <a name="magicstarterviewregistry-class"></a>
 ## MagicStarterViewRegistry Class
 
-The registry maintains two internal maps — one for view builders and one for layout builders:
+The registry maintains three internal maps — one for view builders, one for layout builders, and one for modal builders:
 
 ```dart
 final Map<String, MagicStarterViewBuilder> _builders = {};
 final Map<String, MagicStarterLayoutBuilder> _layouts = {};
+final Map<String, MagicStarterViewBuilder> _modals = {};
 ```
 
 The builder typedefs:
@@ -57,12 +61,22 @@ void registerLayout(String key, MagicStarterLayoutBuilder builder)
 
 Stores a layout builder under the given key. Layout builders receive a `Widget child` and wrap it in a layout shell (sidebar, header, footer, etc.).
 
+<a name="registering-modals"></a>
+### Registering Modals
+
+```dart
+void registerModal(String key, MagicStarterViewBuilder builder)
+```
+
+Stores a modal builder under the given key. Modal builders return a widget that is displayed inside a dialog shell. If the key already exists, the previous builder is replaced.
+
 <a name="checking-existence"></a>
 ### Checking Existence
 
 ```dart
 bool has(String key)       // true when a view builder exists for key
 bool hasLayout(String key) // true when a layout builder exists for key
+bool hasModal(String key)  // true when a modal builder exists for key
 ```
 
 Used internally by `registerDefaultViews()` to implement the "register if absent" pattern.
@@ -73,6 +87,7 @@ Used internally by `registerDefaultViews()` to implement the "register if absent
 ```dart
 Widget make(String key)
 Widget makeLayout(String key, {required Widget child})
+Widget makeModal(String key)
 ```
 
 Both methods throw `StateError` when the requested key is not registered:
@@ -91,7 +106,7 @@ throw StateError('No view builder registered for key "$key".');
 void clear()
 ```
 
-Removes all view and layout builders. Used in test teardowns and by `MagicStarterManager.reset()`.
+Removes all view, layout, and modal builders. Used in test teardowns and by `MagicStarterManager.reset()`.
 
 <a name="default-view-keys"></a>
 ## Default View Keys
@@ -143,6 +158,15 @@ These are registered by `MagicStarterManager.registerDefaultViews()` at construc
 | `layout.app` | `MagicStarterAppLayout` | Authenticated pages — sidebar, header, bottom nav |
 | `layout.guest` | `MagicStarterGuestLayout` | Auth pages — centered card, minimal chrome |
 
+<a name="default-modal-keys"></a>
+## Default Modal Keys
+
+| Key | Modal | Purpose |
+|-----|-------|---------|
+| `modal.confirm` | `MagicStarterConfirmDialog` | Generic confirmation with `ConfirmDialogVariant` (primary/danger/warning) |
+| `modal.password_confirm` | `MagicStarterPasswordConfirmDialog` | Password-confirmation prompt with inline error handling |
+| `modal.two_factor` | `MagicStarterTwoFactorModal` | Multi-step 2FA wizard (QR code, OTP confirm, recovery codes) |
+
 <a name="overriding-views"></a>
 ## Overriding Views
 
@@ -184,6 +208,23 @@ MagicStarter.view.registerLayout(
 
 > [!NOTE]
 > When overriding `layout.app`, your custom layout is responsible for rendering navigation, header, and responsive behavior. The plugin's controllers still work — only the layout shell changes.
+
+<a name="overriding-modals"></a>
+## Overriding Modals
+
+Replace the default modal for any registered key:
+
+```dart
+MagicStarter.view.registerModal(
+  'modal.confirm',
+  () => const MyCustomConfirmDialog(),
+);
+```
+
+Modal builders follow the same "register if absent" pattern as views and layouts. Overrides registered before the manager is instantiated take precedence automatically.
+
+> [!TIP]
+> Override modals when you need a completely custom dialog design. For style-only changes (colors, fonts, borders), use `MagicStarter.useModalTheme()` instead — it requires no view overrides.
 
 <a name="route-integration"></a>
 ## Route Integration

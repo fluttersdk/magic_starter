@@ -52,7 +52,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :bell: | **Notifications** | Real-time polling, mark read/unread, preference matrix |
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
-| :package: | **Reusable Widgets** | PageHeader, Card (3 variants), PasswordConfirmDialog, TwoFactorModal — all standalone |
+| :package: | **Reusable Widgets** | PageHeader, Card (3 variants), ConfirmDialog (3 variants), PasswordConfirmDialog, TwoFactorModal — all standalone |
 | :gear: | **13 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
@@ -273,7 +273,9 @@ All widgets are exported from `package:magic_starter/magic_starter.dart`.
 
 ---
 
-## Navigation Theme
+## Theming
+
+### Navigation Theme
 
 Customize navigation colors, the brand/logo, and avatar styles without overriding any screens:
 
@@ -304,7 +306,23 @@ MagicStarter.useNavigationTheme(
 );
 ```
 
-All fields are optional — defaults preserve the current `text-primary` / `bg-primary/10` behavior.
+### Modal Theme
+
+Customize dialog and modal styles — confirmation dialogs, password prompts, and two-factor modals all read from this theme:
+
+```dart
+MagicStarter.useModalTheme(
+  MagicStarterModalTheme(
+    containerClassName: 'rounded-2xl bg-white dark:bg-gray-900',
+    titleClassName: 'text-lg font-semibold text-gray-900 dark:text-white',
+    primaryButtonClassName: 'bg-primary hover:bg-primary/90 text-white',
+    dangerButtonClassName: 'bg-red-600 hover:bg-red-700 text-white',
+    maxWidth: 480,
+  ),
+);
+```
+
+All theme fields are optional — omitted fields fall back to sensible defaults. Call both `useNavigationTheme()` and `useModalTheme()` in `AppServiceProvider.boot()` before any UI is painted.
 
 ---
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../facades/magic_starter.dart';
+
 /// A reusable dialog widget that prompts the user to confirm their password.
 ///
 /// This dialog maintains its own standalone state for the password input,
@@ -106,39 +108,40 @@ class _MagicStarterPasswordConfirmDialogState
 
   @override
   Widget build(BuildContext context) {
+    final theme = MagicStarter.manager.modalTheme;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 448,
+        constraints: BoxConstraints(
+          maxWidth: theme.maxWidth,
           maxHeight: 600,
         ),
         child: SingleChildScrollView(
           child: WDiv(
             className:
-                'bg-white dark:bg-gray-800 rounded-2xl flex flex-col w-full overflow-hidden',
+                '${theme.containerClassName} flex flex-col w-full overflow-hidden',
             children: [
               // Header
               WDiv(
-                className: 'px-6 pt-6 pb-4',
+                className: theme.headerClassName,
                 children: [
                   WText(
                     widget.title ?? trans('profile.confirm_password'),
-                    className:
-                        'text-xl font-semibold text-gray-900 dark:text-white mb-2',
+                    className: theme.titleClassName,
                   ),
                   WText(
                     widget.description ??
                         trans('profile.confirm_password_description'),
-                    className: 'text-sm text-gray-600 dark:text-gray-400',
+                    className: theme.descriptionClassName,
                   ),
                 ],
               ),
 
               // Body
               WDiv(
-                className: 'px-6 pb-4',
+                className: theme.bodyClassName,
                 children: [
                   WFormInput(
                     controller: _passwordController,
@@ -150,8 +153,7 @@ class _MagicStarterPasswordConfirmDialogState
                         className: 'text-gray-400 text-xl',
                       ),
                     ),
-                    className:
-                        'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+                    className: '${theme.inputClassName} error:border-red-500',
                   ),
                 ],
               ),
@@ -159,17 +161,17 @@ class _MagicStarterPasswordConfirmDialogState
               // Inline error message (from async onConfirm)
               if (_errorMessage != null)
                 WDiv(
-                  className: 'px-6 pb-4',
+                  className: theme.bodyClassName,
                   child: WText(
                     _errorMessage!,
-                    className: 'text-sm text-red-600 dark:text-red-400',
+                    className: theme.errorClassName,
                   ),
                 ),
 
               // Footer
               WDiv(
                 className:
-                    'px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex flex-row gap-2 w-full',
+                    '${theme.footerClassName} flex flex-row gap-2 w-full',
                 children: [
                   WDiv(
                     className: 'flex-1',
@@ -177,7 +179,7 @@ class _MagicStarterPasswordConfirmDialogState
                       onTap: _isLoading ? null : _onCancel,
                       child: WDiv(
                         className:
-                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium text-center',
+                            '${theme.secondaryButtonClassName} text-center',
                         child: WText(trans('common.cancel')),
                       ),
                     ),
@@ -188,7 +190,7 @@ class _MagicStarterPasswordConfirmDialogState
                       onTap: _isLoading ? null : _onConfirm,
                       isLoading: _isLoading,
                       className:
-                          'w-full px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium text-center',
+                          'w-full ${theme.primaryButtonClassName} text-center',
                       child: WText(trans('common.confirm')),
                     ),
                   ),

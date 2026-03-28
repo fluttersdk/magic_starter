@@ -40,6 +40,7 @@ export 'src/ui/widgets/magic_starter_user_profile_dropdown.dart';
 export 'src/ui/widgets/magic_starter_social_divider.dart';
 export 'src/ui/widgets/magic_starter_notification_dropdown.dart';
 export 'src/ui/widgets/magic_starter_password_confirm_dialog.dart';
+export 'src/ui/widgets/magic_starter_confirm_dialog.dart';
 export 'src/ui/widgets/magic_starter_two_factor_modal.dart';
 export 'src/ui/widgets/magic_starter_timezone_select.dart';
 export 'src/ui/widgets/magic_starter_page_header.dart';

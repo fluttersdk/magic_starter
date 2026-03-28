@@ -157,4 +157,58 @@ void main() {
 
     expect(result, isTrue);
   });
+
+  group('modal theme integration', () {
+    testWidgets('uses custom containerClassName from modal theme',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      MagicStarter.useModalTheme(
+        const MagicStarterModalTheme(
+          containerClassName: 'bg-custom-test-container rounded-3xl',
+        ),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv &&
+              widget.className != null &&
+              widget.className!.contains('bg-custom-test-container'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('uses custom titleClassName from modal theme',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      MagicStarter.useModalTheme(
+        const MagicStarterModalTheme(
+          titleClassName: 'text-custom-title-class font-black',
+        ),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WText &&
+              widget.className != null &&
+              widget.className!.contains('text-custom-title-class'),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
 }
