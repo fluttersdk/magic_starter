@@ -454,7 +454,7 @@ class MagicStarterManager {
     // Modals
     _registerDefaultModal(
       'modal.confirm',
-      () => const MagicStarterConfirmDialog(title: ''),
+      () => MagicStarterConfirmDialog(title: trans('common.confirm')),
     );
     _registerDefaultModal(
       'modal.password_confirm',

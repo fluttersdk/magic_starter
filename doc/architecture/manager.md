@@ -209,7 +209,7 @@ All fields are optional — omitted fields fall back to the current defaults.
 | `warningButtonClassName` | Default warning | Warning action button |
 | `errorClassName` | Default error | Inline error message text style |
 | `inputClassName` | Default input | Text input fields inside dialogs |
-| `maxWidth` | `null` | Maximum dialog width in logical pixels |
+| `maxWidth` | `448.0` | Maximum dialog width in logical pixels |
 
 The theme is stored on `MagicStarterManager` as `modalTheme` and reset to defaults by `manager.reset()`. The active theme is read at widget build time, so `useModalTheme()` can be called at any point before a dialog is shown.
 

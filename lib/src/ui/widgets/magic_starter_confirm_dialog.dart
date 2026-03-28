@@ -88,7 +88,14 @@ class _MagicStarterConfirmDialogState extends State<MagicStarterConfirmDialog> {
 
     setState(() => _isLoading = true);
 
-    await widget.onConfirm?.call();
+    try {
+      await widget.onConfirm?.call();
+    } catch (e, stackTrace) {
+      Log.error('[MagicStarterConfirmDialog._onConfirm] $e\n$stackTrace');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      return;
+    }
 
     if (!mounted) return;
 

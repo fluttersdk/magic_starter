@@ -33,7 +33,7 @@ The registry maintains three internal maps — one for view builders, one for la
 ```dart
 final Map<String, MagicStarterViewBuilder> _builders = {};
 final Map<String, MagicStarterLayoutBuilder> _layouts = {};
-final Map<String, MagicStarterViewBuilder> _modals = {};
+final Map<String, MagicStarterModalBuilder> _modals = {};
 ```
 
 The builder typedefs:
@@ -41,6 +41,7 @@ The builder typedefs:
 ```dart
 typedef MagicStarterViewBuilder = Widget Function();
 typedef MagicStarterLayoutBuilder = Widget Function(Widget child);
+typedef MagicStarterModalBuilder = Widget Function();
 ```
 
 <a name="registering-views"></a>
@@ -65,7 +66,7 @@ Stores a layout builder under the given key. Layout builders receive a `Widget c
 ### Registering Modals
 
 ```dart
-void registerModal(String key, MagicStarterViewBuilder builder)
+void registerModal(String key, MagicStarterModalBuilder builder)
 ```
 
 Stores a modal builder under the given key. Modal builders return a widget that is displayed inside a dialog shell. If the key already exists, the previous builder is replaced.
@@ -90,7 +91,7 @@ Widget makeLayout(String key, {required Widget child})
 Widget makeModal(String key)
 ```
 
-Both methods throw `StateError` when the requested key is not registered:
+All three methods throw `StateError` when the requested key is not registered:
 
 ```dart
 throw StateError('No view builder registered for key "$key".');
