@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **MagicStarterPasswordConfirmDialog**: Footer buttons now right-aligned — added `w-full` to footer WDiv so `justify-end` stretches to container width
+- **MagicStarterTwoFactorModal**: Footer buttons now right-aligned in both setup and recovery steps — same `w-full` fix applied to both footer locations
+
 ## [0.0.1-alpha.5] - 2026-03-29
 
 ### Changed

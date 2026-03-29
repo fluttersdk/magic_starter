@@ -315,6 +315,143 @@ void main() {
   );
 
   // -------------------------------------------------------------------------
+  // Compact right-aligned button layout
+  // -------------------------------------------------------------------------
+  group('compact right-aligned button layout', () {
+    testWidgets('setup step footer has no flex-1 wrapper divs',
+        (WidgetTester tester) async {
+      await pumpModal(tester);
+
+      // Locate the footer container (the Wrap rendered by Wind's justify-end).
+      // Setup step has 'common.cancel' button as first button.
+      final footerWrapFinder = find
+          .ancestor(
+            of: find.text('common.cancel'),
+            matching: find.byType(Wrap),
+          )
+          .first;
+
+      // No flex-1 WDiv wrappers inside the footer.
+      final flex1Divs = find.descendant(
+        of: footerWrapFinder,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv && (widget.className?.contains('flex-1') ?? false),
+        ),
+      );
+      expect(flex1Divs, findsNothing);
+    });
+
+    testWidgets(
+        'setup step footer has w-full and justify-end for right-alignment',
+        (WidgetTester tester) async {
+      await pumpModal(tester);
+
+      // The setup step footer should be the WDiv ancestor of the cancel button
+      // and should include both justify-end and w-full in its className.
+      final footerDivFinder = find.ancestor(
+        of: find.text('common.cancel'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv &&
+              widget.className != null &&
+              widget.className!.contains('justify-end') &&
+              widget.className!.contains('w-full'),
+        ),
+      );
+
+      // Expect exactly one footer div with justify-end and w-full.
+      expect(footerDivFinder, findsOneWidget);
+    });
+
+    testWidgets('setup step footer confirm WButton has no w-full className',
+        (WidgetTester tester) async {
+      await pumpModal(tester);
+
+      // Find all WButton widgets.
+      final allButtons = find.byType(WButton);
+      expect(allButtons, findsWidgets);
+
+      // Verify that confirm buttons don't have w-full.
+      // The setup step confirm button is the one next to cancel.
+      final confirmButton = find.byWidgetPredicate(
+        (widget) =>
+            widget is WButton &&
+            widget.className != null &&
+            widget.className!.contains('w-full'),
+      );
+      expect(confirmButton, findsNothing);
+    });
+
+    testWidgets('recovery step footer has no flex-1 wrapper divs',
+        (WidgetTester tester) async {
+      // onConfirm always succeeds to advance to recovery step.
+      await pumpModal(
+        tester,
+        onConfirm: (_) async => true,
+      );
+
+      // Enter a valid 6-digit code and tap confirm to advance to recovery step.
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.pump();
+
+      await tester.tap(find.text('common.confirm'));
+      await tester.pumpAndSettle();
+
+      // Now on recovery step — find the footer Wrap via the 'common.done' button.
+      final footerWrapFinder = find
+          .ancestor(
+            of: find.text('common.done'),
+            matching: find.byType(Wrap),
+          )
+          .first;
+
+      // No flex-1 WDiv wrappers inside the footer.
+      final flex1Divs = find.descendant(
+        of: footerWrapFinder,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv && (widget.className?.contains('flex-1') ?? false),
+        ),
+      );
+      expect(flex1Divs, findsNothing);
+    });
+
+    testWidgets(
+        'recovery step footer has w-full and justify-end for right-alignment',
+        (WidgetTester tester) async {
+      // onConfirm always succeeds to advance to recovery step.
+      await pumpModal(
+        tester,
+        onConfirm: (_) async => true,
+      );
+
+      // Enter a valid 6-digit code and tap confirm.
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.pump();
+
+      await tester.tap(find.text('common.confirm'));
+      await tester.pumpAndSettle();
+
+      // Recovery step footer should be the WDiv ancestor of the Done button
+      // and should include both justify-end and w-full in its className.
+      final footerDivFinder = find.ancestor(
+        of: find.text('common.done'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv &&
+              widget.className != null &&
+              widget.className!.contains('justify-end') &&
+              widget.className!.contains('w-full'),
+        ),
+      );
+
+      // Expect exactly one footer div with justify-end and w-full.
+      expect(footerDivFinder, findsOneWidget);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Modal theme integration
   // -------------------------------------------------------------------------
   group('modal theme integration', () {

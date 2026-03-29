@@ -171,7 +171,7 @@ class _MagicStarterPasswordConfirmDialogState
               // Footer
               WDiv(
                 className:
-                    '${theme.footerClassName} flex flex-row justify-end gap-2 wrap',
+                    '${theme.footerClassName} flex flex-row w-full justify-end gap-2 wrap',
                 children: [
                   WAnchor(
                     onTap: _isLoading ? null : _onCancel,

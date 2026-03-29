@@ -54,6 +54,9 @@ class _MagicStarterTwoFactorModalState
   bool _isLoading = false;
   String? _errorMessage;
 
+  static const _footerClassName =
+      'flex flex-row w-full justify-end gap-2 wrap mt-2';
+
   @override
   void dispose() {
     _otpController.dispose();
@@ -163,7 +166,7 @@ class _MagicStarterTwoFactorModalState
             className: theme.errorClassName,
           ),
         WDiv(
-          className: 'flex flex-row justify-end gap-2 wrap mt-2',
+          className: _footerClassName,
           children: [
             WAnchor(
               onTap: _handleCancel,
@@ -229,7 +232,7 @@ class _MagicStarterTwoFactorModalState
           ],
         ),
         WDiv(
-          className: 'flex flex-row justify-end gap-2 wrap mt-2',
+          className: _footerClassName,
           children: [
             WButton(
               onTap: _handleDone,
