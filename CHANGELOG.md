@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### ✨ New Features
 - **MagicStarterPasswordConfirmDialog**: Added `ConfirmDialogVariant` support (`primary`, `danger`, `warning`) — confirm button now resolves color from variant via `_resolveConfirmClassName()`, matching `MagicStarterConfirmDialog` behavior. Both constructor and `show()` accept optional `variant` parameter, defaults to `ConfirmDialogVariant.primary` for backwards compatibility.
 
+### 🔧 Improvements
+- **Profile Settings**: Standardized dialog variants across all password-confirm call sites — `danger` for session revocation, `warning` for 2FA disable and recovery code regeneration, `primary` for neutral confirmations (enable 2FA, view codes)
+
 ## [0.0.1-alpha.6] - 2026-03-29
 
 ### 🐛 Bug Fixes
