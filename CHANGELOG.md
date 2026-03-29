@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.1-alpha.5] - 2026-03-29
+
+### Changed
+- **MagicStarterDialogShell**: Now exported publicly from the barrel (`package:magic_starter/magic_starter.dart`) — consumer apps can compose custom dialogs on top of it
+- **MagicStarterDialogShell**: `footer` parameter replaced with `footerBuilder` (`Widget Function(BuildContext dialogContext)?`) — provides the dialog's own `BuildContext` so callers can call `Navigator.pop(dialogContext)` without needing an outer context
+
+### Fixed
+- **MagicStarterConfirmDialog** and **MagicStarterPasswordConfirmDialog**: Buttons are now compact and right-aligned (`justify-end gap-2 wrap`) — previously rendered as full-width (`flex-1`) buttons that stretched across the footer
+- **MagicStarterDialogShell**: Body no longer creates a gap between scrollable content and the footer when content is shorter than the available height — switched from `SingleChildScrollView` to `ListView(shrinkWrap: true)`
 
 ## [0.0.1-alpha.4] - 2026-03-29
 

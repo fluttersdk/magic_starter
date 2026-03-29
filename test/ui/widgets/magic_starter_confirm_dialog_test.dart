@@ -322,6 +322,60 @@ void main() {
   );
 
   // ---------------------------------------------------------------------------
+  // Button layout
+  // ---------------------------------------------------------------------------
+
+  testWidgets(
+    'footer buttons are compact and right-aligned — no flex-1 wrappers',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+      addTearDown(() => tester.view.resetDevicePixelRatio());
+
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterConfirmDialog(title: 'Confirm?'),
+        ),
+      );
+
+      // Locate the specific footer Wrap that contains the cancel button.
+      final footerWrapFinder = find
+          .ancestor(
+            of: find.text('common.cancel'),
+            matching: find.byType(Wrap),
+          )
+          .first;
+
+      final wrapWidget = tester.widget<Wrap>(footerWrapFinder);
+
+      // Wrap alignment must be end (right-aligned).
+      expect(wrapWidget.alignment, WrapAlignment.end);
+
+      // Within the footer container, there must be no flex-1 WDiv wrappers.
+      final flex1WrapperFinder = find.descendant(
+        of: footerWrapFinder,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv && (widget.className?.contains('flex-1') ?? false),
+        ),
+      );
+      expect(flex1WrapperFinder, findsNothing);
+
+      // And no WButton in the footer should be forced to full width.
+      final fullWidthButtonFinder = find.descendant(
+        of: footerWrapFinder,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WButton &&
+              (widget.className?.contains('w-full') ?? false),
+        ),
+      );
+      expect(fullWidthButtonFinder, findsNothing);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // Theme integration
   // ---------------------------------------------------------------------------
 

@@ -171,28 +171,20 @@ class _MagicStarterPasswordConfirmDialogState
               // Footer
               WDiv(
                 className:
-                    '${theme.footerClassName} flex flex-row gap-2 w-full',
+                    '${theme.footerClassName} flex flex-row justify-end gap-2 wrap',
                 children: [
-                  WDiv(
-                    className: 'flex-1',
-                    child: WAnchor(
-                      onTap: _isLoading ? null : _onCancel,
-                      child: WDiv(
-                        className:
-                            '${theme.secondaryButtonClassName} text-center',
-                        child: WText(trans('common.cancel')),
-                      ),
+                  WAnchor(
+                    onTap: _isLoading ? null : _onCancel,
+                    child: WDiv(
+                      className: theme.secondaryButtonClassName,
+                      child: WText(trans('common.cancel')),
                     ),
                   ),
-                  WDiv(
-                    className: 'flex-1',
-                    child: WButton(
-                      onTap: _isLoading ? null : _onConfirm,
-                      isLoading: _isLoading,
-                      className:
-                          'w-full ${theme.primaryButtonClassName} text-center',
-                      child: WText(trans('common.confirm')),
-                    ),
+                  WButton(
+                    onTap: _isLoading ? null : _onConfirm,
+                    isLoading: _isLoading,
+                    className: theme.primaryButtonClassName,
+                    child: WText(trans('common.confirm')),
                   ),
                 ],
               ),
