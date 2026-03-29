@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.1-alpha.7] - 2026-03-29
 
 ### ✨ New Features
 - **MagicStarterPasswordConfirmDialog**: Added `ConfirmDialogVariant` support (`primary`, `danger`, `warning`) — confirm button now resolves color from variant via `_resolveConfirmClassName()`, matching `MagicStarterConfirmDialog` behavior. Both constructor and `show()` accept optional `variant` parameter, defaults to `ConfirmDialogVariant.primary` for backwards compatibility.
