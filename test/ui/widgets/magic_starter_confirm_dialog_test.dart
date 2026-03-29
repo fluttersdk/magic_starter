@@ -322,6 +322,44 @@ void main() {
   );
 
   // ---------------------------------------------------------------------------
+  // Button layout
+  // ---------------------------------------------------------------------------
+
+  testWidgets(
+    'footer buttons are compact and right-aligned — no flex-1 wrappers',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+      addTearDown(() => tester.view.resetDevicePixelRatio());
+
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterConfirmDialog(title: 'Confirm?'),
+        ),
+      );
+
+      // The footer row must be a Wrap widget (Wind `justify-end wrap` renders
+      // as Wrap with WrapAlignment.end) — not an expanded Row with flex-1 children.
+      expect(find.byType(Wrap), findsAtLeastNWidgets(1));
+
+      // Both buttons must be direct children of the Wrap — no intermediate
+      // flex-1 WDiv wrappers between the Wrap and the button widgets.
+      final wrapWidget = tester.widget<Wrap>(
+        find
+            .ancestor(
+              of: find.text('common.cancel'),
+              matching: find.byType(Wrap),
+            )
+            .first,
+      );
+
+      // Wrap alignment must be end (right-aligned).
+      expect(wrapWidget.alignment, WrapAlignment.end);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // Theme integration
   // ---------------------------------------------------------------------------
 

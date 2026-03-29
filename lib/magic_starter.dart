@@ -44,4 +44,6 @@ export 'src/ui/widgets/magic_starter_confirm_dialog.dart';
 export 'src/ui/widgets/magic_starter_two_factor_modal.dart';
 export 'src/ui/widgets/magic_starter_timezone_select.dart';
 export 'src/ui/widgets/magic_starter_page_header.dart';
+export 'src/ui/widgets/magic_starter_dialog_shell.dart';
+export 'src/ui/widgets/hide_bottom_nav.dart';
 export 'src/ui/views/teams/magic_starter_team_invitation_accept_view.dart';

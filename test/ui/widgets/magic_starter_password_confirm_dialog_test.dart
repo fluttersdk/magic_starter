@@ -158,6 +158,62 @@ void main() {
     expect(result, isTrue);
   });
 
+  group('compact right-aligned button layout', () {
+    testWidgets('footer has no flex-1 wrapper divs', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+
+      final flex1Divs = find.byWidgetPredicate(
+        (widget) =>
+            widget is WDiv &&
+            widget.className != null &&
+            widget.className!.contains('flex-1'),
+      );
+      expect(flex1Divs, findsNothing);
+    });
+
+    testWidgets('footer container uses justify-end for right-alignment',
+        (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv &&
+              widget.className != null &&
+              widget.className!.contains('justify-end'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('confirm WButton has no w-full className', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+
+      final wButtons = find.byWidgetPredicate(
+        (widget) =>
+            widget is WButton &&
+            widget.className != null &&
+            widget.className!.contains('w-full'),
+      );
+      expect(wButtons, findsNothing);
+    });
+  });
+
   group('modal theme integration', () {
     testWidgets('uses custom containerClassName from modal theme',
         (WidgetTester tester) async {

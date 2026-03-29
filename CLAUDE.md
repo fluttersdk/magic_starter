@@ -109,7 +109,7 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 ## Skills & Extensions
 
 - `fluttersdk:magic-framework` — Magic Framework patterns: facades, service providers, IoC, Eloquent ORM, controllers, routing. Use for ANY code touching Magic APIs.
-- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MagicStarterCard` (with `CardVariant` enum: surface/inset/elevated), `MagicStarterPageHeader` (title, subtitle, leading, actions), `MagicStarterConfirmDialog` (with `ConfirmDialogVariant` enum: primary/danger/warning), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`. All accept plain callbacks — no internal controller coupling required. All modals read `MagicStarterModalTheme` tokens at build time.
+- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MagicStarterCard` (with `CardVariant` enum: surface/inset/elevated), `MagicStarterPageHeader` (title, subtitle, leading, actions), `MagicStarterConfirmDialog` (with `ConfirmDialogVariant` enum: primary/danger/warning), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`, `MagicStarterDialogShell` (sticky header/footer + scrollable body shell; accepts `footerBuilder: Widget Function(BuildContext dialogContext)?` so callers can `Navigator.pop(dialogContext)` safely). All accept plain callbacks — no internal controller coupling required. All modals read `MagicStarterModalTheme` tokens at build time.
 
 ## CI
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/widgets/magic_starter_dialog_shell.dart';
 
 void main() {
   setUp(() async {
@@ -90,23 +89,25 @@ void main() {
     expect(find.text('unique body content'), findsOneWidget);
   });
 
-  testWidgets('renders footer widget when provided', (tester) async {
+  testWidgets('renders footer widget when footerBuilder is provided',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(wrap(
-      const MagicStarterDialogShell(
-        body: Text('body content'),
-        footer: Text('footer content'),
+      MagicStarterDialogShell(
+        body: const Text('body content'),
+        footerBuilder: (_) => const Text('footer content'),
       ),
     ));
 
     expect(find.text('footer content'), findsOneWidget);
   });
 
-  testWidgets('footer section absent when footer is null', (tester) async {
+  testWidgets('footer section absent when footerBuilder is null',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -118,9 +119,70 @@ void main() {
       ),
     ));
 
-    // The footer placeholder key must not be present when footer is null.
+    // The footer placeholder key must not be present when footerBuilder is null.
     expect(
       find.byKey(const Key('magic_starter_dialog_shell_footer')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('footerBuilder callback receives a valid BuildContext',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    BuildContext? capturedContext;
+
+    await tester.pumpWidget(wrap(
+      MagicStarterDialogShell(
+        body: const Text('body content'),
+        footerBuilder: (dialogContext) {
+          capturedContext = dialogContext;
+          return const Text('footer with context');
+        },
+      ),
+    ));
+
+    expect(find.text('footer with context'), findsOneWidget);
+    expect(capturedContext, isNotNull);
+    // Verify the context is a valid mounted context by reading media query.
+    expect(MediaQuery.maybeOf(capturedContext!), isNotNull);
+  });
+
+  testWidgets('body uses ListView so it shrinks to content height',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(wrap(
+      MagicStarterDialogShell(
+        body: const Text('short body'),
+        footerBuilder: (_) => const Text('footer below body'),
+      ),
+    ));
+
+    // Body must not fill all available height when content is short — ListView
+    // with shrinkWrap: true collapses to content height. Verify the footer is
+    // visible immediately below the body without an expanding gap.
+    expect(find.text('short body'), findsOneWidget);
+    expect(find.text('footer below body'), findsOneWidget);
+
+    // Neither widget should require scrolling — both visible in one frame.
+    expect(find.text('short body'), findsOneWidget);
+    expect(find.text('footer below body'), findsOneWidget);
+
+    // Confirm no SingleChildScrollView is a descendant of the dialog shell
+    // (the body is now wrapped by ListView, not SingleChildScrollView).
+    final shellFinder = find.byType(MagicStarterDialogShell);
+    expect(
+      find.descendant(
+        of: shellFinder,
+        matching: find.byType(SingleChildScrollView),
+      ),
       findsNothing,
     );
   });

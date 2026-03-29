@@ -127,27 +127,21 @@ class _MagicStarterConfirmDialogState extends State<MagicStarterConfirmDialog> {
       title: widget.title,
       description: widget.description,
       body: const SizedBox.shrink(),
-      footer: WDiv(
-        className: 'flex flex-row gap-2 w-full',
+      footerBuilder: (_) => WDiv(
+        className: 'flex flex-row justify-end gap-2 wrap',
         children: [
-          WDiv(
-            className: 'flex-1',
-            child: WAnchor(
-              onTap: _isLoading ? null : _onCancel,
-              child: WDiv(
-                className: theme.secondaryButtonClassName,
-                child: WText(cancelLabel),
-              ),
+          WAnchor(
+            onTap: _isLoading ? null : _onCancel,
+            child: WDiv(
+              className: theme.secondaryButtonClassName,
+              child: WText(cancelLabel),
             ),
           ),
-          WDiv(
-            className: 'flex-1',
-            child: WButton(
-              onTap: _isLoading ? null : _onConfirm,
-              isLoading: _isLoading,
-              className: 'w-full ${_resolveConfirmClassName()}',
-              child: WText(confirmLabel),
-            ),
+          WButton(
+            onTap: _isLoading ? null : _onConfirm,
+            isLoading: _isLoading,
+            className: _resolveConfirmClassName(),
+            child: WText(confirmLabel),
           ),
         ],
       ),
