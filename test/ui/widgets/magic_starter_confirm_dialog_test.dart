@@ -182,7 +182,7 @@ void main() {
                 result = await MagicStarterConfirmDialog.show(
                   context,
                   title: 'Are you sure?',
-                  onConfirm: () async => null,
+                  onConfirm: () async {},
                 );
               },
               child: const Text('Show'),
