@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../../facades/magic_starter.dart';
+import 'magic_starter_confirm_dialog.dart';
 
 /// A reusable dialog widget that prompts the user to confirm their password.
 ///
@@ -29,11 +30,15 @@ class MagicStarterPasswordConfirmDialog extends StatefulWidget {
   /// failure.
   final Future<String?> Function(String password)? onConfirm;
 
+  /// Visual variant that controls the confirm button colour.
+  final ConfirmDialogVariant variant;
+
   const MagicStarterPasswordConfirmDialog({
     super.key,
     this.title,
     this.description,
     this.onConfirm,
+    this.variant = ConfirmDialogVariant.primary,
   });
 
   /// Helper method to display the password confirmation dialog.
@@ -47,6 +52,7 @@ class MagicStarterPasswordConfirmDialog extends StatefulWidget {
     String? title,
     String? description,
     Future<String?> Function(String password)? onConfirm,
+    ConfirmDialogVariant variant = ConfirmDialogVariant.primary,
   }) {
     return showDialog<bool>(
       context: context,
@@ -55,6 +61,7 @@ class MagicStarterPasswordConfirmDialog extends StatefulWidget {
         title: title,
         description: description,
         onConfirm: onConfirm,
+        variant: variant,
       ),
     ).then((v) => v ?? false);
   }
@@ -104,6 +111,16 @@ class _MagicStarterPasswordConfirmDialogState
   void _onCancel() {
     if (_isLoading) return;
     Navigator.of(context).pop(false);
+  }
+
+  String _resolveConfirmClassName() {
+    final theme = MagicStarter.manager.modalTheme;
+
+    return switch (widget.variant) {
+      ConfirmDialogVariant.primary => theme.primaryButtonClassName,
+      ConfirmDialogVariant.danger => theme.dangerButtonClassName,
+      ConfirmDialogVariant.warning => theme.warningButtonClassName,
+    };
   }
 
   @override
@@ -183,7 +200,7 @@ class _MagicStarterPasswordConfirmDialogState
                   WButton(
                     onTap: _isLoading ? null : _onConfirm,
                     isLoading: _isLoading,
-                    className: theme.primaryButtonClassName,
+                    className: _resolveConfirmClassName(),
                     child: WText(trans('common.confirm')),
                   ),
                 ],

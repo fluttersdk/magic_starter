@@ -1,5 +1,7 @@
 ---
-path: "lib/src/ui/widgets/**/*.dart"
+name: 'UI Widget Conventions'
+description: 'Widget hierarchy, dialog patterns, card variants, theme consumption, Wind UI'
+applyTo: 'lib/src/ui/widgets/**/*.dart'
 ---
 
 # UI Widgets

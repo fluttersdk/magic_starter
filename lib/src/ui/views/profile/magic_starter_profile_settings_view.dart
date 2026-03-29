@@ -7,6 +7,7 @@ import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../widgets/magic_starter_card.dart';
 import '../../widgets/magic_starter_page_header.dart';
+import '../../widgets/magic_starter_confirm_dialog.dart';
 import '../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../widgets/magic_starter_two_factor_modal.dart';
 import '../../../http/controllers/magic_starter_newsletter_controller.dart';
@@ -260,6 +261,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     final success = await MagicStarterPasswordConfirmDialog.show(
       context,
+      variant: ConfirmDialogVariant.warning,
       onConfirm: (password) async {
         final ok = await _trackLoading(
           _twoFactorLoading,
@@ -312,6 +314,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     if (!context.mounted) return;
     await MagicStarterPasswordConfirmDialog.show(
       context,
+      variant: ConfirmDialogVariant.warning,
       onConfirm: (password) async {
         final codes = await _trackLoading(
           _twoFactorLoading,
@@ -346,6 +349,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     final success = await MagicStarterPasswordConfirmDialog.show(
       context,
+      variant: ConfirmDialogVariant.danger,
       onConfirm: (password) async {
         final ok = await _trackLoading(
           _sessionActionLoading,
@@ -375,6 +379,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     final success = await MagicStarterPasswordConfirmDialog.show(
       context,
+      variant: ConfirmDialogVariant.danger,
       onConfirm: (password) async {
         final ok = await _trackLoading(
           _sessionActionLoading,
