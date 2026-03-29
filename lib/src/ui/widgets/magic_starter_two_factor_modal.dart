@@ -163,7 +163,7 @@ class _MagicStarterTwoFactorModalState
             className: theme.errorClassName,
           ),
         WDiv(
-          className: 'flex flex-row justify-end gap-2 wrap mt-2',
+          className: 'flex flex-row w-full justify-end gap-2 wrap mt-2',
           children: [
             WAnchor(
               onTap: _handleCancel,
@@ -229,7 +229,7 @@ class _MagicStarterTwoFactorModalState
           ],
         ),
         WDiv(
-          className: 'flex flex-row justify-end gap-2 wrap mt-2',
+          className: 'flex flex-row w-full justify-end gap-2 wrap mt-2',
           children: [
             WButton(
               onTap: _handleDone,

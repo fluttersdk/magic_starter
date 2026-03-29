@@ -222,6 +222,24 @@ void main() {
       );
       expect(wButtons, findsNothing);
     });
+
+    testWidgets('footer WDiv has w-full className', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+
+      final footerDiv = find.byWidgetPredicate(
+        (widget) =>
+            widget is WDiv &&
+            widget.className != null &&
+            widget.className!.contains('justify-end') &&
+            widget.className!.contains('w-full'),
+      );
+      expect(footerDiv, findsOneWidget);
+    });
   });
 
   group('modal theme integration', () {
