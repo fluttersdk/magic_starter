@@ -165,15 +165,19 @@ void main() {
       ),
     ));
 
-    // Body must not fill all available height when content is short — ListView
-    // with shrinkWrap: true collapses to content height. Verify the footer is
-    // visible immediately below the body without an expanding gap.
+    // Both widgets must be rendered.
     expect(find.text('short body'), findsOneWidget);
     expect(find.text('footer below body'), findsOneWidget);
 
-    // Neither widget should require scrolling — both visible in one frame.
-    expect(find.text('short body'), findsOneWidget);
-    expect(find.text('footer below body'), findsOneWidget);
+    // Geometry assertion: footer must sit directly below the body content
+    // without an expanding gap. The distance between body bottom and footer
+    // top should be small (only theme padding, not leftover Flexible space).
+    final bodyBottom = tester.getBottomLeft(find.text('short body')).dy;
+    final footerTop = tester.getTopLeft(find.text('footer below body')).dy;
+    final gap = footerTop - bodyBottom;
+
+    // Gap should be modest (theme padding) — not hundreds of pixels.
+    expect(gap, lessThan(80));
 
     // Confirm no SingleChildScrollView is a descendant of the dialog shell
     // (the body is now wrapped by ListView, not SingleChildScrollView).

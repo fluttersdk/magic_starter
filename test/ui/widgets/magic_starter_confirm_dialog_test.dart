@@ -339,23 +339,39 @@ void main() {
         ),
       );
 
-      // The footer row must be a Wrap widget (Wind `justify-end wrap` renders
-      // as Wrap with WrapAlignment.end) — not an expanded Row with flex-1 children.
-      expect(find.byType(Wrap), findsAtLeastNWidgets(1));
+      // Locate the specific footer Wrap that contains the cancel button.
+      final footerWrapFinder = find
+          .ancestor(
+            of: find.text('common.cancel'),
+            matching: find.byType(Wrap),
+          )
+          .first;
 
-      // Both buttons must be direct children of the Wrap — no intermediate
-      // flex-1 WDiv wrappers between the Wrap and the button widgets.
-      final wrapWidget = tester.widget<Wrap>(
-        find
-            .ancestor(
-              of: find.text('common.cancel'),
-              matching: find.byType(Wrap),
-            )
-            .first,
-      );
+      final wrapWidget = tester.widget<Wrap>(footerWrapFinder);
 
       // Wrap alignment must be end (right-aligned).
       expect(wrapWidget.alignment, WrapAlignment.end);
+
+      // Within the footer container, there must be no flex-1 WDiv wrappers.
+      final flex1WrapperFinder = find.descendant(
+        of: footerWrapFinder,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv && (widget.className?.contains('flex-1') ?? false),
+        ),
+      );
+      expect(flex1WrapperFinder, findsNothing);
+
+      // And no WButton in the footer should be forced to full width.
+      final fullWidthButtonFinder = find.descendant(
+        of: footerWrapFinder,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WButton &&
+              (widget.className?.contains('w-full') ?? false),
+        ),
+      );
+      expect(fullWidthButtonFinder, findsNothing);
     },
   );
 

@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.1-alpha.5] - 2026-03-29
 
 ### Changed
 - **MagicStarterDialogShell**: Now exported publicly from the barrel (`package:magic_starter/magic_starter.dart`) — consumer apps can compose custom dialogs on top of it

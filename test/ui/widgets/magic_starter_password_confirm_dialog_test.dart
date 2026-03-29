@@ -167,11 +167,21 @@ void main() {
 
       await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
 
-      final flex1Divs = find.byWidgetPredicate(
-        (widget) =>
-            widget is WDiv &&
-            widget.className != null &&
-            widget.className!.contains('flex-1'),
+      // Locate the footer container (the Wrap rendered by Wind's justify-end).
+      final footerWrapFinder = find
+          .ancestor(
+            of: find.text('common.cancel'),
+            matching: find.byType(Wrap),
+          )
+          .first;
+
+      // No flex-1 WDiv wrappers inside the footer.
+      final flex1Divs = find.descendant(
+        of: footerWrapFinder,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv && (widget.className?.contains('flex-1') ?? false),
+        ),
       );
       expect(flex1Divs, findsNothing);
     });
