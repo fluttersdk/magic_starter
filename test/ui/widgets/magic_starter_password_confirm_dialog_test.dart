@@ -242,6 +242,103 @@ void main() {
     });
   });
 
+  // ---------------------------------------------------------------------------
+  // Variants
+  // ---------------------------------------------------------------------------
+
+  group('ConfirmDialogVariant support', () {
+    testWidgets('default variant is primary', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordConfirmDialog()));
+
+      final dialog = tester.widget<MagicStarterPasswordConfirmDialog>(
+        find.byType(MagicStarterPasswordConfirmDialog),
+      );
+
+      expect(dialog.variant, ConfirmDialogVariant.primary);
+    });
+
+    testWidgets('danger variant renders danger-styled confirm button',
+        (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterPasswordConfirmDialog(
+          variant: ConfirmDialogVariant.danger,
+        ),
+      ));
+
+      // Confirm button should use dangerButtonClassName (contains bg-red-500).
+      final dangerButton = find.byWidgetPredicate(
+        (widget) =>
+            widget is WButton &&
+            widget.className != null &&
+            widget.className!.contains('bg-red-500'),
+      );
+      expect(dangerButton, findsOneWidget);
+    });
+
+    testWidgets('warning variant renders warning-styled confirm button',
+        (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterPasswordConfirmDialog(
+          variant: ConfirmDialogVariant.warning,
+        ),
+      ));
+
+      // Confirm button should use warningButtonClassName (contains bg-amber-500).
+      final warningButton = find.byWidgetPredicate(
+        (widget) =>
+            widget is WButton &&
+            widget.className != null &&
+            widget.className!.contains('bg-amber-500'),
+      );
+      expect(warningButton, findsOneWidget);
+    });
+
+    testWidgets('show() passes variant to widget', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              await MagicStarterPasswordConfirmDialog.show(
+                context,
+                variant: ConfirmDialogVariant.danger,
+              );
+            },
+            child: const Text('Show'),
+          ),
+        ),
+      ));
+
+      await tester.tap(find.text('Show'));
+      await tester.pumpAndSettle();
+
+      final dialog = tester.widget<MagicStarterPasswordConfirmDialog>(
+        find.byType(MagicStarterPasswordConfirmDialog),
+      );
+
+      expect(dialog.variant, ConfirmDialogVariant.danger);
+    });
+  });
+
   group('modal theme integration', () {
     testWidgets('uses custom containerClassName from modal theme',
         (WidgetTester tester) async {
