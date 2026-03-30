@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### 🐛 Bug Fixes
+- **MagicStarterDialogShell**: Fixed mobile overflow — `maxHeight` now computed from safe area (`MediaQuery.viewPaddingOf`) instead of raw screen height; added vertical `insetPadding` (24px) to prevent dialog from extending to screen edges (#13)
+- **MagicStarterPasswordConfirmDialog**: Same safe area fix — replaced hardcoded `maxHeight: 600` with `safeHeight * 0.85`; added vertical `insetPadding`
+- **MagicStarterTwoFactorModal**: Same safe area fix — replaced hardcoded `maxHeight: 800` with `safeHeight * 0.85`; added vertical `insetPadding`
+
 ## [0.0.1-alpha.7] - 2026-03-29
 
 ### ✨ New Features
