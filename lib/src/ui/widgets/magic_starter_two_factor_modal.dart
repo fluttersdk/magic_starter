@@ -249,9 +249,10 @@ class _MagicStarterTwoFactorModalState
   Widget build(BuildContext context) {
     final theme = MagicStarter.manager.modalTheme;
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight = MediaQuery.sizeOf(context).height -
-        viewPadding.top -
-        viewPadding.bottom;
+    final safeHeight = (MediaQuery.sizeOf(context).height -
+            viewPadding.top -
+            viewPadding.bottom)
+        .clamp(0.0, double.infinity);
 
     return Dialog(
       backgroundColor: Colors.transparent,
