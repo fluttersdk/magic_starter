@@ -191,6 +191,102 @@ void main() {
     );
   });
 
+  group('mobile overflow safety', () {
+    testWidgets('Dialog has vertical insetPadding', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterDialogShell(
+          title: 'Test',
+          body: Text('body'),
+        ),
+      ));
+
+      final dialog = tester.widget<Dialog>(find.byType(Dialog));
+      final insetPadding = dialog.insetPadding as EdgeInsets;
+
+      expect(insetPadding.top, greaterThan(0));
+      expect(insetPadding.bottom, greaterThan(0));
+      expect(insetPadding.left, equals(16));
+      expect(insetPadding.right, equals(16));
+    });
+
+    testWidgets('maxHeight accounts for viewPadding safe area', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.viewPadding = const FakeViewPadding(
+        top: 44,
+        bottom: 34,
+      );
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewPadding);
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterDialogShell(
+          title: 'Test',
+          body: Text('body'),
+        ),
+      ));
+
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is ConstrainedBox &&
+              widget.constraints.maxHeight != double.infinity &&
+              widget.constraints.maxWidth != double.infinity,
+        ),
+      );
+      final maxHeight = constrainedBox.constraints.maxHeight;
+
+      // Screen height = 800, viewPadding top = 44, bottom = 34
+      // Safe height = 800 - 44 - 34 = 722
+      // maxHeight should be 722 * 0.85 = 613.7
+      // Without safe area it would be 800 * 0.85 = 680
+      expect(maxHeight, lessThan(680));
+      expect(maxHeight, closeTo(613.7, 1.0));
+    });
+
+    testWidgets('safeHeight is smaller than raw screen height', (tester) async {
+      tester.view.physicalSize = const Size(400, 600);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.viewPadding = const FakeViewPadding(
+        top: 44,
+        bottom: 34,
+      );
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewPadding);
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterDialogShell(
+          title: 'Test',
+          body: Text('body'),
+        ),
+      ));
+
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is ConstrainedBox &&
+              widget.constraints.maxHeight != double.infinity &&
+              widget.constraints.maxWidth != double.infinity,
+        ),
+      );
+      final maxHeight = constrainedBox.constraints.maxHeight;
+
+      // Screen height = 600, viewPadding top = 44, bottom = 34
+      // Safe height = 600 - 44 - 34 = 522
+      // maxHeight should be 522 * 0.85 = 443.7
+      // Without safe area it would be 600 * 0.85 = 510
+      expect(maxHeight, lessThan(510));
+      expect(maxHeight, closeTo(443.7, 1.0));
+    });
+  });
+
   testWidgets(
     'reads containerClassName from MagicStarter.manager.modalTheme',
     (tester) async {

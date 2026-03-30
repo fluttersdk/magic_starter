@@ -452,6 +452,67 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // Mobile overflow safety
+  // -------------------------------------------------------------------------
+  group('mobile overflow safety', () {
+    testWidgets('Dialog has vertical insetPadding', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(
+        MagicStarterTwoFactorModal(
+          setupData: kSetupData,
+          onConfirm: (_) async => true,
+        ),
+      ));
+
+      final dialog = tester.widget<Dialog>(find.byType(Dialog));
+      final insetPadding = dialog.insetPadding as EdgeInsets;
+
+      expect(insetPadding.top, greaterThan(0));
+      expect(insetPadding.bottom, greaterThan(0));
+      expect(insetPadding.left, equals(16));
+      expect(insetPadding.right, equals(16));
+    });
+
+    testWidgets('maxHeight accounts for viewPadding safe area', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.viewPadding = const FakeViewPadding(
+        top: 44,
+        bottom: 34,
+      );
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewPadding);
+
+      await tester.pumpWidget(wrap(
+        MagicStarterTwoFactorModal(
+          setupData: kSetupData,
+          onConfirm: (_) async => true,
+        ),
+      ));
+
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is ConstrainedBox &&
+              widget.constraints.maxHeight != double.infinity &&
+              widget.constraints.maxWidth != double.infinity,
+        ),
+      );
+      final maxHeight = constrainedBox.constraints.maxHeight;
+
+      // Without safe area: hardcoded 800
+      // With safe area: (800 - 44 - 34) * 0.85 = 613.7
+      expect(maxHeight, lessThan(800));
+      expect(maxHeight, closeTo(613.7, 1.0));
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Modal theme integration
   // -------------------------------------------------------------------------
   group('modal theme integration', () {

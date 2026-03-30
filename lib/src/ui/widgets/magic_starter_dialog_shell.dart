@@ -45,13 +45,21 @@ class MagicStarterDialogShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = MagicStarter.manager.modalTheme;
 
+    final viewPadding = MediaQuery.viewPaddingOf(context);
+    final safeHeight = MediaQuery.sizeOf(context).height -
+        viewPadding.top -
+        viewPadding.bottom;
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 24,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: theme.maxWidth,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+          maxHeight: safeHeight * 0.85,
         ),
         child: WDiv(
           className:
