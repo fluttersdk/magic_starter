@@ -91,6 +91,7 @@ class AppServiceProvider extends ServiceProvider {
         //
         //   Magic.findOrPut(DashboardState.new);
         //
-        // See: doc/architecture/controllers.md
+        // See the Magic Starter package documentation/repository for the
+        // controller architecture guide.
     }
 }

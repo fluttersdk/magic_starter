@@ -16,7 +16,7 @@
 
 Controllers in magic_starter are the single source of truth for business logic and async state. Every page-level view delegates all API calls, state transitions, and navigation to its paired controller. Views contain zero business logic — they render state and forward user input.
 
-The plugin ships seven controllers covering auth, profile, teams, notifications, OTP, guest auth, and newsletter flows. All seven follow the same structural pattern: lazy singleton via `Magic.findOrPut`, `MagicController + MagicStateMixin` for state, and `NavigatesRoutes` for navigation. Consumer apps building custom features on top of magic_starter should follow the same conventions for consistency.
+The plugin ships seven controllers covering auth, profile, teams, notifications, OTP, guest auth, and newsletter flows. All seven share the same structural core: lazy singleton via `Magic.findOrPut` and `MagicController + MagicStateMixin` for state. Controllers that handle page navigation also mix in `NavigatesRoutes` (auth, guest auth, profile), while others (notification, team, newsletter) manage state without navigation concerns. Consumer apps building custom features on top of magic_starter should follow the same conventions for consistency.
 
 <a name="lazy-singleton-pattern"></a>
 ## Lazy Singleton Pattern
@@ -69,7 +69,7 @@ The mixin provides these state-transition methods and read properties:
 | `hasErrors` | `true` when the controller holds an error message |
 | `renderState(builder, {onEmpty, onError})` | Widget factory — dispatches to the correct builder based on current state |
 
-The type parameter `T` is the success payload type. All plugin controllers use `MagicStateMixin<bool>` because they only need to signal success or failure, not carry data. When a controller needs to expose structured data it uses `ValueNotifier<T>` fields alongside `MagicStateMixin<bool>`.
+The type parameter `T` is the success payload type. `MagicStateMixin<bool>` is the most common pattern because many controllers only need to signal success or failure, not carry data. However, some controllers use a different success payload type (or omit the explicit type argument) and call `setSuccess(...)` with non-boolean data when the state itself needs to carry a result. Controllers may also expose structured data through `ValueNotifier<T>` fields alongside `MagicStateMixin<T>` when that produces a cleaner API.
 
 A standard async action looks like this:
 
@@ -259,7 +259,7 @@ Consumer apps have two options for wiring a controller to a view.
 
 ### Option A — MagicStatefulView (auto-listens)
 
-Extend `MagicStatefulView<T>` to get the controller resolved and subscribed automatically. This matches the pattern used by all eleven plugin views and is the recommended choice.
+Extend `MagicStatefulView<T>` to get the controller resolved and subscribed automatically. This matches the pattern used by most plugin views and is the recommended choice; `MagicStarterNotificationsListView` is the current exception — it is implemented as a plain `StatefulWidget` that manages state locally.
 
 ```dart
 class ProjectListView extends MagicStatefulView<ProjectController> {
@@ -462,6 +462,6 @@ Key rules:
 
 - [MagicStarterServiceProvider](https://magic.fluttersdk.com/packages/starter/architecture/service-provider) — bootstrap entry point, IoC bindings, and Gate ability registration
 - [MagicStarterManager](https://magic.fluttersdk.com/packages/starter/architecture/manager) — central singleton holding all customization registrations
-- [Views and Layouts](https://magic.fluttersdk.com/packages/starter/architecture/views-and-layouts) — MagicStatefulView lifecycle and Wind UI rendering conventions
+- [Views and Layouts](https://magic.fluttersdk.com/packages/starter/basics/views-and-layouts) — MagicStatefulView lifecycle and Wind UI rendering conventions
 - [Magic Framework — IoC Container](https://magic.fluttersdk.com/getting-started/ioc-container) — singleton, factory, and findOrPut reference
 - [Magic Framework — Service Providers](https://magic.fluttersdk.com/getting-started/service-providers) — two-phase bootstrap lifecycle

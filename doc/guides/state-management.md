@@ -8,7 +8,7 @@
 - [Registration Decision Tree](#registration-decision-tree)
 - [Connecting State to Views](#connecting-state-to-views)
   - [Pattern A: MagicStatefulView](#pattern-a-magicstatefulview)
-  - [Pattern B: StatefulWidget + Magic.find](#pattern-b-statefulwidget--magicfind)
+  - [Pattern B: StatefulWidget + Manual Access](#pattern-b-statefulwidget--manual-access)
 - [Testing](#testing)
 - [Complete Example](#complete-example)
 - [Related](#related)
@@ -19,7 +19,7 @@
 Magic Starter uses a three-part state management model built on the Magic Framework:
 
 1. **`MagicController`** — base class that provides lifecycle management and ties into the IoC container.
-2. **`MagicStateMixin<T>`** — mixin that adds a five-state machine (`loading`, `success`, `error`, `empty`) with `setLoading()`, `setSuccess()`, `setError()`, `clearErrors()`, and `renderState()` helpers.
+2. **`MagicStateMixin<T>`** — mixin that adds a four-state machine (`loading`, `success`, `error`, `empty`) with `setLoading()`, `setSuccess()`, `setError()`, `clearErrors()`, and `renderState()` helpers.
 3. **IoC container** — `Magic.findOrPut()` returns the existing singleton for a class or registers and returns a new one. Views never construct controllers directly.
 
 Consumer app controllers follow the exact same pattern as magic_starter's own controllers. You extend `MagicController`, mix in `MagicStateMixin<T>`, and expose a `static get instance` accessor backed by `Magic.findOrPut()`. Views bind to that accessor and call `renderState()` to drive conditional rendering.
@@ -66,7 +66,7 @@ class ProjectController extends MagicController
 
 Each async action follows the same lifecycle:
 
-1. Guard against re-entrant calls with a `_isSubmitting` flag.
+1. Guard against re-entrant calls with a `_isLoading` flag.
 2. Call `setLoading()` to transition the state machine.
 3. Perform the HTTP call via `Http.get()` / `Http.post()` / etc.
 4. Call `setSuccess(value)` on the happy path or `setError(message)` on failure.
@@ -175,7 +175,7 @@ Does the controller need to be ready before any view renders?
 Use `MagicStatefulView<ControllerType>` for all full-page views. The base class resolves `controller` automatically via `instance` and listens to state changes.
 
 ```dart
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
@@ -268,13 +268,13 @@ The `renderState()` method selects the builder based on the current `MagicStateM
 
 While the state is `loading`, `renderState()` displays a built-in loading indicator — no `onLoading` builder is needed.
 
-<a name="pattern-b-statefulwidget--magicfind"></a>
-### Pattern B: StatefulWidget + Magic.find
+<a name="pattern-b-statefulwidget--manual-access"></a>
+### Pattern B: StatefulWidget + Manual Access
 
-Use `Magic.find<T>()` when you need controller access inside a non-page widget (e.g., a dropdown, a card action, or a sub-widget inside an existing view):
+Use a plain `StatefulWidget` with `ProjectController.instance` when you need controller access inside a non-page widget (e.g., a dropdown, a card action, or a sub-widget inside an existing view):
 
 ```dart
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
@@ -579,7 +579,7 @@ class ProjectController extends MagicController
 ### View (`lib/src/ui/views/projects/project_list_view.dart`)
 
 ```dart
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
