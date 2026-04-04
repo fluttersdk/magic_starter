@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Documentation for recommended state/controller registration pattern for consumer apps (`doc/architecture/controllers.md`, `doc/guides/state-management.md`)
+- State registration guidance in scaffolded `app_service_provider.stub`
+
 ## [0.0.1-alpha.8] - 2026-03-31
 
 ### 🐛 Bug Fixes

@@ -379,6 +379,8 @@ App launch → MagicStarterServiceProvider.boot()
 | [Manager](https://magic.fluttersdk.com/packages/starter/architecture/manager) | Singleton manager and customization hooks |
 | [Service Provider](https://magic.fluttersdk.com/packages/starter/architecture/service-provider) | Bootstrap lifecycle, Gate abilities, IoC bindings |
 | [View Registry](https://magic.fluttersdk.com/packages/starter/architecture/view-registry) | String-keyed builders and host app overrides |
+| [Controllers & State Registration](doc/architecture/controllers.md) | Recommended state/controller registration pattern for consumer apps |
+| [State Management Guide](doc/guides/state-management.md) | State management best practices and patterns |
 
 ---
 

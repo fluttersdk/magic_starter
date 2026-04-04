@@ -73,5 +73,24 @@ class AppServiceProvider extends ServiceProvider {
 {{ teams_block }}
 {{ social_login_block }}
 {{ notifications_block }}
+
+        // -------------------------------------------------------------------
+        // State Registration (optional — for eager initialization)
+        // -------------------------------------------------------------------
+        // Most state classes should use the lazy singleton pattern with a
+        // static accessor instead of registering here:
+        //
+        //   class ProjectState extends MagicController
+        //       with MagicStateMixin<List<Project>> {
+        //     static ProjectState get instance =>
+        //         Magic.findOrPut(ProjectState.new);
+        //   }
+        //
+        // Only register here if the state needs to be ready before any view
+        // renders (e.g., WebSocket connection, auth-dependent init):
+        //
+        //   Magic.findOrPut(DashboardState.new);
+        //
+        // See: doc/architecture/controllers.md
     }
 }

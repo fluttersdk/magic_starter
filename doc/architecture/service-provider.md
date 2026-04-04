@@ -176,10 +176,14 @@ Map<String, dynamic> get appConfig => {
 };
 ```
 
+> [!TIP]
+> For guidance on registering your own controllers and state classes in a consumer app, see [Controllers & State Registration](controllers.md).
+
 <a name="related"></a>
 ## Related
 
 - [MagicStarterManager](https://magic.fluttersdk.com/packages/starter/architecture/manager) — central singleton holding all customization registrations
 - [View Registry](https://magic.fluttersdk.com/packages/starter/architecture/view-registry) — string-keyed view factory for overridable UI
+- [Controllers & State Registration](https://magic.fluttersdk.com/packages/starter/architecture/controllers) — lazy singleton pattern, consumer app state registration guide
 - [Magic Framework — Service Providers](https://magic.fluttersdk.com/getting-started/service-providers) — two-phase lifecycle reference
 - [Magic Framework — Gate](https://magic.fluttersdk.com/getting-started/gate) — authorization abilities reference
