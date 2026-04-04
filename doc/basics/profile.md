@@ -247,15 +247,15 @@ The service provider auto-registers 9 `starter.*` Gate abilities that control se
 
 | Ability | Controls |
 |---------|----------|
-| `starter.profile` | Profile information section |
-| `starter.profile.photo` | Profile photo upload/delete |
-| `starter.profile.password` | Password change section |
-| `starter.profile.email_verification` | Email verification banner |
-| `starter.profile.two_factor` | Two-factor enable/disable section |
-| `starter.profile.sessions` | Active sessions list |
-| `starter.profile.extended` | Extended profile fields |
-| `starter.profile.newsletter` | Newsletter subscription toggle |
-| `starter.profile.delete` | Account deletion section |
+| `starter.update-profile-photo` | Profile photo upload/remove section |
+| `starter.update-email` | Email field in profile information |
+| `starter.update-phone` | Phone and country code in extended profile |
+| `starter.update-password` | Password change section |
+| `starter.verify-email` | Email verification banner |
+| `starter.manage-two-factor` | Two-factor authentication section |
+| `starter.manage-newsletter` | Newsletter preferences section |
+| `starter.logout-sessions` | Logout/revoke buttons in browser sessions |
+| `starter.delete-account` | Account deletion section |
 
 Feature flags control whether the feature exists; Gate abilities control whether a specific user can access it.
 
