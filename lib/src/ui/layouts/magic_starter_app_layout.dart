@@ -8,6 +8,7 @@ import '../../magic_starter_manager.dart';
 import '../widgets/magic_starter_team_selector.dart';
 import '../widgets/magic_starter_user_profile_dropdown.dart';
 import 'package:magic_notifications/magic_notifications.dart';
+import '../widgets/magic_starter_hide_bottom_nav.dart';
 import '../widgets/magic_starter_notification_dropdown.dart';
 
 /// Default App Layout for Magic Starter.
@@ -132,7 +133,9 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               ],
             ),
           ),
-          bottomNavigationBar: (!isDesktop && hasBottomNav)
+          bottomNavigationBar: (!isDesktop &&
+                  hasBottomNav &&
+                  !MagicStarterHideBottomNav.of(context))
               ? _buildBottomNav(context, currentPath)
               : null,
         );
