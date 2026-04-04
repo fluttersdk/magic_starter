@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// Signals to [MagicStarterAppLayout] that the bottom navigation bar
+/// Signals to `MagicStarterAppLayout` that the bottom navigation bar
 /// should be hidden for routes nested under this widget.
 ///
 /// Wrap a layout with this widget to suppress the mobile bottom navigation
