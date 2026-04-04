@@ -30,18 +30,15 @@ class MagicStarterPageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final leading = this.leading;
     return WDiv(
-      className: '''
-        w-full p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700
-      ''',
-      child: Row(
-        children: [
-          if (leading != null) ...[
-            leading,
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: WDiv(
-              className: 'flex flex-col gap-1',
+      className:
+          'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
+      children: [
+        WDiv(
+          className: 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
+          children: [
+            if (leading != null) leading,
+            WDiv(
+              className: 'flex flex-col gap-1 flex-1 min-w-0',
               children: [
                 WText(
                   title,
@@ -56,16 +53,14 @@ class MagicStarterPageHeader extends StatelessWidget {
                   ),
               ],
             ),
-          ),
-          if (actions != null && actions!.isNotEmpty) ...[
-            const SizedBox(width: 16),
-            WDiv(
-              className: 'flex flex-row flex-wrap items-center gap-2',
-              children: actions!,
-            ),
           ],
-        ],
-      ),
+        ),
+        if (actions != null && actions!.isNotEmpty)
+          WDiv(
+            className: 'flex flex-row items-center gap-2',
+            children: actions!,
+          ),
+      ],
     );
   }
 }

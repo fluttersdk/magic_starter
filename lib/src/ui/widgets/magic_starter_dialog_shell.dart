@@ -62,46 +62,50 @@ class MagicStarterDialogShell extends StatelessWidget {
           maxWidth: theme.maxWidth,
           maxHeight: safeHeight * 0.85,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: WDiv(
-            className: theme.containerClassName,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (title != null || description != null)
-                  WDiv(
-                    className: theme.headerClassName,
-                    children: [
-                      if (title != null)
-                        WText(title!, className: theme.titleClassName),
-                      if (description != null)
-                        WText(
-                          description!,
-                          className: theme.descriptionClassName,
-                        ),
-                    ],
-                  ),
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.zero,
-                    child: WDiv(
+        child: WDiv(
+          className:
+              '${theme.containerClassName} flex flex-col w-full overflow-hidden',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (title != null || description != null)
+                WDiv(
+                  className: theme.headerClassName,
+                  children: [
+                    if (title != null)
+                      WText(
+                        title!,
+                        className: theme.titleClassName,
+                      ),
+                    if (description != null)
+                      WText(
+                        description!,
+                        className: theme.descriptionClassName,
+                      ),
+                  ],
+                ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  children: [
+                    WDiv(
                       className: theme.bodyClassName,
                       child: body,
                     ),
+                  ],
+                ),
+              ),
+              if (footerBuilder != null)
+                Builder(
+                  builder: (dialogContext) => WDiv(
+                    key: const Key('magic_starter_dialog_shell_footer'),
+                    className: theme.footerClassName,
+                    child: footerBuilder!(dialogContext),
                   ),
                 ),
-                if (footerBuilder != null)
-                  Builder(
-                    builder: (dialogContext) => WDiv(
-                      key: const Key('magic_starter_dialog_shell_footer'),
-                      className: theme.footerClassName,
-                      child: footerBuilder!(dialogContext),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
