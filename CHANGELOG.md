@@ -4,9 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added
-- Documentation for recommended state/controller registration pattern for consumer apps (`doc/architecture/controllers.md`, `doc/guides/state-management.md`)
-- State registration guidance in scaffolded `app_service_provider.stub`
+## [0.0.1-alpha.9] - 2026-04-04
+
+### ✨ New Features
+- **MagicStarterHideBottomNav**: New `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar for fullscreen routes — wired into layout and exported from barrel (#19)
+
+### 📚 Documentation
+- **State/Controller Registration Guide**: New architecture reference (`doc/architecture/controllers.md`) covering the lazy singleton pattern, `MagicController + MagicStateMixin` usage, controller lifecycle, view binding, and a decision tree for eager vs lazy vs per-view registration (#18)
+- **State Management Getting-Started Guide**: New practical guide (`doc/guides/state-management.md`) with end-to-end examples — state class, view integration, and testing patterns for consumer apps (#18)
+- **Scaffolded Stub**: `app_service_provider.stub` now includes state registration guidance comments showing the recommended `Magic.findOrPut()` pattern (#18)
+- **Cross-References**: `doc/architecture/service-provider.md` now links to the new controllers doc (#18)
+
+### 🔧 Improvements
+- **CI**: Bumped `codecov/codecov-action` from v5 to v6 (#16)
 
 ## [0.0.1-alpha.8] - 2026-03-31
 

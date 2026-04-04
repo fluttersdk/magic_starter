@@ -635,3 +635,4 @@ The modal can also be used for standalone re-authentication (e.g. before a sensi
 | `MagicStarterUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, and logout. Supports a custom `triggerBuilder`. |
 | `MagicStarterNotificationDropdown` | Bell-icon dropdown backed by a `Stream<List<DatabaseNotification>>`. Displays live unread badge, color-coded icons, and mark-as-read callbacks. |
 | `MagicStarterSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |
+| `MagicStarterHideBottomNav` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar. Wrap a route layout with this widget and check `MagicStarterHideBottomNav.of(context)` in the layout's build method. |
