@@ -63,8 +63,7 @@ class MagicStarterDialogShell extends StatelessWidget {
           maxHeight: safeHeight * 0.85,
         ),
         child: WDiv(
-          className:
-              '${theme.containerClassName} flex flex-col w-full overflow-hidden',
+          className: '${theme.containerClassName} w-full overflow-hidden',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
