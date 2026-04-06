@@ -90,6 +90,10 @@ Create a GitHub Release using `gh` CLI. This triggers the full pipeline:
 2. **Creates the git tag** (e.g. `0.0.2`)
 3. **Triggers `publish.yml`** — tag push starts the `validate` job (analyze + format + test), then `publish` job (publish to pub.dev via OIDC)
 
+> **⚠️ CRITICAL: Tag format is `{version}` — NO `v` prefix!**
+> The `publish.yml` workflow triggers on tags matching `[0-9]+.[0-9]+.[0-9]+*`.
+> A `v` prefix (e.g. `v0.0.2`) will NOT trigger the publish pipeline.
+
 Determine if the version is a prerelease:
 - Contains `alpha` or `beta` or `rc` → add `--prerelease` flag
 - Otherwise → stable release, no flag
