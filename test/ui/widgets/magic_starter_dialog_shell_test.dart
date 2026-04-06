@@ -250,6 +250,65 @@ void main() {
       expect(maxHeight, closeTo(613.7, 1.0));
     });
 
+    testWidgets('body scrolls without overflow when content exceeds viewport',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(
+        MagicStarterDialogShell(
+          title: 'Overflow Test',
+          body: Column(
+            children: List.generate(
+              20,
+              (i) => SizedBox(height: 60, child: Text('Item $i')),
+            ),
+          ),
+          footerBuilder: (_) => const Text('sticky footer'),
+        ),
+      ));
+
+      // No overflow error should occur.
+      expect(tester.takeException(), isNull);
+
+      // Footer must still be rendered (sticky).
+      expect(
+        find.byKey(const Key('magic_starter_dialog_shell_footer')),
+        findsOneWidget,
+      );
+
+      // ListView must be present for scrolling.
+      final shellFinder = find.byType(MagicStarterDialogShell);
+      final listViewFinder = find.descendant(
+        of: shellFinder,
+        matching: find.byType(ListView),
+      );
+      expect(listViewFinder, findsOneWidget);
+
+      // The body content (20 × 60px = 1200px) exceeds viewport — verify
+      // the ListView is scrollable by dragging and checking offset changes.
+      final scrollableFinder = find.descendant(
+        of: listViewFinder,
+        matching: find.byType(Scrollable),
+      );
+      final scrollPosition =
+          tester.state<ScrollableState>(scrollableFinder).position;
+      expect(scrollPosition.pixels, equals(0.0));
+
+      await tester.drag(listViewFinder, const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      expect(scrollPosition.pixels, greaterThan(0));
+
+      // Footer remains visible after scroll.
+      expect(
+        find.byKey(const Key('magic_starter_dialog_shell_footer')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('safeHeight is smaller than raw screen height', (tester) async {
       tester.view.physicalSize = const Size(400, 600);
       tester.view.devicePixelRatio = 1.0;

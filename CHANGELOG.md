@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.10] - 2026-04-07
+
+### 🐛 Bug Fixes
+- **MagicStarterDialogShell**: Fixed bottom overflow when body content exceeds viewport — removed `flex flex-col` from outer WDiv that broke constraint propagation to inner Column; body now scrolls correctly with sticky header/footer (#21)
+
+### 🔧 Improvements
+- **Dependencies**: Bumped minimum `magic` to `^1.0.0-alpha.7` — updated all test setUp blocks to bind `AuthManager` in the IoC container, matching the new container-resolved `Auth` facade
+
 ## [0.0.1-alpha.9] - 2026-04-04
 
 ### ✨ New Features

@@ -178,6 +178,7 @@ void main() {
 
       // 3. Bind auth with mock guard.
       mockGuard = MockGuard();
+      Magic.singleton('auth', () => AuthManager());
       Auth.manager.forgetGuards();
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
