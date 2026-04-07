@@ -4,8 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.11] - 2026-04-07
+
 ### ✨ New Features
 - **MagicStarterPageHeader**: Added `titleSuffix` (Widget?) for inline widgets after title (e.g. status badges) and `inlineActions` (bool) to force single-row layout on all screen sizes (#24)
+
+### 📚 Documentation
+- **Release Command**: Added critical tag format warning — `publish.yml` requires tags without `v` prefix (#23)
 
 ## [0.0.1-alpha.10] - 2026-04-07
 
