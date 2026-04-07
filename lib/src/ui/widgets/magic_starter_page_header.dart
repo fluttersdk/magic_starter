@@ -44,7 +44,9 @@ class MagicStarterPageHeader extends StatelessWidget {
           : 'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
       children: [
         WDiv(
-          className: 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
+          className: inlineActions
+              ? 'flex flex-row items-center gap-3 flex-1 min-w-0'
+              : 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
           children: [
             if (leading != null) leading,
             WDiv(
