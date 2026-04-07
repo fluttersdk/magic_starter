@@ -63,7 +63,11 @@ class MagicStarterPageHeader extends StatelessWidget {
                   ),
               ],
             ),
-            if (titleSuffix != null) titleSuffix!,
+            if (titleSuffix != null)
+              WDiv(
+                className: 'flex-shrink-0',
+                child: titleSuffix!,
+              ),
           ],
         ),
         if (actions != null && actions!.isNotEmpty)

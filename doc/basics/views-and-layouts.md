@@ -501,7 +501,7 @@ MagicStarterPageHeader(
   leading: Icon(Icons.arrow_back),
   titleSuffix: StatusBadge(status: 'done'),
   inlineActions: true,
-  actions: [IconButton(icon: Icon(Icons.edit), onPressed: () {})],
+  actions: [WButton(onTap: () {}, child: WText('Edit'))],
 )
 ```
 

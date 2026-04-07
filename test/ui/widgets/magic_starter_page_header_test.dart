@@ -166,13 +166,21 @@ void main() {
   });
 
   testWidgets('titleSuffix not rendered when null', (tester) async {
-    const suffixKey = Key('test_suffix_null');
-
     await tester.pumpWidget(
       wrap(const MagicStarterPageHeader(title: 'My Page')),
     );
 
-    expect(find.byKey(suffixKey), findsNothing);
+    // When titleSuffix is null, the inner title row should contain only
+    // the title column WDiv — no extra children for the suffix wrapper.
+    final headerFinder = find.byType(MagicStarterPageHeader);
+    final innerDivs = find.descendant(
+      of: headerFinder,
+      matching: find.byType(WDiv),
+    );
+
+    // Outer WDiv + inner title row WDiv + title column WDiv = 3.
+    // No suffix wrapper WDiv should be present.
+    expect(innerDivs, findsNWidgets(3));
   });
 
   testWidgets(
