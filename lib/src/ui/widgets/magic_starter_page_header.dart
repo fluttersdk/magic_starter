@@ -18,20 +18,30 @@ class MagicStarterPageHeader extends StatelessWidget {
   /// Optional trailing action widgets.
   final List<Widget>? actions;
 
+  /// Optional widget rendered inline after the title column, inside the title+leading row.
+  final Widget? titleSuffix;
+
+  /// When true, the outer WDiv uses a single-row layout (`flex-row`) instead of
+  /// the default responsive `flex-col sm:flex-row` stacked layout.
+  final bool inlineActions;
+
   const MagicStarterPageHeader({
     super.key,
     required this.title,
     this.subtitle,
     this.leading,
     this.actions,
+    this.titleSuffix,
+    this.inlineActions = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final leading = this.leading;
     return WDiv(
-      className:
-          'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
+      className: inlineActions
+          ? 'w-full flex flex-row items-center justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700'
+          : 'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
       children: [
         WDiv(
           className: 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
@@ -53,6 +63,7 @@ class MagicStarterPageHeader extends StatelessWidget {
                   ),
               ],
             ),
+            if (titleSuffix != null) titleSuffix!,
           ],
         ),
         if (actions != null && actions!.isNotEmpty)

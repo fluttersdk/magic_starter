@@ -148,4 +148,99 @@ void main() {
     final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(outerDiv.className, contains('sm:flex-row'));
   });
+
+  testWidgets('titleSuffix renders inline after title when provided',
+      (tester) async {
+    const suffixKey = Key('test_suffix');
+
+    await tester.pumpWidget(
+      wrap(
+        MagicStarterPageHeader(
+          title: 'My Page',
+          titleSuffix: Container(key: suffixKey),
+        ),
+      ),
+    );
+
+    expect(find.byKey(suffixKey), findsOneWidget);
+  });
+
+  testWidgets('titleSuffix not rendered when null', (tester) async {
+    const suffixKey = Key('test_suffix_null');
+
+    await tester.pumpWidget(
+      wrap(const MagicStarterPageHeader(title: 'My Page')),
+    );
+
+    expect(find.byKey(suffixKey), findsNothing);
+  });
+
+  testWidgets(
+      'inlineActions: true outer WDiv className contains flex-row without flex-col',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        MagicStarterPageHeader(
+          title: 'Inline',
+          inlineActions: true,
+          actions: [
+            ElevatedButton(onPressed: () {}, child: const Text('Go')),
+          ],
+        ),
+      ),
+    );
+
+    final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(outerDiv.className, contains('flex-row'));
+    expect(outerDiv.className, isNot(contains('flex-col')));
+  });
+
+  testWidgets('inlineActions: false (default) retains flex-col sm:flex-row',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        MagicStarterPageHeader(
+          title: 'Default Layout',
+          actions: [
+            ElevatedButton(onPressed: () {}, child: const Text('Go')),
+          ],
+        ),
+      ),
+    );
+
+    final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(outerDiv.className, contains('flex-col'));
+    expect(outerDiv.className, contains('sm:flex-row'));
+  });
+
+  testWidgets(
+      'combined titleSuffix + inlineActions: true + leading — all elements render',
+      (tester) async {
+    const leadingKey = Key('combined_leading');
+    const suffixKey = Key('combined_suffix');
+    const actionKey = Key('combined_action');
+
+    await tester.pumpWidget(
+      wrap(
+        MagicStarterPageHeader(
+          title: 'Combined',
+          leading: const Icon(Icons.arrow_back, key: leadingKey),
+          titleSuffix: const SizedBox(key: suffixKey, width: 8),
+          inlineActions: true,
+          actions: [
+            ElevatedButton(
+              key: actionKey,
+              onPressed: () {},
+              child: const Text('Act'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.byKey(leadingKey), findsOneWidget);
+    expect(find.byKey(suffixKey), findsOneWidget);
+    expect(find.byKey(actionKey), findsOneWidget);
+    expect(find.text('Combined'), findsOneWidget);
+  });
 }

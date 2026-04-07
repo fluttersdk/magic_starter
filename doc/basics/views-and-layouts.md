@@ -493,12 +493,26 @@ MagicStarterPageHeader(
 )
 ```
 
+Detail view with status badge and always-inline layout:
+
+```dart
+MagicStarterPageHeader(
+  title: 'Task Details',
+  leading: Icon(Icons.arrow_back),
+  titleSuffix: StatusBadge(status: 'done'),
+  inlineActions: true,
+  actions: [IconButton(icon: Icon(Icons.edit), onPressed: () {})],
+)
+```
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `title` | `String` | ✅ | Main heading text |
 | `subtitle` | `String?` | — | Secondary line below the title |
 | `leading` | `Widget?` | — | Widget placed before the title (e.g. back button) |
 | `actions` | `List<Widget>?` | — | Row of trailing action widgets (e.g. buttons) |
+| `titleSuffix` | `Widget?` | — | Optional widget rendered inline after the title (e.g. status badge). Stays on the same row as the title text. |
+| `inlineActions` | `bool` | — | When `true`, forces single-row layout on all screen sizes (no mobile stacking). Useful for detail views where actions must stay inline with the title. |
 
 ### MagicStarterCard
 
