@@ -271,4 +271,19 @@ void main() {
 
     expect(find.text('Custom Trigger'), findsOneWidget);
   });
+
+  testWidgets('shows theme toggle in dropdown menu', (tester) async {
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    // Open dropdown
+    await tester.tap(find.text('C'));
+    await tester.pumpAndSettle();
+
+    // Theme toggle label should be visible
+    expect(find.text('common.toggle_theme'), findsOneWidget);
+
+    // Theme toggle icon should be visible (dark_mode when in light mode)
+    expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+  });
 }

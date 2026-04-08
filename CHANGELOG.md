@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ New Features
 - **Sidebar Footer**: Added `sidebarFooterBuilder` slot via `MagicStarter.useSidebarFooter()` — renders custom widget between navigation and user menu in both desktop sidebar and mobile drawer (#27)
+- **MagicStarterUserProfileDropdown**: Moved theme toggle from sidebar bottom bar into user profile dropdown menu — sidebar now shows only avatar, name, and notification bell (#30)
 
 ### 🐛 Bug Fixes
 - **MagicStarterUserProfileDropdown**: Fixed menu overflow when many profile menu items are registered — wrapped menu items in scrollable `overflow-y-auto` WDiv, keeping header and logout footer fixed (#28)

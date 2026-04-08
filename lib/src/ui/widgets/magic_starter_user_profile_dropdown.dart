@@ -145,6 +145,14 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
                       MagicStarterConfig.notificationPreferencesRoute());
                 },
               ),
+            // Theme toggle — does not close dropdown on tap.
+            _buildMenuItem(
+              icon: context.windIsDark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+              label: trans('common.toggle_theme'),
+              onTap: () => context.windTheme.toggleTheme(),
+            ),
           ],
         ),
         // Fixed footer — divider + logout.
@@ -213,6 +221,55 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
                             text-gray-900 dark:text-gray-100
                             danger:text-red-600 dark:danger:text-red-500
                         ''',
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the theme toggle row.
+  ///
+  /// Tapping toggles between light and dark mode without closing the dropdown.
+  Widget _buildThemeToggle(BuildContext context) {
+    final isDark = context.windIsDark;
+
+    return WAnchor(
+      onTap: () => context.windTheme.toggleTheme(),
+      child: WDiv(
+        className: '''
+          mx-2 px-3 py-2.5 w-full
+          rounded-lg
+          hover:bg-gray-50 dark:hover:bg-gray-700/50
+          active:bg-gray-100 dark:active:bg-gray-700
+          flex items-center gap-3
+          cursor-pointer
+          transition-colors duration-150
+        ''',
+        children: [
+          WDiv(
+            className: '''
+              w-8 h-8
+              rounded-lg
+              bg-gray-100 dark:bg-gray-700
+              hover:bg-gray-200 dark:hover:bg-gray-600
+              flex items-center justify-center
+              transition-colors duration-150
+            ''',
+            child: WIcon(
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              className: 'text-lg text-gray-600 dark:text-gray-400',
+            ),
+          ),
+          WDiv(
+            className: 'flex-1 min-w-0',
+            child: WText(
+              trans('common.toggle_theme'),
+              className: '''
+                text-sm font-medium
+                text-gray-900 dark:text-gray-100
+                truncate
+              ''',
+            ),
           ),
         ],
       ),
