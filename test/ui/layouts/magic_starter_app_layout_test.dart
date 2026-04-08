@@ -343,4 +343,34 @@ void main() {
       },
     );
   });
+
+  group('MagicStarterAppLayout sidebar navigation scroll', () {
+    testWidgets(
+      'navigation area uses overflow-y-auto for scrollable content',
+      (tester) async {
+        // Set large viewport to trigger desktop sidebar layout.
+        tester.view.physicalSize = const Size(1200, 800);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // WDiv with overflow-y-auto renders as SingleChildScrollView.
+        // Verify at least one scroll view exists for navigation area.
+        expect(
+          find.byType(SingleChildScrollView),
+          findsAtLeast(1),
+        );
+      },
+    );
+  });
 }

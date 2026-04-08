@@ -325,7 +325,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
 
     // Default fallback: Dashboard + Profile.
     return WDiv(
-      className: 'flex flex-col gap-1 py-2',
+      className: 'flex flex-col gap-1 py-2 overflow-y-auto',
       children: [
         _navItem(
           context,
@@ -354,7 +354,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     VoidCallback? onItemTap,
   }) {
     return WDiv(
-      className: 'flex flex-col py-2 gap-1 w-full',
+      className: 'flex flex-col py-2 gap-1 w-full overflow-y-auto',
       children: [
         // Main navigation items
         ...config.mainItems.map(

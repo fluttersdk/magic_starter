@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 - **MagicStarterUserProfileDropdown**: Fixed menu overflow when many profile menu items are registered — wrapped menu items in scrollable `overflow-y-auto` WDiv, keeping header and logout footer fixed (#28)
+- **Sidebar Navigation**: Fixed overflow when many nav items exceed viewport height — added `overflow-y-auto` to navigation WDiv so items scroll while brand, team selector, and user menu remain fixed (#29)
 
 ## [0.0.1-alpha.11] - 2026-04-07
 
