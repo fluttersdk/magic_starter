@@ -272,7 +272,8 @@ void main() {
     expect(find.text('Custom Trigger'), findsOneWidget);
   });
 
-  testWidgets('shows theme toggle in dropdown menu', (tester) async {
+  testWidgets('shows theme toggle in dropdown and toggles without closing',
+      (tester) async {
     await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
 
@@ -280,10 +281,20 @@ void main() {
     await tester.tap(find.text('C'));
     await tester.pumpAndSettle();
 
-    // Theme toggle label should be visible
+    // Theme toggle label and icon visible (dark_mode icon in light mode)
     expect(find.text('common.toggle_theme'), findsOneWidget);
-
-    // Theme toggle icon should be visible (dark_mode when in light mode)
     expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.light_mode_outlined), findsNothing);
+
+    // Tap theme toggle — should switch icon and keep dropdown open.
+    await tester.tap(find.text('common.toggle_theme'));
+    await tester.pumpAndSettle();
+
+    // Icon should have toggled to light_mode (now in dark mode).
+    expect(find.byIcon(Icons.light_mode_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.dark_mode_outlined), findsNothing);
+
+    // Dropdown should still be open — toggle label still visible.
+    expect(find.text('common.toggle_theme'), findsOneWidget);
   });
 }
