@@ -346,16 +346,28 @@ void main() {
 
   group('MagicStarterAppLayout sidebar navigation scroll', () {
     testWidgets(
-      'navigation area uses overflow-y-auto for scrollable content',
+      'sidebar does not overflow with many nav items in short viewport',
       (tester) async {
-        // Set large viewport to trigger desktop sidebar layout.
-        tester.view.physicalSize = const Size(1200, 800);
+        // Short viewport to trigger overflow scenario.
+        tester.view.physicalSize = const Size(1200, 500);
         tester.view.devicePixelRatio = 1.0;
 
         addTearDown(() {
           tester.view.resetPhysicalSize();
           tester.view.resetDevicePixelRatio();
         });
+
+        // Register 10+ nav items to exceed viewport height.
+        MagicStarter.useNavigation(
+          mainItems: [
+            for (int i = 0; i < 12; i++)
+              MagicStarterNavItem(
+                icon: Icons.circle,
+                labelKey: 'Nav $i',
+                path: '/nav-$i',
+              ),
+          ],
+        );
 
         await tester.pumpWidget(
           createApp(
@@ -364,12 +376,9 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // WDiv with overflow-y-auto renders as SingleChildScrollView.
-        // Verify at least one scroll view exists for navigation area.
-        expect(
-          find.byType(SingleChildScrollView),
-          findsAtLeast(1),
-        );
+        // No overflow error means the navigation area scrolls correctly.
+        // Verify that the layout rendered without exceptions.
+        expect(find.text('Nav 0'), findsOneWidget);
       },
     );
   });
