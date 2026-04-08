@@ -328,7 +328,7 @@ Common pairings used throughout Magic Starter:
 | `hover:bg-gray-100` | `dark:hover:bg-gray-800` |
 
 > [!TIP]
-> Theme toggling is available in the app layout sidebar via `context.windTheme.toggleTheme()`. Check the current mode with `context.windIsDark`.
+> Theme toggling is available in the user profile dropdown menu via `context.windTheme.toggleTheme()`. Check the current mode with `context.windIsDark`.
 
 <a name="view-registry"></a>
 ## View Registry
@@ -654,7 +654,7 @@ The modal can also be used for standalone re-authentication (e.g. before a sensi
 | `MagicStarterAuthFormCard` | Centered card wrapper (max 480 px) for auth-adjacent screens — invite accept, onboarding, etc. Accepts `title`, `subtitle`, optional `errorMessage`, and a theme-toggle button. |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones?search=...`. Debounces search at 300 ms and always includes the pre-selected value in options. |
 | `MagicStarterTeamSelector` | Current-team switcher dropdown. Requires `MagicStarter.teamResolver` to be registered. `compact` mode hides the team name label. |
-| `MagicStarterUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, and logout. Supports a custom `triggerBuilder`. |
+| `MagicStarterUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, theme toggle, and logout. Supports a custom `triggerBuilder`. |
 | `MagicStarterNotificationDropdown` | Bell-icon dropdown backed by a `Stream<List<DatabaseNotification>>`. Displays live unread badge, color-coded icons, and mark-as-read callbacks. |
 | `MagicStarterSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |
 | `MagicStarterHideBottomNav` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar. Wrap a route layout with this widget and check `MagicStarterHideBottomNav.of(context)` in the layout's build method. |

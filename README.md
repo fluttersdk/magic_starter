@@ -173,6 +173,20 @@ MagicStarter.view.register('layout.guest', (context, {required child}) {
 
 All views are resolved through `MagicStarter.view.make('auth.login')` — the registry always wins over defaults.
 
+### Layout Customization
+
+```dart
+// Custom header — replaces the default mobile header
+MagicStarter.useHeader((context, isDesktop) {
+  return MyCustomHeader(showMenuButton: !isDesktop);
+});
+
+// Sidebar footer — custom widget between nav items and user menu
+MagicStarter.useSidebarFooter((context) {
+  return MyVersionBadge();
+});
+```
+
 ---
 
 ## Reusable Widgets
@@ -265,7 +279,7 @@ final success = await MagicStarterTwoFactorModal.show(
 | `MagicStarterAuthFormCard` | Centered card wrapper for auth-adjacent screens (invite accept, onboarding) |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
 | `MagicStarterTeamSelector` | Current-team switcher dropdown with create/settings links |
-| `MagicStarterUserProfileDropdown` | User avatar menu with profile links and logout |
+| `MagicStarterUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
 | `MagicStarterNotificationDropdown` | Bell-icon dropdown with live unread badge and mark-as-read |
 | `MagicStarterSocialDivider` | "Or continue with" divider for auth forms |
 

@@ -7,6 +7,7 @@
 - [Navigation Configuration](#navigation-configuration)
 - [Navigation Theme](#navigation-theme)
 - [Modal Theme](#modal-theme)
+- [Sidebar Footer Builder](#sidebar-footer-builder)
 - [Header Builder](#header-builder)
 - [Logout Callback](#logout-callback)
 - [Notification Type Mapper](#notification-type-mapper)
@@ -216,6 +217,21 @@ The theme is stored on `MagicStarterManager` as `modalTheme` and reset to defaul
 > [!TIP]
 > Register your modal theme in `AppServiceProvider.boot()` alongside `useNavigationTheme()`. Both follow the same pattern — register once, all widgets read the tokens at build time.
 
+<a name="sidebar-footer-builder"></a>
+## Sidebar Footer Builder
+
+Add a custom widget between the navigation items and the user menu in both the desktop sidebar and mobile drawer:
+
+```dart
+MagicStarter.useSidebarFooter((context) {
+  return MyVersionBadge();
+});
+```
+
+The builder receives the current `BuildContext` and should return any widget — a version badge, environment indicator, support link, etc.
+
+When `sidebarFooterBuilder` is `null` (the default), no extra content is rendered between navigation and the user menu.
+
 <a name="header-builder"></a>
 ## Header Builder
 
@@ -337,6 +353,7 @@ Default layouts:
 | `MagicStarter.useNavigation(...)` | `manager.navigationConfig = config` |
 | `MagicStarter.useNavigationTheme(theme)` | `manager.navigationTheme = theme` |
 | `MagicStarter.useModalTheme(theme)` | `manager.modalTheme = theme` |
+| `MagicStarter.useSidebarFooter(builder)` | `manager.sidebarFooterBuilder = builder` |
 | `MagicStarter.useHeader(builder)` | `manager.headerBuilder = builder` |
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |
 | `MagicStarter.useSocialLogin(builder)` | `manager.socialLoginBuilder = builder` |
