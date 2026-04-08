@@ -143,7 +143,8 @@ class MagicStarter {
     manager.headerBuilder = builder;
   }
 
-  /// Register a custom sidebar footer builder. When set, rendered at the bottom of the sidebar.
+  /// Register a custom sidebar footer builder. When set, rendered between the
+  /// navigation and user menu in both the desktop sidebar and mobile drawer.
   static void useSidebarFooter(
     Widget Function(BuildContext context) builder,
   ) {

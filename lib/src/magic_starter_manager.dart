@@ -311,7 +311,8 @@ class MagicStarterManager {
   /// Custom header builder. When set, replaces the default header.
   Widget Function(BuildContext context, bool isDesktop)? headerBuilder;
 
-  /// Custom sidebar footer builder. When set, rendered at the bottom of the sidebar.
+  /// Custom sidebar footer builder. When set, rendered between the
+  /// navigation and user menu in both the desktop sidebar and mobile drawer.
   Widget Function(BuildContext context)? sidebarFooterBuilder;
 
   /// Social login builder. When set, renders custom social login buttons.
