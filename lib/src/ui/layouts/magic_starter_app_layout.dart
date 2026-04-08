@@ -581,24 +581,6 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           ),
           // Notification bell (gated by feature toggle)
           _buildNotificationBell(),
-          // Theme toggle (standalone)
-          WAnchor(
-            onTap: () => context.windTheme.toggleTheme(),
-            child: WDiv(
-              className: '''
-                w-8 h-8 rounded-lg flex-shrink-0
-                flex items-center justify-center
-                hover:bg-gray-100 dark:hover:bg-gray-800 duration-150
-              ''',
-              child: WIcon(
-                context.windIsDark
-                    ? Icons.light_mode_outlined
-                    : Icons.dark_mode_outlined,
-                semanticLabel: trans('common.toggle_theme'),
-                className: 'text-[18px] text-gray-400 dark:text-gray-500',
-              ),
-            ),
-          ),
         ],
       ),
     );

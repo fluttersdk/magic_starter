@@ -145,6 +145,14 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
                       MagicStarterConfig.notificationPreferencesRoute());
                 },
               ),
+            // Theme toggle — does not close dropdown on tap.
+            _buildMenuItem(
+              icon: context.windIsDark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+              label: trans('common.toggle_theme'),
+              onTap: () => context.windTheme.toggleTheme(),
+            ),
           ],
         ),
         // Fixed footer — divider + logout.
@@ -205,14 +213,17 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
                             ''',
             ),
           ),
-          WText(
-            label,
-            states: {if (isDanger) 'danger'},
-            className: '''
-                            text-sm font-medium
-                            text-gray-900 dark:text-gray-100
-                            danger:text-red-600 dark:danger:text-red-500
-                        ''',
+          WDiv(
+            className: 'flex-1 min-w-0',
+            child: WText(
+              label,
+              states: {if (isDanger) 'danger'},
+              className: '''
+                              text-sm font-medium truncate
+                              text-gray-900 dark:text-gray-100
+                              danger:text-red-600 dark:danger:text-red-500
+                          ''',
+            ),
           ),
         ],
       ),
