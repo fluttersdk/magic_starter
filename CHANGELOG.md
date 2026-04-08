@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.12] - 2026-04-09
+
 ### ✨ New Features
 - **Sidebar Footer**: Added `sidebarFooterBuilder` slot via `MagicStarter.useSidebarFooter()` — renders custom widget between navigation and user menu in both desktop sidebar and mobile drawer (#27)
 - **MagicStarterUserProfileDropdown**: Moved theme toggle from sidebar bottom bar into user profile dropdown menu — sidebar now shows only avatar, name, and notification bell (#30)
@@ -11,6 +13,11 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 - **MagicStarterUserProfileDropdown**: Fixed menu overflow when many profile menu items are registered — wrapped menu items in scrollable `overflow-y-auto` WDiv, keeping header and logout footer fixed (#28)
 - **Sidebar Navigation**: Fixed overflow when many nav items exceed viewport height — added `overflow-y-auto` to navigation WDiv so items scroll while brand, team selector, and user menu remain fixed (#29)
+
+### 📚 Documentation
+- **Manager**: Added `useSidebarFooter()` section and facade entry to manager doc
+- **Views & Layouts**: Updated theme toggle location from sidebar to user profile dropdown
+- **README**: Added layout customization section with `useHeader()` and `useSidebarFooter()` examples
 
 ## [0.0.1-alpha.11] - 2026-04-07
 
