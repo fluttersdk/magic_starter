@@ -38,5 +38,6 @@ coverage/
 .env
 
 # AI coding tools
+.ac/
 .opencode/
 .sisyphus/

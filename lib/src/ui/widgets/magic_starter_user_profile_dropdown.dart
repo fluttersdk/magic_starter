@@ -88,6 +88,7 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
     return WDiv(
       className: 'flex flex-col py-2 w-full',
       children: [
+        // Fixed header — user info.
         WDiv(
           className:
               'w-full flex flex-col px-4 py-2 mb-1 border-b border-gray-100 dark:border-gray-700',
@@ -110,35 +111,43 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
           ],
         ),
         const WSpacer(className: 'h-1'),
-        _buildMenuItem(
-          icon: Icons.person_outline,
-          label: trans('auth.profile'),
-          onTap: () {
-            close();
-            MagicRoute.to(MagicStarterConfig.profileRoute());
-          },
-        ),
-        // App-registered profile menu items.
-        for (final item in profileMenuItems)
-          _buildMenuItem(
-            icon: item.icon,
-            label: trans(item.labelKey),
-            onTap: () {
-              close();
-              MagicRoute.to(item.path);
-            },
-          ),
+        // Scrollable menu items.
+        WDiv(
+          className: 'flex-1 overflow-y-auto',
+          children: [
+            _buildMenuItem(
+              icon: Icons.person_outline,
+              label: trans('auth.profile'),
+              onTap: () {
+                close();
+                MagicRoute.to(MagicStarterConfig.profileRoute());
+              },
+            ),
+            // App-registered profile menu items.
+            for (final item in profileMenuItems)
+              _buildMenuItem(
+                icon: item.icon,
+                label: trans(item.labelKey),
+                onTap: () {
+                  close();
+                  MagicRoute.to(item.path);
+                },
+              ),
 
-        // Auto-injected notification settings when feature is enabled.
-        if (MagicStarterConfig.hasNotificationFeatures())
-          _buildMenuItem(
-            icon: Icons.notifications_outlined,
-            label: trans('notifications.settings'),
-            onTap: () {
-              close();
-              MagicRoute.to(MagicStarterConfig.notificationPreferencesRoute());
-            },
-          ),
+            // Auto-injected notification settings when feature is enabled.
+            if (MagicStarterConfig.hasNotificationFeatures())
+              _buildMenuItem(
+                icon: Icons.notifications_outlined,
+                label: trans('notifications.settings'),
+                onTap: () {
+                  close();
+                  MagicRoute.to(
+                      MagicStarterConfig.notificationPreferencesRoute());
+                },
+              ),
+          ],
+        ),
+        // Fixed footer — divider + logout.
         WDiv(
             className: 'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full'),
         _buildMenuItem(

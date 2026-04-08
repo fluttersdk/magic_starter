@@ -213,6 +213,33 @@ void main() {
     expect(logoutCalled, isTrue);
   });
 
+  testWidgets('menu items are scrollable when many items registered',
+      (tester) async {
+    MagicStarter.useNavigation(
+      mainItems: [],
+      profileMenuItems: [
+        for (int i = 0; i < 10; i++)
+          MagicStarterNavItem(
+            icon: Icons.settings,
+            labelKey: 'Item $i',
+            path: '/item-$i',
+          ),
+      ],
+    );
+
+    await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    // Open dropdown
+    await tester.tap(find.text('C'));
+    await tester.pumpAndSettle();
+
+    // Verify all 10 custom items are rendered in the scrollable menu
+    for (int i = 0; i < 10; i++) {
+      expect(find.text('Item $i'), findsOneWidget);
+    }
+  });
+
   testWidgets('uses default bottomRight alignment', (tester) async {
     await tester.pumpWidget(wrap(const MagicStarterUserProfileDropdown()));
     await tester.pumpAndSettle();
