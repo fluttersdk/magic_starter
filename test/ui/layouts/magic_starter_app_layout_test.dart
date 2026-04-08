@@ -343,4 +343,43 @@ void main() {
       },
     );
   });
+
+  group('MagicStarterAppLayout sidebar navigation scroll', () {
+    testWidgets(
+      'sidebar does not overflow with many nav items in short viewport',
+      (tester) async {
+        // Short viewport to trigger overflow scenario.
+        tester.view.physicalSize = const Size(1200, 500);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        // Register 10+ nav items to exceed viewport height.
+        MagicStarter.useNavigation(
+          mainItems: [
+            for (int i = 0; i < 12; i++)
+              MagicStarterNavItem(
+                icon: Icons.circle,
+                labelKey: 'Nav $i',
+                path: '/nav-$i',
+              ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // No overflow error means the navigation area scrolls correctly.
+        // Verify that the layout rendered without exceptions.
+        expect(find.text('Nav 0'), findsOneWidget);
+      },
+    );
+  });
 }
