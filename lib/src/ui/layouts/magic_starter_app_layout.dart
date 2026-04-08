@@ -160,6 +160,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         _buildTeamSelector(context),
         const WSpacer(className: 'h-2'),
         Expanded(child: _buildNavigation(context, currentPath)),
+        if (MagicStarter.manager.sidebarFooterBuilder != null)
+          MagicStarter.manager.sidebarFooterBuilder!(context),
         _buildUserMenu(context),
       ],
     );
@@ -191,6 +193,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 onItemTap: () => Navigator.of(context).pop(),
               ),
             ),
+            if (MagicStarter.manager.sidebarFooterBuilder != null)
+              MagicStarter.manager.sidebarFooterBuilder!(context),
             _buildUserMenu(context),
           ],
         ),
