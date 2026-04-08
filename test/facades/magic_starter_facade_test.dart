@@ -328,6 +328,24 @@ void main() {
       });
     });
 
+    group('sidebarFooter', () {
+      test('useSidebarFooter() sets manager.sidebarFooterBuilder', () {
+        MagicStarter.useSidebarFooter((context) => const SizedBox());
+
+        expect(MagicStarter.manager.sidebarFooterBuilder, isNotNull);
+      });
+
+      test('manager.reset() clears sidebarFooterBuilder', () {
+        MagicStarter.useSidebarFooter((context) => const SizedBox());
+
+        expect(MagicStarter.manager.sidebarFooterBuilder, isNotNull);
+
+        MagicStarter.manager.reset();
+
+        expect(MagicStarter.manager.sidebarFooterBuilder, isNull);
+      });
+    });
+
     group('modal registry defaults', () {
       test('default modal.confirm is registered after manager init', () {
         expect(MagicStarter.view.hasModal('modal.confirm'), isTrue);

@@ -143,6 +143,13 @@ class MagicStarter {
     manager.headerBuilder = builder;
   }
 
+  /// Register a custom sidebar footer builder. When set, rendered at the bottom of the sidebar.
+  static void useSidebarFooter(
+    Widget Function(BuildContext context) builder,
+  ) {
+    manager.sidebarFooterBuilder = builder;
+  }
+
   /// Register a custom social login buttons builder.
   ///
   /// When set, social login buttons appear on login and register pages

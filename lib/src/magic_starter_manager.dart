@@ -311,6 +311,9 @@ class MagicStarterManager {
   /// Custom header builder. When set, replaces the default header.
   Widget Function(BuildContext context, bool isDesktop)? headerBuilder;
 
+  /// Custom sidebar footer builder. When set, rendered at the bottom of the sidebar.
+  Widget Function(BuildContext context)? sidebarFooterBuilder;
+
   /// Social login builder. When set, renders custom social login buttons.
   SocialLoginBuilder? socialLoginBuilder;
 
@@ -506,6 +509,7 @@ class MagicStarterManager {
     navigationConfig = null;
     onLogout = null;
     headerBuilder = null;
+    sidebarFooterBuilder = null;
     socialLoginBuilder = null;
     notificationTypeMapper = null;
     navigationTheme = const MagicStarterNavigationTheme();

@@ -223,6 +223,14 @@ MagicStarter.useNavigation(
   bottomItems: [...],
 );
 
+// Sidebar footer — custom widget between nav items and user menu
+MagicStarter.useSidebarFooter((context) {
+  return MyVersionBadge();
+});
+
+// Custom logo/brand — replaces default app name text
+// MagicStarter.useNavigationTheme(brandBuilder: ...) handles this
+
 // Custom navigation colors and brand
 MagicStarter.useNavigationTheme(
   MagicStarterNavigationTheme(
