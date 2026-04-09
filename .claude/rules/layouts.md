@@ -18,5 +18,6 @@ path: "lib/src/ui/layouts/**/*.dart"
 - Route transitions: guest routes use `RouteTransition.none` — no animation between auth screens
 - Notification polling: `MagicStarterAppLayout` starts polling on mount when notifications feature is enabled — stop in `deactivate()` or `dispose()`
 - Header builder: when `MagicStarter.manager.headerBuilder` is set, renders custom header instead of default — receives `(BuildContext context, bool isDesktop)`
+- Sidebar footer builder: `MagicStarter.manager.sidebarFooterBuilder` — renders custom widget at bottom of sidebar (desktop) and drawer (mobile); receives `BuildContext`
 - Logout: checks `MagicStarter.manager.onLogout` callback first — falls back to `MagicStarterAuthController.instance.logout()`
 - Wind UI exclusively — no Material widgets in layout code; `Icons.*` only for icon data
