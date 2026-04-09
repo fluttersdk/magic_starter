@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import '../magic_starter_manager.dart';
 import '../models/magic_starter_team.dart';
 import '../models/magic_starter_nav_item.dart';
+import '../ui/magic_starter_team_settings_section_registry.dart';
 import '../ui/magic_starter_view_registry.dart';
 
 /// Maps a notification type string to an icon and color class.
@@ -16,8 +17,8 @@ import '../ui/magic_starter_view_registry.dart';
 ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
 /// });
 /// ```
-typedef MagicStarterNotificationTypeMapper
-    = ({IconData icon, String colorClass}) Function(String type);
+typedef MagicStarterNotificationTypeMapper =
+    ({IconData icon, String colorClass}) Function(String type);
 
 /// Static facade for Magic Starter.
 class MagicStarter {
@@ -29,6 +30,21 @@ class MagicStarter {
 
   /// Global view registry accessor.
   static MagicStarterViewRegistry get view => manager.view;
+
+  /// Team settings section registry.
+  ///
+  /// Register custom sections that appear after built-in sections
+  /// in the team settings view.
+  ///
+  /// ```dart
+  /// MagicStarter.teamSettings.registerSection(
+  ///   key: 'billing',
+  ///   order: 10,
+  ///   builder: (context, team) => BillingCard(team: team),
+  /// );
+  /// ```
+  static MagicStarterTeamSettingsSectionRegistry get teamSettings =>
+      manager.teamSettingsSections;
 
   /// Set a custom user model factory.
   ///
@@ -145,9 +161,7 @@ class MagicStarter {
 
   /// Register a custom sidebar footer builder. When set, rendered between the
   /// navigation and user menu in both the desktop sidebar and mobile drawer.
-  static void useSidebarFooter(
-    Widget Function(BuildContext context) builder,
-  ) {
+  static void useSidebarFooter(Widget Function(BuildContext context) builder) {
     manager.sidebarFooterBuilder = builder;
   }
 
@@ -189,7 +203,8 @@ class MagicStarter {
   /// });
   /// ```
   static void useNotificationTypeMapper(
-      MagicStarterNotificationTypeMapper mapper) {
+    MagicStarterNotificationTypeMapper mapper,
+  ) {
     manager.notificationTypeMapper = mapper;
   }
 
@@ -210,12 +225,7 @@ class MagicStarter {
   /// ```
   static void useLocaleOptions(Map<String, String> locales) {
     manager.localeOptions = locales.entries
-        .map(
-          (e) => SelectOption<String>(
-            value: e.key,
-            label: e.value,
-          ),
-        )
+        .map((e) => SelectOption<String>(value: e.key, label: e.value))
         .toList(growable: false);
   }
 

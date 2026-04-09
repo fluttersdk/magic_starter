@@ -11,6 +11,7 @@ import 'ui/layouts/magic_starter_guest_layout.dart';
 import 'ui/widgets/magic_starter_confirm_dialog.dart';
 import 'ui/widgets/magic_starter_password_confirm_dialog.dart';
 import 'ui/widgets/magic_starter_two_factor_modal.dart';
+import 'ui/magic_starter_team_settings_section_registry.dart';
 import 'ui/magic_starter_view_registry.dart';
 import 'ui/views/auth/magic_starter_forgot_password_view.dart';
 import 'ui/views/auth/magic_starter_login_view.dart';
@@ -26,8 +27,8 @@ import 'ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 import 'ui/views/teams/magic_starter_team_settings_view.dart';
 
 /// Social login builder type.
-typedef SocialLoginBuilder = Widget Function(
-    BuildContext context, bool isLoading);
+typedef SocialLoginBuilder =
+    Widget Function(BuildContext context, bool isLoading);
 
 typedef UserModelFactory = Authenticatable Function(Map<String, dynamic> data);
 
@@ -296,6 +297,9 @@ class MagicStarterManager {
 
   final MagicStarterViewRegistry _viewRegistry = MagicStarterViewRegistry();
 
+  final MagicStarterTeamSettingsSectionRegistry _teamSettingsSectionRegistry =
+      MagicStarterTeamSettingsSectionRegistry();
+
   /// User model factory. Override to use your app's User model.
   UserModelFactory userFactory = (data) => MagicStarterAuthUser.fromMap(data);
 
@@ -361,7 +365,8 @@ class MagicStarterManager {
         .map(
           (locale) => SelectOption<String>(
             value: locale.languageCode,
-            label: _nativeLanguageNames[locale.languageCode] ??
+            label:
+                _nativeLanguageNames[locale.languageCode] ??
                 locale.languageCode.toUpperCase(),
           ),
         )
@@ -380,6 +385,13 @@ class MagicStarterManager {
 
   /// Custom label for the newsletter signup feature.
   String? newsletterLabel;
+
+  /// Team settings custom section registry.
+  ///
+  /// Host apps register additional sections that render after the built-in
+  /// General and Members cards in the team settings view.
+  MagicStarterTeamSettingsSectionRegistry get teamSettingsSections =>
+      _teamSettingsSectionRegistry;
 
   /// Global view registry used for plugin view overrides.
   MagicStarterViewRegistry get view => _viewRegistry;
@@ -518,6 +530,7 @@ class MagicStarterManager {
     _localeOptions = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;
+    _teamSettingsSectionRegistry.clear();
     _viewRegistry.clear();
     registerDefaultViews();
   }
