@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
 import '../../widgets/magic_starter_card.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
@@ -16,17 +17,20 @@ class MagicStarterTeamSettingsView
       _MagicStarterTeamSettingsViewState();
 }
 
-class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
-    MagicStarterTeamController, MagicStarterTeamSettingsView> {
-  late final MagicFormData form = MagicFormData(
-    {'name': ''},
-    controller: controller,
-  );
+class _MagicStarterTeamSettingsViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterTeamController,
+          MagicStarterTeamSettingsView
+        > {
+  late final MagicFormData form = MagicFormData({
+    'name': '',
+  }, controller: controller);
 
-  late final MagicFormData inviteForm = MagicFormData(
-    {'email': '', 'role': 'member'},
-    controller: controller,
-  );
+  late final MagicFormData inviteForm = MagicFormData({
+    'email': '',
+    'role': 'member',
+  }, controller: controller);
 
   @override
   void onInit() {
@@ -83,6 +87,10 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
         ),
         _buildGeneralSection(),
         _buildMembersSection(),
+        ...MagicStarter.teamSettings.buildSections(
+          context,
+          MagicStarter.teamResolver?.currentTeam(),
+        ),
       ],
     );
   }
@@ -157,9 +165,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               noPadding: true,
               child: WDiv(
                 className: 'flex flex-col',
-                children: [
-                  ...members.map((member) => _buildMemberRow(member)),
-                ],
+                children: [...members.map((member) => _buildMemberRow(member))],
               ),
             );
           },
@@ -193,8 +199,9 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               child: WDiv(
                 className: 'flex flex-col',
                 children: [
-                  ...invitations
-                      .map((invitation) => _buildInvitationRow(invitation)),
+                  ...invitations.map(
+                    (invitation) => _buildInvitationRow(invitation),
+                  ),
                 ],
               ),
             );
