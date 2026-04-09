@@ -4,6 +4,7 @@ export 'src/facades/magic_starter.dart';
 export 'src/magic_starter_manager.dart';
 export 'src/providers/magic_starter_service_provider.dart';
 export 'src/ui/magic_starter_view_registry.dart';
+export 'src/ui/magic_starter_team_settings_registry.dart';
 export 'src/configuration/magic_starter_config.dart';
 export 'src/models/magic_starter_team.dart';
 export 'src/models/magic_starter_nav_item.dart';

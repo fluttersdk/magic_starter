@@ -11,6 +11,7 @@ import 'ui/layouts/magic_starter_guest_layout.dart';
 import 'ui/widgets/magic_starter_confirm_dialog.dart';
 import 'ui/widgets/magic_starter_password_confirm_dialog.dart';
 import 'ui/widgets/magic_starter_two_factor_modal.dart';
+import 'ui/magic_starter_team_settings_registry.dart';
 import 'ui/magic_starter_view_registry.dart';
 import 'ui/views/auth/magic_starter_forgot_password_view.dart';
 import 'ui/views/auth/magic_starter_login_view.dart';
@@ -295,6 +296,8 @@ class MagicStarterManager {
   }
 
   final MagicStarterViewRegistry _viewRegistry = MagicStarterViewRegistry();
+  final MagicStarterTeamSettingsRegistry _teamSettingsRegistry =
+      MagicStarterTeamSettingsRegistry();
 
   /// User model factory. Override to use your app's User model.
   UserModelFactory userFactory = (data) => MagicStarterAuthUser.fromMap(data);
@@ -383,6 +386,9 @@ class MagicStarterManager {
 
   /// Global view registry used for plugin view overrides.
   MagicStarterViewRegistry get view => _viewRegistry;
+
+  /// Team settings section registry for custom section injection.
+  MagicStarterTeamSettingsRegistry get teamSettings => _teamSettingsRegistry;
 
   /// Registers plugin-provided default views if they are not overridden yet.
   void registerDefaultViews() {
@@ -518,6 +524,7 @@ class MagicStarterManager {
     _localeOptions = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;
+    _teamSettingsRegistry.clear();
     _viewRegistry.clear();
     registerDefaultViews();
   }
