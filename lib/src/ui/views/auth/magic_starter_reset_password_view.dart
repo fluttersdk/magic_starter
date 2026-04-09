@@ -28,6 +28,9 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
 
+  static const _iconVisible = Icons.visibility;
+  static const _iconHidden = Icons.visibility_off;
+
   @override
   void onInit() {
     final email = MagicRouter.instance.queryParameter('email');
@@ -131,7 +134,7 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
                 onTap: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
                 child: WIcon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  _obscurePassword ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),
@@ -154,9 +157,7 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
                 onTap: () => setState(
                     () => _obscureConfirmation = !_obscureConfirmation),
                 child: WIcon(
-                  _obscureConfirmation
-                      ? Icons.visibility
-                      : Icons.visibility_off,
+                  _obscureConfirmation ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),

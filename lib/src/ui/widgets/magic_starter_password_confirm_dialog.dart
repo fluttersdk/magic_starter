@@ -73,6 +73,9 @@ class MagicStarterPasswordConfirmDialog extends StatefulWidget {
 
 class _MagicStarterPasswordConfirmDialogState
     extends State<MagicStarterPasswordConfirmDialog> {
+  static const _iconVisible = Icons.visibility;
+  static const _iconHidden = Icons.visibility_off;
+
   final TextEditingController _passwordController = TextEditingController();
   bool _obscure = true;
   bool _isLoading = false;
@@ -174,7 +177,7 @@ class _MagicStarterPasswordConfirmDialogState
                     suffix: WAnchor(
                       onTap: () => setState(() => _obscure = !_obscure),
                       child: WIcon(
-                        _obscure ? Icons.visibility : Icons.visibility_off,
+                        _obscure ? _iconVisible : _iconHidden,
                         className: 'text-gray-400 text-xl',
                       ),
                     ),

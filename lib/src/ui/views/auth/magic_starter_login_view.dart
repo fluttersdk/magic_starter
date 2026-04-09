@@ -23,6 +23,9 @@ class MagicStarterLoginView
 
 class _MagicStarterLoginViewState extends MagicStatefulViewState<
     MagicStarterAuthController, MagicStarterLoginView> {
+  static const _iconVisible = Icons.visibility;
+  static const _iconHidden = Icons.visibility_off;
+
   /// Both email and phone fields are always declared — the controller decides
   /// which one to include in the payload based on identity mode.
   late final form = MagicFormData(
@@ -93,7 +96,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
                 onTap: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
                 child: WIcon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  _obscurePassword ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),
