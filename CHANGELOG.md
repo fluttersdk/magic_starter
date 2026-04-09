@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### ✨ New Features
+- **Team Settings Sections**: Added `MagicStarter.teamSettings.registerSection()` API — host apps can inject custom sections (billing, integrations, etc.) into the team settings view without overriding it entirely. Sections render after built-in General and Members cards, sorted by `order`.
+
 ## [0.0.1-alpha.13] - 2026-04-09
 
 ### 🐛 Bug Fixes

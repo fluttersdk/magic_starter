@@ -177,6 +177,35 @@ Sends `DELETE /teams/{teamId}/members/{memberId}` and updates the local `members
 > [!TIP]
 > Use `ValueListenableBuilder` to react to changes in `controller.members` and `controller.invitations` — both are `ValueNotifier<List<Map<String, dynamic>>>` for fine-grained rebuilds.
 
+<a name="custom-sections"></a>
+### Custom Sections
+
+Host apps can inject custom sections into the team settings view without overriding the entire view. Sections render after the built-in General and Members cards, sorted by `order` (lower = higher):
+
+```dart
+// In AppServiceProvider.boot()
+MagicStarter.teamSettings.registerSection(
+  key: 'billing',
+  order: 10,
+  builder: (context, team) => BillingCard(team: team),
+);
+
+MagicStarter.teamSettings.registerSection(
+  key: 'integrations',
+  order: 20,
+  builder: (context, team) => IntegrationsCard(team: team),
+);
+```
+
+Remove a section when no longer needed:
+
+```dart
+MagicStarter.teamSettings.removeSection('billing');
+```
+
+> [!NOTE]
+> Registering a section with an existing key replaces the previous one — no duplicates. The `team` parameter is nullable (`MagicStarterTeam?`) because the team resolver may not be configured.
+
 <a name="feature-gate"></a>
 ## Feature Gate
 

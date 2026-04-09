@@ -185,6 +185,13 @@ MagicStarter.useHeader((context, isDesktop) {
 MagicStarter.useSidebarFooter((context) {
   return MyVersionBadge();
 });
+
+// Custom team settings sections — inject cards without overriding the view
+MagicStarter.teamSettings.registerSection(
+  key: 'billing',
+  order: 10,
+  builder: (context, team) => BillingCard(team: team),
+);
 ```
 
 ---

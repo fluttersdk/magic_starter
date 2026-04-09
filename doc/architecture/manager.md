@@ -361,6 +361,7 @@ Default layouts:
 | `MagicStarter.useLocaleOptions(locales)` | `manager.localeOptions = options` |
 | `MagicStarter.useGuestAuthEntry(builder)` | `manager.guestAuthEntryBuilder = builder` |
 | `MagicStarter.useNewsletterLabel(label)` | `manager.newsletterLabel = label` |
+| `MagicStarter.teamSettings` | `manager.teamSettingsSections` |
 | `MagicStarter.view` | `manager.view` |
 | `MagicStarter.isReady` | `manager.isReady` |
 
