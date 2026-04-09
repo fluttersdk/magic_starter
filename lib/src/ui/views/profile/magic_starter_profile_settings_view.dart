@@ -33,6 +33,11 @@ class MagicStarterProfileSettingsView
 
 class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     MagicStarterProfileController, MagicStarterProfileSettingsView> {
+  static const _iconVisible = Icons.visibility;
+  static const _iconHidden = Icons.visibility_off;
+  static const _iconDesktop = Icons.computer;
+  static const _iconMobile = Icons.phone_android;
+
   // -- Profile & password forms -----------------------------------------------
 
   late final profileForm = MagicFormData(
@@ -634,7 +639,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               suffix: WAnchor(
                 onTap: () => setState(() => _obscureCurrent = !_obscureCurrent),
                 child: WIcon(
-                  _obscureCurrent ? Icons.visibility : Icons.visibility_off,
+                  _obscureCurrent ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),
@@ -651,7 +656,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               suffix: WAnchor(
                 onTap: () => setState(() => _obscureNew = !_obscureNew),
                 child: WIcon(
-                  _obscureNew ? Icons.visibility : Icons.visibility_off,
+                  _obscureNew ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),
@@ -669,9 +674,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 onTap: () => setState(
                     () => _obscureConfirmation = !_obscureConfirmation),
                 child: WIcon(
-                  _obscureConfirmation
-                      ? Icons.visibility
-                      : Icons.visibility_off,
+                  _obscureConfirmation ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),
@@ -1113,7 +1116,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           'flex flex-row items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700',
       children: [
         WIcon(
-          isDesktop ? Icons.computer : Icons.phone_android,
+          isDesktop ? _iconDesktop : _iconMobile,
           className: 'text-gray-500 dark:text-gray-400 mt-1 text-xl',
         ),
         WDiv(
@@ -1313,9 +1316,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 onTap: () => setState(
                     () => _obscureUpgradePassword = !_obscureUpgradePassword),
                 child: WIcon(
-                  _obscureUpgradePassword
-                      ? Icons.visibility
-                      : Icons.visibility_off,
+                  _obscureUpgradePassword ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),
@@ -1335,9 +1336,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 onTap: () => setState(() =>
                     _obscureUpgradeConfirmation = !_obscureUpgradeConfirmation),
                 child: WIcon(
-                  _obscureUpgradeConfirmation
-                      ? Icons.visibility
-                      : Icons.visibility_off,
+                  _obscureUpgradeConfirmation ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),

@@ -20,6 +20,14 @@ class MagicStarterNotificationPreferencesView
 class _MagicStarterNotificationPreferencesViewState
     extends MagicStatefulViewState<MagicStarterNotificationController,
         MagicStarterNotificationPreferencesView> {
+  static const _iconLocked = Icons.lock_outline;
+  static const _channelIcons = <String, IconData>{
+    'mail': Icons.mail_outline,
+    'database': Icons.inbox_outlined,
+    'push': Icons.notifications_outlined,
+  };
+  static const _defaultChannelIcon = Icons.circle_notifications_outlined;
+
   @override
   void onInit() {
     super.onInit();
@@ -137,7 +145,7 @@ class _MagicStarterNotificationPreferencesViewState
                 ${isEnabled && !isLocked ? 'bg-primary/10 dark:bg-primary/10' : 'bg-gray-100 dark:bg-gray-700'}
               ''',
               child: WIcon(
-                isLocked ? Icons.lock_outline : icon,
+                isLocked ? _iconLocked : icon,
                 className: '''
                   text-[18px]
                   ${isEnabled && !isLocked ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}
@@ -170,12 +178,7 @@ class _MagicStarterNotificationPreferencesViewState
 
   /// Returns the appropriate icon for a notification channel.
   IconData _channelIcon(String channel) {
-    return switch (channel.toLowerCase()) {
-      'mail' => Icons.mail_outline,
-      'database' => Icons.inbox_outlined,
-      'push' => Icons.notifications_outlined,
-      _ => Icons.circle_notifications_outlined,
-    };
+    return _channelIcons[channel.toLowerCase()] ?? _defaultChannelIcon;
   }
 
   /// Returns a user-friendly label for a notification channel.

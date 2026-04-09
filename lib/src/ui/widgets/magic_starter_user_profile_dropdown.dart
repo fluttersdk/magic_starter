@@ -29,6 +29,9 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
     this.triggerBuilder,
   });
 
+  static const _iconLightMode = Icons.light_mode_outlined;
+  static const _iconDarkMode = Icons.dark_mode_outlined;
+
   @override
   Widget build(BuildContext context) {
     return WPopover(
@@ -147,9 +150,7 @@ class MagicStarterUserProfileDropdown extends StatelessWidget {
               ),
             // Theme toggle — does not close dropdown on tap.
             _buildMenuItem(
-              icon: context.windIsDark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
+              icon: context.windIsDark ? _iconLightMode : _iconDarkMode,
               label: trans('common.toggle_theme'),
               onTap: () => context.windTheme.toggleTheme(),
             ),

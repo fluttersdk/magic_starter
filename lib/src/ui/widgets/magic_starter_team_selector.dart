@@ -11,6 +11,9 @@ import '../../magic_starter_manager.dart';
 /// Displays the current team and allows switching between teams.
 /// Uses the team resolver registered via `MagicStarter.useTeamResolver()`.
 class MagicStarterTeamSelector extends StatelessWidget {
+  static const _iconCollapse = Icons.unfold_less;
+  static const _iconExpand = Icons.unfold_more;
+
   final bool compact;
 
   const MagicStarterTeamSelector({super.key, this.compact = false});
@@ -54,7 +57,7 @@ class MagicStarterTeamSelector extends StatelessWidget {
               ),
             ),
             WIcon(
-              isOpen ? Icons.unfold_less : Icons.unfold_more,
+              isOpen ? _iconCollapse : _iconExpand,
               className: 'text-gray-400 text-lg',
             ),
           ],

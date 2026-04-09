@@ -33,6 +33,13 @@ class MagicStarterNotificationsListView extends StatefulWidget {
 
 class _MagicStarterNotificationsListViewState
     extends State<MagicStarterNotificationsListView> {
+  static const _notificationTypeIcons = <String, IconData>{
+    'monitor_up': Icons.check_circle_outline,
+    'monitor_degraded': Icons.warning_outlined,
+    'monitor_down': Icons.error_outline,
+  };
+  static const _defaultNotificationIcon = Icons.info_outline;
+
   PaginatedNotifications? _paginatedData;
   bool _isLoading = true;
   bool _hasError = false;
@@ -199,12 +206,8 @@ class _MagicStarterNotificationsListViewState
     final mapping = mapper?.call(notification.type);
 
     final IconData icon = mapping?.icon ??
-        switch (notification.type) {
-          'monitor_up' => Icons.check_circle_outline,
-          'monitor_degraded' => Icons.warning_outlined,
-          'monitor_down' => Icons.error_outline,
-          _ => Icons.info_outline,
-        };
+        _notificationTypeIcons[notification.type] ??
+        _defaultNotificationIcon;
 
     final String iconColor = mapping?.colorClass ??
         switch (notification.type) {

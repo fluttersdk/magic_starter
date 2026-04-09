@@ -18,6 +18,13 @@ import 'package:magic_notifications/magic_notifications.dart';
 /// )
 /// ```
 class MagicStarterNotificationDropdown extends StatelessWidget {
+  static const _typeIcons = <String, IconData>{
+    'monitor_down': Icons.error_outline,
+    'monitor_up': Icons.check_circle_outline,
+    'monitor_degraded': Icons.warning_amber_outlined,
+  };
+  static const _defaultTypeIcon = Icons.notifications_none_outlined;
+
   /// Stream of notifications to display.
   final Stream<List<DatabaseNotification>> notificationStream;
 
@@ -338,16 +345,7 @@ class MagicStarterNotificationDropdown extends StatelessWidget {
   }
 
   IconData _getIconForType(String type) {
-    switch (type) {
-      case 'monitor_down':
-        return Icons.error_outline;
-      case 'monitor_up':
-        return Icons.check_circle_outline;
-      case 'monitor_degraded':
-        return Icons.warning_amber_outlined;
-      default:
-        return Icons.notifications_none_outlined;
-    }
+    return _typeIcons[type] ?? _defaultTypeIcon;
   }
 
   String _getColorForType(String type) {

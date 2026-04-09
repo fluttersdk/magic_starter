@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 🐛 Bug Fixes
+- **Icon Tree-Shaking**: Extracted all runtime-conditional `Icons.*` references into `static const` fields for Flutter web tree-shaking compatibility — fixes 11+ broken icon usages across 10 files (#37)
+
 ## [0.0.1-alpha.12] - 2026-04-09
 
 ### ✨ New Features
