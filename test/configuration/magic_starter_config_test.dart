@@ -145,6 +145,13 @@ void main() {
           equals('/auth/two-factor-challenge'),
         );
       });
+
+      test('invitationAcceptRoute() interpolates token into path', () {
+        expect(
+          MagicStarterConfig.invitationAcceptRoute('abc123'),
+          equals('/invitations/abc123/accept'),
+        );
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -394,6 +401,15 @@ void main() {
           equals('/account/notifications'),
         );
       });
+
+      test('twoFactorChallengeRoute() uses configured authPrefix', () {
+        Config.set('magic_starter.routes.auth_prefix', '/authentication');
+
+        expect(
+          MagicStarterConfig.twoFactorChallengeRoute(),
+          equals('/authentication/two-factor-challenge'),
+        );
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -459,6 +475,47 @@ void main() {
           MagicStarterConfig.defaultTimezone(),
           equals('Europe/Istanbul'),
         );
+      });
+
+      test('supportedLocales() returns configured value', () {
+        Config.set('magic_starter.supported_locales', ['en', 'fr', 'de']);
+
+        expect(
+          MagicStarterConfig.supportedLocales(),
+          equals(['en', 'fr', 'de']),
+        );
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // HTTP configuration — default values
+    // -------------------------------------------------------------------------
+
+    group('HTTP configuration (defaults)', () {
+      test('requestTimeoutSeconds() returns 30 by default', () {
+        expect(MagicStarterConfig.requestTimeoutSeconds(), equals(30));
+      });
+
+      test('maxRetries() returns 3 by default', () {
+        expect(MagicStarterConfig.maxRetries(), equals(3));
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // HTTP configuration — configured overrides
+    // -------------------------------------------------------------------------
+
+    group('HTTP configuration (configured)', () {
+      test('requestTimeoutSeconds() returns configured value', () {
+        Config.set('magic_starter.http.timeout_seconds', 60);
+
+        expect(MagicStarterConfig.requestTimeoutSeconds(), equals(60));
+      });
+
+      test('maxRetries() returns configured value', () {
+        Config.set('magic_starter.http.max_retries', 5);
+
+        expect(MagicStarterConfig.maxRetries(), equals(5));
       });
     });
 
