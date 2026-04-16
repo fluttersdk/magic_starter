@@ -184,4 +184,94 @@ void main() {
       expect(find.byType(MagicStarterConfirmDialog), findsOneWidget);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Slot injection tests
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterTeamSettingsView — slot injection', () {
+    late MagicStarterTeamController controller;
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.singleton('network', () => MockNetworkDriver());
+      Config.set('magic_starter.features.teams', true);
+      Config.set('wind.colors.primary', 'indigo');
+      controller = MagicStarterTeamController.instance;
+    });
+
+    tearDown(() {
+      controller.members.dispose();
+      controller.invitations.dispose();
+      controller.currentTeamId.dispose();
+    });
+
+    testWidgets('header slot renders injected widget', (tester) async {
+      MagicStarter.view.slot(
+        'teams.settings',
+        'header',
+        (ctx) => const Text('Custom Header'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterTeamSettingsView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Header'), findsOneWidget);
+    });
+
+    testWidgets('footer slot renders injected widget', (tester) async {
+      MagicStarter.view.slot(
+        'teams.settings',
+        'footer',
+        (ctx) => const Text('Custom Footer'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterTeamSettingsView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Footer'), findsOneWidget);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Theme consumption tests
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterTeamSettingsView — theme consumption', () {
+    late MagicStarterTeamController controller;
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.singleton('network', () => MockNetworkDriver());
+      Config.set('magic_starter.features.teams', true);
+      Config.set('wind.colors.primary', 'indigo');
+      controller = MagicStarterTeamController.instance;
+    });
+
+    tearDown(() {
+      controller.members.dispose();
+      controller.invitations.dispose();
+      controller.currentTeamId.dispose();
+    });
+
+    testWidgets('custom FormTheme renders without crash', (tester) async {
+      MagicStarter.useFormTheme(
+        const MagicStarterFormTheme(
+          inputClassName: 'rounded-none border-2 border-blue-500',
+          labelClassName: 'text-xs font-bold text-blue-700',
+        ),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterTeamSettingsView()));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

@@ -201,4 +201,71 @@ void main() {
       expect(find.text(trans('notifications.mark_all_read')), findsOneWidget);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Slot injection tests
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterNotificationsListView — slot injection', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      mockDriver = MockNetworkDriver();
+      Magic.singleton('network', () => mockDriver);
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+    });
+
+    testWidgets('header slot renders injected widget', (tester) async {
+      MagicStarter.view.slot(
+        'notifications.list',
+        'header',
+        (ctx) => const Text('Custom Header'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterNotificationsListView()));
+
+      expect(find.text('Custom Header'), findsOneWidget);
+    });
+
+    testWidgets('footer slot renders injected widget', (tester) async {
+      MagicStarter.view.slot(
+        'notifications.list',
+        'footer',
+        (ctx) => const Text('Custom Footer'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterNotificationsListView()));
+
+      expect(find.text('Custom Footer'), findsOneWidget);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Theme consumption tests
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterNotificationsListView — theme consumption', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      mockDriver = MockNetworkDriver();
+      Magic.singleton('network', () => mockDriver);
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+    });
+
+    testWidgets('custom FormTheme renders without crash', (tester) async {
+      MagicStarter.useFormTheme(
+        const MagicStarterFormTheme(
+          inputClassName: 'rounded-none border-2 border-blue-500',
+          labelClassName: 'text-xs font-bold text-blue-700',
+        ),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterNotificationsListView()));
+
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

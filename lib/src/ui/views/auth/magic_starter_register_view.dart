@@ -78,6 +78,13 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
   Widget _buildForm({String? errorMessage}) {
     final isLoading = controller.isLoading;
 
+    final headerSlot =
+        MagicStarter.view.buildSlot('auth.register', 'header', context);
+    final formFooterSlot =
+        MagicStarter.view.buildSlot('auth.register', 'formFooter', context);
+    final footerSlot =
+        MagicStarter.view.buildSlot('auth.register', 'footer', context);
+
     return MagicStarterAuthFormCard(
       title: trans('auth.register_title'),
       subtitle: trans('auth.register_subtitle'),
@@ -87,17 +94,17 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
         child: WDiv(
           className: 'flex flex-col items-stretch',
           children: [
+            if (headerSlot != null) headerSlot,
+
             // Name
             WFormInput(
               label: trans('attributes.name'),
               controller: form['name'],
               placeholder: trans('fields.name_placeholder'),
               validator: rules([Required(), Min(2)], field: 'name'),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-4'),
 
@@ -120,11 +127,9 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-4'),
 
@@ -143,11 +148,9 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-6'),
 
@@ -178,13 +181,14 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
             WButton(
               isLoading: isLoading,
               onTap: _submit,
-              className:
-                  'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+              className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('auth.register_title'),
                 className: 'text-center',
               ),
             ),
+
+            if (formFooterSlot != null) formFooterSlot,
 
             // Social login slot
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
@@ -202,15 +206,17 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                 children: [
                   WText(
                     trans('auth.already_have_account'),
-                    className: 'text-sm text-gray-500 dark:text-gray-400',
+                    className: MagicStarter.authTheme.registrationLinkClassName,
                   ),
                   WText(
                     trans('auth.sign_in'),
-                    className: 'text-sm font-semibold text-primary',
+                    className:
+                        MagicStarter.authTheme.registrationLinkTextClassName,
                   ),
                 ],
               ),
             ),
+            if (footerSlot != null) footerSlot,
           ],
         ),
       ),
@@ -256,11 +262,9 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
         required ? [Required(), Email()] : [Email()],
         field: 'email',
       ),
-      className:
-          'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-      placeholderClassName: 'text-gray-400 dark:text-gray-500',
-      labelClassName:
-          'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+      className: MagicStarter.formTheme.inputClassName,
+      placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+      labelClassName: MagicStarter.formTheme.labelClassName,
     );
   }
 
@@ -275,11 +279,9 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
         required ? [Required()] : [],
         field: 'phone',
       ),
-      className:
-          'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-      placeholderClassName: 'text-gray-400 dark:text-gray-500',
-      labelClassName:
-          'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+      className: MagicStarter.formTheme.inputClassName,
+      placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+      labelClassName: MagicStarter.formTheme.labelClassName,
     );
   }
 

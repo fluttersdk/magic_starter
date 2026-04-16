@@ -89,4 +89,66 @@ void main() {
           findsNothing);
     });
   });
+
+  group('MagicStarterLoginView — slot injection', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.put(MagicStarterAuthController());
+    });
+
+    testWidgets('renders header slot when registered', (tester) async {
+      MagicStarter.view.slot(
+        'auth.login',
+        'header',
+        (ctx) => const Text('Custom Header'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterLoginView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Header'), findsOneWidget);
+    });
+
+    testWidgets('renders footer slot when registered', (tester) async {
+      MagicStarter.view.slot(
+        'auth.login',
+        'footer',
+        (ctx) => const Text('Custom Footer'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterLoginView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Footer'), findsOneWidget);
+    });
+  });
+
+  group('MagicStarterLoginView — theme consumption', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.put(MagicStarterAuthController());
+    });
+
+    testWidgets('renders without crash when custom FormTheme is set',
+        (tester) async {
+      MagicStarter.useFormTheme(
+        const MagicStarterFormTheme(
+          inputClassName: 'custom-input',
+          labelClassName: 'custom-label',
+          primaryButtonClassName: 'custom-button',
+        ),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterLoginView()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterLoginView), findsOneWidget);
+    });
+  });
 }

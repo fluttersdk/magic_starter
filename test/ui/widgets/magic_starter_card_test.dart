@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/src/ui/widgets/magic_starter_card.dart';
+import 'package:magic_starter/magic_starter.dart';
 
 void main() {
+  setUp(() {
+    MagicApp.reset();
+    Magic.flush();
+    Magic.singleton('magic_starter', () => MagicStarterManager());
+  });
+
+  tearDown(() {
+    MagicApp.reset();
+    Magic.flush();
+  });
+
   Widget wrap(Widget widget) {
     return MaterialApp(
       home: WindTheme(
@@ -165,5 +176,67 @@ void main() {
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(wDiv.className, contains('overflow-hidden'));
     expect(wDiv.className, contains('shadow-md'));
+  });
+
+  // -------------------------------------------------------------------------
+  // Theme consumption tests
+  // -------------------------------------------------------------------------
+
+  group('theme consumption', () {
+    testWidgets('custom surfaceClassName is used for surface variant',
+        (tester) async {
+      MagicStarter.manager.cardTheme = const MagicStarterCardTheme(
+        surfaceClassName: 'custom-surface',
+      );
+
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterCard(
+            variant: CardVariant.surface,
+            child: SizedBox(),
+          ),
+        ),
+      );
+
+      final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+      expect(wDiv.className, contains('custom-surface'));
+    });
+
+    testWidgets('custom titleClassName is used for card title', (tester) async {
+      MagicStarter.manager.cardTheme = const MagicStarterCardTheme(
+        titleClassName: 'custom-title-class',
+      );
+
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterCard(
+            title: 'My Card',
+            child: SizedBox(),
+          ),
+        ),
+      );
+
+      final wText = tester.widget<WText>(find.byType(WText).first);
+      expect(wText.className, contains('custom-title-class'));
+    });
+
+    testWidgets('custom elevatedClassName is used for elevated variant',
+        (tester) async {
+      MagicStarter.manager.cardTheme = const MagicStarterCardTheme(
+        elevatedClassName: 'custom-elevated',
+      );
+
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterCard(
+            variant: CardVariant.elevated,
+            child: SizedBox(),
+          ),
+        ),
+      );
+
+      final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+      expect(wDiv.className, contains('custom-elevated'));
+    });
   });
 }

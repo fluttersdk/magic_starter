@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../facades/magic_starter.dart';
+
 /// Default Guest Layout for Magic Starter.
 ///
 /// Simple centered wrapper for authentication pages.
@@ -14,10 +16,11 @@ class MagicStarterGuestLayout extends StatelessWidget {
     return Scaffold(
       backgroundColor: wColor(
         context,
-        'gray',
-        shade: 50,
-        darkColorName: 'gray',
-        darkShade: 900,
+        MagicStarter.manager.layoutTheme.contentBackgroundLightColor,
+        shade: MagicStarter.manager.layoutTheme.contentBackgroundLightShade,
+        darkColorName:
+            MagicStarter.manager.layoutTheme.contentBackgroundDarkColor,
+        darkShade: MagicStarter.manager.layoutTheme.contentBackgroundDarkShade,
       ),
       body: Center(
         child: ConstrainedBox(

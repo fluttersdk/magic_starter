@@ -314,5 +314,60 @@ void main() {
         );
       },
     );
+
+    // -----------------------------------------------------------------------
+    // Slot injection tests
+    // -----------------------------------------------------------------------
+
+    group('slot injection', () {
+      testWidgets('header slot renders injected widget', (tester) async {
+        MagicStarter.view.slot(
+          'profile.settings',
+          'header',
+          (ctx) => const Text('Custom Header'),
+        );
+
+        await tester.pumpWidget(
+          wrap(const MagicStarterProfileSettingsView()),
+        );
+
+        expect(find.text('Custom Header'), findsOneWidget);
+      });
+
+      testWidgets('footer slot renders injected widget', (tester) async {
+        MagicStarter.view.slot(
+          'profile.settings',
+          'footer',
+          (ctx) => const Text('Custom Footer'),
+        );
+
+        await tester.pumpWidget(
+          wrap(const MagicStarterProfileSettingsView()),
+        );
+
+        expect(find.text('Custom Footer'), findsOneWidget);
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // Theme consumption tests
+    // -----------------------------------------------------------------------
+
+    group('theme consumption', () {
+      testWidgets('custom FormTheme renders without crash', (tester) async {
+        MagicStarter.useFormTheme(
+          const MagicStarterFormTheme(
+            inputClassName: 'rounded-none border-2 border-blue-500',
+            labelClassName: 'text-xs font-bold text-blue-700',
+          ),
+        );
+
+        await tester.pumpWidget(
+          wrap(const MagicStarterProfileSettingsView()),
+        );
+
+        expect(tester.takeException(), isNull);
+      });
+    });
   });
 }

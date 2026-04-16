@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
 import '../../widgets/magic_starter_card.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
@@ -74,15 +75,28 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
       );
     }
 
+    final headerSlot =
+        MagicStarter.view.buildSlot('teams.settings', 'header', context);
+    final footerSlot =
+        MagicStarter.view.buildSlot('teams.settings', 'footer', context);
+    final afterMembersSlot = MagicStarter.view
+        .buildSlot('teams.settings', 'afterSection:members', context);
+    final afterDangerZoneSlot = MagicStarter.view
+        .buildSlot('teams.settings', 'afterSection:danger-zone', context);
+
     return WDiv(
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
+        if (headerSlot != null) headerSlot,
         MagicStarterPageHeader(
           title: trans('teams.settings'),
           subtitle: trans('teams.settings_subtitle'),
         ),
         _buildGeneralSection(),
         _buildMembersSection(),
+        if (afterMembersSlot != null) afterMembersSlot,
+        if (afterDangerZoneSlot != null) afterDangerZoneSlot,
+        if (footerSlot != null) footerSlot,
       ],
     );
   }
@@ -90,6 +104,8 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
   // -- General Section --------------------------------------------------------
 
   Widget _buildGeneralSection() {
+    final formTheme = MagicStarter.formTheme;
+
     return MagicForm(
       formData: form,
       child: MagicStarterCard(
@@ -101,10 +117,8 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               controller: form['name'],
               label: trans('teams.team_name'),
               validator: rules([Required(), Min(2), Max(255)], field: 'name'),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WDiv(
               className: 'flex justify-end',
@@ -202,60 +216,62 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
         ),
 
         // Invite form
-        MagicForm(
-          formData: inviteForm,
-          child: MagicStarterCard(
-            title: trans('teams.invite_member'),
-            child: WDiv(
-              className: 'flex flex-col gap-4',
-              children: [
-                WFormInput(
-                  controller: inviteForm['email'],
-                  label: trans('attributes.email'),
-                  type: InputType.email,
-                  validator: rules([Required(), Email()], field: 'email'),
-                  labelClassName:
-                      'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-                  className:
-                      'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary error:border-red-500',
-                ),
-                WFormSelect<String>(
-                  value: inviteForm.get('role'),
-                  label: trans('attributes.role'),
-                  options: [
-                    SelectOption(
-                      value: 'member',
-                      label: trans('teams.role_member'),
-                    ),
-                    SelectOption(
-                      value: 'admin',
-                      label: trans('teams.role_admin'),
-                    ),
-                  ],
-                  onChange: (value) =>
-                      inviteForm.set('role', value ?? 'member'),
-                  labelClassName:
-                      'text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-                  className:
-                      'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary',
-                  menuClassName:
-                      'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
-                ),
-                WDiv(
-                  className: 'flex justify-end',
+        Builder(
+          builder: (context) {
+            final formTheme = MagicStarter.formTheme;
+
+            return MagicForm(
+              formData: inviteForm,
+              child: MagicStarterCard(
+                title: trans('teams.invite_member'),
+                child: WDiv(
+                  className: 'flex flex-col gap-4',
                   children: [
-                    WButton(
-                      onTap: _sendInvite,
-                      isLoading: controller.isLoading,
-                      className:
-                          'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                      child: WText(trans('teams.send_invite')),
+                    WFormInput(
+                      controller: inviteForm['email'],
+                      label: trans('attributes.email'),
+                      type: InputType.email,
+                      validator: rules([Required(), Email()], field: 'email'),
+                      labelClassName: formTheme.labelClassName,
+                      className: formTheme.inputClassName,
+                    ),
+                    WFormSelect<String>(
+                      value: inviteForm.get('role'),
+                      label: trans('attributes.role'),
+                      options: [
+                        SelectOption(
+                          value: 'member',
+                          label: trans('teams.role_member'),
+                        ),
+                        SelectOption(
+                          value: 'admin',
+                          label: trans('teams.role_admin'),
+                        ),
+                      ],
+                      onChange: (value) =>
+                          inviteForm.set('role', value ?? 'member'),
+                      labelClassName: formTheme.labelClassName,
+                      className: formTheme.inputClassName,
+                      menuClassName:
+                          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+                    ),
+                    WDiv(
+                      className: 'flex justify-end',
+                      children: [
+                        WButton(
+                          onTap: _sendInvite,
+                          isLoading: controller.isLoading,
+                          className:
+                              'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                          child: WText(trans('teams.send_invite')),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ],
     );

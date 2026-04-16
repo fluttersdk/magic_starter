@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import 'configuration/magic_starter_config.dart';
+import 'configuration/magic_starter_theme.dart';
 import 'facades/magic_starter.dart';
 import 'models/magic_starter_auth_user.dart';
 import 'models/magic_starter_nav_item.dart';
@@ -331,6 +332,57 @@ class MagicStarterManager {
   /// headers, bodies, footers, buttons, inputs, and typography.
   MagicStarterModalTheme modalTheme = const MagicStarterModalTheme();
 
+  /// Form theme configuration. Holds className overrides for inputs, labels,
+  /// placeholders, and primary/secondary/link button styles in all forms.
+  MagicStarterFormTheme formTheme = const MagicStarterFormTheme();
+
+  /// Auth theme configuration. Holds className overrides for the auth form
+  /// card, title, subtitle, error banner, social divider, and link styles.
+  MagicStarterAuthTheme authTheme = const MagicStarterAuthTheme();
+
+  /// Card widget theme configuration. Holds className overrides for card
+  /// variant backgrounds, border radius, padding, and title styles.
+  MagicStarterCardTheme cardTheme = const MagicStarterCardTheme();
+
+  /// Page header theme configuration. Holds className overrides for the
+  /// page header container, title, subtitle, and action container.
+  MagicStarterPageHeaderTheme pageHeaderTheme =
+      const MagicStarterPageHeaderTheme();
+
+  /// Layout shell theme configuration. Holds className/dimension overrides for
+  /// the sidebar, header, content background, drawer, and brand bar.
+  MagicStarterLayoutTheme layoutTheme = const MagicStarterLayoutTheme();
+
+  /// Get the unified theme built from all individual sub-theme fields.
+  ///
+  /// Reading this constructs a [MagicStarterTheme] from the current values of
+  /// [navigationTheme], [modalTheme], [formTheme], [cardTheme],
+  /// [pageHeaderTheme], [layoutTheme], and [authTheme].
+  MagicStarterTheme get theme => MagicStarterTheme(
+        navigation: navigationTheme,
+        modal: modalTheme,
+        form: formTheme,
+        card: cardTheme,
+        pageHeader: pageHeaderTheme,
+        layout: layoutTheme,
+        auth: authTheme,
+      );
+
+  /// Set the unified theme, distributing each sub-theme to its individual field.
+  ///
+  /// This is equivalent to setting [navigationTheme], [modalTheme],
+  /// [formTheme], [cardTheme], [pageHeaderTheme], [layoutTheme], and
+  /// [authTheme] separately.
+  set theme(MagicStarterTheme value) {
+    navigationTheme = value.navigation;
+    modalTheme = value.modal;
+    formTheme = value.form;
+    cardTheme = value.card;
+    pageHeaderTheme = value.pageHeader;
+    layoutTheme = value.layout;
+    authTheme = value.auth;
+  }
+
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
   static const Map<String, String> _nativeLanguageNames = {
@@ -515,6 +567,11 @@ class MagicStarterManager {
     notificationTypeMapper = null;
     navigationTheme = const MagicStarterNavigationTheme();
     modalTheme = const MagicStarterModalTheme();
+    formTheme = const MagicStarterFormTheme();
+    authTheme = const MagicStarterAuthTheme();
+    cardTheme = const MagicStarterCardTheme();
+    pageHeaderTheme = const MagicStarterPageHeaderTheme();
+    layoutTheme = const MagicStarterLayoutTheme();
     _localeOptions = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;

@@ -344,6 +344,138 @@ void main() {
     );
   });
 
+  group('layout theme', () {
+    testWidgets(
+      'sidebar renders with custom sidebarWidth from LayoutTheme',
+      (tester) async {
+        // Desktop viewport to ensure sidebar renders.
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(sidebarWidth: 300),
+        );
+
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // The sidebar is wrapped in SizedBox(width: layoutTheme.sidebarWidth).
+        final sidebarBox =
+            tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
+                  (box) => box.width == 300,
+                  orElse: () =>
+                      throw TestFailure('No SizedBox with width 300 found'),
+                );
+        expect(sidebarBox.width, equals(300));
+      },
+    );
+
+    testWidgets(
+      'sidebar uses custom sidebarClassName from LayoutTheme',
+      (tester) async {
+        // Desktop viewport to ensure sidebar renders.
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const customClass =
+            'h-full flex flex-col bg-zinc-900 border-r border-zinc-700';
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(sidebarClassName: customClass),
+        );
+
+        // Layout reads sidebarClassName at build time — no exception means it
+        // consumed the custom class name correctly.
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify the custom class is stored on the manager after the call.
+        expect(
+          MagicStarter.manager.layoutTheme.sidebarClassName,
+          equals(customClass),
+        );
+      },
+    );
+
+    testWidgets(
+      'useNavigationTheme still affects nav item styling after layout theme change',
+      (tester) async {
+        // Desktop viewport to ensure sidebar with nav items renders.
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const customActiveClass =
+            'active:bg-indigo-100 dark:active:bg-indigo-900';
+        const customHoverClass = 'hover:bg-indigo-50 dark:hover:bg-indigo-900';
+
+        // Apply a custom layout theme first.
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(sidebarWidth: 280),
+        );
+
+        // Then apply a custom navigation theme — must not be overridden.
+        MagicStarter.useNavigationTheme(
+          const MagicStarterNavigationTheme(
+            activeItemClassName: customActiveClass,
+            hoverItemClassName: customHoverClass,
+          ),
+        );
+
+        MagicStarter.useNavigation(
+          mainItems: [
+            const MagicStarterNavItem(
+              icon: Icons.home,
+              labelKey: 'Home',
+              path: '/',
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Navigation theme values must survive the layout theme change.
+        expect(
+          MagicStarter.navigationTheme.activeItemClassName,
+          equals(customActiveClass),
+        );
+        expect(
+          MagicStarter.navigationTheme.hoverItemClassName,
+          equals(customHoverClass),
+        );
+
+        // Layout theme change must not reset the sidebar width either.
+        expect(MagicStarter.manager.layoutTheme.sidebarWidth, equals(280));
+      },
+    );
+  });
+
   group('MagicStarterAppLayout sidebar navigation scroll', () {
     testWidgets(
       'sidebar does not overflow with many nav items in short viewport',

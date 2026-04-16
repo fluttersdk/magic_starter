@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
 
@@ -58,13 +59,19 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
   @override
   Widget build(BuildContext context) {
     return controller.renderState(
-      (_) => _buildSuccess(),
-      onEmpty: _buildForm(),
-      onError: (message) => _buildForm(errorMessage: message),
+      (_) => _buildSuccess(context),
+      onEmpty: _buildForm(context),
+      onError: (message) => _buildForm(context, errorMessage: message),
     );
   }
 
-  Widget _buildSuccess() {
+  Widget _buildSuccess(BuildContext context) {
+    final footerSlot = MagicStarter.view.buildSlot(
+      'auth.reset_password',
+      'footer',
+      context,
+    );
+
     return MagicStarterAuthFormCard(
       title: trans('auth.reset_password_title'),
       subtitle: trans('auth.reset_password_subtitle'),
@@ -88,16 +95,30 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
             onTap: () => MagicRoute.to('/auth/login'),
             child: WText(
               trans('auth.back_to_login'),
-              className: 'text-sm font-semibold text-primary',
+              className: MagicStarter.formTheme.linkClassName,
             ),
           ),
+          if (footerSlot != null) ...[
+            const WSpacer(className: 'h-2'),
+            footerSlot,
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildForm({String? errorMessage}) {
+  Widget _buildForm(BuildContext context, {String? errorMessage}) {
     final isLoading = controller.isLoading;
+    final headerSlot = MagicStarter.view.buildSlot(
+      'auth.reset_password',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'auth.reset_password',
+      'footer',
+      context,
+    );
 
     return MagicStarterAuthFormCard(
       title: trans('auth.reset_password_title'),
@@ -108,6 +129,10 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
         child: WDiv(
           className: 'flex flex-col items-stretch',
           children: [
+            if (headerSlot != null) ...[
+              headerSlot,
+              const WSpacer(className: 'h-4'),
+            ],
             // Email
             WFormInput(
               label: trans('attributes.email'),
@@ -115,11 +140,9 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
               placeholder: trans('fields.email_placeholder'),
               type: InputType.email,
               validator: rules([Required(), Email()], field: 'email'),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-4'),
 
@@ -138,11 +161,9 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-4'),
 
@@ -155,17 +176,16 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
               validator: rules([Required()], field: 'password_confirmation'),
               suffix: WAnchor(
                 onTap: () => setState(
-                    () => _obscureConfirmation = !_obscureConfirmation),
+                  () => _obscureConfirmation = !_obscureConfirmation,
+                ),
                 child: WIcon(
                   _obscureConfirmation ? _iconVisible : _iconHidden,
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-6'),
 
@@ -173,11 +193,16 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
             WButton(
               isLoading: isLoading,
               onTap: _submit,
-              className:
-                  'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
-              child: WText(trans('auth.reset_password_button'),
-                  className: 'text-center'),
+              className: MagicStarter.formTheme.primaryButtonClassName,
+              child: WText(
+                trans('auth.reset_password_button'),
+                className: 'text-center',
+              ),
             ),
+            if (footerSlot != null) ...[
+              const WSpacer(className: 'h-4'),
+              footerSlot,
+            ],
           ],
         ),
       ),

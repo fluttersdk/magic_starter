@@ -107,10 +107,12 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           key: _scaffoldKey,
           backgroundColor: wColor(
             context,
-            'gray',
-            shade: 50,
-            darkColorName: 'gray',
-            darkShade: 950,
+            MagicStarter.manager.layoutTheme.contentBackgroundLightColor,
+            shade: MagicStarter.manager.layoutTheme.contentBackgroundLightShade,
+            darkColorName:
+                MagicStarter.manager.layoutTheme.contentBackgroundDarkColor,
+            darkShade:
+                MagicStarter.manager.layoutTheme.contentBackgroundDarkShade,
           ),
           drawer: isDesktop ? null : _buildDrawer(context, currentPath),
           body: SafeArea(
@@ -148,22 +150,22 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // -------------------------------------------------------------------------
 
   Widget _buildSidebar(BuildContext context, String currentPath) {
-    return WDiv(
-      className: '''
-                w-64 h-full flex flex-col
-                bg-white dark:bg-gray-900
-                border-r border-gray-200 dark:border-gray-700
-            ''',
-      children: [
-        _buildBrand(context),
-        const WSpacer(className: 'h-4'),
-        _buildTeamSelector(context),
-        const WSpacer(className: 'h-2'),
-        Expanded(child: _buildNavigation(context, currentPath)),
-        if (MagicStarter.manager.sidebarFooterBuilder != null)
-          MagicStarter.manager.sidebarFooterBuilder!(context),
-        _buildUserMenu(context),
-      ],
+    final layoutTheme = MagicStarter.manager.layoutTheme;
+    return SizedBox(
+      width: layoutTheme.sidebarWidth,
+      child: WDiv(
+        className: layoutTheme.sidebarClassName,
+        children: [
+          _buildBrand(context),
+          const WSpacer(className: 'h-4'),
+          _buildTeamSelector(context),
+          const WSpacer(className: 'h-2'),
+          Expanded(child: _buildNavigation(context, currentPath)),
+          if (MagicStarter.manager.sidebarFooterBuilder != null)
+            MagicStarter.manager.sidebarFooterBuilder!(context),
+          _buildUserMenu(context),
+        ],
+      ),
     );
   }
 
@@ -172,12 +174,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // -------------------------------------------------------------------------
 
   Widget _buildDrawer(BuildContext context, String currentPath) {
+    final layoutTheme = MagicStarter.manager.layoutTheme;
     return Drawer(
       backgroundColor: wColor(
         context,
-        'white',
-        darkColorName: 'gray',
-        darkShade: 900,
+        layoutTheme.drawerBackgroundLightColor,
+        darkColorName: layoutTheme.drawerBackgroundDarkColor,
+        darkShade: layoutTheme.drawerBackgroundDarkShade,
       ),
       child: SafeArea(
         child: WDiv(
@@ -216,13 +219,9 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     // 2. Default: mobile-only simple header.
     if (isDesktop) return const SizedBox.shrink();
 
+    final layoutTheme = MagicStarter.manager.layoutTheme;
     return WDiv(
-      className: '''
-                h-16 px-4
-                bg-white dark:bg-gray-900
-                border-b border-gray-200 dark:border-gray-700
-                flex items-center justify-between
-            ''',
+      className: layoutTheme.headerClassName,
       children: [
         WAnchor(
           onTap: _openDrawer,
@@ -252,11 +251,9 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
 
   Widget _buildBrand(BuildContext context, {bool showClose = false}) {
     final navTheme = MagicStarter.navigationTheme;
+    final layoutTheme = MagicStarter.manager.layoutTheme;
     return WDiv(
-      className: '''
-                h-14 px-5 flex items-center justify-between
-                border-b border-gray-100 dark:border-gray-800
-            ''',
+      className: layoutTheme.brandBarClassName,
       children: [
         navTheme.brandBuilder != null
             ? navTheme.brandBuilder!(context)

@@ -340,6 +340,91 @@ All theme fields are optional — omitted fields fall back to sensible defaults.
 
 ---
 
+## Customization
+
+Magic Starter supports five levels of customization. Each level is independent — use only what your app requires.
+
+### Level 1: Config (Feature Toggles)
+
+Enable or disable entire modules via `lib/config/magic_starter.dart`. No code changes required:
+
+```dart
+'features': {
+  'teams': true,
+  'two_factor': true,
+  'notifications': true,
+  // all others remain false
+},
+```
+
+### Level 2: Theme Tokens
+
+Apply Wind UI className overrides across all built-in screens at once using `MagicStarter.useTheme()`:
+
+```dart
+MagicStarter.useTheme(
+  MagicStarterTheme(
+    form: MagicStarterFormTheme(
+      inputClassName: 'w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700',
+      primaryButtonClassName: 'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+    ),
+    card: MagicStarterCardTheme(
+      surfaceClassName: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+    ),
+  ),
+);
+```
+
+`MagicStarterTheme` has 7 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `profile`, `notifications`. All fields are optional.
+
+### Level 3: Builder Slots
+
+Override specific sections of a screen without replacing the full view. Use `MagicStarter.view.slot()` to register a partial builder for a named slot:
+
+```dart
+// Replace only the header section inside the profile view
+MagicStarter.view.slot('profile.header', (context) {
+  return MyCustomProfileHeader();
+});
+```
+
+Slots let you inject custom widgets into predefined regions — useful when you need brand-specific visuals in one area but want the rest of the screen untouched.
+
+### Level 4: View Override
+
+Replace an entire screen with your own implementation. The host app always wins over package defaults:
+
+```dart
+MagicStarter.view.register('auth.login', (context) {
+  return const MyBrandedLoginView();
+});
+
+MagicStarter.view.register('layout.guest', (context, {required child}) {
+  return MyCustomGuestLayout(child: child);
+});
+```
+
+All overridable keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.otp_login`, `auth.otp_verify`, `profile.settings`, `teams.index`, `teams.create`, `teams.settings`, `notifications.index`, `notifications.preferences`, `layout.app`, `layout.guest`.
+
+### Level 5: Publish and Own
+
+Copy a view file directly into your host app for complete control. Changes are permanent and tracked by `git`:
+
+```bash
+# Publish a single view
+dart run magic_starter:publish --tag=views:auth.login
+
+# Publish all auth views
+dart run magic_starter:publish --tag=views:auth
+
+# Run doctor to verify wiring
+dart run magic_starter:doctor
+```
+
+The publish command copies the view to `lib/views/magic_starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run magic_starter:doctor` to confirm registration status.
+
+---
+
 ## CLI Tools
 
 | Command | Description |
