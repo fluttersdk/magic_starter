@@ -259,7 +259,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                           onTap: _sendInvite,
                           isLoading: controller.isLoading,
                           className:
-                              'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                              MagicStarter.modalTheme.primaryButtonClassName,
                           child: WText(trans('teams.send_invite')),
                         ),
                       ],

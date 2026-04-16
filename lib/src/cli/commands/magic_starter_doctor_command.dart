@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:magic_cli/magic_cli.dart';
+import 'package:path/path.dart' as p;
 
 /// Diagnostic health-check command for Magic Starter installations.
 ///
@@ -179,7 +180,7 @@ class MagicStarterDoctorCommand extends Command {
 
     for (final entry in dir.listSync(recursive: true)) {
       if (entry is File && entry.path.endsWith('.dart')) {
-        files.add(entry.path.substring(root.length + 1));
+        files.add(p.relative(entry.path, from: root));
       }
     }
 
@@ -203,7 +204,7 @@ class MagicStarterDoctorCommand extends Command {
       return true;
     }
 
-    final fileName = viewRelativePath.split('/').last;
+    final fileName = p.basename(viewRelativePath);
     final content = File(providerPath).readAsStringSync();
 
     return content.contains(fileName.replaceAll('.dart', ''));

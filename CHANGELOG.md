@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 - **Doctor: Published View Detection**: `dart run magic_starter:doctor` now detects published views and reports wiring status — flags views that are published but not registered
 - **Layout Theme Drawer Shade**: Added `drawerBackgroundLightShade` to `MagicStarterLayoutTheme` for consistent drawer background customization
 
+### 🐛 Bug Fixes
+- **CLI: Cross-platform paths**: Replaced POSIX string manipulation with `package:path` in publish and doctor commands for Windows compatibility
+- **CLI: boot() injection**: Publish auto-wire now locates the `boot()` method by signature and brace-depth tracking instead of fragile second-to-last `}` heuristic
+- **Team Settings**: Invite button now reads className from `MagicStarter.modalTheme.primaryButtonClassName` instead of hardcoded Wind UI tokens
+
 ### 🧪 Tests
 - Added slot injection widget tests for 7 views: `forgot_password`, `reset_password`, `two_factor_challenge`, `otp_verify`, `teams.create`, `teams.invitation_accept`, `notifications.preferences`
 - Added `drawerBackgroundLightShade` default value test to theme test suite

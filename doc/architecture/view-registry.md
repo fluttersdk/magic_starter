@@ -240,7 +240,7 @@ MagicStarter.view.slot('auth.login', 'header', (context) {
   return WText('Welcome back!', className: 'text-2xl font-bold text-center');
 });
 
-MagicStarter.view.slot('profile.settings', 'afterProfileSection', (context) {
+MagicStarter.view.slot('profile.settings', 'afterSection:info', (context) {
   return MyCustomBillingSection();
 });
 ```

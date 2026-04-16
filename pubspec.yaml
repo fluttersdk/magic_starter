@@ -24,6 +24,7 @@ dependencies:
   magic_cli: ^0.0.1-alpha.3
   magic_notifications: ^0.0.1-alpha.1
   args: ^2.7.0
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:

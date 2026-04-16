@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:magic_cli/magic_cli.dart';
+import 'package:path/path.dart' as p;
 
 import '../helpers/magic_starter_config_helper.dart';
 
@@ -272,7 +273,8 @@ class MagicStarterPublishCommand extends Command {
     String pluginSourceDir,
     bool force,
   ) {
-    final sourceViewsDir = Directory('$pluginSourceDir/lib/src/ui/views');
+    final sourceViewsDir =
+        Directory(p.join(pluginSourceDir, 'lib', 'src', 'ui', 'views'));
 
     if (!sourceViewsDir.existsSync()) {
       warn('Views source directory not found: ${sourceViewsDir.path}');
@@ -286,9 +288,9 @@ class MagicStarterPublishCommand extends Command {
         continue;
       }
 
-      final relativePath = entry.path.substring(sourceViewsDir.path.length + 1);
-      final destination =
-          '$projectRoot/lib/resources/views/starter/$relativePath';
+      final relativePath = p.relative(entry.path, from: sourceViewsDir.path);
+      final destination = p.join(
+          projectRoot, 'lib', 'resources', 'views', 'starter', relativePath);
 
       published.addAll(
         _copyFile(
@@ -332,14 +334,15 @@ class MagicStarterPublishCommand extends Command {
     final published = <String>[];
 
     for (final entry in fileMap.entries) {
-      final source = '$pluginSourceDir/lib/src/${entry.value}';
-      final parts = entry.value.split('/');
+      final source = p.join(pluginSourceDir, 'lib', 'src', entry.value);
+      final parts = p.split(entry.value);
       final fileName = parts.last;
       // Skip 'ui/views/' or 'ui/layouts/' prefix (first two segments).
       final subDirParts = parts.sublist(2, parts.length - 1);
       final destination = subDirParts.isEmpty
-          ? '$projectRoot/lib/resources/$destinationPrefix/$fileName'
-          : '$projectRoot/lib/resources/$destinationPrefix/${subDirParts.join('/')}/$fileName';
+          ? p.join(projectRoot, 'lib', 'resources', destinationPrefix, fileName)
+          : p.join(projectRoot, 'lib', 'resources', destinationPrefix,
+              p.joinAll(subDirParts), fileName);
 
       published.addAll(
         _copyFile(
@@ -456,10 +459,11 @@ class MagicStarterPublishCommand extends Command {
       final viewEntries =
           scope != null ? _resolveViewEntries(scope) : _viewFileMap;
       for (final entry in viewEntries.entries) {
-        final parts = entry.value.split('/');
+        final parts = p.split(entry.value);
         final fileName = parts.last;
         final className = _snakeToPascal(fileName.replaceAll('.dart', ''));
         final subDirParts = parts.sublist(2, parts.length - 1);
+        // Dart imports always use POSIX separators.
         final subDir = subDirParts.join('/');
         final importPath = subDir.isEmpty
             ? '../../resources/views/starter/$fileName'
@@ -484,10 +488,11 @@ class MagicStarterPublishCommand extends Command {
       }
 
       for (final entry in layoutEntries.entries) {
-        final parts = entry.value.split('/');
+        final parts = p.split(entry.value);
         final fileName = parts.last;
         final className = _snakeToPascal(fileName.replaceAll('.dart', ''));
         final subDirParts = parts.sublist(2, parts.length - 1);
+        // Dart imports always use POSIX separators.
         final subDir = subDirParts.join('/');
         final importPath = subDir.isEmpty
             ? '../../resources/layouts/starter/$fileName'
@@ -551,22 +556,41 @@ class MagicStarterPublishCommand extends Command {
 
   /// Injects a registration line before the closing brace of `boot()`.
   ///
-  /// Uses the same second-to-last `}` strategy as the install command.
+  /// Locates the `boot()` method signature, then finds its matching closing
+  /// brace by tracking brace depth. This is robust even when the provider
+  /// contains additional methods or nested classes.
   String _injectBeforeBootClosingBrace(String content, String line) {
-    final bracePositions = <int>[];
-    for (var i = 0; i < content.length; i++) {
-      if (content[i] == '}') {
-        bracePositions.add(i);
-      }
-    }
-
-    // Need at least 2 closing braces (boot + class).
-    if (bracePositions.length < 2) {
+    // Find the boot() method signature.
+    final bootPattern = RegExp(r'(void|Future<void>)\s+boot\s*\(');
+    final bootMatch = bootPattern.firstMatch(content);
+    if (bootMatch == null) {
       return content;
     }
 
-    final bootBrace = bracePositions[bracePositions.length - 2];
-    return '${content.substring(0, bootBrace)}$line\n  ${content.substring(bootBrace)}';
+    // Find the opening brace of boot().
+    final openBrace = content.indexOf('{', bootMatch.end);
+    if (openBrace == -1) {
+      return content;
+    }
+
+    // Track brace depth to find the matching closing brace.
+    var depth = 1;
+    var pos = openBrace + 1;
+    while (pos < content.length && depth > 0) {
+      if (content[pos] == '{') {
+        depth++;
+      } else if (content[pos] == '}') {
+        depth--;
+      }
+      if (depth > 0) pos++;
+    }
+
+    if (depth != 0) {
+      return content;
+    }
+
+    // pos is now at boot()'s closing brace.
+    return '${content.substring(0, pos)}$line\n  ${content.substring(pos)}';
   }
 
   /// Converts a snake_case string to PascalCase.
