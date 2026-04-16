@@ -10,6 +10,16 @@ All notable changes to this project will be documented in this file.
 - **Granular Publish Command**: `dart run magic_starter:publish --tag=views:auth.login` publishes a single view file to the host app for full ownership
 - **Auto-wire Published Views**: Published views are automatically wired into `AppServiceProvider` so they take effect immediately without manual registration
 - **Doctor: Published View Detection**: `dart run magic_starter:doctor` now detects published views and reports wiring status — flags views that are published but not registered
+- **Layout Theme Drawer Shade**: Added `drawerBackgroundLightShade` to `MagicStarterLayoutTheme` for consistent drawer background customization
+
+### 🧪 Tests
+- Added slot injection widget tests for 7 views: `forgot_password`, `reset_password`, `two_factor_challenge`, `otp_verify`, `teams.create`, `teams.invitation_accept`, `notifications.preferences`
+- Added `drawerBackgroundLightShade` default value test to theme test suite
+
+### 📚 Documentation
+- **Manager**: Added unified theme section, 5 new sub-theme sections (form, auth, card, page header, layout), updated facade methods table with all theme accessors
+- **View Registry**: Added Builder Slots section documenting slot/hasSlot/buildSlot API
+- **CLAUDE.md**: Added publish/uninstall commands, updated manager description, added customization gotchas, updated test count
 
 ## [0.0.1-alpha.13] - 2026-04-09
 

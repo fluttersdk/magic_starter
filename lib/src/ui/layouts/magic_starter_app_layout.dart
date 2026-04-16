@@ -179,6 +179,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       backgroundColor: wColor(
         context,
         layoutTheme.drawerBackgroundLightColor,
+        shade: layoutTheme.drawerBackgroundLightShade,
         darkColorName: layoutTheme.drawerBackgroundDarkColor,
         darkShade: layoutTheme.drawerBackgroundDarkShade,
       ),

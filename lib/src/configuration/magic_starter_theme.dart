@@ -492,6 +492,11 @@ class MagicStarterLayoutTheme {
   /// Defaults to `'white'`.
   final String drawerBackgroundLightColor;
 
+  /// Light-mode drawer background shade for `wColor()`.
+  ///
+  /// Defaults to `50`. Ignored when the color is `'white'` (non-shade color).
+  final int drawerBackgroundLightShade;
+
   /// Dark-mode drawer background color key for `wColor()`.
   ///
   /// Defaults to `'gray'`.
@@ -525,6 +530,7 @@ class MagicStarterLayoutTheme {
     this.contentBackgroundDarkColor = 'gray',
     this.contentBackgroundDarkShade = 950,
     this.drawerBackgroundLightColor = 'white',
+    this.drawerBackgroundLightShade = 50,
     this.drawerBackgroundDarkColor = 'gray',
     this.drawerBackgroundDarkShade = 900,
     this.brandBarClassName =

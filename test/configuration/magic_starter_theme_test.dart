@@ -316,6 +316,12 @@ void main() {
         expect(theme.drawerBackgroundLightColor, equals('white'));
       });
 
+      test('drawerBackgroundLightShade is 50', () {
+        const theme = MagicStarterLayoutTheme();
+
+        expect(theme.drawerBackgroundLightShade, equals(50));
+      });
+
       test('drawerBackgroundDarkColor is gray', () {
         const theme = MagicStarterLayoutTheme();
 
