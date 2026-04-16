@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../configuration/magic_starter_theme.dart';
 import '../magic_starter_manager.dart';
 import '../models/magic_starter_team.dart';
 import '../models/magic_starter_nav_item.dart';
@@ -301,6 +302,164 @@ class MagicStarter {
   /// Returns the theme registered via [useModalTheme], or a default
   /// [MagicStarterModalTheme] instance when not configured.
   static MagicStarterModalTheme get modalTheme => manager.modalTheme;
+
+  /// Register a unified theme configuration.
+  ///
+  /// Sets all sub-themes (navigation, modal, form, card, page header, layout,
+  /// auth) in a single call. Individual sub-themes can still be overridden
+  /// afterward via [useNavigationTheme], [useModalTheme], [useFormTheme], etc.
+  ///
+  /// ```dart
+  /// MagicStarter.useTheme(
+  ///   MagicStarterTheme(
+  ///     form: MagicStarterFormTheme(
+  ///       inputClassName: 'rounded-xl border-2 ...',
+  ///     ),
+  ///     card: MagicStarterCardTheme(
+  ///       surfaceClassName: 'bg-zinc-50 dark:bg-zinc-900 ...',
+  ///     ),
+  ///   ),
+  /// );
+  /// ```
+  static void useTheme(MagicStarterTheme theme) {
+    manager.theme = theme;
+  }
+
+  /// Get the active unified theme.
+  static MagicStarterTheme get theme => manager.theme;
+
+  /// Register a custom form theme.
+  ///
+  /// When set, overrides the default Wind UI class names used for form inputs,
+  /// labels, placeholders, primary/secondary buttons, links, and checkboxes
+  /// across all auth and profile forms.
+  ///
+  /// All fields in [MagicStarterFormTheme] are optional — pass only the
+  /// values you want to customise.
+  ///
+  /// ```dart
+  /// MagicStarter.useFormTheme(
+  ///   MagicStarterFormTheme(
+  ///     inputClassName: 'w-full px-4 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white',
+  ///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl',
+  ///   ),
+  /// );
+  /// ```
+  static void useFormTheme(MagicStarterFormTheme theme) {
+    manager.formTheme = theme;
+  }
+
+  /// Get the active form theme.
+  ///
+  /// Returns the theme registered via [useFormTheme], or a default
+  /// [MagicStarterFormTheme] instance when not configured.
+  static MagicStarterFormTheme get formTheme => manager.formTheme;
+
+  /// Register a custom auth theme.
+  ///
+  /// When set, overrides the default Wind UI class names used for the auth
+  /// form card, title, subtitle, error banner, theme toggle, social divider,
+  /// and guest/registration link styles.
+  ///
+  /// All fields in [MagicStarterAuthTheme] are optional — pass only the
+  /// values you want to customise.
+  ///
+  /// ```dart
+  /// MagicStarter.useAuthTheme(
+  ///   MagicStarterAuthTheme(
+  ///     cardClassName: 'rounded-3xl bg-zinc-900 border border-zinc-700 p-8 flex flex-col items-center',
+  ///     titleClassName: 'text-3xl font-black text-white text-center',
+  ///   ),
+  /// );
+  /// ```
+  static void useAuthTheme(MagicStarterAuthTheme theme) {
+    manager.authTheme = theme;
+  }
+
+  /// Get the active auth theme.
+  ///
+  /// Returns the theme registered via [useAuthTheme], or a default
+  /// [MagicStarterAuthTheme] instance when not configured.
+  static MagicStarterAuthTheme get authTheme => manager.authTheme;
+
+  /// Register a custom card theme.
+  ///
+  /// When set, overrides the default Wind UI class names used for card
+  /// variant backgrounds, border radius, padding, and title styles.
+  ///
+  /// All fields in [MagicStarterCardTheme] are optional — pass only the
+  /// values you want to customise.
+  ///
+  /// ```dart
+  /// MagicStarter.useCardTheme(
+  ///   MagicStarterCardTheme(
+  ///     surfaceClassName: 'bg-zinc-900 border border-zinc-700',
+  ///     borderRadius: 'rounded-xl',
+  ///   ),
+  /// );
+  /// ```
+  static void useCardTheme(MagicStarterCardTheme theme) {
+    manager.cardTheme = theme;
+  }
+
+  /// Get the active card theme.
+  ///
+  /// Returns the theme registered via [useCardTheme], or a default
+  /// [MagicStarterCardTheme] instance when not configured.
+  static MagicStarterCardTheme get cardTheme => manager.cardTheme;
+
+  /// Register a custom page header theme.
+  ///
+  /// When set, overrides the default Wind UI class names used for the page
+  /// header container, title, subtitle, and action container.
+  ///
+  /// All fields in [MagicStarterPageHeaderTheme] are optional — pass only the
+  /// values you want to customise.
+  ///
+  /// ```dart
+  /// MagicStarter.usePageHeaderTheme(
+  ///   MagicStarterPageHeaderTheme(
+  ///     titleClassName: 'text-3xl font-black text-white',
+  ///   ),
+  /// );
+  /// ```
+  static void usePageHeaderTheme(MagicStarterPageHeaderTheme theme) {
+    manager.pageHeaderTheme = theme;
+  }
+
+  /// Get the active page header theme.
+  ///
+  /// Returns the theme registered via [usePageHeaderTheme], or a default
+  /// [MagicStarterPageHeaderTheme] instance when not configured.
+  static MagicStarterPageHeaderTheme get pageHeaderTheme =>
+      manager.pageHeaderTheme;
+
+  /// Register a custom layout theme.
+  ///
+  /// When set, overrides the default Wind UI class names and dimensions for
+  /// the app layout shell: sidebar, header, content background, drawer, brand
+  /// bar, and bottom navigation.
+  ///
+  /// All fields in [MagicStarterLayoutTheme] are optional — pass only the
+  /// values you want to customise.
+  ///
+  /// ```dart
+  /// MagicStarter.useLayoutTheme(
+  ///   MagicStarterLayoutTheme(
+  ///     sidebarWidth: 280,
+  ///     sidebarClassName: 'h-full flex flex-col bg-zinc-900 border-r border-zinc-700',
+  ///   ),
+  /// );
+  /// ```
+  static void useLayoutTheme(MagicStarterLayoutTheme theme) {
+    manager.layoutTheme = theme;
+  }
+
+  /// Get the active layout theme.
+  ///
+  /// Returns the theme registered via [useLayoutTheme], or a default
+  /// [MagicStarterLayoutTheme] instance when not configured.
+  static MagicStarterLayoutTheme get layoutTheme => manager.layoutTheme;
 
   /// Check if the starter is ready.
   static bool get isReady => manager.isReady;

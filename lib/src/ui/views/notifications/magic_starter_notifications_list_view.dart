@@ -109,11 +109,18 @@ class _MagicStarterNotificationsListViewState
     final hasUnread = notifications.any((n) => !n.isRead);
     final totalPages = _paginatedData?.lastPage ?? 1;
 
+    final headerSlot =
+        MagicStarter.view.buildSlot('notifications.list', 'header', context);
+    final footerSlot =
+        MagicStarter.view.buildSlot('notifications.list', 'footer', context);
+
     return WDiv(
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
+        if (headerSlot != null) headerSlot,
         _buildHeader(context, hasUnread: hasUnread),
         _buildBody(context, notifications, totalPages),
+        if (footerSlot != null) footerSlot,
       ],
     );
   }

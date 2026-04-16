@@ -346,6 +346,84 @@ void main() {
       });
     });
 
+    group('unified theme', () {
+      test('useTheme() delegates to manager and theme getter returns it', () {
+        const customForm = MagicStarterFormTheme(
+          inputClassName: 'custom-unified-input',
+        );
+        const customCard = MagicStarterCardTheme(borderRadius: 'rounded-xl');
+
+        const unified = MagicStarterTheme(
+          form: customForm,
+          card: customCard,
+        );
+
+        MagicStarter.useTheme(unified);
+
+        expect(MagicStarter.theme.form.inputClassName, 'custom-unified-input');
+        expect(MagicStarter.theme.card.borderRadius, 'rounded-xl');
+      });
+
+      test('useFormTheme() works and formTheme getter returns it', () {
+        const customForm = MagicStarterFormTheme(
+          primaryButtonClassName: 'custom-primary-btn',
+          linkClassName: 'custom-link',
+        );
+
+        MagicStarter.useFormTheme(customForm);
+
+        expect(
+          MagicStarter.formTheme.primaryButtonClassName,
+          'custom-primary-btn',
+        );
+        expect(MagicStarter.formTheme.linkClassName, 'custom-link');
+        expect(MagicStarter.manager.formTheme, equals(customForm));
+      });
+
+      test('useNavigationTheme() still works alongside useTheme()', () {
+        MagicStarter.useTheme(
+          const MagicStarterTheme(
+            form: MagicStarterFormTheme(inputClassName: 'themed-input'),
+          ),
+        );
+
+        const customNav = MagicStarterNavigationTheme(
+          activeItemClassName: 'active:text-indigo-500',
+        );
+
+        MagicStarter.useNavigationTheme(customNav);
+
+        expect(
+          MagicStarter.navigationTheme.activeItemClassName,
+          'active:text-indigo-500',
+        );
+        expect(MagicStarter.formTheme.inputClassName, 'themed-input');
+      });
+
+      test('individual sub-theme getters work via facade', () {
+        const customCard = MagicStarterCardTheme(
+          surfaceClassName: 'custom-surface',
+        );
+        const customPageHeader = MagicStarterPageHeaderTheme(
+          titleClassName: 'facade-title',
+        );
+        const customLayout = MagicStarterLayoutTheme(sidebarWidth: 280);
+        const customAuth = MagicStarterAuthTheme(
+          cardClassName: 'facade-auth-card',
+        );
+
+        MagicStarter.useCardTheme(customCard);
+        MagicStarter.usePageHeaderTheme(customPageHeader);
+        MagicStarter.useLayoutTheme(customLayout);
+        MagicStarter.useAuthTheme(customAuth);
+
+        expect(MagicStarter.cardTheme.surfaceClassName, 'custom-surface');
+        expect(MagicStarter.pageHeaderTheme.titleClassName, 'facade-title');
+        expect(MagicStarter.layoutTheme.sidebarWidth, 280);
+        expect(MagicStarter.authTheme.cardClassName, 'facade-auth-card');
+      });
+    });
+
     group('modal registry defaults', () {
       test('default modal.confirm is registered after manager init', () {
         expect(MagicStarter.view.hasModal('modal.confirm'), isTrue);

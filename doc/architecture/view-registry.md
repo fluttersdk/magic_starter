@@ -14,6 +14,7 @@
 - [Overriding Views](#overriding-views)
 - [Overriding Layouts](#overriding-layouts)
 - [Overriding Modals](#overriding-modals)
+- [Builder Slots](#builder-slots)
 - [Route Integration](#route-integration)
 - [Testing](#testing)
 - [Related](#related)
@@ -226,6 +227,49 @@ Modal builders follow the same "register if absent" pattern as views and layouts
 
 > [!TIP]
 > Override modals when you need a completely custom dialog design. For style-only changes (colors, fonts, borders), use `MagicStarter.useModalTheme()` instead — it requires no view overrides.
+
+<a name="builder-slots"></a>
+## Builder Slots
+
+Slots allow host apps to inject custom widgets into specific sections of plugin views without overriding the entire view. Each view defines named insertion points (slots) that accept a `Widget Function(BuildContext)` builder.
+
+### Registering a Slot
+
+```dart
+MagicStarter.view.slot('auth.login', 'header', (context) {
+  return WText('Welcome back!', className: 'text-2xl font-bold text-center');
+});
+
+MagicStarter.view.slot('profile.settings', 'afterSection:info', (context) {
+  return MyCustomBillingSection();
+});
+```
+
+The `slot()` method takes three arguments: the view key, the slot name, and a builder function. Internally, slots are stored under the compound key `'viewKey.slotName'` (e.g. `'auth.login.header'`).
+
+### Checking and Building Slots
+
+Views check for registered slots at build time:
+
+```dart
+// Inside a view's build method
+final headerSlot = MagicStarter.view.buildSlot('auth.login', 'header', context);
+if (headerSlot != null) ...[headerSlot, const WSpacer(className: 'h-4')],
+```
+
+`buildSlot()` returns `null` when no slot is registered, so views can safely use conditional spreads.
+
+```dart
+bool hasSlot(String viewKey, String slot)
+Widget? buildSlot(String viewKey, String slot, BuildContext context)
+```
+
+### Available Slots
+
+Each view defines its own slot names. Slot registration must happen before the view is built (ideally in `AppServiceProvider.boot()`). Slots are cleared by `registry.clear()` and re-registered views do not re-populate slots.
+
+> [!TIP]
+> Use slots for small, targeted customizations (a banner, a section, extra fields). For larger structural changes, override the entire view via `MagicStarter.view.register()`.
 
 <a name="route-integration"></a>
 ## Route Integration

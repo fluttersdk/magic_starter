@@ -75,6 +75,13 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
   Widget _buildForm({String? errorMessage}) {
     final isLoading = controller.isLoading;
 
+    final headerSlot =
+        MagicStarter.view.buildSlot('auth.login', 'header', context);
+    final formFooterSlot =
+        MagicStarter.view.buildSlot('auth.login', 'formFooter', context);
+    final footerSlot =
+        MagicStarter.view.buildSlot('auth.login', 'footer', context);
+
     return MagicStarterAuthFormCard(
       title: trans('auth.login_title'),
       subtitle: trans('auth.login_subtitle'),
@@ -84,6 +91,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
         child: WDiv(
           className: 'flex flex-col items-stretch',
           children: [
+            if (headerSlot != null) headerSlot,
             _buildIdentityField(),
             const WSpacer(className: 'h-4'),
             WFormInput(
@@ -100,11 +108,9 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-5'),
             WDiv(
@@ -115,15 +121,14 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
                   onChanged: (value) => form.setValue('remember_me', value),
                   label: WText(
                     trans('auth.remember_me'),
-                    className:
-                        'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 ml-1',
+                    className: MagicStarter.formTheme.checkboxLabelClassName,
                   ),
                 ),
                 WAnchor(
                   onTap: () => MagicRoute.to('/auth/forgot-password'),
                   child: WText(
                     trans('auth.forgot_password'),
-                    className: 'text-sm font-medium text-primary',
+                    className: MagicStarter.formTheme.linkClassName,
                   ),
                 ),
               ],
@@ -132,8 +137,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
             WButton(
               isLoading: isLoading,
               onTap: _submit,
-              className:
-                  'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+              className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(trans('auth.login_title'), className: 'text-center'),
             ),
             if (MagicStarterConfig.hasGuestAuthFeatures()) ...[
@@ -141,14 +145,14 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
               WButton(
                 onTap: MagicStarterGuestAuthController.instance.doGuestLogin,
                 isLoading: isLoading,
-                className:
-                    'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium',
+                className: MagicStarter.authTheme.guestButtonClassName,
                 child: WText(
                   trans('magic_starter.auth.continue_as_guest'),
                   className: 'text-center',
                 ),
               ),
             ],
+            if (formFooterSlot != null) formFooterSlot,
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
                 MagicStarter.hasSocialLogin) ...[
               const MagicStarterSocialDivider(),
@@ -163,16 +167,19 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
                   children: [
                     WText(
                       trans('auth.dont_have_account'),
-                      className: 'text-sm text-gray-500 dark:text-gray-400',
+                      className:
+                          MagicStarter.authTheme.registrationLinkClassName,
                     ),
                     WText(
                       trans('auth.sign_up'),
-                      className: 'text-sm font-semibold text-primary',
+                      className:
+                          MagicStarter.authTheme.registrationLinkTextClassName,
                     ),
                   ],
                 ),
               ),
             ],
+            if (footerSlot != null) footerSlot,
           ],
         ),
       ),
@@ -202,33 +209,33 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
 
   /// Email input field.
   Widget _buildEmailInput() {
+    final formTheme = MagicStarter.formTheme;
+
     return WFormInput(
       label: trans('attributes.email'),
       controller: form['email'],
       placeholder: trans('fields.email_placeholder'),
       type: InputType.email,
       validator: rules([Required(), Email()], field: 'email'),
-      className:
-          'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-      placeholderClassName: 'text-gray-400 dark:text-gray-500',
-      labelClassName:
-          'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+      className: formTheme.inputClassName,
+      placeholderClassName: formTheme.placeholderClassName,
+      labelClassName: formTheme.labelClassName,
     );
   }
 
   /// Phone input field.
   Widget _buildPhoneInput() {
+    final formTheme = MagicStarter.formTheme;
+
     return WFormInput(
       label: trans('attributes.phone'),
       controller: form['phone'],
       placeholder: trans('fields.phone_placeholder'),
       type: InputType.text,
       validator: rules([Required()], field: 'phone'),
-      className:
-          'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-      placeholderClassName: 'text-gray-400 dark:text-gray-500',
-      labelClassName:
-          'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+      className: formTheme.inputClassName,
+      placeholderClassName: formTheme.placeholderClassName,
+      labelClassName: formTheme.labelClassName,
     );
   }
 

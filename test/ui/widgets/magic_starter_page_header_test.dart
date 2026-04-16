@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/src/ui/widgets/magic_starter_page_header.dart';
+import 'package:magic_starter/magic_starter.dart';
 
 void main() {
+  setUp(() {
+    MagicApp.reset();
+    Magic.flush();
+    Magic.singleton('magic_starter', () => MagicStarterManager());
+  });
+
   Widget wrap(Widget widget) {
     return MaterialApp(
       home: WindTheme(
@@ -250,5 +256,45 @@ void main() {
     expect(find.byKey(suffixKey), findsOneWidget);
     expect(find.byKey(actionKey), findsOneWidget);
     expect(find.text('Combined'), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
+  // Theme consumption tests
+  // -------------------------------------------------------------------------
+
+  group('theme consumption', () {
+    testWidgets('custom titleClassName is used for header title',
+        (tester) async {
+      MagicStarter.manager.pageHeaderTheme = const MagicStarterPageHeaderTheme(
+        titleClassName: 'custom-header-title',
+      );
+
+      await tester.pumpWidget(
+        wrap(const MagicStarterPageHeader(title: 'My Page')),
+      );
+
+      final titleText = tester.widgetList<WText>(find.byType(WText)).first;
+      expect(titleText.className, contains('custom-header-title'));
+    });
+
+    testWidgets('custom subtitleClassName is used for header subtitle',
+        (tester) async {
+      MagicStarter.manager.pageHeaderTheme = const MagicStarterPageHeaderTheme(
+        subtitleClassName: 'custom-header-subtitle',
+      );
+
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterPageHeader(
+            title: 'My Page',
+            subtitle: 'A subtitle',
+          ),
+        ),
+      );
+
+      final texts = tester.widgetList<WText>(find.byType(WText)).toList();
+      expect(texts.length, 2);
+      expect(texts[1].className, contains('custom-header-subtitle'));
+    });
   });
 }

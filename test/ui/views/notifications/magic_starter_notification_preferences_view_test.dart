@@ -181,4 +181,65 @@ void main() {
       expect(switchWidget.onChanged, isNull);
     });
   });
+
+  group('MagicStarterNotificationPreferencesView — slot injection', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      mockDriver = MockNetworkDriver();
+      Magic.singleton('network', () => mockDriver);
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Config.set('magic_starter.features.notifications', true);
+
+      mockDriver.mockResponse(statusCode: 200, data: {'data': {}});
+
+      // Pre-instantiate the controller so onInit fires.
+      MagicStarterNotificationController.instance;
+    });
+
+    testWidgets('renders header slot when registered', (tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      MagicStarter.view.slot(
+        'notifications.preferences',
+        'header',
+        (ctx) => const Text('Custom Header'),
+      );
+
+      await tester.pumpWidget(
+        wrap(const MagicStarterNotificationPreferencesView()),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Header'), findsOneWidget);
+    });
+
+    testWidgets('renders footer slot when registered', (tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      MagicStarter.view.slot(
+        'notifications.preferences',
+        'footer',
+        (ctx) => const Text('Custom Footer'),
+      );
+
+      await tester.pumpWidget(
+        wrap(const MagicStarterNotificationPreferencesView()),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Footer'), findsOneWidget);
+    });
+  });
 }

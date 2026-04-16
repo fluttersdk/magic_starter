@@ -162,6 +162,82 @@ void main() {
     });
 
     // -------------------------------------------------------------------------
+    // slot system
+    // -------------------------------------------------------------------------
+
+    group('slot system', () {
+      test('slot() registers a builder and hasSlot() returns true', () {
+        registry.slot('auth.login', 'header', (context) => const SizedBox());
+
+        expect(registry.hasSlot('auth.login', 'header'), isTrue);
+      });
+
+      test('hasSlot() returns false for unregistered slot', () {
+        expect(registry.hasSlot('auth.login', 'header'), isFalse);
+      });
+
+      testWidgets('buildSlot() returns widget for registered slot',
+          (WidgetTester tester) async {
+        const expected = SizedBox(key: Key('slot-widget'));
+        registry.slot('auth.login', 'header', (context) => expected);
+
+        late Widget? result;
+        await tester.pumpWidget(
+          Builder(
+            builder: (BuildContext context) {
+              result = registry.buildSlot('auth.login', 'header', context);
+              return const SizedBox();
+            },
+          ),
+        );
+
+        expect(result, same(expected));
+      });
+
+      testWidgets('buildSlot() returns null for unregistered slot',
+          (WidgetTester tester) async {
+        late Widget? result;
+        await tester.pumpWidget(
+          Builder(
+            builder: (BuildContext context) {
+              result = registry.buildSlot('auth.login', 'missing', context);
+              return const SizedBox();
+            },
+          ),
+        );
+
+        expect(result, isNull);
+      });
+
+      test('clear() removes all slots', () {
+        registry.slot('auth.login', 'header', (context) => const SizedBox());
+        registry.slot(
+            'profile.edit', 'footer', (context) => const Placeholder());
+
+        registry.clear();
+
+        expect(registry.hasSlot('auth.login', 'header'), isFalse);
+        expect(registry.hasSlot('profile.edit', 'footer'), isFalse);
+      });
+
+      test('multiple slots on same view key work independently', () {
+        registry.slot('auth.login', 'header', (context) => const SizedBox());
+        registry.slot('auth.login', 'footer', (context) => const Placeholder());
+
+        expect(registry.hasSlot('auth.login', 'header'), isTrue);
+        expect(registry.hasSlot('auth.login', 'footer'), isTrue);
+      });
+
+      test('slots on different view keys are isolated', () {
+        registry.slot('auth.login', 'header', (context) => const SizedBox());
+
+        expect(registry.hasSlot('auth.login', 'header'), isTrue);
+        expect(registry.hasSlot('auth.register', 'header'), isFalse);
+        expect(registry.hasSlot('profile.edit', 'header'), isFalse);
+      });
+    });
+
+    // -------------------------------------------------------------------------
     // modal registry
     // -------------------------------------------------------------------------
 

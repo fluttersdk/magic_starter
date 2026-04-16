@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../facades/magic_starter.dart';
+
 /// Visual style variants for [MagicStarterCard].
 ///
 /// - [surface] — Default flat card: white/gray-800 background with a subtle border.
@@ -94,21 +96,23 @@ class MagicStarterCard extends StatelessWidget {
   });
 
   String get _variantClasses {
+    final theme = MagicStarter.cardTheme;
     switch (variant) {
       case CardVariant.surface:
-        return 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+        return theme.surfaceClassName;
       case CardVariant.inset:
-        return 'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700';
+        return theme.insetClassName;
       case CardVariant.elevated:
-        return 'bg-white dark:bg-gray-800 shadow-md';
+        return theme.elevatedClassName;
     }
   }
 
   String get _defaultClassName {
+    final theme = MagicStarter.cardTheme;
     final v = _variantClasses;
     return noPadding
-        ? 'w-full $v rounded-2xl overflow-hidden flex flex-col'
-        : 'w-full $v rounded-2xl p-6 flex flex-col gap-4';
+        ? 'w-full $v ${theme.borderRadius} overflow-hidden flex flex-col'
+        : 'w-full $v ${theme.borderRadius} ${theme.paddingClassName} flex flex-col gap-4';
   }
 
   @override
@@ -121,18 +125,18 @@ class MagicStarterCard extends StatelessWidget {
             // Full-bleed mode: title needs its own horizontal padding to align
             // with row content that uses px-6.
             WDiv(
-              className: 'px-6 pt-6 pb-3',
+              className:
+                  MagicStarter.cardTheme.titleNoPaddingContainerClassName,
               child: WText(
                 title!,
-                className:
-                    'text-lg font-semibold text-gray-900 dark:text-white',
+                className: MagicStarter.cardTheme.titleClassName,
               ),
             )
           else
             // Padded mode: card already provides p-6, title renders directly.
             WText(
               title!,
-              className: 'text-lg font-semibold text-gray-900 dark:text-white',
+              className: MagicStarter.cardTheme.titleClassName,
             ),
         child,
       ],

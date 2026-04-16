@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
 import '../../widgets/magic_starter_page_header.dart';
 import '../../widgets/magic_starter_card.dart';
@@ -42,19 +43,28 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
+    final headerSlot =
+        MagicStarter.view.buildSlot('teams.create', 'header', context);
+    final footerSlot =
+        MagicStarter.view.buildSlot('teams.create', 'footer', context);
+
     return WDiv(
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
+        if (headerSlot != null) headerSlot,
         MagicStarterPageHeader(
           title: trans('teams.create_team'),
           subtitle: trans('teams.create_team_subtitle'),
         ),
         _buildForm(),
+        if (footerSlot != null) footerSlot,
       ],
     );
   }
 
   Widget _buildForm() {
+    final formTheme = MagicStarter.formTheme;
+
     return MagicForm(
       formData: form,
       child: MagicStarterCard(
@@ -65,10 +75,8 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
               controller: form['name'],
               label: trans('teams.team_name'),
               validator: rules([Required(), Min(2), Max(255)], field: 'name'),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WDiv(
               className: 'flex justify-end',

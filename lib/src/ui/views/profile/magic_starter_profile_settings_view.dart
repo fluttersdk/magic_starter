@@ -409,16 +409,32 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
+    final headerSlot =
+        MagicStarter.view.buildSlot('profile.settings', 'header', context);
+    final footerSlot =
+        MagicStarter.view.buildSlot('profile.settings', 'footer', context);
+    final beforePhotoSlot = MagicStarter.view
+        .buildSlot('profile.settings', 'beforeSection:photo', context);
+    final afterInfoSlot = MagicStarter.view
+        .buildSlot('profile.settings', 'afterSection:info', context);
+    final beforePasswordSlot = MagicStarter.view
+        .buildSlot('profile.settings', 'beforeSection:password', context);
+    final afterSessionsSlot = MagicStarter.view
+        .buildSlot('profile.settings', 'afterSection:sessions', context);
+
     return WDiv(
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
+        if (headerSlot != null) headerSlot,
         MagicStarterPageHeader(
           title: trans('profile.settings'),
           subtitle: trans('profile.settings_subtitle'),
         ),
         if (MagicStarterConfig.hasProfilePhotoFeatures() &&
-            Gate.allows('starter.update-profile-photo'))
+            Gate.allows('starter.update-profile-photo')) ...[
+          if (beforePhotoSlot != null) beforePhotoSlot,
           _buildProfilePhotoSection(),
+        ],
         // Email verification banner right after photo when unverified.
         if (MagicStarterConfig.hasEmailVerificationFeatures() &&
             Gate.allows('starter.verify-email') &&
@@ -428,7 +444,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           formData: profileForm,
           child: _buildProfileSection(),
         ),
-        if (Gate.allows('starter.update-password')) _buildPasswordSection(),
+        if (afterInfoSlot != null) afterInfoSlot,
+        if (Gate.allows('starter.update-password')) ...[
+          if (beforePasswordSlot != null) beforePasswordSlot,
+          _buildPasswordSection(),
+        ],
         // Verified badge shown inline (not at top).
         if (MagicStarterConfig.hasEmailVerificationFeatures() &&
             Gate.allows('starter.verify-email') &&
@@ -441,8 +461,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             Gate.allows('starter.manage-two-factor'))
           _buildTwoFactorSection(),
         if (Gate.denies('starter.delete-account')) _buildGuestUpgradeSection(),
-        if (MagicStarterConfig.hasSessionsFeatures()) _buildSessionsSection(),
+        if (MagicStarterConfig.hasSessionsFeatures()) ...[
+          _buildSessionsSection(),
+          if (afterSessionsSlot != null) afterSessionsSlot,
+        ],
         _buildDeleteAccountSection(),
+        if (footerSlot != null) footerSlot,
       ],
     );
   }
@@ -533,6 +557,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Profile Section -------------------------------------------------------
 
   Widget _buildProfileSection() {
+    final formTheme = MagicStarter.formTheme;
     // Resolve locale options for extended profile fields.
     final locales = MagicStarter.manager.localeOptions;
 
@@ -553,10 +578,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             controller: profileForm['name'],
             label: trans('attributes.name'),
             validator: rules([Required(), Min(2)], field: 'name'),
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+            labelClassName: formTheme.labelClassName,
+            className: formTheme.inputClassName,
           ),
           // Gate: guests cannot see/edit their email.
           if (Gate.allows('starter.update-email'))
@@ -565,10 +588,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               label: trans('attributes.email'),
               type: InputType.email,
               validator: rules([Required(), Email()], field: 'email'),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
           // Extended fields: phone, timezone, language — feature-gated.
           if (hasExtended && Gate.allows('starter.update-phone'))
@@ -577,10 +598,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               label: trans('profile.phone_label'),
               placeholder: '+905301234567',
               validator: rules([], field: 'phone'),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
           if (MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures())
             MagicStarterTimezoneSelect(
@@ -594,10 +613,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               onChange: (v) => profileForm.set('language', v ?? ''),
               label: trans('profile.language_label'),
               options: finalLocales,
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 error:border-red-500 duration-150',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
               menuClassName:
                   'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
             ),
@@ -624,6 +641,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   // -- Password Section ------------------------------------------------------
 
   Widget _buildPasswordSection() {
+    final formTheme = MagicStarter.formTheme;
     return MagicForm(
       formData: passwordForm,
       child: MagicStarterCard(
@@ -643,10 +661,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WFormInput(
               controller: passwordForm['password'],
@@ -660,10 +676,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WFormInput(
               controller: passwordForm['password_confirmation'],
@@ -678,10 +692,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WDiv(
               className: 'flex justify-end',
@@ -1231,10 +1243,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 [Required()],
                 field: 'password',
               ),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: MagicStarter.formTheme.labelClassName,
+              className: MagicStarter.formTheme.inputClassName,
             ),
             WDiv(
               className: 'flex justify-end',
@@ -1285,6 +1295,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       return const SizedBox.shrink();
     }
 
+    final formTheme = MagicStarter.formTheme;
+
     return MagicForm(
       formData: upgradeForm,
       child: MagicStarterCard(
@@ -1301,10 +1313,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               label: trans('attributes.email'),
               type: InputType.email,
               validator: rules([Required(), Email()], field: 'email'),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WFormInput(
               controller: upgradeForm['password'],
@@ -1320,10 +1330,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WFormInput(
               controller: upgradeForm['password_confirmation'],
@@ -1340,10 +1348,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   className: 'text-gray-400 text-xl',
                 ),
               ),
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+              labelClassName: formTheme.labelClassName,
+              className: formTheme.inputClassName,
             ),
             WDiv(
               className: 'flex justify-end',

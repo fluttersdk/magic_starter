@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import 'configuration/magic_starter_config.dart';
+import 'configuration/magic_starter_theme.dart';
 import 'facades/magic_starter.dart';
 import 'models/magic_starter_auth_user.dart';
 import 'models/magic_starter_nav_item.dart';
@@ -42,216 +43,6 @@ class MagicStarterTeamResolverConfig {
     required this.currentTeam,
     required this.allTeams,
     required this.onSwitch,
-  });
-}
-
-/// Theme configuration for navigation colors and styling.
-///
-/// Allows consumer apps to override the default Wind UI `text-primary` tokens
-/// with custom colors, gradients, or light/dark mode-independent class names.
-///
-/// All fields are optional — defaults preserve the current behavior with no
-/// breaking changes.
-///
-/// ### Example
-/// ```dart
-/// MagicStarter.useNavigationTheme(
-///   MagicStarterNavigationTheme(
-///     activeItemClassName:
-///         'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
-///     brandClassName:
-///         'text-lg font-bold bg-gradient-to-r from-primary-400 to-accent-500 bg-clip-text text-transparent',
-///     bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
-///     avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
-///     avatarTextClassName: 'text-sm font-bold text-amber-600 dark:text-amber-400',
-///   ),
-/// );
-/// ```
-class MagicStarterNavigationTheme {
-  /// Active sidebar/drawer nav item className tokens.
-  ///
-  /// Applied to the `WDiv` that has `states: {if (isActive) 'active'}`. Each
-  /// token must include the `active:` prefix so the Wind CSS state system
-  /// activates it only when the item is selected.
-  ///
-  /// Defaults to `'active:text-primary active:bg-primary/10 dark:active:bg-primary/10'`.
-  final String activeItemClassName;
-
-  /// Hover className for sidebar/drawer nav items.
-  ///
-  /// Defaults to `'hover:bg-gray-100 dark:hover:bg-gray-800'`.
-  final String hoverItemClassName;
-
-  /// Brand/logo text className. Used when [brandBuilder] is `null`.
-  ///
-  /// Supports gradient text by combining Tailwind-like tokens, e.g.
-  /// `'text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent'`.
-  ///
-  /// Defaults to `'text-lg font-bold text-primary'`.
-  final String brandClassName;
-
-  /// Custom brand/logo widget builder.
-  ///
-  /// When set, renders this widget instead of the default app name text.
-  /// Receives the current [BuildContext] and should return any widget
-  /// (image, SVG, styled text, etc.). When `null`, falls back to a [WText]
-  /// using [brandClassName].
-  ///
-  /// ```dart
-  /// brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
-  /// ```
-  final Widget Function(BuildContext context)? brandBuilder;
-
-  /// Active bottom navigation item className tokens.
-  ///
-  /// Applied to both the icon and label [WIcon]/[WText] widgets that have
-  /// `states: isActive ? {'active'} : {}`. Each token must include the
-  /// `active:` prefix.
-  ///
-  /// Defaults to `'active:text-primary'`.
-  final String bottomNavActiveClassName;
-
-  /// Avatar background className for the sidebar user menu.
-  ///
-  /// Defaults to `'bg-primary/10 dark:bg-primary/10'`.
-  final String avatarClassName;
-
-  /// Avatar text/initial color className for the sidebar user menu.
-  ///
-  /// Defaults to `'text-sm font-bold text-primary'`.
-  final String avatarTextClassName;
-
-  /// Profile dropdown trigger avatar background className.
-  ///
-  /// Used for the default circular avatar rendered in
-  /// [MagicStarterUserProfileDropdown] when no custom [triggerBuilder] is set.
-  ///
-  /// Defaults to `'bg-gradient-to-tr from-primary to-gray-200'`.
-  final String dropdownAvatarClassName;
-
-  const MagicStarterNavigationTheme({
-    this.activeItemClassName =
-        'active:text-primary active:bg-primary/10 dark:active:bg-primary/10',
-    this.hoverItemClassName = 'hover:bg-gray-100 dark:hover:bg-gray-800',
-    this.brandClassName = 'text-lg font-bold text-primary',
-    this.brandBuilder,
-    this.bottomNavActiveClassName = 'active:text-primary',
-    this.avatarClassName = 'bg-primary/10 dark:bg-primary/10',
-    this.avatarTextClassName = 'text-sm font-bold text-primary',
-    this.dropdownAvatarClassName = 'bg-gradient-to-tr from-primary to-gray-200',
-  });
-}
-
-/// Theme configuration for modal/dialog colors and styling.
-///
-/// Allows consumer apps to override the default Wind UI class names used for
-/// modal containers, headers, bodies, footers, buttons, inputs, and typography.
-///
-/// All fields are optional — defaults preserve a sensible dark-mode-aware style
-/// with no breaking changes.
-///
-/// ### Example
-/// ```dart
-/// MagicStarter.useModalTheme(
-///   MagicStarterModalTheme(
-///     containerClassName: 'bg-zinc-900 rounded-2xl border border-zinc-700',
-///     primaryButtonClassName:
-///         'px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
-///     maxWidth: 560.0,
-///   ),
-/// );
-/// ```
-class MagicStarterModalTheme {
-  /// Container/dialog background and border-radius className.
-  ///
-  /// Defaults to `'bg-white dark:bg-gray-800 rounded-2xl'`.
-  final String containerClassName;
-
-  /// Header section className (wraps title + description).
-  ///
-  /// Defaults to `'px-6 pt-6 pb-4'`.
-  final String headerClassName;
-
-  /// Body section className (main content area).
-  ///
-  /// Defaults to `'px-6 pb-4'`.
-  final String bodyClassName;
-
-  /// Footer section className (action buttons row).
-  ///
-  /// Defaults to `'px-6 py-4 bg-gray-50 dark:bg-gray-800/50'`.
-  final String footerClassName;
-
-  /// Title text className.
-  ///
-  /// Defaults to `'text-xl font-semibold text-gray-900 dark:text-white mb-2'`.
-  final String titleClassName;
-
-  /// Description/subtitle text className.
-  ///
-  /// Defaults to `'text-sm text-gray-600 dark:text-gray-400'`.
-  final String descriptionClassName;
-
-  /// Primary action button className.
-  ///
-  /// Defaults to
-  /// `'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium'`.
-  final String primaryButtonClassName;
-
-  /// Secondary/cancel action button className.
-  ///
-  /// Defaults to
-  /// `'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium'`.
-  final String secondaryButtonClassName;
-
-  /// Destructive/danger action button className.
-  ///
-  /// Defaults to
-  /// `'px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium'`.
-  final String dangerButtonClassName;
-
-  /// Warning action button className.
-  ///
-  /// Defaults to
-  /// `'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium'`.
-  final String warningButtonClassName;
-
-  /// Inline error message text className.
-  ///
-  /// Defaults to `'text-sm text-red-600 dark:text-red-400'`.
-  final String errorClassName;
-
-  /// Text input field className.
-  ///
-  /// Defaults to
-  /// `'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary'`.
-  final String inputClassName;
-
-  /// Maximum width of the modal dialog in logical pixels.
-  ///
-  /// Defaults to `448.0`.
-  final double maxWidth;
-
-  const MagicStarterModalTheme({
-    this.containerClassName = 'bg-white dark:bg-gray-800 rounded-2xl',
-    this.headerClassName = 'px-6 pt-6 pb-4',
-    this.bodyClassName = 'px-6 pb-4',
-    this.footerClassName = 'px-6 py-4 bg-gray-50 dark:bg-gray-800/50',
-    this.titleClassName =
-        'text-xl font-semibold text-gray-900 dark:text-white mb-2',
-    this.descriptionClassName = 'text-sm text-gray-600 dark:text-gray-400',
-    this.primaryButtonClassName =
-        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-    this.secondaryButtonClassName =
-        'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-    this.dangerButtonClassName =
-        'px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium',
-    this.warningButtonClassName =
-        'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium',
-    this.errorClassName = 'text-sm text-red-600 dark:text-red-400',
-    this.inputClassName =
-        'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
-    this.maxWidth = 448.0,
   });
 }
 
@@ -330,6 +121,57 @@ class MagicStarterManager {
   /// Modal theme configuration. Holds className overrides for modal containers,
   /// headers, bodies, footers, buttons, inputs, and typography.
   MagicStarterModalTheme modalTheme = const MagicStarterModalTheme();
+
+  /// Form theme configuration. Holds className overrides for inputs, labels,
+  /// placeholders, and primary/secondary/link button styles in all forms.
+  MagicStarterFormTheme formTheme = const MagicStarterFormTheme();
+
+  /// Auth theme configuration. Holds className overrides for the auth form
+  /// card, title, subtitle, error banner, social divider, and link styles.
+  MagicStarterAuthTheme authTheme = const MagicStarterAuthTheme();
+
+  /// Card widget theme configuration. Holds className overrides for card
+  /// variant backgrounds, border radius, padding, and title styles.
+  MagicStarterCardTheme cardTheme = const MagicStarterCardTheme();
+
+  /// Page header theme configuration. Holds className overrides for the
+  /// page header container, title, subtitle, and action container.
+  MagicStarterPageHeaderTheme pageHeaderTheme =
+      const MagicStarterPageHeaderTheme();
+
+  /// Layout shell theme configuration. Holds className/dimension overrides for
+  /// the sidebar, header, content background, drawer, and brand bar.
+  MagicStarterLayoutTheme layoutTheme = const MagicStarterLayoutTheme();
+
+  /// Get the unified theme built from all individual sub-theme fields.
+  ///
+  /// Reading this constructs a [MagicStarterTheme] from the current values of
+  /// [navigationTheme], [modalTheme], [formTheme], [cardTheme],
+  /// [pageHeaderTheme], [layoutTheme], and [authTheme].
+  MagicStarterTheme get theme => MagicStarterTheme(
+        navigation: navigationTheme,
+        modal: modalTheme,
+        form: formTheme,
+        card: cardTheme,
+        pageHeader: pageHeaderTheme,
+        layout: layoutTheme,
+        auth: authTheme,
+      );
+
+  /// Set the unified theme, distributing each sub-theme to its individual field.
+  ///
+  /// This is equivalent to setting [navigationTheme], [modalTheme],
+  /// [formTheme], [cardTheme], [pageHeaderTheme], [layoutTheme], and
+  /// [authTheme] separately.
+  set theme(MagicStarterTheme value) {
+    navigationTheme = value.navigation;
+    modalTheme = value.modal;
+    formTheme = value.form;
+    cardTheme = value.card;
+    pageHeaderTheme = value.pageHeader;
+    layoutTheme = value.layout;
+    authTheme = value.auth;
+  }
 
   /// Native language names for common locale codes.
   /// Used to generate human-readable labels from [Lang.supportedLocales].
@@ -515,6 +357,11 @@ class MagicStarterManager {
     notificationTypeMapper = null;
     navigationTheme = const MagicStarterNavigationTheme();
     modalTheme = const MagicStarterModalTheme();
+    formTheme = const MagicStarterFormTheme();
+    authTheme = const MagicStarterAuthTheme();
+    cardTheme = const MagicStarterCardTheme();
+    pageHeaderTheme = const MagicStarterPageHeaderTheme();
+    layoutTheme = const MagicStarterLayoutTheme();
     _localeOptions = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;

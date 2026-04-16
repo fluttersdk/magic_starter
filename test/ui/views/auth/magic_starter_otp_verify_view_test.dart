@@ -108,4 +108,44 @@ void main() {
       expect(find.byType(MagicStarterOtpVerifyView), findsOneWidget);
     });
   });
+
+  group('MagicStarterOtpVerifyView — slot injection', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.put(MagicStarterOtpController());
+    });
+
+    tearDown(() {
+      Magic.delete<MagicStarterOtpController>();
+    });
+
+    testWidgets('renders header slot when registered', (tester) async {
+      MagicStarter.view.slot(
+        'auth.otp_verify',
+        'header',
+        (ctx) => const Text('Custom Header'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterOtpVerifyView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Header'), findsOneWidget);
+    });
+
+    testWidgets('renders footer slot when registered', (tester) async {
+      MagicStarter.view.slot(
+        'auth.otp_verify',
+        'footer',
+        (ctx) => const Text('Custom Footer'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterOtpVerifyView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Footer'), findsOneWidget);
+    });
+  });
 }

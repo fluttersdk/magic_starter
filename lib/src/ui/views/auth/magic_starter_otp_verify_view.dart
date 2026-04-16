@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_otp_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
 
@@ -68,17 +69,19 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
   Widget build(BuildContext context) {
     // Re-render whenever controller state changes (loading / error / step).
     return controller.renderState(
-      (_) => _buildCurrentStep(),
-      onEmpty: _buildCurrentStep(),
-      onError: (message) => _buildCurrentStep(errorMessage: message),
+      (_) => _buildCurrentStep(context),
+      onEmpty: _buildCurrentStep(context),
+      onError: (message) => _buildCurrentStep(context, errorMessage: message),
     );
   }
 
   /// Delegates to the correct step widget based on [MagicStarterOtpController.step].
-  Widget _buildCurrentStep({String? errorMessage}) {
+  Widget _buildCurrentStep(BuildContext context, {String? errorMessage}) {
     return switch (controller.step) {
-      OtpStep.phoneInput => _buildPhoneInputStep(errorMessage: errorMessage),
-      OtpStep.codeInput => _buildCodeInputStep(errorMessage: errorMessage),
+      OtpStep.phoneInput =>
+        _buildPhoneInputStep(context, errorMessage: errorMessage),
+      OtpStep.codeInput =>
+        _buildCodeInputStep(context, errorMessage: errorMessage),
     };
   }
 
@@ -87,8 +90,18 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
   // -------------------------------------------------------------------------
 
   /// Builds the phone-number entry form wrapped in the guest layout card.
-  Widget _buildPhoneInputStep({String? errorMessage}) {
+  Widget _buildPhoneInputStep(BuildContext context, {String? errorMessage}) {
     final isLoading = controller.isLoading;
+    final headerSlot = MagicStarter.view.buildSlot(
+      'auth.otp_verify',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'auth.otp_verify',
+      'footer',
+      context,
+    );
 
     return MagicStarterAuthFormCard(
       title: trans('magic_starter.otp.phone_title'),
@@ -99,26 +112,25 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
         child: WDiv(
           className: 'flex flex-col items-stretch',
           children: [
+            if (headerSlot != null) ...[
+              headerSlot,
+              const WSpacer(className: 'h-4'),
+            ],
             WFormInput(
               label: trans('attributes.phone'),
               controller: _phoneForm['phone'],
               placeholder: trans('fields.phone_placeholder'),
               type: InputType.text,
               validator: rules([Required()], field: 'phone'),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 '
-                  'border border-gray-200 dark:border-gray-700 text-gray-900 '
-                  'dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-6'),
             WButton(
               isLoading: isLoading,
               onTap: _submitPhone,
-              className: 'w-full bg-primary hover:bg-primary/80 text-white '
-                  'text-base font-semibold py-3 rounded-lg',
+              className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('magic_starter.otp.send_code_button'),
                 className: 'text-center',
@@ -131,10 +143,14 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
                 className: 'flex flex-row justify-center',
                 child: WText(
                   trans('auth.back_to_login'),
-                  className: 'text-sm font-semibold text-primary',
+                  className: MagicStarter.formTheme.linkClassName,
                 ),
               ),
             ),
+            if (footerSlot != null) ...[
+              const WSpacer(className: 'h-4'),
+              footerSlot,
+            ],
           ],
         ),
       ),
@@ -146,8 +162,18 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
   // -------------------------------------------------------------------------
 
   /// Builds the 6-digit code entry form wrapped in the guest layout card.
-  Widget _buildCodeInputStep({String? errorMessage}) {
+  Widget _buildCodeInputStep(BuildContext context, {String? errorMessage}) {
     final isLoading = controller.isLoading;
+    final headerSlot = MagicStarter.view.buildSlot(
+      'auth.otp_verify',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'auth.otp_verify',
+      'footer',
+      context,
+    );
 
     return MagicStarterAuthFormCard(
       title: trans('magic_starter.otp.code_title'),
@@ -158,6 +184,10 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
         child: WDiv(
           className: 'flex flex-col items-stretch',
           children: [
+            if (headerSlot != null) ...[
+              headerSlot,
+              const WSpacer(className: 'h-4'),
+            ],
             WFormInput(
               label: trans('magic_starter.otp.code_label'),
               controller: _codeForm['code'],
@@ -168,20 +198,15 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
                 [Required(), Min(6), Max(6)],
                 field: 'code',
               ),
-              className:
-                  'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 '
-                  'border border-gray-200 dark:border-gray-700 text-gray-900 '
-                  'dark:text-white focus:border-primary error:border-red-500',
-              placeholderClassName: 'text-gray-400 dark:text-gray-500',
-              labelClassName:
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              className: MagicStarter.formTheme.inputClassName,
+              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+              labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-6'),
             WButton(
               isLoading: isLoading,
               onTap: _submitCode,
-              className: 'w-full bg-primary hover:bg-primary/80 text-white '
-                  'text-base font-semibold py-3 rounded-lg',
+              className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('magic_starter.otp.verify_button'),
                 className: 'text-center',
@@ -207,10 +232,14 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
                 className: 'flex flex-row justify-center',
                 child: WText(
                   trans('magic_starter.otp.back_button'),
-                  className: 'text-sm font-semibold text-primary',
+                  className: MagicStarter.formTheme.linkClassName,
                 ),
               ),
             ),
+            if (footerSlot != null) ...[
+              const WSpacer(className: 'h-4'),
+              footerSlot,
+            ],
           ],
         ),
       ),

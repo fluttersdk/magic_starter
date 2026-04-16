@@ -476,6 +476,239 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // getPublishedViews
+  // -------------------------------------------------------------------------
+
+  group('getPublishedViews', () {
+    test('returns empty list when published views directory does not exist',
+        () {
+      expect(command.getPublishedViews(tempDir.path), isEmpty);
+    });
+
+    test('returns empty list when directory exists but contains no dart files',
+        () {
+      Directory('${tempDir.path}/lib/resources/views/starter')
+          .createSync(recursive: true);
+      expect(command.getPublishedViews(tempDir.path), isEmpty);
+    });
+
+    test('returns relative paths for dart files in published views directory',
+        () {
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login view',
+      );
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_register_view.dart',
+        '// register view',
+      );
+
+      final views = command.getPublishedViews(tempDir.path);
+
+      expect(views.length, equals(2));
+      expect(
+        views,
+        contains(
+          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        ),
+      );
+      expect(
+        views,
+        contains(
+          'lib/resources/views/starter/auth/magic_starter_register_view.dart',
+        ),
+      );
+    });
+
+    test('ignores non-dart files in the published views directory', () {
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login view',
+      );
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/README.md',
+        '# readme',
+      );
+
+      final views = command.getPublishedViews(tempDir.path);
+
+      expect(views.length, equals(1));
+    });
+
+    test('returns sorted list when multiple views exist', () {
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/profile/magic_starter_profile_settings_view.dart',
+        '// profile',
+      );
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login',
+      );
+
+      final views = command.getPublishedViews(tempDir.path);
+
+      expect(views.first, contains('auth'));
+      expect(views.last, contains('profile'));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // isPublishedViewWired
+  // -------------------------------------------------------------------------
+
+  group('isPublishedViewWired', () {
+    const viewPath =
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart';
+
+    test('returns true when app_service_provider.dart does not exist', () {
+      expect(
+        command.isPublishedViewWired(tempDir.path, viewPath),
+        isTrue,
+      );
+    });
+
+    test(
+        'returns true when provider contains the view filename stem (registered)',
+        () {
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        "import '../../resources/views/starter/auth/magic_starter_login_view.dart';\n"
+            "MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());\n",
+      );
+
+      expect(
+        command.isPublishedViewWired(tempDir.path, viewPath),
+        isTrue,
+      );
+    });
+
+    test('returns false when provider exists but does not reference the view',
+        () {
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        '// empty provider — no registrations\n',
+      );
+
+      expect(
+        command.isPublishedViewWired(tempDir.path, viewPath),
+        isFalse,
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // generateReport — published views section
+  // -------------------------------------------------------------------------
+
+  group('generateReport — published views', () {
+    test('report omits Published Views section when no views are published',
+        () {
+      _setupFullInstall(tempDir);
+      final report = command.generateReport();
+
+      expect(report, isNot(contains('Published Views')));
+    });
+
+    test('report includes Published Views section when views are published',
+        () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login view',
+      );
+
+      final report = command.generateReport();
+
+      expect(report, contains('Published Views'));
+    });
+
+    test('report shows check mark for a wired published view', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login view',
+      );
+      // Wire the view in AppServiceProvider.
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        "import 'package:magic_starter/magic_starter.dart';\n"
+            'void boot() {\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n'
+            "  MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());\n"
+            '}\n',
+      );
+
+      final report = command.generateReport();
+
+      expect(report, contains('✓'));
+      expect(
+        report,
+        contains(
+          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        ),
+      );
+    });
+
+    test('report shows warning symbol for an unwired published view', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login view',
+      );
+      // AppServiceProvider exists but has no registration for the view.
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        "import 'package:magic_starter/magic_starter.dart';\n"
+            'void boot() {\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n'
+            '}\n',
+      );
+
+      final report = command.generateReport();
+
+      expect(report, contains('⚠'));
+      expect(report, contains('Not wired'));
+    });
+
+    test(
+        'unwired published views do not affect getMissingRequirements count (warnings only)',
+        () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login view',
+      );
+      // AppServiceProvider exists but has no registration.
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        "import 'package:magic_starter/magic_starter.dart';\n"
+            'void boot() {\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n'
+            '}\n',
+      );
+
+      // Missing requirements count must stay at 0 — published view warnings
+      // are informational and do not block the health check.
+      expect(command.getMissingRequirements(), isEmpty);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // --verbose flag
   // -------------------------------------------------------------------------
 

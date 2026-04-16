@@ -11,6 +11,12 @@
 - [Header Builder](#header-builder)
 - [Logout Callback](#logout-callback)
 - [Notification Type Mapper](#notification-type-mapper)
+- [Unified Theme](#unified-theme)
+- [Form Theme](#form-theme)
+- [Auth Theme](#auth-theme)
+- [Card Theme](#card-theme)
+- [Page Header Theme](#page-header-theme)
+- [Layout Theme](#layout-theme)
 - [View Registry Integration](#view-registry-integration)
 - [Default Views](#default-views)
 - [MagicStarter Facade](#magicstarter-facade)
@@ -287,6 +293,126 @@ MagicStarter.useNotificationTypeMapper((type) => switch (type) {
 
 The mapper returns a record `({IconData icon, String colorClass})`. When not configured, notification views fall back to built-in defaults.
 
+<a name="unified-theme"></a>
+## Unified Theme
+
+`MagicStarterTheme` wraps all 7 sub-theme objects into a single configuration. Host apps can set the entire visual identity in one call, then selectively override individual sub-themes afterward:
+
+```dart
+MagicStarter.useTheme(
+  MagicStarterTheme(
+    navigation: MagicStarterNavigationTheme(
+      activeItemClassName: 'active:text-amber-500 active:bg-amber-500/10',
+    ),
+    form: MagicStarterFormTheme(
+      inputClassName: 'rounded-xl border-2 border-zinc-700',
+    ),
+    card: MagicStarterCardTheme(
+      surfaceClassName: 'bg-zinc-50 dark:bg-zinc-900',
+    ),
+  ),
+);
+
+// Override just one sub-theme after unified set
+MagicStarter.useAuthTheme(
+  MagicStarterAuthTheme(cardClassName: 'rounded-3xl bg-zinc-900 p-8'),
+);
+```
+
+The unified theme supports `copyWith()` for partial overrides:
+
+```dart
+final customTheme = MagicStarter.theme.copyWith(
+  form: MagicStarterFormTheme(inputClassName: 'rounded-xl'),
+);
+MagicStarter.useTheme(customTheme);
+```
+
+The manager maintains bidirectional sync: the `theme` getter constructs a `MagicStarterTheme` from all 7 individual fields, while the `theme` setter distributes each sub-theme to its respective field. Both `useTheme()` and individual `use*Theme()` methods work together seamlessly.
+
+| Sub-theme | Class | Facade getter/setter |
+|-----------|-------|---------------------|
+| Navigation | `MagicStarterNavigationTheme` | `useNavigationTheme()` / `navigationTheme` |
+| Modal | `MagicStarterModalTheme` | `useModalTheme()` / `modalTheme` |
+| Form | `MagicStarterFormTheme` | `useFormTheme()` / `formTheme` |
+| Auth | `MagicStarterAuthTheme` | `useAuthTheme()` / `authTheme` |
+| Card | `MagicStarterCardTheme` | `useCardTheme()` / `cardTheme` |
+| Page Header | `MagicStarterPageHeaderTheme` | `usePageHeaderTheme()` / `pageHeaderTheme` |
+| Layout | `MagicStarterLayoutTheme` | `useLayoutTheme()` / `layoutTheme` |
+
+All sub-theme classes live in `lib/src/configuration/magic_starter_theme.dart`.
+
+<a name="form-theme"></a>
+## Form Theme
+
+`MagicStarterFormTheme` overrides Wind UI tokens for form inputs, labels, placeholders, buttons, links, and checkboxes across all auth and profile forms.
+
+```dart
+MagicStarter.useFormTheme(
+  MagicStarterFormTheme(
+    inputClassName: 'w-full px-4 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white',
+    primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl',
+  ),
+);
+```
+
+<a name="auth-theme"></a>
+## Auth Theme
+
+`MagicStarterAuthTheme` overrides Wind UI tokens for the auth form card, title, subtitle, error banner, social divider, and link styles on login/register/forgot/reset pages.
+
+```dart
+MagicStarter.useAuthTheme(
+  MagicStarterAuthTheme(
+    cardClassName: 'rounded-3xl bg-zinc-900 border border-zinc-700 p-8',
+    titleClassName: 'text-3xl font-black text-white text-center',
+  ),
+);
+```
+
+<a name="card-theme"></a>
+## Card Theme
+
+`MagicStarterCardTheme` overrides Wind UI tokens for `MagicStarterCard` variant backgrounds, border radius, padding, and title styles.
+
+```dart
+MagicStarter.useCardTheme(
+  MagicStarterCardTheme(
+    surfaceClassName: 'bg-zinc-900 border border-zinc-700',
+    borderRadius: 'rounded-xl',
+  ),
+);
+```
+
+<a name="page-header-theme"></a>
+## Page Header Theme
+
+`MagicStarterPageHeaderTheme` overrides Wind UI tokens for the `MagicStarterPageHeader` container, title, subtitle, and action container.
+
+```dart
+MagicStarter.usePageHeaderTheme(
+  MagicStarterPageHeaderTheme(
+    titleClassName: 'text-3xl font-black text-white',
+  ),
+);
+```
+
+<a name="layout-theme"></a>
+## Layout Theme
+
+`MagicStarterLayoutTheme` overrides Wind UI class names and dimensions for the app layout shell: sidebar, header, content background, drawer background, brand bar, and bottom navigation.
+
+```dart
+MagicStarter.useLayoutTheme(
+  MagicStarterLayoutTheme(
+    sidebarWidth: 280,
+    sidebarClassName: 'h-full flex flex-col bg-zinc-900 border-r border-zinc-700',
+    contentBackgroundLightColor: 'zinc',
+    contentBackgroundLightShade: 50,
+  ),
+);
+```
+
 <a name="view-registry-integration"></a>
 ## View Registry Integration
 
@@ -351,8 +477,14 @@ Default layouts:
 | `MagicStarter.createUser(data)` | `manager.userFactory(data)` |
 | `MagicStarter.useTeamResolver(...)` | `manager.teamResolver = config` |
 | `MagicStarter.useNavigation(...)` | `manager.navigationConfig = config` |
+| `MagicStarter.useTheme(theme)` | `manager.theme = theme` (sets all 7 sub-themes) |
 | `MagicStarter.useNavigationTheme(theme)` | `manager.navigationTheme = theme` |
 | `MagicStarter.useModalTheme(theme)` | `manager.modalTheme = theme` |
+| `MagicStarter.useFormTheme(theme)` | `manager.formTheme = theme` |
+| `MagicStarter.useAuthTheme(theme)` | `manager.authTheme = theme` |
+| `MagicStarter.useCardTheme(theme)` | `manager.cardTheme = theme` |
+| `MagicStarter.usePageHeaderTheme(theme)` | `manager.pageHeaderTheme = theme` |
+| `MagicStarter.useLayoutTheme(theme)` | `manager.layoutTheme = theme` |
 | `MagicStarter.useSidebarFooter(builder)` | `manager.sidebarFooterBuilder = builder` |
 | `MagicStarter.useHeader(builder)` | `manager.headerBuilder = builder` |
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |

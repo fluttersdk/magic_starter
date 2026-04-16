@@ -33,6 +33,12 @@ void main() {
     file.writeAsStringSync(content);
   }
 
+  void createHostFile(String relativePath, String content) {
+    final file = File('${tempDir.path}/$relativePath');
+    file.createSync(recursive: true);
+    file.writeAsStringSync(content);
+  }
+
   String readHostFile(String relativePath) {
     return File('${tempDir.path}/$relativePath').readAsStringSync();
   }
@@ -246,6 +252,609 @@ void main() {
 
       expect(Directory('${tempDir.path}/lib/config').existsSync(), isTrue);
       expect(hostFileExists('lib/config/magic_starter.dart'), isTrue);
+    });
+
+    // -------------------------------------------------------------------
+    // Granular view publishing
+    // -------------------------------------------------------------------
+
+    test('--tag=views:auth publishes only auth module views', () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'class LoginView {}',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_register_view.dart',
+        'class RegisterView {}',
+      );
+      createPluginFile(
+        'lib/src/ui/views/profile/magic_starter_profile_settings_view.dart',
+        'class ProfileSettingsView {}',
+      );
+
+      await command.runWith([
+        '--tag=views:auth',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_register_view.dart'),
+        isTrue,
+      );
+      // Profile view should NOT be published.
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/profile/magic_starter_profile_settings_view.dart'),
+        isFalse,
+      );
+    });
+
+    test('--tag=views:auth.login publishes single view by registry key',
+        () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'class LoginView {}',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_register_view.dart',
+        'class RegisterView {}',
+      );
+
+      await command.runWith([
+        '--tag=views:auth.login',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        isTrue,
+      );
+      expect(
+        readHostFile(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        'class LoginView {}',
+      );
+      // Other auth views should NOT be published.
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_register_view.dart'),
+        isFalse,
+      );
+    });
+
+    test('--tag=views:auth publishes all six auth views when present',
+        () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'login',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_register_view.dart',
+        'register',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_forgot_password_view.dart',
+        'forgot',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_reset_password_view.dart',
+        'reset',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_two_factor_challenge_view.dart',
+        'two_factor',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_otp_verify_view.dart',
+        'otp',
+      );
+
+      await command.runWith([
+        '--tag=views:auth',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_register_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_forgot_password_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_reset_password_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_two_factor_challenge_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/auth/magic_starter_otp_verify_view.dart'),
+        isTrue,
+      );
+    });
+
+    test('--tag=views:notifications publishes notification module views',
+        () async {
+      createPluginFile(
+        'lib/src/ui/views/notifications/magic_starter_notifications_list_view.dart',
+        'class NotificationsListView {}',
+      );
+      createPluginFile(
+        'lib/src/ui/views/notifications/magic_starter_notification_preferences_view.dart',
+        'class NotificationPreferencesView {}',
+      );
+
+      await command.runWith([
+        '--tag=views:notifications',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/notifications/magic_starter_notifications_list_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/notifications/magic_starter_notification_preferences_view.dart'),
+        isTrue,
+      );
+    });
+
+    test('--tag=views:unknown reports error for unknown view scope', () async {
+      await command.runWith([
+        '--tag=views:unknown',
+      ]);
+
+      // No files should be created.
+      expect(
+        Directory('${tempDir.path}/lib/resources').existsSync(),
+        isFalse,
+      );
+    });
+
+    // -------------------------------------------------------------------
+    // Granular layout publishing
+    // -------------------------------------------------------------------
+
+    test('--tag=layouts publishes both layout files', () async {
+      createPluginFile(
+        'lib/src/ui/layouts/magic_starter_app_layout.dart',
+        'class AppLayout {}',
+      );
+      createPluginFile(
+        'lib/src/ui/layouts/magic_starter_guest_layout.dart',
+        'class GuestLayout {}',
+      );
+
+      await command.runWith([
+        '--tag=layouts',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/layouts/starter/magic_starter_app_layout.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/layouts/starter/magic_starter_guest_layout.dart'),
+        isTrue,
+      );
+    });
+
+    test('--tag=layouts:app publishes only the app layout', () async {
+      createPluginFile(
+        'lib/src/ui/layouts/magic_starter_app_layout.dart',
+        'class AppLayout {}',
+      );
+      createPluginFile(
+        'lib/src/ui/layouts/magic_starter_guest_layout.dart',
+        'class GuestLayout {}',
+      );
+
+      await command.runWith([
+        '--tag=layouts:app',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/layouts/starter/magic_starter_app_layout.dart'),
+        isTrue,
+      );
+      expect(
+        readHostFile(
+            'lib/resources/layouts/starter/magic_starter_app_layout.dart'),
+        'class AppLayout {}',
+      );
+      // Guest layout should NOT be published.
+      expect(
+        hostFileExists(
+            'lib/resources/layouts/starter/magic_starter_guest_layout.dart'),
+        isFalse,
+      );
+    });
+
+    test('--tag=layouts:guest publishes only the guest layout', () async {
+      createPluginFile(
+        'lib/src/ui/layouts/magic_starter_guest_layout.dart',
+        'class GuestLayout {}',
+      );
+
+      await command.runWith([
+        '--tag=layouts:guest',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/layouts/starter/magic_starter_guest_layout.dart'),
+        isTrue,
+      );
+    });
+
+    test('--tag=layouts:unknown reports error for unknown layout scope',
+        () async {
+      await command.runWith([
+        '--tag=layouts:unknown',
+      ]);
+
+      expect(
+        Directory('${tempDir.path}/lib/resources').existsSync(),
+        isFalse,
+      );
+    });
+
+    // -------------------------------------------------------------------
+    // Granular view publishing with --force
+    // -------------------------------------------------------------------
+
+    test('--tag=views:auth.login with --force overwrites existing file',
+        () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'new-login-content',
+      );
+
+      final existing = File(
+        '${tempDir.path}/lib/resources/views/starter/auth/magic_starter_login_view.dart',
+      );
+      existing.createSync(recursive: true);
+      existing.writeAsStringSync('old-login-content');
+
+      await command.runWith([
+        '--tag=views:auth.login',
+        '--force',
+      ]);
+
+      expect(
+        readHostFile(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        'new-login-content',
+      );
+    });
+
+    test('--tag=views:auth.login without --force skips existing file',
+        () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'new-login-content',
+      );
+
+      final existing = File(
+        '${tempDir.path}/lib/resources/views/starter/auth/magic_starter_login_view.dart',
+      );
+      existing.createSync(recursive: true);
+      existing.writeAsStringSync('old-login-content');
+
+      await command.runWith([
+        '--tag=views:auth.login',
+      ]);
+
+      expect(
+        readHostFile(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
+        'old-login-content',
+      );
+    });
+
+    test('--tag=views:profile publishes profile module views', () async {
+      createPluginFile(
+        'lib/src/ui/views/profile/magic_starter_profile_settings_view.dart',
+        'class ProfileSettingsView {}',
+      );
+
+      await command.runWith([
+        '--tag=views:profile',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/profile/magic_starter_profile_settings_view.dart'),
+        isTrue,
+      );
+    });
+
+    test('--tag=views:teams publishes team module views', () async {
+      createPluginFile(
+        'lib/src/ui/views/teams/magic_starter_team_create_view.dart',
+        'class TeamCreateView {}',
+      );
+      createPluginFile(
+        'lib/src/ui/views/teams/magic_starter_team_settings_view.dart',
+        'class TeamSettingsView {}',
+      );
+      createPluginFile(
+        'lib/src/ui/views/teams/magic_starter_team_invitation_accept_view.dart',
+        'class TeamInvitationAcceptView {}',
+      );
+
+      await command.runWith([
+        '--tag=views:teams',
+      ]);
+
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/teams/magic_starter_team_create_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/teams/magic_starter_team_settings_view.dart'),
+        isTrue,
+      );
+      expect(
+        hostFileExists(
+            'lib/resources/views/starter/teams/magic_starter_team_invitation_accept_view.dart'),
+        isTrue,
+      );
+    });
+
+    // -------------------------------------------------------------------
+    // Auto-wire into AppServiceProvider
+    // -------------------------------------------------------------------
+
+    test('auto-wires view registration into AppServiceProvider after publish',
+        () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'class MagicStarterLoginView {}',
+      );
+
+      // Create a mock AppServiceProvider.
+      createHostFile(
+        'lib/app/providers/app_service_provider.dart',
+        '''
+import 'package:magic/magic.dart';
+
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  Future<void> boot() async {
+    // existing boot code
+  }
+}
+''',
+      );
+
+      await command.runWith([
+        '--tag=views:auth.login',
+      ]);
+
+      final content =
+          readHostFile('lib/app/providers/app_service_provider.dart');
+
+      // Should contain the import.
+      expect(
+        content,
+        contains(
+          "import '../../resources/views/starter/auth/magic_starter_login_view.dart';",
+        ),
+      );
+
+      // Should contain the registration call.
+      expect(
+        content,
+        contains(
+          "MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());",
+        ),
+      );
+    });
+
+    test('auto-wires layout registration into AppServiceProvider after publish',
+        () async {
+      createPluginFile(
+        'lib/src/ui/layouts/magic_starter_app_layout.dart',
+        'class MagicStarterAppLayout {}',
+      );
+
+      createHostFile(
+        'lib/app/providers/app_service_provider.dart',
+        '''
+import 'package:magic/magic.dart';
+
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  Future<void> boot() async {
+    // existing boot code
+  }
+}
+''',
+      );
+
+      await command.runWith([
+        '--tag=layouts:app',
+      ]);
+
+      final content =
+          readHostFile('lib/app/providers/app_service_provider.dart');
+
+      expect(
+        content,
+        contains(
+          "import '../../resources/layouts/starter/magic_starter_app_layout.dart';",
+        ),
+      );
+
+      expect(
+        content,
+        contains(
+          "MagicStarter.view.registerLayout('layout.app', (child) => MagicStarterAppLayout(child: child));",
+        ),
+      );
+    });
+
+    test('auto-wire is idempotent: second run does not duplicate registration',
+        () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'class MagicStarterLoginView {}',
+      );
+
+      createHostFile(
+        'lib/app/providers/app_service_provider.dart',
+        '''
+import 'package:magic/magic.dart';
+
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  Future<void> boot() async {
+    // existing boot code
+  }
+}
+''',
+      );
+
+      // First publish.
+      await command.runWith([
+        '--tag=views:auth.login',
+        '--force',
+      ]);
+
+      // Second publish (with force to re-copy file).
+      await command.runWith([
+        '--tag=views:auth.login',
+        '--force',
+      ]);
+
+      final content =
+          readHostFile('lib/app/providers/app_service_provider.dart');
+
+      // Count occurrences of the registration line.
+      final regPattern = RegExp(
+        RegExp.escape(
+          "MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());",
+        ),
+      );
+      final matches = regPattern.allMatches(content).length;
+      expect(matches, 1, reason: 'Registration should appear exactly once');
+
+      // Count occurrences of the import line.
+      final importPattern = RegExp(
+        RegExp.escape(
+          "import '../../resources/views/starter/auth/magic_starter_login_view.dart';",
+        ),
+      );
+      final importMatches = importPattern.allMatches(content).length;
+      expect(
+        importMatches,
+        1,
+        reason: 'Import should appear exactly once',
+      );
+    });
+
+    test('auto-wire skips when AppServiceProvider not found', () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'class MagicStarterLoginView {}',
+      );
+
+      // Do NOT create AppServiceProvider file.
+
+      await command.runWith([
+        '--tag=views:auth.login',
+      ]);
+
+      // Verify the view was still published.
+      expect(
+        hostFileExists(
+          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        ),
+        isTrue,
+      );
+
+      // AppServiceProvider should not exist.
+      expect(
+        hostFileExists('lib/app/providers/app_service_provider.dart'),
+        isFalse,
+      );
+    });
+
+    test('auto-wires multiple view registrations for module scope', () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'class MagicStarterLoginView {}',
+      );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_register_view.dart',
+        'class MagicStarterRegisterView {}',
+      );
+
+      createHostFile(
+        'lib/app/providers/app_service_provider.dart',
+        '''
+import 'package:magic/magic.dart';
+
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  Future<void> boot() async {
+    // existing boot code
+  }
+}
+''',
+      );
+
+      await command.runWith([
+        '--tag=views:auth',
+      ]);
+
+      final content =
+          readHostFile('lib/app/providers/app_service_provider.dart');
+
+      expect(
+        content,
+        contains(
+          "MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());",
+        ),
+      );
+      expect(
+        content,
+        contains(
+          "MagicStarter.view.register('auth.register', () => const MagicStarterRegisterView());",
+        ),
+      );
     });
   });
 }

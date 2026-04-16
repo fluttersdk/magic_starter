@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../facades/magic_starter.dart';
+
 /// Reusable page header for Magic Starter views.
 ///
 /// Matches the [AppPageHeader] standard: full-width, border-b separator,
@@ -40,8 +42,8 @@ class MagicStarterPageHeader extends StatelessWidget {
     final leading = this.leading;
     return WDiv(
       className: inlineActions
-          ? 'w-full flex flex-row items-center justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700'
-          : 'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
+          ? MagicStarter.pageHeaderTheme.containerInlineClassName
+          : MagicStarter.pageHeaderTheme.containerClassName,
       children: [
         WDiv(
           className: inlineActions
@@ -54,14 +56,12 @@ class MagicStarterPageHeader extends StatelessWidget {
               children: [
                 WText(
                   title,
-                  className:
-                      'text-2xl font-bold text-gray-900 dark:text-white truncate',
+                  className: MagicStarter.pageHeaderTheme.titleClassName,
                 ),
                 if (subtitle != null)
                   WText(
                     subtitle!,
-                    className:
-                        'text-sm text-gray-600 dark:text-gray-400 truncate',
+                    className: MagicStarter.pageHeaderTheme.subtitleClassName,
                   ),
               ],
             ),
@@ -74,7 +74,7 @@ class MagicStarterPageHeader extends StatelessWidget {
         ),
         if (actions != null && actions!.isNotEmpty)
           WDiv(
-            className: 'flex flex-row items-center gap-2',
+            className: MagicStarter.pageHeaderTheme.actionContainerClassName,
             children: actions!,
           ),
       ],

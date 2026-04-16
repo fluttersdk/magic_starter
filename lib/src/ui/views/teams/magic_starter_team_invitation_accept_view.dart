@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
 
@@ -33,20 +34,29 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
+    final headerSlot = MagicStarter.view
+        .buildSlot('teams.invitation_accept', 'header', context);
+    final footerSlot = MagicStarter.view
+        .buildSlot('teams.invitation_accept', 'footer', context);
+
     return controller.renderState(
-      (_) => _buildSuccess(),
-      onEmpty: _buildDefault(),
-      onError: (message) => _buildError(message),
+      (_) => _buildSuccess(headerSlot: headerSlot, footerSlot: footerSlot),
+      onEmpty: _buildDefault(headerSlot: headerSlot, footerSlot: footerSlot),
+      onError: (message) =>
+          _buildError(message, headerSlot: headerSlot, footerSlot: footerSlot),
     );
   }
 
-  Widget _buildDefault() {
+  Widget _buildDefault({Widget? headerSlot, Widget? footerSlot}) {
+    final formTheme = MagicStarter.formTheme;
+
     return MagicStarterAuthFormCard(
       title: trans('teams.accept_invitation'),
       subtitle: trans('teams.accept_invitation_subtitle'),
       child: WDiv(
         className: 'flex flex-col items-center gap-6',
         children: [
+          if (headerSlot != null) headerSlot,
           WDiv(
             className:
                 'w-16 h-16 rounded-full bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
@@ -58,26 +68,26 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
           WButton(
             onTap: _accept,
             isLoading: controller.isLoading,
-            className: '''
-                w-full bg-primary hover:bg-primary/80
-                text-white text-base font-bold
-                p-4 rounded-xl shadow-lg
-              ''',
-            child: WText(trans('teams.accept_invitation'),
-                className: 'text-center'),
+            className: formTheme.primaryButtonClassName,
+            child: WText(
+              trans('teams.accept_invitation'),
+              className: 'text-center',
+            ),
           ),
+          if (footerSlot != null) footerSlot,
         ],
       ),
     );
   }
 
-  Widget _buildSuccess() {
+  Widget _buildSuccess({Widget? headerSlot, Widget? footerSlot}) {
     return MagicStarterAuthFormCard(
       title: trans('teams.accept_invitation'),
       subtitle: trans('teams.accept_invitation_subtitle'),
       child: WDiv(
         className: 'flex flex-col items-center gap-4',
         children: [
+          if (headerSlot != null) headerSlot,
           WDiv(
             className:
                 'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
@@ -98,12 +108,17 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
               className: 'text-sm font-semibold text-primary',
             ),
           ),
+          if (footerSlot != null) footerSlot,
         ],
       ),
     );
   }
 
-  Widget _buildError(String message) {
+  Widget _buildError(
+    String message, {
+    Widget? headerSlot,
+    Widget? footerSlot,
+  }) {
     return MagicStarterAuthFormCard(
       title: trans('teams.accept_invitation'),
       subtitle: trans('teams.accept_invitation_subtitle'),
@@ -111,6 +126,7 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
       child: WDiv(
         className: 'flex flex-col items-center gap-4',
         children: [
+          if (headerSlot != null) headerSlot,
           WDiv(
             className:
                 'w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center',
@@ -127,6 +143,7 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
               className: 'text-sm font-semibold text-primary',
             ),
           ),
+          if (footerSlot != null) footerSlot,
         ],
       ),
     );

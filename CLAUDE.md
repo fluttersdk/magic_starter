@@ -10,7 +10,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 
 | Command | Description |
 |---------|-------------|
-| `flutter test --coverage` | Run all tests (~46 files, ~630+ cases) with coverage |
+| `flutter test --coverage` | Run all tests (~46 files, ~752 cases) with coverage |
 | `flutter test test/http/controllers/` | Run controller tests only |
 | `flutter test --name "pattern"` | Run tests matching pattern |
 | `flutter analyze --no-fatal-infos` | Static analysis (flutter_lints ^6.0) |
@@ -19,7 +19,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 | `dart run magic_starter:install` | Scaffold config + provider into consumer project |
 | `dart run magic_starter:configure` | Interactive feature toggle configuration |
 | `dart run magic_starter:doctor` | Diagnose project setup issues |
-| `dart run magic_starter:publish` | Publish stubs to consumer project |
+| `dart run magic_starter:publish` | Publish (copy) views/layouts for customization |
 | `dart run magic_starter:uninstall` | Remove scaffolded files from consumer project |
 
 ## Architecture
@@ -32,10 +32,10 @@ lib/
 ├── config/
 │   └── magic_starter.dart          # Configuration template stub
 └── src/
-    ├── magic_starter_manager.dart  # Singleton registry: user model, team resolver, nav, navigation theme, views
+    ├── magic_starter_manager.dart  # Singleton registry: user model, team resolver, nav, 7 sub-themes, views, slots
     ├── configuration/              # 13 feature toggles (all default false, opt-in)
     ├── providers/                  # IoC registration, 9 Gate abilities, boot logic
-    ├── facades/                    # Static API: MagicStarter.useUserModel(), .useNavigationTheme(), .view.make()
+    ├── facades/                    # Static API: MagicStarter.useUserModel(), .useTheme(), .view.make(), .view.slot()
     ├── http/controllers/           # 7 controllers + NavigatesRoutes mixin
     │   └── concerns/              # Shared mixins (navigates_routes.dart)
     ├── routes/                     # Per-module route registration (feature-gated)
@@ -109,6 +109,9 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | `brandBuilder` + `brandClassName` both set | `brandBuilder` wins — `brandClassName` is ignored when a builder is registered |
 | Modal theme not affecting dialogs | `MagicStarter.useModalTheme()` must be called before any dialog is shown — ideally in `AppServiceProvider.boot()` |
 | Hardcoding dialog classNames | All modal classNames must come from `MagicStarter.manager.modalTheme` — never hardcode in widget build methods |
+| Theme sub-theme ordering | `useTheme()` sets all 7 sub-themes at once; individual `useFormTheme()` etc. can override after. Call unified first if using both |
+| Slot not rendering | `MagicStarter.view.slot(viewKey, slotName, builder)` must be called before the view is built. Views call `buildSlot()` at build time |
+| Published view not loading | `dart run magic_starter:publish` copies views to `lib/resources/views/starter/`. Auto-wire adds `MagicStarter.view.register()` to AppServiceProvider |
 | `Icons.*` in `build()` | Extract as `static const _iconName = Icons.xxx` — required for Flutter web tree-shaking |
 
 ## Skills & Extensions

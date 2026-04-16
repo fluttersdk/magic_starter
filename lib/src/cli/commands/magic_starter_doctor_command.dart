@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:magic_cli/magic_cli.dart';
+import 'package:path/path.dart' as p;
 
 /// Diagnostic health-check command for Magic Starter installations.
 ///
@@ -163,6 +164,52 @@ class MagicStarterDoctorCommand extends Command {
     return FileHelper.fileExists('$root/assets/lang/en.json');
   }
 
+  /// Scan `lib/resources/views/starter/` for published view `.dart` files.
+  ///
+  /// Returns a list of relative file paths (relative to [root]) for every
+  /// `.dart` file found in the published views directory. Returns an empty
+  /// list when the directory does not exist or contains no Dart files.
+  List<String> getPublishedViews(String root) {
+    final dir = Directory('$root/lib/resources/views/starter');
+
+    if (!dir.existsSync()) {
+      return [];
+    }
+
+    final files = <String>[];
+
+    for (final entry in dir.listSync(recursive: true)) {
+      if (entry is File && entry.path.endsWith('.dart')) {
+        files.add(p.relative(entry.path, from: root));
+      }
+    }
+
+    files.sort();
+
+    return files;
+  }
+
+  /// Check whether a published view file has a corresponding
+  /// `MagicStarter.view.register()` call in `app_service_provider.dart`.
+  ///
+  /// [viewRelativePath] is relative to [root] (e.g.,
+  /// `lib/resources/views/starter/auth/magic_starter_login_view.dart`).
+  ///
+  /// Returns `true` when the registration is found or when the provider file
+  /// does not exist (cannot verify — treat as wired to avoid false positives).
+  bool isPublishedViewWired(String root, String viewRelativePath) {
+    final providerPath = '$root/lib/app/providers/app_service_provider.dart';
+
+    if (!FileHelper.fileExists(providerPath)) {
+      return true;
+    }
+
+    final fileName = p.basename(viewRelativePath);
+    final content = File(providerPath).readAsStringSync();
+
+    return content.contains(fileName.replaceAll('.dart', ''));
+  }
+
   // -------------------------------------------------------------------------
   // Report
   // -------------------------------------------------------------------------
@@ -289,9 +336,25 @@ class MagicStarterDoctorCommand extends Command {
       buffer.writeln('    Path: assets/lang/en.json');
     }
 
+    // 9. Published views section.
+    final List<String> publishedViews = getPublishedViews(root);
+    if (publishedViews.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Published Views:');
+      for (final String viewPath in publishedViews) {
+        final bool wired = isPublishedViewWired(root, viewPath);
+        buffer.writeln('  ${wired ? '✓' : '⚠'} $viewPath');
+        if (!wired) {
+          buffer.writeln(
+            '      Not wired: add MagicStarter.view.register() in AppServiceProvider',
+          );
+        }
+      }
+    }
+
     buffer.writeln();
 
-    // 9. Summary section.
+    // 10. Summary section.
     final List<String> missing = getMissingRequirements();
     if (missing.isEmpty) {
       buffer.writeln('✓ All requirements met!');

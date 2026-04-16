@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
+
+import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
 
@@ -56,14 +58,24 @@ class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
   @override
   Widget build(BuildContext context) {
     return controller.renderState(
-      (_) => _buildContent(),
-      onEmpty: _buildContent(),
-      onError: (message) => _buildContent(errorMessage: message),
+      (_) => _buildContent(context),
+      onEmpty: _buildContent(context),
+      onError: (message) => _buildContent(context, errorMessage: message),
     );
   }
 
-  Widget _buildContent({String? errorMessage}) {
+  Widget _buildContent(BuildContext context, {String? errorMessage}) {
     final isLoading = controller.isLoading;
+    final headerSlot = MagicStarter.view.buildSlot(
+      'auth.two_factor_challenge',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'auth.two_factor_challenge',
+      'footer',
+      context,
+    );
 
     return MagicStarterAuthFormCard(
       title: trans('auth.two_factor_challenge'),
@@ -74,6 +86,7 @@ class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
       child: WDiv(
         className: 'flex flex-col gap-6',
         children: [
+          if (headerSlot != null) headerSlot,
           // Input
           WFormInput(
             controller: _codeController,
@@ -81,18 +94,15 @@ class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
                 ? trans('auth.recovery_code')
                 : trans('auth.authentication_code'),
             placeholder: _useRecoveryCode ? 'xxxxx-xxxxx' : '123456',
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
-            placeholderClassName: 'text-gray-400 dark:text-gray-500',
-            labelClassName:
-                'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+            className: MagicStarter.formTheme.inputClassName,
+            placeholderClassName: MagicStarter.formTheme.placeholderClassName,
+            labelClassName: MagicStarter.formTheme.labelClassName,
           ),
           // Submit button
           WButton(
             isLoading: isLoading,
             onTap: _submit,
-            className:
-                'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg flex items-center justify-center',
+            className: MagicStarter.formTheme.primaryButtonClassName,
             child: WText(trans('auth.verify'), className: 'text-center'),
           ),
           // Toggle link
@@ -108,12 +118,12 @@ class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
                   _useRecoveryCode
                       ? trans('auth.use_authentication_code')
                       : trans('auth.use_recovery_code'),
-                  className:
-                      'text-sm font-medium text-primary hover:underline cursor-pointer',
+                  className: MagicStarter.formTheme.linkClassName,
                 ),
               ),
             ],
           ),
+          if (footerSlot != null) footerSlot,
         ],
       ),
     );

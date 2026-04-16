@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../facades/magic_starter.dart';
+
 /// Consistent card wrapper for all auth forms.
 ///
 /// Provides title, subtitle, optional error banner, theme toggle, and content area.
@@ -22,12 +24,7 @@ class MagicStarterAuthFormCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WDiv(
-      className: '''
-        rounded-2xl bg-white dark:bg-gray-800
-        border border-gray-200 dark:border-gray-700
-        p-4 lg:p-8
-        flex flex-col items-center
-      ''',
+      className: MagicStarter.authTheme.cardClassName,
       children: [
         // Theme Toggle
         WDiv(
@@ -35,14 +32,10 @@ class MagicStarterAuthFormCard extends StatelessWidget {
           child: WAnchor(
             onTap: () => context.windTheme.toggleTheme(),
             child: WDiv(
-              className: '''
-                p-2 rounded-lg duration-150
-                bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800
-                flex items-center justify-center
-              ''',
+              className: MagicStarter.authTheme.themeToggleClassName,
               child: WIcon(
                 Icons.brightness_6_outlined,
-                className: 'text-2xl text-gray-500 dark:text-gray-400',
+                className: MagicStarter.authTheme.themeToggleIconClassName,
               ),
             ),
           ),
@@ -51,28 +44,21 @@ class MagicStarterAuthFormCard extends StatelessWidget {
         // Title
         WText(
           title,
-          className:
-              'text-2xl font-bold text-gray-900 dark:text-white text-center',
+          className: MagicStarter.authTheme.titleClassName,
         ),
         const WSpacer(className: 'h-1'),
 
         // Subtitle
         WText(
           subtitle,
-          className: 'text-sm text-gray-600 dark:text-gray-400 text-center',
+          className: MagicStarter.authTheme.subtitleClassName,
         ),
         const WSpacer(className: 'h-6'),
 
         // Error Banner
         if (errorMessage != null) ...[
           WDiv(
-            className: '''
-              p-3 rounded-xl
-              bg-red-50 dark:bg-red-900/30
-              border border-red-200 dark:border-red-800
-              text-red-700 dark:text-red-300
-              text-sm text-center
-            ''',
+            className: MagicStarter.authTheme.errorBannerClassName,
             child: WText(errorMessage!),
           ),
           const WSpacer(className: 'h-4'),
