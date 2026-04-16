@@ -162,11 +162,11 @@ All 13 features default to `false` (opt-in). Enable only what your app needs:
 Override any screen or layout from your host app using the view registry:
 
 ```dart
-MagicStarter.view.register('auth.login', (context) {
+MagicStarter.view.register('auth.login', () {
   return const MyCustomLoginView();
 });
 
-MagicStarter.view.register('layout.guest', (context, {required child}) {
+MagicStarter.view.registerLayout('layout.guest', (child) {
   return MyCustomGuestLayout(child: child);
 });
 ```
