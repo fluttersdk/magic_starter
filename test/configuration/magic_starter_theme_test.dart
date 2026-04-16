@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_starter/src/configuration/magic_starter_theme.dart';
-import 'package:magic_starter/src/magic_starter_manager.dart';
 
 void main() {
   // -------------------------------------------------------------------------
