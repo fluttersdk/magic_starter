@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.14] - 2026-04-16
+
 ### ✨ New Features
 - **Unified Theme System**: Added `MagicStarterTheme` with 7 sub-themes (`form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`) set all theme tokens in one call via `MagicStarter.useTheme()`
 - **Builder Slots**: Added `MagicStarter.view.slot()` for partial view customization — override specific sections (header, footer, sidebar) without replacing the entire view
