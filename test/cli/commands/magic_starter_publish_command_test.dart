@@ -278,18 +278,18 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_login_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_register_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_register_view.dart'),
         isTrue,
       );
       // Profile view should NOT be published.
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/profile/magic_starter_profile_settings_view.dart'),
+            'lib/resources/views/starter/profile/magic_starter_profile_settings_view.dart'),
         isFalse,
       );
     });
@@ -311,18 +311,18 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_login_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         isTrue,
       );
       expect(
         readHostFile(
-            'lib/resources/views/starter/views/auth/magic_starter_login_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         'class LoginView {}',
       );
       // Other auth views should NOT be published.
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_register_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_register_view.dart'),
         isFalse,
       );
     });
@@ -360,32 +360,32 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_login_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_register_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_register_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_forgot_password_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_forgot_password_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_reset_password_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_reset_password_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_two_factor_challenge_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_two_factor_challenge_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/auth/magic_starter_otp_verify_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_otp_verify_view.dart'),
         isTrue,
       );
     });
@@ -407,12 +407,12 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/notifications/magic_starter_notifications_list_view.dart'),
+            'lib/resources/views/starter/notifications/magic_starter_notifications_list_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/notifications/magic_starter_notification_preferences_view.dart'),
+            'lib/resources/views/starter/notifications/magic_starter_notification_preferences_view.dart'),
         isTrue,
       );
     });
@@ -449,12 +449,12 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/layouts/starter/layouts/magic_starter_app_layout.dart'),
+            'lib/resources/layouts/starter/magic_starter_app_layout.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/layouts/starter/layouts/magic_starter_guest_layout.dart'),
+            'lib/resources/layouts/starter/magic_starter_guest_layout.dart'),
         isTrue,
       );
     });
@@ -475,18 +475,18 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/layouts/starter/layouts/magic_starter_app_layout.dart'),
+            'lib/resources/layouts/starter/magic_starter_app_layout.dart'),
         isTrue,
       );
       expect(
         readHostFile(
-            'lib/resources/layouts/starter/layouts/magic_starter_app_layout.dart'),
+            'lib/resources/layouts/starter/magic_starter_app_layout.dart'),
         'class AppLayout {}',
       );
       // Guest layout should NOT be published.
       expect(
         hostFileExists(
-            'lib/resources/layouts/starter/layouts/magic_starter_guest_layout.dart'),
+            'lib/resources/layouts/starter/magic_starter_guest_layout.dart'),
         isFalse,
       );
     });
@@ -503,7 +503,7 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/layouts/starter/layouts/magic_starter_guest_layout.dart'),
+            'lib/resources/layouts/starter/magic_starter_guest_layout.dart'),
         isTrue,
       );
     });
@@ -532,7 +532,7 @@ void main() {
       );
 
       final existing = File(
-        '${tempDir.path}/lib/resources/views/starter/views/auth/magic_starter_login_view.dart',
+        '${tempDir.path}/lib/resources/views/starter/auth/magic_starter_login_view.dart',
       );
       existing.createSync(recursive: true);
       existing.writeAsStringSync('old-login-content');
@@ -544,7 +544,7 @@ void main() {
 
       expect(
         readHostFile(
-            'lib/resources/views/starter/views/auth/magic_starter_login_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         'new-login-content',
       );
     });
@@ -557,7 +557,7 @@ void main() {
       );
 
       final existing = File(
-        '${tempDir.path}/lib/resources/views/starter/views/auth/magic_starter_login_view.dart',
+        '${tempDir.path}/lib/resources/views/starter/auth/magic_starter_login_view.dart',
       );
       existing.createSync(recursive: true);
       existing.writeAsStringSync('old-login-content');
@@ -568,7 +568,7 @@ void main() {
 
       expect(
         readHostFile(
-            'lib/resources/views/starter/views/auth/magic_starter_login_view.dart'),
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart'),
         'old-login-content',
       );
     });
@@ -585,7 +585,7 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/profile/magic_starter_profile_settings_view.dart'),
+            'lib/resources/views/starter/profile/magic_starter_profile_settings_view.dart'),
         isTrue,
       );
     });
@@ -610,17 +610,17 @@ void main() {
 
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/teams/magic_starter_team_create_view.dart'),
+            'lib/resources/views/starter/teams/magic_starter_team_create_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/teams/magic_starter_team_settings_view.dart'),
+            'lib/resources/views/starter/teams/magic_starter_team_settings_view.dart'),
         isTrue,
       );
       expect(
         hostFileExists(
-            'lib/resources/views/starter/views/teams/magic_starter_team_invitation_accept_view.dart'),
+            'lib/resources/views/starter/teams/magic_starter_team_invitation_accept_view.dart'),
         isTrue,
       );
     });
@@ -664,7 +664,7 @@ class AppServiceProvider extends ServiceProvider {
       expect(
         content,
         contains(
-          "import '../../resources/views/starter/views/auth/magic_starter_login_view.dart';",
+          "import '../../resources/views/starter/auth/magic_starter_login_view.dart';",
         ),
       );
 
@@ -710,7 +710,7 @@ class AppServiceProvider extends ServiceProvider {
       expect(
         content,
         contains(
-          "import '../../resources/layouts/starter/layouts/magic_starter_app_layout.dart';",
+          "import '../../resources/layouts/starter/magic_starter_app_layout.dart';",
         ),
       );
 
@@ -772,7 +772,7 @@ class AppServiceProvider extends ServiceProvider {
       // Count occurrences of the import line.
       final importPattern = RegExp(
         RegExp.escape(
-          "import '../../resources/views/starter/views/auth/magic_starter_login_view.dart';",
+          "import '../../resources/views/starter/auth/magic_starter_login_view.dart';",
         ),
       );
       final importMatches = importPattern.allMatches(content).length;
@@ -798,7 +798,7 @@ class AppServiceProvider extends ServiceProvider {
       // Verify the view was still published.
       expect(
         hostFileExists(
-          'lib/resources/views/starter/views/auth/magic_starter_login_view.dart',
+          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
         ),
         isTrue,
       );

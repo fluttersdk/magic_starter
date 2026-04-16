@@ -375,7 +375,7 @@ MagicStarter.useTheme(
 );
 ```
 
-`MagicStarterTheme` has 7 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `profile`, `notifications`. All fields are optional.
+`MagicStarterTheme` has 7 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`. All fields are optional.
 
 ### Level 3: Builder Slots
 
@@ -383,7 +383,7 @@ Override specific sections of a screen without replacing the full view. Use `Mag
 
 ```dart
 // Replace only the header section inside the profile view
-MagicStarter.view.slot('profile.header', (context) {
+MagicStarter.view.slot('profile.settings', 'header', (context) {
   return MyCustomProfileHeader();
 });
 ```
@@ -395,16 +395,16 @@ Slots let you inject custom widgets into predefined regions — useful when you 
 Replace an entire screen with your own implementation. The host app always wins over package defaults:
 
 ```dart
-MagicStarter.view.register('auth.login', (context) {
+MagicStarter.view.register('auth.login', () {
   return const MyBrandedLoginView();
 });
 
-MagicStarter.view.register('layout.guest', (context, {required child}) {
+MagicStarter.view.registerLayout('layout.guest', (child) {
   return MyCustomGuestLayout(child: child);
 });
 ```
 
-All overridable keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.otp_login`, `auth.otp_verify`, `profile.settings`, `teams.index`, `teams.create`, `teams.settings`, `notifications.index`, `notifications.preferences`, `layout.app`, `layout.guest`.
+All overridable keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.two_factor_challenge`, `auth.otp_verify`, `profile.settings`, `teams.create`, `teams.settings`, `teams.invitation_accept`, `notifications.list`, `notifications.preferences`, `layout.app`, `layout.guest`.
 
 ### Level 5: Publish and Own
 
@@ -421,7 +421,7 @@ dart run magic_starter:publish --tag=views:auth
 dart run magic_starter:doctor
 ```
 
-The publish command copies the view to `lib/views/magic_starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run magic_starter:doctor` to confirm registration status.
+The publish command copies the view to `lib/resources/views/starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run magic_starter:doctor` to confirm registration status.
 
 ---
 

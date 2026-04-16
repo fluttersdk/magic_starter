@@ -81,8 +81,6 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
         MagicStarter.view.buildSlot('teams.settings', 'footer', context);
     final afterMembersSlot = MagicStarter.view
         .buildSlot('teams.settings', 'afterSection:members', context);
-    final afterDangerZoneSlot = MagicStarter.view
-        .buildSlot('teams.settings', 'afterSection:danger-zone', context);
 
     return WDiv(
       className: 'p-4 lg:p-6 flex flex-col gap-6',
@@ -95,7 +93,6 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
         _buildGeneralSection(),
         _buildMembersSection(),
         if (afterMembersSlot != null) afterMembersSlot,
-        if (afterDangerZoneSlot != null) afterDangerZoneSlot,
         if (footerSlot != null) footerSlot,
       ],
     );

@@ -35,7 +35,7 @@ class MagicStarterPublishCommand extends Command {
         'ui/views/profile/magic_starter_profile_settings_view.dart',
     'teams.create': 'ui/views/teams/magic_starter_team_create_view.dart',
     'teams.settings': 'ui/views/teams/magic_starter_team_settings_view.dart',
-    'teams.invitation':
+    'teams.invitation_accept':
         'ui/views/teams/magic_starter_team_invitation_accept_view.dart',
     'notifications.list':
         'ui/views/notifications/magic_starter_notifications_list_view.dart',
@@ -333,12 +333,13 @@ class MagicStarterPublishCommand extends Command {
 
     for (final entry in fileMap.entries) {
       final source = '$pluginSourceDir/lib/src/${entry.value}';
-      final fileName = entry.value.split('/').last;
-      final subDir = entry.value
-          .substring(entry.value.indexOf('/') + 1)
-          .replaceAll('/$fileName', '');
-      final destination =
-          '$projectRoot/lib/resources/$destinationPrefix/$subDir/$fileName';
+      final parts = entry.value.split('/');
+      final fileName = parts.last;
+      // Skip 'ui/views/' or 'ui/layouts/' prefix (first two segments).
+      final subDirParts = parts.sublist(2, parts.length - 1);
+      final destination = subDirParts.isEmpty
+          ? '$projectRoot/lib/resources/$destinationPrefix/$fileName'
+          : '$projectRoot/lib/resources/$destinationPrefix/${subDirParts.join('/')}/$fileName';
 
       published.addAll(
         _copyFile(
@@ -455,12 +456,14 @@ class MagicStarterPublishCommand extends Command {
       final viewEntries =
           scope != null ? _resolveViewEntries(scope) : _viewFileMap;
       for (final entry in viewEntries.entries) {
-        final fileName = entry.value.split('/').last;
+        final parts = entry.value.split('/');
+        final fileName = parts.last;
         final className = _snakeToPascal(fileName.replaceAll('.dart', ''));
-        final subDir = entry.value
-            .substring(entry.value.indexOf('/') + 1)
-            .replaceAll('/$fileName', '');
-        final importPath = '../../resources/views/starter/$subDir/$fileName';
+        final subDirParts = parts.sublist(2, parts.length - 1);
+        final subDir = subDirParts.join('/');
+        final importPath = subDir.isEmpty
+            ? '../../resources/views/starter/$fileName'
+            : '../../resources/views/starter/$subDir/$fileName';
 
         registrations.add(_AutoWireEntry(
           importLine: "import '$importPath';",
@@ -481,12 +484,14 @@ class MagicStarterPublishCommand extends Command {
       }
 
       for (final entry in layoutEntries.entries) {
-        final fileName = entry.value.split('/').last;
+        final parts = entry.value.split('/');
+        final fileName = parts.last;
         final className = _snakeToPascal(fileName.replaceAll('.dart', ''));
-        final subDir = entry.value
-            .substring(entry.value.indexOf('/') + 1)
-            .replaceAll('/$fileName', '');
-        final importPath = '../../resources/layouts/starter/$subDir/$fileName';
+        final subDirParts = parts.sublist(2, parts.length - 1);
+        final subDir = subDirParts.join('/');
+        final importPath = subDir.isEmpty
+            ? '../../resources/layouts/starter/$fileName'
+            : '../../resources/layouts/starter/$subDir/$fileName';
 
         registrations.add(_AutoWireEntry(
           importLine: "import '$importPath';",
