@@ -506,7 +506,20 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.byKey(brandKey), findsOneWidget);
+        // Scope to the header row: the ancestor of the menu icon is the mobile
+        // header. The drawer also uses brandBuilder, so a global finder cannot
+        // prove the header specifically renders it.
+        final headerFinder = find
+            .ancestor(
+              of: find.byIcon(Icons.menu),
+              matching: find.byType(WDiv),
+            )
+            .first;
+
+        expect(
+          find.descendant(of: headerFinder, matching: find.byKey(brandKey)),
+          findsOneWidget,
+        );
       },
     );
 
@@ -528,7 +541,22 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text(trans('app.name')), findsWidgets);
+        // Scope to the header row: app.name can also appear in the drawer, so
+        // a global text finder cannot prove the header fallback specifically.
+        final headerFinder = find
+            .ancestor(
+              of: find.byIcon(Icons.menu),
+              matching: find.byType(WDiv),
+            )
+            .first;
+
+        expect(
+          find.descendant(
+            of: headerFinder,
+            matching: find.text(trans('app.name')),
+          ),
+          findsOneWidget,
+        );
       },
     );
   });

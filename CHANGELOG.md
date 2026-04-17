@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### 🐛 Bug Fixes
-- **Mobile Header Brand**: `MagicStarterAppLayout` mobile topbar now honors `navigationTheme.brandBuilder` with the same fallback as the desktop sidebar, so custom brand widgets render consistently across breakpoints ([#65](https://github.com/fluttersdk/magic_starter/issues/65))
+- **Mobile Header Brand**: `MagicStarterAppLayout` mobile topbar now honors `navigationTheme.brandBuilder`, so custom brand widgets render consistently across breakpoints when provided ([#65](https://github.com/fluttersdk/magic_starter/issues/65))
 
 ## [0.0.1-alpha.14] - 2026-04-16
 
