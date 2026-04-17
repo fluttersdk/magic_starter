@@ -476,6 +476,63 @@ void main() {
     );
   });
 
+  group('MagicStarterAppLayout mobile header brand', () {
+    testWidgets(
+      'mobile header renders brandBuilder when set',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const brandKey = Key('custom-brand-builder');
+        MagicStarter.useNavigationTheme(
+          MagicStarterNavigationTheme(
+            brandBuilder: (_) => const SizedBox(
+              key: brandKey,
+              width: 10,
+              height: 10,
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(brandKey), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'mobile header falls back to WText when brandBuilder is null',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text(trans('app.name')), findsWidgets);
+      },
+    );
+  });
+
   group('MagicStarterAppLayout sidebar navigation scroll', () {
     testWidgets(
       'sidebar does not overflow with many nav items in short viewport',

@@ -221,6 +221,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     if (isDesktop) return const SizedBox.shrink();
 
     final layoutTheme = MagicStarter.manager.layoutTheme;
+    final navTheme = MagicStarter.navigationTheme;
     return WDiv(
       className: layoutTheme.headerClassName,
       children: [
@@ -231,10 +232,12 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             className: 'text-gray-600 dark:text-gray-300',
           ),
         ),
-        WText(
-          trans('app.name'),
-          className: 'font-bold text-lg text-gray-900 dark:text-white',
-        ),
+        navTheme.brandBuilder != null
+            ? navTheme.brandBuilder!(context)
+            : WText(
+                trans('app.name'),
+                className: 'font-bold text-lg text-gray-900 dark:text-white',
+              ),
         WDiv(
           className: 'flex items-center gap-1',
           children: [
