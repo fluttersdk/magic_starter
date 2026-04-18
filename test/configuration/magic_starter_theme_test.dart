@@ -204,6 +204,20 @@ void main() {
         expect(theme.subtitleClassName, contains('text-sm'));
       });
 
+      test('titleClassName uses line-clamp-2 instead of truncate', () {
+        const theme = MagicStarterPageHeaderTheme();
+
+        expect(theme.titleClassName, contains('line-clamp-2'));
+        expect(theme.titleClassName, isNot(contains('truncate')));
+      });
+
+      test('subtitleClassName uses line-clamp-2 instead of truncate', () {
+        const theme = MagicStarterPageHeaderTheme();
+
+        expect(theme.subtitleClassName, contains('line-clamp-2'));
+        expect(theme.subtitleClassName, isNot(contains('truncate')));
+      });
+
       test('containerClassName contains border-b', () {
         const theme = MagicStarterPageHeaderTheme();
 

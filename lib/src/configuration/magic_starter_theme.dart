@@ -399,12 +399,14 @@ class MagicStarterPageHeaderTheme {
 
   /// Title text className.
   ///
-  /// Defaults to `'text-2xl font-bold text-gray-900 dark:text-white truncate'`.
+  /// Defaults to `'text-2xl font-bold text-gray-900 dark:text-white line-clamp-2'`.
+  /// Uses `line-clamp-2` instead of `truncate` so long titles wrap to a second
+  /// line on narrow viewports (e.g. iPhone-width screens) instead of clipping.
   final String titleClassName;
 
   /// Subtitle text className.
   ///
-  /// Defaults to `'text-sm text-gray-600 dark:text-gray-400 truncate'`.
+  /// Defaults to `'text-sm text-gray-600 dark:text-gray-400 line-clamp-2'`.
   final String subtitleClassName;
 
   /// Action buttons container className.
@@ -418,9 +420,9 @@ class MagicStarterPageHeaderTheme {
     this.containerInlineClassName =
         'w-full flex flex-row items-center justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
     this.titleClassName =
-        'text-2xl font-bold text-gray-900 dark:text-white truncate',
+        'text-2xl font-bold text-gray-900 dark:text-white line-clamp-2',
     this.subtitleClassName =
-        'text-sm text-gray-600 dark:text-gray-400 truncate',
+        'text-sm text-gray-600 dark:text-gray-400 line-clamp-2',
     this.actionContainerClassName = 'flex flex-row items-center gap-2',
   });
 }
