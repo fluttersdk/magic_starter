@@ -115,7 +115,7 @@ void main() {
         );
         expect(
           manager.pageHeaderTheme.titleClassName,
-          'text-2xl font-bold text-gray-900 dark:text-white truncate',
+          'text-2xl font-bold text-gray-900 dark:text-white line-clamp-2',
         );
         expect(manager.layoutTheme.sidebarWidth, 256);
       });
