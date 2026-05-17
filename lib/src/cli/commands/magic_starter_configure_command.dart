@@ -1,4 +1,4 @@
-import 'package:magic_cli/magic_cli.dart';
+import 'package:fluttersdk_artisan/artisan.dart';
 
 import '../helpers/magic_starter_config_helper.dart';
 
@@ -11,10 +11,10 @@ import '../helpers/magic_starter_config_helper.dart';
 ///
 /// Usage:
 /// ```
-/// dart run magic_starter configure --show
-/// dart run magic_starter configure --teams --no-social-login
+/// artisan starter:configure --show
+/// artisan starter:configure --teams --no-social-login
 /// ```
-class MagicStarterConfigureCommand extends Command {
+class MagicStarterConfigureCommand extends ArtisanCommand {
   /// The feature flag definitions: CLI flag name → config key name.
   ///
   /// CLI flags use kebab-case; config keys use snake_case.
@@ -30,10 +30,13 @@ class MagicStarterConfigureCommand extends Command {
   };
 
   @override
-  final String name = 'configure';
+  String get name => 'starter:configure';
 
   @override
-  final String description = 'Update Magic Starter configuration';
+  String get description => 'Update Magic Starter configuration';
+
+  @override
+  CommandBoot get boot => CommandBoot.none;
 
   /// Absolute path to the Flutter project root, resolved on access.
   String get projectRoot => getProjectRoot();
@@ -63,30 +66,30 @@ class MagicStarterConfigureCommand extends Command {
   }
 
   @override
-  Future<void> handle() async {
+  Future<int> handle(ArtisanContext ctx) async {
     // 1. Attempt to read config — bail early if missing.
     final String? content =
         MagicStarterConfigHelper.readConfigContent(projectRoot);
     if (content == null) {
-      error('Configuration file not found: $_configPath');
-      info('Run installation first: dart run magic_starter install');
-      return;
+      ctx.output.error('Configuration file not found: $_configPath');
+      ctx.output.info('Run installation first: artisan starter:install');
+      return 1;
     }
 
     // 2. --show: display table of current features and exit.
-    if (arguments['show'] as bool) {
-      _showConfig(content);
-      return;
+    if (ctx.input.option('show') as bool? ?? false) {
+      _showConfig(ctx, content);
+      return 0;
     }
 
     // 3. Collect requested updates — only flags explicitly provided.
-    final Map<String, bool> updates = _collectUpdates();
+    final Map<String, bool> updates = _collectUpdates(ctx);
 
     if (updates.isEmpty) {
-      warn('No configuration updates specified.');
-      info('Use --help to see available options.');
-      info('Use --show to view current configuration.');
-      return;
+      ctx.output.warning('No configuration updates specified.');
+      ctx.output.info('Use --help to see available options.');
+      ctx.output.info('Use --show to view current configuration.');
+      return 0;
     }
 
     // 4. Apply each update sequentially to the content string.
@@ -102,7 +105,8 @@ class MagicStarterConfigureCommand extends Command {
     // 5. Write the updated content back to the config file.
     FileHelper.writeFile(_configPath, updated);
 
-    success('Configuration updated successfully.');
+    ctx.output.success('Configuration updated successfully.');
+    return 0;
   }
 
   /// Collects all feature flag updates that were explicitly parsed.
@@ -110,15 +114,15 @@ class MagicStarterConfigureCommand extends Command {
   /// Returns a map of config key → bool for every flag the user supplied.
   /// Flags not provided (defaultsTo: null) are omitted so they remain
   /// untouched in the config file.
-  Map<String, bool> _collectUpdates() {
+  Map<String, bool> _collectUpdates(ArtisanContext ctx) {
     final updates = <String, bool>{};
 
     for (final entry in _featureFlags.entries) {
       final String flag = entry.key;
       final String configKey = entry.value;
 
-      // argResults[flag] is null when the flag was not provided.
-      final dynamic value = arguments[flag];
+      // option(flag) is null when the flag was not provided.
+      final dynamic value = ctx.input.option(flag);
       if (value != null) {
         updates[configKey] = value as bool;
       }
@@ -129,29 +133,30 @@ class MagicStarterConfigureCommand extends Command {
 
   /// Prints a formatted table of the current feature toggles.
   ///
-  /// Parses [content] via [MagicStarterConfigHelper.parseFeatures] and delegates
-  /// display to the base [Command.table] helper.
-  void _showConfig(String content) {
+  /// Parses [content] via [MagicStarterConfigHelper.parseFeatures] and renders
+  /// a simple two-column report into the output stream.
+  void _showConfig(ArtisanContext ctx, String content) {
     final Map<String, bool> features =
         MagicStarterConfigHelper.parseFeatures(content);
 
-    info('Current Magic Starter Feature Configuration:\n');
+    ctx.output.info('Current Magic Starter Feature Configuration:');
+    ctx.output.writeln('');
 
-    final List<List<String>> rows = features.entries
-        .map(
-          (entry) => [
-            entry.key,
-            entry.value ? 'enabled' : 'disabled',
-          ],
-        )
-        .toList();
-
-    table(
-      [
-        'Feature',
-        'Status',
-      ],
-      rows,
+    // 1. Compute the column width for the feature name.
+    final int nameWidth = features.keys.fold<int>(
+      'Feature'.length,
+      (int max, String key) => key.length > max ? key.length : max,
     );
+
+    // 2. Print header row.
+    final String header = '${'Feature'.padRight(nameWidth)}  Status';
+    ctx.output.writeln(header);
+    ctx.output.writeln('${'-' * nameWidth}  ${'-' * 'Status'.length}');
+
+    // 3. Print one row per feature.
+    for (final entry in features.entries) {
+      final String status = entry.value ? 'enabled' : 'disabled';
+      ctx.output.writeln('${entry.key.padRight(nameWidth)}  $status');
+    }
   }
 }

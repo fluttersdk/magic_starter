@@ -1,6 +1,6 @@
 name: magic_starter
 description: Starter kit for Magic Framework. Auth, Profile, Teams, Notifications — 13 opt-in features with overridable views.
-version: 0.0.1-alpha.14
+version: 0.0.1-alpha.15
 homepage: https://magic.fluttersdk.com/starter
 documentation: https://magic.fluttersdk.com/packages/starter/getting-started/installation
 repository: https://github.com/fluttersdk/magic_starter
@@ -21,7 +21,7 @@ dependencies:
   flutter:
     sdk: flutter
   magic: ^1.0.0-alpha.7
-  magic_cli: ^0.0.1-alpha.3
+  fluttersdk_artisan: ^1.0.0-alpha.1
   magic_notifications: ^0.0.1-alpha.1
   args: ^2.7.0
   path: ^1.9.0
@@ -32,8 +32,9 @@ dev_dependencies:
   test: ^1.25.0
   flutter_lints: ^6.0.0
 
-executables:
-  magic_starter: magic_starter
+dependency_overrides:
+  fluttersdk_artisan:
+    path: ../fluttersdk_artisan
 
 flutter:
   assets:

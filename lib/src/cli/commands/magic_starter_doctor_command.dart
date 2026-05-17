@@ -1,26 +1,29 @@
 import 'dart:io';
 
-import 'package:magic_cli/magic_cli.dart';
+import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:path/path.dart' as p;
 
 /// Diagnostic health-check command for Magic Starter installations.
 ///
 /// Runs a series of checks across the host application to verify that
 /// Magic Starter was installed correctly. Each check is independent and
-/// reports ✓ (pass) or ✗ (fail). The command exits with code 0 when all
+/// reports a pass or fail marker. The command returns exit code 0 when all
 /// checks pass, and code 1 when any check fails.
 ///
 /// ## Usage
 /// ```bash
-/// dart run magic_starter doctor
-/// dart run magic_starter doctor --verbose
+/// artisan starter:doctor
+/// artisan starter:doctor --verbose
 /// ```
-class MagicStarterDoctorCommand extends Command {
+class MagicStarterDoctorCommand extends ArtisanCommand {
   @override
-  String get name => 'doctor';
+  String get name => 'starter:doctor';
 
   @override
   String get description => 'Check Magic Starter installation health';
+
+  @override
+  CommandBoot get boot => CommandBoot.none;
 
   /// Absolute path to the Flutter project root — resolved on access.
   String get projectRoot => getProjectRoot();
@@ -41,26 +44,27 @@ class MagicStarterDoctorCommand extends Command {
   }
 
   @override
-  Future<void> handle() async {
+  Future<int> handle(ArtisanContext ctx) async {
     // 1. Resolve verbosity before running checks.
-    final bool verbose = arguments['verbose'] as bool;
+    final bool verbose = (ctx.input.option('verbose') as bool?) ?? false;
 
     // 2. Print human-readable report.
-    stdout.write(generateReport(verbose: verbose));
+    ctx.output.writeln(generateReport(verbose: verbose));
 
-    // 3. Collect missing requirements and exit with appropriate code.
+    // 3. Collect missing requirements and return appropriate exit code.
     final List<String> missing = getMissingRequirements();
 
     if (missing.isEmpty) {
-      success('All checks passed!');
-      newLine();
-      exit(0);
-    } else {
-      newLine();
-      error(
-          '${missing.length} check(s) failed. Run `dart run magic_starter install` to fix.');
-      exit(1);
+      ctx.output.success('All checks passed!');
+      ctx.output.writeln('');
+      return 0;
     }
+
+    ctx.output.writeln('');
+    ctx.output.error(
+      '${missing.length} check(s) failed. Run `artisan starter:install` to fix.',
+    );
+    return 1;
   }
 
   // -------------------------------------------------------------------------
@@ -70,7 +74,7 @@ class MagicStarterDoctorCommand extends Command {
   /// Check that the Magic Framework config exists (`lib/config/app.dart`).
   ///
   /// A missing `app.dart` indicates Magic was not installed before running
-  /// `magic_starter install`.
+  /// `starter:install`.
   bool checkMagicInstalled(String root) {
     return FileHelper.fileExists('$root/lib/config/app.dart');
   }
@@ -265,8 +269,8 @@ class MagicStarterDoctorCommand extends Command {
   /// Generate a human-readable diagnostic report.
   ///
   /// When [verbose] is `true`, each check line includes the file path that
-  /// was inspected. Returns a formatted string with ✓/✗ per check and a
-  /// summary section at the bottom.
+  /// was inspected. Returns a formatted string with pass/fail markers per
+  /// check and a summary section at the bottom.
   String generateReport({bool verbose = false}) {
     final String root = projectRoot;
     final StringBuffer buffer = StringBuffer();
@@ -277,21 +281,21 @@ class MagicStarterDoctorCommand extends Command {
 
     // 1. Magic Framework.
     final bool magicInstalled = checkMagicInstalled(root);
-    buffer.writeln('Magic Framework: ${magicInstalled ? '✓' : '✗'}');
+    buffer.writeln('Magic Framework: ${magicInstalled ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    Path: lib/config/app.dart');
     }
 
     // 2. Starter config file.
     final bool configExists = checkConfigExists(root);
-    buffer.writeln('Starter Config: ${configExists ? '✓' : '✗'}');
+    buffer.writeln('Starter Config: ${configExists ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    Path: lib/config/magic_starter.dart');
     }
 
     // 3. Service provider registration.
     final bool providerRegistered = checkProviderRegistered(root);
-    buffer.writeln('Provider: ${providerRegistered ? '✓' : '✗'}');
+    buffer.writeln('Provider: ${providerRegistered ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    File: lib/config/app.dart');
       buffer.writeln('    Contains: MagicStarterServiceProvider');
@@ -299,7 +303,7 @@ class MagicStarterDoctorCommand extends Command {
 
     // 4. Config factory in main.
     final bool configFactory = checkConfigFactory(root);
-    buffer.writeln('Config Factory: ${configFactory ? '✓' : '✗'}');
+    buffer.writeln('Config Factory: ${configFactory ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    File: lib/main.dart');
       buffer.writeln('    Contains: magicStarterConfig');
@@ -307,7 +311,7 @@ class MagicStarterDoctorCommand extends Command {
 
     // 5. Middleware.
     final bool middleware = checkMiddleware(root);
-    buffer.writeln('Middleware: ${middleware ? '✓' : '✗'}');
+    buffer.writeln('Middleware: ${middleware ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    File: lib/app/kernel.dart');
       buffer.writeln('    Contains: EnsureAuthenticated');
@@ -315,7 +319,7 @@ class MagicStarterDoctorCommand extends Command {
 
     // 6. Auth routes.
     final bool routes = checkRoutes(root);
-    buffer.writeln('Routes: ${routes ? '✓' : '✗'}');
+    buffer.writeln('Routes: ${routes ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    File: lib/app/providers/route_service_provider.dart');
       buffer.writeln('    Contains: registerMagicStarterAuthRoutes');
@@ -323,7 +327,7 @@ class MagicStarterDoctorCommand extends Command {
 
     // 7. Facade setup.
     final bool facadeSetup = checkFacadeSetup(root);
-    buffer.writeln('Facade: ${facadeSetup ? '✓' : '✗'}');
+    buffer.writeln('Facade: ${facadeSetup ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    File: lib/app/providers/app_service_provider.dart');
       buffer.writeln('    Contains: MagicStarter.useUserModel');
@@ -331,7 +335,7 @@ class MagicStarterDoctorCommand extends Command {
 
     // 8. Translation file.
     final bool translations = checkTranslations(root);
-    buffer.writeln('Translations: ${translations ? '✓' : '✗'}');
+    buffer.writeln('Translations: ${translations ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    Path: assets/lang/en.json');
     }
@@ -343,7 +347,7 @@ class MagicStarterDoctorCommand extends Command {
       buffer.writeln('Published Views:');
       for (final String viewPath in publishedViews) {
         final bool wired = isPublishedViewWired(root, viewPath);
-        buffer.writeln('  ${wired ? '✓' : '⚠'} $viewPath');
+        buffer.writeln('  ${wired ? 'OK' : 'WARN'} $viewPath');
         if (!wired) {
           buffer.writeln(
             '      Not wired: add MagicStarter.view.register() in AppServiceProvider',
@@ -357,11 +361,11 @@ class MagicStarterDoctorCommand extends Command {
     // 10. Summary section.
     final List<String> missing = getMissingRequirements();
     if (missing.isEmpty) {
-      buffer.writeln('✓ All requirements met!');
+      buffer.writeln('All requirements met!');
     } else {
       buffer.writeln('Missing Requirements:');
       for (final String issue in missing) {
-        buffer.writeln('  ✗ $issue');
+        buffer.writeln('  FAIL $issue');
       }
     }
 
