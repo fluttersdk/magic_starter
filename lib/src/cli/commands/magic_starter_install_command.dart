@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:magic_cli/magic_cli.dart';
+import 'package:fluttersdk_artisan/artisan.dart';
 
 /// Installs and configures Magic Starter inside a host Magic application.
-class MagicStarterInstallCommand extends Command {
+class MagicStarterInstallCommand extends ArtisanCommand {
   /// Dynamic feature keys that can be toggled by user input.
   static const List<String> _dynamicFeatureKeys = [
     'teams',
@@ -23,11 +23,14 @@ class MagicStarterInstallCommand extends Command {
   ];
 
   @override
-  String get name => 'install';
+  String get name => 'starter:install';
 
   @override
   String get description =>
       'Install and configure Magic Starter in your application';
+
+  @override
+  CommandBoot get boot => CommandBoot.none;
 
   /// Absolute project root path.
   String get projectRoot => getProjectRoot();
@@ -102,10 +105,10 @@ class MagicStarterInstallCommand extends Command {
   }
 
   @override
-  Future<void> handle() async {
-    final bool force = arguments['force'] as bool? ?? false;
+  Future<int> handle(ArtisanContext ctx) async {
+    final bool force = (ctx.input.option('force') as bool?) ?? false;
 
-    info('Magic Starter Installer');
+    ctx.output.info('Magic Starter Installer');
 
     // 1. Validate host app is a Magic project.
     final String appPath = '$projectRoot/lib/config/app.dart';
@@ -115,13 +118,10 @@ class MagicStarterInstallCommand extends Command {
     }
 
     // 2. Resolve features using interactive or non-interactive flow.
-    final Map<String, bool> features = _resolveFeatureSelections();
+    final Map<String, bool> features = _resolveFeatureSelections(ctx);
 
     // 3. Create config file from stub.
-    _createConfigFile(
-      force: force,
-      features: features,
-    );
+    _createConfigFile(ctx, force: force, features: features);
 
     // 4. Inject provider into app config.
     _injectIntoApp();
@@ -130,7 +130,7 @@ class MagicStarterInstallCommand extends Command {
     _injectIntoMain();
 
     // 6. Create middleware files.
-    _createMiddlewareFiles(force: force);
+    _createMiddlewareFiles(ctx, force: force);
 
     // 7. Inject middleware aliases into kernel.
     _injectIntoKernel();
@@ -140,44 +140,49 @@ class MagicStarterInstallCommand extends Command {
 
     // 9. Replace AppServiceProvider from stub.
     _replaceAppServiceProvider(
+      ctx,
       features: features,
       force: force,
     );
 
     // 10. Scaffold User model.
     _createUserModel(
+      ctx,
       force: force,
       features: features,
     );
 
     // 11. Scaffold Team model (only when teams feature is enabled).
     if (features['teams'] ?? false) {
-      _createTeamModel(force: force);
+      _createTeamModel(ctx, force: force);
     }
 
     // 12. Scaffold Dashboard view.
-    _createDashboardView(force: force);
+    _createDashboardView(ctx, force: force);
 
     // 13. Scaffold app routes file.
-    _createAppRoutes(force: force);
+    _createAppRoutes(ctx, force: force);
 
     // 14. Create translations and pubspec asset entry.
-    _createTranslationFile(force: force);
+    _createTranslationFile(ctx, force: force);
     _injectTranslationAssetIntoPubspec();
 
     // 15. Optional notification package setup.
-    await _setupNotifications(features: features);
+    await _setupNotifications(ctx, features: features);
 
     // 16. Format host app.
     await runDartFormat(projectRoot);
 
-    success('Magic Starter installation completed successfully.');
+    ctx.output.success('Magic Starter installation completed successfully.');
+    return 0;
   }
 
-  Map<String, bool> _resolveFeatureSelections() {
-    final bool hasFeatureFlag = (option('features') as String?) != null;
+  Map<String, bool> _resolveFeatureSelections(ArtisanContext ctx) {
+    final String? rawFeaturesOption = ctx.input.option('features') as String?;
+    final bool hasFeatureFlag = rawFeaturesOption != null;
     final bool nonInteractive =
-        (arguments['non-interactive'] as bool? ?? false) || hasFeatureFlag;
+        ((ctx.input.option('non-interactive') as bool?) ?? false) ||
+            hasFeatureFlag;
 
     final Map<String, bool> features = {
       'teams': false,
@@ -196,7 +201,7 @@ class MagicStarterInstallCommand extends Command {
     };
 
     if (nonInteractive) {
-      final String rawFeatures = option('features') as String? ?? '';
+      final String rawFeatures = rawFeaturesOption ?? '';
       final Set<String> selected = rawFeatures
           .split(',')
           .map((String feature) => feature.trim())
@@ -211,7 +216,7 @@ class MagicStarterInstallCommand extends Command {
     }
 
     for (final String key in _dynamicFeatureKeys) {
-      features[key] = confirm(
+      features[key] = _promptConfirm(
         'Enable $key feature?',
         defaultValue: false,
       );
@@ -220,7 +225,8 @@ class MagicStarterInstallCommand extends Command {
     return features;
   }
 
-  void _createConfigFile({
+  void _createConfigFile(
+    ArtisanContext ctx, {
     required bool force,
     required Map<String, bool> features,
   }) {
@@ -240,6 +246,7 @@ class MagicStarterInstallCommand extends Command {
     );
 
     _safeWriteFile(
+      ctx,
       path: configPath,
       content: rendered,
       force: force,
@@ -355,16 +362,19 @@ class MagicStarterInstallCommand extends Command {
     }
   }
 
-  void _createMiddlewareFiles({
+  void _createMiddlewareFiles(
+    ArtisanContext ctx, {
     required bool force,
   }) {
     _createMiddlewareFile(
+      ctx,
       force: force,
       stubName: 'install/ensure_authenticated',
       targetPath: '$projectRoot/lib/app/middleware/ensure_authenticated.dart',
     );
 
     _createMiddlewareFile(
+      ctx,
       force: force,
       stubName: 'install/redirect_if_authenticated',
       targetPath:
@@ -372,7 +382,8 @@ class MagicStarterInstallCommand extends Command {
     );
   }
 
-  void _createMiddlewareFile({
+  void _createMiddlewareFile(
+    ArtisanContext ctx, {
     required bool force,
     required String stubName,
     required String targetPath,
@@ -383,6 +394,7 @@ class MagicStarterInstallCommand extends Command {
     );
 
     _safeWriteFile(
+      ctx,
       path: targetPath,
       content: content,
       force: force,
@@ -512,7 +524,8 @@ class MagicStarterInstallCommand extends Command {
     );
   }
 
-  void _replaceAppServiceProvider({
+  void _replaceAppServiceProvider(
+    ArtisanContext ctx, {
     required Map<String, bool> features,
     required bool force,
   }) {
@@ -525,6 +538,7 @@ class MagicStarterInstallCommand extends Command {
     // created the file with user customizations.
     if (FileHelper.fileExists(targetPath) && !force) {
       _injectIntoExistingAppServiceProvider(
+        ctx,
         targetPath: targetPath,
         features: features,
       );
@@ -579,6 +593,7 @@ class MagicStarterInstallCommand extends Command {
     );
 
     _safeWriteFile(
+      ctx,
       path: targetPath,
       content: rendered,
       force: force,
@@ -590,7 +605,8 @@ class MagicStarterInstallCommand extends Command {
   /// Adds imports and boot-time configuration calls that are required for the
   /// starter plugin to function. Each injection is idempotent — it checks for
   /// the presence of a marker string before adding code.
-  void _injectIntoExistingAppServiceProvider({
+  void _injectIntoExistingAppServiceProvider(
+    ArtisanContext ctx, {
     required String targetPath,
     required Map<String, bool> features,
   }) {
@@ -717,7 +733,7 @@ class MagicStarterInstallCommand extends Command {
     }
 
     FileHelper.writeFile(targetPath, content);
-    info('Injected: lib/app/providers/app_service_provider.dart');
+    ctx.output.info('Injected: lib/app/providers/app_service_provider.dart');
   }
 
   /// Injects [code] before the closing brace of the `boot()` method body.
@@ -744,7 +760,8 @@ class MagicStarterInstallCommand extends Command {
     return '${content.substring(0, bootBrace)}$code  ${content.substring(bootBrace)}';
   }
 
-  void _createTranslationFile({
+  void _createTranslationFile(
+    ArtisanContext ctx, {
     required bool force,
   }) {
     final String targetPath = '$projectRoot/assets/lang/en.json';
@@ -764,19 +781,20 @@ class MagicStarterInstallCommand extends Command {
     if (exists && !force) {
       // Deep-merge — preserves user-customised values, adds new keys.
       JsonEditor.mergeJsonData(targetPath, sourceData);
-      info('Merged: $relativePath');
+      ctx.output.info('Merged: $relativePath');
     } else if (exists && force) {
       // Force — overwrite entirely.
       JsonEditor.mergeJsonData(targetPath, sourceData, force: true);
-      warn('Overwritten: $relativePath');
+      ctx.output.warning('Overwritten: $relativePath');
     } else {
       // Fresh write — target does not exist.
       JsonEditor.mergeJsonData(targetPath, sourceData);
-      success('Created: $relativePath');
+      ctx.output.success('Created: $relativePath');
     }
   }
 
-  void _createUserModel({
+  void _createUserModel(
+    ArtisanContext ctx, {
     required bool force,
     required Map<String, bool> features,
   }) {
@@ -815,13 +833,15 @@ class MagicStarterInstallCommand extends Command {
     Directory('$projectRoot/lib/app/models').createSync(recursive: true);
 
     _safeWriteFile(
+      ctx,
       path: '$projectRoot/lib/app/models/user.dart',
       content: rendered,
       force: force,
     );
   }
 
-  void _createTeamModel({
+  void _createTeamModel(
+    ArtisanContext ctx, {
     required bool force,
   }) {
     final String stub = StubLoader.load(
@@ -830,13 +850,15 @@ class MagicStarterInstallCommand extends Command {
     );
 
     _safeWriteFile(
+      ctx,
       path: '$projectRoot/lib/app/models/team.dart',
       content: stub,
       force: force,
     );
   }
 
-  void _createDashboardView({
+  void _createDashboardView(
+    ArtisanContext ctx, {
     required bool force,
   }) {
     final String stub = StubLoader.load(
@@ -847,13 +869,15 @@ class MagicStarterInstallCommand extends Command {
     Directory('$projectRoot/lib/resources/views').createSync(recursive: true);
 
     _safeWriteFile(
+      ctx,
       path: '$projectRoot/lib/resources/views/dashboard_view.dart',
       content: stub,
       force: force,
     );
   }
 
-  void _createAppRoutes({
+  void _createAppRoutes(
+    ArtisanContext ctx, {
     required bool force,
   }) {
     final String targetPath = '$projectRoot/lib/routes/app.dart';
@@ -861,7 +885,7 @@ class MagicStarterInstallCommand extends Command {
     // When routes file already exists and --force is not set, inject the
     // dashboard imports and layout group into the existing routes file.
     if (FileHelper.fileExists(targetPath) && !force) {
-      _injectIntoExistingAppRoutes(targetPath: targetPath);
+      _injectIntoExistingAppRoutes(ctx, targetPath: targetPath);
       return;
     }
 
@@ -873,6 +897,7 @@ class MagicStarterInstallCommand extends Command {
     Directory('$projectRoot/lib/routes').createSync(recursive: true);
 
     _safeWriteFile(
+      ctx,
       path: targetPath,
       content: stub,
       force: force,
@@ -883,7 +908,8 @@ class MagicStarterInstallCommand extends Command {
   /// existing routes/app.dart file.
   ///
   /// Each injection is idempotent — checks for markers before adding code.
-  void _injectIntoExistingAppRoutes({
+  void _injectIntoExistingAppRoutes(
+    ArtisanContext ctx, {
     required String targetPath,
   }) {
     // 1. Add imports.
@@ -943,12 +969,13 @@ class MagicStarterInstallCommand extends Command {
         });
 
         FileHelper.writeFile(targetPath, content);
-        info('Injected: lib/routes/app.dart');
+        ctx.output.info('Injected: lib/routes/app.dart');
       }
     }
   }
 
-  void _safeWriteFile({
+  void _safeWriteFile(
+    ArtisanContext ctx, {
     required String path,
     required String content,
     required bool force,
@@ -956,14 +983,14 @@ class MagicStarterInstallCommand extends Command {
     final String relativePath = path.replaceFirst('$projectRoot/', '');
 
     if (FileHelper.fileExists(path) && !force) {
-      info('Skipped: $relativePath (already exists)');
+      ctx.output.info('Skipped: $relativePath (already exists)');
       return;
     }
 
     if (FileHelper.fileExists(path) && force) {
-      warn('Overwritten: $relativePath');
+      ctx.output.warning('Overwritten: $relativePath');
     } else {
-      success('Created: $relativePath');
+      ctx.output.success('Created: $relativePath');
     }
 
     FileHelper.writeFile(path, content);
@@ -1105,7 +1132,8 @@ class MagicStarterInstallCommand extends Command {
     FileHelper.writeFile(pubspecPath, updated);
   }
 
-  Future<void> _setupNotifications({
+  Future<void> _setupNotifications(
+    ArtisanContext ctx, {
     required Map<String, bool> features,
   }) async {
     if (!(features['notifications'] ?? false)) {
@@ -1128,7 +1156,8 @@ class MagicStarterInstallCommand extends Command {
     try {
       await runNotificationInstaller(projectRoot);
     } catch (_) {
-      warn('Failed to run magic_notifications installer automatically.');
+      ctx.output.warning(
+          'Failed to run magic_notifications installer automatically.');
     }
   }
 
@@ -1174,5 +1203,20 @@ class MagicStarterInstallCommand extends Command {
     }
 
     return '${Directory.current.path}/assets/stubs';
+  }
+
+  /// Reads a single yes/no answer from stdin.
+  ///
+  /// `magic_cli`'s `Command.confirm()` is gone in artisan; we inline the
+  /// minimal prompt to preserve interactive UX. Returns [defaultValue] when
+  /// stdin is closed or the user just presses ENTER.
+  bool _promptConfirm(String question, {required bool defaultValue}) {
+    final String suffix = defaultValue ? ' [Y/n] ' : ' [y/N] ';
+    stdout.write('$question$suffix');
+    final String? answer = stdin.readLineSync()?.trim().toLowerCase();
+    if (answer == null || answer.isEmpty) {
+      return defaultValue;
+    }
+    return answer == 'y' || answer == 'yes';
   }
 }

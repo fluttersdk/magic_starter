@@ -1,5 +1,6 @@
 // Magic Starter plugin exports
 
+export 'src/cli/starter_artisan_provider.dart';
 export 'src/facades/magic_starter.dart';
 export 'src/magic_starter_manager.dart';
 export 'src/providers/magic_starter_service_provider.dart';
