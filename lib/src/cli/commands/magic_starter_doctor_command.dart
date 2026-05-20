@@ -17,7 +17,8 @@ import 'package:path/path.dart' as p;
 /// ```
 class MagicStarterDoctorCommand extends ArtisanCommand {
   @override
-  String get name => 'starter:doctor';
+  String get signature => 'starter:doctor '
+      '{--verbose : Show file paths and detailed information for each check}';
 
   @override
   String get description => 'Check Magic Starter installation health';
@@ -32,16 +33,6 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
   ///
   /// Overridable in tests to supply an arbitrary temp directory.
   String getProjectRoot() => FileHelper.findProjectRoot();
-
-  @override
-  void configure(ArgParser parser) {
-    parser.addFlag(
-      'verbose',
-      abbr: 'v',
-      negatable: false,
-      help: 'Show file paths and detailed information for each check.',
-    );
-  }
 
   @override
   Future<int> handle(ArtisanContext ctx) async {

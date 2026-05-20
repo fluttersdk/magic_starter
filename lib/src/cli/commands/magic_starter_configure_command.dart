@@ -30,7 +30,16 @@ class MagicStarterConfigureCommand extends ArtisanCommand {
   };
 
   @override
-  String get name => 'starter:configure';
+  String get signature => 'starter:configure '
+      '{--show : Display current feature configuration} '
+      '{--teams : Enable or disable the teams feature} '
+      '{--social-login : Enable or disable the social_login feature} '
+      '{--two-factor : Enable or disable the two_factor feature} '
+      '{--sessions : Enable or disable the sessions feature} '
+      '{--phone-otp : Enable or disable the phone_otp feature} '
+      '{--newsletter : Enable or disable the newsletter feature} '
+      '{--notifications : Enable or disable the notifications feature} '
+      '{--email-verification : Enable or disable the email_verification feature}';
 
   @override
   String get description => 'Update Magic Starter configuration';
@@ -46,24 +55,6 @@ class MagicStarterConfigureCommand extends ArtisanCommand {
 
   /// Absolute path to the magic_starter config file.
   String get _configPath => '$projectRoot/lib/config/magic_starter.dart';
-
-  @override
-  void configure(ArgParser parser) {
-    parser.addFlag(
-      'show',
-      negatable: false,
-      help: 'Display current feature configuration',
-    );
-
-    for (final flag in _featureFlags.keys) {
-      parser.addFlag(
-        flag,
-        // defaultsTo: null — flag is not touched when omitted.
-        defaultsTo: null,
-        help: 'Enable or disable the ${flag.replaceAll('-', '_')} feature',
-      );
-    }
-  }
 
   @override
   Future<int> handle(ArtisanContext ctx) async {
@@ -112,8 +103,8 @@ class MagicStarterConfigureCommand extends ArtisanCommand {
   /// Collects all feature flag updates that were explicitly parsed.
   ///
   /// Returns a map of config key → bool for every flag the user supplied.
-  /// Flags not provided (defaultsTo: null) are omitted so they remain
-  /// untouched in the config file.
+  /// Flags the user did not pass are omitted via [ArtisanInput.hasOption]
+  /// (i.e. `wasParsed`) so they remain untouched in the config file.
   Map<String, bool> _collectUpdates(ArtisanContext ctx) {
     final updates = <String, bool>{};
 
@@ -121,11 +112,10 @@ class MagicStarterConfigureCommand extends ArtisanCommand {
       final String flag = entry.key;
       final String configKey = entry.value;
 
-      // option(flag) is null when the flag was not provided.
-      final dynamic value = ctx.input.option(flag);
-      if (value != null) {
-        updates[configKey] = value as bool;
+      if (!ctx.input.hasOption(flag)) {
+        continue;
       }
+      updates[configKey] = (ctx.input.option(flag) as bool?) ?? false;
     }
 
     return updates;

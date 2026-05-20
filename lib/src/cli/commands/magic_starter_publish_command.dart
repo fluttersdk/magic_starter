@@ -51,31 +51,15 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   };
 
   @override
-  String get name => 'starter:publish';
+  String get signature => 'starter:publish '
+      '{--force : Overwrite existing files} '
+      '{--tag=all : Publish group (config|views|layouts|middleware|lang|all) with optional scope (views:auth, views:auth.login, layouts:app)}';
 
   @override
   String get description => 'Publish Magic Starter files for customization';
 
   @override
   CommandBoot get boot => CommandBoot.none;
-
-  @override
-  void configure(ArgParser parser) {
-    parser.addFlag(
-      'force',
-      abbr: 'f',
-      help: 'Overwrite existing files.',
-      defaultsTo: false,
-      negatable: false,
-    );
-
-    parser.addOption(
-      'tag',
-      help: 'Publish group: config, views, layouts, middleware, lang, all.\n'
-          'Granular: views:auth, views:auth.login, layouts:app.',
-      defaultsTo: 'all',
-    );
-  }
 
   /// Resolve the host project root path.
   ///

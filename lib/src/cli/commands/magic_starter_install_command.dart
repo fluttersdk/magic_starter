@@ -216,7 +216,7 @@ class MagicStarterInstallCommand extends ArtisanCommand {
     }
 
     for (final String key in _dynamicFeatureKeys) {
-      features[key] = _promptConfirm(
+      features[key] = Prompt.confirm(
         'Enable $key feature?',
         defaultValue: false,
       );
@@ -1203,20 +1203,5 @@ class MagicStarterInstallCommand extends ArtisanCommand {
     }
 
     return '${Directory.current.path}/assets/stubs';
-  }
-
-  /// Reads a single yes/no answer from stdin.
-  ///
-  /// `magic_cli`'s `Command.confirm()` is gone in artisan; we inline the
-  /// minimal prompt to preserve interactive UX. Returns [defaultValue] when
-  /// stdin is closed or the user just presses ENTER.
-  bool _promptConfirm(String question, {required bool defaultValue}) {
-    final String suffix = defaultValue ? ' [Y/n] ' : ' [y/N] ';
-    stdout.write('$question$suffix');
-    final String? answer = stdin.readLineSync()?.trim().toLowerCase();
-    if (answer == null || answer.isEmpty) {
-      return defaultValue;
-    }
-    return answer == 'y' || answer == 'yes';
   }
 }
