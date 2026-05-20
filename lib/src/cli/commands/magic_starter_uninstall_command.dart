@@ -9,7 +9,8 @@ import 'package:fluttersdk_artisan/artisan.dart';
 /// intact whenever possible.
 class MagicStarterUninstallCommand extends ArtisanCommand {
   @override
-  String get name => 'starter:uninstall';
+  String get signature => 'starter:uninstall '
+      '{--force : Skip confirmation prompt}';
 
   @override
   String get description => 'Remove Magic Starter from the project';
@@ -40,17 +41,6 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   @override
-  void configure(ArgParser parser) {
-    parser.addFlag(
-      'force',
-      abbr: 'f',
-      help: 'Skip confirmation prompt',
-      defaultsTo: false,
-      negatable: false,
-    );
-  }
-
-  @override
   Future<int> handle(ArtisanContext ctx) async {
     ctx.output.info(ConsoleStyle.banner('Magic Starter', '0.0.1'));
 
@@ -61,7 +51,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
 
     // 2. Ask for explicit confirmation unless --force is provided.
     if (!force) {
-      final bool confirmed = _promptConfirm(
+      final bool confirmed = Prompt.confirm(
         'Proceed with uninstall?',
         defaultValue: false,
       );
@@ -364,20 +354,5 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
     ctx.output.info('  • middleware files under lib/app/middleware/');
     ctx.output.info('  • translation entries/files for magic_starter');
     ctx.output.writeln('');
-  }
-
-  /// Reads a single yes/no answer from stdin.
-  ///
-  /// `magic_cli`'s `Command.confirm()` is gone in artisan; we inline the
-  /// minimal prompt to preserve interactive UX. Returns [defaultValue] when
-  /// stdin is closed or the user just presses ENTER.
-  bool _promptConfirm(String question, {required bool defaultValue}) {
-    final String suffix = defaultValue ? ' [Y/n] ' : ' [y/N] ';
-    stdout.write('$question$suffix');
-    final String? answer = stdin.readLineSync()?.trim().toLowerCase();
-    if (answer == null || answer.isEmpty) {
-      return defaultValue;
-    }
-    return answer == 'y' || answer == 'yes';
   }
 }
