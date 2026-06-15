@@ -41,3 +41,6 @@ coverage/
 .ac/
 .opencode/
 .sisyphus/
+
+# Local development path wiring (never committed; breaks CI which has no sibling paths)
+pubspec_overrides.yaml
