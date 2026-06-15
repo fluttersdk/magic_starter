@@ -32,8 +32,6 @@ class MagicStarterAppLayout extends StatefulWidget {
 }
 
 class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -72,10 +70,6 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     if (mounted) setState(() {});
   }
 
-  void _openDrawer() {
-    _scaffoldKey.currentState?.openDrawer();
-  }
-
   String _getCurrentPath(BuildContext context) {
     try {
       return GoRouterState.of(context).uri.path;
@@ -109,7 +103,6 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     final isDesktop = wScreenIs(context, 'lg');
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: wColor(
         context,
         MagicStarter.manager.layoutTheme.contentBackgroundLightColor,
@@ -132,7 +125,19 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 WDiv(
                   className: 'flex-1 overflow-y-auto',
                   scrollPrimary: true,
-                  child: widget.child,
+                  // Key the route content by path so each route mounts as a
+                  // distinct subtree. Without this the persistent shell reuses
+                  // the scroll container's child slot across different route
+                  // views; swapping a scrollable view for another then tears
+                  // down render objects in a confused order (markNeedsLayout on
+                  // an already-dirty relayout boundary, double detach) under
+                  // accumulated navigation. A per-route key forces a clean
+                  // unmount-then-mount. Debug-only asserts, but they surface the
+                  // red ErrorWidget in dev; the keyed subtree removes the smell.
+                  child: KeyedSubtree(
+                    key: ValueKey(currentPath),
+                    child: widget.child,
+                  ),
                 ),
               ],
             ),
@@ -226,11 +231,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     return WDiv(
       className: layoutTheme.headerClassName,
       children: [
-        WAnchor(
-          onTap: _openDrawer,
-          child: WIcon(
-            Icons.menu,
-            className: 'text-gray-600 dark:text-gray-300',
+        Builder(
+          builder: (drawerContext) => WAnchor(
+            onTap: () => Scaffold.of(drawerContext).openDrawer(),
+            child: WIcon(
+              Icons.menu,
+              className: 'text-gray-600 dark:text-gray-300',
+            ),
           ),
         ),
         navTheme.brandBuilder != null
