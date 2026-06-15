@@ -2,11 +2,11 @@ import 'package:magic_starter/src/cli/starter_artisan_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('StarterArtisanProvider', () {
-    late StarterArtisanProvider provider;
+  group('MagicStarterArtisanProvider', () {
+    late MagicStarterArtisanProvider provider;
 
     setUp(() {
-      provider = StarterArtisanProvider();
+      provider = MagicStarterArtisanProvider();
     });
 
     // -------------------------------------------------------------------------

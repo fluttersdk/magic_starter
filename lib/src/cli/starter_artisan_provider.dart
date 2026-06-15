@@ -12,7 +12,7 @@ import 'commands/magic_starter_uninstall_command.dart';
 /// list so that `artisan starter:install`, `starter:configure`,
 /// `starter:doctor`, `starter:publish`, and `starter:uninstall` become
 /// discoverable through the unified `artisan` binary.
-class StarterArtisanProvider extends ArtisanServiceProvider {
+class MagicStarterArtisanProvider extends ArtisanServiceProvider {
   @override
   String get providerName => 'magic_starter';
 
