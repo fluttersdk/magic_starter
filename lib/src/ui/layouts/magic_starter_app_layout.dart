@@ -99,49 +99,50 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     final navConfig = MagicStarter.navigationConfig;
     final hasBottomNav = navConfig != null && navConfig.bottomItems.isNotEmpty;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isDesktop = wScreenIs(context, 'lg');
+    // Responsive breakpoint via MediaQuery (wScreenIs reads MediaQuery.size),
+    // NOT a LayoutBuilder. A LayoutBuilder here makes itself the build-scope
+    // root; a setState from the auth/refresh listeners during a route
+    // transition then rebuilds dirty widgets in the wrong scope, producing a
+    // LayoutBuilder-slot / GlobalKey / RenderFlex exception cascade (worst at
+    // narrow widths). MediaQuery.of registers a normal dependency, so width
+    // changes still rebuild the shell without the layout-phase build boundary.
+    final isDesktop = wScreenIs(context, 'lg');
 
-        return Scaffold(
-          key: _scaffoldKey,
-          backgroundColor: wColor(
-            context,
-            MagicStarter.manager.layoutTheme.contentBackgroundLightColor,
-            shade: MagicStarter.manager.layoutTheme.contentBackgroundLightShade,
-            darkColorName:
-                MagicStarter.manager.layoutTheme.contentBackgroundDarkColor,
-            darkShade:
-                MagicStarter.manager.layoutTheme.contentBackgroundDarkShade,
-          ),
-          drawer: isDesktop ? null : _buildDrawer(context, currentPath),
-          body: SafeArea(
-            bottom: false,
-            child: WDiv(
-              className: 'flex flex-row w-full h-full',
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: wColor(
+        context,
+        MagicStarter.manager.layoutTheme.contentBackgroundLightColor,
+        shade: MagicStarter.manager.layoutTheme.contentBackgroundLightShade,
+        darkColorName:
+            MagicStarter.manager.layoutTheme.contentBackgroundDarkColor,
+        darkShade: MagicStarter.manager.layoutTheme.contentBackgroundDarkShade,
+      ),
+      drawer: isDesktop ? null : _buildDrawer(context, currentPath),
+      body: SafeArea(
+        bottom: false,
+        child: WDiv(
+          className: 'flex flex-row w-full h-full',
+          children: [
+            if (isDesktop) _buildSidebar(context, currentPath),
+            WDiv(
+              className: 'flex-1 flex flex-col h-full overflow-hidden',
               children: [
-                if (isDesktop) _buildSidebar(context, currentPath),
+                _buildHeader(context, isDesktop),
                 WDiv(
-                  className: 'flex-1 flex flex-col h-full overflow-hidden',
-                  children: [
-                    _buildHeader(context, isDesktop),
-                    WDiv(
-                      className: 'flex-1 overflow-y-auto',
-                      scrollPrimary: true,
-                      child: widget.child,
-                    ),
-                  ],
+                  className: 'flex-1 overflow-y-auto',
+                  scrollPrimary: true,
+                  child: widget.child,
                 ),
               ],
             ),
-          ),
-          bottomNavigationBar: (!isDesktop &&
-                  hasBottomNav &&
-                  !MagicStarterHideBottomNav.of(context))
+          ],
+        ),
+      ),
+      bottomNavigationBar:
+          (!isDesktop && hasBottomNav && !MagicStarterHideBottomNav.of(context))
               ? _buildBottomNav(context, currentPath)
               : null,
-        );
-      },
     );
   }
 
