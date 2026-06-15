@@ -38,10 +38,10 @@ import 'package:path/path.dart' as p;
 ///
 /// ## Test seam
 ///
-/// [getProjectRoot], [getStubSearchPaths], [runDartFormat],
-/// [runNotificationInstaller], and [resolveManifestPath] are overridable so a
-/// test subclass can pin the project root + stubs dir + manifest path and
-/// stub the external `dart format` / notifications-installer side effects.
+/// [getProjectRoot], [getStubSearchPaths], [runDartFormat], and
+/// [resolveManifestPath] are overridable so a test subclass can pin the
+/// project root + stubs dir + manifest path and stub the `dart format`
+/// side effect.
 class MagicStarterInstallCommand extends ArtisanInstallCommand {
   /// Public default constructor. The provider's `commands()` list constructs
   /// this with no arguments; test fixtures subclass + override the seams.
@@ -105,22 +105,6 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       [
         'format',
         '.',
-      ],
-      workingDirectory: rootPath,
-    );
-  }
-
-  /// Runs magic_notifications installer.
-  ///
-  /// Overridable in tests.
-  Future<ProcessResult> runNotificationInstaller(String rootPath) {
-    return Process.run(
-      'dart',
-      [
-        'run',
-        'magic_notifications',
-        'install',
-        '--non-interactive',
       ],
       workingDirectory: rootPath,
     );
@@ -1194,12 +1178,14 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       }
     }
 
-    try {
-      await runNotificationInstaller(projectRoot);
-    } catch (_) {
-      ctx.output.warning(
-          'Failed to run magic_notifications installer automatically.');
-    }
+    // OneSignal setup needs a user-specific App ID, so it cannot be auto-run
+    // here. magic_notifications also has no standalone entrypoint post
+    // artisan-migration; its installer surfaces through the host app's artisan
+    // binary. Point the operator at the correct command instead of shelling out.
+    ctx.output.info(
+      'Notifications enabled. Complete OneSignal setup by running:\n'
+      '  dart run <app>:artisan notifications:install --app-id=<your-onesignal-app-id>',
+    );
   }
 
   String _resolvePluginStubsDir() {

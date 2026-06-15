@@ -21,7 +21,6 @@ class TestMagicStarterInstallCommand extends MagicStarterInstallCommand {
   final String manifestPath;
 
   bool didRunDartFormat = false;
-  bool didRunNotificationInstaller = false;
 
   @override
   String getProjectRoot() => projectRoot;
@@ -38,11 +37,6 @@ class TestMagicStarterInstallCommand extends MagicStarterInstallCommand {
     return ProcessResult(1, 0, 'formatted', '');
   }
 
-  @override
-  Future<ProcessResult> runNotificationInstaller(String rootPath) async {
-    didRunNotificationInstaller = true;
-    return ProcessResult(1, 0, 'notifications installed', '');
-  }
 }
 
 /// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
