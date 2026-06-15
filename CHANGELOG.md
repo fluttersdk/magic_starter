@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- **Breaking: Standalone CLI entrypoint** — removed `bin/magic_starter.dart` and `dart run magic_starter:*` commands. Commands now surface via the host app's artisan dispatcher. Migrate: `dart run magic_starter:install` becomes `dart run <app>:artisan starter:install` (register `StarterArtisanProvider` in your app's `artisan.providers` list).
+- **Removed magic_cli dependency** — CLI now builds on `fluttersdk_artisan ^0.0.7`.
+
+### Changed
+- **Install is manifest-driven** — static scaffolding (config publish, provider injection) now driven by `install.yaml` manifest; dynamic logic (feature toggles, interactive mode) handled by fluent override in `MagicStarterInstallCommand`.
+
+### Added
+- **Read-only MCP tool** — `starter_doctor` diagnostic command exposed as a read-only MCP tool via `StarterArtisanProvider.mcpTools()`.
+
 ### 🐛 Bug Fixes
 - **Social login translation keys**: the install-generated `assets/lang/en.json` (from `assets/stubs/install/en.stub`) now ships `auth.sign_in_with` and `auth.sign_up_with`. The social-login buttons (`SocialAuthButtons` from `magic_social_auth`) call `trans('auth.sign_in_with', {'provider': ...})`, but `magic_social_auth` ships no lang file and magic loads translations only from the consumer's `assets/lang`, so a fresh `starter:install` with `social_login` enabled previously rendered raw keys ("auth.sign_in_with") instead of "Sign in with Google". Surfaced by a full reference-app E2E bring-up.
 - **Mobile Header Brand**: `MagicStarterAppLayout` mobile topbar now honors `navigationTheme.brandBuilder`, so custom brand widgets render consistently across breakpoints when provided ([#65](https://github.com/fluttersdk/magic_starter/issues/65))

@@ -71,10 +71,12 @@ dependencies:
 ### 2. Install configuration
 
 ```bash
-dart run magic_starter:install
+dart run <app>:artisan starter:install
 ```
 
 This generates `lib/config/magic_starter.dart`, injects `MagicStarterServiceProvider` into `lib/config/app.dart`, and wires the `magicStarterConfig` factory into `lib/main.dart`.
+
+(If `magic_starter` is not yet registered as a provider in your host app, register `StarterArtisanProvider` in your app's `artisan.providers` list first.)
 
 ### 3. Boot the provider
 
@@ -412,28 +414,30 @@ Copy a view file directly into your host app for complete control. Changes are p
 
 ```bash
 # Publish a single view
-dart run magic_starter:publish --tag=views:auth.login
+dart run <app>:artisan starter:publish --tag=views:auth.login
 
 # Publish all auth views
-dart run magic_starter:publish --tag=views:auth
+dart run <app>:artisan starter:publish --tag=views:auth
 
 # Run doctor to verify wiring
-dart run magic_starter:doctor
+dart run <app>:artisan starter:doctor
 ```
 
-The publish command copies the view to `lib/resources/views/starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run magic_starter:doctor` to confirm registration status.
+The publish command copies the view to `lib/resources/views/starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run <app>:artisan starter:doctor` to confirm registration status.
 
 ---
 
 ## CLI Tools
 
+Run any of these commands via your host app's artisan dispatcher:
+
 | Command | Description |
 |---------|-------------|
-| `dart run magic_starter:install` | Scaffold config, provider, and routes into your Magic project |
-| `dart run magic_starter:configure` | Interactively toggle features and update config |
-| `dart run magic_starter:doctor` | Verify installation, check dependencies, diagnose issues |
-| `dart run magic_starter:publish` | Publish starter views and layouts for full customization |
-| `dart run magic_starter:uninstall` | Remove starter config, provider, and routes from your project |
+| `dart run <app>:artisan starter:install` | Scaffold config, provider, and routes into your Magic project |
+| `dart run <app>:artisan starter:configure` | Interactively toggle features and update config |
+| `dart run <app>:artisan starter:doctor` | Verify installation, check dependencies, diagnose issues |
+| `dart run <app>:artisan starter:publish --tag=views:auth.login` | Publish a specific view/layout for full customization |
+| `dart run <app>:artisan starter:uninstall` | Remove starter config, provider, and routes from your project |
 
 ---
 

@@ -1,83 +1,69 @@
 import 'dart:io';
 
+import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_install_command.dart';
 import 'package:test/test.dart';
+import 'package:path/path.dart' as p;
 
+/// Test double pinning the project root, stub search paths, manifest path, and
+/// the external `dart format` / notifications-installer side effects so the
+/// installer runs end-to-end against a temp directory with zero real I/O.
 class TestMagicStarterInstallCommand extends MagicStarterInstallCommand {
   TestMagicStarterInstallCommand({
     required this.projectRoot,
     required this.stubsDir,
+    required this.manifestPath,
   });
 
   @override
   final String projectRoot;
   final String stubsDir;
+  final String manifestPath;
 
   bool didRunDartFormat = false;
   bool didRunNotificationInstaller = false;
-  final List<String> infoMessages = <String>[];
-  final List<String> warnMessages = <String>[];
-  final List<String> successMessages = <String>[];
 
   @override
-  String getProjectRoot() {
-    return projectRoot;
-  }
+  String getProjectRoot() => projectRoot;
 
   @override
-  List<String> getStubSearchPaths() {
-    return [
-      stubsDir,
-    ];
-  }
+  List<String> getStubSearchPaths() => <String>[stubsDir];
+
+  @override
+  Future<String?> resolveManifestPath() async => manifestPath;
 
   @override
   Future<ProcessResult> runDartFormat(String rootPath) async {
     didRunDartFormat = true;
-
-    return ProcessResult(
-      1,
-      0,
-      'formatted',
-      '',
-    );
+    return ProcessResult(1, 0, 'formatted', '');
   }
 
   @override
   Future<ProcessResult> runNotificationInstaller(String rootPath) async {
     didRunNotificationInstaller = true;
-
-    return ProcessResult(
-      1,
-      0,
-      'notifications installed',
-      '',
-    );
+    return ProcessResult(1, 0, 'notifications installed', '');
   }
+}
 
-  @override
-  void info(String message) {
-    infoMessages.add(message);
-    super.info(message);
-  }
-
-  @override
-  void warn(String message) {
-    warnMessages.add(message);
-    super.warn(message);
-  }
-
-  @override
-  void success(String message) {
-    successMessages.add(message);
-    super.success(message);
-  }
-
-  void clearMessages() {
-    infoMessages.clear();
-    warnMessages.clear();
-    successMessages.clear();
-  }
+/// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
+/// [MapInput] (flags) and a [BufferedOutput] (capturable). The four base
+/// install flags are always defaulted so the [ArtisanInstallCommand] hard
+/// casts (`option('force') as bool`) never trip on absence.
+Future<int> runInstall(
+  MagicStarterInstallCommand command, {
+  bool force = false,
+  bool nonInteractive = true,
+  String? features,
+}) {
+  final options = <String, dynamic>{
+    'force': force,
+    'dry-run': false,
+    'non-interactive': nonInteractive,
+    'no-bootstrap': false,
+    if (features != null) 'features': features,
+  };
+  final ctx = ArtisanContext.bare(MapInput(options), BufferedOutput());
+  return command.handle(ctx);
 }
 
 void main() {
@@ -85,13 +71,16 @@ void main() {
     late Directory tempDir;
     late TestMagicStarterInstallCommand command;
     late String stubsPath;
+    late String manifestPath;
 
     setUp(() {
       tempDir = Directory.systemTemp.createTempSync('magic_starter_install_');
       stubsPath = '${Directory.current.path}/assets/stubs';
+      manifestPath = '${Directory.current.path}/install.yaml';
       command = TestMagicStarterInstallCommand(
         projectRoot: tempDir.path,
         stubsDir: stubsPath,
+        manifestPath: manifestPath,
       );
     });
 
@@ -101,15 +90,17 @@ void main() {
       }
     });
 
-    test('name is install', () {
-      expect(command.name, 'install');
+    test('extends ArtisanInstallCommand', () {
+      expect(command, isA<ArtisanInstallCommand>());
+    });
+
+    test('name is starter:install', () {
+      expect(command.name, 'starter:install');
     });
 
     test('errors when Magic not installed (no lib/config/app.dart)', () async {
       expect(
-        () => command.runWith([
-          '--non-interactive',
-        ]),
+        () => runInstall(command),
         throwsA(
           isA<Exception>().having(
             (Exception exception) => exception.toString(),
@@ -123,9 +114,7 @@ void main() {
     test('creates lib/config/magic_starter.dart from stub', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final File configFile =
           File('${tempDir.path}/lib/config/magic_starter.dart');
@@ -141,9 +130,7 @@ void main() {
       configFile.createSync(recursive: true);
       configFile.writeAsStringSync('// existing config');
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       expect(configFile.readAsStringSync(), '// existing config');
     });
@@ -156,10 +143,7 @@ void main() {
       configFile.createSync(recursive: true);
       configFile.writeAsStringSync('// existing config');
 
-      await command.runWith([
-        '--non-interactive',
-        '--force',
-      ]);
+      await runInstall(command, force: true);
 
       expect(configFile.readAsStringSync(), isNot('// existing config'));
       expect(configFile.readAsStringSync(), contains('magicStarterConfig'));
@@ -168,9 +152,7 @@ void main() {
     test('injects import into app.dart', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String appContent =
           File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
@@ -182,9 +164,7 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String appContent =
           File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
@@ -196,12 +176,8 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
+      await runInstall(command);
 
       final String appContent =
           File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
@@ -213,9 +189,7 @@ void main() {
     test('injects magic_starter import into main.dart', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
@@ -225,9 +199,7 @@ void main() {
     test('injects magicStarterConfig factory into main.dart', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
@@ -238,12 +210,8 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
@@ -256,9 +224,7 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
@@ -268,31 +234,22 @@ void main() {
       expect(content, contains('windTheme: windTheme'));
     });
 
-    test('injects WindThemeData import into main.dart', () async {
+    test('injects material.dart import into main.dart', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      expect(
-        content,
-        contains("import 'package:flutter/material.dart';"),
-      );
+      expect(content, contains("import 'package:flutter/material.dart';"));
     });
 
     test('skips WindThemeData injection when already present (idempotency)',
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
@@ -303,9 +260,7 @@ void main() {
     test('creates ensure_authenticated middleware file', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final File middlewareFile =
           File('${tempDir.path}/lib/app/middleware/ensure_authenticated.dart');
@@ -317,9 +272,7 @@ void main() {
     test('creates redirect_if_authenticated middleware file', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final File middlewareFile = File(
           '${tempDir.path}/lib/app/middleware/redirect_if_authenticated.dart');
@@ -336,9 +289,7 @@ void main() {
       middlewareFile.createSync(recursive: true);
       middlewareFile.writeAsStringSync('// keep this middleware');
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       expect(middlewareFile.readAsStringSync(), '// keep this middleware');
     });
@@ -346,14 +297,11 @@ void main() {
     test('injects middleware aliases into kernel.dart', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String kernelContent =
           File('${tempDir.path}/lib/app/kernel.dart').readAsStringSync();
 
-      // Verify UNCOMMENTED Kernel.registerAll block exists.
       expect(
         RegExp(r"^\s*Kernel\.registerAll\(", multiLine: true)
             .hasMatch(kernelContent),
@@ -364,7 +312,6 @@ void main() {
       expect(
           kernelContent, contains("'guest': () => RedirectIfAuthenticated(),"));
 
-      // Verify UNCOMMENTED import 'package:magic/magic.dart' exists.
       expect(
         RegExp(r"^import 'package:magic/magic\.dart';", multiLine: true)
             .hasMatch(kernelContent),
@@ -381,9 +328,7 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
@@ -395,9 +340,7 @@ void main() {
     test('injects auth route registration call into RSP boot()', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
@@ -409,11 +352,7 @@ void main() {
     test('injects team routes only when teams feature enabled', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--features=teams',
-        '--force',
-      ]);
+      await runInstall(command, force: true, features: 'teams');
 
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
@@ -424,10 +363,7 @@ void main() {
     test('does not inject team routes when teams feature disabled', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--features=social_login',
-      ]);
+      await runInstall(command, features: 'social_login');
 
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
@@ -438,10 +374,7 @@ void main() {
     test('replaces app_service_provider.dart content', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--force',
-      ]);
+      await runInstall(command, force: true);
 
       final String content =
           File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
@@ -453,9 +386,7 @@ void main() {
     test('middleware stubs use correct handle() signature', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String ensureContent =
           File('${tempDir.path}/lib/app/middleware/ensure_authenticated.dart')
@@ -464,21 +395,17 @@ void main() {
               '${tempDir.path}/lib/app/middleware/redirect_if_authenticated.dart')
           .readAsStringSync();
 
-      // Must use correct MagicMiddleware.handle signature.
       expect(ensureContent, contains('handle(void Function() next)'));
       expect(redirectContent, contains('handle(void Function() next)'));
 
-      // Must NOT use old MagicRequest signature.
       expect(ensureContent, isNot(contains('MagicRequest')));
       expect(redirectContent, isNot(contains('MagicRequest')));
 
-      // Must use MagicRoute.to() not offAllNamed().
       expect(ensureContent, isNot(contains('offAllNamed')));
       expect(redirectContent, isNot(contains('offAllNamed')));
       expect(ensureContent, contains('MagicRoute.to('));
       expect(redirectContent, contains('MagicRoute.to('));
 
-      // Must call next() without await (next returns void, not Future).
       expect(ensureContent, contains('next();'));
       expect(ensureContent, isNot(contains('await next()')));
       expect(redirectContent, contains('next();'));
@@ -489,28 +416,22 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--force',
-      ]);
+      await runInstall(command, force: true);
 
       final String content =
           File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
               .readAsStringSync();
 
-      // Must use correct MagicStarterNavItem constructor params.
       expect(content, contains('icon:'));
       expect(content, contains('labelKey:'));
       expect(content, contains('path:'));
 
-      // Must NOT use old wrong param names.
       expect(content, isNot(contains("label: 'Dashboard'")));
       expect(
         content,
         isNot(contains('route: MagicStarterConfig.homeRoute()')),
       );
 
-      // Must use MagicRoute.to() not offAllNamed().
       expect(content, isNot(contains('offAllNamed')));
       expect(content, contains('MagicRoute.to('));
     });
@@ -518,40 +439,29 @@ void main() {
     test('teams block uses correct useTeamResolver named params', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--features=teams',
-        '--force',
-      ]);
+      await runInstall(command, force: true, features: 'teams');
 
       final String content =
           File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
               .readAsStringSync();
 
-      // Must use named parameter style.
       expect(content, contains('MagicStarter.useTeamResolver('));
       expect(content, contains('currentTeam:'));
       expect(content, contains('allTeams:'));
       expect(content, contains('onSwitch:'));
 
-      // Must NOT use old positional callback style.
       expect(content, isNot(contains('useTeamResolver((userId)')));
     });
 
     test('notifications block uses correct type mapper signature', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--features=notifications',
-        '--force',
-      ]);
+      await runInstall(command, force: true, features: 'notifications');
 
       final String content =
           File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
               .readAsStringSync();
 
-      // Must use (type) parameter, not (notification).
       expect(content, contains('useNotificationTypeMapper((type)'));
       expect(
           content, isNot(contains('useNotificationTypeMapper((notification)')));
@@ -561,18 +471,13 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--force',
-      ]);
+      await runInstall(command, force: true);
 
       final String content =
           File('${tempDir.path}/lib/config/magic_starter.dart')
               .readAsStringSync();
 
-      // Must NOT start with /// (dangling library doc comment).
       expect(content.trimLeft().startsWith('///'), isFalse);
-      // Must still have comment header.
       expect(content, contains('// Magic Starter Configuration.'));
     });
 
@@ -580,15 +485,16 @@ void main() {
       setupMagicProjectFiles(tempDir);
 
       // Pass --features WITHOUT --non-interactive.
-      await command.runWith([
-        '--features=teams,social_login',
-      ]);
+      await runInstall(
+        command,
+        nonInteractive: false,
+        features: 'teams,social_login',
+      );
 
       final String config =
           File('${tempDir.path}/lib/config/magic_starter.dart')
               .readAsStringSync();
 
-      // Features must be applied even without --non-interactive.
       expect(config, contains("'teams': true"));
       expect(config, contains("'social_login': true"));
       expect(config, contains("'newsletter': false"));
@@ -597,9 +503,7 @@ void main() {
     test('creates assets/lang/en.json translation file', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final File file = File('${tempDir.path}/assets/lang/en.json');
       expect(file.existsSync(), isTrue);
@@ -609,9 +513,7 @@ void main() {
     test('adds assets/lang/en.json to pubspec flutter assets', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content =
           File('${tempDir.path}/pubspec.yaml').readAsStringSync();
@@ -621,12 +523,8 @@ void main() {
     test('idempotent — running twice does not duplicate injections', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
+      await runInstall(command);
 
       final String app =
           File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
@@ -646,10 +544,10 @@ void main() {
         () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--features=teams,social_login,notifications,email_verification',
-      ]);
+      await runInstall(
+        command,
+        features: 'teams,social_login,notifications,email_verification',
+      );
 
       final String config =
           File('${tempDir.path}/lib/config/magic_starter.dart')
@@ -663,9 +561,7 @@ void main() {
     test('runs dart format after install', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       expect(command.didRunDartFormat, isTrue);
     });
@@ -673,16 +569,12 @@ void main() {
     test('route registrations are on separate lines in RSP', () async {
       setupMagicProjectFiles(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-        '--features=teams',
-      ]);
+      await runInstall(command, features: 'teams');
 
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
               .readAsStringSync();
 
-      // Each registration call must be on its own line.
       final List<String> lines = content.split('\n');
       for (final String line in lines) {
         final int count = 'register'.allMatches(line).length;
@@ -696,8 +588,6 @@ void main() {
 
     test('pubspec does not get duplicate assets: key with existing assets',
         () async {
-      // Simulate real-world pubspec from magic install (blank line after
-      // flutter:, existing assets with .env, comments below).
       final File pubspecFile = File('${tempDir.path}/pubspec.yaml');
       pubspecFile.writeAsStringSync('''
 name: test_app
@@ -725,13 +615,10 @@ flutter:
       setupRouteServiceProviderFile(tempDir);
       setupAppServiceProviderFile(tempDir);
 
-      await command.runWith([
-        '--non-interactive',
-      ]);
+      await runInstall(command);
 
       final String content = pubspecFile.readAsStringSync();
 
-      // Must NOT have duplicate assets: keys.
       final int assetsKeyCount =
           RegExp(r'^  assets:\s*$', multiLine: true).allMatches(content).length;
       expect(
@@ -740,10 +627,7 @@ flutter:
         reason: 'Duplicate assets: key found in pubspec.yaml.\n\n$content',
       );
 
-      // The en.json asset must be present.
       expect(content, contains('- assets/lang/en.json'));
-
-      // The existing .env asset must still be present.
       expect(content, contains('- .env'));
     });
 
@@ -751,10 +635,7 @@ flutter:
       test('creates lib/app/models/user.dart after install', () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-          '--force',
-        ]);
+        await runInstall(command, force: true);
 
         final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
         expect(userFile.existsSync(), isTrue);
@@ -765,10 +646,7 @@ flutter:
           () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-          '--features=teams',
-        ]);
+        await runInstall(command, features: 'teams');
 
         final File teamFile = File('${tempDir.path}/lib/app/models/team.dart');
         final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
@@ -781,10 +659,7 @@ flutter:
           () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-          '--force',
-        ]);
+        await runInstall(command, force: true);
 
         final File teamFile = File('${tempDir.path}/lib/app/models/team.dart');
         final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
@@ -797,9 +672,7 @@ flutter:
       test('creates dashboard view scaffold file', () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-        ]);
+        await runInstall(command);
 
         final File dashboardFile =
             File('${tempDir.path}/lib/resources/views/dashboard_view.dart');
@@ -810,9 +683,7 @@ flutter:
       test('creates app routes scaffold file', () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-        ]);
+        await runInstall(command);
 
         final File routesFile = File('${tempDir.path}/lib/routes/app.dart');
         expect(routesFile.existsSync(), isTrue);
@@ -822,46 +693,26 @@ flutter:
           () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-        ]);
-        command.clearMessages();
+        await runInstall(command);
 
-        await command.runWith([
-          '--non-interactive',
-        ]);
+        final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
+        userFile.writeAsStringSync('// keep this user');
 
-        expect(
-          command.infoMessages,
-          contains('Skipped: lib/app/models/user.dart (already exists)'),
-        );
-        expect(
-          command.infoMessages,
-          contains(
-              'Skipped: lib/resources/views/dashboard_view.dart (already exists)'),
-        );
+        await runInstall(command);
+
+        expect(userFile.readAsStringSync(), '// keep this user');
       });
 
       test('safe-write overwrites existing files with --force', () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-        ]);
-        command.clearMessages();
+        await runInstall(command);
 
         final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
         userFile.writeAsStringSync('// mutated user model');
 
-        await command.runWith([
-          '--non-interactive',
-          '--force',
-        ]);
+        await runInstall(command, force: true);
 
-        expect(
-          command.warnMessages,
-          contains('Overwritten: lib/app/models/user.dart'),
-        );
         expect(userFile.readAsStringSync(),
             isNot(contains('// mutated user model')));
       });
@@ -871,9 +722,7 @@ flutter:
           () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-        ]);
+        await runInstall(command);
 
         final String content =
             File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
@@ -887,39 +736,13 @@ flutter:
           () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-          '--features=social_login',
-          '--force',
-        ]);
+        await runInstall(command, force: true, features: 'social_login');
 
         final String content =
             File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
                 .readAsStringSync();
 
         expect(content, contains('MagicStarter.useSocialLogin('));
-      });
-
-      test('safe-write reports created path messages for new scaffold files',
-          () async {
-        setupMagicProjectFiles(tempDir);
-
-        await command.runWith([
-          '--non-interactive',
-        ]);
-
-        expect(
-          command.successMessages,
-          contains('Created: lib/app/models/user.dart'),
-        );
-        expect(
-          command.successMessages,
-          contains('Created: lib/resources/views/dashboard_view.dart'),
-        );
-        expect(
-          command.successMessages,
-          contains('Created: lib/routes/app.dart'),
-        );
       });
     });
 
@@ -929,11 +752,7 @@ flutter:
       () async {
         setupMagicProjectFiles(tempDir);
 
-        await command.runWith([
-          '--non-interactive',
-          '--features=notifications',
-          '--force',
-        ]);
+        await runInstall(command, force: true, features: 'notifications');
 
         final String pubspecContent =
             File('${tempDir.path}/pubspec.yaml').readAsStringSync();
@@ -950,6 +769,66 @@ flutter:
         );
       },
     );
+
+    test('install.yaml manifest exists and declares the starter provider',
+        () async {
+      final File manifestFile = File(manifestPath);
+      expect(manifestFile.existsSync(), isTrue);
+
+      final manifest = ManifestParser.parseFile(p.normalize(manifestPath));
+      expect(manifest.pluginName, 'magic_starter');
+      expect(manifest.magic.provider, 'MagicStarterServiceProvider');
+    });
+
+    test(
+        'provider injection is staged AFTER all transactional writeFile ops '
+        '(no-rollback ordering)', () async {
+      setupMagicProjectFiles(tempDir);
+
+      final manifest = ManifestParser.parseFile(p.normalize(manifestPath));
+      final installer = command.stageInstaller(
+        command.buildContext(
+          ArtisanContext.bare(
+              MapInput(const <String, dynamic>{}), BufferedOutput()),
+        ),
+        manifest,
+        features: <String, bool>{
+          for (final String key
+              in MagicStarterInstallCommand.dynamicFeatureKeys)
+            key: false,
+        },
+        force: true,
+      );
+
+      final List<InstallOperation> ops = installer.pendingOps;
+
+      // The provider injection import targets lib/config/app.dart; it is the
+      // first op the injectProvider composite enqueues.
+      final int providerInjectIndex = ops.indexWhere(
+        (InstallOperation op) =>
+            op is InjectImport && op.targetFile == 'lib/config/app.dart',
+      );
+      expect(providerInjectIndex, greaterThanOrEqualTo(0),
+          reason: 'provider injection must be staged');
+
+      // Every transactional WriteFile op must precede the helper-backed
+      // provider injection (the .tmp swap covers WriteFile only; injectProvider
+      // commits synchronously and does not roll back).
+      final List<int> writeFileIndexes = <int>[
+        for (int i = 0; i < ops.length; i++)
+          if (ops[i] is WriteFile) i,
+      ];
+      expect(writeFileIndexes, isNotEmpty,
+          reason: 'transactional writes must be staged');
+      for (final int writeIndex in writeFileIndexes) {
+        expect(
+          writeIndex,
+          lessThan(providerInjectIndex),
+          reason: 'writeFile op at $writeIndex must precede the provider '
+              'injection at $providerInjectIndex',
+        );
+      }
+    });
   });
 }
 

@@ -8,6 +8,8 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 
 ## Commands
 
+### Development and Testing
+
 | Command | Description |
 |---------|-------------|
 | `flutter test --coverage` | Run all tests (~52 files, ~752 cases) with coverage |
@@ -16,11 +18,16 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 | `flutter analyze --no-fatal-infos` | Static analysis (flutter_lints ^6.0) |
 | `dart format .` | Format all code |
 | `dart fix --apply` | Auto-fix lint issues |
-| `dart run magic_starter:install` | Scaffold config + provider into consumer project |
-| `dart run magic_starter:configure` | Interactive feature toggle configuration |
-| `dart run magic_starter:doctor` | Diagnose project setup issues |
-| `dart run magic_starter:publish` | Publish (copy) views/layouts for customization |
-| `dart run magic_starter:uninstall` | Remove scaffolded files from consumer project |
+
+### CLI Commands (via host app's artisan)
+
+| Command | Description |
+|---------|-------------|
+| `dart run <app>:artisan starter:install` | Scaffold config + provider into consumer project (manifest-driven, hybrid for feature toggles) |
+| `dart run <app>:artisan starter:configure` | Interactively toggle features and update config |
+| `dart run <app>:artisan starter:doctor` | Diagnose project setup and installation issues (also exposed as read-only MCP tool) |
+| `dart run <app>:artisan starter:publish --tag=views:auth.login` | Publish (copy) a view/layout for customization |
+| `dart run <app>:artisan starter:uninstall` | Remove scaffolded files from consumer project |
 
 ## Architecture
 
@@ -44,11 +51,20 @@ lib/
     │   ├── layouts/               # AppLayout (authenticated), GuestLayout (auth pages)
     │   ├── views/                 # auth/, profile/, teams/, notifications/
     │   └── widgets/               # 13 reusable Wind UI components
-    └── cli/                        # install, configure, doctor, publish, uninstall
-bin/
-└── magic_starter.dart              # CLI entry point — registers commands with Kernel
-assets/stubs/                       # Stub templates for code generation
+    └── cli/                        # Install command + provider (no bin/ — surfaces via host app's artisan)
+        ├── starter_artisan_provider.dart  # 5 commands (install, configure, doctor, publish, uninstall) + read-only mcpTool (starter_doctor)
+        ├── commands/
+        │   ├── magic_starter_install_command.dart   # ArtisanInstallCommand + install.yaml manifest
+        │   ├── magic_starter_configure_command.dart # Feature toggle configuration
+        │   ├── magic_starter_doctor_command.dart    # Diagnose setup issues (exposed as MCP tool)
+        │   ├── magic_starter_publish_command.dart   # Publish views for customization
+        │   └── magic_starter_uninstall_command.dart # Remove scaffolded files
+        └── cli.dart                       # Barrel export (provider + commands)
+install.yaml                           # Manifest for static install scaffolding (config publish, provider injection)
+assets/stubs/                          # Stub templates for code generation
 ```
+
+**CLI Surface**: Commands surface via the host app's artisan registry, not a standalone bin/. The host app registers `StarterArtisanProvider` in its `artisan.providers`, exposing 5 commands and 1 read-only MCP tool.
 
 **Data flow:** App boot → `MagicStarterServiceProvider.register()` → binds manager + 9 Gate abilities → `boot()` → resolves config, registers default views → Feature-gated routes registered → Controllers handle HTTP via `Http.*` → Views render via `MagicStatefulView` + Wind UI
 
@@ -111,7 +127,7 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | Hardcoding dialog classNames | All modal classNames must come from `MagicStarter.manager.modalTheme` — never hardcode in widget build methods |
 | Theme sub-theme ordering | `useTheme()` sets all 7 sub-themes at once; individual `useFormTheme()` etc. can override after. Call unified first if using both |
 | Slot not rendering | `MagicStarter.view.slot(viewKey, slotName, builder)` must be called before the view is built. Views call `buildSlot()` at build time |
-| Published view not loading | `dart run magic_starter:publish` copies views to `lib/resources/views/starter/`. Auto-wire adds `MagicStarter.view.register()` to AppServiceProvider |
+| Published view not loading | `dart run <app>:artisan starter:publish` copies views to `lib/resources/views/starter/`. Auto-wire adds `MagicStarter.view.register()` to AppServiceProvider |
 | `Icons.*` in `build()` | Extract as `static const _iconName = Icons.xxx` — required for Flutter web tree-shaking |
 
 ## Skills & Extensions
