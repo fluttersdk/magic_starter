@@ -1069,8 +1069,9 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
         : content.length;
     final flutterSection = content.substring(flutterMatch.start, flutterEnd);
 
-    // Early return if no assets: key in the flutter section.
-    if (!flutterSection.contains('assets:')) {
+    // Early return if no REAL (uncommented) assets: key in the flutter section
+    // (a plain contains() would match the commented `# assets:` example).
+    if (!RegExp(r'^\s*assets:', multiLine: true).hasMatch(flutterSection)) {
       return false;
     }
 
@@ -1126,8 +1127,11 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
         : content.length;
     final flutterSection = content.substring(flutterMatch.start, flutterEnd);
 
-    // Skip if assets: already exists in the flutter section.
-    if (flutterSection.contains('assets:')) {
+    // Skip if a REAL (uncommented) assets: key already exists. A plain
+    // `contains('assets:')` would match the commented `# assets:` example that
+    // `flutter create` ships, causing this to bail out and append a SECOND
+    // `flutter:` section -> duplicate top-level key -> invalid YAML.
+    if (RegExp(r'^\s*assets:', multiLine: true).hasMatch(flutterSection)) {
       return false;
     }
 

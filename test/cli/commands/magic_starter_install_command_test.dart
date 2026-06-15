@@ -625,6 +625,51 @@ flutter:
       expect(content, contains('- .env'));
     });
 
+    test(
+        'pubspec with only the commented `# assets:` example does not get a '
+        'duplicate flutter: section (invalid YAML)', () async {
+      // Reproduces the real `flutter create` pubspec: a flutter: section whose
+      // ONLY assets reference is the commented-out example. A naive
+      // contains('assets:') check matches that comment and appends a SECOND
+      // flutter: key, producing invalid YAML that breaks all flutter tooling.
+      final File pubspecFile = File('${tempDir.path}/pubspec.yaml');
+      pubspecFile.writeAsStringSync('''
+name: test_app
+description: Test host app
+dependencies:
+  flutter:
+    sdk: flutter
+  magic:
+    path: ../magic
+
+flutter:
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+''');
+
+      setupAppFile(tempDir);
+      setupMainFile(tempDir);
+      setupKernelFile(tempDir);
+      setupRouteServiceProviderFile(tempDir);
+      setupAppServiceProviderFile(tempDir);
+
+      await runInstall(command);
+
+      final String content = pubspecFile.readAsStringSync();
+
+      final int flutterKeyCount =
+          RegExp(r'^flutter:\s*$', multiLine: true).allMatches(content).length;
+      expect(
+        flutterKeyCount,
+        equals(1),
+        reason: 'Duplicate top-level flutter: key (invalid YAML).\n\n$content',
+      );
+      expect(content, contains('- assets/lang/en.json'));
+    });
+
     group('new scaffolding steps', () {
       test('creates lib/app/models/user.dart after install', () async {
         setupMagicProjectFiles(tempDir);
