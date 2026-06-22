@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:magic_cli/magic_cli.dart';
+import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_doctor_command.dart';
 import 'package:test/test.dart';
 
@@ -97,8 +97,8 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterDoctorCommand metadata', () {
-    test('name is "doctor"', () {
-      expect(command.name, equals('doctor'));
+    test('name is "starter:doctor"', () {
+      expect(command.name, equals('starter:doctor'));
     });
 
     test('description is not empty', () {
@@ -403,29 +403,33 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('generateReport', () {
-    test('contains a ✓ for every passing check in a fully installed project',
+    test('contains "OK" for every passing check in a fully installed project',
         () {
       _setupFullInstall(tempDir);
       final report = command.generateReport();
 
-      expect(report, contains('✓'));
+      expect(report, contains('OK'));
     });
 
-    test('contains a ✗ for each failing check', () {
+    test('contains "FAIL" for each failing check', () {
       // No files created — all checks fail.
       final report = command.generateReport();
 
-      expect(report, contains('✗'));
+      expect(report, contains('FAIL'));
     });
 
-    test('shows ✓ for magic framework when lib/config/app.dart exists', () {
+    test(
+        'shows passing result for magic framework when lib/config/app.dart exists',
+        () {
       _writeFile(tempDir, 'lib/config/app.dart', '// app');
       final report = command.generateReport();
 
       expect(report, contains('Magic Framework'));
     });
 
-    test('shows ✓ for starter config when magic_starter.dart exists', () {
+    test(
+        'shows passing result for starter config when magic_starter.dart exists',
+        () {
       _writeFile(tempDir, 'lib/config/magic_starter.dart', '// cfg');
       final report = command.generateReport();
 
@@ -631,7 +635,7 @@ void main() {
       expect(report, contains('Published Views'));
     });
 
-    test('report shows check mark for a wired published view', () {
+    test('report shows "OK" for a wired published view', () {
       _setupFullInstall(tempDir);
       _writeFile(
         tempDir,
@@ -651,7 +655,8 @@ void main() {
 
       final report = command.generateReport();
 
-      expect(report, contains('✓'));
+      // The command emits "OK <viewPath>" for a wired view.
+      expect(report, contains('OK'));
       expect(
         report,
         contains(
@@ -660,7 +665,7 @@ void main() {
       );
     });
 
-    test('report shows warning symbol for an unwired published view', () {
+    test('report shows "WARN" for an unwired published view', () {
       _setupFullInstall(tempDir);
       _writeFile(
         tempDir,
@@ -679,7 +684,7 @@ void main() {
 
       final report = command.generateReport();
 
-      expect(report, contains('⚠'));
+      expect(report, contains('WARN'));
       expect(report, contains('Not wired'));
     });
 
@@ -725,11 +730,14 @@ void main() {
       expect(() => parser.parse(['--verbose']), returnsNormally);
     });
 
-    test('-v short flag is also accepted', () {
+    test('unknown flag raises ArgParserException', () {
+      // The signature DSL does not register a -v abbreviation; verify that
+      // an unrecognised flag causes a parse error rather than silently
+      // passing through.
       final parser = ArgParser();
       command.configure(parser);
 
-      expect(() => parser.parse(['-v']), returnsNormally);
+      expect(() => parser.parse(['-v']), throwsA(isA<ArgParserException>()));
     });
   });
 }

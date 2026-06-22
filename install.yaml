@@ -1,0 +1,39 @@
+# magic_starter install manifest (PluginInstaller DSL schema v1).
+#
+# Hybrid layout:
+#
+#   - The STATIC layer below declares only the manifest-expressible work:
+#     injecting MagicStarterServiceProvider into the host's
+#     lib/config/app.dart providers list (`magic.provider`). The injection is
+#     idempotent (ConfigEditor lookahead regex no-ops on re-run).
+#
+#   - The DYNAMIC layer lives in MagicStarterInstallCommand's fluent override
+#     (_applyFluentOverride). It is manifest-inexpressible because it is
+#     feature-gated: the 13 opt-in feature toggles drive which config flags,
+#     route registrations, models, and AppServiceProvider boot blocks are
+#     scaffolded. Manifest `prompts:` run unconditionally during prepare(),
+#     so feature-gated selection stays in code (--non-interactive / --features
+#     branch + interactive Prompt.confirm loop).
+#
+#   - Stub-backed publishes (config, middleware, models, dashboard, routes,
+#     translations) route through the command's getStubSearchPaths() seam, not
+#     the manifest publish: section, because that seam is overridable for tests
+#     and resolves the plugin's assets/stubs/ without a consumer .dart_tool.
+#
+# See doc/install_yaml_schema.md (in fluttersdk_artisan) for the full schema.
+
+plugin_name: magic_starter
+
+magic:
+  # Static layer: inject the starter service provider into the host's
+  # lib/config/app.dart providers list. Import defaults to
+  # package:magic_starter/magic_starter.dart (derived from plugin_name).
+  provider: MagicStarterServiceProvider
+
+post_install:
+  message: |
+    Magic Starter installed. Next steps:
+
+    1. Review lib/config/magic_starter.dart feature toggles. Re-run
+       `dart run <app>:artisan starter:configure` to adjust them.
+    2. Run `flutter pub get && flutter run` to verify the bootstrap.

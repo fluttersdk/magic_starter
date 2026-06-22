@@ -21,7 +21,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-Magic Starter provides five CLI commands that manage the full lifecycle of the plugin inside a host Magic application — from initial scaffolding through configuration, diagnostics, customization, and removal. All commands extend `Command` from `magic_cli` and follow a consistent pattern: `configure(ArgParser)` for flag definitions and `handle()` for async execution logic.
+Magic Starter provides five CLI commands that manage the full lifecycle of the plugin inside a host Magic application, from initial scaffolding through configuration, diagnostics, customization, and removal. The commands surface through the host app's `fluttersdk_artisan` dispatcher (run them as `dart run <app>:artisan starter:<command>`): each extends `ArtisanCommand` (install extends `ArtisanInstallCommand`), declares a `signature` DSL string for its arguments and flags, and implements async `handle(ArtisanContext ctx)` for the execution logic.
 
 Every command resolves the host project root via `FileHelper.findProjectRoot()` and validates that the target is a Magic project before proceeding.
 

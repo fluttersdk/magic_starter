@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_publish_command.dart';
 import 'package:test/test.dart';
 
@@ -17,6 +18,26 @@ class TestMagicStarterPublishCommand extends MagicStarterPublishCommand {
 
   @override
   String? getPluginSourceDir() => _pluginSourceDir;
+}
+
+/// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
+/// [MapInput] (flags) and a [BufferedOutput] (capturable).
+///
+/// [tag] defaults to `'all'` to match the command default. Pass [force] to
+/// simulate `--force`.
+Future<int> _runPublish(
+  MagicStarterPublishCommand command, {
+  String tag = 'all',
+  bool force = false,
+}) {
+  final ctx = ArtisanContext.bare(
+    MapInput(<String, dynamic>{
+      'tag': tag,
+      'force': force,
+    }),
+    BufferedOutput(),
+  );
+  return command.handle(ctx);
 }
 
 void main() {
@@ -68,8 +89,8 @@ void main() {
   });
 
   group('MagicStarterPublishCommand', () {
-    test('name is publish', () {
-      expect(command.name, 'publish');
+    test('name is starter:publish', () {
+      expect(command.name, 'starter:publish');
     });
 
     test('--tag=config copies config file from plugin to host', () async {
@@ -78,9 +99,7 @@ void main() {
         'final map = <String, dynamic>{\'ok\': true};',
       );
 
-      await command.runWith([
-        '--tag=config',
-      ]);
+      await _runPublish(command, tag: 'config');
 
       expect(hostFileExists('lib/config/magic_starter.dart'), isTrue);
       expect(
@@ -99,9 +118,7 @@ void main() {
       existing.createSync(recursive: true);
       existing.writeAsStringSync('existing-content');
 
-      await command.runWith([
-        '--tag=config',
-      ]);
+      await _runPublish(command, tag: 'config');
 
       expect(existing.readAsStringSync(), 'existing-content');
     });
@@ -116,10 +133,7 @@ void main() {
       existing.createSync(recursive: true);
       existing.writeAsStringSync('existing-content');
 
-      await command.runWith([
-        '--tag=config',
-        '--force',
-      ]);
+      await _runPublish(command, tag: 'config', force: true);
 
       expect(existing.readAsStringSync(), 'forced-content');
     });
@@ -135,9 +149,7 @@ void main() {
         'class SettingsView {}',
       );
 
-      await command.runWith([
-        '--tag=views',
-      ]);
+      await _runPublish(command, tag: 'views');
 
       expect(
         hostFileExists(
@@ -162,9 +174,7 @@ void main() {
         '{"auth.login":"Login"}',
       );
 
-      await command.runWith([
-        '--tag=lang',
-      ]);
+      await _runPublish(command, tag: 'lang');
 
       expect(hostFileExists('assets/lang/en.json'), isTrue);
       expect(readHostFile('assets/lang/en.json'), '{"auth.login":"Login"}');
@@ -180,9 +190,7 @@ void main() {
         'class RedirectIfAuthenticated {}',
       );
 
-      await command.runWith([
-        '--tag=middleware',
-      ]);
+      await _runPublish(command, tag: 'middleware');
 
       expect(hostFileExists('lib/app/middleware/ensure_authenticated.dart'),
           isTrue);
@@ -222,7 +230,7 @@ void main() {
         'redirect-content',
       );
 
-      await command.runWith([]);
+      await _runPublish(command, tag: 'all');
 
       expect(hostFileExists('lib/config/magic_starter.dart'), isTrue);
       expect(
@@ -246,9 +254,7 @@ void main() {
 
       expect(Directory('${tempDir.path}/lib').existsSync(), isFalse);
 
-      await command.runWith([
-        '--tag=config',
-      ]);
+      await _runPublish(command, tag: 'config');
 
       expect(Directory('${tempDir.path}/lib/config').existsSync(), isTrue);
       expect(hostFileExists('lib/config/magic_starter.dart'), isTrue);
@@ -272,9 +278,7 @@ void main() {
         'class ProfileSettingsView {}',
       );
 
-      await command.runWith([
-        '--tag=views:auth',
-      ]);
+      await _runPublish(command, tag: 'views:auth');
 
       expect(
         hostFileExists(
@@ -305,9 +309,7 @@ void main() {
         'class RegisterView {}',
       );
 
-      await command.runWith([
-        '--tag=views:auth.login',
-      ]);
+      await _runPublish(command, tag: 'views:auth.login');
 
       expect(
         hostFileExists(
@@ -354,9 +356,7 @@ void main() {
         'otp',
       );
 
-      await command.runWith([
-        '--tag=views:auth',
-      ]);
+      await _runPublish(command, tag: 'views:auth');
 
       expect(
         hostFileExists(
@@ -401,9 +401,7 @@ void main() {
         'class NotificationPreferencesView {}',
       );
 
-      await command.runWith([
-        '--tag=views:notifications',
-      ]);
+      await _runPublish(command, tag: 'views:notifications');
 
       expect(
         hostFileExists(
@@ -418,9 +416,7 @@ void main() {
     });
 
     test('--tag=views:unknown reports error for unknown view scope', () async {
-      await command.runWith([
-        '--tag=views:unknown',
-      ]);
+      await _runPublish(command, tag: 'views:unknown');
 
       // No files should be created.
       expect(
@@ -443,9 +439,7 @@ void main() {
         'class GuestLayout {}',
       );
 
-      await command.runWith([
-        '--tag=layouts',
-      ]);
+      await _runPublish(command, tag: 'layouts');
 
       expect(
         hostFileExists(
@@ -469,9 +463,7 @@ void main() {
         'class GuestLayout {}',
       );
 
-      await command.runWith([
-        '--tag=layouts:app',
-      ]);
+      await _runPublish(command, tag: 'layouts:app');
 
       expect(
         hostFileExists(
@@ -497,9 +489,7 @@ void main() {
         'class GuestLayout {}',
       );
 
-      await command.runWith([
-        '--tag=layouts:guest',
-      ]);
+      await _runPublish(command, tag: 'layouts:guest');
 
       expect(
         hostFileExists(
@@ -510,9 +500,7 @@ void main() {
 
     test('--tag=layouts:unknown reports error for unknown layout scope',
         () async {
-      await command.runWith([
-        '--tag=layouts:unknown',
-      ]);
+      await _runPublish(command, tag: 'layouts:unknown');
 
       expect(
         Directory('${tempDir.path}/lib/resources').existsSync(),
@@ -537,10 +525,7 @@ void main() {
       existing.createSync(recursive: true);
       existing.writeAsStringSync('old-login-content');
 
-      await command.runWith([
-        '--tag=views:auth.login',
-        '--force',
-      ]);
+      await _runPublish(command, tag: 'views:auth.login', force: true);
 
       expect(
         readHostFile(
@@ -562,9 +547,7 @@ void main() {
       existing.createSync(recursive: true);
       existing.writeAsStringSync('old-login-content');
 
-      await command.runWith([
-        '--tag=views:auth.login',
-      ]);
+      await _runPublish(command, tag: 'views:auth.login');
 
       expect(
         readHostFile(
@@ -579,9 +562,7 @@ void main() {
         'class ProfileSettingsView {}',
       );
 
-      await command.runWith([
-        '--tag=views:profile',
-      ]);
+      await _runPublish(command, tag: 'views:profile');
 
       expect(
         hostFileExists(
@@ -604,9 +585,7 @@ void main() {
         'class TeamInvitationAcceptView {}',
       );
 
-      await command.runWith([
-        '--tag=views:teams',
-      ]);
+      await _runPublish(command, tag: 'views:teams');
 
       expect(
         hostFileExists(
@@ -653,9 +632,7 @@ class AppServiceProvider extends ServiceProvider {
 ''',
       );
 
-      await command.runWith([
-        '--tag=views:auth.login',
-      ]);
+      await _runPublish(command, tag: 'views:auth.login');
 
       final content =
           readHostFile('lib/app/providers/app_service_provider.dart');
@@ -700,9 +677,7 @@ class AppServiceProvider extends ServiceProvider {
 ''',
       );
 
-      await command.runWith([
-        '--tag=layouts:app',
-      ]);
+      await _runPublish(command, tag: 'layouts:app');
 
       final content =
           readHostFile('lib/app/providers/app_service_provider.dart');
@@ -746,16 +721,10 @@ class AppServiceProvider extends ServiceProvider {
       );
 
       // First publish.
-      await command.runWith([
-        '--tag=views:auth.login',
-        '--force',
-      ]);
+      await _runPublish(command, tag: 'views:auth.login', force: true);
 
       // Second publish (with force to re-copy file).
-      await command.runWith([
-        '--tag=views:auth.login',
-        '--force',
-      ]);
+      await _runPublish(command, tag: 'views:auth.login', force: true);
 
       final content =
           readHostFile('lib/app/providers/app_service_provider.dart');
@@ -791,9 +760,7 @@ class AppServiceProvider extends ServiceProvider {
 
       // Do NOT create AppServiceProvider file.
 
-      await command.runWith([
-        '--tag=views:auth.login',
-      ]);
+      await _runPublish(command, tag: 'views:auth.login');
 
       // Verify the view was still published.
       expect(
@@ -836,9 +803,7 @@ class AppServiceProvider extends ServiceProvider {
 ''',
       );
 
-      await command.runWith([
-        '--tag=views:auth',
-      ]);
+      await _runPublish(command, tag: 'views:auth');
 
       final content =
           readHostFile('lib/app/providers/app_service_provider.dart');

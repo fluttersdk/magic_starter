@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:magic_cli/magic_cli.dart';
+import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:path/path.dart' as p;
 
 import '../helpers/magic_starter_config_helper.dart';
@@ -16,7 +16,7 @@ import '../helpers/magic_starter_config_helper.dart';
 /// - `--tag=views:auth.login` publishes a single view by registry key
 /// - `--tag=layouts` publishes both layouts
 /// - `--tag=layouts:app` publishes a single layout
-class MagicStarterPublishCommand extends Command {
+class MagicStarterPublishCommand extends ArtisanCommand {
   // -------------------------------------------------------------------------
   // View and layout file maps
   // -------------------------------------------------------------------------
@@ -49,29 +49,17 @@ class MagicStarterPublishCommand extends Command {
     'app': 'ui/layouts/magic_starter_app_layout.dart',
     'guest': 'ui/layouts/magic_starter_guest_layout.dart',
   };
+
   @override
-  String get name => 'publish';
+  String get signature => 'starter:publish '
+      '{--force : Overwrite existing files} '
+      '{--tag=all : Publish group (config|views|layouts|middleware|lang|all) with optional scope (views:auth, views:auth.login, layouts:app)}';
 
   @override
   String get description => 'Publish Magic Starter files for customization';
 
   @override
-  void configure(ArgParser parser) {
-    parser.addFlag(
-      'force',
-      abbr: 'f',
-      help: 'Overwrite existing files.',
-      defaultsTo: false,
-      negatable: false,
-    );
-
-    parser.addOption(
-      'tag',
-      help: 'Publish group: config, views, layouts, middleware, lang, all.\n'
-          'Granular: views:auth, views:auth.login, layouts:app.',
-      defaultsTo: 'all',
-    );
-  }
+  CommandBoot get boot => CommandBoot.none;
 
   /// Resolve the host project root path.
   ///
@@ -88,17 +76,18 @@ class MagicStarterPublishCommand extends Command {
   }
 
   @override
-  Future<void> handle() async {
-    info(ConsoleStyle.banner('Magic Starter', '0.0.1'));
+  Future<int> handle(ArtisanContext ctx) async {
+    ctx.output.info(ConsoleStyle.banner('Magic Starter', '0.0.1'));
 
     final projectRoot = getProjectRoot();
     final pluginSourceDir = getPluginSourceDir();
-    final force = arguments['force'] as bool? ?? false;
-    final tag = arguments['tag'] as String? ?? 'all';
+    final force = (ctx.input.option('force') as bool?) ?? false;
+    final tag = (ctx.input.option('tag') as String?) ?? 'all';
 
     if (pluginSourceDir == null) {
-      error('Could not resolve the magic_starter plugin source directory.');
-      return;
+      ctx.output.error(
+          'Could not resolve the magic_starter plugin source directory.');
+      return 1;
     }
 
     // Parse colon-separated tag: group[:scope].
@@ -111,17 +100,14 @@ class MagicStarterPublishCommand extends Command {
     // 1. Publish each requested tag group.
     if (group == 'config' || group == 'all') {
       published.addAll(
-        _publishConfig(
-          projectRoot,
-          pluginSourceDir,
-          force,
-        ),
+        _publishConfig(ctx, projectRoot, pluginSourceDir, force),
       );
     }
 
     if (group == 'views' || group == 'all') {
       published.addAll(
         _publishViewsWithScope(
+          ctx,
           projectRoot,
           pluginSourceDir,
           force,
@@ -133,6 +119,7 @@ class MagicStarterPublishCommand extends Command {
     if (group == 'layouts' || group == 'all') {
       published.addAll(
         _publishLayoutsWithScope(
+          ctx,
           projectRoot,
           pluginSourceDir,
           force,
@@ -143,21 +130,13 @@ class MagicStarterPublishCommand extends Command {
 
     if (group == 'middleware' || group == 'all') {
       published.addAll(
-        _publishMiddleware(
-          projectRoot,
-          pluginSourceDir,
-          force,
-        ),
+        _publishMiddleware(ctx, projectRoot, pluginSourceDir, force),
       );
     }
 
     if (group == 'lang' || group == 'all') {
       published.addAll(
-        _publishLang(
-          projectRoot,
-          pluginSourceDir,
-          force,
-        ),
+        _publishLang(ctx, projectRoot, pluginSourceDir, force),
       );
     }
 
@@ -171,29 +150,33 @@ class MagicStarterPublishCommand extends Command {
       'all'
     };
     if (!knownGroups.contains(group)) {
-      error('Unknown tag: $tag');
-      return;
+      ctx.output.error('Unknown tag: $tag');
+      return 1;
     }
 
     // 3. Report result summary.
     if (published.isEmpty) {
-      warn('No files were published.');
-      return;
+      ctx.output.warning('No files were published.');
+      return 0;
     }
 
-    success('Published ${published.length} file(s).');
+    ctx.output.success('Published ${published.length} file(s).');
 
     // 4. Auto-wire published views/layouts into AppServiceProvider.
     if (group == 'views' || group == 'layouts' || group == 'all') {
       _autoWireRegistrations(
+        ctx: ctx,
         projectRoot: projectRoot,
         group: group,
         scope: scope,
       );
     }
+
+    return 0;
   }
 
   List<String> _publishConfig(
+    ArtisanContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -201,14 +184,11 @@ class MagicStarterPublishCommand extends Command {
     final source = '$pluginSourceDir/lib/config/magic_starter.dart';
     final destination = '$projectRoot/lib/config/magic_starter.dart';
 
-    return _copyFile(
-      source,
-      destination,
-      force,
-    );
+    return _copyFile(ctx, source, destination, force);
   }
 
   List<String> _publishViewsWithScope(
+    ArtisanContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -216,17 +196,18 @@ class MagicStarterPublishCommand extends Command {
   ) {
     // No scope: publish all views (original behavior).
     if (scope == null) {
-      return _publishAllViews(projectRoot, pluginSourceDir, force);
+      return _publishAllViews(ctx, projectRoot, pluginSourceDir, force);
     }
 
     // Resolve matching entries from the view file map.
     final entries = _resolveViewEntries(scope);
     if (entries.isEmpty) {
-      error('Unknown view scope: $scope');
+      ctx.output.error('Unknown view scope: $scope');
       return [];
     }
 
     return _publishFileMapEntries(
+      ctx,
       entries,
       projectRoot,
       pluginSourceDir,
@@ -236,6 +217,7 @@ class MagicStarterPublishCommand extends Command {
   }
 
   List<String> _publishLayoutsWithScope(
+    ArtisanContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -244,6 +226,7 @@ class MagicStarterPublishCommand extends Command {
     // No scope: publish all layouts.
     if (scope == null) {
       return _publishFileMapEntries(
+        ctx,
         _layoutFileMap,
         projectRoot,
         pluginSourceDir,
@@ -255,6 +238,7 @@ class MagicStarterPublishCommand extends Command {
     // Single layout by key.
     if (_layoutFileMap.containsKey(scope)) {
       return _publishFileMapEntries(
+        ctx,
         {scope: _layoutFileMap[scope]!},
         projectRoot,
         pluginSourceDir,
@@ -263,12 +247,13 @@ class MagicStarterPublishCommand extends Command {
       );
     }
 
-    error('Unknown layout scope: $scope');
+    ctx.output.error('Unknown layout scope: $scope');
     return [];
   }
 
   /// Publishes all view files by scanning the source directory.
   List<String> _publishAllViews(
+    ArtisanContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -277,7 +262,8 @@ class MagicStarterPublishCommand extends Command {
         Directory(p.join(pluginSourceDir, 'lib', 'src', 'ui', 'views'));
 
     if (!sourceViewsDir.existsSync()) {
-      warn('Views source directory not found: ${sourceViewsDir.path}');
+      ctx.output
+          .warning('Views source directory not found: ${sourceViewsDir.path}');
       return [];
     }
 
@@ -293,11 +279,7 @@ class MagicStarterPublishCommand extends Command {
           projectRoot, 'lib', 'resources', 'views', 'starter', relativePath);
 
       published.addAll(
-        _copyFile(
-          entry.path,
-          destination,
-          force,
-        ),
+        _copyFile(ctx, entry.path, destination, force),
       );
     }
 
@@ -325,6 +307,7 @@ class MagicStarterPublishCommand extends Command {
 
   /// Publishes files from a key-to-relative-path map.
   List<String> _publishFileMapEntries(
+    ArtisanContext ctx,
     Map<String, String> fileMap,
     String projectRoot,
     String pluginSourceDir,
@@ -345,11 +328,7 @@ class MagicStarterPublishCommand extends Command {
               p.joinAll(subDirParts), fileName);
 
       published.addAll(
-        _copyFile(
-          source,
-          destination,
-          force,
-        ),
+        _copyFile(ctx, source, destination, force),
       );
     }
 
@@ -357,6 +336,7 @@ class MagicStarterPublishCommand extends Command {
   }
 
   List<String> _publishMiddleware(
+    ArtisanContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -373,6 +353,7 @@ class MagicStarterPublishCommand extends Command {
     for (final entry in middlewareFiles.entries) {
       published.addAll(
         _copyFile(
+          ctx,
           entry.value,
           '$projectRoot/lib/app/middleware/${entry.key}.dart',
           force,
@@ -384,11 +365,13 @@ class MagicStarterPublishCommand extends Command {
   }
 
   List<String> _publishLang(
+    ArtisanContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
   ) {
     return _copyFile(
+      ctx,
       '$pluginSourceDir/assets/stubs/install/en.stub',
       '$projectRoot/assets/lang/en.json',
       force,
@@ -396,6 +379,7 @@ class MagicStarterPublishCommand extends Command {
   }
 
   List<String> _copyFile(
+    ArtisanContext ctx,
     String sourcePath,
     String destinationPath,
     bool force,
@@ -403,12 +387,12 @@ class MagicStarterPublishCommand extends Command {
     final sourceFile = File(sourcePath);
 
     if (!sourceFile.existsSync()) {
-      warn('Source file not found: $sourcePath');
+      ctx.output.warning('Source file not found: $sourcePath');
       return [];
     }
 
     if (FileHelper.fileExists(destinationPath) && !force) {
-      warn('Skipped (already exists): $destinationPath');
+      ctx.output.warning('Skipped (already exists): $destinationPath');
       return [];
     }
 
@@ -419,10 +403,8 @@ class MagicStarterPublishCommand extends Command {
       content,
     );
 
-    info('Published: $destinationPath');
-    return [
-      destinationPath,
-    ];
+    ctx.output.info('Published: $destinationPath');
+    return [destinationPath];
   }
 
   // -------------------------------------------------------------------------
@@ -435,6 +417,7 @@ class MagicStarterPublishCommand extends Command {
   /// `MagicStarter.view.registerLayout()` calls. Idempotent: skips lines that
   /// already exist in the file.
   void _autoWireRegistrations({
+    required ArtisanContext ctx,
     required String projectRoot,
     required String group,
     String? scope,
@@ -443,7 +426,7 @@ class MagicStarterPublishCommand extends Command {
         '$projectRoot/lib/app/providers/app_service_provider.dart';
 
     if (!FileHelper.fileExists(providerPath)) {
-      warn(
+      ctx.output.warning(
         'Auto-wire: AppServiceProvider not found at '
         'lib/app/providers/app_service_provider.dart. '
         'Skipping registration injection.',
@@ -518,7 +501,8 @@ class MagicStarterPublishCommand extends Command {
     for (final reg in registrations) {
       // Check idempotency: skip if the registration line already exists.
       if (content.contains(reg.registrationLine)) {
-        info('Auto-wire: Skipped (already registered) ${reg.displayLabel}');
+        ctx.output.info(
+            'Auto-wire: Skipped (already registered) ${reg.displayLabel}');
         continue;
       }
 
@@ -529,7 +513,7 @@ class MagicStarterPublishCommand extends Command {
 
       // Inject registration before boot() closing brace.
       content = _injectBeforeBootClosingBrace(content, reg.registrationLine);
-      info('Registered: ${reg.displayLabel}');
+      ctx.output.info('Registered: ${reg.displayLabel}');
       injectedCount++;
     }
 

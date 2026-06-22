@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_uninstall_command.dart';
 import 'package:test/test.dart';
 
@@ -9,19 +10,9 @@ class TestMagicStarterUninstallCommand extends MagicStarterUninstallCommand {
   final String _projectRoot;
 
   bool didRunDartFormat = false;
-  int confirmCalls = 0;
 
   @override
   String getProjectRoot() => _projectRoot;
-
-  @override
-  bool confirm(
-    String question, {
-    bool? defaultValue,
-  }) {
-    confirmCalls++;
-    return false;
-  }
 
   @override
   Future<ProcessResult> runDartFormat(String rootPath) async {
@@ -34,6 +25,19 @@ class TestMagicStarterUninstallCommand extends MagicStarterUninstallCommand {
       '',
     );
   }
+}
+
+/// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
+/// [MapInput] (flags) and a [BufferedOutput] (capturable).
+Future<int> _runUninstall(
+  MagicStarterUninstallCommand command, {
+  bool force = false,
+}) {
+  final ctx = ArtisanContext.bare(
+    MapInput(<String, dynamic>{'force': force}),
+    BufferedOutput(),
+  );
+  return command.handle(ctx);
 }
 
 void main() {
@@ -52,16 +56,14 @@ void main() {
       }
     });
 
-    test('name is uninstall', () {
-      expect(command.name, 'uninstall');
+    test('name is starter:uninstall', () {
+      expect(command.name, 'starter:uninstall');
     });
 
     test('deletes lib/config/magic_starter.dart', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final File configFile =
           File('${tempDir.path}/lib/config/magic_starter.dart');
@@ -71,9 +73,7 @@ void main() {
     test('removes MagicStarterServiceProvider line from app.dart', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final String appContent =
           File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
@@ -84,9 +84,7 @@ void main() {
     test('removes magic_starter import from app.dart', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final String appContent =
           File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
@@ -100,9 +98,7 @@ void main() {
     test('removes magicStarterConfig factory from main.dart', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final String mainContent =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
@@ -113,9 +109,7 @@ void main() {
     test('removes magic_starter config import from main.dart', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final String mainContent =
           File('${tempDir.path}/lib/main.dart').readAsStringSync();
@@ -129,9 +123,7 @@ void main() {
     test('removes middleware aliases from kernel.dart', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final String kernelContent =
           File('${tempDir.path}/lib/app/kernel.dart').readAsStringSync();
@@ -152,9 +144,7 @@ void main() {
         () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final String content =
           File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
@@ -176,11 +166,8 @@ void main() {
     test('--force skips confirmation prompt', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
-      expect(command.confirmCalls, 0);
       expect(
         File('${tempDir.path}/lib/config/magic_starter.dart').existsSync(),
         isFalse,
@@ -191,9 +178,7 @@ void main() {
       setupInstalledProject(tempDir);
       File('${tempDir.path}/lib/config/magic_starter.dart').deleteSync();
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       expect(true, isTrue);
     });
@@ -217,9 +202,7 @@ Map<String, dynamic> get appConfig => {
 ''',
       );
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       expect(true, isTrue);
     });
@@ -227,9 +210,7 @@ Map<String, dynamic> get appConfig => {
     test('runs dart format after uninstall', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       expect(command.didRunDartFormat, isTrue);
     });
@@ -237,9 +218,7 @@ Map<String, dynamic> get appConfig => {
     test('removes magic_starter dependency from pubspec.yaml', () async {
       setupInstalledProject(tempDir);
 
-      await command.runWith([
-        '--force',
-      ]);
+      await _runUninstall(command, force: true);
 
       final String pubspecContent =
           File('${tempDir.path}/pubspec.yaml').readAsStringSync();

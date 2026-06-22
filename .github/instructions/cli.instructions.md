@@ -6,13 +6,15 @@ applyTo: 'lib/src/cli/**/*.dart'
 
 # CLI Commands
 
-- Class hierarchy: `extends Command` from `magic_cli`
-- Lifecycle: `configure(ArgParser parser)` for flags/options, `handle()` async for main logic
+- Class hierarchy: `extends ArtisanCommand` (or `extends ArtisanInstallCommand` for install) from `fluttersdk_artisan`
+- Lifecycle: `signature` DSL property (`'name {arg} {--flag}'`) or `configure(ArgParser)` for flags, async `handle(ArtisanContext ctx)` for main logic
+- Boot mode: `CommandBoot.none` (commands run out-of-isolate, no Flutter app instance required)
+- Install command pattern: `extends ArtisanInstallCommand`, drives the `install.yaml` manifest, fluent override for dynamic logic (feature toggles, conditional prompts)
 - Overridable methods for testability: `getProjectRoot()`, `getStubSearchPaths()`, `runDartFormat()`
-- Stub lookup: multiple search paths with fallback — use `_resolvePluginStubsDir()` helper
+- Stub lookup: standardized on `resolveMagicStubsDir().parent.parent`, consistent across plugins
 - File operations via `FileHelper`: `fileExists()`, `findProjectRoot()`, `readFile()`, `writeFile()`
-- Process execution: `Process.run('dart', ['format', '.'], workingDirectory: path)` — captured output, not streamed
-- User feedback: `info('message')` for progress, `Log.warning('[MagicStarter] message')` for issues
+- Process execution: `Process.run('dart', ['format', '.'], workingDirectory: path)`, captured output (not streamed)
+- User feedback: `ctx.output.info('message')` for progress, `ctx.output.error('message')` for errors
 - Non-interactive mode: support `--non-interactive` flag with `--features` option for CI
 - Validate host app is a Magic project before proceeding — check for `pubspec.yaml` with magic dependency
 - Step-by-step file creation with `--force` flag to override existing files

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_configure_command.dart';
 import 'package:test/test.dart';
 
@@ -12,6 +13,20 @@ class _TestMagicStarterConfigureCommand extends MagicStarterConfigureCommand {
 
   @override
   String getProjectRoot() => _root;
+}
+
+/// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
+/// [MapInput] (flags) and a [BufferedOutput] (capturable).
+///
+/// Flags are passed as a plain map: include a key to signal "was parsed",
+/// omit it to leave it untouched. Bool flags use `true`/`false` as values;
+/// string options supply the string value directly.
+Future<int> _runConfigure(
+  MagicStarterConfigureCommand command,
+  Map<String, dynamic> flags,
+) {
+  final ctx = ArtisanContext.bare(MapInput(flags), BufferedOutput());
+  return command.handle(ctx);
 }
 
 /// Writes a canonical magic_starter config file to [dir] with the given
@@ -67,8 +82,8 @@ void main() {
   // Command identity
   // -------------------------------------------------------------------------
   group('command identity', () {
-    test('name is configure', () {
-      expect(command.name, equals('configure'));
+    test('name is starter:configure', () {
+      expect(command.name, equals('starter:configure'));
     });
 
     test('description is non-empty', () {
@@ -81,7 +96,7 @@ void main() {
   // -------------------------------------------------------------------------
   group('--show', () {
     test('displays current configuration without errors', () async {
-      await command.runWith(['--show']);
+      await _runConfigure(command, {'show': true});
       // If we reach here without exception, output succeeded.
     });
 
@@ -89,7 +104,7 @@ void main() {
       File('${tempDir.path}/lib/config/magic_starter.dart').deleteSync();
 
       // Should not throw but should write to stderr — just verify no crash.
-      await command.runWith(['--show']);
+      await _runConfigure(command, {'show': true});
     });
   });
 
@@ -101,7 +116,7 @@ void main() {
       File('${tempDir.path}/lib/config/magic_starter.dart').deleteSync();
 
       // Must not throw — handle() should write error and return.
-      await command.runWith(['--teams']);
+      await _runConfigure(command, {'teams': true});
     });
   });
 
@@ -112,7 +127,7 @@ void main() {
     test('toggles teams feature on with --teams', () async {
       _setupConfigFile(tempDir, teams: false);
 
-      await command.runWith(['--teams']);
+      await _runConfigure(command, {'teams': true});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -122,7 +137,7 @@ void main() {
     test('toggles teams feature off with --no-teams', () async {
       _setupConfigFile(tempDir, teams: true);
 
-      await command.runWith(['--no-teams']);
+      await _runConfigure(command, {'teams': false});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -137,7 +152,7 @@ void main() {
     test('toggles social-login feature on with --social-login', () async {
       _setupConfigFile(tempDir, socialLogin: false);
 
-      await command.runWith(['--social-login']);
+      await _runConfigure(command, {'social-login': true});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -147,7 +162,7 @@ void main() {
     test('toggles social-login feature off with --no-social-login', () async {
       _setupConfigFile(tempDir, socialLogin: true);
 
-      await command.runWith(['--no-social-login']);
+      await _runConfigure(command, {'social-login': false});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -167,11 +182,11 @@ void main() {
         emailVerification: false,
       );
 
-      await command.runWith([
-        '--teams',
-        '--newsletter',
-        '--email-verification',
-      ]);
+      await _runConfigure(command, {
+        'teams': true,
+        'newsletter': true,
+        'email-verification': true,
+      });
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -198,7 +213,7 @@ void main() {
         emailVerification: false,
       );
 
-      await command.runWith(['--teams']);
+      await _runConfigure(command, {'teams': true});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -224,8 +239,8 @@ void main() {
     test('setting same value twice does not corrupt the file', () async {
       _setupConfigFile(tempDir, teams: true);
 
-      await command.runWith(['--teams']);
-      await command.runWith(['--teams']);
+      await _runConfigure(command, {'teams': true});
+      await _runConfigure(command, {'teams': true});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -236,8 +251,8 @@ void main() {
     test('toggling off then on restores original value', () async {
       _setupConfigFile(tempDir, socialLogin: true);
 
-      await command.runWith(['--no-social-login']);
-      await command.runWith(['--social-login']);
+      await _runConfigure(command, {'social-login': false});
+      await _runConfigure(command, {'social-login': true});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -251,7 +266,7 @@ void main() {
   group('all feature flags', () {
     test('--two-factor enables two_factor feature', () async {
       _setupConfigFile(tempDir, twoFactor: false);
-      await command.runWith(['--two-factor']);
+      await _runConfigure(command, {'two-factor': true});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -260,7 +275,7 @@ void main() {
 
     test('--no-sessions disables sessions feature', () async {
       _setupConfigFile(tempDir, sessions: true);
-      await command.runWith(['--no-sessions']);
+      await _runConfigure(command, {'sessions': false});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -269,7 +284,7 @@ void main() {
 
     test('--phone-otp enables phone_otp feature', () async {
       _setupConfigFile(tempDir, phoneOtp: false);
-      await command.runWith(['--phone-otp']);
+      await _runConfigure(command, {'phone-otp': true});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
@@ -278,7 +293,7 @@ void main() {
 
     test('--no-notifications disables notifications feature', () async {
       _setupConfigFile(tempDir, notifications: true);
-      await command.runWith(['--no-notifications']);
+      await _runConfigure(command, {'notifications': false});
 
       final content = File('${tempDir.path}/lib/config/magic_starter.dart')
           .readAsStringSync();
