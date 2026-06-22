@@ -143,8 +143,7 @@ void main() {
       );
 
       // Enter a valid-looking 6-digit code and tap confirm.
-      await tester.enterText(
-          find.byType(TextField, skipOffstage: false), '123456');
+      await tester.enterText(find.byType(TextField), '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -178,8 +177,7 @@ void main() {
       expect(find.byType(WSvg), findsOneWidget);
 
       // Simulate entering a 6-digit OTP and confirming.
-      await tester.enterText(
-          find.byType(TextField, skipOffstage: false), '654321');
+      await tester.enterText(find.byType(TextField), '654321');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -203,8 +201,7 @@ void main() {
         onConfirm: (_) async => false,
       );
 
-      await tester.enterText(
-          find.byType(TextField, skipOffstage: false), '000000');
+      await tester.enterText(find.byType(TextField), '000000');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -302,8 +299,7 @@ void main() {
       expect(find.byType(WSvg), findsOneWidget);
 
       // Enter OTP and confirm.
-      await tester.enterText(
-          find.byType(TextField, skipOffstage: false), '123456');
+      await tester.enterText(find.byType(TextField), '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -396,8 +392,7 @@ void main() {
       );
 
       // Enter a valid 6-digit code and tap confirm to advance to recovery step.
-      await tester.enterText(
-          find.byType(TextField, skipOffstage: false), '123456');
+      await tester.enterText(find.byType(TextField), '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -432,8 +427,7 @@ void main() {
       );
 
       // Enter a valid 6-digit code and tap confirm.
-      await tester.enterText(
-          find.byType(TextField, skipOffstage: false), '123456');
+      await tester.enterText(find.byType(TextField), '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
