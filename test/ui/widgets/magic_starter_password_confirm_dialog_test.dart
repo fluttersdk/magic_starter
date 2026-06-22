@@ -110,7 +110,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Enter password and tap confirm
-    final textField = find.byType(TextField);
+    final textField = find.byType(TextField, skipOffstage: false);
     await tester.enterText(textField, 'wrongpass');
     await tester.tap(find.text('common.confirm'));
     await tester.pumpAndSettle();
@@ -148,7 +148,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Find the text field inside WFormInput and enter text
-    final textField = find.byType(TextField);
+    final textField = find.byType(TextField, skipOffstage: false);
     await tester.enterText(textField, 'secretpassword');
     await tester.pump();
 
