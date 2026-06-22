@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### 🐛 Bug Fixes
+- **Social login translation keys**: the install-generated `assets/lang/en.json` (from `assets/stubs/install/en.stub`) now ships `auth.sign_in_with` and `auth.sign_up_with`. The social-login buttons (`SocialAuthButtons` from `magic_social_auth`) call `trans('auth.sign_in_with', {'provider': ...})`, but `magic_social_auth` ships no lang file and magic loads translations only from the consumer's `assets/lang`, so a fresh `starter:install` with `social_login` enabled previously rendered raw keys ("auth.sign_in_with") instead of "Sign in with Google". Surfaced by a full reference-app E2E bring-up.
 - **Mobile Header Brand**: `MagicStarterAppLayout` mobile topbar now honors `navigationTheme.brandBuilder`, so custom brand widgets render consistently across breakpoints when provided ([#65](https://github.com/fluttersdk/magic_starter/issues/65))
 - **Page Header Title Truncation**: `MagicStarterPageHeaderTheme` defaults now use `line-clamp-2` instead of `truncate` for `titleClassName` and `subtitleClassName`, so long titles wrap to a second line on narrow viewports (e.g. iPhone-width screens) instead of clipping to "AI sett..." ([#67](https://github.com/fluttersdk/magic_starter/issues/67))
 
