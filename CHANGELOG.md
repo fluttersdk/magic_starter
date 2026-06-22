@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 - **Breaking: Standalone CLI entrypoint** — removed `bin/magic_starter.dart` and `dart run magic_starter:*` commands. Commands now surface via the host app's artisan dispatcher. Migrate: `dart run magic_starter:install` becomes `dart run <app>:artisan starter:install` (register `StarterArtisanProvider` in your app's `artisan.providers` list).
-- **Removed magic_cli dependency** — CLI now builds on `fluttersdk_artisan ^0.0.7`.
+- **Removed magic_cli dependency**: CLI now builds on `fluttersdk_artisan ^0.0.8`.
 
 ### Changed
 - **Install is manifest-driven** — static scaffolding (config publish, provider injection) now driven by `install.yaml` manifest; dynamic logic (feature toggles, interactive mode) handled by fluent override in `MagicStarterInstallCommand`.

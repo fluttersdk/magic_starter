@@ -36,7 +36,6 @@ class TestMagicStarterInstallCommand extends MagicStarterInstallCommand {
     didRunDartFormat = true;
     return ProcessResult(1, 0, 'formatted', '');
   }
-
 }
 
 /// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
