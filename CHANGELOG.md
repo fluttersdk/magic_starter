@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - **Removed magic_cli dependency**: CLI now builds on `fluttersdk_artisan ^0.0.8`.
 
 ### Changed
+- **plugin:install auto-scaffolds starter**: `install.yaml` now declares `bootstrap_command: starter:install` so `plugin:install magic_starter` automatically runs the full starter scaffold (config, routes, middleware, dashboard) without a separate manual step. Requires `fluttersdk_artisan ^0.0.9` which introduced auto-execution of the `bootstrap_command` field. Pass `--no-bootstrap` to skip the auto-run.
+- **post_install message**: updated install completion message to reflect that `starter:install` now runs automatically. The message documents the `--no-bootstrap` opt-out and directs users to `starter:configure` for feature adjustments.
 - **Install is manifest-driven** — static scaffolding (config publish, provider injection) now driven by `install.yaml` manifest; dynamic logic (feature toggles, interactive mode) handled by fluent override in `MagicStarterInstallCommand`.
 
 ### Added
