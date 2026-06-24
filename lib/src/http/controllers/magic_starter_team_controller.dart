@@ -25,8 +25,27 @@ class MagicStarterTeamController extends MagicController
   dynamic get activeTeamId =>
       currentTeamId.value ?? MagicStarter.teamResolver?.currentTeam()?.id;
 
-  /// Get the active team name from the resolver.
-  String? get activeTeamName => MagicStarter.teamResolver?.currentTeam()?.name;
+  /// Get the active team name, consistent with [activeTeamId].
+  ///
+  /// When a team has been explicitly selected or just created
+  /// ([currentTeamId] set), the name is resolved from the resolver's
+  /// `allTeams()` by matching [activeTeamId]. This keeps the displayed name in
+  /// step with [activeTeamId] so the settings view opens the newly created (or
+  /// switched) team, not the resolver's previously current one. Falls back to
+  /// the resolver's `currentTeam()` when no local selection or match exists.
+  String? get activeTeamName {
+    final resolver = MagicStarter.teamResolver;
+    if (resolver == null) return null;
+
+    final localId = currentTeamId.value;
+    if (localId != null) {
+      for (final team in resolver.allTeams()) {
+        if (team.id == localId) return team.name;
+      }
+    }
+
+    return resolver.currentTeam()?.name;
+  }
 
   /// Render create team view via registry key.
   Widget create() => MagicStarter.view.make('teams.create');

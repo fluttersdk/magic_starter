@@ -291,6 +291,51 @@ void main() {
         expect(postCalls, hasLength(1));
       });
 
+      // REPORT #14: after creating a team, the team settings view opens the
+      // OLD team's settings. The settings view pre-fills its name field from
+      // [activeTeamName] (controller :29). The seam is the divergence between
+      // [activeTeamId] (prefers the local currentTeamId notifier) and
+      // [activeTeamName] (reads only the resolver, which still points at the
+      // previously active team because the new team is not yet the resolver's
+      // current team). After create, both getters must agree on the new team.
+      test(
+        'after create: activeTeamName reflects the new team, not the old one',
+        () async {
+          // The resolver simulates the consumer wiring: its "current team" is
+          // still the OLD team (id 1) because the resolver keys off a list that
+          // has not re-pointed at the freshly created team yet. The new team
+          // IS present in allTeams (the user belongs to it server-side).
+          const oldTeam = MagicStarterTeam(id: 1, name: 'Old Team');
+          const newTeam = MagicStarterTeam(id: 10, name: 'New Team');
+          MagicStarter.manager.teamResolver = MagicStarterTeamResolverConfig(
+            currentTeam: () => oldTeam,
+            allTeams: () => const [oldTeam, newTeam],
+            onSwitch: (_) async {},
+          );
+
+          mockDriver.stubResponse(
+            '/teams',
+            statusCode: 200,
+            data: {
+              'data': {
+                'id': 10,
+                'name': 'New Team',
+              },
+            },
+          );
+
+          await controller.doCreate(name: 'New Team');
+
+          // activeTeamId already prefers the local notifier and is correct.
+          expect(controller.activeTeamId, equals(10));
+
+          // The bug: activeTeamName returns 'Old Team' because it reads only
+          // the resolver's currentTeam(). It must reflect the new team so the
+          // settings view opens the new team, not the old one.
+          expect(controller.activeTeamName, equals('New Team'));
+        },
+      );
+
       test('failure (422) — returns false, sets error', () async {
         mockDriver.stubResponse(
           '/teams',

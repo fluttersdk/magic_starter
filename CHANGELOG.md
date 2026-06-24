@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Create team opens the new team's settings**: `MagicStarterTeamController.activeTeamName` now resolves the name from the team resolver's `allTeams()` keyed by `activeTeamId`, falling back to `currentTeam()`. Previously `activeTeamId` preferred the local `currentTeamId` notifier (set on create/switch) while `activeTeamName` read only the resolver's `currentTeam()`, so after creating a team the settings view pre-filled the OLD team's name and effectively opened the old team ([#14](https://github.com/fluttersdk/magic_starter/issues/14)).
+
 ### Removed
 - **Breaking: Standalone CLI entrypoint** — removed `bin/magic_starter.dart` and `dart run magic_starter:*` commands. Commands now surface via the host app's artisan dispatcher. Migrate: `dart run magic_starter:install` becomes `dart run <app>:artisan starter:install` (register `StarterArtisanProvider` in your app's `artisan.providers` list).
 - **Removed magic_cli dependency**: CLI now builds on `fluttersdk_artisan ^0.0.8`.
