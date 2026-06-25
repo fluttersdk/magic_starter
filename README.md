@@ -52,7 +52,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :bell: | **Notifications** | Real-time polling, mark read/unread, preference matrix |
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
-| :package: | **Reusable Widgets** | PageHeader, Card (3 variants), ConfirmDialog (3 variants), PasswordConfirmDialog, TwoFactorModal — all standalone |
+| :package: | **Design-System Components** | 29 atomic components (Button, Input, Badge, Dialog, Toast, Tabs, Accordion, and more) plus `MagicStarterTokens` semantic alias layer |
 | :gear: | **13 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
@@ -191,9 +191,53 @@ MagicStarter.useSidebarFooter((context) {
 
 ---
 
+## Design-System Components
+
+Magic Starter ships a full atomic design-system component library exported from `package:magic_starter/magic_starter.dart`. Every component lives in a canonical 4-file atomic folder (`<name>.dart`, `<name>.recipe.dart`, `<name>.preview.dart`, `index.dart`) under `lib/src/ui/components/` and is driven by a `WindRecipe` that reads from `MagicStarterTokens.defaultAliases`.
+
+### MagicStarterTokens
+
+`MagicStarterTokens.defaultAliases` is a map of 17 semantic roles to light+dark Wind className pairs:
+
+| Role | Example className pair |
+|------|----------------------|
+| `surface` | `bg-white dark:bg-gray-950` |
+| `fg` | `text-gray-900 dark:text-gray-50` |
+| `primary` | `bg-primary-600 dark:bg-primary-500` |
+| `destructive` | `bg-red-600 dark:bg-red-500` |
+| `border` | `border-gray-200 dark:border-gray-800` |
+
+Pass the map when configuring your Wind theme so all components resolve against semantic roles rather than raw palette utilities:
+
+```dart
+WindApp(
+  theme: WindThemeData(
+    aliases: MagicStarterTokens.defaultAliases,
+  ),
+  child: const MyApp(),
+)
+```
+
+> **Breaking import note**: the barrel now exports `Switch`, `Dialog`, `Checkbox`, `Radio`, `Badge`, `Typography`, `BottomSheet`, `Tooltip`, `DropdownMenu`, and `DropdownMenuItem`. If you import both `package:flutter/material.dart` and `package:magic_starter/magic_starter.dart`, add a `hide` clause on the conflicting names.
+
+### Component families
+
+| Family | Components |
+|--------|-----------|
+| Form controls | `Button`, `Input`, `Textarea`, `Checkbox`, `Switch`, `Radio`, `Select`, `Combobox` |
+| Display | `Badge`, `Typography`, `Skeleton`, `Toast`, `Tooltip`, `EmptyState`, `ErrorState` |
+| Selection / navigation | `SegmentedControl`, `Tabs`, `Accordion`, `Navbar`, `DropdownMenu` |
+| Overlay | `Dialog`, `BottomSheet` |
+| Composition | `MagicFormField`, `Card`, `PageHeader`, `SocialDivider` |
+| App chrome | `NotificationDropdown`, `UserProfileDropdown`, `TeamSelector` |
+
+All components accept Wind `className` strings and resolve colors through the semantic alias layer when configured.
+
+---
+
 ## Reusable Widgets
 
-Magic Starter exports a set of standalone UI widgets that consumer apps can use directly — no internal controller coupling required.
+Magic Starter also exports a set of standalone UI widgets that consumer apps can use directly. No internal controller coupling required.
 
 ### MagicStarterPageHeader
 

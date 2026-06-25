@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart'
-    show Button, SocialDivider;
+import 'package:magic_starter/magic_starter.dart' show Button, SocialDivider;
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
