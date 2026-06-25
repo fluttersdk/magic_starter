@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Card migrated to the atomic-component folder + `WindRecipe`**: the card now lives at `lib/src/ui/components/card/` in the canonical 4-file shape (`card.dart` → `class Card`, `card.recipe.dart`, `card.preview.dart`, `index.dart`) and resolves its root className through a theme-driven `WindRecipe` instead of inline string interpolation. The recipe output is byte-identical to the previous `_defaultClassName` for every `CardVariant` x `noPadding` combination (gated by an explicit equivalence test). `MagicStarterCard` is retained as a thin re-export alias of `Card`, and `CardVariant` plus the barrel export path (`package:magic_starter/magic_starter.dart`) are unchanged, so existing callers and the widget-test suite are untouched. This establishes the verbatim template for the Wave 4 component migration.
+
 ### Added
 - **`MagicStarterTokens.defaultAliases`**: semantic token alias map with 17 roles (`surface`, `surface-container`, `surface-container-high`, `fg`, `fg-muted`, `fg-disabled`, `primary`, `on-primary`, `primary-container`, `accent`, `border`, `border-subtle`, `destructive`, `on-destructive`, `destructive-container`, `success`, `warning`). Each role maps to a light+dark wind className pair (`'bg-... dark:bg-...'` / `'text-... dark:text-...'`). Pass as `WindThemeData(aliases: MagicStarterTokens.defaultAliases)` so components resolve against semantic roles rather than palette utilities directly. This map is the stable key contract that `design:sync` (Steps 20-21) will later regenerate from `DESIGN.md`.
 

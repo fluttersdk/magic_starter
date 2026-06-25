@@ -2,6 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/components/card/card.recipe.dart';
+
+/// Reproduces the pre-migration `_defaultClassName` interpolation verbatim.
+///
+/// This is the equivalence baseline the WindRecipe MUST match byte-for-byte
+/// for every variant x noPadding combination. It mirrors the original widget
+/// body at `magic_starter_card.dart:110-116` before the migration.
+String legacyDefaultClassName(
+  MagicStarterCardTheme theme,
+  CardVariant variant,
+  bool noPadding,
+) {
+  final v = switch (variant) {
+    CardVariant.surface => theme.surfaceClassName,
+    CardVariant.inset => theme.insetClassName,
+    CardVariant.elevated => theme.elevatedClassName,
+  };
+  return noPadding
+      ? 'w-full $v ${theme.borderRadius} overflow-hidden flex flex-col'
+      : 'w-full $v ${theme.borderRadius} ${theme.paddingClassName} flex flex-col gap-4';
+}
 
 void main() {
   setUp(() {
@@ -74,6 +95,64 @@ void main() {
 
     final wDiv = tester.widget<WDiv>(find.byType(WDiv));
     expect(wDiv.className, contains(customClassName));
+  });
+
+  // -------------------------------------------------------------------------
+  // WindRecipe byte-identical equivalence gate
+  // -------------------------------------------------------------------------
+
+  group('card recipe equivalence', () {
+    test(
+        'recipe output is byte-identical to legacy _defaultClassName for every '
+        'variant x noPadding combo (default theme)', () {
+      const theme = MagicStarterCardTheme();
+      final recipe = buildCardRecipe(theme);
+
+      for (final variant in CardVariant.values) {
+        for (final noPadding in [false, true]) {
+          final actual = recipe(
+            variants: {
+              kCardVariantAxis: variant.name,
+              kCardPaddingAxis:
+                  noPadding ? kCardPaddingNoPadding : kCardPaddingPadded,
+            },
+          );
+          final expected = legacyDefaultClassName(theme, variant, noPadding);
+
+          expect(
+            actual,
+            expected,
+            reason: 'variant=$variant noPadding=$noPadding must match exactly',
+          );
+        }
+      }
+    });
+
+    test('recipe output stays byte-identical under a custom theme', () {
+      const theme = MagicStarterCardTheme(
+        surfaceClassName: 'bg-zinc-900 border border-zinc-700',
+        insetClassName: 'bg-zinc-800 border border-zinc-700',
+        elevatedClassName: 'bg-zinc-900 shadow-lg',
+        borderRadius: 'rounded-xl',
+        paddingClassName: 'p-8',
+      );
+      final recipe = buildCardRecipe(theme);
+
+      for (final variant in CardVariant.values) {
+        for (final noPadding in [false, true]) {
+          final actual = recipe(
+            variants: {
+              kCardVariantAxis: variant.name,
+              kCardPaddingAxis:
+                  noPadding ? kCardPaddingNoPadding : kCardPaddingPadded,
+            },
+          );
+          final expected = legacyDefaultClassName(theme, variant, noPadding);
+
+          expect(actual, expected);
+        }
+      }
+    });
   });
 
   // -------------------------------------------------------------------------
