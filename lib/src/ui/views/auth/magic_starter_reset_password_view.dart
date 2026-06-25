@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart' show Button;
 
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
@@ -16,6 +18,10 @@ class MagicStarterResetPasswordView
 
 class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
     MagicStarterAuthController, MagicStarterResetPasswordView> {
+  static const _iconVisible = Icons.visibility;
+  static const _iconHidden = Icons.visibility_off;
+  static const _iconCheck = Icons.check_circle_outline;
+
   late final _token = MagicRouter.instance.pathParameter('token') ?? '';
   late final form = MagicFormData(
     {
@@ -28,9 +34,6 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
 
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
-
-  static const _iconVisible = Icons.visibility;
-  static const _iconHidden = Icons.visibility_off;
 
   @override
   void onInit() {
@@ -82,7 +85,7 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
             className:
                 'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
             child: WIcon(
-              Icons.check_circle_outline,
+              _iconCheck,
               className: 'text-[32px] text-green-600 dark:text-green-400',
             ),
           ),
@@ -190,9 +193,9 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
             const WSpacer(className: 'h-6'),
 
             // Submit
-            WButton(
+            Button(
               isLoading: isLoading,
-              onTap: _submit,
+              onPressed: _submit,
               className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('auth.reset_password_button'),

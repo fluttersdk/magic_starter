@@ -28,7 +28,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
-      expect(find.byType(MagicStarterSocialDivider), findsNothing);
+      expect(find.byType(SocialDivider), findsNothing);
     });
 
     testWidgets(
@@ -38,7 +38,7 @@ void main() {
 
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
-      expect(find.byType(MagicStarterSocialDivider), findsNothing);
+      expect(find.byType(SocialDivider), findsNothing);
     });
 
     testWidgets(
@@ -51,7 +51,7 @@ void main() {
 
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
-      expect(find.byType(MagicStarterSocialDivider), findsOneWidget);
+      expect(find.byType(SocialDivider), findsOneWidget);
       expect(find.byKey(const Key('social-buttons')), findsOneWidget);
     });
 

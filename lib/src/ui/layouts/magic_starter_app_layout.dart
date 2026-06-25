@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Drawer, Scaffold, Icons;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../configuration/magic_starter_config.dart';

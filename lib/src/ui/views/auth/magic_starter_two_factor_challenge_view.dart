@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart' show Button;
 
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
@@ -99,9 +100,9 @@ class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
             labelClassName: MagicStarter.formTheme.labelClassName,
           ),
           // Submit button
-          WButton(
+          Button(
             isLoading: isLoading,
-            onTap: _submit,
+            onPressed: _submit,
             className: MagicStarter.formTheme.primaryButtonClassName,
             child: WText(trans('auth.verify'), className: 'text-center'),
           ),

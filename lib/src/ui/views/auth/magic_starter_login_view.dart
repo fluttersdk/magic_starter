@@ -1,12 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart'
+    show Button, SocialDivider;
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
 import '../../../http/controllers/magic_starter_guest_auth_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
-import '../../widgets/magic_starter_social_divider.dart';
 
 /// Login view with dynamic identity field support.
 ///
@@ -134,16 +136,16 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
               ],
             ),
             const WSpacer(className: 'h-6'),
-            WButton(
+            Button(
               isLoading: isLoading,
-              onTap: _submit,
+              onPressed: _submit,
               className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(trans('auth.login_title'), className: 'text-center'),
             ),
             if (MagicStarterConfig.hasGuestAuthFeatures()) ...[
               const WSpacer(className: 'h-4'),
-              WButton(
-                onTap: MagicStarterGuestAuthController.instance.doGuestLogin,
+              Button(
+                onPressed: MagicStarterGuestAuthController.instance.doGuestLogin,
                 isLoading: isLoading,
                 className: MagicStarter.authTheme.guestButtonClassName,
                 child: WText(
@@ -155,7 +157,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
             if (formFooterSlot != null) formFooterSlot,
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
                 MagicStarter.hasSocialLogin) ...[
-              const MagicStarterSocialDivider(),
+              const SocialDivider(),
               MagicStarter.socialLoginBuilder!(context, isLoading),
             ],
             if (MagicStarterConfig.hasRegistrationFeatures()) ...[

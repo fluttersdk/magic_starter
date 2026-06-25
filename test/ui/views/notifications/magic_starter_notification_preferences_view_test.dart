@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Switch;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart' hide Switch;
+import 'package:magic_starter/magic_starter.dart';
 
 class MockNetworkDriver implements NetworkDriver {
   MagicResponse? nextResponse;
@@ -150,7 +150,7 @@ void main() {
       expect(find.text(trans('notifications.channel_email')), findsOneWidget);
       expect(find.text('Slack'), findsOneWidget);
 
-      // Check for WCheckbox toggles
+      // Check for design-system Switch toggles
       expect(find.byType(Switch), findsNWidgets(2));
     });
 
@@ -177,8 +177,10 @@ void main() {
           .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
       await tester.pumpAndSettle();
 
+      // The design-system Switch uses disabled:true for locked channels
+      // rather than setting onChanged to null.
       final switchWidget = tester.widget<Switch>(find.byType(Switch));
-      expect(switchWidget.onChanged, isNull);
+      expect(switchWidget.disabled, isTrue);
     });
   });
 
