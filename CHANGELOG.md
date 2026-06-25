@@ -19,6 +19,9 @@ All notable changes to this project will be documented in this file.
 - **Mobile Header Brand**: `MagicStarterAppLayout` mobile topbar now honors `navigationTheme.brandBuilder`, so custom brand widgets render consistently across breakpoints when provided ([#65](https://github.com/fluttersdk/magic_starter/issues/65))
 - **Page Header Title Truncation**: `MagicStarterPageHeaderTheme` defaults now use `line-clamp-2` instead of `truncate` for `titleClassName` and `subtitleClassName`, so long titles wrap to a second line on narrow viewports (e.g. iPhone-width screens) instead of clipping to "AI sett..." ([#67](https://github.com/fluttersdk/magic_starter/issues/67))
 
+### 🧪 Tests
+- **wind 1.1.x widget-test compatibility**: the two-factor modal and password confirm dialog widget tests drove input via `find.byType(TextField)`, which broke once CI resolved `fluttersdk_wind` 1.1.x (the Material-free `WInput`/`WFormInput` rewrite renders an `EditableText` instead of a Material `TextField`). Both files now resolve the field via `find.descendant(of: find.byType(WFormInput), matching: find.byType(EditableText))`, scoping the search to the single form input so the two-factor setup step's selectable secret-key `EditableText` is not matched by accident.
+
 ## [0.0.1-alpha.14] - 2026-04-16
 
 ### ✨ New Features
