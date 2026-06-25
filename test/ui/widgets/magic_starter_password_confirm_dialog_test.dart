@@ -157,7 +157,7 @@ void main() {
     await tester.tap(find.text('Show'));
     await tester.pumpAndSettle();
 
-    // Find the text field inside WFormInput and enter text
+    // Enter text into the password input (EditableText inside WFormInput)
     await tester.enterText(passwordInput, 'secretpassword');
     await tester.pump();
 

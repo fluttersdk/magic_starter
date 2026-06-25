@@ -11,8 +11,9 @@ import 'package:magic_starter/magic_starter.dart';
 /// Resolves the OTP input inside [MagicStarterTwoFactorModal].
 ///
 /// Under wind 1.1.x the `WInput`/`WFormInput` rewrite is Material-free and no
-/// longer renders a `TextField`, so `otpInput` finds nothing.
-/// A bare `find.byType(EditableText)` is also wrong: the setup step renders the
+/// longer renders a `TextField`, so the old `find.byType(TextField)` finds
+/// nothing. A bare `find.byType(EditableText)` is also wrong: the setup step
+/// renders the
 /// secret key via a `selectable` `WText`, which hosts a second read-only
 /// `EditableText`. Scoping the search to the single `WFormInput` pins the OTP
 /// field unambiguously.
