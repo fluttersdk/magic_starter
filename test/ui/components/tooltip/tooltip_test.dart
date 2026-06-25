@@ -1,0 +1,64 @@
+import 'package:flutter/material.dart' hide Tooltip;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart';
+
+void main() {
+  setUp(() {
+    MagicApp.reset();
+    Magic.flush();
+    Magic.singleton('magic_starter', () => MagicStarterManager());
+  });
+
+  Widget wrap(Widget widget) {
+    return MaterialApp(
+      home: WindTheme(
+        data: WindThemeData(),
+        child: Scaffold(body: Center(child: widget)),
+      ),
+    );
+  }
+
+  group('Tooltip', () {
+    testWidgets('renders trigger child', (tester) async {
+      await tester.pumpWidget(wrap(
+        Tooltip(
+          content: const Text('tooltip text'),
+          child: const Text('hover me'),
+        ),
+      ));
+
+      expect(find.text('hover me'), findsOneWidget);
+    });
+
+    testWidgets('tooltip content is not visible when closed', (tester) async {
+      await tester.pumpWidget(wrap(
+        Tooltip(
+          content: const Text('hidden tooltip'),
+          child: const Text('hover me'),
+        ),
+      ));
+
+      // Content should not be in the tree when popover is closed.
+      expect(find.text('hidden tooltip'), findsNothing);
+    });
+
+    testWidgets('has className prop', (tester) async {
+      await tester.pumpWidget(wrap(
+        Tooltip(
+          content: const Text('tip'),
+          className: 'bg-gray-900 text-white',
+          child: const Text('trigger'),
+        ),
+      ));
+
+      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
+      expect(tooltip.className, 'bg-gray-900 text-white');
+    });
+  });
+
+  // Verify Tooltip is re-exported from index.dart
+  test('Tooltip is re-exported from index.dart', () {
+    expect(Tooltip, isNotNull);
+  });
+}

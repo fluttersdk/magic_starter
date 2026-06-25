@@ -36,8 +36,10 @@ void main() {
   testWidgets('TeamSelector renders team initial when resolver has teams',
       (tester) async {
     final teams = [
-      MagicStarterTeam.fromMap({'id': 1, 'name': 'Acme Corp', 'personal_team': false}),
-      MagicStarterTeam.fromMap({'id': 2, 'name': 'Beta Inc', 'personal_team': false}),
+      MagicStarterTeam.fromMap(
+          {'id': 1, 'name': 'Acme Corp', 'personal_team': false}),
+      MagicStarterTeam.fromMap(
+          {'id': 2, 'name': 'Beta Inc', 'personal_team': false}),
     ];
     MagicStarter.useTeamResolver(
       currentTeam: () => teams.first,

@@ -50,3 +50,31 @@ export 'src/ui/widgets/magic_starter_page_header.dart';
 export 'src/ui/widgets/magic_starter_dialog_shell.dart';
 export 'src/ui/widgets/magic_starter_hide_bottom_nav.dart';
 export 'src/ui/views/teams/magic_starter_team_invitation_accept_view.dart';
+
+// Design-system components (Wave 4 atomic-component library).
+// Migrated components (card, page_header, social_divider, notification_dropdown,
+// user_profile_dropdown, team_selector, confirm_dialog) are already reachable
+// through their existing alias exports above and are intentionally excluded here.
+export 'src/ui/components/button/index.dart';
+export 'src/ui/components/input/index.dart';
+export 'src/ui/components/textarea/index.dart';
+export 'src/ui/components/checkbox/index.dart';
+export 'src/ui/components/switch/index.dart';
+export 'src/ui/components/radio/index.dart';
+export 'src/ui/components/badge/index.dart';
+export 'src/ui/components/typography/index.dart';
+export 'src/ui/components/skeleton/index.dart';
+export 'src/ui/components/select/index.dart';
+export 'src/ui/components/combobox/index.dart';
+export 'src/ui/components/segmented_control/index.dart';
+export 'src/ui/components/tabs/index.dart';
+export 'src/ui/components/accordion/index.dart';
+export 'src/ui/components/dialog/index.dart';
+export 'src/ui/components/bottom_sheet/index.dart';
+export 'src/ui/components/toast/index.dart';
+export 'src/ui/components/tooltip/index.dart';
+export 'src/ui/components/dropdown_menu/index.dart';
+export 'src/ui/components/form_field/index.dart';
+export 'src/ui/components/navbar/index.dart';
+export 'src/ui/components/empty_state/index.dart';
+export 'src/ui/components/error_state/index.dart';

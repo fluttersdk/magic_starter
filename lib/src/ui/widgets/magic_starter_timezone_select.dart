@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../components/select/select.recipe.dart';
+
 /// Searchable timezone select widget for Magic Starter.
 ///
 /// Fetches available timezones from the `GET /timezones` API endpoint
@@ -198,6 +200,9 @@ class _MagicStarterTimezoneSelectState
 
   @override
   Widget build(BuildContext context) {
+    // Resolve the select slot recipe for semantic-token defaults.
+    final slots = selectRecipe();
+
     if (_isInitializing) {
       return WDiv(
         children: [
@@ -205,11 +210,10 @@ class _MagicStarterTimezoneSelectState
             WText(
               widget.label!,
               className: widget.labelClassName ??
-                  'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+                  'text-sm font-medium text-fg-muted mb-1',
             ),
           WDiv(
-            className:
-                'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center',
+            className: widget.className ?? slots['trigger'],
             child: const SizedBox(
               width: 20,
               height: 20,
@@ -227,14 +231,12 @@ class _MagicStarterTimezoneSelectState
       searchable: true,
       onSearch: _handleSearch,
       label: widget.label,
-      labelClassName: widget.labelClassName ??
-          'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+      labelClassName:
+          widget.labelClassName ?? 'text-sm font-medium text-fg-muted mb-1',
       searchPlaceholder: widget.placeholder ?? trans('profile.timezone_search'),
       placeholder: widget.placeholder ?? trans('profile.timezone_select'),
-      className: widget.className ??
-          'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
-      menuClassName: widget.menuClassName ??
-          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+      className: widget.className ?? slots['trigger'],
+      menuClassName: widget.menuClassName ?? slots['popup'],
     );
   }
 }

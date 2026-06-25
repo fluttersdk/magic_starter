@@ -13,8 +13,7 @@ String emptyStateIconWrapClassName() =>
 String emptyStateIconClassName() => 'text-4xl text-fg-muted';
 
 /// Title className.
-String emptyStateTitleClassName() =>
-    'text-base font-semibold text-fg';
+String emptyStateTitleClassName() => 'text-base font-semibold text-fg';
 
 /// Description className.
 String emptyStateDescriptionClassName() => 'text-sm text-fg-muted max-w-xs';

@@ -1,0 +1,96 @@
+import 'package:flutter/widgets.dart';
+import 'package:magic/magic.dart';
+
+import 'button.recipe.dart';
+
+/// A reusable button component for Magic Starter views.
+///
+/// Composes [WButton] with a [WindRecipe] to provide consistent styling across
+/// all intents and sizes. Semantic tokens (Step 7) drive colors so a
+/// `DESIGN.md` override re-skins every button without touching this file.
+///
+/// ### Variant styles
+///
+/// ```dart
+/// Button(
+///   intent: ButtonIntent.destructive,
+///   size: ButtonSize.lg,
+///   onPressed: _deleteAccount,
+///   child: const WText('Delete account'),
+/// )
+/// ```
+///
+/// ### Loading state
+///
+/// ```dart
+/// Button(
+///   onPressed: _submit,
+///   isLoading: controller.isLoading,
+///   child: const WText('Submit'),
+/// )
+/// ```
+@immutable
+class Button extends StatelessWidget {
+  /// The button content.
+  final Widget child;
+
+  /// Called when the button is tapped and not loading/disabled.
+  final VoidCallback? onPressed;
+
+  /// Visual intent of the button.
+  final ButtonIntent intent;
+
+  /// Size of the button.
+  final ButtonSize size;
+
+  /// Whether the button shows a loading spinner.
+  final bool isLoading;
+
+  /// Whether the button is disabled.
+  final bool disabled;
+
+  /// Optional className override that bypasses the recipe entirely.
+  final String? className;
+
+  /// An explicit accessible label for icon-only buttons.
+  final String? semanticLabel;
+
+  /// Creates a [Button].
+  const Button({
+    super.key,
+    required this.child,
+    this.onPressed,
+    this.intent = ButtonIntent.primary,
+    this.size = ButtonSize.md,
+    this.isLoading = false,
+    this.disabled = false,
+    this.className,
+    this.semanticLabel,
+  });
+
+  /// Resolves the className from the recipe or the caller override.
+  String _resolveClassName() {
+    if (className != null) {
+      return className!;
+    }
+
+    return buttonRecipe(
+      variants: {
+        kButtonIntentAxis: intent.name,
+        kButtonSizeAxis: size.name,
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WButton(
+      onTap: onPressed,
+      isLoading: isLoading,
+      disabled: disabled,
+      className: _resolveClassName(),
+      semanticLabel: semanticLabel,
+      child: child,
+    );
+  }
+}

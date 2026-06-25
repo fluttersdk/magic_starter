@@ -11,13 +11,10 @@ import 'package:magic/magic.dart';
 String formFieldRootClassName() => 'flex flex-col gap-1 w-full';
 
 /// Label text className.
-String formFieldLabelClassName() =>
-    'text-sm font-medium text-fg';
+String formFieldLabelClassName() => 'text-sm font-medium text-fg';
 
 /// Hint text className.
-String formFieldHintClassName() =>
-    'text-xs text-fg-muted';
+String formFieldHintClassName() => 'text-xs text-fg-muted';
 
 /// Error text className (destructive tone).
-String formFieldErrorClassName() =>
-    'text-xs text-red-600 dark:text-red-400';
+String formFieldErrorClassName() => 'text-xs text-red-600 dark:text-red-400';

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Wave 4 design-system component library**: 23 new generic UI components are now part of the public barrel (`package:magic_starter/magic_starter.dart`). Each component lives in the canonical atomic-component folder shape (`<name>.dart`, `<name>.recipe.dart`, `<name>.preview.dart`, `index.dart`) under `lib/src/ui/components/`.
+  - **Form controls**: `Button` (with `ButtonIntent`, `ButtonSize`, `buttonRecipe`), `Input` (with `InputState`, `inputRecipe`), `Textarea` (with `TextareaState`, `textareaRecipe`), `Checkbox`, `Switch`, `Radio`, `Select` (with `selectRecipe`), `Combobox` (with `comboboxRecipe`).
+  - **Feedback and display**: `Badge` (with `BadgeTone`), `Typography` (with `TypographyVariant`), `Skeleton` (with `SkeletonShape`), `Toast` (with `ToastVariant`), `Tooltip`, `EmptyState`, `ErrorState`.
+  - **Layout and navigation**: `Accordion` (with `AccordionItem`, `accordionRecipe`), `SegmentedControl` (with `SegmentedControlSize`, `segmentedControlRecipe`), `Tabs` (with `tabsRecipe`), `Navbar`, `Dropdown` menu (`DropdownMenu`, `DropdownMenuItem`).
+  - **Overlay**: `Dialog`, `BottomSheet`.
+  - **Composition**: `MagicFormField` (label, hint, error wrapper).
+  - Previously migrated components (`Card`, `PageHeader`, `SocialDivider`, `NotificationDropdown`, `UserProfileDropdown`, `TeamSelector`, `ConfirmDialog`) were already barrel-reachable through their existing alias exports and are unchanged.
+  - **Breaking collision note**: the barrel now exports `Switch`, `Dialog`, `Checkbox`, `Radio`, `Badge`, `Typography`, `BottomSheet`, `Tooltip`, `DropdownMenu`, and `DropdownMenuItem`. Tests and app code that import both `package:flutter/material.dart` and `package:magic_starter/magic_starter.dart` must add a `hide` clause on the material import (or the barrel import) to resolve the ambiguity.
+
 ### Changed
 - **Card migrated to the atomic-component folder + `WindRecipe`**: the card now lives at `lib/src/ui/components/card/` in the canonical 4-file shape (`card.dart` → `class Card`, `card.recipe.dart`, `card.preview.dart`, `index.dart`) and resolves its root className through a theme-driven `WindRecipe` instead of inline string interpolation. The recipe output is byte-identical to the previous `_defaultClassName` for every `CardVariant` x `noPadding` combination (gated by an explicit equivalence test). `MagicStarterCard` is retained as a thin re-export alias of `Card`, and `CardVariant` plus the barrel export path (`package:magic_starter/magic_starter.dart`) are unchanged, so existing callers and the widget-test suite are untouched. This establishes the verbatim template for the Wave 4 component migration.
 

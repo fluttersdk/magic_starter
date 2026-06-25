@@ -14,8 +14,7 @@ void main() {
     MagicApp.reset();
     Magic.flush();
     Magic.singleton('magic_starter', () => MagicStarterManager());
-    streamController =
-        StreamController<List<DatabaseNotification>>.broadcast();
+    streamController = StreamController<List<DatabaseNotification>>.broadcast();
     Magic.singleton('log', () => LogManager());
     Config.set('logging', {
       'default': 'console',
@@ -120,7 +119,8 @@ void main() {
     expect(find.byIcon(Icons.notifications_off_outlined), findsOneWidget);
   });
 
-  testWidgets('NotificationDropdown preview renders without error', (tester) async {
+  testWidgets('NotificationDropdown preview renders without error',
+      (tester) async {
     await tester.pumpWidget(wrap(const NotificationDropdownPreview()));
     await tester.pump();
     expect(find.byType(NotificationDropdownPreview), findsOneWidget);

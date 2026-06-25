@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/components/form_field/index.dart';
 
 void main() {
   setUp(() {
@@ -67,7 +66,8 @@ void main() {
     expect(find.text('Must be at least 8 characters'), findsOneWidget);
   });
 
-  testWidgets('MagicFormField does not render hint when omitted', (tester) async {
+  testWidgets('MagicFormField does not render hint when omitted',
+      (tester) async {
     await tester.pumpWidget(
       wrap(
         MagicFormField(
@@ -114,7 +114,8 @@ void main() {
     );
   });
 
-  testWidgets('MagicFormField does not render error when omitted', (tester) async {
+  testWidgets('MagicFormField does not render error when omitted',
+      (tester) async {
     await tester.pumpWidget(
       wrap(
         MagicFormField(

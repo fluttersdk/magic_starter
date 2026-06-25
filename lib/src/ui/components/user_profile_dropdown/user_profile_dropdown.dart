@@ -158,8 +158,7 @@ class UserProfileDropdown extends StatelessWidget {
           ],
         ),
         WDiv(
-            className:
-                'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full'),
+            className: 'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full'),
         _buildMenuItem(
           icon: Icons.logout,
           label: trans('auth.logout'),

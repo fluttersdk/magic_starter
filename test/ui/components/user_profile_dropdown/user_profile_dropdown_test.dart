@@ -163,7 +163,8 @@ void main() {
     expect(find.text('Custom Trigger'), findsOneWidget);
   });
 
-  testWidgets('UserProfileDropdown preview renders without error', (tester) async {
+  testWidgets('UserProfileDropdown preview renders without error',
+      (tester) async {
     await tester.pumpWidget(wrap(const UserProfileDropdownPreview()));
     await tester.pump();
     expect(find.byType(UserProfileDropdownPreview), findsOneWidget);
