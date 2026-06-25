@@ -293,7 +293,7 @@ void main() {
 
       // REPORT #14: after creating a team, the team settings view opens the
       // OLD team's settings. The settings view pre-fills its name field from
-      // [activeTeamName] (controller :29). The seam is the divergence between
+      // [activeTeamName]. The seam is the divergence between
       // [activeTeamId] (prefers the local currentTeamId notifier) and
       // [activeTeamName] (reads only the resolver, which still points at the
       // previously active team because the new team is not yet the resolver's
