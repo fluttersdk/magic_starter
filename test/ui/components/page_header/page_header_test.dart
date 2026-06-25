@@ -1,0 +1,188 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/components/page_header/index.dart';
+
+void main() {
+  setUp(() {
+    MagicApp.reset();
+    Magic.flush();
+    Magic.singleton('magic_starter', () => MagicStarterManager());
+  });
+
+  tearDown(() {
+    MagicApp.reset();
+    Magic.flush();
+  });
+
+  Widget wrap(Widget widget) {
+    return MaterialApp(
+      home: WindTheme(
+        data: WindThemeData(),
+        child: Scaffold(body: widget),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Behavior equivalence gate — mirrors magic_starter_page_header_test.dart
+  // ---------------------------------------------------------------------------
+
+  testWidgets('renders required title', (tester) async {
+    await tester.pumpWidget(
+      wrap(const PageHeader(title: 'My Page')),
+    );
+    expect(find.text('My Page'), findsOneWidget);
+  });
+
+  testWidgets('renders subtitle when provided', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        const PageHeader(
+          title: 'Projects',
+          subtitle: 'Manage your projects',
+        ),
+      ),
+    );
+    expect(find.text('Projects'), findsOneWidget);
+    expect(find.text('Manage your projects'), findsOneWidget);
+  });
+
+  testWidgets('does not render subtitle when omitted', (tester) async {
+    await tester.pumpWidget(
+      wrap(const PageHeader(title: 'Projects')),
+    );
+    final texts = tester.widgetList<WText>(find.byType(WText)).toList();
+    expect(texts.length, 1);
+    expect(texts.first.data, 'Projects');
+  });
+
+  testWidgets('renders leading widget when provided', (tester) async {
+    const leadingKey = Key('back-btn');
+    await tester.pumpWidget(
+      wrap(
+        const PageHeader(
+          title: 'Detail',
+          leading: Icon(Icons.arrow_back, key: leadingKey),
+        ),
+      ),
+    );
+    expect(find.byKey(leadingKey), findsOneWidget);
+  });
+
+  testWidgets('renders actions list when provided', (tester) async {
+    const actionKey = Key('action-btn');
+    await tester.pumpWidget(
+      wrap(
+        PageHeader(
+          title: 'Projects',
+          actions: [
+            ElevatedButton(
+              key: actionKey,
+              onPressed: () {},
+              child: const Text('New'),
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.byKey(actionKey), findsOneWidget);
+  });
+
+  testWidgets('outer WDiv has responsive sm:flex-row class', (tester) async {
+    await tester.pumpWidget(
+      wrap(const PageHeader(title: 'Responsive')),
+    );
+    final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(outerDiv.className, contains('sm:flex-row'));
+  });
+
+  testWidgets('titleSuffix renders inline after title when provided',
+      (tester) async {
+    const suffixKey = Key('test_suffix');
+    await tester.pumpWidget(
+      wrap(
+        PageHeader(
+          title: 'My Page',
+          titleSuffix: Container(key: suffixKey),
+        ),
+      ),
+    );
+    expect(find.byKey(suffixKey), findsOneWidget);
+  });
+
+  testWidgets('inlineActions: true outer WDiv className contains flex-row',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        PageHeader(
+          title: 'Inline',
+          inlineActions: true,
+          actions: [
+            ElevatedButton(onPressed: () {}, child: const Text('Go')),
+          ],
+        ),
+      ),
+    );
+    final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(outerDiv.className, contains('flex-row'));
+    expect(outerDiv.className, isNot(contains('flex-col')));
+  });
+
+  testWidgets('inlineActions: false (default) retains flex-col sm:flex-row',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        PageHeader(
+          title: 'Default Layout',
+          actions: [
+            ElevatedButton(onPressed: () {}, child: const Text('Go')),
+          ],
+        ),
+      ),
+    );
+    final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(outerDiv.className, contains('flex-col'));
+    expect(outerDiv.className, contains('sm:flex-row'));
+  });
+
+  // ---------------------------------------------------------------------------
+  // Theme consumption
+  // ---------------------------------------------------------------------------
+
+  group('theme consumption', () {
+    testWidgets('custom titleClassName is used', (tester) async {
+      MagicStarter.manager.pageHeaderTheme = const MagicStarterPageHeaderTheme(
+        titleClassName: 'custom-header-title',
+      );
+      await tester.pumpWidget(
+        wrap(const PageHeader(title: 'My Page')),
+      );
+      final titleText = tester.widgetList<WText>(find.byType(WText)).first;
+      expect(titleText.className, contains('custom-header-title'));
+    });
+
+    testWidgets('custom subtitleClassName is used', (tester) async {
+      MagicStarter.manager.pageHeaderTheme = const MagicStarterPageHeaderTheme(
+        subtitleClassName: 'custom-header-subtitle',
+      );
+      await tester.pumpWidget(
+        wrap(
+          const PageHeader(
+            title: 'My Page',
+            subtitle: 'A subtitle',
+          ),
+        ),
+      );
+      final texts = tester.widgetList<WText>(find.byType(WText)).toList();
+      expect(texts[1].className, contains('custom-header-subtitle'));
+    });
+  });
+
+  testWidgets('PageHeader preview renders without error', (tester) async {
+    await tester.pumpWidget(wrap(const PageHeaderPreview()));
+    await tester.pump();
+    expect(find.byType(PageHeaderPreview), findsOneWidget);
+  });
+}
