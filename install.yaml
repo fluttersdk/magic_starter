@@ -30,10 +30,18 @@ magic:
   # package:magic_starter/magic_starter.dart (derived from plugin_name).
   provider: MagicStarterServiceProvider
 
+bootstrap_command: starter:install
+
 post_install:
   message: |
-    Magic Starter installed. Next steps:
+    Magic Starter installed.
 
-    1. Review lib/config/magic_starter.dart feature toggles. Re-run
-       `dart run <app>:artisan starter:configure` to adjust them.
-    2. Run `flutter pub get && flutter run` to verify the bootstrap.
+    `starter:install` ran automatically and scaffolded your config, route
+    registrations, middleware, and dashboard with all opt-in features
+    disabled (safe defaults). Use `dart run <app>:artisan starter:configure`
+    to enable features afterward.
+
+    To skip the automatic scaffold on future installs, pass `--no-bootstrap`
+    to `plugin:install`.
+
+    Run `flutter pub get && flutter run` to verify the setup.
