@@ -8,6 +8,20 @@ import 'package:magic_starter/magic_starter.dart';
 /// RED PHASE — [MagicStarterTwoFactorModal] does NOT exist yet.
 /// These tests define the contract for the 2FA setup wizard modal
 /// and MUST fail until Task 4 provides the implementation.
+/// Resolves the OTP input inside [MagicStarterTwoFactorModal].
+///
+/// Under wind 1.1.x the `WInput`/`WFormInput` rewrite is Material-free and no
+/// longer renders a `TextField`, so the old `find.byType(TextField)` finds
+/// nothing. A bare `find.byType(EditableText)` is also wrong: the setup step
+/// renders the
+/// secret key via a `selectable` `WText`, which hosts a second read-only
+/// `EditableText`. Scoping the search to the single `WFormInput` pins the OTP
+/// field unambiguously.
+final Finder otpInput = find.descendant(
+  of: find.byType(WFormInput),
+  matching: find.byType(EditableText),
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -143,7 +157,7 @@ void main() {
       );
 
       // Enter a valid-looking 6-digit code and tap confirm.
-      await tester.enterText(find.byType(TextField), '123456');
+      await tester.enterText(otpInput, '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -177,7 +191,7 @@ void main() {
       expect(find.byType(WSvg), findsOneWidget);
 
       // Simulate entering a 6-digit OTP and confirming.
-      await tester.enterText(find.byType(TextField), '654321');
+      await tester.enterText(otpInput, '654321');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -201,7 +215,7 @@ void main() {
         onConfirm: (_) async => false,
       );
 
-      await tester.enterText(find.byType(TextField), '000000');
+      await tester.enterText(otpInput, '000000');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -299,7 +313,7 @@ void main() {
       expect(find.byType(WSvg), findsOneWidget);
 
       // Enter OTP and confirm.
-      await tester.enterText(find.byType(TextField), '123456');
+      await tester.enterText(otpInput, '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -392,7 +406,7 @@ void main() {
       );
 
       // Enter a valid 6-digit code and tap confirm to advance to recovery step.
-      await tester.enterText(find.byType(TextField), '123456');
+      await tester.enterText(otpInput, '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));
@@ -427,7 +441,7 @@ void main() {
       );
 
       // Enter a valid 6-digit code and tap confirm.
-      await tester.enterText(find.byType(TextField), '123456');
+      await tester.enterText(otpInput, '123456');
       await tester.pump();
 
       await tester.tap(find.text('common.confirm'));

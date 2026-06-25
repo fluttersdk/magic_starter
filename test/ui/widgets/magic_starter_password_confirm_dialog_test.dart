@@ -3,6 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
+/// Resolves the password input inside [MagicStarterPasswordConfirmDialog].
+///
+/// Under wind 1.1.x the `WInput`/`WFormInput` rewrite is Material-free and no
+/// longer renders a `TextField`, so `find.byType(TextField)` finds nothing.
+/// Scoping the search to the single `WFormInput` pins the password field via
+/// its underlying `EditableText` without depending on the Material widget tree.
+final Finder passwordInput = find.descendant(
+  of: find.byType(WFormInput),
+  matching: find.byType(EditableText),
+);
+
 void main() {
   setUp(() async {
     MagicApp.reset();
@@ -110,8 +121,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Enter password and tap confirm
-    final textField = find.byType(TextField);
-    await tester.enterText(textField, 'wrongpass');
+    await tester.enterText(passwordInput, 'wrongpass');
     await tester.tap(find.text('common.confirm'));
     await tester.pumpAndSettle();
 
@@ -147,9 +157,8 @@ void main() {
     await tester.tap(find.text('Show'));
     await tester.pumpAndSettle();
 
-    // Find the text field inside WFormInput and enter text
-    final textField = find.byType(TextField);
-    await tester.enterText(textField, 'secretpassword');
+    // Enter text into the password input (EditableText inside WFormInput)
+    await tester.enterText(passwordInput, 'secretpassword');
     await tester.pump();
 
     await tester.tap(find.text('common.confirm'));
