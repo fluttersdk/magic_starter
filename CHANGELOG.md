@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - **plugin:install auto-scaffolds starter**: `install.yaml` now declares `bootstrap_command: starter:install` so `plugin:install magic_starter` automatically runs the full starter scaffold (config, routes, middleware, dashboard) without a separate manual step. Requires `fluttersdk_artisan ^0.0.9` which introduced auto-execution of the `bootstrap_command` field. Pass `--no-bootstrap` to skip the auto-run.
-- **post_install message**: updated install completion message to reflect that `starter:install` now runs automatically. The message documents the `--no-bootstrap` opt-out and directs users to `starter:configure` for feature adjustments.
+- **post_install message**: reworded so it no longer flatly claims the `starter:install` bootstrap succeeded (a chained-bootstrap failure previously left the message asserting a scaffold that never happened). It now tells the operator to run `dart run <app>:artisan starter:install` by hand if the bootstrap exited non-zero or `lib/config/magic_starter.dart` is missing, shows the `--features=` one-liner, and documents the `--no-bootstrap` opt-out. Pairs with `fluttersdk_artisan`'s fix that surfaces a non-zero bootstrap exit code.
 - **Install is manifest-driven** — static scaffolding (config publish, provider injection) now driven by `install.yaml` manifest; dynamic logic (feature toggles, interactive mode) handled by fluent override in `MagicStarterInstallCommand`.
 
 ### Added

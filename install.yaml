@@ -34,14 +34,19 @@ bootstrap_command: starter:install
 
 post_install:
   message: |
-    Magic Starter installed.
+    Magic Starter provider registered.
 
-    `starter:install` ran automatically and scaffolded your config, route
-    registrations, middleware, and dashboard with all opt-in features
-    disabled (safe defaults). Use `dart run <app>:artisan starter:configure`
-    to enable features afterward.
+    The `starter:install` bootstrap is chained automatically to scaffold your
+    config, route registrations, middleware, models, and dashboard (all opt-in
+    features disabled by default). If the bootstrap reported a non-zero exit
+    above, or `lib/config/magic_starter.dart` is missing, run it by hand:
+
+      dart run <app>:artisan starter:install
+
+    Then enable features with `dart run <app>:artisan starter:configure`, or
+    install with features directly:
+
+      dart run <app>:artisan starter:install --features=registration,teams,sessions
 
     To skip the automatic scaffold on future installs, pass `--no-bootstrap`
-    to `plugin:install`.
-
-    Run `flutter pub get && flutter run` to verify the setup.
+    to `plugin:install`. Finally: `flutter pub get && flutter run`.
