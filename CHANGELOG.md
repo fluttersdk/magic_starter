@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`MagicStarterTokens.defaultAliases`**: semantic token alias map with 17 roles (`surface`, `surface-container`, `surface-container-high`, `fg`, `fg-muted`, `fg-disabled`, `primary`, `on-primary`, `primary-container`, `accent`, `border`, `border-subtle`, `destructive`, `on-destructive`, `destructive-container`, `success`, `warning`). Each role maps to a light+dark wind className pair (`'bg-... dark:bg-...'` / `'text-... dark:text-...'`). Pass as `WindThemeData(aliases: MagicStarterTokens.defaultAliases)` so components resolve against semantic roles rather than palette utilities directly. This map is the stable key contract that `design:sync` (Steps 20-21) will later regenerate from `DESIGN.md`.
+
 ### Fixed
 - **Create team opens the new team's settings**: `MagicStarterTeamController.activeTeamName` now matches the local `currentTeamId` (when set) against the resolver's `allTeams()` by id, falling back to the resolver's `currentTeam()` when no match exists. Previously `activeTeamId` preferred the local `currentTeamId` notifier (set on create/switch) while `activeTeamName` read only the resolver's `currentTeam()`, so after creating a team the settings view pre-filled the OLD team's name and effectively opened the old team ([#14](https://github.com/fluttersdk/magic_starter/issues/14)).
 
