@@ -2,7 +2,6 @@ import 'package:flutter/material.dart' show Icons, MaterialApp, Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/src/ui/components/settings_row/index.dart';
 import 'package:magic_starter/src/ui/components/settings_row/settings_row.preview.dart';
 import 'package:magic_starter/magic_starter.dart';
 
