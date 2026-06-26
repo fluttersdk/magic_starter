@@ -185,4 +185,63 @@ void main() {
     await tester.pump();
     expect(find.byType(PageHeaderPreview), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------------------
+  // Back affordance — TDD cases
+  // ---------------------------------------------------------------------------
+
+  testWidgets('renders back leading when backLabel is set', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        const PageHeader(
+          title: 'Profile',
+          backLabel: 'Settings',
+        ),
+      ),
+    );
+    // Back label text must be visible.
+    expect(find.text('Settings'), findsOneWidget);
+    // Chevron icon is rendered.
+    expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+  });
+
+  testWidgets('no back leading when backLabel is null', (tester) async {
+    await tester.pumpWidget(
+      wrap(const PageHeader(title: 'Dashboard')),
+    );
+    // Without backLabel the chevron must not appear.
+    expect(find.byIcon(Icons.chevron_left), findsNothing);
+  });
+
+  testWidgets('tap on back leading invokes MagicRoute.back with fallback',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        const PageHeader(
+          title: 'Profile',
+          backLabel: 'Settings',
+          backFallback: '/settings',
+        ),
+      ),
+    );
+
+    // Precondition: back control renders.
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+
+    // Act: tap the back control (WAnchor wraps the chevron + label row).
+    // MagicRouter is not initialized in widget tests so we expect a StateError.
+    // The StateError confirms that MagicRoute.back() was actually invoked
+    // (the wrong behavior would be silence — no exception, no call).
+    await tester.tap(find.text('Settings'));
+    await tester.pump();
+
+    // Consume the expected StateError from the uninitialized router.
+    final Object? exception = tester.takeException();
+    expect(exception, isA<StateError>());
+    expect(
+      (exception as StateError).message,
+      contains('Router not initialized'),
+    );
+  });
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -9,6 +10,13 @@ import '../../../facades/magic_starter.dart';
 /// layout, optional [leading], optional [actions], optional [titleSuffix], and
 /// an [inlineActions] flag to force a single-row layout.
 ///
+/// When [backLabel] is set, a unified back affordance is rendered in the leading
+/// slot: a `Icons.chevron_left` icon followed by the [backLabel] text. Tapping
+/// it calls `MagicRoute.back(fallback: backFallback)`, which tries a native pop
+/// first, then the internal history stack, then navigates to [backFallback] if
+/// both are empty. When [backLabel] is null (default) the header is unchanged
+/// and top-level pages show no back affordance.
+///
 /// ### Example
 /// ```dart
 /// PageHeader(
@@ -16,9 +24,19 @@ import '../../../facades/magic_starter.dart';
 ///   subtitle: 'Manage your account',
 ///   actions: [Button(onPressed: save, child: const Text('Save'))],
 /// )
+///
+/// // Sub-page with automatic back:
+/// PageHeader(
+///   title: 'Profile',
+///   backLabel: 'Settings',
+///   backFallback: '/settings',
+/// )
 /// ```
 @immutable
 class PageHeader extends StatelessWidget {
+  // Icon reference extracted as a static const for Flutter web tree-shaking.
+  static const IconData _chevronLeft = Icons.chevron_left;
+
   /// Required title text.
   final String title;
 
@@ -26,6 +44,10 @@ class PageHeader extends StatelessWidget {
   final String? subtitle;
 
   /// Optional leading widget (e.g. back button).
+  ///
+  /// Takes precedence over the auto-generated back control. When both
+  /// [leading] and [backLabel] are provided, [leading] is rendered and
+  /// [backLabel] is ignored.
   final Widget? leading;
 
   /// Optional trailing action widgets.
@@ -38,6 +60,20 @@ class PageHeader extends StatelessWidget {
   /// responsive `flex-col sm:flex-row` stacked layout.
   final bool inlineActions;
 
+  /// Back-affordance label (e.g. `'Settings'`).
+  ///
+  /// When set and [leading] is null, renders a `chevron_left` icon + this
+  /// label as a tappable leading control that calls
+  /// `MagicRoute.back(fallback: backFallback)`. When null (default), no back
+  /// control is rendered.
+  final String? backLabel;
+
+  /// Fallback route passed to `MagicRoute.back({fallback})` when the native pop
+  /// stack and internal history are both empty.
+  ///
+  /// Only used when [backLabel] is set.
+  final String? backFallback;
+
   /// Creates a [PageHeader].
   const PageHeader({
     super.key,
@@ -47,11 +83,33 @@ class PageHeader extends StatelessWidget {
     this.actions,
     this.titleSuffix,
     this.inlineActions = false,
+    this.backLabel,
+    this.backFallback,
   });
+
+  /// Builds the back affordance control when [backLabel] is set and no explicit
+  /// [leading] widget was provided.
+  Widget _buildBackControl(BuildContext context) {
+    final fallback = backFallback;
+    return WAnchor(
+      onTap: () => MagicRoute.back(fallback: fallback),
+      child: WDiv(
+        className: MagicStarter.pageHeaderTheme.backControlClassName,
+        children: [
+          WIcon(_chevronLeft),
+          WText(backLabel!),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final leading = this.leading;
+    // Resolve the effective leading: an explicit widget takes priority; when
+    // backLabel is set, auto-build the unified back control.
+    final Widget? effectiveLeading = leading ??
+        (backLabel != null ? _buildBackControl(context) : null);
+
     return WDiv(
       className: inlineActions
           ? MagicStarter.pageHeaderTheme.containerInlineClassName
@@ -63,7 +121,7 @@ class PageHeader extends StatelessWidget {
               ? 'flex flex-row items-center gap-3 flex-1 min-w-0'
               : 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
           children: [
-            if (leading != null) leading,
+            if (effectiveLeading != null) effectiveLeading,
             WDiv(
               className: 'flex flex-col gap-1 flex-1 min-w-0',
               children: [

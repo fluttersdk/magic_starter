@@ -42,6 +42,13 @@ class PageHeaderPreview extends StatelessWidget {
             ),
           ],
         ),
+        // Back-enabled variant: auto-back via backLabel + backFallback.
+        const PageHeader(
+          title: 'Profile',
+          subtitle: 'Edit your profile information',
+          backLabel: 'Settings',
+          backFallback: '/settings',
+        ),
       ],
     );
   }

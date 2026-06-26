@@ -414,6 +414,15 @@ class MagicStarterPageHeaderTheme {
   /// Defaults to `'flex flex-row items-center gap-2'`.
   final String actionContainerClassName;
 
+  /// Back affordance control className (chevron + label row rendered as leading).
+  ///
+  /// Applied to the [WAnchor] that wraps the `Icons.chevron_left` icon and the
+  /// [backLabel] text. Override to adjust color, size, spacing, or hover states.
+  ///
+  /// Defaults to
+  /// `'flex flex-row items-center gap-0.5 text-sm text-fg-muted hover:text-fg'`.
+  final String backControlClassName;
+
   const MagicStarterPageHeaderTheme({
     this.containerClassName =
         'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
@@ -424,6 +433,8 @@ class MagicStarterPageHeaderTheme {
     this.subtitleClassName =
         'text-sm text-gray-600 dark:text-gray-400 line-clamp-2',
     this.actionContainerClassName = 'flex flex-row items-center gap-2',
+    this.backControlClassName =
+        'flex flex-row items-center gap-0.5 text-sm text-fg-muted hover:text-fg',
   });
 }
 

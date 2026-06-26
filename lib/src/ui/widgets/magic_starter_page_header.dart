@@ -8,7 +8,8 @@ import '../components/page_header/page_header.dart';
 /// Backward-compatible alias for [PageHeader].
 ///
 /// Delegates all construction to [PageHeader] so existing callers and the
-/// test suite are unaffected.
+/// test suite are unaffected. New [backLabel] and [backFallback] params are
+/// forwarded to the underlying [PageHeader] implementation.
 class MagicStarterPageHeader extends PageHeader {
   const MagicStarterPageHeader({
     super.key,
@@ -18,5 +19,7 @@ class MagicStarterPageHeader extends PageHeader {
     super.actions,
     super.titleSuffix,
     super.inlineActions,
+    super.backLabel,
+    super.backFallback,
   });
 }
