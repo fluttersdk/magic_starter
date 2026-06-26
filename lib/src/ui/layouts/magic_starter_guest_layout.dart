@@ -26,8 +26,14 @@ class MagicStarterGuestLayout extends StatelessWidget {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
+          // Each guest page owns its own implicit scroll controller. Never
+          // attach to the ambient PrimaryScrollController: with
+          // RouteTransition.none, the outgoing and incoming guest routes are
+          // briefly mounted together, and two `primary: true` scroll views
+          // contending for the single PrimaryScrollController detach each
+          // other mid-layout (the dropChild / "wrong build scope" cascade).
           child: SingleChildScrollView(
-            primary: true,
+            primary: false,
             child: WDiv(className: 'p-4 lg:p-8', child: child),
           ),
         ),
