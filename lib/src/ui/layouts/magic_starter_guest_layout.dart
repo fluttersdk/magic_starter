@@ -12,6 +12,15 @@ class MagicStarterGuestLayout extends StatelessWidget {
 
   const MagicStarterGuestLayout({super.key, required this.child});
 
+  /// Current route path, used to key the page subtree (see [build]).
+  String _currentPath(BuildContext context) {
+    try {
+      return GoRouterState.of(context).uri.path;
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,7 +43,15 @@ class MagicStarterGuestLayout extends StatelessWidget {
           // other mid-layout (the dropChild / "wrong build scope" cascade).
           child: SingleChildScrollView(
             primary: false,
-            child: WDiv(className: 'p-4 lg:p-8', child: child),
+            // Key the page subtree by route path so a guest -> guest navigation
+            // (login -> register -> forgot, RouteTransition.none) forces a clean
+            // unmount/mount instead of reparenting the previous page's element
+            // tree, which otherwise tears down mid-build ("wrong build scope" /
+            // dropChild cascade). Mirrors MagicStarterAppLayout.
+            child: KeyedSubtree(
+              key: ValueKey(_currentPath(context)),
+              child: WDiv(className: 'p-4 lg:p-8', child: child),
+            ),
           ),
         ),
       ),
