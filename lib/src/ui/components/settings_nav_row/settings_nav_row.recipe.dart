@@ -14,7 +14,7 @@ const String kSettingsNavRowLayoutDefault = 'default';
 ///
 /// Emission order: `base ++ layout-variant`.
 const WindRecipe settingsNavRowRecipe = WindRecipe(
-  base: 'w-full flex flex-row items-center min-h-11 px-5 py-3.5 '
+  base: 'w-full flex flex-row items-center min-h-12 px-5 py-4 '
       'bg-surface-container '
       'hover:bg-surface-container-high',
   variants: {
@@ -29,17 +29,17 @@ const WindRecipe settingsNavRowRecipe = WindRecipe(
 
 /// Leading icon tile className (the colored square behind the icon).
 const String kSettingsNavRowIconTileClassName =
-    'grid place-items-center size-9 rounded-lg '
+    'grid place-items-center size-10 rounded-lg '
     'bg-surface-container-high';
 
 /// Leading icon className (the icon inside the tile).
-const String kSettingsNavRowIconClassName = 'text-fg-muted';
+const String kSettingsNavRowIconClassName = 'text-fg-muted text-lg';
 
 /// Title className for the nav row.
-const String kSettingsNavRowTitleClassName = 'text-sm font-medium text-fg';
+const String kSettingsNavRowTitleClassName = 'text-base font-medium text-fg';
 
 /// Subtitle className for the nav row.
-const String kSettingsNavRowSubtitleClassName = 'text-xs text-fg-muted';
+const String kSettingsNavRowSubtitleClassName = 'text-sm text-fg-muted';
 
 /// Trailing value className for the nav row.
 const String kSettingsNavRowValueClassName = 'text-sm text-fg-muted';

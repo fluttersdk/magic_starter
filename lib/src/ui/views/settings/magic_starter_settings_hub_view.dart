@@ -186,7 +186,7 @@ class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
 
     // 3. Assemble the scaffold children, omitting any section with no rows.
     return SettingsScaffold(
-      title: trans('profile.settings'),
+      title: trans('magic_starter.nav.settings'),
       children: [
         if (headerSlot != null) headerSlot,
         if (accountRows.isNotEmpty)

@@ -190,7 +190,8 @@ void main() {
   // Back affordance — TDD cases
   // ---------------------------------------------------------------------------
 
-  testWidgets('renders back leading when backLabel is set', (tester) async {
+  testWidgets('renders icon-only back leading when backLabel is set',
+      (tester) async {
     await tester.pumpWidget(
       wrap(
         const PageHeader(
@@ -199,10 +200,9 @@ void main() {
         ),
       ),
     );
-    // Back label text must be visible.
-    expect(find.text('Settings'), findsOneWidget);
-    // Chevron icon is rendered.
+    // Icon-only: the chevron renders, the parent label text is NOT shown.
     expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+    expect(find.text('Settings'), findsNothing);
   });
 
   testWidgets('no back leading when backLabel is null', (tester) async {
@@ -213,7 +213,7 @@ void main() {
     expect(find.byIcon(Icons.chevron_left), findsNothing);
   });
 
-  testWidgets('tap on back leading invokes MagicRoute.back with fallback',
+  testWidgets('tap on back leading navigates to the parent route',
       (tester) async {
     await tester.pumpWidget(
       wrap(
@@ -225,23 +225,15 @@ void main() {
       ),
     );
 
-    // Precondition: back control renders.
-    expect(find.text('Settings'), findsOneWidget);
+    // Precondition: the icon-only back control renders.
     expect(find.byIcon(Icons.chevron_left), findsOneWidget);
 
-    // Act: tap the back control (WAnchor wraps the chevron + label row).
-    // MagicRouter is not initialized in widget tests so we expect a StateError.
-    // The StateError confirms that MagicRoute.back() was actually invoked
-    // (the wrong behavior would be silence — no exception, no call).
-    await tester.tap(find.text('Settings'));
+    // Act: tap the chevron. MagicRouter is not initialized in widget tests, so
+    // MagicRoute.to(...) throws; the thrown exception confirms navigation was
+    // actually invoked (the wrong behavior would be silence — no call).
+    await tester.tap(find.byIcon(Icons.chevron_left));
     await tester.pump();
 
-    // Consume the expected StateError from the uninitialized router.
-    final Object? exception = tester.takeException();
-    expect(exception, isA<StateError>());
-    expect(
-      (exception as StateError).message,
-      contains('Router not initialized'),
-    );
+    expect(tester.takeException(), isNotNull);
   });
 }

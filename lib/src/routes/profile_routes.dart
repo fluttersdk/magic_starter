@@ -1,7 +1,28 @@
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
+import '../http/controllers/magic_starter_newsletter_controller.dart';
+import '../http/controllers/magic_starter_profile_controller.dart';
+
+/// Resolves a settings view backed by [MagicStarterProfileController].
+///
+/// `MagicStatefulView` resolves its controller with `Magic.find<T>()`, which
+/// requires the controller to already be registered. The legacy single-page
+/// route registered it implicitly by reading `controller.instance`; the
+/// registry-driven sub-pages do not, so the controller must be put into the
+/// container here before the view builds.
+Widget _profileSettingsView(String key) {
+  Magic.findOrPut(MagicStarterProfileController.new);
+  return MagicStarter.view.make(key);
+}
+
+/// Resolves the newsletter sub-page, registering its controller first.
+Widget _newsletterSettingsView() {
+  Magic.findOrPut(MagicStarterNewsletterController.new);
+  return MagicStarter.view.make('settings.newsletter');
+}
 
 /// Registers profile/settings routes provided by Magic Starter plugin.
 ///
@@ -19,20 +40,20 @@ void registerMagicStarterProfileRoutes() {
       // Hub index — the default Settings destination.
       MagicRoute.page(
         MagicStarterConfig.settingsHubRoute(),
-        () => MagicStarter.view.make('settings.hub'),
+        () => _profileSettingsView('settings.hub'),
       ).transition(RouteTransition.none);
 
       // Profile sub-page — always available.
       MagicRoute.page(
         MagicStarterConfig.profileRoute(),
-        () => MagicStarter.view.make('profile.profile'),
+        () => _profileSettingsView('profile.profile'),
       ).transition(RouteTransition.none);
 
       // Appearance (theme) sub-page — always available (mirrors the hub row,
       // which renders Appearance unconditionally).
       MagicRoute.page(
         MagicStarterConfig.settingsAppearanceRoute(),
-        () => MagicStarter.view.make('settings.appearance'),
+        () => _profileSettingsView('settings.appearance'),
       ).transition(RouteTransition.none);
 
       // Password sub-page — always available. The hub gates the Password row
@@ -40,14 +61,14 @@ void registerMagicStarterProfileRoutes() {
       // route stays registered like a core auth action.
       MagicRoute.page(
         MagicStarterConfig.settingsPasswordRoute(),
-        () => MagicStarter.view.make('settings.security.password'),
+        () => _profileSettingsView('settings.security.password'),
       ).transition(RouteTransition.none);
 
       // Language sub-page — extended profile / locale selection.
       if (MagicStarterConfig.hasExtendedProfileFeatures()) {
         MagicRoute.page(
           MagicStarterConfig.settingsLanguageRoute(),
-          () => MagicStarter.view.make('settings.language'),
+          () => _profileSettingsView('settings.language'),
         ).transition(RouteTransition.none);
       }
 
@@ -55,7 +76,7 @@ void registerMagicStarterProfileRoutes() {
       if (MagicStarterConfig.hasTimezoneFeatures()) {
         MagicRoute.page(
           MagicStarterConfig.settingsTimezoneRoute(),
-          () => MagicStarter.view.make('settings.timezone'),
+          () => _profileSettingsView('settings.timezone'),
         ).transition(RouteTransition.none);
       }
 
@@ -63,7 +84,7 @@ void registerMagicStarterProfileRoutes() {
       if (MagicStarterConfig.hasNewsletterFeatures()) {
         MagicRoute.page(
           MagicStarterConfig.settingsNewsletterRoute(),
-          () => MagicStarter.view.make('settings.newsletter'),
+          () => _newsletterSettingsView(),
         ).transition(RouteTransition.none);
       }
 
@@ -71,7 +92,7 @@ void registerMagicStarterProfileRoutes() {
       if (MagicStarterConfig.hasTwoFactorFeatures()) {
         MagicRoute.page(
           MagicStarterConfig.settingsTwoFactorRoute(),
-          () => MagicStarter.view.make('settings.security.two_factor'),
+          () => _profileSettingsView('settings.security.two_factor'),
         ).transition(RouteTransition.none);
       }
 
@@ -79,7 +100,7 @@ void registerMagicStarterProfileRoutes() {
       if (MagicStarterConfig.hasSessionsFeatures()) {
         MagicRoute.page(
           MagicStarterConfig.settingsSessionsRoute(),
-          () => MagicStarter.view.make('settings.security.sessions'),
+          () => _profileSettingsView('settings.security.sessions'),
         ).transition(RouteTransition.none);
       }
     },

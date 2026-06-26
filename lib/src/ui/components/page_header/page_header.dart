@@ -91,14 +91,22 @@ class PageHeader extends StatelessWidget {
   /// [leading] widget was provided.
   Widget _buildBackControl(BuildContext context) {
     final fallback = backFallback;
+    // Icon-only back control. It sits in the title row's leading slot
+    // (`items-center`), so the chevron vertically centres against the
+    // title + subtitle block. Navigation goes straight to the parent route
+    // (`MagicRoute.to`) rather than popping the navigator: the settings
+    // surface uses RouteTransition.none, and popping the instant-swap stack
+    // triggered a teardown assertion (`_owner != null`); going to the parent
+    // is stable and lands on the correct hub/parent.
     return WAnchor(
-      onTap: () => MagicRoute.back(fallback: fallback),
+      onTap: () {
+        if (fallback != null) {
+          MagicRoute.to(fallback);
+        }
+      },
       child: WDiv(
         className: MagicStarter.pageHeaderTheme.backControlClassName,
-        children: [
-          WIcon(_chevronLeft),
-          WText(backLabel!),
-        ],
+        child: WIcon(_chevronLeft),
       ),
     );
   }

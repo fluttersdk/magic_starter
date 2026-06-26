@@ -89,7 +89,10 @@ class SettingsNavRow extends StatelessWidget {
       override(to);
       return;
     }
-    MagicRoute.push(to);
+    // Go (not push): the settings surface uses RouteTransition.none, and the
+    // unified header back navigates to the parent route via `MagicRoute.to`.
+    // Keeping every settings hop a `go` avoids a push/pop teardown assertion.
+    MagicRoute.to(to);
   }
 
   @override
