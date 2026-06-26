@@ -89,7 +89,7 @@ void main() {
     expect(titleTexts, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffold renders backLabel via PageHeader',
+  testWidgets('SettingsScaffold renders icon-only back via PageHeader',
       (tester) async {
     await tester.pumpWidget(
       wrap(
@@ -101,10 +101,9 @@ void main() {
         ),
       ),
     );
-    // Back label text must appear in the back affordance.
-    expect(find.text('Settings'), findsOneWidget);
-    // Chevron icon is rendered by PageHeader back control.
+    // Icon-only back: chevron renders, parent label text is NOT shown.
     expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+    expect(find.text('Settings'), findsNothing);
   });
 
   testWidgets('SettingsScaffold renders no back when backLabel is null',

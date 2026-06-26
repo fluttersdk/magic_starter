@@ -55,8 +55,8 @@ void main() {
       final cls = settingsRowRecipe(
         variants: {kSettingsRowToneAxis: SettingsRowTone.destructive.name},
       );
-      // base contains min-h-11; destructive contains text-destructive
-      final baseIdx = cls.indexOf('min-h-11');
+      // base contains min-h-12; destructive contains text-destructive
+      final baseIdx = cls.indexOf('min-h-12');
       final variantIdx = cls.indexOf('text-destructive');
       expect(baseIdx, lessThan(variantIdx));
     });
@@ -193,19 +193,19 @@ void main() {
     expect(titleTexts.first.className, contains('text-destructive'));
   });
 
-  testWidgets('SettingsRow row container has min-h-11 className',
+  testWidgets('SettingsRow row container has min-h-12 className',
       (tester) async {
     await tester.pumpWidget(
       wrap(
         const SettingsRow(title: 'Sessions'),
       ),
     );
-    // The root WDiv should carry min-h-11.
+    // The root WDiv should carry a 44pt+ minimum height (min-h-12 = 48px).
     final divs = tester.widgetList<WDiv>(find.byType(WDiv));
-    final hasMinH11 = divs.any(
-      (d) => d.className != null && d.className!.contains('min-h-11'),
+    final hasMinHeight = divs.any(
+      (d) => d.className != null && d.className!.contains('min-h-12'),
     );
-    expect(hasMinH11, isTrue);
+    expect(hasMinHeight, isTrue);
   });
 
   testWidgets('SettingsRow has no internal divider', (tester) async {

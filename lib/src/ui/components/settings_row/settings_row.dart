@@ -98,7 +98,7 @@ class SettingsRow extends StatelessWidget {
       SettingsRowTone.defaultTone => 'text-fg',
       SettingsRowTone.destructive => 'text-destructive',
     };
-    return 'text-sm font-medium $toneClass';
+    return 'text-base font-medium $toneClass';
   }
 
   /// Resolves the root container className from the recipe.
@@ -117,11 +117,11 @@ class SettingsRow extends StatelessWidget {
         // 1a. Optional leading icon tile.
         if (icon != null)
           WDiv(
-            className: 'grid place-items-center size-9 rounded-lg '
+            className: 'grid place-items-center size-10 rounded-lg '
                 'bg-surface-container-high text-fg-muted flex-shrink-0',
             child: WIcon(
               icon!,
-              className: 'text-fg-muted',
+              className: 'text-fg-muted text-lg',
             ),
           ),
         // 1b. Title + optional subtitle column.
@@ -135,7 +135,7 @@ class SettingsRow extends StatelessWidget {
             if (subtitle != null)
               WText(
                 subtitle!,
-                className: 'text-xs text-fg-muted',
+                className: 'text-sm text-fg-muted',
               ),
           ],
         ),

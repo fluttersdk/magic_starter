@@ -25,10 +25,10 @@ enum SettingsRowTone {
 /// Emission order: `base ++ tone-variant`.
 ///
 /// Tone -> semantic token mapping:
-/// - defaultTone: `text-fg font-medium text-sm`
-/// - destructive: `text-destructive font-medium text-sm`
+/// - defaultTone: `text-fg font-medium text-base`
+/// - destructive: `text-destructive font-medium text-base`
 const WindRecipe settingsRowRecipe = WindRecipe(
-  base: 'min-h-11 px-5 py-3.5 flex flex-row items-center gap-3',
+  base: 'min-h-12 px-5 py-4 flex flex-row items-center gap-3',
   variants: {
     kSettingsRowToneAxis: {
       'defaultTone': 'text-fg',

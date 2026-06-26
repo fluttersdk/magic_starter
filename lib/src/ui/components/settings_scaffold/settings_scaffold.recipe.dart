@@ -15,14 +15,14 @@ String settingsScaffoldScrollableRecipe() {
 /// Returns the className for the inner centered constrained column.
 ///
 /// Mobile-first: `w-full px-4` fills the screen with edge padding. At `lg`
-/// breakpoints the padding collapses (`lg:px-0`) and `max-w-2xl mx-auto`
-/// centres the column capped at 672 logical pixels — matching the guest layout
-/// max-width convention adapted for authenticated content.
+/// breakpoints the padding collapses (`lg:px-0`) and the centred column widens
+/// from `max-w-2xl` (672px, comfortable on phones) to `lg:max-w-4xl` (896px) so
+/// it does not read as a thin strip on wide desktops while staying centred.
 ///
 /// Emission order: base (width + mx-auto) ++ padding ++ max-width.
 String settingsScaffoldContainerRecipe() {
   return const WindRecipe(
-    base: 'w-full mx-auto px-4 lg:px-0 max-w-2xl',
+    base: 'w-full mx-auto px-4 lg:px-0 max-w-2xl lg:max-w-4xl',
   )();
 }
 
