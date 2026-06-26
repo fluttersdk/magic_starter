@@ -16,6 +16,10 @@ import 'package:flutter/widgets.dart';
 
 import 'src/ui/components/accordion/accordion.preview.dart';
 import 'src/ui/components/badge/badge.preview.dart';
+import 'src/ui/components/settings_nav_row/settings_nav_row.preview.dart';
+import 'src/ui/components/settings_row/settings_row.preview.dart';
+import 'src/ui/components/settings_scaffold/settings_scaffold.preview.dart';
+import 'src/ui/components/settings_section/settings_section.preview.dart';
 import 'src/ui/components/bottom_sheet/bottom_sheet.preview.dart';
 import 'src/ui/components/button/button.preview.dart';
 import 'src/ui/components/card/card.preview.dart';
@@ -127,6 +131,26 @@ List<StarterComponentPreview> starterComponentPreviews() {
       builder: (_) => const SegmentedControlPreview()
     ),
     (label: 'Select', slug: 'select', builder: (_) => const SelectPreview()),
+    (
+      label: 'Settings Nav Row',
+      slug: 'settings_nav_row',
+      builder: (_) => const SettingsNavRowPreview()
+    ),
+    (
+      label: 'Settings Row',
+      slug: 'settings_row',
+      builder: (_) => const SettingsRowPreview()
+    ),
+    (
+      label: 'Settings Scaffold',
+      slug: 'settings_scaffold',
+      builder: (_) => const SettingsScaffoldPreview()
+    ),
+    (
+      label: 'Settings Section',
+      slug: 'settings_section',
+      builder: (_) => const SettingsSectionPreview()
+    ),
     (
       label: 'Skeleton',
       slug: 'skeleton',
