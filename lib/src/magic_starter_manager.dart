@@ -21,7 +21,15 @@ import 'ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 import 'ui/views/auth/magic_starter_otp_verify_view.dart';
 import 'ui/views/notifications/magic_starter_notification_preferences_view.dart';
 import 'ui/views/notifications/magic_starter_notifications_list_view.dart';
-import 'ui/views/profile/magic_starter_profile_settings_view.dart';
+import 'ui/views/profile/magic_starter_profile_sub_page_view.dart';
+import 'ui/views/settings/magic_starter_settings_hub_view.dart';
+import 'ui/views/settings/preferences/magic_starter_appearance_view.dart';
+import 'ui/views/settings/preferences/magic_starter_language_view.dart';
+import 'ui/views/settings/preferences/magic_starter_newsletter_view.dart';
+import 'ui/views/settings/preferences/magic_starter_timezone_view.dart';
+import 'ui/views/settings/security/magic_starter_password_view.dart';
+import 'ui/views/settings/security/magic_starter_sessions_view.dart';
+import 'ui/views/settings/security/magic_starter_two_factor_view.dart';
 import 'ui/views/teams/magic_starter_team_create_view.dart';
 import 'ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 import 'ui/views/teams/magic_starter_team_settings_view.dart';
@@ -255,11 +263,65 @@ class MagicStarterManager {
       );
     }
 
-    // Profile — always registered.
+    // Settings — iOS-style hub + drill-down sub-pages. The hub, Profile,
+    // Appearance, and Password sub-pages are always registered; the rest
+    // mirror their feature toggles (and the routes that gate them).
     _registerDefault(
-      'profile.settings',
-      () => const MagicStarterProfileSettingsView(),
+      'settings.hub',
+      () => const MagicStarterSettingsHubView(),
     );
+    _registerDefault(
+      'profile.profile',
+      () => const MagicStarterProfileSubPageView(),
+    );
+    _registerDefault(
+      'settings.appearance',
+      () => const MagicStarterAppearanceView(),
+    );
+    _registerDefault(
+      'settings.security.password',
+      () => const MagicStarterPasswordView(),
+    );
+
+    // Language — extended profile / locale selection.
+    if (MagicStarterConfig.hasExtendedProfileFeatures()) {
+      _registerDefault(
+        'settings.language',
+        () => const MagicStarterLanguageView(),
+      );
+    }
+
+    // Timezone.
+    if (MagicStarterConfig.hasTimezoneFeatures()) {
+      _registerDefault(
+        'settings.timezone',
+        () => const MagicStarterTimezoneView(),
+      );
+    }
+
+    // Newsletter.
+    if (MagicStarterConfig.hasNewsletterFeatures()) {
+      _registerDefault(
+        'settings.newsletter',
+        () => const MagicStarterNewsletterView(),
+      );
+    }
+
+    // Security — Two-Factor.
+    if (MagicStarterConfig.hasTwoFactorFeatures()) {
+      _registerDefault(
+        'settings.security.two_factor',
+        () => const MagicStarterTwoFactorView(),
+      );
+    }
+
+    // Security — Active Sessions.
+    if (MagicStarterConfig.hasSessionsFeatures()) {
+      _registerDefault(
+        'settings.security.sessions',
+        () => const MagicStarterSessionsView(),
+      );
+    }
 
     // Teams — conditional on feature flag.
     if (MagicStarterConfig.hasTeamFeatures()) {

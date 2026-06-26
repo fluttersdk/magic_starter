@@ -347,11 +347,14 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         ),
         _navItem(
           context,
-          icon: Icons.person_outline,
-          label: trans('nav.profile'),
-          onTap: () => MagicRoute.to(MagicStarterConfig.profileRoute()),
+          icon: Icons.settings_outlined,
+          label: trans('nav.settings'),
+          onTap: () => MagicRoute.to(MagicStarterConfig.settingsHubRoute()),
           onBeforeTap: onItemTap,
-          isActive: currentPath == MagicStarterConfig.profileRoute(),
+          isActive: _isActive(
+            MagicStarterConfig.settingsHubRoute(),
+            currentPath,
+          ),
         ),
       ],
     );
