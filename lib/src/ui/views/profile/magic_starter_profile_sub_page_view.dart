@@ -5,11 +5,8 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
-import '../../components/settings_row/index.dart';
 import '../../components/settings_section/index.dart';
 import '../../components/settings_scaffold/index.dart';
-import '../../widgets/magic_starter_confirm_dialog.dart';
-import '../../widgets/magic_starter_password_confirm_dialog.dart';
 
 /// Profile sub-page view (`profile.profile`).
 ///
@@ -168,11 +165,10 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
           child: _buildProfileSection(),
         ),
 
-        // 4. Guest upgrade (guests only).
+        // 4. Guest upgrade (guests only). Account deletion lives on the
+        //    Security > Browser Sessions sub-page (a destructive account action),
+        //    not here, to keep the Profile form clean.
         if (isGuest) _buildGuestUpgradeSection(),
-
-        // 5. Danger zone — destructive delete row (full members only).
-        if (!isGuest) _buildDangerSection(context),
 
         if (footerSlot != null) footerSlot,
       ],
@@ -549,51 +545,5 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
       return;
     }
     _rebuildIfValidationErrors();
-  }
-
-  // -- Danger Section ---------------------------------------------------------
-
-  /// Builds the danger zone with a destructive Delete Account row.
-  ///
-  /// The row opens the reused [MagicStarterPasswordConfirmDialog] (danger
-  /// variant) which collects the account password and calls
-  /// [MagicStarterProfileController.doDeleteAccount]. The dialog stays open and
-  /// surfaces backend errors inline; on success the controller logs the user
-  /// out and navigates to login.
-  Widget _buildDangerSection(BuildContext context) {
-    return SettingsSection(
-      footer: trans('magic_starter.profile.delete_account.description'),
-      children: [
-        SettingsRow(
-          title: trans('magic_starter.profile.delete_account.button'),
-          icon: Icons.delete_outline,
-          tone: SettingsRowTone.destructive,
-          onTap: () => _confirmDeleteAccount(context),
-        ),
-      ],
-    );
-  }
-
-  /// Opens the password-confirm dialog and deletes the account on confirm.
-  Future<void> _confirmDeleteAccount(BuildContext context) async {
-    // ignore: use_build_context_synchronously
-    if (!context.mounted) return;
-
-    await MagicStarterPasswordConfirmDialog.show(
-      context,
-      title: trans('magic_starter.profile.delete_account.title'),
-      description: trans('magic_starter.profile.delete_account.description'),
-      variant: ConfirmDialogVariant.danger,
-      onConfirm: (password) async {
-        final ok = await controller.doDeleteAccount(password: password);
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
-    );
   }
 }

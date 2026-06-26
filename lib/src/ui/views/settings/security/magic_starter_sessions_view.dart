@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
-import '../../../components/settings_row/settings_row.dart';
+import '../../../components/settings_row/index.dart';
 import '../../../components/settings_scaffold/settings_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 import '../../../widgets/magic_starter_password_confirm_dialog.dart';
@@ -176,7 +176,43 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
               ),
             ],
           ),
+        // Danger zone — destructive Delete Account row (full members only).
+        // Lives here, on the Security > Sessions sub-page, rather than on the
+        // Profile form: account deletion is a security/account action.
+        if (Gate.allows('starter.delete-account'))
+          SettingsSection(
+            footer: trans('magic_starter.profile.delete_account.description'),
+            children: [
+              SettingsRow(
+                title: trans('magic_starter.profile.delete_account.button'),
+                icon: Icons.delete_outline,
+                tone: SettingsRowTone.destructive,
+                onTap: () => _confirmDeleteAccount(context),
+              ),
+            ],
+          ),
       ],
+    );
+  }
+
+  /// Opens the password-confirm dialog and deletes the account on confirm.
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    if (!context.mounted) return;
+    await MagicStarterPasswordConfirmDialog.show(
+      context,
+      title: trans('magic_starter.profile.delete_account.title'),
+      description: trans('magic_starter.profile.delete_account.description'),
+      variant: ConfirmDialogVariant.danger,
+      onConfirm: (password) async {
+        final ok = await controller.doDeleteAccount(password: password);
+        if (!ok) {
+          final error =
+              controller.rxStatus.message ?? trans('common.error_occurred');
+          controller.clearErrors();
+          return error;
+        }
+        return null;
+      },
     );
   }
 

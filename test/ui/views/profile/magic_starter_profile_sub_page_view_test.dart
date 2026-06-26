@@ -279,14 +279,17 @@ void main() {
       expect(find.text('The name field is required.'), findsOneWidget);
     });
 
-    testWidgets('renders a destructive Delete Account row', (tester) async {
+    testWidgets('does NOT render a Delete Account row (moved to Sessions)',
+        (tester) async {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
+      // Account deletion now lives on the Security > Sessions sub-page, not on
+      // the Profile form. No destructive row should be present here.
       final rows = tester.widgetList<SettingsRow>(find.byType(SettingsRow));
-      final deleteRow = rows.where(
+      final destructiveRows = rows.where(
         (row) => row.tone == SettingsRowTone.destructive,
       );
-      expect(deleteRow, isNotEmpty);
+      expect(destructiveRows, isEmpty);
     });
 
     testWidgets('email verification resend submits when unverified',

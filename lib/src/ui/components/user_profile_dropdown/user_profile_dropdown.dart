@@ -124,6 +124,14 @@ class UserProfileDropdown extends StatelessWidget {
           className: 'flex-1 overflow-y-auto',
           children: [
             _buildMenuItem(
+              icon: Icons.settings_outlined,
+              label: trans('magic_starter.nav.settings'),
+              onTap: () {
+                close();
+                MagicRoute.to(MagicStarterConfig.settingsHubRoute());
+              },
+            ),
+            _buildMenuItem(
               icon: Icons.person_outline,
               label: trans('auth.profile'),
               onTap: () {
