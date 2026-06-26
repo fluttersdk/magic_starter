@@ -362,55 +362,61 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
     final formTheme = MagicStarter.formTheme;
     final hasExtended = MagicStarterConfig.hasExtendedProfileFeatures();
 
-    return SettingsSection(
-      header: trans('profile.profile_information'),
+    return WDiv(
+      className: 'flex flex-col gap-6',
       children: [
-        WDiv(
-          className: 'flex flex-col gap-4 px-5 py-4',
+        SettingsSection(
+          header: trans('profile.profile_information'),
           children: [
-            WFormInput(
-              controller: profileForm['name'],
-              label: trans('attributes.name'),
-              validator: rules([Required(), Min(2)], field: 'name'),
-              labelClassName: formTheme.labelClassName,
-              className: formTheme.inputClassName,
-            ),
-            // Gate: guests cannot see/edit their email.
-            if (Gate.allows('starter.update-email'))
-              WFormInput(
-                controller: profileForm['email'],
-                label: trans('attributes.email'),
-                type: InputType.email,
-                validator: rules([Required(), Email()], field: 'email'),
-                labelClassName: formTheme.labelClassName,
-                className: formTheme.inputClassName,
-              ),
-            // Phone is part of the identity form; timezone and language are
-            // their own dedicated Preferences sub-pages (reached from the hub),
-            // so they are intentionally NOT duplicated here.
-            if (hasExtended && Gate.allows('starter.update-phone'))
-              WFormInput(
-                controller: profileForm['phone'],
-                label: trans('profile.phone_label'),
-                placeholder: '+905301234567',
-                validator: rules([], field: 'phone'),
-                labelClassName: formTheme.labelClassName,
-                className: formTheme.inputClassName,
-              ),
             WDiv(
-              className: 'flex justify-end',
+              className: 'flex flex-col gap-4 px-5 py-4',
               children: [
-                MagicBuilder<bool>(
-                  listenable: _profileSaveLoading,
-                  builder: (isProcessing) => WButton(
-                    onTap: isProcessing ? null : _submitProfile,
-                    isLoading: isProcessing,
-                    className: 'px-4 py-2 rounded-lg bg-primary '
-                        'hover:bg-primary/80 text-white text-sm font-medium',
-                    child: WText(trans('common.save')),
-                  ),
+                WFormInput(
+                  controller: profileForm['name'],
+                  label: trans('attributes.name'),
+                  validator: rules([Required(), Min(2)], field: 'name'),
+                  labelClassName: formTheme.labelClassName,
+                  className: formTheme.inputClassName,
                 ),
+                // Gate: guests cannot see/edit their email.
+                if (Gate.allows('starter.update-email'))
+                  WFormInput(
+                    controller: profileForm['email'],
+                    label: trans('attributes.email'),
+                    type: InputType.email,
+                    validator: rules([Required(), Email()], field: 'email'),
+                    labelClassName: formTheme.labelClassName,
+                    className: formTheme.inputClassName,
+                  ),
+                // Phone is part of the identity form; timezone and language are
+                // their own dedicated Preferences sub-pages (reached from the
+                // hub), so they are intentionally NOT duplicated here.
+                if (hasExtended && Gate.allows('starter.update-phone'))
+                  WFormInput(
+                    controller: profileForm['phone'],
+                    label: trans('profile.phone_label'),
+                    placeholder: '+905301234567',
+                    validator: rules([], field: 'phone'),
+                    labelClassName: formTheme.labelClassName,
+                    className: formTheme.inputClassName,
+                  ),
               ],
+            ),
+          ],
+        ),
+        // Save action sits BELOW the card (outside the grouped section).
+        WDiv(
+          className: 'flex justify-end',
+          children: [
+            MagicBuilder<bool>(
+              listenable: _profileSaveLoading,
+              builder: (isProcessing) => WButton(
+                onTap: isProcessing ? null : _submitProfile,
+                isLoading: isProcessing,
+                className: 'px-4 py-2 rounded-lg bg-primary '
+                    'hover:bg-primary/80 text-white text-sm font-medium',
+                child: WText(trans('common.save')),
+              ),
             ),
           ],
         ),

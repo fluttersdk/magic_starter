@@ -91,22 +91,23 @@ class _MagicStarterTimezoneViewState extends MagicStatefulViewState<
                       setState(() => form.set('timezone', v ?? '')),
                   label: trans('profile.timezone_label'),
                 ),
-                WDiv(
-                  className: 'flex justify-end',
-                  children: [
-                    MagicBuilder<bool>(
-                      listenable: _saveLoading,
-                      builder: (isSaving) => WButton(
-                        onTap: isSaving ? null : _submit,
-                        isLoading: isSaving,
-                        className:
-                            'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-on-primary text-sm font-medium',
-                        child: WText(trans('common.save')),
-                      ),
-                    ),
-                  ],
-                ),
               ],
+            ),
+          ],
+        ),
+        // Save action sits BELOW the card (outside the grouped section).
+        WDiv(
+          className: 'flex justify-end',
+          children: [
+            MagicBuilder<bool>(
+              listenable: _saveLoading,
+              builder: (isSaving) => WButton(
+                onTap: isSaving ? null : _submit,
+                isLoading: isSaving,
+                className:
+                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-on-primary text-sm font-medium',
+                child: WText(trans('common.save')),
+              ),
             ),
           ],
         ),

@@ -37,9 +37,9 @@ void main() {
       expect(cls, contains('w-full'));
     });
 
-    test('container recipe emits max-w-2xl token', () {
+    test('container recipe emits max-w-7xl token', () {
       final cls = settingsScaffoldContainerRecipe();
-      expect(cls, contains('max-w-2xl'));
+      expect(cls, contains('max-w-7xl'));
     });
 
     test('container recipe emits mx-auto token', () {
@@ -157,7 +157,7 @@ void main() {
     expect(childArea, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffold outer container has max-w-2xl and mx-auto',
+  testWidgets('SettingsScaffold outer container has max-w-7xl and mx-auto',
       (tester) async {
     await tester.pumpWidget(
       wrap(
@@ -172,7 +172,7 @@ void main() {
         .widgetList<WDiv>(find.byType(WDiv))
         .where(
           (w) =>
-              w.className?.contains('max-w-2xl') == true &&
+              w.className?.contains('max-w-7xl') == true &&
               w.className?.contains('mx-auto') == true,
         )
         .toList();

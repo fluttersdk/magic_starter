@@ -100,75 +100,86 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
       children: [
         MagicForm(
           formData: passwordForm,
-          child: SettingsSection(
+          child: WDiv(
+            className: 'flex flex-col gap-6',
             children: [
-              WDiv(
-                className: 'flex flex-col gap-4 px-5 py-4',
+              SettingsSection(
                 children: [
-                  WFormInput(
-                    controller: passwordForm['current_password'],
-                    label: trans('attributes.current_password'),
-                    type: _obscureCurrent ? InputType.password : InputType.text,
-                    validator: rules([Required()], field: 'current_password'),
-                    suffix: WAnchor(
-                      onTap: () =>
-                          setState(() => _obscureCurrent = !_obscureCurrent),
-                      child: WIcon(
-                        _obscureCurrent ? _iconVisible : _iconHidden,
-                        className: 'text-fg-muted text-xl',
-                      ),
-                    ),
-                    labelClassName: formTheme.labelClassName,
-                    className: formTheme.inputClassName,
-                  ),
-                  WFormInput(
-                    controller: passwordForm['password'],
-                    label: trans('attributes.new_password'),
-                    type: _obscureNew ? InputType.password : InputType.text,
-                    validator: rules([Required(), Min(8)], field: 'password'),
-                    suffix: WAnchor(
-                      onTap: () => setState(() => _obscureNew = !_obscureNew),
-                      child: WIcon(
-                        _obscureNew ? _iconVisible : _iconHidden,
-                        className: 'text-fg-muted text-xl',
-                      ),
-                    ),
-                    labelClassName: formTheme.labelClassName,
-                    className: formTheme.inputClassName,
-                  ),
-                  WFormInput(
-                    controller: passwordForm['password_confirmation'],
-                    label: trans('attributes.password_confirmation'),
-                    type: _obscureConfirmation
-                        ? InputType.password
-                        : InputType.text,
-                    validator:
-                        rules([Required()], field: 'password_confirmation'),
-                    suffix: WAnchor(
-                      onTap: () => setState(
-                          () => _obscureConfirmation = !_obscureConfirmation),
-                      child: WIcon(
-                        _obscureConfirmation ? _iconVisible : _iconHidden,
-                        className: 'text-fg-muted text-xl',
-                      ),
-                    ),
-                    labelClassName: formTheme.labelClassName,
-                    className: formTheme.inputClassName,
-                  ),
                   WDiv(
-                    className: 'flex justify-end',
+                    className: 'flex flex-col gap-4 px-5 py-4',
                     children: [
-                      MagicBuilder<bool>(
-                        listenable: passwordForm.processingListenable,
-                        builder: (isProcessing) => WButton(
-                          onTap: isProcessing ? null : _submitPassword,
-                          isLoading: isProcessing,
-                          className:
-                              'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                          child: WText(trans('profile.update_password')),
+                      WFormInput(
+                        controller: passwordForm['current_password'],
+                        label: trans('attributes.current_password'),
+                        type: _obscureCurrent
+                            ? InputType.password
+                            : InputType.text,
+                        validator:
+                            rules([Required()], field: 'current_password'),
+                        suffix: WAnchor(
+                          onTap: () => setState(
+                              () => _obscureCurrent = !_obscureCurrent),
+                          child: WIcon(
+                            _obscureCurrent ? _iconVisible : _iconHidden,
+                            className: 'text-fg-muted text-xl',
+                          ),
                         ),
+                        labelClassName: formTheme.labelClassName,
+                        className: formTheme.inputClassName,
+                      ),
+                      WFormInput(
+                        controller: passwordForm['password'],
+                        label: trans('attributes.new_password'),
+                        type: _obscureNew ? InputType.password : InputType.text,
+                        validator:
+                            rules([Required(), Min(8)], field: 'password'),
+                        suffix: WAnchor(
+                          onTap: () =>
+                              setState(() => _obscureNew = !_obscureNew),
+                          child: WIcon(
+                            _obscureNew ? _iconVisible : _iconHidden,
+                            className: 'text-fg-muted text-xl',
+                          ),
+                        ),
+                        labelClassName: formTheme.labelClassName,
+                        className: formTheme.inputClassName,
+                      ),
+                      WFormInput(
+                        controller: passwordForm['password_confirmation'],
+                        label: trans('attributes.password_confirmation'),
+                        type: _obscureConfirmation
+                            ? InputType.password
+                            : InputType.text,
+                        validator:
+                            rules([Required()], field: 'password_confirmation'),
+                        suffix: WAnchor(
+                          onTap: () => setState(() =>
+                              _obscureConfirmation = !_obscureConfirmation),
+                          child: WIcon(
+                            _obscureConfirmation ? _iconVisible : _iconHidden,
+                            className: 'text-fg-muted text-xl',
+                          ),
+                        ),
+                        labelClassName: formTheme.labelClassName,
+                        className: formTheme.inputClassName,
                       ),
                     ],
+                  ),
+                ],
+              ),
+              // Save action sits BELOW the card (outside the grouped section).
+              WDiv(
+                className: 'flex justify-end',
+                children: [
+                  MagicBuilder<bool>(
+                    listenable: passwordForm.processingListenable,
+                    builder: (isProcessing) => WButton(
+                      onTap: isProcessing ? null : _submitPassword,
+                      isLoading: isProcessing,
+                      className:
+                          'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+                      child: WText(trans('profile.update_password')),
+                    ),
                   ),
                 ],
               ),

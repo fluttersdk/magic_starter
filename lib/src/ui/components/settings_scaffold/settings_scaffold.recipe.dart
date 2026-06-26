@@ -16,15 +16,16 @@ String settingsScaffoldScrollableRecipe() {
 
 /// Returns the className for the inner centered constrained column.
 ///
-/// Mobile-first: `w-full px-4` fills the screen with edge padding. At `lg`
-/// breakpoints the padding collapses (`lg:px-0`) and the centred column widens
-/// from `max-w-2xl` (672px, comfortable on phones) to `lg:max-w-4xl` (896px) so
-/// it does not read as a thin strip on wide desktops while staying centred.
+/// Mobile-first and fills the available content width like the other
+/// authenticated pages: `w-full` with comfortable edge padding (`px-4`, wider
+/// `lg:px-8` on desktop). No narrow centred max-width cap — a thin centred strip
+/// left large empty gutters on desktop. A very generous `max-w-7xl` cap only
+/// keeps rows from becoming absurdly wide on ultra-wide monitors.
 ///
-/// Emission order: base (width + mx-auto) ++ padding ++ max-width.
+/// Emission order: base (width + padding + cap + mx-auto).
 String settingsScaffoldContainerRecipe() {
   return const WindRecipe(
-    base: 'w-full mx-auto px-4 lg:px-0 max-w-2xl lg:max-w-4xl',
+    base: 'w-full px-4 lg:px-8 max-w-7xl mx-auto',
   )();
 }
 
