@@ -6,4 +6,3 @@
 
 export 'form_field.dart' show MagicFormField;
 export 'form_field.recipe.dart';
-export 'form_field.preview.dart' show MagicFormFieldPreview;

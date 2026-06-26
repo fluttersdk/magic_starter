@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart' show Icons, ElevatedButton, Text;
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../button/button.dart';
 import 'error_state.dart';
 
 /// Static preview for [ErrorState].
@@ -21,9 +22,9 @@ class ErrorStatePreview extends StatelessWidget {
           icon: Icons.error_outline,
           title: 'Failed to load data',
           description: 'Please check your connection and try again.',
-          action: ElevatedButton(
+          action: Button(
             onPressed: () {},
-            child: const Text('Retry'),
+            child: const WText('Retry'),
           ),
         ),
       ],

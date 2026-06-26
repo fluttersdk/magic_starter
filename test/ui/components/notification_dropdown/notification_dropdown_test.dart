@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/components/notification_dropdown/index.dart';
+import 'package:magic_starter/src/ui/components/notification_dropdown/notification_dropdown.preview.dart';
 
 void main() {
   late StreamController<List<DatabaseNotification>> streamController;

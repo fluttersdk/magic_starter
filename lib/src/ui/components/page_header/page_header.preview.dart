@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart' show Icons, ElevatedButton, Text;
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../button/button.dart';
 import 'page_header.dart';
 
 /// Static preview for [PageHeader].
@@ -24,9 +25,9 @@ class PageHeaderPreview extends StatelessWidget {
         PageHeader(
           title: 'Settings',
           actions: [
-            ElevatedButton(
+            Button(
               onPressed: () {},
-              child: const Text('Save'),
+              child: const WText('Save'),
             ),
           ],
         ),
@@ -35,9 +36,9 @@ class PageHeaderPreview extends StatelessWidget {
           inlineActions: true,
           leading: const Icon(Icons.arrow_back),
           actions: [
-            ElevatedButton(
+            Button(
               onPressed: () {},
-              child: const Text('Create'),
+              child: const WText('Create'),
             ),
           ],
         ),

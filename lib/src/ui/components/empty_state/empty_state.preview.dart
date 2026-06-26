@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart' show Icons, ElevatedButton, Text;
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../button/button.dart';
 import 'empty_state.dart';
 
 /// Static preview for [EmptyState].
@@ -26,9 +27,9 @@ class EmptyStatePreview extends StatelessWidget {
           icon: Icons.folder_open_outlined,
           title: 'No projects found',
           description: 'Create your first project to get started.',
-          action: ElevatedButton(
+          action: Button(
             onPressed: () {},
-            child: const Text('Create project'),
+            child: const WText('Create project'),
           ),
         ),
       ],

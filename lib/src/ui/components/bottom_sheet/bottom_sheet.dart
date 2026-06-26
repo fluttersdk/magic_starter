@@ -91,8 +91,10 @@ class BottomSheet extends StatelessWidget {
             // 3. Drag handle indicator.
             Center(
               child: WDiv(
+                // Semantic alias so the handle re-skins with the theme instead
+                // of hardcoded gray palette utilities.
                 className:
-                    'w-9 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mt-3 mb-1',
+                    'w-9 h-1 bg-surface-container-high rounded-full mt-3 mb-1',
               ),
             ),
             // 4. Header section: title + description.

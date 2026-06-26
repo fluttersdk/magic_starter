@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import 'tooltip.recipe.dart';
+
 /// A reusable tooltip component that wraps [WPopover] to display a brief
 /// label on hover (desktop) or long-press (mobile).
 ///
@@ -8,10 +10,10 @@ import 'package:magic/magic.dart';
 /// All styling is className-driven (semantic tokens).
 ///
 /// **WPopover dismiss race note**: the `_suppressNextTapOutside` guard in
-/// [WPopover] handles the real-click dismiss race (see `wind/w_popover.dart`
-/// lines 231-240). Tooltip uses `enableTriggerOnTap: false` and a
-/// [PopoverController] for programmatic show/hide so the synthetic-tap
-/// behavior remains intact and no real-click race can be introduced.
+/// [WPopover] handles the real-click dismiss race (see `wind/w_popover.dart`).
+/// Tooltip sets `enableTriggerOnTap: true` so tapping the trigger toggles the
+/// tooltip on touch screens; WPopover's guard swallows the same-frame
+/// outside-tap so opening does not immediately dismiss it.
 ///
 /// ### Example
 /// ```dart
@@ -28,8 +30,8 @@ class Tooltip extends StatelessWidget {
   /// The tooltip content widget shown in the popover panel.
   final Widget content;
 
-  /// Optional className for the tooltip panel. Defaults to a standard dark
-  /// popover style using semantic tokens.
+  /// Optional className for the tooltip panel. Defaults to
+  /// [kTooltipDefaultPanelClassName] (a semantic-token surface panel).
   final String? className;
 
   /// Popover alignment relative to the trigger. Defaults to [PopoverAlignment.topCenter].
@@ -46,9 +48,8 @@ class Tooltip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Resolve panel className from argument or default token classes.
-    final panelClassName = className ??
-        'bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded max-w-xs';
+    // 1. Resolve panel className from argument or the default semantic tokens.
+    final panelClassName = className ?? kTooltipDefaultPanelClassName;
 
     // 2. Wrap the trigger in WPopover for hover/tap-driven display.
     //    enableTriggerOnTap: true lets tapping the trigger show/hide the

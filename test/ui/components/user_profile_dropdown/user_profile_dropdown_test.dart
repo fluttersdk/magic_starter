@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/components/user_profile_dropdown/index.dart';
+import 'package:magic_starter/src/ui/components/user_profile_dropdown/user_profile_dropdown.preview.dart';
 
 class MockGuard implements Guard {
   Authenticatable? _user;
