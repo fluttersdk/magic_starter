@@ -78,3 +78,7 @@ export 'src/ui/components/form_field/index.dart';
 export 'src/ui/components/navbar/index.dart';
 export 'src/ui/components/empty_state/index.dart';
 export 'src/ui/components/error_state/index.dart';
+export 'src/ui/components/settings_section/index.dart';
+export 'src/ui/components/settings_row/index.dart';
+export 'src/ui/components/settings_nav_row/index.dart';
+export 'src/ui/components/settings_scaffold/index.dart';
