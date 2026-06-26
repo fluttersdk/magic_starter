@@ -107,8 +107,8 @@ class PageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     // Resolve the effective leading: an explicit widget takes priority; when
     // backLabel is set, auto-build the unified back control.
-    final Widget? effectiveLeading = leading ??
-        (backLabel != null ? _buildBackControl(context) : null);
+    final Widget? effectiveLeading =
+        leading ?? (backLabel != null ? _buildBackControl(context) : null);
 
     return WDiv(
       className: inlineActions

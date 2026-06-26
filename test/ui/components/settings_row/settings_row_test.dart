@@ -175,7 +175,8 @@ void main() {
     expect(titleTexts.first.className, contains('text-fg'));
   });
 
-  testWidgets('SettingsRow destructive tone title uses text-destructive className',
+  testWidgets(
+      'SettingsRow destructive tone title uses text-destructive className',
       (tester) async {
     await tester.pumpWidget(
       wrap(

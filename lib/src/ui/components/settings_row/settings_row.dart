@@ -117,8 +117,7 @@ class SettingsRow extends StatelessWidget {
         // 1a. Optional leading icon tile.
         if (icon != null)
           WDiv(
-            className:
-                'grid place-items-center size-9 rounded-lg '
+            className: 'grid place-items-center size-9 rounded-lg '
                 'bg-surface-container-high text-fg-muted flex-shrink-0',
             child: WIcon(
               icon!,

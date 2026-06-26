@@ -127,7 +127,8 @@ void main() {
   // Rendering — leading icon tile
   // ---------------------------------------------------------------------------
 
-  testWidgets('renders leading icon tile when icon is provided', (tester) async {
+  testWidgets('renders leading icon tile when icon is provided',
+      (tester) async {
     await tester.pumpWidget(
       wrap(
         const SettingsNavRow(

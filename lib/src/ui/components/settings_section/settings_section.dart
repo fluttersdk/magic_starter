@@ -69,7 +69,8 @@ class SettingsSection extends StatelessWidget {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  String _containerClass() => containerClassName ?? settingsSectionContainerRecipe();
+  String _containerClass() =>
+      containerClassName ?? settingsSectionContainerRecipe();
 
   String _captionClass() => captionClassName ?? settingsSectionCaptionRecipe();
 

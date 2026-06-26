@@ -72,7 +72,8 @@ void main() {
       expect(cls, contains('border-color-border-subtle'));
     });
 
-    test('emission order: base precedes variant classes in container recipe', () {
+    test('emission order: base precedes variant classes in container recipe',
+        () {
       final cls = settingsSectionContainerRecipe();
       final baseIdx = cls.indexOf('bg-surface-container');
       final roundedIdx = cls.indexOf('rounded-lg');

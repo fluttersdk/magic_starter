@@ -77,11 +77,11 @@ class _PreviewRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WDiv(
-      className: 'px-5 py-3.5 min-h-11 flex flex-row items-center justify-between',
+      className:
+          'px-5 py-3.5 min-h-11 flex flex-row items-center justify-between',
       children: [
         WText(label, className: 'text-sm text-fg'),
-        if (value != null)
-          WText(value!, className: 'text-sm text-fg-muted'),
+        if (value != null) WText(value!, className: 'text-sm text-fg-muted'),
       ],
     );
   }

@@ -317,13 +317,16 @@ class MagicStarterConfig {
   static String settingsNewsletterRoute() => '${profilePrefix()}/newsletter';
 
   /// Full path for the Two-Factor security sub-page.
-  static String settingsTwoFactorRoute() => '${profilePrefix()}/security/two-factor';
+  static String settingsTwoFactorRoute() =>
+      '${profilePrefix()}/security/two-factor';
 
   /// Full path for the Password security sub-page.
-  static String settingsPasswordRoute() => '${profilePrefix()}/security/password';
+  static String settingsPasswordRoute() =>
+      '${profilePrefix()}/security/password';
 
   /// Full path for the Active Sessions security sub-page.
-  static String settingsSessionsRoute() => '${profilePrefix()}/security/sessions';
+  static String settingsSessionsRoute() =>
+      '${profilePrefix()}/security/sessions';
 
   /// Full path for invitation acceptance page.
   static String invitationAcceptRoute(String token) =>

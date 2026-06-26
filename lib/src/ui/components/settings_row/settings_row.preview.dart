@@ -27,10 +27,12 @@ class SettingsRowPreview extends StatelessWidget {
         // Default tone rows.
         WText(
           'default tone',
-          className: 'text-xs font-medium uppercase tracking-wide text-fg-muted px-1',
+          className:
+              'text-xs font-medium uppercase tracking-wide text-fg-muted px-1',
         ),
         WDiv(
-          className: 'bg-surface-container rounded-lg overflow-hidden flex flex-col',
+          className:
+              'bg-surface-container rounded-lg overflow-hidden flex flex-col',
           children: [
             SettingsRow(
               title: 'Profile',
@@ -58,10 +60,12 @@ class SettingsRowPreview extends StatelessWidget {
         // Destructive tone row.
         WText(
           'destructive tone',
-          className: 'text-xs font-medium uppercase tracking-wide text-fg-muted px-1',
+          className:
+              'text-xs font-medium uppercase tracking-wide text-fg-muted px-1',
         ),
         WDiv(
-          className: 'bg-surface-container rounded-lg overflow-hidden flex flex-col',
+          className:
+              'bg-surface-container rounded-lg overflow-hidden flex flex-col',
           children: [
             SettingsRow(
               title: 'Delete Account',

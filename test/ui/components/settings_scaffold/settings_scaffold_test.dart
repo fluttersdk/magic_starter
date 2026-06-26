@@ -180,8 +180,7 @@ void main() {
     expect(constrainedDivs, isNotEmpty);
   });
 
-  testWidgets(
-      'SettingsScaffold uses SingleChildScrollView with primary: false',
+  testWidgets('SettingsScaffold uses SingleChildScrollView with primary: false',
       (tester) async {
     await tester.pumpWidget(
       wrap(
