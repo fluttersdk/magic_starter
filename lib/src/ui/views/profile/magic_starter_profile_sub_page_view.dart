@@ -10,7 +10,6 @@ import '../../components/settings_section/index.dart';
 import '../../components/settings_scaffold/index.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
 import '../../widgets/magic_starter_password_confirm_dialog.dart';
-import '../../widgets/magic_starter_timezone_select.dart';
 
 /// Profile sub-page view (`profile.profile`).
 ///
@@ -361,14 +360,6 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
 
   Widget _buildProfileSection() {
     final formTheme = MagicStarter.formTheme;
-    final locales = MagicStarter.manager.localeOptions;
-
-    final finalLocales = locales.isNotEmpty
-        ? locales
-        : [
-            SelectOption<String>(value: 'en', label: 'English'),
-            SelectOption<String>(value: 'tr', label: 'Türkçe'),
-          ];
     final hasExtended = MagicStarterConfig.hasExtendedProfileFeatures();
 
     return SettingsSection(
@@ -394,7 +385,9 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
                 labelClassName: formTheme.labelClassName,
                 className: formTheme.inputClassName,
               ),
-            // Extended fields: phone, timezone, language — feature-gated.
+            // Phone is part of the identity form; timezone and language are
+            // their own dedicated Preferences sub-pages (reached from the hub),
+            // so they are intentionally NOT duplicated here.
             if (hasExtended && Gate.allows('starter.update-phone'))
               WFormInput(
                 controller: profileForm['phone'],
@@ -403,23 +396,6 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
                 validator: rules([], field: 'phone'),
                 labelClassName: formTheme.labelClassName,
                 className: formTheme.inputClassName,
-              ),
-            if (MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures())
-              MagicStarterTimezoneSelect(
-                value: profileForm.get('timezone'),
-                onChanged: (v) => profileForm.set('timezone', v ?? ''),
-                label: trans('profile.timezone_label'),
-              ),
-            if (hasExtended)
-              WFormSelect<String>(
-                value: profileForm.get('language'),
-                onChange: (v) => profileForm.set('language', v ?? ''),
-                label: trans('profile.language_label'),
-                options: finalLocales,
-                labelClassName: formTheme.labelClassName,
-                className: formTheme.inputClassName,
-                menuClassName: 'bg-surface border border-color-border '
-                    'rounded-xl shadow-xl',
               ),
             WDiv(
               className: 'flex justify-end',

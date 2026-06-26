@@ -231,10 +231,12 @@ void main() {
     testWidgets('renders the profile information form fields', (tester) async {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
-      // Name + email inputs at minimum, plus timezone/language selects.
+      // Name / email / phone inputs are present. Timezone and language live on
+      // their own dedicated Preferences sub-pages, so they must NOT be
+      // duplicated on the Profile sub-page.
       expect(find.byType(WFormInput), findsWidgets);
-      expect(find.byType(WFormSelect<String>), findsOneWidget);
-      expect(find.byType(MagicStarterTimezoneSelect), findsOneWidget);
+      expect(find.byType(WFormSelect<String>), findsNothing);
+      expect(find.byType(MagicStarterTimezoneSelect), findsNothing);
     });
 
     testWidgets('profile save submits to /user/profile', (tester) async {

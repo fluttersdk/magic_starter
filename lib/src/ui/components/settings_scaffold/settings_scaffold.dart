@@ -82,10 +82,14 @@ class SettingsScaffold extends StatelessWidget {
     //    to the ambient PrimaryScrollController: with RouteTransition.none two
     //    routes are briefly mounted simultaneously and two `primary: true`
     //    views contend for the single controller (dropChild cascade).
-    return SingleChildScrollView(
-      primary: false,
-      child: WDiv(
-        className: settingsScaffoldScrollableRecipe(),
+    // The page-surface fill wraps the scroll view (which expands to the full
+    // content viewport), so the surface paints the ENTIRE area — not only the
+    // content height. Painting it on the scroll view's child left everything
+    // below the last section showing the layout's grey content background.
+    return WDiv(
+      className: settingsScaffoldScrollableRecipe(),
+      child: SingleChildScrollView(
+        primary: false,
         child: WDiv(
           className: settingsScaffoldContainerRecipe(),
           children: [

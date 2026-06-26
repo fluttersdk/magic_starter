@@ -1,14 +1,16 @@
 import 'package:magic/magic.dart';
 
-/// Returns the className for the outermost scrollable area wrapper.
+/// Returns the className for the outermost page-surface wrapper.
 ///
-/// Full-width container that holds the centered constrained inner column.
-/// `bg-surface` applies the page-level surface token (iOS grouped background).
+/// Wraps the scroll view and fills the full content viewport (`w-full h-full`)
+/// so the `bg-surface` page token paints the ENTIRE area, not just the content
+/// height — otherwise everything below the last section shows the layout's grey
+/// content background.
 ///
-/// Emission order: base (width + surface token).
+/// Emission order: base (width + height + surface token).
 String settingsScaffoldScrollableRecipe() {
   return const WindRecipe(
-    base: 'w-full bg-surface',
+    base: 'w-full h-full bg-surface',
   )();
 }
 
