@@ -55,6 +55,8 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
         PageHeader(
           title: trans('teams.create_team'),
           subtitle: trans('teams.create_team_subtitle'),
+          backLabel: trans('teams.settings'),
+          backFallback: MagicStarterConfig.teamSettingsRoute(),
         ),
         _buildForm(),
         if (footerSlot != null) footerSlot,

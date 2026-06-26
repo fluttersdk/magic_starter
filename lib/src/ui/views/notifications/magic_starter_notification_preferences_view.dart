@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show Icons, CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_notification_controller.dart';
 import '../../components/switch/switch.dart';
@@ -65,6 +66,8 @@ class _MagicStarterNotificationPreferencesViewState
         MagicStarterPageHeader(
           title: trans('notifications.preferences_title'),
           subtitle: trans('notifications.preferences_description'),
+          backLabel: trans('profile.settings'),
+          backFallback: MagicStarterConfig.settingsHubRoute(),
         ),
         _buildMatrixSettings(),
         if (footerSlot != null) footerSlot,
