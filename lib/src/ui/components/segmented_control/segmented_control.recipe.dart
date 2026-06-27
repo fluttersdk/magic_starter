@@ -26,7 +26,8 @@ Map<String, String> segmentedControlRecipe({
 }) {
   const recipe = WindSlotRecipe(
     slots: {
-      'root': 'inline-flex rounded-lg bg-surface-container-high p-1 gap-1',
+      'root': 'flex flex-row items-center rounded-lg bg-surface-container-high '
+          'p-1 gap-1',
       'item':
           'px-3 py-1.5 rounded-md text-sm font-medium text-fg-muted cursor-pointer selected:bg-surface selected:text-fg selected:shadow-sm transition-colors',
     },

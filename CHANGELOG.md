@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`SegmentedControl` rendered its segments vertically**: the recipe `root` slot used `inline-flex`, which Wind does not support (no inline layout) and which falls back to a vertical flex column, so the segments stacked top-to-bottom instead of sitting side by side. Changed `root` to `flex flex-row items-center` so the control lays its segments out horizontally as intended.
+
 ### Added
 - **`package:magic_starter/previews.dart`** (dev-only barrel): exposes all 30 component previews as `(label, slug, builder)` records via `starterComponentPreviews()`, so a consumer's dev-only preview catalog can surface the full component set (Button, Badge, ..., UserProfileDropdown, TeamSelector, NotificationDropdown) without duplication. Kept SEPARATE from the `magic_starter.dart` release barrel (the atomic-component contract keeps `*.preview.dart` out of release); the records are returned from a function (not a top-level const holding widget refs), so a consumer that only calls it behind a `kReleaseMode`/`PREVIEW_ENABLED` guard tree-shakes the whole set from release.
 - **`design.md.stub`**: a `DESIGN.md` template shipped at `assets/stubs/design.md.stub` covering all 17 semantic roles (`surface`, `fg`, `primary`, `border`, `destructive`, `success`, `warning`, and their variants), typography on the 4px logical scale, rounded/spacing scales, and key component entries with `{{ placeholder }}` tokens. Consumers copy it into their project root, fill in brand hex values and fonts, then run `design:lint` to validate and `design:sync` to generate the Wind theme. Pairs with `MagicStarterTokens.defaultAliases` as the stable key contract.
