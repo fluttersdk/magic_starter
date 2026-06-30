@@ -130,8 +130,13 @@ class PageHeader extends StatelessWidget {
               : 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
           children: [
             if (effectiveLeading != null) effectiveLeading,
+            // The title column shrinks for truncation (flex-initial =
+            // FlexFit.loose) but does NOT grow, so a `titleSuffix` sits right
+            // after the title instead of being pushed to the row's far edge.
+            // The title row's own `sm:flex-1` still claims the width so trailing
+            // `actions` align right.
             WDiv(
-              className: 'flex flex-col gap-1 flex-1 min-w-0',
+              className: 'flex flex-col gap-1 flex-initial min-w-0',
               children: [
                 WText(
                   title,
