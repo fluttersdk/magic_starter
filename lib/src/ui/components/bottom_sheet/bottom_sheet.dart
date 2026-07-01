@@ -58,6 +58,11 @@ class BottomSheet extends StatelessWidget {
       context: context,
       backgroundColor: m.Colors.transparent,
       isScrollControlled: true,
+      // Present on the root navigator so the sheet + scrim span the whole
+      // viewport and anchor to the real screen bottom. Shown on the shell's
+      // content navigator the overlay is confined to the content area, which
+      // left the sheet floating with a bottom gap on tall/wide screens.
+      useRootNavigator: true,
       builder: (_) => BottomSheet(
         title: title,
         description: description,
