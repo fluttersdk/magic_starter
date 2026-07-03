@@ -227,6 +227,37 @@ void main() {
       expect(content, contains('windTheme: windTheme'));
     });
 
+    test(
+        'injects windTheme into multi-arg MagicApplication preserving '
+        'title and titleSuffix', () async {
+      setupMagicProjectFiles(tempDir);
+
+      // Rewrite main.dart with the multi-argument MagicApplication signature
+      // scaffolded once magic gained titleSuffix/titleSeparator support.
+      final File mainFile = File('${tempDir.path}/lib/main.dart');
+      mainFile.writeAsStringSync(
+        mainFile.readAsStringSync().replaceFirst(
+              "MagicApplication(title: 'Starter App'),",
+              "MagicApplication(title: 'Starter App', "
+                  "titleSuffix: 'Starter App'),",
+            ),
+      );
+
+      await runInstall(command);
+
+      final String content = mainFile.readAsStringSync();
+      expect(content, contains('windTheme: windTheme'));
+      expect(content, contains("title: 'Starter App'"));
+      expect(content, contains("titleSuffix: 'Starter App'"));
+      // The injected windTheme must not collide with the preserved trailing
+      // args into a double comma (invalid Dart).
+      expect(content, isNot(contains(',,')));
+      expect(
+        content,
+        contains("windTheme: windTheme, titleSuffix: 'Starter App'"),
+      );
+    });
+
     test('injects material.dart import into main.dart', () async {
       setupMagicProjectFiles(tempDir);
 
