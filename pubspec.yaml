@@ -20,9 +20,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  magic: ^1.0.0-alpha.13
+  magic: ^0.0.4
   fluttersdk_artisan: ^0.0.8
-  magic_notifications: ^0.0.1-alpha.1
+  magic_notifications: ^0.0.1
   args: ^2.7.0
   path: ^1.9.0
 
