@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Switch;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -150,8 +150,8 @@ void main() {
       expect(find.text(trans('notifications.channel_email')), findsOneWidget);
       expect(find.text('Slack'), findsOneWidget);
 
-      // Check for WCheckbox toggles
-      expect(find.byType(Switch), findsNWidgets(2));
+      // Check for design-system Switch toggles
+      expect(find.byType(MSSwitch), findsNWidgets(2));
     });
 
     testWidgets('locked channel checkbox is disabled', (tester) async {
@@ -177,8 +177,10 @@ void main() {
           .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
       await tester.pumpAndSettle();
 
-      final switchWidget = tester.widget<Switch>(find.byType(Switch));
-      expect(switchWidget.onChanged, isNull);
+      // The design-system Switch uses disabled:true for locked channels
+      // rather than setting onChanged to null.
+      final switchWidget = tester.widget<MSSwitch>(find.byType(MSSwitch));
+      expect(switchWidget.disabled, isTrue);
     });
   });
 

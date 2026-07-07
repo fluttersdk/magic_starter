@@ -2,6 +2,7 @@
 
 - [Introduction](#introduction)
 - [Singleton Pattern](#singleton-pattern)
+- [Unbound Fallback and Testing](#unbound-fallback-and-testing)
 - [User Model Registration](#user-model-registration)
 - [Team Resolver](#team-resolver)
 - [Navigation Configuration](#navigation-configuration)
@@ -41,12 +42,46 @@ app.singleton('magic_starter', () => MagicStarterManager());
 All access goes through the `MagicStarter` facade, which resolves the singleton from the container:
 
 ```dart
-static MagicStarterManager get manager =>
-    Magic.make<MagicStarterManager>('magic_starter');
+static MagicStarterManager get manager {
+  if (Magic.bound('magic_starter')) {
+    return Magic.make<MagicStarterManager>('magic_starter');
+  }
+  // Falls back to a shared default manager instead of throwing.
+  return _fallbackManager ??= MagicStarterManager();
+}
 ```
 
 > [!NOTE]
 > The constructor calls `registerDefaultViews()` immediately. This means all default views and layouts are available as soon as the manager is instantiated — before `boot()` runs.
+
+<a name="unbound-fallback-and-testing"></a>
+## Unbound Fallback and Testing
+
+Every accessor on the `MagicStarter` facade delegates through `manager`, so any code that reads a theme (e.g. `MSCard` via `MagicStarter.cardTheme`) previously threw `"Service [magic_starter] is not registered"` when rendered without `MagicStarterServiceProvider` bound — for instance, in a standalone widget test or a `/preview` catalog entry.
+
+`MagicStarter.manager` now checks `Magic.bound('magic_starter')` first. When unbound it falls back to a shared, lazily-created default `MagicStarterManager()` (its 7 sub-themes already hold `const` defaults, so every theme accessor resolves) instead of throwing. The fallback also emits a **one-time** `kDebugMode` warning — `"MagicStarterManager not bound; using defaults. Call MagicStarter... to configure."` — so a genuine forgot-to-bind bug in a real app still surfaces during development. A manager bound via the container always wins over the fallback.
+
+For tests that need a specific manager configuration (custom theme, team resolver, etc.), bind one explicitly with `setUpMagicStarterForTests()`:
+
+```dart
+import 'package:magic_starter/magic_starter.dart';
+
+setUp(() {
+  MagicApp.reset();
+  Magic.flush();
+  setUpMagicStarterForTests(); // binds a default MagicStarterManager()
+});
+```
+
+Pass a pre-configured instance to bind it instead:
+
+```dart
+setUpMagicStarterForTests(
+  manager: MagicStarterManager()..useCardTheme(...),
+);
+```
+
+`setUpMagicStarterForTests()` wraps the same `Magic.singleton('magic_starter', () => ...)` idiom used throughout the test suite; tests that only rely on default theme values can now skip binding altogether and rely on the fallback.
 
 <a name="user-model-registration"></a>
 ## User Model Registration

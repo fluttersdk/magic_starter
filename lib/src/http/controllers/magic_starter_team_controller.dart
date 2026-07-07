@@ -169,7 +169,23 @@ class MagicStarterTeamController extends MagicController
       final createdTeamId = data?['id'];
 
       if (createdTeamId != null) {
-        currentTeamId.value = createdTeamId;
+        // Switch the backend's current team to the newly created one
+        // (Jetstream create-then-switch). Without this the server keeps
+        // current_team_id on the previous team, so the resolver-driven sidebar
+        // name + active highlight show the OLD team while local state and the
+        // member fetch point at the new one (inconsistent state, REPORT #14).
+        final switchResponse = await Http.put(
+          '/user/current-team',
+          data: {'team_id': createdTeamId},
+        );
+        if (switchResponse.successful) {
+          currentTeamId.value = createdTeamId;
+        } else {
+          Log.error(
+            '[MagicStarterTeamController.doCreate] team $createdTeamId created '
+            'but current-team switch failed (${switchResponse.statusCode})',
+          );
+        }
       }
 
       await Auth.restore();

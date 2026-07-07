@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart' show MSButton;
 
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
@@ -16,6 +18,8 @@ class MagicStarterForgotPasswordView
 
 class _MagicStarterForgotPasswordViewState extends MagicStatefulViewState<
     MagicStarterAuthController, MagicStarterForgotPasswordView> {
+  static const _iconCheck = Icons.check_circle_outline;
+
   late final form = MagicFormData(
     {'email': ''},
     controller: controller,
@@ -61,7 +65,7 @@ class _MagicStarterForgotPasswordViewState extends MagicStatefulViewState<
             className:
                 'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
             child: WIcon(
-              Icons.check_circle_outline,
+              _iconCheck,
               className: 'text-[32px] text-green-600 dark:text-green-400',
             ),
           ),
@@ -123,9 +127,9 @@ class _MagicStarterForgotPasswordViewState extends MagicStatefulViewState<
               labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-6'),
-            WButton(
+            MSButton(
               isLoading: isLoading,
-              onTap: _submit,
+              onPressed: _submit,
               className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('auth.send_reset_link'),

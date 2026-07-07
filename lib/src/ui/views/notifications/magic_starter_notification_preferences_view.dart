@@ -1,9 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons, CircularProgressIndicator;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
-import '../../widgets/magic_starter_page_header.dart';
-import '../../widgets/magic_starter_card.dart';
+
+import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_notification_controller.dart';
+import '../../components/switch/switch.dart';
+import '../../widgets/magic_starter_card.dart';
+import '../../widgets/magic_starter_page_header.dart';
 
 /// Notification preferences view for Magic Starter.
 ///
@@ -62,6 +66,8 @@ class _MagicStarterNotificationPreferencesViewState
         MagicStarterPageHeader(
           title: trans('notifications.preferences_title'),
           subtitle: trans('notifications.preferences_description'),
+          backLabel: trans('profile.settings'),
+          backFallback: MagicStarterConfig.settingsHubRoute(),
         ),
         _buildMatrixSettings(),
         if (footerSlot != null) footerSlot,
@@ -172,19 +178,16 @@ class _MagicStarterNotificationPreferencesViewState
             ),
           ],
         ),
-        Switch.adaptive(
+        MSSwitch(
           value: isEnabled,
-          activeThumbColor: Theme.of(context).colorScheme.onPrimary,
-          activeTrackColor: Theme.of(context).colorScheme.primary,
-          onChanged: isLocked
-              ? null
-              : (newValue) {
-                  controller.updateTypePreference(
-                    type,
-                    channel,
-                    newValue,
-                  );
-                },
+          disabled: isLocked,
+          onChanged: (newValue) {
+            controller.updateTypePreference(
+              type,
+              channel,
+              newValue,
+            );
+          },
         ),
       ],
     );

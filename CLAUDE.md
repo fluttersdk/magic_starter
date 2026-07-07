@@ -12,7 +12,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 
 | Command | Description |
 |---------|-------------|
-| `flutter test --coverage` | Run all tests (~52 files, ~752 cases) with coverage |
+| `flutter test --coverage` | Run all tests (~62 files, ~996 cases) with coverage |
 | `flutter test test/http/controllers/` | Run controller tests only |
 | `flutter test --name "pattern"` | Run tests matching pattern |
 | `flutter analyze --no-fatal-infos` | Static analysis (flutter_lints ^6.0) |

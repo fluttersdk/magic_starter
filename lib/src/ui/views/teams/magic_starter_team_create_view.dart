@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
-import '../../widgets/magic_starter_page_header.dart';
-import '../../widgets/magic_starter_card.dart';
+import '../../components/card/card.dart';
+import '../../components/page_header/page_header.dart';
 
 class MagicStarterTeamCreateView
     extends MagicStatefulView<MagicStarterTeamController> {
@@ -52,9 +52,11 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
         if (headerSlot != null) headerSlot,
-        MagicStarterPageHeader(
+        MSPageHeader(
           title: trans('teams.create_team'),
           subtitle: trans('teams.create_team_subtitle'),
+          backLabel: trans('teams.settings'),
+          backFallback: MagicStarterConfig.teamSettingsRoute(),
         ),
         _buildForm(),
         if (footerSlot != null) footerSlot,
@@ -67,7 +69,7 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
 
     return MagicForm(
       formData: form,
-      child: MagicStarterCard(
+      child: MSCard(
         child: WDiv(
           className: 'flex flex-col gap-4',
           children: [

@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
-import '../../widgets/magic_starter_card.dart';
+import '../../components/card/card.dart';
+import '../../components/page_header/page_header.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
-import '../../widgets/magic_starter_page_header.dart';
 
 class MagicStarterTeamSettingsView
     extends MagicStatefulView<MagicStarterTeamController> {
@@ -86,7 +87,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
         if (headerSlot != null) headerSlot,
-        MagicStarterPageHeader(
+        MSPageHeader(
           title: trans('teams.settings'),
           subtitle: trans('teams.settings_subtitle'),
         ),
@@ -105,7 +106,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
     return MagicForm(
       formData: form,
-      child: MagicStarterCard(
+      child: MSCard(
         title: trans('teams.general_settings'),
         child: WDiv(
           className: 'flex flex-col gap-4',
@@ -146,7 +147,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           valueListenable: controller.members,
           builder: (context, members, _) {
             if (members.isEmpty) {
-              return MagicStarterCard(
+              return MSCard(
                 child: WDiv(
                   className: 'w-full flex flex-col items-center gap-2 py-4',
                   children: [
@@ -163,7 +164,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               );
             }
 
-            return MagicStarterCard(
+            return MSCard(
               title: trans('teams.current_members'),
               noPadding: true,
               child: WDiv(
@@ -181,7 +182,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           valueListenable: controller.invitations,
           builder: (context, invitations, _) {
             if (invitations.isEmpty) {
-              return MagicStarterCard(
+              return MSCard(
                 child: WDiv(
                   className: 'w-full flex flex-col items-center gap-2 py-4',
                   children: [
@@ -198,7 +199,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               );
             }
 
-            return MagicStarterCard(
+            return MSCard(
               title: trans('teams.pending_invitations'),
               noPadding: true,
               child: WDiv(
@@ -219,7 +220,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
             return MagicForm(
               formData: inviteForm,
-              child: MagicStarterCard(
+              child: MSCard(
                 title: trans('teams.invite_member'),
                 child: WDiv(
                   className: 'flex flex-col gap-4',

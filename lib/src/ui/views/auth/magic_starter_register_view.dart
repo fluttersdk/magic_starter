@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_starter/magic_starter.dart'
+    show MSButton, MSSocialDivider;
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
-import '../../widgets/magic_starter_social_divider.dart';
 
 /// Registration view with dynamic identity field support.
 ///
@@ -178,9 +180,9 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
             const WSpacer(className: 'h-6'),
 
             // Submit
-            WButton(
+            MSButton(
               isLoading: isLoading,
-              onTap: _submit,
+              onPressed: _submit,
               className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('auth.register_title'),
@@ -193,7 +195,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
             // Social login slot
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
                 MagicStarter.hasSocialLogin) ...[
-              const MagicStarterSocialDivider(),
+              const MSSocialDivider(),
               MagicStarter.socialLoginBuilder!(context, isLoading),
             ],
 

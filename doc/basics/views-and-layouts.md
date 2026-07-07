@@ -293,7 +293,7 @@ WDiv(
 ```
 
 > [!NOTE]
-> Never use Material widgets (`Container`, `Text`, `ElevatedButton`, etc.) in Magic Starter views. The only exception is `Icons.*` for icon data references and `Switch.adaptive` where Wind UI does not yet provide a toggle.
+> Never use Material widgets (`Container`, `Text`, `ElevatedButton`, etc.) in Magic Starter views. The only exception is `Icons.*` for icon data references and `MSSwitch.adaptive` where Wind UI does not yet provide a toggle.
 
 <a name="dark-mode"></a>
 ## Dark Mode

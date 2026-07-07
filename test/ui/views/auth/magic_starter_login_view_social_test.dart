@@ -29,7 +29,7 @@ void main() {
       // Feature is false by default, no builder registered
       await tester.pumpWidget(wrap(const MagicStarterLoginView()));
 
-      expect(find.byType(MagicStarterSocialDivider), findsNothing);
+      expect(find.byType(MSSocialDivider), findsNothing);
     });
 
     testWidgets(
@@ -39,7 +39,7 @@ void main() {
 
       await tester.pumpWidget(wrap(const MagicStarterLoginView()));
 
-      expect(find.byType(MagicStarterSocialDivider), findsNothing);
+      expect(find.byType(MSSocialDivider), findsNothing);
     });
 
     testWidgets(
@@ -52,7 +52,7 @@ void main() {
 
       await tester.pumpWidget(wrap(const MagicStarterLoginView()));
 
-      expect(find.byType(MagicStarterSocialDivider), findsOneWidget);
+      expect(find.byType(MSSocialDivider), findsOneWidget);
       expect(find.byKey(const Key('social-buttons')), findsOneWidget);
     });
 

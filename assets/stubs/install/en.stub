@@ -63,6 +63,8 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "go_to_dashboard": "Go to Dashboard",
+    "off": "Off",
+    "on": "On",
     "remove": "Remove",
     "save": "Save",
     "toggle_theme": "Toggle theme",
@@ -106,8 +108,12 @@
       "description": "Create a permanent account to keep your data and unlock all features.",
       "title": "Upgrade Your Guest Account"
     },
+    "nav": {
+      "settings": "Settings"
+    },
     "notifications": {
-      "fetch_error": "Failed to load notification preferences."
+      "fetch_error": "Failed to load notification preferences.",
+      "preferences_title": "Notification Preferences"
     },
     "newsletter": {
       "fetch_error": "Failed to load newsletter preferences.",
@@ -133,6 +139,20 @@
       "verify_button": "Verify Code",
       "verify_error": "Failed to verify code. Please try again."
     },
+    "appearance": {
+      "dark": "Dark",
+      "dark_description": "Always use the dark theme.",
+      "light": "Light",
+      "light_description": "Always use the light theme.",
+      "section_footer": "Choosing System follows your device display settings.",
+      "subtitle": "Choose your preferred color scheme.",
+      "system": "System",
+      "system_description": "Follow the system display setting.",
+      "title": "Appearance"
+    },
+    "language": {
+      "subtitle": "Choose the language used throughout the app."
+    },
     "profile": {
       "delete_account": {
         "button": "Delete Account",
@@ -142,6 +162,14 @@
         "password_label": "Confirm your password",
         "title": "Delete Account"
       }
+    },
+    "settings": {
+      "account_section": "Account",
+      "preferences_section": "Preferences",
+      "security_section": "Security"
+    },
+    "timezone": {
+      "subtitle": "Set the timezone used for displaying dates and times."
     }
   },
   "nav": {

@@ -301,6 +301,33 @@ class MagicStarterConfig {
   /// Full path for profile settings page.
   static String profileRoute() => '${profilePrefix()}/profile';
 
+  /// Full path for the iOS-style settings hub (the drill-down index).
+  static String settingsHubRoute() => profilePrefix();
+
+  /// Full path for the Appearance (theme) settings sub-page.
+  static String settingsAppearanceRoute() => '${profilePrefix()}/appearance';
+
+  /// Full path for the Language settings sub-page.
+  static String settingsLanguageRoute() => '${profilePrefix()}/language';
+
+  /// Full path for the Timezone settings sub-page.
+  static String settingsTimezoneRoute() => '${profilePrefix()}/timezone';
+
+  /// Full path for the Newsletter settings sub-page.
+  static String settingsNewsletterRoute() => '${profilePrefix()}/newsletter';
+
+  /// Full path for the Two-Factor security sub-page.
+  static String settingsTwoFactorRoute() =>
+      '${profilePrefix()}/security/two-factor';
+
+  /// Full path for the Password security sub-page.
+  static String settingsPasswordRoute() =>
+      '${profilePrefix()}/security/password';
+
+  /// Full path for the Active Sessions security sub-page.
+  static String settingsSessionsRoute() =>
+      '${profilePrefix()}/security/sessions';
+
   /// Full path for invitation acceptance page.
   static String invitationAcceptRoute(String token) =>
       '/invitations/$token/accept';

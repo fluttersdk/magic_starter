@@ -276,6 +276,12 @@ void main() {
             },
           },
         );
+        // doCreate switches the backend current team to the new one.
+        mockDriver.stubResponse(
+          '/user/current-team',
+          statusCode: 200,
+          data: {'data': {}},
+        );
 
         final result = await controller.doCreate(name: 'New Team');
 
@@ -322,6 +328,11 @@ void main() {
                 'name': 'New Team',
               },
             },
+          );
+          mockDriver.stubResponse(
+            '/user/current-team',
+            statusCode: 200,
+            data: {'data': {}},
           );
 
           await controller.doCreate(name: 'New Team');

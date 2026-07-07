@@ -52,7 +52,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :bell: | **Notifications** | Real-time polling, mark read/unread, preference matrix |
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
-| :package: | **Reusable Widgets** | PageHeader, Card (3 variants), ConfirmDialog (3 variants), PasswordConfirmDialog, TwoFactorModal — all standalone |
+| :package: | **Design-System Components** | 29 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, and more) plus `MagicStarterTokens` semantic alias layer |
 | :gear: | **13 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
@@ -191,9 +191,84 @@ MagicStarter.useSidebarFooter((context) {
 
 ---
 
+## Design-System Components
+
+Magic Starter ships a full atomic design-system component library exported from `package:magic_starter/magic_starter.dart`. Every component lives in a canonical 4-file atomic folder (`<name>.dart`, `<name>.recipe.dart`, `<name>.preview.dart`, `index.dart`) under `lib/src/ui/components/` and is driven by a `WindRecipe` that reads from `MagicStarterTokens.defaultAliases`.
+
+### MagicStarterTokens
+
+`MagicStarterTokens.defaultAliases` is a map of 17 semantic roles to light+dark Wind className pairs:
+
+| Role | Example className pair |
+|------|----------------------|
+| `surface` | `bg-white dark:bg-gray-950` |
+| `fg` | `text-gray-900 dark:text-gray-50` |
+| `primary` | `bg-primary-600 dark:bg-primary-500` |
+| `destructive` | `bg-red-600 dark:bg-red-500` |
+| `border` | `border-gray-200 dark:border-gray-800` |
+
+Pass the map when configuring your Wind theme so all components resolve against semantic roles rather than raw palette utilities:
+
+```dart
+WindApp(
+  theme: WindThemeData(
+    aliases: MagicStarterTokens.defaultAliases,
+  ),
+  child: const MyApp(),
+)
+```
+
+> **`MS` prefix (breaking)**: every design-system component now carries an `MS` prefix (`MSButton`, `MSDialog`, `MSSwitch`, ...). This removes the Material collision entirely, so importing both `package:flutter/material.dart` and `package:magic_starter/magic_starter.dart` no longer needs a `hide` clause. See the [migration table](#migration-ms-prefix) below to update from the pre-`MS` names.
+
+### Component families
+
+| Family | Components |
+|--------|-----------|
+| Form controls | `MSButton`, `MSInput`, `MSTextarea`, `MSCheckbox`, `MSSwitch`, `MSRadio`, `MSSelect`, `MSCombobox` |
+| Display | `MSBadge`, `MSTypography`, `MSSkeleton`, `MSToast`, `MSTooltip`, `MSEmptyState`, `MSErrorState` |
+| Selection / navigation | `MSSegmentedControl`, `MSTabs`, `MSAccordion`, `MSNavbar`, `MSDropdownMenu` |
+| Overlay | `MSDialog`, `MSBottomSheet` |
+| Composition | `MSFormField`, `MSCard`, `MSPageHeader`, `MSSocialDivider` |
+| App chrome | `MSNotificationDropdown`, `MSUserProfileDropdown`, `MSTeamSelector` |
+
+All components accept Wind `className` strings and resolve colors through the semantic alias layer when configured. `MSButton`, `MSInput`, and `MSTextarea` also accept a `bool fullWidth = false` prop; setting it to `true` fills the parent width (wraps the rendered widget in a `SizedBox(width: double.infinity)` rather than a `className` token, since Material widgets ignore cross-axis stretch — see [flutter/flutter#19399](https://github.com/flutter/flutter/issues/19399)).
+
+<a name="migration-ms-prefix"></a>
+### Migration: the `MS` prefix
+
+Earlier previews exported these components under bare names. They now carry an
+`MS` prefix (and the old names are gone, no compat shim). Replace each old name
+with its `MS` counterpart and drop any `hide` clause you added for the Material
+collision:
+
+| Old | New | Old | New |
+|-----|-----|-----|-----|
+| `Button` | `MSButton` | `DropdownMenu` | `MSDropdownMenu` |
+| `Input` | `MSInput` | `DropdownMenuItem` | `MSDropdownMenuItem` |
+| `Textarea` | `MSTextarea` | `MagicFormField` | `MSFormField` |
+| `Checkbox` | `MSCheckbox` | `Navbar` | `MSNavbar` |
+| `Switch` | `MSSwitch` | `EmptyState` | `MSEmptyState` |
+| `Radio` | `MSRadio` | `ErrorState` | `MSErrorState` |
+| `Badge` | `MSBadge` | `SettingsSection` | `MSSettingsSection` |
+| `Typography` | `MSTypography` | `SettingsRow` | `MSSettingsRow` |
+| `Skeleton` | `MSSkeleton` | `SettingsNavRow` | `MSSettingsNavRow` |
+| `Select` | `MSSelect` | `SettingsScaffold` | `MSSettingsScaffold` |
+| `Combobox` | `MSCombobox` | `Card` | `MSCard` |
+| `SegmentedControl` | `MSSegmentedControl` | `PageHeader` | `MSPageHeader` |
+| `Tabs` | `MSTabs` | `SocialDivider` | `MSSocialDivider` |
+| `Accordion` | `MSAccordion` | `NotificationDropdown` | `MSNotificationDropdown` |
+| `AccordionItem` | `MSAccordionItem` | `UserProfileDropdown` | `MSUserProfileDropdown` |
+| `Dialog` | `MSDialog` | `TeamSelector` | `MSTeamSelector` |
+| `BottomSheet` | `MSBottomSheet` | `ConfirmDialog` | `MSConfirmDialog` |
+| `Toast` | `MSToast` | `Tooltip` | `MSTooltip` |
+
+The `MagicStarter*` public widgets (`MagicStarterCard`, `MagicStarterPageHeader`, ...), the per-axis enums (`ButtonIntent`, `InputState`, ...), and the recipe functions are unchanged.
+
+---
+
 ## Reusable Widgets
 
-Magic Starter exports a set of standalone UI widgets that consumer apps can use directly — no internal controller coupling required.
+Magic Starter also exports a set of standalone UI widgets that consumer apps can use directly. No internal controller coupling required.
 
 ### MagicStarterPageHeader
 
@@ -378,6 +453,21 @@ MagicStarter.useTheme(
 ```
 
 `MagicStarterTheme` has 7 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`. All fields are optional.
+
+#### One-call adoption from a `WindThemeData`
+
+If your app already defines a Wind semantic palette (the 17 alias roles, e.g. via `MagicStarterTokens.defaultAliases` or a `design:sync`-generated map), skip building sub-theme structs entirely and adopt the whole palette in one call:
+
+```dart
+MagicStarter.useWindTheme(
+  WindThemeData(
+    colors: {'primary': myBrandColor},
+    aliases: MagicStarterTokens.defaultAliases, // or a design:sync map
+  ),
+);
+```
+
+`useWindTheme()` derives all 7 sub-themes from the theme's semantic roles (`bg-surface`, `text-fg`, `bg-primary`, `border-color-border`, `bg-destructive`, ...) and delegates to `useTheme()`. Each alias carries its own `dark:` pair, so one token re-skins both light and dark. It is additive: `useTheme()` and any `use*Theme()` setter still override afterward. A role you do not define keeps the shipped default (never an invisible surface). See [doc/guides/wind-theme-adoption.md](doc/guides/wind-theme-adoption.md) for the full alias-to-property mapping.
 
 ### Level 3: Builder Slots
 

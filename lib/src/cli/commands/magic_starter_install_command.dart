@@ -403,12 +403,24 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     String content = FileHelper.readFile(mainPath);
     if (content.contains('MagicApplication(') &&
         !content.contains('windTheme:')) {
+      // Anchor on the `title:` argument without requiring an immediate closing
+      // paren so both `MagicApplication(title: 'X')` and the multi-argument
+      // `MagicApplication(title: 'X', titleSuffix: 'Y')` form are matched.
+      // Group 1 is the title; group 2 is the remaining arguments (empty for the
+      // single-argument form) preserved verbatim after the injected windTheme.
       content = content.replaceFirstMapped(
-        RegExp(r"MagicApplication\(title:\s*'([^']*)'\)"),
-        (Match m) => 'MagicApplication(\n'
-            '      title: \'${m[1]}\',\n'
-            '      windTheme: windTheme,\n'
-            '    )',
+        RegExp(r"MagicApplication\(\s*title:\s*'([^']*)'([^)]*)\)"),
+        (Match m) {
+          // The trailing args (group 2) already carry their own leading comma
+          // for the multi-argument form (", titleSuffix: 'Y'"); only the
+          // single-argument form (empty group 2) needs a comma after
+          // windTheme. Emitting an unconditional comma would produce ",,".
+          final String rest = m[2] ?? '';
+          return 'MagicApplication(\n'
+              '      title: \'${m[1]}\',\n'
+              '      windTheme: windTheme${rest.isEmpty ? ',' : rest}\n'
+              '    )';
+        },
       );
       FileHelper.writeFile(mainPath, content);
     }

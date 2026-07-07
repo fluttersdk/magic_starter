@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Switch;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -334,7 +334,7 @@ void main() {
         // Switch must reflect the unsubscribed state.
         expect(
           find.byWidgetPredicate(
-            (Widget widget) => widget is Switch && widget.value == false,
+            (Widget widget) => widget is MSSwitch && widget.value == false,
           ),
           findsOneWidget,
         );
@@ -373,7 +373,7 @@ void main() {
         // Switch must reflect the subscribed state.
         expect(
           find.byWidgetPredicate(
-            (Widget widget) => widget is Switch && widget.value == true,
+            (Widget widget) => widget is MSSwitch && widget.value == true,
           ),
           findsOneWidget,
         );
@@ -407,7 +407,7 @@ void main() {
         );
 
         final switchFinder = find.byWidgetPredicate(
-          (Widget widget) => widget is Switch && widget.value == false,
+          (Widget widget) => widget is MSSwitch && widget.value == false,
         );
         await tester.ensureVisible(switchFinder);
         await tester.tap(switchFinder);
@@ -444,7 +444,7 @@ void main() {
         );
 
         final switchFinder = find.byWidgetPredicate(
-          (Widget widget) => widget is Switch && widget.value == true,
+          (Widget widget) => widget is MSSwitch && widget.value == true,
         );
         await tester.ensureVisible(switchFinder);
         await tester.tap(switchFinder);

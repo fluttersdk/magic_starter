@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons, CircularProgressIndicator;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
+import '../../../facades/magic_starter.dart';
 import '../../widgets/magic_starter_card.dart';
 import '../../widgets/magic_starter_page_header.dart';
-
-import '../../../facades/magic_starter.dart';
 
 /// Full-page view for listing all notifications with mark as read,
 /// delete, pagination, and view all functionality.

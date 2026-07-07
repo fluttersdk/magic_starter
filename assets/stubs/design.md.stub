@@ -1,0 +1,176 @@
+---
+name: {{ app_name }}
+description: >
+  Design system for {{ app_name }}. Single-brand, Wind semantic tokens,
+  M3-role palette. Generate the Wind theme with:
+    dart run {{ app_package }}:artisan design:sync
+colors:
+  surface:
+    light: "#FFFFFF"
+    dark: "#030712"
+  surface-container:
+    light: "#F9FAFB"
+    dark: "#111827"
+  surface-container-high:
+    light: "#F3F4F6"
+    dark: "#1F2937"
+  fg:
+    light: "#111827"
+    dark: "#F9FAFB"
+  fg-muted:
+    light: "#6B7280"
+    dark: "#9CA3AF"
+  fg-disabled:
+    light: "#D1D5DB"
+    dark: "#4B5563"
+  primary:
+    light: "#{{ primary_hex_light }}"
+    dark: "#{{ primary_hex_dark }}"
+  on-primary:
+    light: "#FFFFFF"
+    dark: "#FFFFFF"
+  primary-container:
+    light: "#{{ primary_container_light }}"
+    dark: "#{{ primary_container_dark }}"
+  accent:
+    light: "#{{ accent_hex_light }}"
+    dark: "#{{ accent_hex_dark }}"
+  border:
+    light: "#E5E7EB"
+    dark: "#374151"
+  border-subtle:
+    light: "#F3F4F6"
+    dark: "#1F2937"
+  destructive:
+    light: "#DC2626"
+    dark: "#EF4444"
+  on-destructive:
+    light: "#FFFFFF"
+    dark: "#FFFFFF"
+  destructive-container:
+    light: "#FEE2E2"
+    dark: "#7F1D1D"
+  success:
+    light: "#15803D"
+    dark: "#16A34A"
+  warning:
+    light: "#D97706"
+    dark: "#B45309"
+typography:
+  display:
+    fontFamily: {{ font_family }}
+    fontSize: 36px
+    fontWeight: "700"
+    lineHeight: 44px
+    letterSpacing: -0.02em
+  headline-lg:
+    fontFamily: {{ font_family }}
+    fontSize: 28px
+    fontWeight: "700"
+    lineHeight: 36px
+    letterSpacing: -0.01em
+  headline-md:
+    fontFamily: {{ font_family }}
+    fontSize: 22px
+    fontWeight: "600"
+    lineHeight: 30px
+  title-lg:
+    fontFamily: {{ font_family }}
+    fontSize: 18px
+    fontWeight: "600"
+    lineHeight: 26px
+  body-lg:
+    fontFamily: {{ font_family }}
+    fontSize: 16px
+    fontWeight: "400"
+    lineHeight: 26px
+  body-md:
+    fontFamily: {{ font_family }}
+    fontSize: 14px
+    fontWeight: "400"
+    lineHeight: 22px
+  label-md:
+    fontFamily: {{ font_family }}
+    fontSize: 14px
+    fontWeight: "600"
+    lineHeight: 20px
+    letterSpacing: 0.01em
+  label-sm:
+    fontFamily: {{ font_family }}
+    fontSize: 12px
+    fontWeight: "500"
+    lineHeight: 16px
+rounded:
+  sm: 4px
+  DEFAULT: 8px
+  md: 12px
+  lg: 16px
+  xl: 24px
+  full: 9999px
+spacing:
+  xs: 4px
+  sm: 8px
+  md: 16px
+  lg: 24px
+  xl: 40px
+  gutter: 16px
+  section: 32px
+components:
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.md}"
+  button-destructive:
+    backgroundColor: "{colors.destructive}"
+    textColor: "{colors.on-destructive}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.md}"
+  card-surface:
+    backgroundColor: "{colors.surface-container}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.lg}"
+  input-field:
+    backgroundColor: "{colors.surface-container-high}"
+    rounded: "{rounded.DEFAULT}"
+    padding: "{spacing.md}"
+---
+
+## Overview
+
+[Describe the brand personality, product purpose, and style direction for
+{{ app_name }}. What does this design system represent?]
+
+For responsive and accessible usage patterns, see
+[docs/design-culture/](docs/design-culture/).
+
+## Colors
+
+[Explain the palette rationale: why these colors, what roles they serve, how
+light and dark modes differ. Reference WCAG contrast requirements for
+on-X / X pairs.]
+
+## Typography
+
+[Describe the chosen font and why it fits the brand. List the scale levels and
+their intended usage contexts (display, body, label).]
+
+## Layout
+
+[Describe the responsive grid: breakpoints, column model, gutter and section
+spacing. Reference the wind-responsive doc for breakpoint-specific guidance.]
+
+## Elevation & Depth
+
+[Describe the elevation model: tonal backgrounds, shadows (if any), and how
+depth signals hierarchy to the user.]
+
+## Shapes
+
+[Map corner-radius values to use cases: inputs, buttons, cards, dialogs,
+badges.]
+
+## Components
+
+[List the key components and their token bindings. Variant matrices are visible
+at `/preview` in debug builds. Run `design:lint` to validate token usage.]
