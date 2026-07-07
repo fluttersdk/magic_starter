@@ -423,6 +423,21 @@ MagicStarter.useTheme(
 
 `MagicStarterTheme` has 7 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`. All fields are optional.
 
+#### One-call adoption from a `WindThemeData`
+
+If your app already defines a Wind semantic palette (the 17 alias roles, e.g. via `MagicStarterTokens.defaultAliases` or a `design:sync`-generated map), skip building sub-theme structs entirely and adopt the whole palette in one call:
+
+```dart
+MagicStarter.useWindTheme(
+  WindThemeData(
+    colors: {'primary': myBrandColor},
+    aliases: MagicStarterTokens.defaultAliases, // or a design:sync map
+  ),
+);
+```
+
+`useWindTheme()` derives all 7 sub-themes from the theme's semantic roles (`bg-surface`, `text-fg`, `bg-primary`, `border-color-border`, `bg-destructive`, ...) and delegates to `useTheme()`. Each alias carries its own `dark:` pair, so one token re-skins both light and dark. It is additive: `useTheme()` and any `use*Theme()` setter still override afterward. A role you do not define keeps the shipped default (never an invisible surface). See [doc/guides/wind-theme-adoption.md](doc/guides/wind-theme-adoption.md) for the full alias-to-property mapping.
+
 ### Level 3: Builder Slots
 
 Override specific sections of a screen without replacing the full view. Use `MagicStarter.view.slot()` to register a partial builder for a named slot:

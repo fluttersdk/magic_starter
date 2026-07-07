@@ -1,4 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:magic/magic.dart';
+
+import '../ui/theme/magic_starter_tokens.dart';
 
 // ---------------------------------------------------------------------------
 // Navigation theme
@@ -736,6 +739,141 @@ class MagicStarterTheme {
     this.auth = const MagicStarterAuthTheme(),
   });
 
+  /// Derives a full [MagicStarterTheme] from a [WindThemeData]'s semantic
+  /// alias palette, so a consumer aligns all 7 magic_starter surfaces to their
+  /// brand in one call instead of building up to 7 sub-theme structs by hand.
+  ///
+  /// Every color-bearing className fragment in the sub-theme defaults is
+  /// rebuilt from the 17 semantic roles ([MagicStarterTokens.defaultAliases]):
+  /// `bg-surface` / `bg-surface-container` / `bg-surface-container-high` for
+  /// backgrounds, `text-fg` / `text-fg-muted` / `text-fg-disabled` for text,
+  /// `bg-primary` / `text-on-primary` / `text-primary` for the brand action,
+  /// `border-color-border` / `border-color-border-subtle` for dividers, and
+  /// `bg-destructive` / `text-on-destructive` / `bg-destructive-container` for
+  /// danger surfaces. Because each alias carries its own `dark:` pair, no
+  /// manual `dark:` palette utility is emitted; the single token re-skins in
+  /// both modes.
+  ///
+  /// A role is only emitted as a token when [theme] actually defines it (as an
+  /// alias key, or a backing color key in [WindThemeData.colors]); otherwise
+  /// the property keeps the shipped default palette pair for that role so a
+  /// partially-configured theme never produces a silent no-op (invisible)
+  /// surface. Pair this factory with a full alias map (e.g.
+  /// [MagicStarterTokens.defaultAliases] or a `design:sync`-generated map) to
+  /// re-skin every surface.
+  ///
+  /// ### Example
+  /// ```dart
+  /// MagicStarter.useWindTheme(
+  ///   WindThemeData(
+  ///     colors: {'primary': myBrandColor},
+  ///     aliases: MagicStarterTokens.defaultAliases,
+  ///   ),
+  /// );
+  /// ```
+  factory MagicStarterTheme.fromWind(WindThemeData theme) {
+    // Resolve each semantic role once so the sub-theme builders below read as a
+    // flat mapping from role to token/fallback rather than repeated lookups.
+    final surface = _windRole(theme, 'bg-surface');
+    final surfaceContainer = _windRole(theme, 'bg-surface-container');
+    final surfaceContainerHigh = _windRole(theme, 'bg-surface-container-high');
+    final fg = _windRole(theme, 'text-fg');
+    final fgMuted = _windRole(theme, 'text-fg-muted');
+    final fgDisabled = _windRole(theme, 'text-fg-disabled');
+    final bgPrimary = _windRole(theme, 'bg-primary');
+    final textPrimary = _windRole(theme, 'text-primary');
+    final onPrimary = _windRole(theme, 'text-on-primary');
+    final border = _windRole(theme, 'border-color-border');
+    final borderSubtle = _windRole(theme, 'border-color-border-subtle');
+    final bgDestructive = _windRole(theme, 'bg-destructive');
+    final onDestructive = _windRole(theme, 'text-on-destructive');
+    final destructiveContainer = _windRole(theme, 'bg-destructive-container');
+    final textDestructive = _windRole(theme, 'text-destructive');
+    final bgWarning = _windRole(theme, 'bg-warning');
+
+    return MagicStarterTheme(
+      navigation: MagicStarterNavigationTheme(
+        activeItemClassName:
+            'active:$textPrimary active:bg-primary/10 dark:active:bg-primary/10',
+        hoverItemClassName: 'hover:$surfaceContainerHigh',
+        brandClassName: 'text-lg font-bold $textPrimary',
+        bottomNavActiveClassName: 'active:$textPrimary',
+        avatarClassName: 'bg-primary/10 dark:bg-primary/10',
+        avatarTextClassName: 'text-sm font-bold $textPrimary',
+        dropdownAvatarClassName: 'bg-gradient-to-tr from-primary to-gray-200',
+      ),
+      modal: MagicStarterModalTheme(
+        containerClassName: '$surfaceContainer rounded-2xl',
+        titleClassName: 'text-xl font-semibold $fg mb-2',
+        descriptionClassName: 'text-sm $fgMuted',
+        footerClassName: 'px-6 py-4 $surfaceContainerHigh',
+        primaryButtonClassName:
+            'px-4 py-2 rounded-lg $bgPrimary hover:bg-primary/80 $onPrimary text-sm font-medium',
+        secondaryButtonClassName:
+            'px-4 py-2 rounded-lg $surfaceContainer border $border hover:$surfaceContainerHigh $fg text-sm font-medium',
+        dangerButtonClassName:
+            'px-4 py-2 rounded-lg $bgDestructive $onDestructive text-sm font-medium',
+        warningButtonClassName:
+            'px-4 py-2 rounded-lg $bgWarning text-white text-sm font-medium',
+        errorClassName: 'text-sm $textDestructive',
+        inputClassName:
+            'w-full px-3 py-3 rounded-lg $surfaceContainerHigh border $border $fg focus:border-primary',
+      ),
+      form: MagicStarterFormTheme(
+        inputClassName:
+            'w-full px-3 py-3 rounded-lg $surfaceContainerHigh border $border $fg focus:border-primary error:border-red-500',
+        labelClassName: 'text-sm font-medium $fg mb-1',
+        errorClassName: 'text-sm $textDestructive',
+        placeholderClassName: fgDisabled,
+        primaryButtonClassName:
+            'w-full $bgPrimary hover:bg-primary/80 $onPrimary text-base font-semibold py-3 rounded-lg',
+        secondaryButtonClassName:
+            'w-full bg-transparent border $border $fgMuted hover:$surfaceContainer py-3 rounded-lg text-sm font-medium',
+        linkClassName: 'text-sm font-medium $textPrimary',
+        checkboxLabelClassName: '$fgMuted hover:$fg ml-1',
+      ),
+      card: MagicStarterCardTheme(
+        surfaceClassName: '$surface border $border',
+        insetClassName: '$surfaceContainer border $border',
+        elevatedClassName: '$surface shadow-md',
+        titleClassName: 'text-lg font-semibold $fg',
+      ),
+      pageHeader: MagicStarterPageHeaderTheme(
+        containerClassName:
+            'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b $border',
+        containerInlineClassName:
+            'w-full flex flex-row items-center justify-between gap-4 p-2 lg:p-4 border-b $border',
+        titleClassName: 'text-2xl font-bold $fg line-clamp-2',
+        subtitleClassName: 'text-sm $fgMuted line-clamp-2',
+        backControlClassName:
+            'flex items-center justify-center size-9 -ml-1 text-2xl $fgMuted hover:$fg',
+      ),
+      layout: MagicStarterLayoutTheme(
+        sidebarClassName: 'h-full flex flex-col $surface border-r $border',
+        headerClassName:
+            'h-16 px-4 $surface border-b $border flex items-center justify-between',
+        brandBarClassName:
+            'h-14 px-5 flex items-center justify-between border-b $borderSubtle',
+      ),
+      auth: MagicStarterAuthTheme(
+        cardClassName:
+            'rounded-2xl $surfaceContainer border $border p-4 lg:p-8 flex flex-col items-center',
+        titleClassName: 'text-2xl font-bold $fg text-center',
+        subtitleClassName: 'text-sm $fgMuted text-center',
+        errorBannerClassName:
+            'p-3 rounded-xl $destructiveContainer border border-red-200 dark:border-red-800 $textDestructive text-sm text-center',
+        themeToggleClassName:
+            'p-2 rounded-lg duration-150 bg-transparent hover:$surfaceContainerHigh flex items-center justify-center',
+        themeToggleIconClassName: 'text-2xl $fgMuted',
+        socialDividerTextClassName: 'text-sm $fgMuted',
+        guestButtonClassName:
+            'w-full bg-transparent border $border $fgMuted hover:$surfaceContainer py-3 rounded-lg text-sm font-medium',
+        registrationLinkClassName: 'text-sm $fgMuted',
+        registrationLinkTextClassName: 'text-sm font-semibold $textPrimary',
+      ),
+    );
+  }
+
   /// Returns a copy of this theme with the given sub-themes replaced.
   MagicStarterTheme copyWith({
     MagicStarterNavigationTheme? navigation,
@@ -756,4 +894,60 @@ class MagicStarterTheme {
       auth: auth ?? this.auth,
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// WindThemeData -> semantic-role derivation helpers (used by
+// MagicStarterTheme.fromWind)
+// ---------------------------------------------------------------------------
+
+/// Fallback palette pairs for semantic roles that are NOT keys in
+/// [MagicStarterTokens.defaultAliases].
+///
+/// `text-primary` resolves directly against the `primary` color and is always
+/// available, so its fallback is only a safety net. `text-destructive` has no
+/// canonical alias (the contract ships `bg-destructive` / `text-on-destructive`
+/// only), so it falls back to the red text pair the sub-themes used before.
+const Map<String, String> _windRoleFallbacks = {
+  'text-primary': 'text-primary',
+  'text-destructive': 'text-red-600 dark:text-red-400',
+};
+
+/// Resolves a semantic role [token] against [theme].
+///
+/// Returns the bare semantic token when [theme] defines the role (so it
+/// re-skins with the passed palette); otherwise returns the shipped default
+/// palette pair so the surface stays visible even when the theme omits the
+/// role. This keeps [MagicStarterTheme.fromWind] derived-from-the-theme without
+/// ever emitting a token that would silently no-op at render time.
+String _windRole(WindThemeData theme, String token) {
+  if (_windThemeDefines(theme, token)) return token;
+  return MagicStarterTokens.defaultAliases[token] ??
+      _windRoleFallbacks[token] ??
+      token;
+}
+
+/// Whether [theme] defines the semantic role behind [token], either as an alias
+/// key (`bg-surface`, `text-fg`, `border-color-border`, ...) or via the backing
+/// color key in [WindThemeData.colors] (`bg-primary` -> `primary`).
+bool _windThemeDefines(WindThemeData theme, String token) {
+  if (theme.aliases.containsKey(token)) {
+    return true;
+  }
+
+  final colorKey = _windBackingColorKey(token);
+  return colorKey != null && theme.colors.containsKey(colorKey);
+}
+
+/// Strips the CSS-property prefix off a semantic [token] to recover its backing
+/// color key (`border-color-border` -> `border`, `bg-primary` -> `primary`,
+/// `text-fg` -> `fg`), or `null` when the token carries no known prefix.
+String? _windBackingColorKey(String token) {
+  for (final prefix in const ['border-color-', 'bg-', 'text-']) {
+    if (token.startsWith(prefix)) {
+      return token.substring(prefix.length);
+    }
+  }
+
+  return null;
 }

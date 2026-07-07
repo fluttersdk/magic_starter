@@ -358,6 +358,35 @@ class MagicStarter {
     manager.theme = theme;
   }
 
+  /// Adopt a whole [WindThemeData] palette across all 7 sub-themes in one call.
+  ///
+  /// Derives a [MagicStarterTheme] from the passed theme's semantic alias
+  /// palette (surface / surface-container / fg / primary / on-primary / border
+  /// / destructive, etc.) and delegates to [useTheme]. Every color-bearing
+  /// className in the built-in navigation, modal, form, card, page header,
+  /// layout, and auth surfaces is rebuilt from those semantic roles, so a
+  /// consumer aligns the entire starter kit to their brand in a single call
+  /// instead of constructing up to 7 sub-theme structs by hand.
+  ///
+  /// This is additive: [useTheme] and every individual `use*Theme()` setter
+  /// still work and can override any sub-theme afterward.
+  ///
+  /// Pair it with a full alias map (e.g. `MagicStarterTokens.defaultAliases` or
+  /// a `design:sync`-generated map) so every surface re-skins; see
+  /// [MagicStarterTheme.fromWind] for the alias-to-property mapping.
+  ///
+  /// ```dart
+  /// MagicStarter.useWindTheme(
+  ///   WindThemeData(
+  ///     colors: {'primary': myBrandColor},
+  ///     aliases: MagicStarterTokens.defaultAliases,
+  ///   ),
+  /// );
+  /// ```
+  static void useWindTheme(WindThemeData theme) {
+    useTheme(MagicStarterTheme.fromWind(theme));
+  }
+
   /// Get the active unified theme.
   static MagicStarterTheme get theme => manager.theme;
 
