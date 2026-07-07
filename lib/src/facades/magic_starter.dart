@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
@@ -24,9 +25,41 @@ typedef MagicStarterNotificationTypeMapper
 class MagicStarter {
   MagicStarter._();
 
+  /// Shared fallback manager used when `magic_starter` is not bound in the
+  /// Magic IoC container. Lazily created once and reused so repeated unbound
+  /// access does not construct a new manager (and re-register default views)
+  /// on every call.
+  static MagicStarterManager? _fallbackManager;
+
+  /// Guards the one-time [debugPrint] warning emitted by [manager] the first
+  /// time it falls back to [_fallbackManager]. Prevents log spam from every
+  /// unbound getter access while still surfacing a real forgot-to-bind bug.
+  static bool _hasWarnedAboutUnboundManager = false;
+
   /// Get the manager instance.
-  static MagicStarterManager get manager =>
-      Magic.make<MagicStarterManager>('magic_starter');
+  ///
+  /// Resolves `MagicStarterManager` from the Magic IoC container. When the
+  /// container has no binding for `'magic_starter'` (e.g. rendering a
+  /// component in a widget test or a `/preview` catalog without going
+  /// through [MagicStarterServiceProvider]), falls back to a shared
+  /// default-constructed [MagicStarterManager] instead of throwing, and
+  /// emits a one-time debug warning so a genuine forgot-to-bind bug stays
+  /// visible in development.
+  static MagicStarterManager get manager {
+    if (Magic.bound('magic_starter')) {
+      return Magic.make<MagicStarterManager>('magic_starter');
+    }
+
+    if (kDebugMode && !_hasWarnedAboutUnboundManager) {
+      _hasWarnedAboutUnboundManager = true;
+      debugPrint(
+        'MagicStarterManager not bound; using defaults. '
+        'Call MagicStarter... to configure.',
+      );
+    }
+
+    return _fallbackManager ??= MagicStarterManager();
+  }
 
   /// Global view registry accessor.
   static MagicStarterViewRegistry get view => manager.view;
