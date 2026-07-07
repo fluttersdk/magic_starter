@@ -6,5 +6,5 @@
 // re-exported here — `previews:refresh` (Step 18) discovers `*.preview.dart`
 // files directly, and the preview must stay out of the release barrel.
 
-export 'dialog.dart' show Dialog;
+export 'dialog.dart' show MSDialog;
 export 'dialog.recipe.dart';

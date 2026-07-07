@@ -6,5 +6,5 @@
 // re-exported here — `previews:refresh` discovers `*.preview.dart` files
 // directly, and the preview must stay out of the release barrel.
 
-export 'settings_scaffold.dart' show SettingsScaffold;
+export 'settings_scaffold.dart' show MSSettingsScaffold;
 export 'settings_scaffold.recipe.dart';

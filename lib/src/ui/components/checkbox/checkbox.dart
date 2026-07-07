@@ -11,13 +11,13 @@ import 'checkbox.recipe.dart';
 /// ### Usage
 ///
 /// ```dart
-/// Checkbox(
+/// MSCheckbox(
 ///   value: _accepted,
 ///   onChanged: (v) => setState(() => _accepted = v),
 /// )
 /// ```
 @immutable
-class Checkbox extends StatelessWidget {
+class MSCheckbox extends StatelessWidget {
   /// Whether the checkbox is checked.
   final bool value;
 
@@ -33,8 +33,8 @@ class Checkbox extends StatelessWidget {
   /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
-  /// Creates a [Checkbox].
-  const Checkbox({
+  /// Creates a [MSCheckbox].
+  const MSCheckbox({
     super.key,
     required this.value,
     this.onChanged,

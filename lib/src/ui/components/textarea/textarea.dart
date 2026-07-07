@@ -11,7 +11,7 @@ import 'textarea.recipe.dart';
 /// ### Basic usage
 ///
 /// ```dart
-/// Textarea(
+/// MSTextarea(
 ///   placeholder: 'Enter a description',
 ///   minLines: 3,
 ///   maxLines: 8,
@@ -19,7 +19,7 @@ import 'textarea.recipe.dart';
 /// )
 /// ```
 @immutable
-class Textarea extends StatelessWidget {
+class MSTextarea extends StatelessWidget {
   /// The controlled value of the textarea.
   final String? value;
 
@@ -67,8 +67,8 @@ class Textarea extends StatelessWidget {
   /// Accessible label for the textarea.
   final String? semanticLabel;
 
-  /// Creates a [Textarea].
-  const Textarea({
+  /// Creates a [MSTextarea].
+  const MSTextarea({
     super.key,
     this.value,
     this.onChanged,

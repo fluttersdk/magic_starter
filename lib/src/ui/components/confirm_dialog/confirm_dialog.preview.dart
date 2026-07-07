@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'confirm_dialog.dart';
 
-/// Static variant-matrix preview for [ConfirmDialog].
+/// Static variant-matrix preview for [MSConfirmDialog].
 ///
 /// Renders each [ConfirmDialogVariant] inline (not via showDialog) so the
 /// preview catalog can display the full variant surface in light and dark.
@@ -18,7 +18,7 @@ class ConfirmDialogPreview extends StatelessWidget {
       className: 'flex flex-col gap-6 p-6',
       children: [
         for (final variant in ConfirmDialogVariant.values)
-          ConfirmDialog(
+          MSConfirmDialog(
             title: '${variant.name} confirm',
             description:
                 'This action demonstrates the ${variant.name} variant.',

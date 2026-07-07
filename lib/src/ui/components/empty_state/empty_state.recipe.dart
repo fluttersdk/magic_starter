@@ -1,7 +1,7 @@
 // EmptyState has no variant axes — its layout is static. This file maintains
 // the canonical 4-file atomic-component shape.
 
-/// Root container className for [EmptyState].
+/// Root container className for [MSEmptyState].
 String emptyStateRootClassName() =>
     'flex flex-col items-center justify-center gap-4 py-12 px-6 text-center';
 

@@ -8,15 +8,15 @@ import 'empty_state.recipe.dart';
 ///
 /// ### Example
 /// ```dart
-/// EmptyState(
+/// MSEmptyState(
 ///   icon: Icons.inbox_outlined,
 ///   title: 'No notifications',
 ///   description: 'You are all caught up!',
-///   action: Button(onPressed: refresh, child: const Text('Refresh')),
+///   action: MSButton(onPressed: refresh, child: const Text('Refresh')),
 /// )
 /// ```
 @immutable
-class EmptyState extends StatelessWidget {
+class MSEmptyState extends StatelessWidget {
   /// Optional icon rendered in the icon wrap slot.
   final IconData? icon;
 
@@ -26,11 +26,11 @@ class EmptyState extends StatelessWidget {
   /// Optional secondary description text.
   final String? description;
 
-  /// Optional action widget (e.g. a [Button]).
+  /// Optional action widget (e.g. a [MSButton]).
   final Widget? action;
 
-  /// Creates an [EmptyState].
-  const EmptyState({
+  /// Creates an [MSEmptyState].
+  const MSEmptyState({
     super.key,
     required this.title,
     this.icon,

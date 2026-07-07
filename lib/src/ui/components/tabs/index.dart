@@ -4,5 +4,5 @@
 // re-exported here — `previews:refresh` discovers `*.preview.dart` files
 // directly, and the preview must stay out of the release barrel.
 
-export 'tabs.dart' show Tabs;
+export 'tabs.dart' show MSTabs;
 export 'tabs.recipe.dart' show tabsRecipe;

@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'radio.dart';
 
-/// Static variant-matrix preview for [Radio].
+/// Static variant-matrix preview for [MSRadio].
 ///
 /// Renders selected and unselected states in both enabled and disabled modes.
 class RadioPreview extends StatelessWidget {
@@ -22,13 +22,13 @@ class RadioPreview extends StatelessWidget {
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [
-                Radio<String>(
+                MSRadio<String>(
                   value: 'a',
                   groupValue: 'b',
                   onChanged: (_) {},
                 ),
                 WText('Unselected', className: 'text-sm text-fg'),
-                Radio<String>(
+                MSRadio<String>(
                   value: 'a',
                   groupValue: 'a',
                   onChanged: (_) {},
@@ -48,14 +48,14 @@ class RadioPreview extends StatelessWidget {
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [
-                Radio<String>(
+                MSRadio<String>(
                   value: 'a',
                   groupValue: 'b',
                   onChanged: (_) {},
                   disabled: true,
                 ),
                 WText('Unselected', className: 'text-sm text-fg-disabled'),
-                Radio<String>(
+                MSRadio<String>(
                   value: 'a',
                   groupValue: 'a',
                   onChanged: (_) {},

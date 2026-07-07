@@ -32,7 +32,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const Card(
+        const MSCard(
           className: 'mt-10',
           child: Text('body'),
         ),
@@ -46,7 +46,7 @@ void main() {
   testWidgets('Card without caller className keeps the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Card(child: Text('body'))),
+      wrap(const MSCard(child: Text('body'))),
     );
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(wDiv.className, contains('w-full'));

@@ -1,6 +1,6 @@
 import 'package:magic/magic.dart';
 
-/// The [Tooltip] panel [WindRecipe] (const).
+/// The [MSTooltip] panel [WindRecipe] (const).
 ///
 /// The base carries the default panel styling using semantic alias tokens
 /// (`bg-surface-container-high`, `text-fg`, `border-color-border`) so the

@@ -12,7 +12,7 @@ import 'input.recipe.dart';
 /// ### Basic usage
 ///
 /// ```dart
-/// Input(
+/// MSInput(
 ///   placeholder: 'Email address',
 ///   type: InputType.email,
 ///   onChanged: (v) => controller.email = v,
@@ -22,14 +22,14 @@ import 'input.recipe.dart';
 /// ### Error state
 ///
 /// ```dart
-/// Input(
+/// MSInput(
 ///   placeholder: 'Email address',
 ///   state: InputState.error,
 ///   onChanged: (v) => controller.email = v,
 /// )
 /// ```
 @immutable
-class Input extends StatelessWidget {
+class MSInput extends StatelessWidget {
   /// The controlled value of the input.
   final String? value;
 
@@ -104,8 +104,8 @@ class Input extends StatelessWidget {
   /// Accessible label for the input.
   final String? semanticLabel;
 
-  /// Creates an [Input].
-  const Input({
+  /// Creates an [MSInput].
+  const MSInput({
     super.key,
     this.value,
     this.onChanged,

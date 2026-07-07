@@ -19,7 +19,7 @@ import 'settings_nav_row.recipe.dart';
 ///
 /// ### Usage
 /// ```dart
-/// SettingsNavRow(
+/// MSSettingsNavRow(
 ///   title: 'Two-Factor',
 ///   subtitle: 'Secure your account',
 ///   value: 'On',
@@ -33,14 +33,14 @@ import 'settings_nav_row.recipe.dart';
 /// Pass [onTapOverride] in widget tests to intercept navigation without
 /// requiring a live router:
 /// ```dart
-/// SettingsNavRow(
+/// MSSettingsNavRow(
 ///   title: 'Profile',
 ///   to: '/settings/profile',
 ///   onTapOverride: (path) => capturedPath = path,
 /// )
 /// ```
 @immutable
-class SettingsNavRow extends StatelessWidget {
+class MSSettingsNavRow extends StatelessWidget {
   /// Required row title text.
   final String title;
 
@@ -68,8 +68,8 @@ class SettingsNavRow extends StatelessWidget {
   /// `MagicRouter` instance.
   final void Function(String path)? onTapOverride;
 
-  /// Creates a [SettingsNavRow].
-  const SettingsNavRow({
+  /// Creates a [MSSettingsNavRow].
+  const MSSettingsNavRow({
     super.key,
     required this.title,
     required this.to,

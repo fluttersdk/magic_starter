@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 
 import 'settings_nav_row.dart';
 
-/// Static variant-matrix preview for [SettingsNavRow].
+/// Static variant-matrix preview for [MSSettingsNavRow].
 ///
 /// Renders combinations of: with/without icon, with/without subtitle,
 /// with/without trailing value — in a scrollable list so the catalog
@@ -22,7 +22,7 @@ class SettingsNavRowPreview extends StatelessWidget {
         WDiv(
           className: 'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
-          child: const SettingsNavRow(
+          child: const MSSettingsNavRow(
             title: 'Profile',
             to: '/settings/profile',
           ),
@@ -32,7 +32,7 @@ class SettingsNavRowPreview extends StatelessWidget {
         WDiv(
           className: 'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
-          child: const SettingsNavRow(
+          child: const MSSettingsNavRow(
             title: 'Security',
             subtitle: 'Password, 2FA, sessions',
             icon: Icons.security,
@@ -44,7 +44,7 @@ class SettingsNavRowPreview extends StatelessWidget {
         WDiv(
           className: 'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
-          child: const SettingsNavRow(
+          child: const MSSettingsNavRow(
             title: 'Two-Factor Auth',
             value: 'On',
             icon: Icons.lock_outline,
@@ -56,7 +56,7 @@ class SettingsNavRowPreview extends StatelessWidget {
         WDiv(
           className: 'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
-          child: const SettingsNavRow(
+          child: const MSSettingsNavRow(
             title: 'Active Sessions',
             subtitle: 'Manage where you are signed in',
             value: '3 devices',
@@ -70,17 +70,17 @@ class SettingsNavRowPreview extends StatelessWidget {
           className: 'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
           children: const [
-            SettingsNavRow(
+            MSSettingsNavRow(
               title: 'Appearance',
               icon: Icons.palette_outlined,
               to: '/settings/appearance',
             ),
-            SettingsNavRow(
+            MSSettingsNavRow(
               title: 'Notifications',
               icon: Icons.notifications_outlined,
               to: '/settings/notifications',
             ),
-            SettingsNavRow(
+            MSSettingsNavRow(
               title: 'Language',
               value: 'English',
               icon: Icons.language,

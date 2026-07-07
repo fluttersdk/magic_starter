@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart' hide Dialog;
+import 'package:magic_starter/magic_starter.dart';
 
 void main() {
   setUp(() async {

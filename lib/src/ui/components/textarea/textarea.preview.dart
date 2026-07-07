@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 import 'textarea.dart';
 import 'textarea.recipe.dart';
 
-/// Static variant-matrix preview for [Textarea].
+/// Static variant-matrix preview for [MSTextarea].
 ///
 /// Renders every [TextareaState] so the catalog (`/preview`) can show the full
 /// surface in both light and dark.
@@ -25,7 +25,7 @@ class TextareaPreview extends StatelessWidget {
                 state.name,
                 className: 'text-sm font-semibold text-fg-muted',
               ),
-              Textarea(
+              MSTextarea(
                 state: state,
                 placeholder: 'Enter text (${state.name})',
                 minLines: 3,

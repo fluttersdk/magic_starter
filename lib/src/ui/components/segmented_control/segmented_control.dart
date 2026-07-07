@@ -13,14 +13,14 @@ import 'segmented_control.recipe.dart';
 /// ### Example Usage:
 ///
 /// ```dart
-/// SegmentedControl<String>(
+/// MSSegmentedControl<String>(
 ///   options: const ['Monthly', 'Annual'],
 ///   selectedIndex: _selected,
 ///   onChanged: (i) => setState(() => _selected = i),
 /// )
 /// ```
 @immutable
-class SegmentedControl<T> extends StatelessWidget {
+class MSSegmentedControl<T> extends StatelessWidget {
   /// The label displayed for each segment, in display order.
   final List<String> options;
 
@@ -36,8 +36,8 @@ class SegmentedControl<T> extends StatelessWidget {
   /// Per-slot className overrides appended after the recipe output.
   final Map<String, String>? classNames;
 
-  /// Creates a [SegmentedControl] widget.
-  const SegmentedControl({
+  /// Creates a [MSSegmentedControl] widget.
+  const MSSegmentedControl({
     super.key,
     required this.options,
     required this.selectedIndex,

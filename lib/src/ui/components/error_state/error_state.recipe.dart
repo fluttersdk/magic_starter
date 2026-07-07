@@ -1,7 +1,7 @@
 // ErrorState has no variant axes — its layout is static. This file maintains
 // the canonical 4-file atomic-component shape.
 
-/// Root container className for [ErrorState].
+/// Root container className for [MSErrorState].
 String errorStateRootClassName() =>
     'flex flex-col items-center justify-center gap-4 py-12 px-6 text-center';
 

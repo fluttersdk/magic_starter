@@ -141,9 +141,10 @@ void main() {
     );
   }
 
-  /// Returns the [SettingsNavRow] whose `to` matches [path], or null.
-  SettingsNavRow? navRowFor(WidgetTester tester, String path) {
-    final rows = tester.widgetList<SettingsNavRow>(find.byType(SettingsNavRow));
+  /// Returns the [MSSettingsNavRow] whose `to` matches [path], or null.
+  MSSettingsNavRow? navRowFor(WidgetTester tester, String path) {
+    final rows =
+        tester.widgetList<MSSettingsNavRow>(find.byType(MSSettingsNavRow));
     for (final row in rows) {
       if (row.to == path) {
         return row;
@@ -376,7 +377,7 @@ void main() {
     // The guest upgrade row would point at the profile route's upgrade flow;
     // for a non-guest there is exactly one Account row (Profile).
     final accountRows = tester
-        .widgetList<SettingsNavRow>(find.byType(SettingsNavRow))
+        .widgetList<MSSettingsNavRow>(find.byType(MSSettingsNavRow))
         .where((r) => r.to == MagicStarterConfig.profileRoute());
     expect(accountRows.length, 1);
   });

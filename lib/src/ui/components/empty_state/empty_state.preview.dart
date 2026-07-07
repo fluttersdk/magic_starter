@@ -5,7 +5,7 @@ import 'package:magic/magic.dart';
 import '../button/button.dart';
 import 'empty_state.dart';
 
-/// Static preview for [EmptyState].
+/// Static preview for [MSEmptyState].
 ///
 /// Renders three variations: minimal (title-only), with all slots, and with
 /// action. One preview class per file.
@@ -17,17 +17,17 @@ class EmptyStatePreview extends StatelessWidget {
     return WDiv(
       className: 'flex flex-col gap-8 p-6',
       children: [
-        const EmptyState(title: 'Nothing here yet'),
-        const EmptyState(
+        const MSEmptyState(title: 'Nothing here yet'),
+        const MSEmptyState(
           icon: Icons.inbox_outlined,
           title: 'No notifications',
           description: 'You are all caught up! Check back later.',
         ),
-        EmptyState(
+        MSEmptyState(
           icon: Icons.folder_open_outlined,
           title: 'No projects found',
           description: 'Create your first project to get started.',
-          action: Button(
+          action: MSButton(
             onPressed: () {},
             child: const WText('Create project'),
           ),

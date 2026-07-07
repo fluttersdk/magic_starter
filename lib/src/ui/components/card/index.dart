@@ -6,5 +6,5 @@
 // re-exported here — `previews:refresh` (Step 18) discovers `*.preview.dart`
 // files directly, and the preview must stay out of the release barrel.
 
-export 'card.dart' show Card, CardVariant;
+export 'card.dart' show MSCard, CardVariant;
 export 'card.recipe.dart';

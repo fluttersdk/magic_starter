@@ -141,7 +141,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
 
     final isGuest = Gate.denies('starter.delete-account');
 
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('profile.settings'),
       subtitle: trans('profile.settings_subtitle'),
       backLabel: trans('magic_starter.nav.settings'),
@@ -181,7 +181,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
     final user = Auth.user();
     final photoUrl = user?.get<String>('profile_photo_url');
 
-    return SettingsSection(
+    return MSSettingsSection(
       header: trans('profile.profile_photo'),
       children: [
         WDiv(
@@ -273,7 +273,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
   /// with a resend button when unverified.
   Widget _buildEmailVerificationSection() {
     if (controller.isEmailVerified) {
-      return SettingsSection(
+      return MSSettingsSection(
         header: trans('magic_starter.email_verification.section_title'),
         children: [
           WDiv(
@@ -293,7 +293,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
       );
     }
 
-    return SettingsSection(
+    return MSSettingsSection(
       header: trans('magic_starter.email_verification.section_title'),
       children: [
         WDiv(
@@ -361,7 +361,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
     return WDiv(
       className: 'flex flex-col gap-6',
       children: [
-        SettingsSection(
+        MSSettingsSection(
           header: trans('profile.profile_information'),
           children: [
             WDiv(
@@ -445,7 +445,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
 
     return MagicForm(
       formData: upgradeForm,
-      child: SettingsSection(
+      child: MSSettingsSection(
         header: trans('magic_starter.guest_upgrade.title'),
         children: [
           WDiv(

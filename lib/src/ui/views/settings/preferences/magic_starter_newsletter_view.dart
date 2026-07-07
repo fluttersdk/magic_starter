@@ -13,7 +13,7 @@ import '../../../components/switch/index.dart';
 /// newsletter controller.
 ///
 /// Lifts the long-form profile view's newsletter section verbatim: a
-/// [SettingsRow] with a trailing [Switch] wired to
+/// [MSSettingsRow] with a trailing [MSSwitch] wired to
 /// [MagicStarterNewsletterController.updateNewsletterSubscription] (optimistic
 /// update). The current status is fetched on init via `getNewsletterStatus`
 /// and surfaced through the controller's `renderState`.
@@ -57,13 +57,13 @@ class _MagicStarterNewsletterViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('magic_starter.newsletter.section_title'),
       subtitle: trans('magic_starter.newsletter.section_description'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
-        SettingsSection(
+        MSSettingsSection(
           footer: trans('magic_starter.newsletter.section_description'),
           children: [
             controller.renderState(
@@ -71,13 +71,13 @@ class _MagicStarterNewsletterViewState extends MagicStatefulViewState<
                 final isSubscribed = data?['subscribed'] as bool? ?? false;
                 return ValueListenableBuilder<bool>(
                   valueListenable: _toggleLoading,
-                  builder: (context, isLoading, _) => SettingsRow(
+                  builder: (context, isLoading, _) => MSSettingsRow(
                     icon: _iconNewsletter,
                     title: trans('magic_starter.newsletter.toggle_label'),
                     subtitle: isSubscribed
                         ? trans('magic_starter.newsletter.subscribed_status')
                         : trans('magic_starter.newsletter.unsubscribed_status'),
-                    trailing: Switch(
+                    trailing: MSSwitch(
                       value: isSubscribed,
                       disabled: isLoading,
                       onChanged: (newValue) => _toggle(newValue),
@@ -85,7 +85,7 @@ class _MagicStarterNewsletterViewState extends MagicStatefulViewState<
                   ),
                 );
               },
-              onEmpty: SettingsRow(
+              onEmpty: MSSettingsRow(
                 icon: _iconNewsletter,
                 title: trans('magic_starter.newsletter.toggle_label'),
                 trailing: WIcon(

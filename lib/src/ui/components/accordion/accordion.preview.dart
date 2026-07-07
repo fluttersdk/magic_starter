@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'accordion.dart';
 
-/// Static variant-matrix preview for [Accordion].
+/// Static variant-matrix preview for [MSAccordion].
 ///
 /// Renders a three-item accordion so the catalog can exercise the expand/
 /// collapse interaction and light/dark themes. One preview class per file is
@@ -21,16 +21,16 @@ class AccordionPreview extends StatelessWidget {
           'Accordion — default',
           className: 'text-sm font-medium text-fg-muted',
         ),
-        const Accordion(
+        const MSAccordion(
           items: [
-            AccordionItem(
+            MSAccordionItem(
               title: 'What is Magic Starter?',
               body: WText(
                 'A Flutter starter kit built on the Magic framework, '
                 'providing 13 opt-in features out of the box.',
               ),
             ),
-            AccordionItem(
+            MSAccordionItem(
               title: 'What features are included?',
               body: WText(
                 'Auth, registration, 2FA, profile, profile photos, teams, '
@@ -38,7 +38,7 @@ class AccordionPreview extends StatelessWidget {
                 'phone OTP, and guest auth.',
               ),
             ),
-            AccordionItem(
+            MSAccordionItem(
               title: 'How do I customise views?',
               body: WText(
                 'Use the view registry: MagicStarter.view.register() or '

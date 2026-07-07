@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'bottom_sheet.dart';
 
-/// Static preview for the [BottomSheet] component.
+/// Static preview for the [MSBottomSheet] component.
 ///
 /// Renders the sheet panel inline (not via showModalBottomSheet) so the
 /// preview catalog can display it in light and dark. One preview class per
@@ -18,7 +18,7 @@ class BottomSheetPreview extends StatelessWidget {
       className: 'flex flex-col gap-6 p-6',
       children: [
         // Sheet with title + description + footer.
-        BottomSheet(
+        MSBottomSheet(
           title: 'Select an option',
           description: 'Choose the action you want to perform.',
           body: WDiv(
@@ -40,7 +40,7 @@ class BottomSheetPreview extends StatelessWidget {
           ),
         ),
         // Sheet body only.
-        const BottomSheet(
+        const MSBottomSheet(
           body: WText(
             'A minimal bottom sheet with no title or footer.',
             className: 'text-sm',

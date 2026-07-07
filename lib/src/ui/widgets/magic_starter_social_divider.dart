@@ -4,9 +4,9 @@
 
 import '../components/social_divider/social_divider.dart';
 
-export '../components/social_divider/social_divider.dart' show SocialDivider;
+export '../components/social_divider/social_divider.dart' show MSSocialDivider;
 
-/// Backward-compatible alias for [SocialDivider].
-class MagicStarterSocialDivider extends SocialDivider {
+/// Backward-compatible alias for [MSSocialDivider].
+class MagicStarterSocialDivider extends MSSocialDivider {
   const MagicStarterSocialDivider({super.key});
 }

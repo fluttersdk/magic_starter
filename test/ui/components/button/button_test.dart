@@ -120,7 +120,7 @@ void main() {
     const childKey = Key('btn-child');
     await tester.pumpWidget(
       wrap(
-        Button(
+        MSButton(
           onPressed: () {},
           child: const SizedBox(key: childKey),
         ),
@@ -132,7 +132,7 @@ void main() {
   testWidgets('Button applies primary className by default', (tester) async {
     await tester.pumpWidget(
       wrap(
-        Button(
+        MSButton(
           onPressed: () {},
           child: const SizedBox(),
         ),
@@ -146,7 +146,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        Button(
+        MSButton(
           intent: ButtonIntent.destructive,
           onPressed: () {},
           child: const SizedBox(),
@@ -160,7 +160,7 @@ void main() {
   testWidgets('Button respects isLoading prop', (tester) async {
     await tester.pumpWidget(
       wrap(
-        Button(
+        MSButton(
           onPressed: () {},
           isLoading: true,
           child: const SizedBox(),
@@ -195,7 +195,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        Button(
+        MSButton(
           intent: ButtonIntent.primary,
           className: 'mt-10',
           onPressed: () {},
@@ -221,7 +221,7 @@ void main() {
           width: 300,
           child: Column(
             children: [
-              Button(
+              MSButton(
                 fullWidth: true,
                 intent: ButtonIntent.primary,
                 onPressed: () {},
@@ -233,10 +233,10 @@ void main() {
       ),
     );
 
-    final size = tester.getSize(find.byType(Button));
+    final size = tester.getSize(find.byType(MSButton));
     expect(size.width, 300);
 
-    final buttonCenter = tester.getCenter(find.byType(Button));
+    final buttonCenter = tester.getCenter(find.byType(MSButton));
     final labelCenter = tester.getCenter(find.text('Save'));
     expect(labelCenter.dx, closeTo(buttonCenter.dx, 1.0));
 
@@ -252,7 +252,7 @@ void main() {
           width: 300,
           child: Column(
             children: [
-              Button(
+              MSButton(
                 onPressed: () {},
                 child: const WText('Save'),
               ),
@@ -262,7 +262,7 @@ void main() {
       ),
     );
 
-    final size = tester.getSize(find.byType(Button));
+    final size = tester.getSize(find.byType(MSButton));
     expect(size.width, lessThan(300));
   });
 }

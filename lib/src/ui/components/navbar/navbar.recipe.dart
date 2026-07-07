@@ -1,7 +1,7 @@
 // Navbar has no variant axes — its structure is responsive and handled by
 // className tokens. This file maintains the canonical 4-file shape.
 
-/// Root container className for [Navbar].
+/// Root container className for [MSNavbar].
 String navbarRootClassName() =>
     'w-full flex flex-row items-center justify-between '
     'bg-surface border-b border-color-border px-4 h-14';

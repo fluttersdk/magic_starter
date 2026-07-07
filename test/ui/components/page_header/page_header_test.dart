@@ -31,7 +31,7 @@ void main() {
 
   testWidgets('renders required title', (tester) async {
     await tester.pumpWidget(
-      wrap(const PageHeader(title: 'My Page')),
+      wrap(const MSPageHeader(title: 'My Page')),
     );
     expect(find.text('My Page'), findsOneWidget);
   });
@@ -39,7 +39,7 @@ void main() {
   testWidgets('renders subtitle when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const PageHeader(
+        const MSPageHeader(
           title: 'Projects',
           subtitle: 'Manage your projects',
         ),
@@ -51,7 +51,7 @@ void main() {
 
   testWidgets('does not render subtitle when omitted', (tester) async {
     await tester.pumpWidget(
-      wrap(const PageHeader(title: 'Projects')),
+      wrap(const MSPageHeader(title: 'Projects')),
     );
     final texts = tester.widgetList<WText>(find.byType(WText)).toList();
     expect(texts.length, 1);
@@ -62,7 +62,7 @@ void main() {
     const leadingKey = Key('back-btn');
     await tester.pumpWidget(
       wrap(
-        const PageHeader(
+        const MSPageHeader(
           title: 'Detail',
           leading: Icon(Icons.arrow_back, key: leadingKey),
         ),
@@ -75,7 +75,7 @@ void main() {
     const actionKey = Key('action-btn');
     await tester.pumpWidget(
       wrap(
-        PageHeader(
+        MSPageHeader(
           title: 'Projects',
           actions: [
             ElevatedButton(
@@ -92,7 +92,7 @@ void main() {
 
   testWidgets('outer WDiv has responsive sm:flex-row class', (tester) async {
     await tester.pumpWidget(
-      wrap(const PageHeader(title: 'Responsive')),
+      wrap(const MSPageHeader(title: 'Responsive')),
     );
     final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(outerDiv.className, contains('sm:flex-row'));
@@ -103,7 +103,7 @@ void main() {
     const suffixKey = Key('test_suffix');
     await tester.pumpWidget(
       wrap(
-        PageHeader(
+        MSPageHeader(
           title: 'My Page',
           titleSuffix: Container(key: suffixKey),
         ),
@@ -116,7 +116,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        PageHeader(
+        MSPageHeader(
           title: 'Inline',
           inlineActions: true,
           actions: [
@@ -134,7 +134,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        PageHeader(
+        MSPageHeader(
           title: 'Default Layout',
           actions: [
             ElevatedButton(onPressed: () {}, child: const Text('Go')),
@@ -157,7 +157,7 @@ void main() {
         titleClassName: 'custom-header-title',
       );
       await tester.pumpWidget(
-        wrap(const PageHeader(title: 'My Page')),
+        wrap(const MSPageHeader(title: 'My Page')),
       );
       final titleText = tester.widgetList<WText>(find.byType(WText)).first;
       expect(titleText.className, contains('custom-header-title'));
@@ -169,7 +169,7 @@ void main() {
       );
       await tester.pumpWidget(
         wrap(
-          const PageHeader(
+          const MSPageHeader(
             title: 'My Page',
             subtitle: 'A subtitle',
           ),
@@ -194,7 +194,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const PageHeader(
+        const MSPageHeader(
           title: 'Profile',
           backLabel: 'Settings',
         ),
@@ -207,7 +207,7 @@ void main() {
 
   testWidgets('no back leading when backLabel is null', (tester) async {
     await tester.pumpWidget(
-      wrap(const PageHeader(title: 'Dashboard')),
+      wrap(const MSPageHeader(title: 'Dashboard')),
     );
     // Without backLabel the chevron must not appear.
     expect(find.byIcon(Icons.chevron_left), findsNothing);
@@ -217,7 +217,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const PageHeader(
+        const MSPageHeader(
           title: 'Profile',
           backLabel: 'Settings',
           backFallback: '/settings',

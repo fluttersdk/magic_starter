@@ -2,7 +2,7 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_theme.dart';
 
-/// Slot keys for the [Dialog] component's Wind slot recipe.
+/// Slot keys for the [MSDialog] component's Wind slot recipe.
 ///
 /// The dialog uses a [WindSlotRecipe] to emit per-slot classNames driven
 /// by `MagicStarterModalTheme`. Callers that need raw className strings

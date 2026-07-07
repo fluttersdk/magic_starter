@@ -57,7 +57,7 @@ void main() {
 
   testWidgets('Input renders a WInput or WFormInput widget', (tester) async {
     await tester.pumpWidget(
-      wrap(const Input(placeholder: 'Enter text')),
+      wrap(const MSInput(placeholder: 'Enter text')),
     );
     // Input wraps WInput
     expect(find.byType(WInput), findsOneWidget);
@@ -66,7 +66,7 @@ void main() {
   testWidgets('Input applies bg-surface-container-high in normal state',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Input(placeholder: 'Enter text')),
+      wrap(const MSInput(placeholder: 'Enter text')),
     );
     final widget = tester.widget<WInput>(find.byType(WInput));
     expect(widget.className, contains('bg-surface-container-high'));
@@ -85,7 +85,7 @@ void main() {
   testWidgets('Input appends caller className onto the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Input(placeholder: 'x', className: 'mt-10')),
+      wrap(const MSInput(placeholder: 'x', className: 'mt-10')),
     );
     final widget = tester.widget<WInput>(find.byType(WInput));
     expect(widget.className, contains('bg-surface-container-high'));
@@ -100,7 +100,7 @@ void main() {
       'Input(fullWidth: true) wraps the WInput in a SizedBox(width: infinity) '
       'and keeps intent styling', (tester) async {
     await tester.pumpWidget(
-      wrap(const Input(fullWidth: true, placeholder: 'Enter text')),
+      wrap(const MSInput(fullWidth: true, placeholder: 'Enter text')),
     );
 
     final fullWidthWrapper = find.ancestor(
@@ -118,7 +118,7 @@ void main() {
   testWidgets('Input fullWidth defaults to false (no SizedBox wrapper)',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Input(placeholder: 'Hi')),
+      wrap(const MSInput(placeholder: 'Hi')),
     );
 
     final fullWidthWrapper = find.ancestor(

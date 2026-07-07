@@ -88,13 +88,13 @@ class _MagicStarterLanguageViewState extends MagicStatefulViewState<
   Widget build(BuildContext context) {
     final formTheme = MagicStarter.formTheme;
 
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('profile.language_label'),
       subtitle: trans('magic_starter.language.subtitle'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
-        SettingsSection(
+        MSSettingsSection(
           children: [
             WDiv(
               className: 'flex flex-col gap-4 px-5 py-4',

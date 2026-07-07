@@ -12,7 +12,7 @@ import 'select.recipe.dart';
 /// ### Example Usage:
 ///
 /// ```dart
-/// Select<String>(
+/// MSSelect<String>(
 ///   value: _selected,
 ///   options: countries,
 ///   onChange: (v) => setState(() => _selected = v),
@@ -25,7 +25,7 @@ import 'select.recipe.dart';
 /// appended last, per the WindSlotRecipe caller-append contract):
 ///
 /// ```dart
-/// Select<String>(
+/// MSSelect<String>(
 ///   value: _selected,
 ///   options: options,
 ///   onChange: (_) {},
@@ -33,7 +33,7 @@ import 'select.recipe.dart';
 /// )
 /// ```
 @immutable
-class Select<T> extends StatelessWidget {
+class MSSelect<T> extends StatelessWidget {
   /// Currently selected value, or `null` when nothing is selected.
   final T? value;
 
@@ -52,8 +52,8 @@ class Select<T> extends StatelessWidget {
   /// Per-slot className overrides appended after the recipe output.
   final Map<String, String>? classNames;
 
-  /// Creates a [Select] widget.
-  const Select({
+  /// Creates a [MSSelect] widget.
+  const MSSelect({
     super.key,
     required this.options,
     this.value,

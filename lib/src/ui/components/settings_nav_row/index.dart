@@ -5,5 +5,5 @@
 // discovers *.preview.dart files directly, and the preview must stay out
 // of the release barrel.
 
-export 'settings_nav_row.dart' show SettingsNavRow;
+export 'settings_nav_row.dart' show MSSettingsNavRow;
 export 'settings_nav_row.recipe.dart';

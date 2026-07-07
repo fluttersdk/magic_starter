@@ -58,7 +58,7 @@ void main() {
     testWidgets('renders first panel by default', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Tabs(
+          MSTabs(
             tabs: const ['Tab 1', 'Tab 2'],
             selectedIndex: 0,
             onChanged: (_) {},
@@ -77,7 +77,7 @@ void main() {
       int? changed;
       await tester.pumpWidget(
         wrap(
-          Tabs(
+          MSTabs(
             tabs: const ['Tab 1', 'Tab 2'],
             selectedIndex: 0,
             onChanged: (i) => changed = i,
@@ -96,7 +96,7 @@ void main() {
     testWidgets('renders second panel when selectedIndex is 1', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Tabs(
+          MSTabs(
             tabs: const ['Tab 1', 'Tab 2'],
             selectedIndex: 1,
             onChanged: (_) {},

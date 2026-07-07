@@ -5,5 +5,5 @@
 // surface (component + variant enum + recipe helper). The preview is
 // intentionally NOT re-exported here.
 
-export 'confirm_dialog.dart' show ConfirmDialog, ConfirmDialogVariant;
+export 'confirm_dialog.dart' show MSConfirmDialog, ConfirmDialogVariant;
 export 'confirm_dialog.recipe.dart';

@@ -5,10 +5,10 @@
 import '../components/notification_dropdown/notification_dropdown.dart';
 
 export '../components/notification_dropdown/notification_dropdown.dart'
-    show NotificationDropdown;
+    show MSNotificationDropdown;
 
-/// Backward-compatible alias for [NotificationDropdown].
-class MagicStarterNotificationDropdown extends NotificationDropdown {
+/// Backward-compatible alias for [MSNotificationDropdown].
+class MagicStarterNotificationDropdown extends MSNotificationDropdown {
   const MagicStarterNotificationDropdown({
     super.key,
     required super.notificationStream,

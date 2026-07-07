@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'dialog.dart';
 
-/// Static preview for the [Dialog] component.
+/// Static preview for the [MSDialog] component.
 ///
 /// Renders a representative dialog inline (not via showDialog) so the preview
 /// catalog can display the shell in light and dark without an overlay. One
@@ -18,7 +18,7 @@ class DialogPreview extends StatelessWidget {
       className: 'flex flex-col gap-6 p-6',
       children: [
         // Dialog with title, description, and footer.
-        Dialog(
+        MSDialog(
           title: 'Confirm deletion',
           description: 'This action cannot be undone.',
           body: const WText(
@@ -42,7 +42,7 @@ class DialogPreview extends StatelessWidget {
           ),
         ),
         // Dialog with title only (no description, no footer).
-        const Dialog(
+        const MSDialog(
           title: 'Informational',
           body: WText(
             'This dialog has only a title and body content.',

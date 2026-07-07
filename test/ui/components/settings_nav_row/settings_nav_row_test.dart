@@ -32,7 +32,7 @@ void main() {
   testWidgets('renders required title', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
         ),
@@ -48,7 +48,7 @@ void main() {
   testWidgets('renders subtitle when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           subtitle: 'Name, email, photo',
           to: '/settings/profile',
@@ -62,7 +62,7 @@ void main() {
   testWidgets('does not render subtitle when omitted', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
         ),
@@ -81,7 +81,7 @@ void main() {
   testWidgets('renders trailing value text when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Two-Factor',
           value: 'On',
           to: '/settings/security/two-factor',
@@ -94,7 +94,7 @@ void main() {
   testWidgets('does not render trailing value when omitted', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
         ),
@@ -113,7 +113,7 @@ void main() {
   testWidgets('renders trailing chevron icon', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
         ),
@@ -131,7 +131,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           icon: Icons.person_outline,
           to: '/settings/profile',
@@ -144,7 +144,7 @@ void main() {
   testWidgets('renders without leading icon when icon is null', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
         ),
@@ -163,7 +163,7 @@ void main() {
 
     await tester.pumpWidget(
       wrap(
-        SettingsNavRow(
+        MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
           // Inject test-only hook to intercept navigation instead of driving
@@ -173,7 +173,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byType(SettingsNavRow));
+    await tester.tap(find.byType(MSSettingsNavRow));
     await tester.pump();
 
     expect(tappedPath, '/settings/profile');
@@ -185,7 +185,7 @@ void main() {
 
     await tester.pumpWidget(
       wrap(
-        SettingsNavRow(
+        MSSettingsNavRow(
           title: 'Sessions',
           to: '/settings/security/sessions',
           onTapOverride: (path) => tappedPath = path,
@@ -193,7 +193,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byType(SettingsNavRow));
+    await tester.tap(find.byType(MSSettingsNavRow));
     await tester.pump();
 
     expect(tappedPath, '/settings/security/sessions');
@@ -207,7 +207,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
         ),
@@ -230,7 +230,7 @@ void main() {
   testWidgets('value WText carries text-fg-muted class', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Two-Factor',
           value: 'On',
           to: '/settings/security/two-factor',
@@ -246,7 +246,7 @@ void main() {
   testWidgets('title WText carries text-fg class', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsNavRow(
+        const MSSettingsNavRow(
           title: 'Profile',
           to: '/settings/profile',
         ),

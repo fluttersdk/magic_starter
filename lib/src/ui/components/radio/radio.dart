@@ -13,14 +13,14 @@ import 'radio.recipe.dart';
 ///
 /// ```dart
 /// // Inside a group: every radio shares the same groupValue.
-/// Radio<String>(
+/// MSRadio<String>(
 ///   value: 'email',
 ///   groupValue: _channel,
 ///   onChanged: (v) => setState(() => _channel = v),
 /// )
 /// ```
 @immutable
-class Radio<T> extends StatelessWidget {
+class MSRadio<T> extends StatelessWidget {
   /// The value this radio button represents.
   final T value;
 
@@ -43,8 +43,8 @@ class Radio<T> extends StatelessWidget {
   /// Accessible label for the radio (required for unlabelled usage).
   final String? semanticLabel;
 
-  /// Creates a [Radio].
-  const Radio({
+  /// Creates a [MSRadio].
+  const MSRadio({
     super.key,
     required this.value,
     required this.groupValue,

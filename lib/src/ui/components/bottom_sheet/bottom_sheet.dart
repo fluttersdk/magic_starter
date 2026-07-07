@@ -16,14 +16,14 @@ import '../../../facades/magic_starter.dart';
 ///
 /// ### Example
 /// ```dart
-/// await BottomSheet.show(
+/// await MSBottomSheet.show(
 ///   context,
 ///   title: 'Select action',
 ///   body: Column(children: [...]),
 /// );
 /// ```
 @immutable
-class BottomSheet extends StatelessWidget {
+class MSBottomSheet extends StatelessWidget {
   /// Optional heading rendered at the top of the sheet.
   final String? title;
 
@@ -37,8 +37,8 @@ class BottomSheet extends StatelessWidget {
   /// [BuildContext].
   final Widget Function(BuildContext sheetContext)? footerBuilder;
 
-  /// Creates a [BottomSheet].
-  const BottomSheet({
+  /// Creates a [MSBottomSheet].
+  const MSBottomSheet({
     super.key,
     this.title,
     this.description,
@@ -63,7 +63,7 @@ class BottomSheet extends StatelessWidget {
       // content navigator the overlay is confined to the content area, which
       // left the sheet floating with a bottom gap on tall/wide screens.
       useRootNavigator: true,
-      builder: (_) => BottomSheet(
+      builder: (_) => MSBottomSheet(
         title: title,
         description: description,
         body: body,

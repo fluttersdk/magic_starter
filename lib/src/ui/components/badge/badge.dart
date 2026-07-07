@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'badge.recipe.dart';
 
-/// Visual tone variants for [Badge].
+/// Visual tone variants for [MSBadge].
 ///
 /// Each tone maps to a semantic token pair (background + foreground) defined
 /// in [MagicStarterTokens.defaultAliases] so the badge re-skins automatically
@@ -45,12 +45,12 @@ enum BadgeTone {
 /// names for each [tone]; no raw hex or `Colors.*` anywhere.
 ///
 /// ```dart
-/// Badge('Active', tone: BadgeTone.success)
-/// Badge('Error', tone: BadgeTone.destructive)
-/// Badge('Pending')  // defaults to BadgeTone.neutral
+/// MSBadge('Active', tone: BadgeTone.success)
+/// MSBadge('Error', tone: BadgeTone.destructive)
+/// MSBadge('Pending')  // defaults to BadgeTone.neutral
 /// ```
 @immutable
-class Badge extends StatelessWidget {
+class MSBadge extends StatelessWidget {
   /// The label text displayed inside the badge.
   final String label;
 
@@ -65,8 +65,8 @@ class Badge extends StatelessWidget {
   /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
-  /// Creates a [Badge].
-  const Badge(
+  /// Creates a [MSBadge].
+  const MSBadge(
     this.label, {
     super.key,
     this.tone = BadgeTone.neutral,

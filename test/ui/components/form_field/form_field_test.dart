@@ -32,7 +32,7 @@ void main() {
   testWidgets('MagicFormField renders label when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        MagicFormField(
+        MSFormField(
           label: 'Email',
           child: const WDiv(className: 'h-10'),
         ),
@@ -45,7 +45,7 @@ void main() {
     const childKey = Key('form-field-child');
     await tester.pumpWidget(
       wrap(
-        MagicFormField(
+        MSFormField(
           label: 'Name',
           child: SizedBox(key: childKey, height: 10),
         ),
@@ -57,7 +57,7 @@ void main() {
   testWidgets('MagicFormField renders hint when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        MagicFormField(
+        MSFormField(
           label: 'Password',
           hint: 'Must be at least 8 characters',
           child: const WDiv(className: 'h-10'),
@@ -71,7 +71,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        MagicFormField(
+        MSFormField(
           label: 'Name',
           child: const WDiv(className: 'h-10'),
         ),
@@ -85,7 +85,7 @@ void main() {
   testWidgets('MagicFormField renders error when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        MagicFormField(
+        MSFormField(
           label: 'Email',
           error: 'Invalid email address',
           child: const WDiv(className: 'h-10'),
@@ -99,7 +99,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        MagicFormField(
+        MSFormField(
           label: 'Email',
           error: 'Required field',
           child: const WDiv(className: 'h-10'),
@@ -119,7 +119,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        MagicFormField(
+        MSFormField(
           label: 'Name',
           child: const WDiv(className: 'h-10'),
         ),
@@ -131,9 +131,9 @@ void main() {
   testWidgets('MagicFormField renders without label when label is null',
       (tester) async {
     await tester.pumpWidget(
-      wrap(MagicFormField(child: const WDiv(className: 'h-10'))),
+      wrap(MSFormField(child: const WDiv(className: 'h-10'))),
     );
-    expect(find.byType(MagicFormField), findsOneWidget);
+    expect(find.byType(MSFormField), findsOneWidget);
   });
 
   testWidgets('MagicFormField preview renders without error', (tester) async {

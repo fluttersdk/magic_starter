@@ -27,7 +27,7 @@ void main() {
 
   testWidgets('TeamSelector returns empty when no resolver registered',
       (tester) async {
-    await tester.pumpWidget(wrap(const TeamSelector()));
+    await tester.pumpWidget(wrap(const MSTeamSelector()));
     await tester.pump();
     // When no resolver, renders SizedBox.shrink
     expect(find.byType(WPopover), findsNothing);
@@ -47,7 +47,7 @@ void main() {
       onSwitch: (id) async {},
     );
 
-    await tester.pumpWidget(wrap(const TeamSelector()));
+    await tester.pumpWidget(wrap(const MSTeamSelector()));
     await tester.pump();
 
     // The first letter of 'Acme Corp' is shown as the team initial
@@ -62,7 +62,7 @@ void main() {
       onSwitch: (id) async {},
     );
 
-    await tester.pumpWidget(wrap(const TeamSelector()));
+    await tester.pumpWidget(wrap(const MSTeamSelector()));
     await tester.pump();
 
     expect(find.byType(WPopover), findsNothing);

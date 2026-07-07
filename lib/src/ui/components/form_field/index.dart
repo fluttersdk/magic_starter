@@ -4,5 +4,5 @@
 // discovers `*.preview.dart` files directly, and the preview must stay out of
 // the release barrel.
 
-export 'form_field.dart' show MagicFormField;
+export 'form_field.dart' show MSFormField;
 export 'form_field.recipe.dart';

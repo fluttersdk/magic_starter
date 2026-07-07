@@ -17,7 +17,7 @@ import '../../../facades/magic_starter.dart';
 ///
 /// ### Example
 /// ```dart
-/// await Dialog.show(
+/// await MSDialog.show(
 ///   context,
 ///   title: 'Confirm deletion',
 ///   body: const WText('This cannot be undone.'),
@@ -28,7 +28,7 @@ import '../../../facades/magic_starter.dart';
 /// );
 /// ```
 @immutable
-class Dialog extends StatelessWidget {
+class MSDialog extends StatelessWidget {
   /// Optional heading rendered in the sticky header section.
   final String? title;
 
@@ -43,8 +43,8 @@ class Dialog extends StatelessWidget {
   /// `Navigator.of(dialogContext)`.
   final Widget Function(BuildContext dialogContext)? footerBuilder;
 
-  /// Creates a [Dialog].
-  const Dialog({
+  /// Creates a [MSDialog].
+  const MSDialog({
     super.key,
     this.title,
     this.description,
@@ -62,7 +62,7 @@ class Dialog extends StatelessWidget {
   }) {
     return m.showDialog<T>(
       context: context,
-      builder: (_) => Dialog(
+      builder: (_) => MSDialog(
         title: title,
         description: description,
         body: body,

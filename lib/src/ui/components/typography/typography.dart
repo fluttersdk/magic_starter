@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'typography.recipe.dart';
 
-/// Visual variants for [Typography].
+/// Visual variants for [MSTypography].
 ///
 /// - [h1] — Display heading: largest size, bold weight.
 /// - [h2] — Section heading: large size, bold weight.
@@ -34,12 +34,12 @@ enum TypographyVariant {
 /// `Colors.*` anywhere.
 ///
 /// ```dart
-/// Typography('Page Title', variant: TypographyVariant.h1)
-/// Typography('Some paragraph text.')  // defaults to body
-/// Typography('Created at 09:00', variant: TypographyVariant.caption)
+/// MSTypography('Page Title', variant: TypographyVariant.h1)
+/// MSTypography('Some paragraph text.')  // defaults to body
+/// MSTypography('Created at 09:00', variant: TypographyVariant.caption)
 /// ```
 @immutable
-class Typography extends StatelessWidget {
+class MSTypography extends StatelessWidget {
   /// The text content to display.
   final String data;
 
@@ -54,8 +54,8 @@ class Typography extends StatelessWidget {
   /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
-  /// Creates a [Typography] widget.
-  const Typography(
+  /// Creates a [MSTypography] widget.
+  const MSTypography(
     this.data, {
     super.key,
     this.variant = TypographyVariant.body,

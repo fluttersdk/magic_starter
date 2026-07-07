@@ -16,17 +16,17 @@ import 'settings_section.recipe.dart';
 ///
 /// ### Example — account section:
 /// ```dart
-/// SettingsSection(
+/// MSSettingsSection(
 ///   header: 'Account',
 ///   footer: 'Manage your personal information.',
 ///   children: [
-///     SettingsNavRow(title: 'Profile', to: '/settings/profile'),
-///     SettingsNavRow(title: 'Email', to: '/settings/email'),
+///     MSSettingsNavRow(title: 'Profile', to: '/settings/profile'),
+///     MSSettingsNavRow(title: 'Email', to: '/settings/email'),
 ///   ],
 /// )
 /// ```
 @immutable
-class SettingsSection extends StatelessWidget {
+class MSSettingsSection extends StatelessWidget {
   /// Optional uppercase muted caption rendered above the container.
   ///
   /// When `null` no header is rendered.
@@ -57,8 +57,8 @@ class SettingsSection extends StatelessWidget {
   /// output while every non-overridden base class survives.
   final String? captionClassName;
 
-  /// Creates a [SettingsSection].
-  const SettingsSection({
+  /// Creates a [MSSettingsSection].
+  const MSSettingsSection({
     super.key,
     required this.children,
     this.header,

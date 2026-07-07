@@ -12,7 +12,7 @@ import 'tabs.recipe.dart';
 /// ### Example Usage:
 ///
 /// ```dart
-/// Tabs(
+/// MSTabs(
 ///   tabs: const ['Overview', 'Details', 'Settings'],
 ///   selectedIndex: _selectedTab,
 ///   onChanged: (i) => setState(() => _selectedTab = i),
@@ -23,7 +23,7 @@ import 'tabs.recipe.dart';
 /// ### Slot override:
 ///
 /// ```dart
-/// Tabs(
+/// MSTabs(
 ///   tabs: const ['A', 'B'],
 ///   selectedIndex: 0,
 ///   onChanged: (_) {},
@@ -32,7 +32,7 @@ import 'tabs.recipe.dart';
 /// )
 /// ```
 @immutable
-class Tabs extends StatelessWidget {
+class MSTabs extends StatelessWidget {
   /// The labels rendered for each tab, in display order.
   final List<String> tabs;
 
@@ -48,8 +48,8 @@ class Tabs extends StatelessWidget {
   /// Per-slot className overrides appended after the recipe output.
   final Map<String, String>? classNames;
 
-  /// Creates a [Tabs] widget.
-  const Tabs({
+  /// Creates a [MSTabs] widget.
+  const MSTabs({
     super.key,
     required this.tabs,
     required this.selectedIndex,

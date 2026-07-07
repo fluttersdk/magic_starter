@@ -5,16 +5,16 @@ import '../components/confirm_dialog/confirm_dialog.dart';
 export '../components/confirm_dialog/confirm_dialog.dart'
     show ConfirmDialogVariant;
 
-/// Thin backwards-compatible alias for the migrated [ConfirmDialog] component.
+/// Thin backwards-compatible alias for the migrated [MSConfirmDialog] component.
 ///
 /// The confirm dialog moved to the canonical atomic-component folder
 /// (`lib/src/ui/components/confirm_dialog/`) as part of the design-system
 /// migration. This subclass preserves the historic `MagicStarterConfirmDialog`
 /// name, constructor signature, [show] factory, and barrel export path so
 /// existing callers and the widget test suite stay untouched. New code should
-/// import [ConfirmDialog] directly.
-class MagicStarterConfirmDialog extends ConfirmDialog {
-  /// Creates a [MagicStarterConfirmDialog] (alias of [ConfirmDialog]).
+/// import [MSConfirmDialog] directly.
+class MagicStarterConfirmDialog extends MSConfirmDialog {
+  /// Creates a [MagicStarterConfirmDialog] (alias of [MSConfirmDialog]).
   const MagicStarterConfirmDialog({
     super.key,
     required super.title,
@@ -28,7 +28,7 @@ class MagicStarterConfirmDialog extends ConfirmDialog {
   /// Opens a [MagicStarterConfirmDialog] and returns `true` if confirmed,
   /// `false` if cancelled.
   ///
-  /// Overrides [ConfirmDialog.show] to create a [MagicStarterConfirmDialog]
+  /// Overrides [MSConfirmDialog.show] to create a [MagicStarterConfirmDialog]
   /// instance so `find.byType(MagicStarterConfirmDialog)` works in existing
   /// tests and callers.
   static Future<bool> show(

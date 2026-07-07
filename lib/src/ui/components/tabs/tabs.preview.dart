@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'tabs.dart';
 
-/// Static variant-matrix preview for [Tabs].
+/// Static variant-matrix preview for [MSTabs].
 ///
 /// Renders a Tabs widget with a three-tab configuration so the catalog can
 /// exercise light and dark themes and interaction states. One preview class per
@@ -30,7 +30,7 @@ class _TabsPreviewState extends State<TabsPreview> {
           'Tabs — interactive',
           className: 'text-sm font-medium text-fg-muted',
         ),
-        Tabs(
+        MSTabs(
           tabs: _tabs,
           selectedIndex: _selected,
           onChanged: (i) => setState(() => _selected = i),

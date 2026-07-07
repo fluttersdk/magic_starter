@@ -58,7 +58,7 @@ void main() {
     testWidgets('renders WSelect with searchable=true', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Combobox<String>(
+          MSCombobox<String>(
             value: null,
             options: const [SelectOption(value: 'a', label: 'Option A')],
             onChange: (_) {},

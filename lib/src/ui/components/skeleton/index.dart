@@ -6,5 +6,5 @@
 // re-exported here — `previews:refresh` discovers `*.preview.dart` files
 // directly, and the preview must stay out of the release barrel.
 
-export 'skeleton.dart' show Skeleton, SkeletonShape;
+export 'skeleton.dart' show MSSkeleton, SkeletonShape;
 export 'skeleton.recipe.dart';

@@ -30,7 +30,7 @@ void main() {
   testWidgets('Navbar renders brand when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        Navbar(
+        MSNavbar(
           brand: const Text('My App'),
           children: const [],
         ),
@@ -43,7 +43,7 @@ void main() {
     const childKey = Key('navbar-child');
     await tester.pumpWidget(
       wrap(
-        Navbar(
+        MSNavbar(
           children: [
             SizedBox(key: childKey, width: 10),
           ],
@@ -57,7 +57,7 @@ void main() {
     const trailingKey = Key('navbar-trailing');
     await tester.pumpWidget(
       wrap(
-        Navbar(
+        MSNavbar(
           trailing: SizedBox(key: trailingKey, width: 10),
           children: const [],
         ),

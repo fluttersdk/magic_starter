@@ -2,7 +2,7 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_theme.dart';
 
-/// Slot keys for the [BottomSheet] component's Wind slot recipe.
+/// Slot keys for the [MSBottomSheet] component's Wind slot recipe.
 const String kBottomSheetSlotPanel = 'panel';
 const String kBottomSheetSlotHeader = 'header';
 const String kBottomSheetSlotTitle = 'title';

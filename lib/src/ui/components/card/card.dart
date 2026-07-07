@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../facades/magic_starter.dart';
 import 'card.recipe.dart';
 
-/// Visual style variants for [Card].
+/// Visual style variants for [MSCard].
 ///
 /// - [surface] — Default flat card: white/gray-800 background with a subtle border.
 /// - [inset] — Recessed appearance: slightly darker background (gray-50/gray-900)
@@ -34,7 +34,7 @@ enum CardVariant {
 /// Pass [variant] to control the visual appearance of the card:
 ///
 /// ```dart
-/// Card(
+/// MSCard(
 ///   variant: CardVariant.elevated,
 ///   child: ...,
 /// )
@@ -47,7 +47,7 @@ enum CardVariant {
 ///
 /// ### Example — padded card with title:
 /// ```dart
-/// Card(
+/// MSCard(
 ///   title: 'Team Settings',
 ///   child: WFormInput(...),
 /// )
@@ -55,7 +55,7 @@ enum CardVariant {
 ///
 /// ### Example — full-bleed list card:
 /// ```dart
-/// Card(
+/// MSCard(
 ///   title: 'Members',
 ///   noPadding: true,
 ///   child: WDiv(
@@ -65,7 +65,7 @@ enum CardVariant {
 /// )
 /// ```
 @immutable
-class Card extends StatelessWidget {
+class MSCard extends StatelessWidget {
   /// The optional title to display at the top of the card.
   final String? title;
 
@@ -91,8 +91,8 @@ class Card extends StatelessWidget {
   /// appearance (white/gray-800 background, subtle border, no shadow).
   final CardVariant variant;
 
-  /// Creates a [Card].
-  const Card({
+  /// Creates a [MSCard].
+  const MSCard({
     super.key,
     required this.child,
     this.title,

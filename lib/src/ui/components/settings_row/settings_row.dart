@@ -13,17 +13,17 @@ import 'settings_row.recipe.dart';
 /// - Title text (semantic-token driven; tone-controlled via [tone]).
 /// - Optional subtitle text below the title.
 /// - A flexible [trailing] slot for any widget: `Switch`, `Badge`, value text,
-///   or a `Button`. The caller owns the trailing control; [SettingsRow] never
+///   or a `Button`. The caller owns the trailing control; [MSSettingsRow] never
 ///   hardcodes it.
 /// - Minimum 44pt-equivalent height (`min-h-11`), horizontal `px-5 py-3.5`.
 /// - Optional [onTap] to make the whole row tappable via [WAnchor].
 ///
 /// The row intentionally has **no internal divider** — the parent
-/// [SettingsSection] owns dividers between rows.
+/// [MSSettingsSection] owns dividers between rows.
 ///
 /// ### Default row (no icon, value trailing):
 /// ```dart
-/// SettingsRow(
+/// MSSettingsRow(
 ///   title: 'Language',
 ///   trailing: WText('English', className: 'text-sm text-fg-muted'),
 /// )
@@ -31,7 +31,7 @@ import 'settings_row.recipe.dart';
 ///
 /// ### Destructive row (Delete / Sign-out):
 /// ```dart
-/// SettingsRow(
+/// MSSettingsRow(
 ///   title: 'Delete Account',
 ///   tone: SettingsRowTone.destructive,
 ///   onTap: _openDeleteDialog,
@@ -40,14 +40,14 @@ import 'settings_row.recipe.dart';
 ///
 /// ### Row with leading icon:
 /// ```dart
-/// SettingsRow(
+/// MSSettingsRow(
 ///   title: 'Notifications',
 ///   icon: Icons.notifications_none_outlined,
-///   trailing: const Switch(value: true, onChanged: null),
+///   trailing: const MSSwitch(value: true, onChanged: null),
 /// )
 /// ```
 @immutable
-class SettingsRow extends StatelessWidget {
+class MSSettingsRow extends StatelessWidget {
   // Static icon constants extracted for Flutter web tree-shaking.
   // (No default icon; caller supplies any IconData from Icons.*)
 
@@ -79,8 +79,8 @@ class SettingsRow extends StatelessWidget {
   /// Use [SettingsRowTone.destructive] for Delete / Sign-out rows.
   final SettingsRowTone tone;
 
-  /// Creates a [SettingsRow].
-  const SettingsRow({
+  /// Creates a [MSSettingsRow].
+  const MSSettingsRow({
     super.key,
     required this.title,
     this.subtitle,

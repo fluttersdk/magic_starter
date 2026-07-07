@@ -29,7 +29,7 @@ void main() {
 
   testWidgets('EmptyState renders title', (tester) async {
     await tester.pumpWidget(
-      wrap(const EmptyState(title: 'No items found')),
+      wrap(const MSEmptyState(title: 'No items found')),
     );
     expect(find.text('No items found'), findsOneWidget);
   });
@@ -37,7 +37,7 @@ void main() {
   testWidgets('EmptyState renders description when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const EmptyState(
+        const MSEmptyState(
           title: 'No items',
           description: 'Start by creating one',
         ),
@@ -49,7 +49,7 @@ void main() {
   testWidgets('EmptyState renders icon when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const EmptyState(
+        const MSEmptyState(
           title: 'No items',
           icon: Icons.inbox_outlined,
         ),
@@ -62,7 +62,7 @@ void main() {
     const actionKey = Key('empty-action');
     await tester.pumpWidget(
       wrap(
-        EmptyState(
+        MSEmptyState(
           title: 'No items',
           action: ElevatedButton(
             key: actionKey,
@@ -78,7 +78,7 @@ void main() {
   testWidgets('EmptyState does not render description when omitted',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const EmptyState(title: 'Nothing here')),
+      wrap(const MSEmptyState(title: 'Nothing here')),
     );
     // Only title WText present
     final texts = tester.widgetList<WText>(find.byType(WText)).toList();

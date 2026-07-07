@@ -234,9 +234,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterAppearanceView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<SettingsScaffold>(find.byType(SettingsScaffold));
+          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
       expect(scaffold.backLabel, isNotNull);
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
@@ -246,7 +246,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Light / Dark / System option cards.
-      final rows = tester.widgetList<SettingsRow>(find.byType(SettingsRow));
+      final rows = tester.widgetList<MSSettingsRow>(find.byType(MSSettingsRow));
       expect(rows.length, greaterThanOrEqualTo(3));
     });
 
@@ -265,7 +265,7 @@ void main() {
       expect(controller!.brightness, Brightness.light);
 
       final darkRow = find.widgetWithText(
-        SettingsRow,
+        MSSettingsRow,
         'magic_starter.appearance.dark',
       );
       expect(darkRow, findsOneWidget);
@@ -299,7 +299,7 @@ void main() {
       expect(controller!.brightness, Brightness.dark);
 
       final lightRow = find.widgetWithText(
-        SettingsRow,
+        MSSettingsRow,
         'magic_starter.appearance.light',
       );
       expect(lightRow, findsOneWidget);
@@ -329,7 +329,7 @@ void main() {
       expect(controller!.data.syncWithSystem, isFalse);
 
       final systemRow = find.widgetWithText(
-        SettingsRow,
+        MSSettingsRow,
         'magic_starter.appearance.system',
       );
       expect(systemRow, findsOneWidget);
@@ -351,9 +351,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterLanguageView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<SettingsScaffold>(find.byType(SettingsScaffold));
+          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -393,9 +393,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterTimezoneView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<SettingsScaffold>(find.byType(SettingsScaffold));
+          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -441,9 +441,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterNewsletterView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<SettingsScaffold>(find.byType(SettingsScaffold));
+          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -458,8 +458,8 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterNewsletterView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SettingsRow), findsWidgets);
-      expect(find.byType(Switch), findsOneWidget);
+      expect(find.byType(MSSettingsRow), findsWidgets);
+      expect(find.byType(MSSwitch), findsOneWidget);
     });
 
     testWidgets('toggling the switch updates the subscription via PUT',
@@ -481,7 +481,7 @@ void main() {
         },
       );
 
-      final toggle = find.byType(Switch);
+      final toggle = find.byType(MSSwitch);
       expect(toggle, findsOneWidget);
       await tester.ensureVisible(toggle);
       await tester.tap(toggle);

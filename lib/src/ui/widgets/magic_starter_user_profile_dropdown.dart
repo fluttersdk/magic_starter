@@ -5,10 +5,10 @@
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
 
 export '../components/user_profile_dropdown/user_profile_dropdown.dart'
-    show UserProfileDropdown;
+    show MSUserProfileDropdown;
 
-/// Backward-compatible alias for [UserProfileDropdown].
-class MagicStarterUserProfileDropdown extends UserProfileDropdown {
+/// Backward-compatible alias for [MSUserProfileDropdown].
+class MagicStarterUserProfileDropdown extends MSUserProfileDropdown {
   const MagicStarterUserProfileDropdown({
     super.key,
     super.alignment,

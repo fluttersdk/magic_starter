@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'toast.recipe.dart';
 
-/// Visual style variants for [Toast].
+/// Visual style variants for [MSToast].
 ///
 /// Each variant maps to a semantic token that the design system provides:
 /// - [info] — neutral, surface tone.
@@ -33,13 +33,13 @@ enum ToastVariant {
 ///
 /// ### Example
 /// ```dart
-/// Toast(
+/// MSToast(
 ///   message: 'Profile updated successfully',
 ///   variant: ToastVariant.success,
 /// )
 /// ```
 @immutable
-class Toast extends StatelessWidget {
+class MSToast extends StatelessWidget {
   /// The message text to display in the toast.
   final String message;
 
@@ -52,8 +52,8 @@ class Toast extends StatelessWidget {
   /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
-  /// Creates a [Toast].
-  const Toast({
+  /// Creates a [MSToast].
+  const MSToast({
     super.key,
     required this.message,
     this.variant = ToastVariant.info,

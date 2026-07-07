@@ -6,7 +6,7 @@ const String kButtonIntentAxis = 'intent';
 /// The size axis key for the button recipe.
 const String kButtonSizeAxis = 'size';
 
-/// Visual intent variants for [Button].
+/// Visual intent variants for [MSButton].
 ///
 /// - [primary] — Brand-colored filled button for the main call-to-action.
 /// - [secondary] — Neutral surface button for secondary actions.
@@ -26,7 +26,7 @@ enum ButtonIntent {
   destructive,
 }
 
-/// Size variants for [Button].
+/// Size variants for [MSButton].
 ///
 /// - [sm] — Compact button for toolbars and dense layouts.
 /// - [md] — Default button size for most contexts.

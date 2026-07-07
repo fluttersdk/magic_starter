@@ -109,13 +109,13 @@ void main() {
       'name': 'John Doe',
       'email': 'john@example.com',
     }));
-    await tester.pumpWidget(wrap(const UserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
     expect(find.text('J'), findsOneWidget);
   });
 
   testWidgets('renders fallback initial when no user', (tester) async {
-    await tester.pumpWidget(wrap(const UserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
     expect(find.text('C'), findsOneWidget);
   });
@@ -126,7 +126,7 @@ void main() {
       'name': 'John Doe',
       'email': 'john@example.com',
     }));
-    await tester.pumpWidget(wrap(const UserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('J'));
@@ -137,7 +137,7 @@ void main() {
   });
 
   testWidgets('uses default bottomRight alignment', (tester) async {
-    await tester.pumpWidget(wrap(const UserProfileDropdown()));
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
     final popover = tester.widget<WPopover>(find.byType(WPopover));
     expect(popover.alignment, PopoverAlignment.bottomRight);
@@ -145,7 +145,7 @@ void main() {
 
   testWidgets('accepts custom alignment parameter', (tester) async {
     await tester.pumpWidget(wrap(
-      const UserProfileDropdown(alignment: PopoverAlignment.topRight),
+      const MSUserProfileDropdown(alignment: PopoverAlignment.topRight),
     ));
     await tester.pumpAndSettle();
     final popover = tester.widget<WPopover>(find.byType(WPopover));
@@ -154,7 +154,7 @@ void main() {
 
   testWidgets('uses custom triggerBuilder when provided', (tester) async {
     await tester.pumpWidget(wrap(
-      UserProfileDropdown(
+      MSUserProfileDropdown(
         triggerBuilder: (context, isOpen, isHovering) =>
             const Text('Custom Trigger'),
       ),

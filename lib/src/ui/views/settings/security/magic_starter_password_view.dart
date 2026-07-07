@@ -11,7 +11,7 @@ import '../../../components/settings_section/settings_section.dart';
 /// Password update settings sub-page.
 ///
 /// Drilled into from the Settings hub. Wraps the current/new/confirm password
-/// form in a [SettingsScaffold] with a unified back affordance returning to
+/// form in a [MSSettingsScaffold] with a unified back affordance returning to
 /// the hub.
 ///
 /// The form wiring is lifted verbatim from the original long-form profile
@@ -93,7 +93,7 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
   Widget build(BuildContext context) {
     final formTheme = MagicStarter.formTheme;
 
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('profile.update_password'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
@@ -103,7 +103,7 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
           child: WDiv(
             className: 'flex flex-col gap-6',
             children: [
-              SettingsSection(
+              MSSettingsSection(
                 children: [
                   WDiv(
                     className: 'flex flex-col gap-4 px-5 py-4',

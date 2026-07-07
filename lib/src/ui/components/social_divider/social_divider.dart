@@ -12,11 +12,11 @@ import '../../../facades/magic_starter.dart';
 ///
 /// ### Example
 /// ```dart
-/// const SocialDivider()
+/// const MSSocialDivider()
 /// ```
 @immutable
-class SocialDivider extends StatelessWidget {
-  const SocialDivider({super.key});
+class MSSocialDivider extends StatelessWidget {
+  const MSSocialDivider({super.key});
 
   @override
   Widget build(BuildContext context) {

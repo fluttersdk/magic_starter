@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'user_profile_dropdown.dart';
 
-/// Static preview for [UserProfileDropdown].
+/// Static preview for [MSUserProfileDropdown].
 ///
 /// Renders the dropdown trigger in its default and topRight alignment. One
 /// preview class per file.
@@ -15,8 +15,8 @@ class UserProfileDropdownPreview extends StatelessWidget {
     return WDiv(
       className: 'flex flex-row items-start gap-6 p-6',
       children: const [
-        UserProfileDropdown(),
-        UserProfileDropdown(alignment: PopoverAlignment.topRight),
+        MSUserProfileDropdown(),
+        MSUserProfileDropdown(alignment: PopoverAlignment.topRight),
       ],
     );
   }

@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'skeleton.recipe.dart';
 
-/// Shape variants for [Skeleton].
+/// Shape variants for [MSSkeleton].
 ///
 /// - [block] — Rectangular block placeholder (e.g. image, card).
 /// - [text] — Short inline text-line placeholder.
@@ -31,12 +31,12 @@ enum SkeletonShape {
 /// controls the border-radius via the recipe.
 ///
 /// ```dart
-/// Skeleton(width: 200, height: 80)                        // block (default)
-/// Skeleton(shape: SkeletonShape.circle, width: 48, height: 48)
-/// Skeleton(shape: SkeletonShape.text, width: 160, height: 16)
+/// MSSkeleton(width: 200, height: 80)                        // block (default)
+/// MSSkeleton(shape: SkeletonShape.circle, width: 48, height: 48)
+/// MSSkeleton(shape: SkeletonShape.text, width: 160, height: 16)
 /// ```
 @immutable
-class Skeleton extends StatelessWidget {
+class MSSkeleton extends StatelessWidget {
   /// The visual shape controlling border-radius.
   ///
   /// Defaults to [SkeletonShape.block].
@@ -56,8 +56,8 @@ class Skeleton extends StatelessWidget {
   /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
-  /// Creates a [Skeleton] widget.
-  const Skeleton({
+  /// Creates a [MSSkeleton] widget.
+  const MSSkeleton({
     super.key,
     this.shape = SkeletonShape.block,
     this.width,

@@ -71,10 +71,10 @@ void main() {
     testWidgets('renders item titles', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Accordion(
+          MSAccordion(
             items: const [
-              AccordionItem(title: 'Section 1', body: Text('Content 1')),
-              AccordionItem(title: 'Section 2', body: Text('Content 2')),
+              MSAccordionItem(title: 'Section 1', body: Text('Content 1')),
+              MSAccordionItem(title: 'Section 2', body: Text('Content 2')),
             ],
           ),
         ),
@@ -88,9 +88,9 @@ void main() {
     testWidgets('content is hidden by default (collapsed)', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Accordion(
+          MSAccordion(
             items: const [
-              AccordionItem(title: 'Section 1', body: Text('Content 1')),
+              MSAccordionItem(title: 'Section 1', body: Text('Content 1')),
             ],
           ),
         ),
@@ -103,9 +103,9 @@ void main() {
     testWidgets('tapping header expands the panel', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Accordion(
+          MSAccordion(
             items: const [
-              AccordionItem(title: 'Section 1', body: Text('Content 1')),
+              MSAccordionItem(title: 'Section 1', body: Text('Content 1')),
             ],
           ),
         ),
@@ -121,9 +121,9 @@ void main() {
     testWidgets('tapping expanded header collapses the panel', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Accordion(
+          MSAccordion(
             items: const [
-              AccordionItem(title: 'Section 1', body: Text('Content 1')),
+              MSAccordionItem(title: 'Section 1', body: Text('Content 1')),
             ],
           ),
         ),

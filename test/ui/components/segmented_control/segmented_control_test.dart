@@ -63,7 +63,7 @@ void main() {
     testWidgets('renders option labels', (tester) async {
       await tester.pumpWidget(
         wrap(
-          SegmentedControl<String>(
+          MSSegmentedControl<String>(
             options: const ['Option A', 'Option B', 'Option C'],
             selectedIndex: 0,
             onChanged: (_) {},
@@ -81,7 +81,7 @@ void main() {
       int? changed;
       await tester.pumpWidget(
         wrap(
-          SegmentedControl<String>(
+          MSSegmentedControl<String>(
             options: const ['Option A', 'Option B'],
             selectedIndex: 0,
             onChanged: (i) => changed = i,

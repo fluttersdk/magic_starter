@@ -1,6 +1,6 @@
 import 'package:magic/magic.dart';
 
-/// Builds the slot recipe for [Tabs] from semantic tokens.
+/// Builds the slot recipe for [MSTabs] from semantic tokens.
 ///
 /// Slots:
 /// - `list` — the horizontal tab-list row with the border separator.

@@ -1,4 +1,4 @@
-// hide Flutter's material Badge to avoid the name conflict with our Badge.
+// hide Flutter's material Badge to avoid the name conflict with our MSBadge.
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -103,14 +103,14 @@ void main() {
 
   testWidgets('Badge renders label text', (tester) async {
     await tester.pumpWidget(
-      wrap(const Badge('Active')),
+      wrap(const MSBadge('Active')),
     );
     expect(find.text('Active'), findsOneWidget);
   });
 
   testWidgets('Badge default tone is neutral', (tester) async {
     await tester.pumpWidget(
-      wrap(const Badge('Label')),
+      wrap(const MSBadge('Label')),
     );
     final wBadge = tester.widget<WBadge>(find.byType(WBadge));
     expect(wBadge.className, contains('bg-surface-container-high'));
@@ -118,7 +118,7 @@ void main() {
 
   testWidgets('Badge applies primary tone className', (tester) async {
     await tester.pumpWidget(
-      wrap(const Badge('Label', tone: BadgeTone.primary)),
+      wrap(const MSBadge('Label', tone: BadgeTone.primary)),
     );
     final wBadge = tester.widget<WBadge>(find.byType(WBadge));
     expect(wBadge.className, contains('bg-primary'));
@@ -126,7 +126,7 @@ void main() {
 
   testWidgets('Badge applies outline tone with border', (tester) async {
     await tester.pumpWidget(
-      wrap(const Badge('Label', tone: BadgeTone.outline)),
+      wrap(const MSBadge('Label', tone: BadgeTone.outline)),
     );
     final wBadge = tester.widget<WBadge>(find.byType(WBadge));
     expect(wBadge.className, contains('border'));
@@ -153,7 +153,7 @@ void main() {
   testWidgets('Badge appends caller className onto the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Badge('Label', tone: BadgeTone.primary, className: 'mt-10')),
+      wrap(const MSBadge('Label', tone: BadgeTone.primary, className: 'mt-10')),
     );
     final wBadge = tester.widget<WBadge>(find.byType(WBadge));
     expect(wBadge.className, contains('bg-primary'));

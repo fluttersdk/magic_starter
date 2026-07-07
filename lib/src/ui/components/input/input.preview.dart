@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 import 'input.dart';
 import 'input.recipe.dart';
 
-/// Static variant-matrix preview for [Input].
+/// Static variant-matrix preview for [MSInput].
 ///
 /// Renders every [InputState] so the catalog (`/preview`) can show the full
 /// surface in both light and dark.
@@ -25,7 +25,7 @@ class InputPreview extends StatelessWidget {
                 state.name,
                 className: 'text-sm font-semibold text-fg-muted',
               ),
-              Input(
+              MSInput(
                 state: state,
                 placeholder: 'Enter text (${state.name})',
               ),

@@ -10,7 +10,7 @@ const _kIconNotifications = Icons.notifications_none_outlined;
 const _kIconPerson = Icons.person_outline;
 const _kIconDelete = Icons.delete_outline;
 
-/// Static tone-matrix preview for [SettingsRow].
+/// Static tone-matrix preview for [MSSettingsRow].
 ///
 /// Renders every [SettingsRowTone] in light and dark modes, exercising the
 /// leading icon tile, subtitle, trailing slot, and tappable variant so the
@@ -34,14 +34,14 @@ class SettingsRowPreview extends StatelessWidget {
           className:
               'bg-surface-container rounded-lg overflow-hidden flex flex-col',
           children: [
-            SettingsRow(
+            MSSettingsRow(
               title: 'Profile',
               subtitle: 'Edit your name and email',
               icon: _kIconPerson,
               onTap: () {},
             ),
             WDiv(className: 'h-px bg-color-border-subtle mx-5'),
-            SettingsRow(
+            MSSettingsRow(
               title: 'Notifications',
               icon: _kIconNotifications,
               trailing: WText(
@@ -51,7 +51,7 @@ class SettingsRowPreview extends StatelessWidget {
               onTap: () {},
             ),
             WDiv(className: 'h-px bg-color-border-subtle mx-5'),
-            const SettingsRow(
+            const MSSettingsRow(
               title: 'Language',
               trailing: SizedBox(width: 40, height: 20),
             ),
@@ -67,7 +67,7 @@ class SettingsRowPreview extends StatelessWidget {
           className:
               'bg-surface-container rounded-lg overflow-hidden flex flex-col',
           children: [
-            SettingsRow(
+            MSSettingsRow(
               title: 'Delete Account',
               icon: _kIconDelete,
               tone: SettingsRowTone.destructive,

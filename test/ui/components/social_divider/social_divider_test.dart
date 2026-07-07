@@ -31,13 +31,13 @@ void main() {
 
   testWidgets('SocialDivider renders divider with translated text',
       (tester) async {
-    await tester.pumpWidget(wrap(const SocialDivider()));
+    await tester.pumpWidget(wrap(const MSSocialDivider()));
     // trans() returns the key when no translation is loaded
     expect(find.text('auth.or_continue_with'), findsOneWidget);
   });
 
   testWidgets('SocialDivider contains WDiv and WText elements', (tester) async {
-    await tester.pumpWidget(wrap(const SocialDivider()));
+    await tester.pumpWidget(wrap(const MSSocialDivider()));
     expect(find.byType(WDiv), findsWidgets);
     expect(find.byType(WText), findsOneWidget);
   });
@@ -51,7 +51,7 @@ void main() {
       MagicStarter.manager.authTheme = const MagicStarterAuthTheme(
         socialDividerTextClassName: 'custom-divider-text',
       );
-      await tester.pumpWidget(wrap(const SocialDivider()));
+      await tester.pumpWidget(wrap(const MSSocialDivider()));
       final wText = tester.widget<WText>(find.byType(WText));
       expect(wText.className, contains('custom-divider-text'));
     });

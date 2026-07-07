@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 /// The state axis key for the input recipe.
 const String kInputStateAxis = 'state';
 
-/// Visual state variants for [Input].
+/// Visual state variants for [MSInput].
 ///
 /// - [normal] — Default resting state.
 /// - [error] — Validation-failed state; applies destructive border color.
@@ -19,7 +19,7 @@ enum InputState {
 ///
 /// Semantic tokens drive background and border so a `DESIGN.md` override
 /// re-skins all inputs without touching this file. Width-agnostic: full-width
-/// is the dedicated [Input.fullWidth] prop (a `SizedBox` wrapper), not a
+/// is the dedicated [MSInput.fullWidth] prop (a `SizedBox` wrapper), not a
 /// baked-in `w-full` token, so the default renders at content width.
 const WindRecipe inputRecipe = WindRecipe(
   base: 'rounded-lg border text-fg text-sm '

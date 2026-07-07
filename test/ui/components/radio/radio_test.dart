@@ -58,7 +58,7 @@ void main() {
   testWidgets('Radio renders a WRadio widget', (tester) async {
     await tester.pumpWidget(
       wrap(
-        Radio<String>(
+        MSRadio<String>(
           value: 'a',
           groupValue: 'a',
           onChanged: (_) {},
@@ -72,7 +72,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        Radio<String>(
+        MSRadio<String>(
           value: 'a',
           groupValue: 'a',
           onChanged: (_) {},
@@ -88,7 +88,7 @@ void main() {
     String? selected;
     await tester.pumpWidget(
       wrap(
-        Radio<String>(
+        MSRadio<String>(
           value: 'b',
           groupValue: 'a',
           onChanged: (v) => selected = v,
@@ -114,7 +114,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        Radio<String>(
+        MSRadio<String>(
           value: 'a',
           groupValue: 'a',
           onChanged: (_) {},

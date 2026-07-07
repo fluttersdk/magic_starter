@@ -11,9 +11,9 @@ import 'navbar.recipe.dart';
 ///
 /// ### Example
 /// ```dart
-/// Navbar(
+/// MSNavbar(
 ///   brand: WText('Acme', className: 'text-lg font-bold text-primary'),
-///   trailing: const UserProfileDropdown(),
+///   trailing: const MSUserProfileDropdown(),
 ///   children: [
 ///     WText('Dashboard', className: 'text-sm font-medium text-fg'),
 ///     WText('Projects', className: 'text-sm font-medium text-fg'),
@@ -21,7 +21,7 @@ import 'navbar.recipe.dart';
 /// )
 /// ```
 @immutable
-class Navbar extends StatelessWidget {
+class MSNavbar extends StatelessWidget {
   /// Optional brand/logo widget.
   final Widget? brand;
 
@@ -31,8 +31,8 @@ class Navbar extends StatelessWidget {
   /// Optional trailing widget (e.g. user profile dropdown).
   final Widget? trailing;
 
-  /// Creates a [Navbar].
-  const Navbar({
+  /// Creates a [MSNavbar].
+  const MSNavbar({
     super.key,
     required this.children,
     this.brand,

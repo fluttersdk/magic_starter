@@ -15,11 +15,11 @@ import '../../../http/controllers/magic_starter_auth_controller.dart';
 ///
 /// ### Example
 /// ```dart
-/// const UserProfileDropdown()
+/// const MSUserProfileDropdown()
 /// // or with custom alignment:
-/// const UserProfileDropdown(alignment: PopoverAlignment.topRight)
+/// const MSUserProfileDropdown(alignment: PopoverAlignment.topRight)
 /// ```
-class UserProfileDropdown extends StatelessWidget {
+class MSUserProfileDropdown extends StatelessWidget {
   /// The popover alignment direction.
   final PopoverAlignment alignment;
 
@@ -29,7 +29,7 @@ class UserProfileDropdown extends StatelessWidget {
   final Widget Function(BuildContext context, bool isOpen, bool isHovering)?
       triggerBuilder;
 
-  const UserProfileDropdown({
+  const MSUserProfileDropdown({
     super.key,
     this.alignment = PopoverAlignment.bottomRight,
     this.triggerBuilder,

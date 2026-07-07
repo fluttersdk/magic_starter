@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'tooltip.dart';
 
-/// Static preview for the [Tooltip] component.
+/// Static preview for the [MSTooltip] component.
 ///
 /// Renders tooltips with different alignment options in a matrix so the
 /// preview catalog can display them in light and dark. One preview class
@@ -17,7 +17,7 @@ class TooltipPreview extends StatelessWidget {
     return WDiv(
       className: 'flex flex-row gap-8 p-12 justify-center items-center',
       children: [
-        Tooltip(
+        MSTooltip(
           content: const WText('Tooltip above'),
           alignment: PopoverAlignment.topCenter,
           child: WDiv(
@@ -26,7 +26,7 @@ class TooltipPreview extends StatelessWidget {
             child: const WText('Hover (top)'),
           ),
         ),
-        Tooltip(
+        MSTooltip(
           content: const WText('Tooltip below'),
           alignment: PopoverAlignment.bottomCenter,
           child: WDiv(
@@ -35,7 +35,7 @@ class TooltipPreview extends StatelessWidget {
             child: const WText('Hover (bottom)'),
           ),
         ),
-        Tooltip(
+        MSTooltip(
           content: const WText('Custom styled tooltip'),
           className: 'bg-primary text-white text-xs px-2 py-1 rounded',
           child: WDiv(

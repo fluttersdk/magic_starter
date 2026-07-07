@@ -60,7 +60,7 @@ void main() {
   group('Toast widget', () {
     testWidgets('renders message text', (tester) async {
       await tester.pumpWidget(wrap(
-        const Toast(message: 'Operation succeeded'),
+        const MSToast(message: 'Operation succeeded'),
       ));
 
       expect(find.text('Operation succeeded'), findsOneWidget);
@@ -68,19 +68,19 @@ void main() {
 
     testWidgets('default variant is info', (tester) async {
       await tester.pumpWidget(wrap(
-        const Toast(message: 'Hello'),
+        const MSToast(message: 'Hello'),
       ));
 
-      final toast = tester.widget<Toast>(find.byType(Toast));
+      final toast = tester.widget<MSToast>(find.byType(MSToast));
       expect(toast.variant, ToastVariant.info);
     });
 
     testWidgets('success variant is set', (tester) async {
       await tester.pumpWidget(wrap(
-        const Toast(message: 'Done', variant: ToastVariant.success),
+        const MSToast(message: 'Done', variant: ToastVariant.success),
       ));
 
-      final toast = tester.widget<Toast>(find.byType(Toast));
+      final toast = tester.widget<MSToast>(find.byType(MSToast));
       expect(toast.variant, ToastVariant.success);
     });
   });
@@ -104,7 +104,7 @@ void main() {
   testWidgets('Toast appends caller className onto the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Toast(message: 'hi', className: 'mt-10')),
+      wrap(const MSToast(message: 'hi', className: 'mt-10')),
     );
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(wDiv.className, contains('rounded-lg'));

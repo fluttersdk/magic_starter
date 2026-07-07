@@ -4,5 +4,5 @@
 // discovers `*.preview.dart` directly, and the preview must stay out of the
 // release barrel.
 
-export 'radio.dart' show Radio;
+export 'radio.dart' show MSRadio;
 export 'radio.recipe.dart';

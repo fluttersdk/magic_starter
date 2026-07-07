@@ -13,9 +13,9 @@ import '../../../widgets/magic_starter_confirm_dialog.dart';
 /// Active sessions settings sub-page.
 ///
 /// Drilled into from the Settings hub. Wraps the browser-sessions list in a
-/// [SettingsScaffold] with a unified back affordance returning to the hub.
+/// [MSSettingsScaffold] with a unified back affordance returning to the hub.
 ///
-/// Each device is rendered as a [SettingsRow] (destructive-tone revoke control
+/// Each device is rendered as a [MSSettingsRow] (destructive-tone revoke control
 /// for non-current devices). The load + revoke wiring is lifted verbatim from
 /// the original long-form profile settings view: it reuses
 /// [MagicStarterProfileController.getSessions] / `doRevokeSession` /
@@ -142,18 +142,18 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('profile.browser_sessions'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
-        SettingsSection(
+        MSSettingsSection(
           footer: trans('profile.browser_sessions_description'),
           children: _buildSessionRows(),
         ),
         // Gate: guests cannot logout/revoke sessions.
         if (Gate.allows('starter.logout-sessions'))
-          SettingsSection(
+          MSSettingsSection(
             children: [
               MagicBuilder<bool>(
                 listenable: _sessionActionLoading,
@@ -180,10 +180,10 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
         // Lives here, on the Security > Sessions sub-page, rather than on the
         // Profile form: account deletion is a security/account action.
         if (Gate.allows('starter.delete-account'))
-          SettingsSection(
+          MSSettingsSection(
             footer: trans('magic_starter.profile.delete_account.description'),
             children: [
-              SettingsRow(
+              MSSettingsRow(
                 title: trans('magic_starter.profile.delete_account.button'),
                 icon: Icons.delete_outline,
                 tone: SettingsRowTone.destructive,
@@ -249,7 +249,7 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
     return _sessions.map(_buildSessionRow).toList();
   }
 
-  /// Renders a single session as a [SettingsRow] with a device icon, the
+  /// Renders a single session as a [MSSettingsRow] with a device icon, the
   /// platform/browser title, location subtitle, and a destructive revoke
   /// trailing control for non-current devices.
   Widget _buildSessionRow(Map<String, dynamic> session) {
@@ -269,7 +269,7 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
     final subtitleText =
         [ip, locationText].where((s) => s.isNotEmpty).join('  ');
 
-    return SettingsRow(
+    return MSSettingsRow(
       icon: isDesktop ? _iconDesktop : _iconMobile,
       title: title.isNotEmpty ? title : trans('profile.browser_sessions'),
       subtitle: subtitleText.isNotEmpty ? subtitleText : null,

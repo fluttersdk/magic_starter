@@ -69,7 +69,7 @@ void main() {
   testWidgets('SettingsRow renders title text', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(title: 'Notifications'),
+        const MSSettingsRow(title: 'Notifications'),
       ),
     );
     expect(find.text('Notifications'), findsOneWidget);
@@ -79,7 +79,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(title: 'Profile'),
+        const MSSettingsRow(title: 'Profile'),
       ),
     );
     // WIcon should not be present when no icon is given.
@@ -90,7 +90,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(
+        const MSSettingsRow(
           title: 'Profile',
           icon: Icons.person_outline,
         ),
@@ -102,7 +102,7 @@ void main() {
   testWidgets('SettingsRow renders subtitle when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(
+        const MSSettingsRow(
           title: 'Profile',
           subtitle: 'Edit your name and email',
         ),
@@ -115,7 +115,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(title: 'Profile'),
+        const MSSettingsRow(title: 'Profile'),
       ),
     );
     // Only one text widget (the title).
@@ -126,7 +126,7 @@ void main() {
     const trailingKey = Key('trailing-widget');
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(
+        const MSSettingsRow(
           title: 'Dark Mode',
           trailing: SizedBox(key: trailingKey, width: 40, height: 24),
         ),
@@ -139,7 +139,7 @@ void main() {
     var tapped = false;
     await tester.pumpWidget(
       wrap(
-        SettingsRow(
+        MSSettingsRow(
           title: 'Profile',
           onTap: () => tapped = true,
         ),
@@ -154,7 +154,7 @@ void main() {
   testWidgets('SettingsRow is not tappable when onTap is null', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(title: 'Profile'),
+        const MSSettingsRow(title: 'Profile'),
       ),
     );
     // WAnchor should not be present when onTap is null.
@@ -165,7 +165,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(title: 'Appearance'),
+        const MSSettingsRow(title: 'Appearance'),
       ),
     );
     final titleTexts = tester
@@ -180,7 +180,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(
+        const MSSettingsRow(
           title: 'Delete Account',
           tone: SettingsRowTone.destructive,
         ),
@@ -197,7 +197,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(title: 'Sessions'),
+        const MSSettingsRow(title: 'Sessions'),
       ),
     );
     // The root WDiv should carry a 44pt+ minimum height (min-h-12 = 48px).
@@ -213,7 +213,7 @@ void main() {
     // dividers.
     await tester.pumpWidget(
       wrap(
-        const SettingsRow(title: 'Profile'),
+        const MSSettingsRow(title: 'Profile'),
       ),
     );
     final divs = tester.widgetList<WDiv>(find.byType(WDiv));

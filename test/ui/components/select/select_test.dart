@@ -58,7 +58,7 @@ void main() {
     testWidgets('renders and shows WSelect', (tester) async {
       await tester.pumpWidget(
         wrap(
-          Select<String>(
+          MSSelect<String>(
             value: null,
             options: const [SelectOption(value: 'a', label: 'Option A')],
             onChange: (_) {},
@@ -74,7 +74,7 @@ void main() {
       String? selected;
       await tester.pumpWidget(
         wrap(
-          Select<String>(
+          MSSelect<String>(
             value: null,
             options: const [SelectOption(value: 'a', label: 'Option A')],
             onChange: (v) => selected = v,

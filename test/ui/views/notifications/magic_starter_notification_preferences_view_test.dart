@@ -151,7 +151,7 @@ void main() {
       expect(find.text('Slack'), findsOneWidget);
 
       // Check for design-system Switch toggles
-      expect(find.byType(Switch), findsNWidgets(2));
+      expect(find.byType(MSSwitch), findsNWidgets(2));
     });
 
     testWidgets('locked channel checkbox is disabled', (tester) async {
@@ -179,7 +179,7 @@ void main() {
 
       // The design-system Switch uses disabled:true for locked channels
       // rather than setting onChanged to null.
-      final switchWidget = tester.widget<Switch>(find.byType(Switch));
+      final switchWidget = tester.widget<MSSwitch>(find.byType(MSSwitch));
       expect(switchWidget.disabled, isTrue);
     });
   });

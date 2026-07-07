@@ -87,7 +87,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
         if (headerSlot != null) headerSlot,
-        PageHeader(
+        MSPageHeader(
           title: trans('teams.settings'),
           subtitle: trans('teams.settings_subtitle'),
         ),
@@ -106,7 +106,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
     return MagicForm(
       formData: form,
-      child: Card(
+      child: MSCard(
         title: trans('teams.general_settings'),
         child: WDiv(
           className: 'flex flex-col gap-4',
@@ -147,7 +147,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           valueListenable: controller.members,
           builder: (context, members, _) {
             if (members.isEmpty) {
-              return Card(
+              return MSCard(
                 child: WDiv(
                   className: 'w-full flex flex-col items-center gap-2 py-4',
                   children: [
@@ -164,7 +164,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               );
             }
 
-            return Card(
+            return MSCard(
               title: trans('teams.current_members'),
               noPadding: true,
               child: WDiv(
@@ -182,7 +182,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           valueListenable: controller.invitations,
           builder: (context, invitations, _) {
             if (invitations.isEmpty) {
-              return Card(
+              return MSCard(
                 child: WDiv(
                   className: 'w-full flex flex-col items-center gap-2 py-4',
                   children: [
@@ -199,7 +199,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               );
             }
 
-            return Card(
+            return MSCard(
               title: trans('teams.pending_invitations'),
               noPadding: true,
               child: WDiv(
@@ -220,7 +220,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
             return MagicForm(
               formData: inviteForm,
-              child: Card(
+              child: MSCard(
                 title: trans('teams.invite_member'),
                 child: WDiv(
                   className: 'flex flex-col gap-4',

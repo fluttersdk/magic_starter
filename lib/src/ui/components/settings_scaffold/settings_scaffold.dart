@@ -7,9 +7,9 @@ import 'settings_scaffold.recipe.dart';
 /// Mobile-first centered sub-page wrapper for Settings screens.
 ///
 /// Wraps a vertically scrollable, max-width-constrained centered column
-/// containing a unified [PageHeader] (title, subtitle, optional back
+/// containing a unified [MSPageHeader] (title, subtitle, optional back
 /// affordance) and a `mt-6 flex flex-col gap-6` children area intended for
-/// [SettingsSection] widgets.
+/// [MSSettingsSection] widgets.
 ///
 /// Works identically on mobile and desktop inside `layout.app`: the inner
 /// column is always `w-full max-w-2xl mx-auto px-4 lg:px-0` so content is
@@ -22,52 +22,52 @@ import 'settings_scaffold.recipe.dart';
 ///
 /// ### Example — sub-page with back:
 /// ```dart
-/// SettingsScaffold(
+/// MSSettingsScaffold(
 ///   title: 'Profile',
 ///   subtitle: 'Update your personal information',
 ///   backLabel: 'Settings',
 ///   backFallback: '/settings',
 ///   children: [
-///     SettingsSection(header: 'Personal', children: [...]),
+///     MSSettingsSection(header: 'Personal', children: [...]),
 ///   ],
 /// )
 /// ```
 ///
 /// ### Example — top-level page (no back):
 /// ```dart
-/// SettingsScaffold(
+/// MSSettingsScaffold(
 ///   title: 'Settings',
 ///   children: [
-///     SettingsSection(header: 'Account', children: [...]),
+///     MSSettingsSection(header: 'Account', children: [...]),
 ///   ],
 /// )
 /// ```
 @immutable
-class SettingsScaffold extends StatelessWidget {
-  /// Required page title forwarded to [PageHeader].
+class MSSettingsScaffold extends StatelessWidget {
+  /// Required page title forwarded to [MSPageHeader].
   final String title;
 
-  /// Optional subtitle forwarded to [PageHeader].
+  /// Optional subtitle forwarded to [MSPageHeader].
   final String? subtitle;
 
-  /// Optional back-affordance label forwarded to [PageHeader].
+  /// Optional back-affordance label forwarded to [MSPageHeader].
   ///
   /// When set, a chevron + label back control appears in the header leading
   /// slot; tapping it calls `MagicRoute.back(fallback: backFallback)`.
   /// When null (default), no back affordance is rendered.
   final String? backLabel;
 
-  /// Fallback route forwarded to [PageHeader]'s `MagicRoute.back` call.
+  /// Fallback route forwarded to [MSPageHeader]'s `MagicRoute.back` call.
   ///
   /// Only used when [backLabel] is set.
   final String? backFallback;
 
-  /// The [SettingsSection] widgets (or other content) to render in the
+  /// The [MSSettingsSection] widgets (or other content) to render in the
   /// `mt-6 flex flex-col gap-6` children area below the header.
   final List<Widget> children;
 
-  /// Creates a [SettingsScaffold].
-  const SettingsScaffold({
+  /// Creates a [MSSettingsScaffold].
+  const MSSettingsScaffold({
     super.key,
     required this.title,
     required this.children,
@@ -94,7 +94,7 @@ class SettingsScaffold extends StatelessWidget {
           className: settingsScaffoldContainerRecipe(),
           children: [
             // 2. Unified page header — back affordance is composed here.
-            PageHeader(
+            MSPageHeader(
               title: title,
               subtitle: subtitle,
               backLabel: backLabel,

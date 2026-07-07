@@ -11,7 +11,7 @@ import 'form_field.recipe.dart';
 ///
 /// ### Example
 /// ```dart
-/// MagicFormField(
+/// MSFormField(
 ///   label: 'Email',
 ///   hint: 'We will never share your email',
 ///   error: controller.errors['email'],
@@ -19,7 +19,7 @@ import 'form_field.recipe.dart';
 /// )
 /// ```
 @immutable
-class MagicFormField extends StatelessWidget {
+class MSFormField extends StatelessWidget {
   /// Optional label displayed above the child input.
   final String? label;
 
@@ -36,8 +36,8 @@ class MagicFormField extends StatelessWidget {
   /// When non-null, the hint is suppressed.
   final String? error;
 
-  /// Creates a [MagicFormField].
-  const MagicFormField({
+  /// Creates a [MSFormField].
+  const MSFormField({
     super.key,
     required this.child,
     this.label,

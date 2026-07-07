@@ -6,6 +6,6 @@
 // here — `previews:refresh` discovers `*.preview.dart` files directly, and the
 // preview must stay out of the release barrel.
 
-export 'settings_row.dart' show SettingsRow;
+export 'settings_row.dart' show MSSettingsRow;
 export 'settings_row.recipe.dart'
     show SettingsRowTone, kSettingsRowToneAxis, settingsRowRecipe;

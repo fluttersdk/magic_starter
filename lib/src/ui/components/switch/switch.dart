@@ -11,13 +11,13 @@ import 'switch.recipe.dart';
 /// ### Usage
 ///
 /// ```dart
-/// Switch(
+/// MSSwitch(
 ///   value: _enabled,
 ///   onChanged: (v) => setState(() => _enabled = v),
 /// )
 /// ```
 @immutable
-class Switch extends StatelessWidget {
+class MSSwitch extends StatelessWidget {
   /// Whether the switch is on.
   final bool value;
 
@@ -36,8 +36,8 @@ class Switch extends StatelessWidget {
   /// Accessible label for the switch (required for icon-only usage).
   final String? semanticLabel;
 
-  /// Creates a [Switch].
-  const Switch({
+  /// Creates a [MSSwitch].
+  const MSSwitch({
     super.key,
     required this.value,
     required this.onChanged,

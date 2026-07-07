@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 
 import 'dropdown_menu.dart';
 
-/// Static preview for the [DropdownMenu] component.
+/// Static preview for the [MSDropdownMenu] component.
 ///
 /// Renders a dropdown with a representative set of items (normal, disabled,
 /// with leading icon) so the preview catalog can display the surface in light
@@ -22,15 +22,15 @@ class DropdownMenuPreview extends StatelessWidget {
       className: 'flex flex-row gap-8 p-6',
       children: [
         // Standard menu.
-        DropdownMenu(
+        MSDropdownMenu(
           items: [
-            DropdownMenuItem(
+            MSDropdownMenuItem(
               label: 'Edit',
               leading: const WIcon(_iconEdit, className: 'text-fg text-sm'),
               onTap: () {},
             ),
-            const DropdownMenuItem(label: 'View details', onTap: null),
-            DropdownMenuItem(
+            const MSDropdownMenuItem(label: 'View details', onTap: null),
+            MSDropdownMenuItem(
               label: 'Delete',
               leading: const WIcon(
                 _iconDelete,
@@ -46,10 +46,10 @@ class DropdownMenuPreview extends StatelessWidget {
           ),
         ),
         // Menu with a disabled item.
-        DropdownMenu(
+        MSDropdownMenu(
           items: [
-            const DropdownMenuItem(label: 'Available action', onTap: null),
-            const DropdownMenuItem(
+            const MSDropdownMenuItem(label: 'Available action', onTap: null),
+            const MSDropdownMenuItem(
               label: 'Unavailable action',
               disabled: true,
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart' show Button;
+import 'package:magic_starter/magic_starter.dart' show MSButton;
 
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_otp_controller.dart';
@@ -128,7 +128,7 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
               labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-6'),
-            Button(
+            MSButton(
               isLoading: isLoading,
               onPressed: _submitPhone,
               className: MagicStarter.formTheme.primaryButtonClassName,
@@ -204,7 +204,7 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
               labelClassName: MagicStarter.formTheme.labelClassName,
             ),
             const WSpacer(className: 'h-6'),
-            Button(
+            MSButton(
               isLoading: isLoading,
               onPressed: _submitCode,
               className: MagicStarter.formTheme.primaryButtonClassName,

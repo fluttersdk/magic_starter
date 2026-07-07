@@ -1,6 +1,6 @@
 import 'package:magic/magic.dart';
 
-/// The [DropdownMenu] popover-panel [WindRecipe] (const).
+/// The [MSDropdownMenu] popover-panel [WindRecipe] (const).
 ///
 /// The base carries the default panel styling with semantic alias tokens. A
 /// caller `className` is APPENDED after the base (parser last-wins resolves
@@ -10,7 +10,7 @@ const WindRecipe dropdownMenuPanelRecipe = WindRecipe(
       'py-1 overflow-hidden',
 );
 
-/// The [DropdownMenu] active-item [WindRecipe] (const).
+/// The [MSDropdownMenu] active-item [WindRecipe] (const).
 ///
 /// Applied to each enabled item's container. A per-item `className` appends
 /// after the base so callers refine an individual row without losing the base.
@@ -19,7 +19,7 @@ const WindRecipe dropdownMenuItemRecipe = WindRecipe(
       'hover:bg-surface-container',
 );
 
-/// The [DropdownMenu] disabled-item [WindRecipe] (const).
+/// The [MSDropdownMenu] disabled-item [WindRecipe] (const).
 ///
 /// Applied to each disabled item's container (muted, non-interactive). A
 /// per-item `className` appends after the base.

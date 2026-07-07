@@ -1004,7 +1004,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                                   ),
                                 ],
                               ),
-                              Switch(
+                              MSSwitch(
                                 value: isSubscribed,
                                 disabled: isLoading,
                                 onChanged: (newValue) async {

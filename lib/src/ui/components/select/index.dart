@@ -7,5 +7,5 @@
 // `*.preview.dart` files directly, and the preview must stay out of the
 // release barrel.
 
-export 'select.dart' show Select;
+export 'select.dart' show MSSelect;
 export 'select.recipe.dart' show selectRecipe;

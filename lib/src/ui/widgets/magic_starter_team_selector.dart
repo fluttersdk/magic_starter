@@ -4,9 +4,9 @@
 
 import '../components/team_selector/team_selector.dart';
 
-export '../components/team_selector/team_selector.dart' show TeamSelector;
+export '../components/team_selector/team_selector.dart' show MSTeamSelector;
 
-/// Backward-compatible alias for [TeamSelector].
-class MagicStarterTeamSelector extends TeamSelector {
+/// Backward-compatible alias for [MSTeamSelector].
+class MagicStarterTeamSelector extends MSTeamSelector {
   const MagicStarterTeamSelector({super.key, super.compact});
 }

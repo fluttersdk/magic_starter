@@ -99,13 +99,13 @@ class _MagicStarterAppearanceViewState extends MagicStatefulViewState<
     final theme = WindTheme.of(context);
     final active = _activeMode(theme);
 
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('magic_starter.appearance.title'),
       subtitle: trans('magic_starter.appearance.subtitle'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
-        SettingsSection(
+        MSSettingsSection(
           footer: trans('magic_starter.appearance.section_footer'),
           children: [
             _buildOptionRow(
@@ -148,7 +148,7 @@ class _MagicStarterAppearanceViewState extends MagicStatefulViewState<
     required _AppearanceMode active,
   }) {
     final isSelected = mode == active;
-    return SettingsRow(
+    return MSSettingsRow(
       icon: icon,
       title: title,
       subtitle: subtitle,

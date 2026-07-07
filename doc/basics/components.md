@@ -127,81 +127,82 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `Button` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`) |
-| `Input` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MagicFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`) |
-| `Textarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `Input`; `fullWidth: true` fills the parent width (defaults `false`) |
-| `Checkbox` | | Boolean toggle; Wind-only, no Material dependency |
-| `Switch` | | Toggle; replaces Flutter's `Switch` in Wind layouts |
-| `Radio` | | Single-select option |
-| `Select` | `selectRecipe` | Dropdown single-select backed by an item list |
-| `Combobox` | `comboboxRecipe` | Searchable single-select with filter input |
+| `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`) |
+| `MSInput` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`) |
+| `MSTextarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `MSInput`; `fullWidth: true` fills the parent width (defaults `false`) |
+| `MSCheckbox` | | Boolean toggle; Wind-only, no Material dependency |
+| `MSSwitch` | | Toggle; replaces Flutter's `MSSwitch` in Wind layouts |
+| `MSRadio` | | Single-select option |
+| `MSSelect` | `selectRecipe` | Dropdown single-select backed by an item list |
+| `MSCombobox` | `comboboxRecipe` | Searchable single-select with filter input |
 
 <a name="display-and-feedback"></a>
 ### Display and Feedback
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `Badge` | `BadgeTone` (neutral/primary/success/warning/destructive) | Inline label chip |
-| `Typography` | `TypographyVariant` (h1-h6/body/caption/overline) | Semantic text wrapper |
-| `Skeleton` | `SkeletonShape` (line/rect/circle) | Placeholder loading block |
-| `Toast` | `ToastVariant` (info/success/warning/error) | Transient feedback overlay |
-| `Tooltip` | | Hover/long-press hint bubble |
-| `EmptyState` | | Illustrated empty-list placeholder |
-| `ErrorState` | | Full-screen or inline error with retry |
+| `MSBadge` | `BadgeTone` (neutral/primary/success/warning/destructive) | Inline label chip |
+| `MSTypography` | `TypographyVariant` (h1-h6/body/caption/overline) | Semantic text wrapper |
+| `MSSkeleton` | `SkeletonShape` (line/rect/circle) | Placeholder loading block |
+| `MSToast` | `ToastVariant` (info/success/warning/error) | Transient feedback overlay |
+| `MSTooltip` | | Hover/long-press hint bubble |
+| `MSEmptyState` | | Illustrated empty-list placeholder |
+| `MSErrorState` | | Full-screen or inline error with retry |
 
 <a name="selection-and-navigation"></a>
 ### Selection and Navigation
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `SegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher |
-| `Tabs` | `tabsRecipe` | Full tab bar with content panels |
-| `Accordion` | `AccordionItem`, `accordionRecipe` | Collapsible section list |
-| `Navbar` | | Horizontal top navigation bar |
-| `DropdownMenu` | `DropdownMenuItem` | Contextual action menu |
+| `MSSegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher |
+| `MSTabs` | `tabsRecipe` | Full tab bar with content panels |
+| `MSAccordion` | `MSAccordionItem`, `accordionRecipe` | Collapsible section list |
+| `MSNavbar` | | Horizontal top navigation bar |
+| `MSDropdownMenu` | `MSDropdownMenuItem` | Contextual action menu |
 
 <a name="overlay"></a>
 ### Overlay
 
 | Component | Notes |
 |-----------|-------|
-| `Dialog` | Modal dialog shell; reads `MagicStarterModalTheme` tokens |
-| `BottomSheet` | Slide-up sheet; reads `MagicStarterModalTheme` tokens |
+| `MSDialog` | Modal dialog shell; reads `MagicStarterModalTheme` tokens |
+| `MSBottomSheet` | Slide-up sheet; reads `MagicStarterModalTheme` tokens |
 
 <a name="composition-and-app-chrome"></a>
 ### Composition and App Chrome
 
 | Component | Notes |
 |-----------|-------|
-| `MagicFormField` | Label + input + hint + error layout wrapper |
-| `Card` | Surface/inset/elevated variants; `MagicStarterCard` is a stable alias |
-| `PageHeader` | Full-width responsive header; `MagicStarterPageHeader` is a stable alias |
-| `SocialDivider` | "Or continue with" separator; `MagicStarterSocialDivider` is a stable alias |
-| `NotificationDropdown` | Bell-icon dropdown with live unread badge; `MagicStarterNotificationDropdown` is a stable alias |
-| `UserProfileDropdown` | Avatar menu with profile links and logout; `MagicStarterUserProfileDropdown` is a stable alias |
-| `TeamSelector` | Current-team switcher; `MagicStarterTeamSelector` is a stable alias |
+| `MSFormField` | Label + input + hint + error layout wrapper |
+| `MSCard` | Surface/inset/elevated variants; `MagicStarterCard` is a stable alias |
+| `MSPageHeader` | Full-width responsive header; `MagicStarterPageHeader` is a stable alias |
+| `MSSocialDivider` | "Or continue with" separator; `MagicStarterSocialDivider` is a stable alias |
+| `MSNotificationDropdown` | Bell-icon dropdown with live unread badge; `MagicStarterNotificationDropdown` is a stable alias |
+| `MSUserProfileDropdown` | Avatar menu with profile links and logout; `MagicStarterUserProfileDropdown` is a stable alias |
+| `MSTeamSelector` | Current-team switcher; `MagicStarterTeamSelector` is a stable alias |
 
 <a name="import-collisions"></a>
 ## Import Collisions
 
-The barrel now exports names that collide with `package:flutter/material.dart`:
-
-```
-Switch, Dialog, Checkbox, Radio, Badge, Typography, BottomSheet, Tooltip,
-DropdownMenu, DropdownMenuItem
-```
-
-In files that import both, add a `hide` clause on the material import:
+Every component carries an `MS` prefix (`MSButton`, `MSDialog`, `MSSwitch`, ...),
+so none of the barrel's component exports collide with
+`package:flutter/material.dart`. You can import both without a `hide` clause:
 
 ```dart
-import 'package:flutter/material.dart' show Icons;  // import only Icons
+import 'package:flutter/material.dart';
 import 'package:magic_starter/magic_starter.dart';
+
+// No ambiguity: MSSwitch is the component, Switch is Material's.
 ```
+
+> Earlier releases exported unprefixed names (`Switch`, `Dialog`, ...) and
+> required a `hide` clause. See the migration table in the package README to
+> update from the pre-`MS` names.
 
 Or hide the specific colliding names:
 
 ```dart
-import 'package:flutter/material.dart' hide Switch, Dialog, Checkbox;
+import 'package:flutter/material.dart' hide MSSwitch, MSDialog, MSCheckbox;
 import 'package:magic_starter/magic_starter.dart';
 ```
 

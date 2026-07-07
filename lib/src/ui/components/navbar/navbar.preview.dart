@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'navbar.dart';
 
-/// Static preview for [Navbar].
+/// Static preview for [MSNavbar].
 ///
 /// Renders two variations: brand-only and full (brand + links + trailing). One
 /// preview class per file.
@@ -15,11 +15,11 @@ class NavbarPreview extends StatelessWidget {
     return WDiv(
       className: 'flex flex-col gap-6',
       children: [
-        Navbar(
+        MSNavbar(
           brand: const WText('Acme', className: 'text-lg font-bold text-fg'),
           children: const [],
         ),
-        Navbar(
+        MSNavbar(
           brand: const WText('Acme', className: 'text-lg font-bold text-fg'),
           trailing: const WDiv(
             className:

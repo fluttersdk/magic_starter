@@ -5,7 +5,7 @@ import 'package:magic/magic.dart';
 import '../button/button.dart';
 import 'error_state.dart';
 
-/// Static preview for [ErrorState].
+/// Static preview for [MSErrorState].
 ///
 /// Renders two variations: minimal (title-only) and full (all slots). One
 /// preview class per file.
@@ -17,12 +17,12 @@ class ErrorStatePreview extends StatelessWidget {
     return WDiv(
       className: 'flex flex-col gap-8 p-6',
       children: [
-        const ErrorState(title: 'Something went wrong'),
-        ErrorState(
+        const MSErrorState(title: 'Something went wrong'),
+        MSErrorState(
           icon: Icons.error_outline,
           title: 'Failed to load data',
           description: 'Please check your connection and try again.',
-          action: Button(
+          action: MSButton(
             onPressed: () {},
             child: const WText('Retry'),
           ),

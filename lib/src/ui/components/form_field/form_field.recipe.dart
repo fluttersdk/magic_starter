@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 // No variant axes needed for FormField — the layout is static (root/label/hint/error
 // slots). The recipe provides the root container className.
 
-/// Builds the root-container className for [MagicFormField].
+/// Builds the root-container className for [MSFormField].
 ///
 /// Returns a plain string rather than a [WindRecipe] because FormField has no
 /// variant axes; the recipe is kept as a named function for visual consistency

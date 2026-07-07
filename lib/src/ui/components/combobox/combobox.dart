@@ -5,14 +5,14 @@ import 'combobox.recipe.dart';
 
 /// A searchable single-select combobox component for Magic Starter.
 ///
-/// Extends [Select]'s recipe-driven approach with `searchable: true` wired into
+/// Extends [MSSelect]'s recipe-driven approach with `searchable: true` wired into
 /// the underlying [WSelect], so the user can type to filter options. Supports
 /// async [onSearch] for remote filtering.
 ///
 /// ### Example Usage:
 ///
 /// ```dart
-/// Combobox<String>(
+/// MSCombobox<String>(
 ///   value: _selected,
 ///   options: countries,
 ///   onChange: (v) => setState(() => _selected = v),
@@ -22,7 +22,7 @@ import 'combobox.recipe.dart';
 /// ### Async search:
 ///
 /// ```dart
-/// Combobox<String>(
+/// MSCombobox<String>(
 ///   value: _selected,
 ///   options: _options,
 ///   onChange: (v) => setState(() => _selected = v),
@@ -30,7 +30,7 @@ import 'combobox.recipe.dart';
 /// )
 /// ```
 @immutable
-class Combobox<T> extends StatelessWidget {
+class MSCombobox<T> extends StatelessWidget {
   /// Currently selected value, or `null` when nothing is selected.
   final T? value;
 
@@ -55,8 +55,8 @@ class Combobox<T> extends StatelessWidget {
   /// Per-slot className overrides appended after the recipe output.
   final Map<String, String>? classNames;
 
-  /// Creates a [Combobox] widget.
-  const Combobox({
+  /// Creates a [MSCombobox] widget.
+  const MSCombobox({
     super.key,
     required this.options,
     this.value,

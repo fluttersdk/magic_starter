@@ -6,7 +6,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 
 import 'notification_dropdown.dart';
 
-/// Static preview for [NotificationDropdown].
+/// Static preview for [MSNotificationDropdown].
 ///
 /// Renders the dropdown with a mock notification stream (empty state). One
 /// preview class per file.
@@ -41,7 +41,7 @@ class _NotificationDropdownPreviewState
     return WDiv(
       className: 'flex flex-row items-start gap-6 p-6',
       children: [
-        NotificationDropdown(
+        MSNotificationDropdown(
           notificationStream: _controller.stream,
         ),
       ],

@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'combobox.dart';
 
-/// Static variant-matrix preview for [Combobox].
+/// Static variant-matrix preview for [MSCombobox].
 ///
 /// Shows a Combobox in its default and pre-selected states so the catalog can
 /// exercise light and dark themes. One preview class per file is the canonical
@@ -21,7 +21,7 @@ class ComboboxPreview extends StatelessWidget {
           'Combobox — default (searchable)',
           className: 'text-sm font-medium text-fg-muted',
         ),
-        Combobox<String>(
+        MSCombobox<String>(
           value: null,
           options: const [
             SelectOption(value: 'apple', label: 'Apple'),
@@ -36,7 +36,7 @@ class ComboboxPreview extends StatelessWidget {
           'Combobox — pre-selected value',
           className: 'text-sm font-medium text-fg-muted',
         ),
-        Combobox<String>(
+        MSCombobox<String>(
           value: 'banana',
           options: const [
             SelectOption(value: 'apple', label: 'Apple'),

@@ -22,7 +22,7 @@ void main() {
   group('Tooltip', () {
     testWidgets('renders trigger child', (tester) async {
       await tester.pumpWidget(wrap(
-        Tooltip(
+        MSTooltip(
           content: const Text('tooltip text'),
           child: const Text('hover me'),
         ),
@@ -33,7 +33,7 @@ void main() {
 
     testWidgets('tooltip content is not visible when closed', (tester) async {
       await tester.pumpWidget(wrap(
-        Tooltip(
+        MSTooltip(
           content: const Text('hidden tooltip'),
           child: const Text('hover me'),
         ),
@@ -45,21 +45,21 @@ void main() {
 
     testWidgets('has className prop', (tester) async {
       await tester.pumpWidget(wrap(
-        Tooltip(
+        MSTooltip(
           content: const Text('tip'),
           className: 'bg-gray-900 text-white',
           child: const Text('trigger'),
         ),
       ));
 
-      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
+      final tooltip = tester.widget<MSTooltip>(find.byType(MSTooltip));
       expect(tooltip.className, 'bg-gray-900 text-white');
     });
   });
 
   // Verify Tooltip is re-exported from index.dart
   test('Tooltip is re-exported from index.dart', () {
-    expect(Tooltip, isNotNull);
+    expect(MSTooltip, isNotNull);
   });
 
   // ---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ void main() {
   testWidgets('Tooltip panel appends caller className onto the default',
       (tester) async {
     await tester.pumpWidget(wrap(
-      Tooltip(
+      MSTooltip(
         className: 'mt-10',
         content: const Text('tip'),
         child: const Text('trigger'),

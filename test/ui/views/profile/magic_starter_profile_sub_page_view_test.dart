@@ -219,10 +219,10 @@ void main() {
         (tester) async {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<SettingsScaffold>(
-        find.byType(SettingsScaffold),
+      final scaffold = tester.widget<MSSettingsScaffold>(
+        find.byType(MSSettingsScaffold),
       );
       expect(scaffold.backLabel, isNotNull);
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
@@ -285,7 +285,7 @@ void main() {
 
       // Account deletion now lives on the Security > Sessions sub-page, not on
       // the Profile form. No destructive row should be present here.
-      final rows = tester.widgetList<SettingsRow>(find.byType(SettingsRow));
+      final rows = tester.widgetList<MSSettingsRow>(find.byType(MSSettingsRow));
       final destructiveRows = rows.where(
         (row) => row.tone == SettingsRowTone.destructive,
       );

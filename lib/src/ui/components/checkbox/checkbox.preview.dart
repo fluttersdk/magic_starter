@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'checkbox.dart';
 
-/// Static variant-matrix preview for [Checkbox].
+/// Static variant-matrix preview for [MSCheckbox].
 ///
 /// Renders checked and unchecked states in both enabled and disabled modes.
 class CheckboxPreview extends StatelessWidget {
@@ -22,9 +22,9 @@ class CheckboxPreview extends StatelessWidget {
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [
-                Checkbox(value: false, onChanged: (_) {}),
+                MSCheckbox(value: false, onChanged: (_) {}),
                 WText('Unchecked', className: 'text-sm text-fg'),
-                Checkbox(value: true, onChanged: (_) {}),
+                MSCheckbox(value: true, onChanged: (_) {}),
                 WText('Checked', className: 'text-sm text-fg'),
               ],
             ),
@@ -40,9 +40,9 @@ class CheckboxPreview extends StatelessWidget {
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [
-                const Checkbox(value: false, disabled: true),
+                const MSCheckbox(value: false, disabled: true),
                 WText('Unchecked', className: 'text-sm text-fg-disabled'),
-                const Checkbox(value: true, disabled: true),
+                const MSCheckbox(value: true, disabled: true),
                 WText('Checked', className: 'text-sm text-fg-disabled'),
               ],
             ),

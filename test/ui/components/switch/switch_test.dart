@@ -52,14 +52,14 @@ void main() {
 
   testWidgets('Switch renders a WSwitch', (tester) async {
     await tester.pumpWidget(
-      wrap(Switch(value: false, onChanged: (_) {})),
+      wrap(MSSwitch(value: false, onChanged: (_) {})),
     );
     expect(find.byType(WSwitch), findsOneWidget);
   });
 
   testWidgets('Switch reflects value prop on WSwitch', (tester) async {
     await tester.pumpWidget(
-      wrap(Switch(value: true, onChanged: (_) {})),
+      wrap(MSSwitch(value: true, onChanged: (_) {})),
     );
     final widget = tester.widget<WSwitch>(find.byType(WSwitch));
     expect(widget.value, isTrue);
@@ -68,7 +68,7 @@ void main() {
   testWidgets('Switch fires onChanged when tapped', (tester) async {
     bool? newValue;
     await tester.pumpWidget(
-      wrap(Switch(value: false, onChanged: (v) => newValue = v)),
+      wrap(MSSwitch(value: false, onChanged: (v) => newValue = v)),
     );
     await tester.tap(find.byType(WSwitch));
     await tester.pump();
@@ -78,7 +78,7 @@ void main() {
   testWidgets('Switch applies track className with bg-surface-container-high',
       (tester) async {
     await tester.pumpWidget(
-      wrap(Switch(value: false, onChanged: (_) {})),
+      wrap(MSSwitch(value: false, onChanged: (_) {})),
     );
     final widget = tester.widget<WSwitch>(find.byType(WSwitch));
     expect(widget.className, contains('bg-surface-container-high'));
@@ -98,7 +98,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        Switch(
+        MSSwitch(
           value: false,
           onChanged: (_) {},
           className: 'mt-10',

@@ -4,6 +4,6 @@
 // discovers `*.preview.dart` directly, and the preview must stay out of the
 // release barrel.
 
-export 'textarea.dart' show Textarea;
+export 'textarea.dart' show MSTextarea;
 export 'textarea.recipe.dart'
     show TextareaState, textareaRecipe, kTextareaStateAxis;

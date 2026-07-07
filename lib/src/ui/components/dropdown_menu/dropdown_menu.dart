@@ -3,9 +3,9 @@ import 'package:magic/magic.dart';
 
 import 'dropdown_menu.recipe.dart';
 
-/// A single item entry for [DropdownMenu].
+/// A single item entry for [MSDropdownMenu].
 @immutable
-class DropdownMenuItem {
+class MSDropdownMenuItem {
   /// The display label for this menu item.
   final String label;
 
@@ -21,8 +21,8 @@ class DropdownMenuItem {
   /// Optional caller className appended after the item recipe output.
   final String? className;
 
-  /// Creates a [DropdownMenuItem].
-  const DropdownMenuItem({
+  /// Creates a [MSDropdownMenuItem].
+  const MSDropdownMenuItem({
     required this.label,
     this.onTap,
     this.disabled = false,
@@ -46,21 +46,21 @@ class DropdownMenuItem {
 ///
 /// ### Example
 /// ```dart
-/// DropdownMenu(
+/// MSDropdownMenu(
 ///   child: const WText('Options'),
 ///   items: [
-///     DropdownMenuItem(label: 'Edit', onTap: controller.edit),
-///     DropdownMenuItem(label: 'Delete', onTap: controller.delete),
+///     MSDropdownMenuItem(label: 'Edit', onTap: controller.edit),
+///     MSDropdownMenuItem(label: 'Delete', onTap: controller.delete),
 ///   ],
 /// )
 /// ```
 @immutable
-class DropdownMenu extends StatelessWidget {
+class MSDropdownMenu extends StatelessWidget {
   /// The trigger widget that opens/closes the menu.
   final Widget child;
 
   /// The menu items to display in the popover panel.
-  final List<DropdownMenuItem> items;
+  final List<MSDropdownMenuItem> items;
 
   /// Optional caller className appended after the panel recipe output.
   final String? className;
@@ -69,8 +69,8 @@ class DropdownMenu extends StatelessWidget {
   /// Defaults to [PopoverAlignment.bottomLeft].
   final PopoverAlignment alignment;
 
-  /// Creates a [DropdownMenu].
-  const DropdownMenu({
+  /// Creates a [MSDropdownMenu].
+  const MSDropdownMenu({
     super.key,
     required this.child,
     required this.items,
@@ -103,7 +103,7 @@ class DropdownMenu extends StatelessWidget {
     );
   }
 
-  Widget _buildItem(DropdownMenuItem item, VoidCallback close) {
+  Widget _buildItem(MSDropdownMenuItem item, VoidCallback close) {
     // 3. Disabled items: muted style, no tap handler.
     if (item.disabled) {
       return WDiv(

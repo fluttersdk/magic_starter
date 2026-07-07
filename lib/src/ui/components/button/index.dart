@@ -6,7 +6,7 @@
 // re-exported here — `previews:refresh` discovers `*.preview.dart` directly,
 // and the preview must stay out of the release barrel.
 
-export 'button.dart' show Button;
+export 'button.dart' show MSButton;
 export 'button.recipe.dart'
     show
         ButtonIntent,

@@ -87,7 +87,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        const ConfirmDialog(title: 'Are you sure?'),
+        const MSConfirmDialog(title: 'Are you sure?'),
       ));
 
       expect(find.text('Are you sure?'), findsOneWidget);
@@ -100,7 +100,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        const ConfirmDialog(
+        const MSConfirmDialog(
           title: 'Delete?',
           description: 'This cannot be undone.',
         ),
@@ -116,7 +116,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(const ConfirmDialog(title: 'Confirm?')));
+      await tester.pumpWidget(wrap(const MSConfirmDialog(title: 'Confirm?')));
 
       expect(find.text('common.confirm'), findsOneWidget);
       expect(find.text('common.cancel'), findsOneWidget);
@@ -128,10 +128,10 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(const ConfirmDialog(title: 'Confirm?')));
+      await tester.pumpWidget(wrap(const MSConfirmDialog(title: 'Confirm?')));
 
-      final dialog = tester.widget<ConfirmDialog>(
-        find.byType(ConfirmDialog),
+      final dialog = tester.widget<MSConfirmDialog>(
+        find.byType(MSConfirmDialog),
       );
       expect(dialog.variant, ConfirmDialogVariant.primary);
     });
@@ -143,13 +143,14 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        const ConfirmDialog(
+        const MSConfirmDialog(
           title: 'Delete?',
           variant: ConfirmDialogVariant.danger,
         ),
       ));
 
-      final dialog = tester.widget<ConfirmDialog>(find.byType(ConfirmDialog));
+      final dialog =
+          tester.widget<MSConfirmDialog>(find.byType(MSConfirmDialog));
       expect(dialog.variant, ConfirmDialogVariant.danger);
     });
   });
@@ -171,7 +172,7 @@ void main() {
         Builder(
           builder: (context) => ElevatedButton(
             onPressed: () async {
-              result = await ConfirmDialog.show(context, title: 'Delete?');
+              result = await MSConfirmDialog.show(context, title: 'Delete?');
             },
             child: const Text('Show'),
           ),
@@ -198,7 +199,7 @@ void main() {
         Builder(
           builder: (context) => ElevatedButton(
             onPressed: () async {
-              result = await ConfirmDialog.show(
+              result = await MSConfirmDialog.show(
                 context,
                 title: 'Delete?',
                 onConfirm: () async {},
@@ -228,7 +229,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(const ConfirmDialog(title: 'Confirm?')));
+    await tester.pumpWidget(wrap(const MSConfirmDialog(title: 'Confirm?')));
 
     final footerWrapFinder = find
         .ancestor(

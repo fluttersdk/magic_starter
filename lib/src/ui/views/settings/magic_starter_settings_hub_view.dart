@@ -12,7 +12,7 @@ import '../../components/settings_section/index.dart';
 /// iOS-style Settings hub --- the drill-down index for the starter.
 ///
 /// Replaces the single long-form profile settings page with a grouped list of
-/// [SettingsNavRow]s that push into focused sub-pages. The hub itself performs
+/// [MSSettingsNavRow]s that push into focused sub-pages. The hub itself performs
 /// no API calls: it reads [Auth.user] for the Profile row subtitle and reuses
 /// [MagicStarterProfileController] purely so it slots into the same
 /// [MagicStatefulView] lifecycle as the other settings views.
@@ -68,14 +68,14 @@ class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
     final subtitle = _profileSubtitle(name, email);
 
     return [
-      SettingsNavRow(
+      MSSettingsNavRow(
         icon: _iconProfile,
         title: trans('profile.profile_information'),
         subtitle: subtitle,
         to: MagicStarterConfig.profileRoute(),
       ),
       if (_isGuest)
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconGuestUpgrade,
           title: trans('magic_starter.guest_upgrade.title'),
           subtitle: trans('magic_starter.guest_upgrade.description'),
@@ -95,20 +95,20 @@ class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
     return [
       if (MagicStarterConfig.hasTwoFactorFeatures() &&
           Gate.allows('starter.manage-two-factor'))
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconTwoFactor,
           title: trans('profile.two_factor_authentication'),
           value: _twoFactorValue(),
           to: MagicStarterConfig.settingsTwoFactorRoute(),
         ),
       if (Gate.allows('starter.update-password'))
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconPassword,
           title: trans('profile.update_password'),
           to: MagicStarterConfig.settingsPasswordRoute(),
         ),
       if (MagicStarterConfig.hasSessionsFeatures())
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconSessions,
           title: trans('profile.browser_sessions'),
           to: MagicStarterConfig.settingsSessionsRoute(),
@@ -129,32 +129,32 @@ class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
   /// rest follow their feature toggles.
   List<Widget> _preferencesRows() {
     return [
-      SettingsNavRow(
+      MSSettingsNavRow(
         icon: _iconAppearance,
         title: trans('magic_starter.appearance.title'),
         to: MagicStarterConfig.settingsAppearanceRoute(),
       ),
       if (MagicStarterConfig.hasNotificationFeatures())
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconNotifications,
           title: trans('magic_starter.notifications.preferences_title'),
           to: MagicStarterConfig.notificationPreferencesRoute(),
         ),
       if (MagicStarterConfig.hasExtendedProfileFeatures())
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconLanguage,
           title: trans('profile.language_label'),
           to: MagicStarterConfig.settingsLanguageRoute(),
         ),
       if (MagicStarterConfig.hasTimezoneFeatures())
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconTimezone,
           title: trans('profile.timezone_label'),
           to: MagicStarterConfig.settingsTimezoneRoute(),
         ),
       if (MagicStarterConfig.hasNewsletterFeatures() &&
           Gate.allows('starter.manage-newsletter'))
-        SettingsNavRow(
+        MSSettingsNavRow(
           icon: _iconNewsletter,
           title: trans('magic_starter.newsletter.section_title'),
           to: MagicStarterConfig.settingsNewsletterRoute(),
@@ -185,22 +185,22 @@ class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
     final preferencesRows = _preferencesRows();
 
     // 3. Assemble the scaffold children, omitting any section with no rows.
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('magic_starter.nav.settings'),
       children: [
         if (headerSlot != null) headerSlot,
         if (accountRows.isNotEmpty)
-          SettingsSection(
+          MSSettingsSection(
             header: trans('magic_starter.settings.account_section'),
             children: accountRows,
           ),
         if (securityRows.isNotEmpty)
-          SettingsSection(
+          MSSettingsSection(
             header: trans('magic_starter.settings.security_section'),
             children: securityRows,
           ),
         if (preferencesRows.isNotEmpty)
-          SettingsSection(
+          MSSettingsSection(
             header: trans('magic_starter.settings.preferences_section'),
             children: preferencesRows,
           ),

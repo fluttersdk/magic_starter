@@ -74,13 +74,13 @@ class _MagicStarterTimezoneViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('profile.timezone_label'),
       subtitle: trans('magic_starter.timezone.subtitle'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
-        SettingsSection(
+        MSSettingsSection(
           children: [
             WDiv(
               className: 'flex flex-col gap-4 px-5 py-4',

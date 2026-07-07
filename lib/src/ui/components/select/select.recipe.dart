@@ -1,6 +1,6 @@
 import 'package:magic/magic.dart';
 
-/// Builds the slot recipe for [Select] from semantic tokens.
+/// Builds the slot recipe for [MSSelect] from semantic tokens.
 ///
 /// Slots:
 /// - `trigger` — the closed-state trigger button.

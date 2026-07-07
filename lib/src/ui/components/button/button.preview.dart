@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 import 'button.dart';
 import 'button.recipe.dart';
 
-/// Static variant-matrix preview for [Button].
+/// Static variant-matrix preview for [MSButton].
 ///
 /// Renders every [ButtonIntent] x [ButtonSize] combination in a scrollable
 /// column so the catalog (`/preview`) can display the full surface in both
@@ -30,7 +30,7 @@ class ButtonPreview extends StatelessWidget {
                 className: 'flex flex-row gap-3',
                 children: [
                   for (final size in ButtonSize.values)
-                    Button(
+                    MSButton(
                       intent: intent,
                       size: size,
                       onPressed: () {},

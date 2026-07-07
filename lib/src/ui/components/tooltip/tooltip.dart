@@ -17,13 +17,13 @@ import 'tooltip.recipe.dart';
 ///
 /// ### Example
 /// ```dart
-/// Tooltip(
+/// MSTooltip(
 ///   content: const WText('Saves your current draft'),
 ///   child: const WText('Save'),
 /// )
 /// ```
 @immutable
-class Tooltip extends StatelessWidget {
+class MSTooltip extends StatelessWidget {
   /// The widget that acts as the anchor/trigger for the tooltip.
   final Widget child;
 
@@ -37,8 +37,8 @@ class Tooltip extends StatelessWidget {
   /// Popover alignment relative to the trigger. Defaults to [PopoverAlignment.topCenter].
   final PopoverAlignment alignment;
 
-  /// Creates a [Tooltip].
-  const Tooltip({
+  /// Creates a [MSTooltip].
+  const MSTooltip({
     super.key,
     required this.child,
     required this.content,

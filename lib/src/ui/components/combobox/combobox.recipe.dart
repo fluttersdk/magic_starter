@@ -1,6 +1,6 @@
 import 'package:magic/magic.dart';
 
-/// Builds the slot recipe for [Combobox] from semantic tokens.
+/// Builds the slot recipe for [MSCombobox] from semantic tokens.
 ///
 /// Shares the same slot shape as [selectRecipe] (trigger/popup/item) but the
 /// trigger carries a search-input affordance (slightly different padding) and

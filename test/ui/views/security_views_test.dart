@@ -284,10 +284,10 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterTwoFactorView()));
       await tester.pump();
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<SettingsScaffold>(
-        find.byType(SettingsScaffold),
+      final scaffold = tester.widget<MSSettingsScaffold>(
+        find.byType(MSSettingsScaffold),
       );
       expect(scaffold.backLabel, isNotNull);
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
@@ -364,10 +364,10 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterPasswordView()));
       await tester.pump();
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<SettingsScaffold>(
-        find.byType(SettingsScaffold),
+      final scaffold = tester.widget<MSSettingsScaffold>(
+        find.byType(MSSettingsScaffold),
       );
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
@@ -419,10 +419,10 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.byType(SettingsScaffold), findsOneWidget);
+      expect(find.byType(MSSettingsScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<SettingsScaffold>(
-        find.byType(SettingsScaffold),
+      final scaffold = tester.widget<MSSettingsScaffold>(
+        find.byType(MSSettingsScaffold),
       );
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
@@ -453,7 +453,7 @@ void main() {
       expect(mockDriver.lastUrl, contains('/sessions'));
 
       // A SettingsRow is rendered per device.
-      expect(find.byType(SettingsRow), findsWidgets);
+      expect(find.byType(MSSettingsRow), findsWidgets);
     });
 
     testWidgets(

@@ -5,7 +5,7 @@ import 'package:magic/magic.dart';
 import '../button/button.dart';
 import 'page_header.dart';
 
-/// Static preview for [PageHeader].
+/// Static preview for [MSPageHeader].
 ///
 /// Renders four layout variants: title-only, with subtitle, with actions, and
 /// with inlineActions. One preview class per file.
@@ -17,33 +17,33 @@ class PageHeaderPreview extends StatelessWidget {
     return WDiv(
       className: 'flex flex-col gap-6 p-6',
       children: [
-        const PageHeader(title: 'Dashboard'),
-        const PageHeader(
+        const MSPageHeader(title: 'Dashboard'),
+        const MSPageHeader(
           title: 'Projects',
           subtitle: 'Manage your projects',
         ),
-        PageHeader(
+        MSPageHeader(
           title: 'Settings',
           actions: [
-            Button(
+            MSButton(
               onPressed: () {},
               child: const WText('Save'),
             ),
           ],
         ),
-        PageHeader(
+        MSPageHeader(
           title: 'Create',
           inlineActions: true,
           leading: const Icon(Icons.arrow_back),
           actions: [
-            Button(
+            MSButton(
               onPressed: () {},
               child: const WText('Create'),
             ),
           ],
         ),
         // Back-enabled variant: auto-back via backLabel + backFallback.
-        const PageHeader(
+        const MSPageHeader(
           title: 'Profile',
           subtitle: 'Edit your profile information',
           backLabel: 'Settings',

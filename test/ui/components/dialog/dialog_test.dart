@@ -47,7 +47,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        const Dialog(
+        const MSDialog(
           title: 'Test Dialog',
           body: Text('body content'),
         ),
@@ -63,7 +63,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        const Dialog(
+        const MSDialog(
           body: Text('unique body text'),
         ),
       ));
@@ -78,7 +78,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        Dialog(
+        MSDialog(
           body: const Text('body'),
           footerBuilder: (_) => const Text('footer widget'),
         ),
@@ -96,7 +96,7 @@ void main() {
       await tester.pumpWidget(wrap(
         Builder(
           builder: (context) => ElevatedButton(
-            onPressed: () => Dialog.show(
+            onPressed: () => MSDialog.show(
               context,
               title: 'Opened Dialog',
               body: const Text('dialog body'),
@@ -109,7 +109,7 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(Dialog), findsWidgets);
+      expect(find.byType(MSDialog), findsWidgets);
       expect(find.text('Opened Dialog'), findsOneWidget);
     });
 
@@ -126,16 +126,16 @@ void main() {
       );
 
       await tester.pumpWidget(wrap(
-        const Dialog(body: Text('themed')),
+        const MSDialog(body: Text('themed')),
       ));
 
-      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.byType(MSDialog), findsOneWidget);
     });
   });
 
   // Verify Dialog is re-exported from index.dart
   test('Dialog is re-exported from index.dart', () {
     // The import of index.dart at the top of this file proves re-export.
-    expect(Dialog, isNotNull);
+    expect(MSDialog, isNotNull);
   });
 }

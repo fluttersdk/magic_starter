@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'switch.dart';
 
-/// Static variant-matrix preview for [Switch].
+/// Static variant-matrix preview for [MSSwitch].
 ///
 /// Renders on/off states in both enabled and disabled modes.
 class SwitchPreview extends StatelessWidget {
@@ -22,9 +22,9 @@ class SwitchPreview extends StatelessWidget {
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [
-                Switch(value: false, onChanged: (_) {}),
+                MSSwitch(value: false, onChanged: (_) {}),
                 WText('Off', className: 'text-sm text-fg'),
-                Switch(value: true, onChanged: (_) {}),
+                MSSwitch(value: true, onChanged: (_) {}),
                 WText('On', className: 'text-sm text-fg'),
               ],
             ),
@@ -40,9 +40,9 @@ class SwitchPreview extends StatelessWidget {
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [
-                const Switch(value: false, onChanged: null, disabled: true),
+                const MSSwitch(value: false, onChanged: null, disabled: true),
                 WText('Off', className: 'text-sm text-fg-disabled'),
-                const Switch(value: true, onChanged: null, disabled: true),
+                const MSSwitch(value: true, onChanged: null, disabled: true),
                 WText('On', className: 'text-sm text-fg-disabled'),
               ],
             ),

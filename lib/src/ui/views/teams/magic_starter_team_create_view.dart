@@ -52,7 +52,7 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
       className: 'p-4 lg:p-6 flex flex-col gap-6',
       children: [
         if (headerSlot != null) headerSlot,
-        PageHeader(
+        MSPageHeader(
           title: trans('teams.create_team'),
           subtitle: trans('teams.create_team_subtitle'),
           backLabel: trans('teams.settings'),
@@ -69,7 +69,7 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
 
     return MagicForm(
       formData: form,
-      child: Card(
+      child: MSCard(
         child: WDiv(
           className: 'flex flex-col gap-4',
           children: [

@@ -5,21 +5,21 @@ import 'error_state.recipe.dart';
 
 /// A centered error-state placeholder with destructive tone.
 ///
-/// Mirrors [EmptyState] slot structure (root/iconWrap/title/description/action)
+/// Mirrors [MSEmptyState] slot structure (root/iconWrap/title/description/action)
 /// but applies a destructive visual tone: red tinted icon background and red
 /// title text.
 ///
 /// ### Example
 /// ```dart
-/// ErrorState(
+/// MSErrorState(
 ///   icon: Icons.error_outline,
 ///   title: 'Something went wrong',
 ///   description: 'Failed to load your data.',
-///   action: Button(onPressed: retry, child: const Text('Retry')),
+///   action: MSButton(onPressed: retry, child: const Text('Retry')),
 /// )
 /// ```
 @immutable
-class ErrorState extends StatelessWidget {
+class MSErrorState extends StatelessWidget {
   /// Optional icon rendered in the icon wrap slot.
   final IconData? icon;
 
@@ -29,11 +29,11 @@ class ErrorState extends StatelessWidget {
   /// Optional secondary description text.
   final String? description;
 
-  /// Optional action widget (e.g. a [Button]).
+  /// Optional action widget (e.g. a [MSButton]).
   final Widget? action;
 
-  /// Creates an [ErrorState].
-  const ErrorState({
+  /// Creates an [MSErrorState].
+  const MSErrorState({
     super.key,
     required this.title,
     this.icon,

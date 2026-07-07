@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'badge.dart';
 
-/// Static variant-matrix preview for [Badge].
+/// Static variant-matrix preview for [MSBadge].
 ///
 /// Renders every [BadgeTone] in a column so the catalog can show the full
 /// surface in light and dark. One preview class per file is the canonical
@@ -21,7 +21,7 @@ class BadgePreview extends StatelessWidget {
           WDiv(
             className: 'flex flex-row items-center gap-3',
             children: [
-              Badge(tone.name, tone: tone),
+              MSBadge(tone.name, tone: tone),
               WText(
                 tone.name,
                 className: 'text-sm text-fg-muted',

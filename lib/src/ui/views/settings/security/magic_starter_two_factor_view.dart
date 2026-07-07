@@ -13,7 +13,7 @@ import '../../../widgets/magic_starter_confirm_dialog.dart';
 /// Two-factor authentication settings sub-page.
 ///
 /// Drilled into from the Settings hub. Wraps the 2FA management surface in a
-/// [SettingsScaffold] with a unified back affordance returning to the hub.
+/// [MSSettingsScaffold] with a unified back affordance returning to the hub.
 ///
 /// The interaction wiring (enable / disable / show + regenerate recovery codes)
 /// is lifted verbatim from the original long-form profile settings view: it
@@ -192,12 +192,12 @@ class _MagicStarterTwoFactorViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScaffold(
+    return MSSettingsScaffold(
       title: trans('profile.two_factor_authentication'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
-        SettingsSection(
+        MSSettingsSection(
           children: [
             WDiv(
               className: 'flex flex-col gap-4 px-5 py-4',

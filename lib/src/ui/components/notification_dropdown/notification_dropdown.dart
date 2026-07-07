@@ -11,7 +11,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 ///
 /// ### Example
 /// ```dart
-/// NotificationDropdown(
+/// MSNotificationDropdown(
 ///   notificationStream: Notify.notifications(),
 ///   onMarkAsRead: (id) => Notify.markAsRead(id),
 ///   onMarkAllAsRead: () => Notify.markAllAsRead(),
@@ -19,7 +19,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 ///   onViewAll: () => MagicRoute.to(MagicStarterConfig.notificationsRoute()),
 /// )
 /// ```
-class NotificationDropdown extends StatelessWidget {
+class MSNotificationDropdown extends StatelessWidget {
   static const _typeIcons = <String, IconData>{
     'monitor_down': Icons.error_outline,
     'monitor_up': Icons.check_circle_outline,
@@ -42,8 +42,8 @@ class NotificationDropdown extends StatelessWidget {
   /// Callback when the "View all" link is tapped.
   final VoidCallback? onViewAll;
 
-  /// Creates a [NotificationDropdown].
-  const NotificationDropdown({
+  /// Creates a [MSNotificationDropdown].
+  const MSNotificationDropdown({
     super.key,
     required this.notificationStream,
     this.onMarkAsRead,

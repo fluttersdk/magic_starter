@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'team_selector.dart';
 
-/// Static preview for [TeamSelector].
+/// Static preview for [MSTeamSelector].
 ///
 /// Renders the selector trigger in default state (no resolver bound, so
 /// SizedBox.shrink is shown — to see the full widget, a resolver must be
@@ -17,8 +17,8 @@ class TeamSelectorPreview extends StatelessWidget {
       className: 'flex flex-row items-start gap-4 p-6',
       children: const [
         // No resolver bound — renders an empty placeholder in preview.
-        TeamSelector(),
-        TeamSelector(compact: true),
+        MSTeamSelector(),
+        MSTeamSelector(compact: true),
       ],
     );
   }

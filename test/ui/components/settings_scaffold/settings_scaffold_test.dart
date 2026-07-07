@@ -75,7 +75,7 @@ void main() {
   testWidgets('SettingsScaffold renders title via PageHeader', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Profile',
           children: [],
         ),
@@ -93,7 +93,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Profile',
           backLabel: 'Settings',
           backFallback: '/settings',
@@ -110,7 +110,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Settings',
           children: [],
         ),
@@ -122,7 +122,7 @@ void main() {
   testWidgets('SettingsScaffold renders child widgets', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Profile',
           children: [
             Text('Section 1'),
@@ -139,7 +139,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Profile',
           children: [Text('Child')],
         ),
@@ -161,7 +161,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Profile',
           children: [],
         ),
@@ -183,7 +183,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Profile',
           children: [],
         ),
@@ -202,7 +202,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsScaffold(
+        const MSSettingsScaffold(
           title: 'Profile',
           subtitle: 'Manage your account',
           children: [],

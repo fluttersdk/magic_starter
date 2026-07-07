@@ -86,7 +86,7 @@ void main() {
   testWidgets('Skeleton block shape renders without error', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const Skeleton(
+        const MSSkeleton(
           shape: SkeletonShape.block,
           width: 200,
           height: 80,
@@ -99,7 +99,7 @@ void main() {
   testWidgets('Skeleton circle shape renders without error', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const Skeleton(
+        const MSSkeleton(
           shape: SkeletonShape.circle,
           width: 48,
           height: 48,
@@ -113,7 +113,7 @@ void main() {
   testWidgets('Skeleton text shape renders without error', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const Skeleton(
+        const MSSkeleton(
           shape: SkeletonShape.text,
           width: 160,
           height: 16,
@@ -125,7 +125,7 @@ void main() {
 
   testWidgets('Skeleton default shape is block', (tester) async {
     await tester.pumpWidget(
-      wrap(const Skeleton(width: 100, height: 20)),
+      wrap(const MSSkeleton(width: 100, height: 20)),
     );
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(wDiv.className, contains('rounded-md'));
@@ -153,7 +153,7 @@ void main() {
   testWidgets('Skeleton appends caller className onto the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Skeleton(width: 100, height: 20, className: 'mt-10')),
+      wrap(const MSSkeleton(width: 100, height: 20, className: 'mt-10')),
     );
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(wDiv.className, contains('animate-pulse'));

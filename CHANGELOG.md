@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING: every design-system component class is now `MS`-prefixed (MS-7b)**: the flat, unprefixed component classes were renamed to an `MS`-prefixed namespace (`Button` -> `MSButton`, `Dialog` -> `MSDialog`, ...) and the old names were removed outright (no re-export, no `@Deprecated` alias, no compat barrel). This ends the `package:flutter/material.dart` collision that previously forced consumers to sprinkle `hide` clauses (`Switch`, `Dialog`, `Checkbox`, `Radio`, `Badge`, `Typography`, `BottomSheet`, `Tooltip`, `DropdownMenu`, `DropdownMenuItem`, `EmptyState`, `ErrorState` all shadowed Material or common consumer names). The already-`MagicStarter*`-prefixed public widgets (`MagicStarterCard`, `MagicStarterPageHeader`, ...), the per-axis enums (`ButtonIntent`, `InputState`, `BadgeTone`, ...), and the recipe functions/consts are unchanged. Migration: replace each old class name with its `MS` counterpart and drop any now-unnecessary `hide` clause.
+
+  | Old name | New name | Old name | New name |
+  |----------|----------|----------|----------|
+  | `Button` | `MSButton` | `Tooltip` | `MSTooltip` |
+  | `Input` | `MSInput` | `DropdownMenu` | `MSDropdownMenu` |
+  | `Textarea` | `MSTextarea` | `DropdownMenuItem` | `MSDropdownMenuItem` |
+  | `Checkbox` | `MSCheckbox` | `MagicFormField` | `MSFormField` |
+  | `Switch` | `MSSwitch` | `Navbar` | `MSNavbar` |
+  | `Radio` | `MSRadio` | `EmptyState` | `MSEmptyState` |
+  | `Badge` | `MSBadge` | `ErrorState` | `MSErrorState` |
+  | `Typography` | `MSTypography` | `SettingsSection` | `MSSettingsSection` |
+  | `Skeleton` | `MSSkeleton` | `SettingsRow` | `MSSettingsRow` |
+  | `Select` | `MSSelect` | `SettingsNavRow` | `MSSettingsNavRow` |
+  | `Combobox` | `MSCombobox` | `SettingsScaffold` | `MSSettingsScaffold` |
+  | `SegmentedControl` | `MSSegmentedControl` | `Card` | `MSCard` |
+  | `Tabs` | `MSTabs` | `PageHeader` | `MSPageHeader` |
+  | `Accordion` | `MSAccordion` | `SocialDivider` | `MSSocialDivider` |
+  | `AccordionItem` | `MSAccordionItem` | `NotificationDropdown` | `MSNotificationDropdown` |
+  | `Dialog` | `MSDialog` | `UserProfileDropdown` | `MSUserProfileDropdown` |
+  | `BottomSheet` | `MSBottomSheet` | `TeamSelector` | `MSTeamSelector` |
+  | `Toast` | `MSToast` | `ConfirmDialog` | `MSConfirmDialog` |
+
+  Note: `MagicFormField` becomes `MSFormField` (the `Magic` segment is dropped, not double-prefixed). The `MagicStarter*` alias widgets keep their names and now subclass the `MS`-prefixed components (`MagicStarterCard extends MSCard`).
+
 ### Fixed
 - **`MagicStarter.manager` no longer throws when `magic_starter` is unbound (MS-6)**: components that read theme through the facade (e.g. `Card` via `MagicStarter.cardTheme`) threw `"Service [magic_starter] is not registered"` when rendered without a running `MagicStarterServiceProvider` — e.g. a standalone widget test or a `/preview` catalog entry. `MagicStarter.manager` now checks `Magic.bound('magic_starter')` first and, when unbound, falls back to a shared default-constructed `MagicStarterManager()` (its 7 sub-themes already hold const defaults) instead of throwing. The fallback emits a one-time `kDebugMode` warning ("MagicStarterManager not bound; using defaults...") so a genuine forgot-to-bind bug in a real app still surfaces in development; a bound manager still wins.
 - **Caller `className` now APPENDS onto the component recipe instead of replacing it (WIND-1)**: 14 components (`Button`, `Badge`, `Input`, `Textarea`, `Card`, `Switch`, `Checkbox`, `Radio`, `Skeleton`, `Toast`, `Typography`, `DropdownMenu`, `Tooltip`, `SettingsSection`) previously bypassed their recipe entirely when a caller passed `className` (`if (className != null) return className!` / `className ?? recipe()`), so `Button(intent: primary, className: 'w-full')` dropped the primary fill and every base token. Each component now routes the caller `className` through the recipe's caller-slot (`recipe(variants: {...}, className: className)`), so it appends last and Wind's parse-time per-family last-wins resolves conflicts while every non-overridden base class survives. `DropdownMenu` also threads its per-item `className` (active + disabled) through per-item recipes, `Radio` appends `indicatorClassName`, `Switch` appends `thumbClassName`, and `SettingsSection` appends both `containerClassName` and `captionClassName`. `Tooltip` and `DropdownMenu`, which had hardcoded default strings and no recipe, now lift those defaults into small `WindRecipe`s (`tooltipPanelRecipe`, `dropdownMenuPanelRecipe`, `dropdownMenuItemRecipe`, `dropdownMenuItemDisabledRecipe`); the previous `kTooltipDefaultPanelClassName` / `kDropdownMenu*ClassName` string constants are removed in favor of these recipes. Default styling (no caller `className`) is byte-identical to before.
@@ -22,7 +49,7 @@ All notable changes to this project will be documented in this file.
   - **Overlay**: `Dialog`, `BottomSheet`.
   - **Composition**: `MagicFormField` (label, hint, error wrapper).
   - Previously migrated components (`Card`, `PageHeader`, `SocialDivider`, `NotificationDropdown`, `UserProfileDropdown`, `TeamSelector`, `ConfirmDialog`) were already barrel-reachable through their existing alias exports and are unchanged.
-  - **Breaking collision note**: the barrel now exports `Switch`, `Dialog`, `Checkbox`, `Radio`, `Badge`, `Typography`, `BottomSheet`, `Tooltip`, `DropdownMenu`, and `DropdownMenuItem`. Tests and app code that import both `package:flutter/material.dart` and `package:magic_starter/magic_starter.dart` must add a `hide` clause on the material import (or the barrel import) to resolve the ambiguity.
+  - **Collision resolved by the `MS` prefix (see the BREAKING entry below)**: these components were initially added under bare names (`Switch`, `Dialog`, `Checkbox`, `Radio`, `Badge`, `Typography`, `BottomSheet`, `Tooltip`, `DropdownMenu`, `DropdownMenuItem`) that collided with `package:flutter/material.dart`. They now carry an `MS` prefix (`MSSwitch`, `MSDialog`, ...), so importing both packages no longer needs a `hide` clause.
 
 ### Changed
 - **Wave 5 view rewrite**: the auth (login, register, forgot, reset, two-factor-challenge, otp-verify), profile, notifications (list + preferences matrix), and teams (create, settings, invitation-accept) views plus both layouts (`MagicStarterAppLayout`, `MagicStarterGuestLayout`) now compose the new design-system components (`Button`, `Card`, `Switch`, `PageHeader`, `SocialDivider`, etc.) instead of inline W-widgets. Views are now Wind-exclusive: bare `package:flutter/material.dart` imports were replaced with `widgets.dart` + `material show Icons` (and the few genuinely-needed Material shells via `show`), so the new component names no longer collide. Behavior, registry keys (`auth.*`, `profile.*`, `notifications.*`, `teams.*`, `layout.app`, `layout.guest`), controller contracts, gate abilities, `refreshNotifier`, and notification polling are all preserved; only the presentation layer changed.

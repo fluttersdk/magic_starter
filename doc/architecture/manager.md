@@ -57,7 +57,7 @@ static MagicStarterManager get manager {
 <a name="unbound-fallback-and-testing"></a>
 ## Unbound Fallback and Testing
 
-Every accessor on the `MagicStarter` facade delegates through `manager`, so any code that reads a theme (e.g. `Card` via `MagicStarter.cardTheme`) previously threw `"Service [magic_starter] is not registered"` when rendered without `MagicStarterServiceProvider` bound — for instance, in a standalone widget test or a `/preview` catalog entry.
+Every accessor on the `MagicStarter` facade delegates through `manager`, so any code that reads a theme (e.g. `MSCard` via `MagicStarter.cardTheme`) previously threw `"Service [magic_starter] is not registered"` when rendered without `MagicStarterServiceProvider` bound — for instance, in a standalone widget test or a `/preview` catalog entry.
 
 `MagicStarter.manager` now checks `Magic.bound('magic_starter')` first. When unbound it falls back to a shared, lazily-created default `MagicStarterManager()` (its 7 sub-themes already hold `const` defaults, so every theme accessor resolves) instead of throwing. The fallback also emits a **one-time** `kDebugMode` warning — `"MagicStarterManager not bound; using defaults. Call MagicStarter... to configure."` — so a genuine forgot-to-bind bug in a real app still surfaces during development. A manager bound via the container always wins over the fallback.
 

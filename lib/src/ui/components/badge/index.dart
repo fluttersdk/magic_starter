@@ -6,5 +6,5 @@
 // re-exported here — `previews:refresh` discovers `*.preview.dart` files
 // directly, and the preview must stay out of the release barrel.
 
-export 'badge.dart' show Badge, BadgeTone;
+export 'badge.dart' show MSBadge, BadgeTone;
 export 'badge.recipe.dart';

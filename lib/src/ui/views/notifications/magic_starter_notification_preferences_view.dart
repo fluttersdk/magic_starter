@@ -178,7 +178,7 @@ class _MagicStarterNotificationPreferencesViewState
             ),
           ],
         ),
-        Switch(
+        MSSwitch(
           value: isEnabled,
           disabled: isLocked,
           onChanged: (newValue) {

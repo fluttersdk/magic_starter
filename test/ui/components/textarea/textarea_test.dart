@@ -57,7 +57,7 @@ void main() {
   testWidgets('Textarea renders a WInput widget in multiline mode',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Textarea(placeholder: 'Enter text')),
+      wrap(const MSTextarea(placeholder: 'Enter text')),
     );
     expect(find.byType(WInput), findsOneWidget);
   });
@@ -65,7 +65,7 @@ void main() {
   testWidgets('Textarea applies bg-surface-container-high in normal state',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Textarea(placeholder: 'Enter text')),
+      wrap(const MSTextarea(placeholder: 'Enter text')),
     );
     final widget = tester.widget<WInput>(find.byType(WInput));
     expect(widget.className, contains('bg-surface-container-high'));
@@ -84,7 +84,7 @@ void main() {
   testWidgets('Textarea appends caller className onto the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Textarea(placeholder: 'x', className: 'mt-10')),
+      wrap(const MSTextarea(placeholder: 'x', className: 'mt-10')),
     );
     final widget = tester.widget<WInput>(find.byType(WInput));
     expect(widget.className, contains('bg-surface-container-high'));
@@ -99,7 +99,7 @@ void main() {
       'Textarea(fullWidth: true) wraps the WInput in a SizedBox(width: '
       'infinity) and keeps intent styling', (tester) async {
     await tester.pumpWidget(
-      wrap(const Textarea(fullWidth: true, placeholder: 'Enter text')),
+      wrap(const MSTextarea(fullWidth: true, placeholder: 'Enter text')),
     );
 
     final fullWidthWrapper = find.ancestor(
@@ -117,7 +117,7 @@ void main() {
   testWidgets('Textarea fullWidth defaults to false (no SizedBox wrapper)',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Textarea(placeholder: 'Hi')),
+      wrap(const MSTextarea(placeholder: 'Hi')),
     );
 
     final fullWidthWrapper = find.ancestor(

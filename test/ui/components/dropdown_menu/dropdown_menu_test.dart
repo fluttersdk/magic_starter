@@ -23,8 +23,8 @@ void main() {
   group('DropdownMenu', () {
     testWidgets('renders trigger child', (tester) async {
       await tester.pumpWidget(wrap(
-        DropdownMenu(
-          items: const [DropdownMenuItem(label: 'Item 1')],
+        MSDropdownMenu(
+          items: const [MSDropdownMenuItem(label: 'Item 1')],
           child: const Text('open menu'),
         ),
       ));
@@ -34,8 +34,8 @@ void main() {
 
     testWidgets('items are not visible when closed', (tester) async {
       await tester.pumpWidget(wrap(
-        DropdownMenu(
-          items: const [DropdownMenuItem(label: 'Hidden Item')],
+        MSDropdownMenu(
+          items: const [MSDropdownMenuItem(label: 'Hidden Item')],
           child: const Text('open menu'),
         ),
       ));
@@ -45,8 +45,8 @@ void main() {
 
     testWidgets('tapping trigger opens the menu items', (tester) async {
       await tester.pumpWidget(wrap(
-        DropdownMenu(
-          items: const [DropdownMenuItem(label: 'Visible Item')],
+        MSDropdownMenu(
+          items: const [MSDropdownMenuItem(label: 'Visible Item')],
           child: const Text('open menu'),
         ),
       ));
@@ -61,9 +61,9 @@ void main() {
       bool tapped = false;
 
       await tester.pumpWidget(wrap(
-        DropdownMenu(
+        MSDropdownMenu(
           items: [
-            DropdownMenuItem(
+            MSDropdownMenuItem(
               label: 'Tap me',
               onTap: () => tapped = true,
             ),
@@ -83,10 +83,10 @@ void main() {
     testWidgets('DropdownMenuItem disabled label is rendered in menu',
         (tester) async {
       await tester.pumpWidget(wrap(
-        DropdownMenu(
+        MSDropdownMenu(
           items: const [
-            DropdownMenuItem(label: 'Normal'),
-            DropdownMenuItem(label: 'Disabled', disabled: true),
+            MSDropdownMenuItem(label: 'Normal'),
+            MSDropdownMenuItem(label: 'Disabled', disabled: true),
           ],
           child: const Text('open menu'),
         ),
@@ -107,7 +107,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   test('DropdownMenuItem holds label, onTap, disabled', () {
-    const item = DropdownMenuItem(label: 'Test', disabled: false);
+    const item = MSDropdownMenuItem(label: 'Test', disabled: false);
     // Data-class field assertions use the type directly (not tester.widget).
     expect(item.label, 'Test');
     expect(item.disabled, isFalse);
@@ -116,7 +116,7 @@ void main() {
 
   // Verify DropdownMenu is re-exported from index.dart
   test('DropdownMenu is re-exported from index.dart', () {
-    expect(DropdownMenu, isNotNull);
+    expect(MSDropdownMenu, isNotNull);
   });
 
   // ---------------------------------------------------------------------------
@@ -127,9 +127,9 @@ void main() {
     testWidgets('panel appends caller className onto the default',
         (tester) async {
       await tester.pumpWidget(wrap(
-        DropdownMenu(
+        MSDropdownMenu(
           className: 'mt-10',
-          items: const [DropdownMenuItem(label: 'Item 1')],
+          items: const [MSDropdownMenuItem(label: 'Item 1')],
           child: const Text('open menu'),
         ),
       ));
@@ -141,8 +141,8 @@ void main() {
     testWidgets('item appends caller className onto the item default',
         (tester) async {
       await tester.pumpWidget(wrap(
-        DropdownMenu(
-          items: const [DropdownMenuItem(label: 'Edit', className: 'mt-10')],
+        MSDropdownMenu(
+          items: const [MSDropdownMenuItem(label: 'Edit', className: 'mt-10')],
           child: const Text('open menu'),
         ),
       ));
@@ -158,9 +158,10 @@ void main() {
         'disabled item appends caller className onto the disabled default',
         (tester) async {
       await tester.pumpWidget(wrap(
-        DropdownMenu(
+        MSDropdownMenu(
           items: const [
-            DropdownMenuItem(label: 'Gone', disabled: true, className: 'mt-10'),
+            MSDropdownMenuItem(
+                label: 'Gone', disabled: true, className: 'mt-10'),
           ],
           child: const Text('open menu'),
         ),

@@ -12,7 +12,7 @@ import 'button.recipe.dart';
 /// ### Variant styles
 ///
 /// ```dart
-/// Button(
+/// MSButton(
 ///   intent: ButtonIntent.destructive,
 ///   size: ButtonSize.lg,
 ///   onPressed: _deleteAccount,
@@ -23,14 +23,14 @@ import 'button.recipe.dart';
 /// ### Loading state
 ///
 /// ```dart
-/// Button(
+/// MSButton(
 ///   onPressed: _submit,
 ///   isLoading: controller.isLoading,
 ///   child: const WText('Submit'),
 /// )
 /// ```
 @immutable
-class Button extends StatelessWidget {
+class MSButton extends StatelessWidget {
   /// The button content.
   final Widget child;
 
@@ -67,8 +67,8 @@ class Button extends StatelessWidget {
   /// An explicit accessible label for icon-only buttons.
   final String? semanticLabel;
 
-  /// Creates a [Button].
-  const Button({
+  /// Creates a [MSButton].
+  const MSButton({
     super.key,
     required this.child,
     this.onPressed,

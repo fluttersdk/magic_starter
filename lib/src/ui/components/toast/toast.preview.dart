@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'toast.dart';
 
-/// Static variant-matrix preview for [Toast].
+/// Static variant-matrix preview for [MSToast].
 ///
 /// Renders each [ToastVariant] in sequence so the preview catalog can show
 /// the full tone surface in light and dark. One preview class per file is
@@ -18,7 +18,7 @@ class ToastPreview extends StatelessWidget {
       className: 'flex flex-col gap-4 p-6',
       children: [
         for (final variant in ToastVariant.values)
-          Toast(
+          MSToast(
             message: '${variant.name}: example toast notification',
             variant: variant,
           ),

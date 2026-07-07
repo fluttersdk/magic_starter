@@ -1,6 +1,6 @@
 import 'package:magic/magic.dart';
 
-/// Builds the slot recipe for [Accordion] from semantic tokens.
+/// Builds the slot recipe for [MSAccordion] from semantic tokens.
 ///
 /// Slots:
 /// - `root` — outer container holding all accordion items.

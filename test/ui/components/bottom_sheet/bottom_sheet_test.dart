@@ -39,7 +39,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        const BottomSheet(
+        const MSBottomSheet(
           title: 'Sheet Title',
           body: Text('sheet body'),
         ),
@@ -55,7 +55,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        const BottomSheet(
+        const MSBottomSheet(
           body: Text('unique sheet content'),
         ),
       ));
@@ -72,7 +72,7 @@ void main() {
       await tester.pumpWidget(wrap(
         Builder(
           builder: (context) => ElevatedButton(
-            onPressed: () => BottomSheet.show(
+            onPressed: () => MSBottomSheet.show(
               context,
               title: 'Bottom Sheet',
               body: const Text('sheet body'),
@@ -96,7 +96,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(wrap(
-        BottomSheet(
+        MSBottomSheet(
           body: const Text('body'),
           footerBuilder: (_) => const Text('footer content'),
         ),
@@ -108,6 +108,6 @@ void main() {
 
   // Verify BottomSheet is re-exported from index.dart
   test('BottomSheet is re-exported from index.dart', () {
-    expect(BottomSheet, isNotNull);
+    expect(MSBottomSheet, isNotNull);
   });
 }

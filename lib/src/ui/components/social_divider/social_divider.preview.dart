@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'social_divider.dart';
 
-/// Static preview for [SocialDivider].
+/// Static preview for [MSSocialDivider].
 ///
 /// Renders the divider in light/dark. One preview class per file.
 class SocialDividerPreview extends StatelessWidget {
@@ -14,7 +14,7 @@ class SocialDividerPreview extends StatelessWidget {
     return WDiv(
       className: 'flex flex-col gap-6 p-6',
       children: const [
-        SocialDivider(),
+        MSSocialDivider(),
       ],
     );
   }

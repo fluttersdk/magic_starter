@@ -88,7 +88,7 @@ void main() {
   testWidgets('SettingsSection renders a single child', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           children: [
             Text('Row 1'),
           ],
@@ -102,7 +102,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           header: 'Account',
           children: [Text('Row 1')],
         ),
@@ -122,7 +122,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           children: [Text('Row 1')],
         ),
       ),
@@ -139,7 +139,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           footer: 'Manage your personal information.',
           children: [Text('Row 1')],
         ),
@@ -155,7 +155,7 @@ void main() {
   testWidgets('SettingsSection renders N children', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           children: [
             Text('Row 1'),
             Text('Row 2'),
@@ -173,7 +173,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           children: [
             Text('Row 1'),
             Text('Row 2'),
@@ -196,7 +196,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           children: [Text('Only row')],
         ),
       ),
@@ -212,7 +212,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           children: [Text('Row 1')],
         ),
       ),
@@ -229,7 +229,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           header: 'Security',
           children: [Text('Row 1')],
         ),
@@ -246,7 +246,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           header: 'Preferences',
           footer: 'Choose your preferences.',
           children: [Text('Row 1'), Text('Row 2')],
@@ -283,7 +283,7 @@ void main() {
     testWidgets('container appends caller className onto the recipe base',
         (tester) async {
       await tester.pumpWidget(wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           containerClassName: 'mt-10',
           children: [Text('row')],
         ),
@@ -297,7 +297,7 @@ void main() {
     testWidgets('caption appends caller className onto the recipe base',
         (tester) async {
       await tester.pumpWidget(wrap(
-        const SettingsSection(
+        const MSSettingsSection(
           header: 'Account',
           captionClassName: 'mt-10',
           children: [Text('row')],

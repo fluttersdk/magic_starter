@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'typography.dart';
 
-/// Static variant-matrix preview for [Typography].
+/// Static variant-matrix preview for [MSTypography].
 ///
 /// Renders every [TypographyVariant] so the catalog can show the full scale
 /// in light and dark. One preview class per file is the canonical Wave 4
@@ -21,7 +21,7 @@ class TypographyPreview extends StatelessWidget {
           WDiv(
             className: 'flex flex-col gap-1',
             children: [
-              Typography(
+              MSTypography(
                 'The quick brown fox — ${variant.name}',
                 variant: variant,
               ),

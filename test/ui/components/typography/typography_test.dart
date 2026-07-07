@@ -109,14 +109,14 @@ void main() {
 
   testWidgets('Typography renders text content', (tester) async {
     await tester.pumpWidget(
-      wrap(const Typography('Hello', variant: TypographyVariant.body)),
+      wrap(const MSTypography('Hello', variant: TypographyVariant.body)),
     );
     expect(find.text('Hello'), findsOneWidget);
   });
 
   testWidgets('Typography default variant is body', (tester) async {
     await tester.pumpWidget(
-      wrap(const Typography('Hello')),
+      wrap(const MSTypography('Hello')),
     );
     final wText = tester.widget<WText>(find.byType(WText).first);
     expect(wText.className, contains('text-base'));
@@ -124,7 +124,7 @@ void main() {
 
   testWidgets('Typography h1 applies text-4xl className', (tester) async {
     await tester.pumpWidget(
-      wrap(const Typography('Heading', variant: TypographyVariant.h1)),
+      wrap(const MSTypography('Heading', variant: TypographyVariant.h1)),
     );
     final wText = tester.widget<WText>(find.byType(WText).first);
     expect(wText.className, contains('text-4xl'));
@@ -132,7 +132,7 @@ void main() {
 
   testWidgets('Typography caption applies smaller text size', (tester) async {
     await tester.pumpWidget(
-      wrap(const Typography('Caption', variant: TypographyVariant.caption)),
+      wrap(const MSTypography('Caption', variant: TypographyVariant.caption)),
     );
     final wText = tester.widget<WText>(find.byType(WText).first);
     final hasSmall = wText.className!.contains('text-sm') ||
@@ -161,7 +161,7 @@ void main() {
   testWidgets('Typography appends caller className onto the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(const Typography('Hi', className: 'mt-10')),
+      wrap(const MSTypography('Hi', className: 'mt-10')),
     );
     final wText = tester.widget<WText>(find.byType(WText).first);
     expect(wText.className, contains('text-base'));

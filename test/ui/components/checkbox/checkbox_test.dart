@@ -49,14 +49,14 @@ void main() {
 
   testWidgets('Checkbox renders a WCheckbox', (tester) async {
     await tester.pumpWidget(
-      wrap(Checkbox(value: false, onChanged: (_) {})),
+      wrap(MSCheckbox(value: false, onChanged: (_) {})),
     );
     expect(find.byType(WCheckbox), findsOneWidget);
   });
 
   testWidgets('Checkbox reflects value prop on WCheckbox', (tester) async {
     await tester.pumpWidget(
-      wrap(Checkbox(value: true, onChanged: (_) {})),
+      wrap(MSCheckbox(value: true, onChanged: (_) {})),
     );
     final widget = tester.widget<WCheckbox>(find.byType(WCheckbox));
     expect(widget.value, isTrue);
@@ -65,7 +65,7 @@ void main() {
   testWidgets('Checkbox fires onChanged when tapped', (tester) async {
     bool? newValue;
     await tester.pumpWidget(
-      wrap(Checkbox(value: false, onChanged: (v) => newValue = v)),
+      wrap(MSCheckbox(value: false, onChanged: (v) => newValue = v)),
     );
     await tester.tap(find.byType(WCheckbox));
     await tester.pump();
@@ -85,7 +85,7 @@ void main() {
   testWidgets('Checkbox appends caller className onto the recipe base',
       (tester) async {
     await tester.pumpWidget(
-      wrap(Checkbox(value: false, onChanged: (_) {}, className: 'mt-10')),
+      wrap(MSCheckbox(value: false, onChanged: (_) {}, className: 'mt-10')),
     );
     final widget = tester.widget<WCheckbox>(find.byType(WCheckbox));
     expect(widget.className, contains('checked:bg-primary'));

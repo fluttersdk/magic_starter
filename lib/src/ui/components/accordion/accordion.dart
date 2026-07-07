@@ -8,20 +8,20 @@ import 'accordion.recipe.dart';
 const _kIconExpanded = Icons.keyboard_arrow_up;
 const _kIconCollapsed = Icons.keyboard_arrow_down;
 
-/// A single item within an [Accordion].
+/// A single item within an [MSAccordion].
 ///
 /// Carries the [title] shown in the trigger row and the [body] widget displayed
 /// in the collapsible panel.
 @immutable
-class AccordionItem {
+class MSAccordionItem {
   /// The title text displayed in the trigger row.
   final String title;
 
   /// The widget rendered inside the collapsible panel.
   final Widget body;
 
-  /// Creates an [AccordionItem].
-  const AccordionItem({
+  /// Creates an [MSAccordionItem].
+  const MSAccordionItem({
     required this.title,
     required this.body,
   });
@@ -36,38 +36,38 @@ class AccordionItem {
 /// ### Example Usage:
 ///
 /// ```dart
-/// Accordion(
+/// MSAccordion(
 ///   items: [
-///     AccordionItem(
+///     MSAccordionItem(
 ///       title: 'What is Magic Starter?',
 ///       body: WText('A Flutter starter kit built on the Magic framework.'),
 ///     ),
-///     AccordionItem(
+///     MSAccordionItem(
 ///       title: 'What features are included?',
 ///       body: WText('13 opt-in features including auth, teams, and notifications.'),
 ///     ),
 ///   ],
 /// )
 /// ```
-class Accordion extends StatefulWidget {
+class MSAccordion extends StatefulWidget {
   /// The list of accordion items to render.
-  final List<AccordionItem> items;
+  final List<MSAccordionItem> items;
 
   /// Per-slot className overrides appended after the recipe output.
   final Map<String, String>? classNames;
 
-  /// Creates an [Accordion] widget.
-  const Accordion({
+  /// Creates an [MSAccordion] widget.
+  const MSAccordion({
     super.key,
     required this.items,
     this.classNames,
   });
 
   @override
-  State<Accordion> createState() => _AccordionState();
+  State<MSAccordion> createState() => _AccordionState();
 }
 
-class _AccordionState extends State<Accordion> {
+class _AccordionState extends State<MSAccordion> {
   /// Index of the currently expanded item, or `-1` when all are collapsed.
   int _expandedIndex = -1;
 
@@ -99,7 +99,7 @@ class _AccordionState extends State<Accordion> {
   /// Builds a single accordion item at [index].
   Widget _buildItem(int index, Map<String, String> slots) {
     final bool isExpanded = _expandedIndex == index;
-    final AccordionItem item = widget.items[index];
+    final MSAccordionItem item = widget.items[index];
 
     return WDiv(
       className: slots['item'],

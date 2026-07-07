@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'select.dart';
 
-/// Static variant-matrix preview for [Select].
+/// Static variant-matrix preview for [MSSelect].
 ///
 /// Shows a Select with populated options in both the default state and a
 /// pre-selected state so the catalog can exercise light and dark themes.
@@ -21,7 +21,7 @@ class SelectPreview extends StatelessWidget {
           'Select — default (no value)',
           className: 'text-sm font-medium text-fg-muted',
         ),
-        Select<String>(
+        MSSelect<String>(
           value: null,
           options: const [
             SelectOption(value: 'option_a', label: 'Option A'),
@@ -34,7 +34,7 @@ class SelectPreview extends StatelessWidget {
           'Select — pre-selected value',
           className: 'text-sm font-medium text-fg-muted',
         ),
-        Select<String>(
+        MSSelect<String>(
           value: 'option_b',
           options: const [
             SelectOption(value: 'option_a', label: 'Option A'),
@@ -47,7 +47,7 @@ class SelectPreview extends StatelessWidget {
           'Select — disabled',
           className: 'text-sm font-medium text-fg-muted',
         ),
-        Select<String>(
+        MSSelect<String>(
           value: null,
           options: const [],
           onChange: (_) {},

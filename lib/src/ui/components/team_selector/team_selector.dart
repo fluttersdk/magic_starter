@@ -17,18 +17,18 @@ import '../../../magic_starter_manager.dart';
 ///
 /// ### Example
 /// ```dart
-/// const TeamSelector()
+/// const MSTeamSelector()
 /// // or compact (icon-only) mode:
-/// const TeamSelector(compact: true)
+/// const MSTeamSelector(compact: true)
 /// ```
-class TeamSelector extends StatelessWidget {
+class MSTeamSelector extends StatelessWidget {
   static const _iconCollapse = Icons.unfold_less;
   static const _iconExpand = Icons.unfold_more;
 
   /// When `true`, hides the team name label and expand icon (icon-only mode).
   final bool compact;
 
-  const TeamSelector({super.key, this.compact = false});
+  const MSTeamSelector({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context) {

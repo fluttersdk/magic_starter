@@ -27,7 +27,7 @@ void main() {
 
   testWidgets('ErrorState renders title', (tester) async {
     await tester.pumpWidget(
-      wrap(const ErrorState(title: 'Something went wrong')),
+      wrap(const MSErrorState(title: 'Something went wrong')),
     );
     expect(find.text('Something went wrong'), findsOneWidget);
   });
@@ -35,7 +35,7 @@ void main() {
   testWidgets('ErrorState renders description when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const ErrorState(
+        const MSErrorState(
           title: 'Error',
           description: 'Please try again later',
         ),
@@ -47,7 +47,7 @@ void main() {
   testWidgets('ErrorState renders icon when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const ErrorState(
+        const MSErrorState(
           title: 'Error',
           icon: Icons.error_outline,
         ),
@@ -60,7 +60,7 @@ void main() {
     const actionKey = Key('error-action');
     await tester.pumpWidget(
       wrap(
-        ErrorState(
+        MSErrorState(
           title: 'Error',
           action: ElevatedButton(
             key: actionKey,
@@ -75,7 +75,7 @@ void main() {
 
   testWidgets('ErrorState title uses destructive tone', (tester) async {
     await tester.pumpWidget(
-      wrap(const ErrorState(title: 'Failed')),
+      wrap(const MSErrorState(title: 'Failed')),
     );
     final texts = tester.widgetList<WText>(find.byType(WText)).toList();
     // Title should use a destructive/error tone class

@@ -19,21 +19,21 @@ import '../../../facades/magic_starter.dart';
 ///
 /// ### Example
 /// ```dart
-/// PageHeader(
+/// MSPageHeader(
 ///   title: 'Settings',
 ///   subtitle: 'Manage your account',
-///   actions: [Button(onPressed: save, child: const Text('Save'))],
+///   actions: [MSButton(onPressed: save, child: const Text('Save'))],
 /// )
 ///
 /// // Sub-page with automatic back:
-/// PageHeader(
+/// MSPageHeader(
 ///   title: 'Profile',
 ///   backLabel: 'Settings',
 ///   backFallback: '/settings',
 /// )
 /// ```
 @immutable
-class PageHeader extends StatelessWidget {
+class MSPageHeader extends StatelessWidget {
   // Icon reference extracted as a static const for Flutter web tree-shaking.
   static const IconData _chevronLeft = Icons.chevron_left;
 
@@ -74,8 +74,8 @@ class PageHeader extends StatelessWidget {
   /// Only used when [backLabel] is set.
   final String? backFallback;
 
-  /// Creates a [PageHeader].
-  const PageHeader({
+  /// Creates a [MSPageHeader].
+  const MSPageHeader({
     super.key,
     required this.title,
     this.subtitle,

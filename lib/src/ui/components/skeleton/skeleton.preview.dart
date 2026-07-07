@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import 'skeleton.dart';
 
-/// Static variant-matrix preview for [Skeleton].
+/// Static variant-matrix preview for [MSSkeleton].
 ///
 /// Renders every [SkeletonShape] with representative dimensions so the catalog
 /// can show the pulsing effect in light and dark. One preview class per file
@@ -22,7 +22,8 @@ class SkeletonPreview extends StatelessWidget {
           className: 'flex flex-col gap-2',
           children: [
             WText('block', className: 'text-xs text-fg-muted'),
-            const Skeleton(shape: SkeletonShape.block, width: 240, height: 80),
+            const MSSkeleton(
+                shape: SkeletonShape.block, width: 240, height: 80),
           ],
         ),
 
@@ -31,9 +32,9 @@ class SkeletonPreview extends StatelessWidget {
           className: 'flex flex-col gap-2',
           children: [
             WText('text', className: 'text-xs text-fg-muted'),
-            const Skeleton(shape: SkeletonShape.text, width: 200, height: 14),
-            const Skeleton(shape: SkeletonShape.text, width: 160, height: 14),
-            const Skeleton(shape: SkeletonShape.text, width: 120, height: 14),
+            const MSSkeleton(shape: SkeletonShape.text, width: 200, height: 14),
+            const MSSkeleton(shape: SkeletonShape.text, width: 160, height: 14),
+            const MSSkeleton(shape: SkeletonShape.text, width: 120, height: 14),
           ],
         ),
 
@@ -42,7 +43,8 @@ class SkeletonPreview extends StatelessWidget {
           className: 'flex flex-col gap-2',
           children: [
             WText('circle', className: 'text-xs text-fg-muted'),
-            const Skeleton(shape: SkeletonShape.circle, width: 48, height: 48),
+            const MSSkeleton(
+                shape: SkeletonShape.circle, width: 48, height: 48),
           ],
         ),
       ],

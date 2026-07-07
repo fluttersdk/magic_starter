@@ -6,5 +6,5 @@
 // re-exported here — `previews:refresh` discovers `*.preview.dart` files
 // directly, and the preview must stay out of the release barrel.
 
-export 'typography.dart' show Typography, TypographyVariant;
+export 'typography.dart' show MSTypography, TypographyVariant;
 export 'typography.recipe.dart';

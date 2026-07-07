@@ -5,7 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../facades/magic_starter.dart';
 import 'confirm_dialog.recipe.dart';
 
-/// Visual style variants for [ConfirmDialog].
+/// Visual style variants for [MSConfirmDialog].
 ///
 /// - [primary] — Default confirmation: primary-colored confirm button.
 /// - [danger] — Destructive action: red confirm button.
@@ -30,7 +30,7 @@ enum ConfirmDialogVariant {
 ///
 /// ### Example
 /// ```dart
-/// final confirmed = await ConfirmDialog.show(
+/// final confirmed = await MSConfirmDialog.show(
 ///   context,
 ///   title: 'Delete team?',
 ///   description: 'This cannot be undone.',
@@ -38,7 +38,7 @@ enum ConfirmDialogVariant {
 ///   onConfirm: () async => controller.deleteTeam(),
 /// );
 /// ```
-class ConfirmDialog extends StatefulWidget {
+class MSConfirmDialog extends StatefulWidget {
   /// Dialog heading text.
   final String title;
 
@@ -57,8 +57,8 @@ class ConfirmDialog extends StatefulWidget {
   /// Optional async callback invoked when the user taps the confirm button.
   final Future<void> Function()? onConfirm;
 
-  /// Creates a [ConfirmDialog].
-  const ConfirmDialog({
+  /// Creates a [MSConfirmDialog].
+  const MSConfirmDialog({
     super.key,
     required this.title,
     this.description,
@@ -82,7 +82,7 @@ class ConfirmDialog extends StatefulWidget {
         .showDialog<bool>(
           context: context,
           barrierDismissible: false,
-          builder: (_) => ConfirmDialog(
+          builder: (_) => MSConfirmDialog(
             title: title,
             description: description,
             confirmLabel: confirmLabel,
@@ -95,10 +95,10 @@ class ConfirmDialog extends StatefulWidget {
   }
 
   @override
-  State<ConfirmDialog> createState() => _ConfirmDialogState();
+  State<MSConfirmDialog> createState() => _ConfirmDialogState();
 }
 
-class _ConfirmDialogState extends State<ConfirmDialog> {
+class _ConfirmDialogState extends State<MSConfirmDialog> {
   bool _isLoading = false;
 
   Future<void> _onConfirm() async {

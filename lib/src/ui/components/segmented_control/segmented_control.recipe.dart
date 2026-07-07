@@ -1,9 +1,9 @@
 import 'package:magic/magic.dart';
 
-/// Size axis key for [SegmentedControl].
+/// Size axis key for [MSSegmentedControl].
 const String kSegmentedControlSizeAxis = 'size';
 
-/// Visual size variants for [SegmentedControl].
+/// Visual size variants for [MSSegmentedControl].
 enum SegmentedControlSize {
   /// Compact size: smaller padding and text.
   sm,
@@ -12,7 +12,7 @@ enum SegmentedControlSize {
   md,
 }
 
-/// Builds the slot recipe for [SegmentedControl] from semantic tokens.
+/// Builds the slot recipe for [MSSegmentedControl] from semantic tokens.
 ///
 /// Slots:
 /// - `root` — the outer container row.

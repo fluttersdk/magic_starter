@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart' show Button;
+import 'package:magic_starter/magic_starter.dart' show MSButton;
 
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
@@ -88,7 +88,7 @@ class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
         className: 'flex flex-col gap-6',
         children: [
           if (headerSlot != null) headerSlot,
-          // Input
+          // MSInput
           WFormInput(
             controller: _codeController,
             label: _useRecoveryCode
@@ -100,7 +100,7 @@ class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
             labelClassName: MagicStarter.formTheme.labelClassName,
           ),
           // Submit button
-          Button(
+          MSButton(
             isLoading: isLoading,
             onPressed: _submit,
             className: MagicStarter.formTheme.primaryButtonClassName,
