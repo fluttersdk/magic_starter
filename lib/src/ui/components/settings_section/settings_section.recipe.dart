@@ -6,12 +6,15 @@ import 'package:magic/magic.dart';
 /// `rounded-lg` corner radius, a hairline border via `border-color-border-subtle`,
 /// and `overflow-hidden` so child rows are clipped to the rounded corners.
 ///
-/// Emission order: base (surface + layout) ++ border ++ shape.
-String settingsSectionContainerRecipe() {
+/// Emission order: base (surface + layout) ++ border ++ shape ++ caller.
+///
+/// A caller [className] is appended after the base so it refines rather than
+/// replaces the recipe output (parser last-wins resolves conflicts per family).
+String settingsSectionContainerRecipe({String? className}) {
   return const WindRecipe(
     base:
         'w-full bg-surface-container rounded-lg border border-color-border-subtle overflow-hidden flex flex-col',
-  )();
+  )(className: className);
 }
 
 /// Returns the className for the section header and footer caption text.
@@ -19,11 +22,15 @@ String settingsSectionContainerRecipe() {
 /// Mirrors the iOS inset-grouped section header: 13pt-equivalent (`text-xs`),
 /// uppercase muted label, with `px-1` horizontal nudge.
 ///
-/// Emission order: base (size + weight + case + spacing + color + padding).
-String settingsSectionCaptionRecipe() {
+/// Emission order: base (size + weight + case + spacing + color + padding)
+/// ++ caller.
+///
+/// A caller [className] is appended after the base so it refines rather than
+/// replaces the recipe output (parser last-wins resolves conflicts per family).
+String settingsSectionCaptionRecipe({String? className}) {
   return const WindRecipe(
     base: 'text-xs font-medium uppercase tracking-wide text-fg-muted px-1',
-  )();
+  )(className: className);
 }
 
 /// Returns the className for the hairline divider inserted between child rows.

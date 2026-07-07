@@ -30,8 +30,8 @@ class Tooltip extends StatelessWidget {
   /// The tooltip content widget shown in the popover panel.
   final Widget content;
 
-  /// Optional className for the tooltip panel. Defaults to
-  /// [kTooltipDefaultPanelClassName] (a semantic-token surface panel).
+  /// Optional caller className for the tooltip panel, appended after
+  /// [tooltipPanelRecipe]'s default semantic-token styling.
   final String? className;
 
   /// Popover alignment relative to the trigger. Defaults to [PopoverAlignment.topCenter].
@@ -48,8 +48,9 @@ class Tooltip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Resolve panel className from argument or the default semantic tokens.
-    final panelClassName = className ?? kTooltipDefaultPanelClassName;
+    // 1. Resolve panel className from the recipe; the caller className appends
+    //    last so it refines the default rather than replacing it.
+    final panelClassName = tooltipPanelRecipe(className: className);
 
     // 2. Wrap the trigger in WPopover for hover/tap-driven display.
     //    enableTriggerOnTap: true lets tapping the trigger show/hide the

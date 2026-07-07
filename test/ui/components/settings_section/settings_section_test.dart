@@ -274,4 +274,39 @@ void main() {
     await tester.pump();
     expect(find.byType(SettingsSectionPreview), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  group('SettingsSection className append', () {
+    testWidgets('container appends caller className onto the recipe base',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        const SettingsSection(
+          containerClassName: 'mt-10',
+          children: [Text('row')],
+        ),
+      ));
+      final containerDiv = tester
+          .widgetList<WDiv>(find.byType(WDiv))
+          .firstWhere((w) => w.className?.contains('mt-10') == true);
+      expect(containerDiv.className, contains('rounded-lg'));
+    });
+
+    testWidgets('caption appends caller className onto the recipe base',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        const SettingsSection(
+          header: 'Account',
+          captionClassName: 'mt-10',
+          children: [Text('row')],
+        ),
+      ));
+      final captionText = tester
+          .widgetList<WText>(find.byType(WText))
+          .firstWhere((w) => w.className?.contains('mt-10') == true);
+      expect(captionText.className, contains('uppercase'));
+    });
+  });
 }

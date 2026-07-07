@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import 'dropdown_menu.recipe.dart';
+
 /// A single item entry for [DropdownMenu].
 @immutable
 class DropdownMenuItem {
@@ -16,7 +18,7 @@ class DropdownMenuItem {
   /// Optional leading icon or widget rendered before the label.
   final Widget? leading;
 
-  /// Optional className override for this item's container.
+  /// Optional caller className appended after the item recipe output.
   final String? className;
 
   /// Creates a [DropdownMenuItem].
@@ -60,7 +62,7 @@ class DropdownMenu extends StatelessWidget {
   /// The menu items to display in the popover panel.
   final List<DropdownMenuItem> items;
 
-  /// Optional className for the popover panel container.
+  /// Optional caller className appended after the panel recipe output.
   final String? className;
 
   /// Popover alignment relative to the trigger.
@@ -78,9 +80,9 @@ class DropdownMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Resolve panel className from argument or default semantic-token style.
-    final panelClassName = className ??
-        'min-w-40 bg-surface border border-color-border rounded-lg shadow-lg py-1 overflow-hidden';
+    // 1. Resolve panel className from the recipe; the caller className appends
+    //    last so it refines the default rather than replacing it.
+    final panelClassName = dropdownMenuPanelRecipe(className: className);
 
     // 2. Build WPopover with the trigger and item list as content.
     return WPopover(
@@ -105,8 +107,7 @@ class DropdownMenu extends StatelessWidget {
     // 3. Disabled items: muted style, no tap handler.
     if (item.disabled) {
       return WDiv(
-        className: item.className ??
-            'flex flex-row items-center gap-2 px-4 py-2 text-sm text-fg-disabled',
+        className: dropdownMenuItemDisabledRecipe(className: item.className),
         children: [
           if (item.leading != null) item.leading!,
           WText(item.label),
@@ -121,8 +122,7 @@ class DropdownMenu extends StatelessWidget {
         close();
       },
       child: WDiv(
-        className: item.className ??
-            'flex flex-row items-center gap-2 px-4 py-2 text-sm text-fg hover:bg-surface-container',
+        className: dropdownMenuItemRecipe(className: item.className),
         children: [
           if (item.leading != null) item.leading!,
           WText(item.label),

@@ -43,16 +43,18 @@ class SettingsSection extends StatelessWidget {
   /// When `null` no footer is rendered.
   final String? footer;
 
-  /// Optional className override for the grouped container.
+  /// Optional caller className appended after [settingsSectionContainerRecipe]
+  /// for the grouped container.
   ///
-  /// When supplied it replaces [settingsSectionContainerRecipe] entirely,
-  /// providing a full escape hatch for consumer apps.
+  /// Wind's parse-time per-family last-wins lets these tokens refine the recipe
+  /// output while every non-overridden base class survives.
   final String? containerClassName;
 
-  /// Optional className override for the header and footer captions.
+  /// Optional caller className appended after [settingsSectionCaptionRecipe]
+  /// for both the header and footer captions.
   ///
-  /// When supplied it replaces [settingsSectionCaptionRecipe] for both
-  /// the header and footer text elements.
+  /// Wind's parse-time per-family last-wins lets these tokens refine the recipe
+  /// output while every non-overridden base class survives.
   final String? captionClassName;
 
   /// Creates a [SettingsSection].
@@ -70,9 +72,10 @@ class SettingsSection extends StatelessWidget {
   // -------------------------------------------------------------------------
 
   String _containerClass() =>
-      containerClassName ?? settingsSectionContainerRecipe();
+      settingsSectionContainerRecipe(className: containerClassName);
 
-  String _captionClass() => captionClassName ?? settingsSectionCaptionRecipe();
+  String _captionClass() =>
+      settingsSectionCaptionRecipe(className: captionClassName);
 
   String _dividerClass() => settingsSectionDividerRecipe();
 

@@ -61,4 +61,22 @@ void main() {
   test('Tooltip is re-exported from index.dart', () {
     expect(Tooltip, isNotNull);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Tooltip panel appends caller className onto the default',
+      (tester) async {
+    await tester.pumpWidget(wrap(
+      Tooltip(
+        className: 'mt-10',
+        content: const Text('tip'),
+        child: const Text('trigger'),
+      ),
+    ));
+    final popover = tester.widget<WPopover>(find.byType(WPopover));
+    expect(popover.className, contains('bg-surface-container-high'));
+    expect(popover.className, contains('mt-10'));
+  });
 }

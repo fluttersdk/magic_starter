@@ -118,4 +118,59 @@ void main() {
   test('DropdownMenu is re-exported from index.dart', () {
     expect(DropdownMenu, isNotNull);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  group('DropdownMenu className append', () {
+    testWidgets('panel appends caller className onto the default',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        DropdownMenu(
+          className: 'mt-10',
+          items: const [DropdownMenuItem(label: 'Item 1')],
+          child: const Text('open menu'),
+        ),
+      ));
+      final popover = tester.widget<WPopover>(find.byType(WPopover));
+      expect(popover.className, contains('bg-surface'));
+      expect(popover.className, contains('mt-10'));
+    });
+
+    testWidgets('item appends caller className onto the item default',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        DropdownMenu(
+          items: const [DropdownMenuItem(label: 'Edit', className: 'mt-10')],
+          child: const Text('open menu'),
+        ),
+      ));
+      await tester.tap(find.text('open menu'));
+      await tester.pump();
+      final itemDiv = tester
+          .widgetList<WDiv>(find.byType(WDiv))
+          .firstWhere((w) => w.className?.contains('mt-10') == true);
+      expect(itemDiv.className, contains('px-4'));
+    });
+
+    testWidgets(
+        'disabled item appends caller className onto the disabled default',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        DropdownMenu(
+          items: const [
+            DropdownMenuItem(label: 'Gone', disabled: true, className: 'mt-10'),
+          ],
+          child: const Text('open menu'),
+        ),
+      ));
+      await tester.tap(find.text('open menu'));
+      await tester.pump();
+      final itemDiv = tester
+          .widgetList<WDiv>(find.byType(WDiv))
+          .firstWhere((w) => w.className?.contains('mt-10') == true);
+      expect(itemDiv.className, contains('text-fg-disabled'));
+    });
+  });
 }
