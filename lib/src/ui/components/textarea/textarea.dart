@@ -50,6 +50,14 @@ class Textarea extends StatelessWidget {
   /// External text editing controller.
   final TextEditingController? controller;
 
+  /// Whether the textarea fills the width of its parent.
+  ///
+  /// Wraps the rendered [WInput] in a `SizedBox(width: double.infinity)` at
+  /// the widget layer, matching Flutter's cross-axis-stretch workaround
+  /// (flutter/flutter#19399) rather than baking width into the recipe.
+  /// Orthogonal to layout state; defaults to `false` (content-width).
+  final bool fullWidth;
+
   /// Optional caller className appended after the recipe output.
   ///
   /// Wind's parse-time per-family last-wins lets these tokens override the
@@ -72,13 +80,14 @@ class Textarea extends StatelessWidget {
     this.minLines = 3,
     this.focusNode,
     this.controller,
+    this.fullWidth = false,
     this.className,
     this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return WInput(
+    final Widget textarea = WInput(
       value: value,
       onChanged: onChanged,
       type: InputType.multiline,
@@ -95,5 +104,11 @@ class Textarea extends StatelessWidget {
       controller: controller,
       semanticLabel: semanticLabel,
     );
+
+    if (!fullWidth) {
+      return textarea;
+    }
+
+    return SizedBox(width: double.infinity, child: textarea);
   }
 }

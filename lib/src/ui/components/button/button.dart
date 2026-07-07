@@ -49,6 +49,15 @@ class Button extends StatelessWidget {
   /// Whether the button is disabled.
   final bool disabled;
 
+  /// Whether the button fills the width of its parent.
+  ///
+  /// Material widgets ignore cross-axis stretch inside a `Column`
+  /// (flutter/flutter#19399), so this is not a recipe/className concern:
+  /// it wraps the rendered [WButton] in a `SizedBox(width: double.infinity)`
+  /// at the widget layer. Orthogonal to [size] (a layout concern, not the
+  /// padding/font scale). Defaults to `false` (content-width).
+  final bool fullWidth;
+
   /// Optional caller className appended after the recipe output.
   ///
   /// Wind's parse-time per-family last-wins lets these tokens override the
@@ -67,13 +76,14 @@ class Button extends StatelessWidget {
     this.size = ButtonSize.md,
     this.isLoading = false,
     this.disabled = false,
+    this.fullWidth = false,
     this.className,
     this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return WButton(
+    final Widget button = WButton(
       onTap: onPressed,
       isLoading: isLoading,
       disabled: disabled,
@@ -87,5 +97,11 @@ class Button extends StatelessWidget {
       semanticLabel: semanticLabel,
       child: child,
     );
+
+    if (!fullWidth) {
+      return button;
+    }
+
+    return SizedBox(width: double.infinity, child: button);
   }
 }

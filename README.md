@@ -231,7 +231,7 @@ WindApp(
 | Composition | `MagicFormField`, `Card`, `PageHeader`, `SocialDivider` |
 | App chrome | `NotificationDropdown`, `UserProfileDropdown`, `TeamSelector` |
 
-All components accept Wind `className` strings and resolve colors through the semantic alias layer when configured.
+All components accept Wind `className` strings and resolve colors through the semantic alias layer when configured. `Button`, `Input`, and `Textarea` also accept a `bool fullWidth = false` prop; setting it to `true` fills the parent width (wraps the rendered widget in a `SizedBox(width: double.infinity)` rather than a `className` token, since Material widgets ignore cross-axis stretch — see [flutter/flutter#19399](https://github.com/flutter/flutter/issues/19399)).
 
 ---
 

@@ -207,4 +207,62 @@ void main() {
     expect(btn.className, contains('bg-primary'));
     expect(btn.className, contains('mt-10'));
   });
+
+  // ---------------------------------------------------------------------------
+  // fullWidth prop (MS-2)
+  // ---------------------------------------------------------------------------
+
+  testWidgets(
+      'Button(fullWidth: true) fills the parent width, centers its label, '
+      'and keeps intent styling', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        SizedBox(
+          width: 300,
+          child: Column(
+            children: [
+              Button(
+                fullWidth: true,
+                intent: ButtonIntent.primary,
+                onPressed: () {},
+                child: const WText('Save'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final size = tester.getSize(find.byType(Button));
+    expect(size.width, 300);
+
+    final buttonCenter = tester.getCenter(find.byType(Button));
+    final labelCenter = tester.getCenter(find.text('Save'));
+    expect(labelCenter.dx, closeTo(buttonCenter.dx, 1.0));
+
+    final btn = tester.widget<WButton>(find.byType(WButton));
+    expect(btn.className, contains('bg-primary'));
+  });
+
+  testWidgets('Button fullWidth defaults to false (content-width)',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        SizedBox(
+          width: 300,
+          child: Column(
+            children: [
+              Button(
+                onPressed: () {},
+                child: const WText('Save'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final size = tester.getSize(find.byType(Button));
+    expect(size.width, lessThan(300));
+  });
 }

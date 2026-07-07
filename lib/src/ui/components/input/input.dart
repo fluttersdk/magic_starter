@@ -81,6 +81,14 @@ class Input extends StatelessWidget {
   /// Input formatters.
   final List<TextInputFormatter>? inputFormatters;
 
+  /// Whether the input fills the width of its parent.
+  ///
+  /// Wraps the rendered [WInput] in a `SizedBox(width: double.infinity)` at
+  /// the widget layer, matching Flutter's cross-axis-stretch workaround
+  /// (flutter/flutter#19399) rather than baking width into the recipe.
+  /// Orthogonal to layout state; defaults to `false` (content-width).
+  final bool fullWidth;
+
   /// Optional caller className appended after the recipe output.
   ///
   /// Wind's parse-time per-family last-wins lets these tokens override the
@@ -116,6 +124,7 @@ class Input extends StatelessWidget {
     this.focusNode,
     this.controller,
     this.inputFormatters,
+    this.fullWidth = false,
     this.className,
     this.prefix,
     this.suffix,
@@ -124,7 +133,7 @@ class Input extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WInput(
+    final Widget input = WInput(
       value: value,
       onChanged: onChanged,
       type: type,
@@ -149,5 +158,11 @@ class Input extends StatelessWidget {
       suffix: suffix,
       semanticLabel: semanticLabel,
     );
+
+    if (!fullWidth) {
+      return input;
+    }
+
+    return SizedBox(width: double.infinity, child: input);
   }
 }

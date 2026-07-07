@@ -127,9 +127,9 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `Button` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions |
-| `Input` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MagicFormField` for label + error display |
-| `Textarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `Input` |
+| `Button` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`) |
+| `Input` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MagicFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`) |
+| `Textarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `Input`; `fullWidth: true` fills the parent width (defaults `false`) |
 | `Checkbox` | | Boolean toggle; Wind-only, no Material dependency |
 | `Switch` | | Toggle; replaces Flutter's `Switch` in Wind layouts |
 | `Radio` | | Single-select option |

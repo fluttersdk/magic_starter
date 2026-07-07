@@ -18,9 +18,11 @@ enum InputState {
 /// The input [WindRecipe] (const — no theme override hook needed).
 ///
 /// Semantic tokens drive background and border so a `DESIGN.md` override
-/// re-skins all inputs without touching this file.
+/// re-skins all inputs without touching this file. Width-agnostic: full-width
+/// is the dedicated [Input.fullWidth] prop (a `SizedBox` wrapper), not a
+/// baked-in `w-full` token, so the default renders at content width.
 const WindRecipe inputRecipe = WindRecipe(
-  base: 'w-full rounded-lg border text-fg text-sm '
+  base: 'rounded-lg border text-fg text-sm '
       'focus:outline-none focus:ring-2 '
       'disabled:opacity-50 disabled:cursor-not-allowed',
   variants: {

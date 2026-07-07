@@ -18,9 +18,11 @@ enum TextareaState {
 /// The textarea [WindRecipe] (const — no theme override hook needed).
 ///
 /// Mirrors [inputRecipe] but does not set `maxLines` (the [Textarea] widget
-/// configures multiline on [WInput] separately).
+/// configures multiline on [WInput] separately). Width-agnostic: full-width
+/// is the dedicated [Textarea.fullWidth] prop (a `SizedBox` wrapper), not a
+/// baked-in `w-full` token, so the default renders at content width.
 const WindRecipe textareaRecipe = WindRecipe(
-  base: 'w-full rounded-lg border text-fg text-sm resize-none '
+  base: 'rounded-lg border text-fg text-sm resize-none '
       'focus:outline-none focus:ring-2 '
       'disabled:opacity-50 disabled:cursor-not-allowed',
   variants: {

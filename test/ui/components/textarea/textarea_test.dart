@@ -90,4 +90,42 @@ void main() {
     expect(widget.className, contains('bg-surface-container-high'));
     expect(widget.className, contains('mt-10'));
   });
+
+  // ---------------------------------------------------------------------------
+  // fullWidth prop (MS-2)
+  // ---------------------------------------------------------------------------
+
+  testWidgets(
+      'Textarea(fullWidth: true) wraps the WInput in a SizedBox(width: '
+      'infinity) and keeps intent styling', (tester) async {
+    await tester.pumpWidget(
+      wrap(const Textarea(fullWidth: true, placeholder: 'Enter text')),
+    );
+
+    final fullWidthWrapper = find.ancestor(
+      of: find.byType(WInput),
+      matching: find.byWidgetPredicate(
+        (w) => w is SizedBox && w.width == double.infinity,
+      ),
+    );
+    expect(fullWidthWrapper, findsOneWidget);
+
+    final widget = tester.widget<WInput>(find.byType(WInput));
+    expect(widget.className, contains('bg-surface-container-high'));
+  });
+
+  testWidgets('Textarea fullWidth defaults to false (no SizedBox wrapper)',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(const Textarea(placeholder: 'Hi')),
+    );
+
+    final fullWidthWrapper = find.ancestor(
+      of: find.byType(WInput),
+      matching: find.byWidgetPredicate(
+        (w) => w is SizedBox && w.width == double.infinity,
+      ),
+    );
+    expect(fullWidthWrapper, findsNothing);
+  });
 }
