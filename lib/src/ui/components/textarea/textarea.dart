@@ -50,7 +50,10 @@ class Textarea extends StatelessWidget {
   /// External text editing controller.
   final TextEditingController? controller;
 
-  /// Optional className override that bypasses the recipe entirely.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// Accessible label for the textarea.
@@ -73,24 +76,16 @@ class Textarea extends StatelessWidget {
     this.semanticLabel,
   });
 
-  /// Resolves the className from the recipe or the caller override.
-  String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-
-    return textareaRecipe(
-      variants: {kTextareaStateAxis: state.name},
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return WInput(
       value: value,
       onChanged: onChanged,
       type: InputType.multiline,
-      className: _resolveClassName(),
+      className: textareaRecipe(
+        variants: {kTextareaStateAxis: state.name},
+        className: className,
+      ),
       placeholder: placeholder,
       enabled: enabled,
       readOnly: readOnly,

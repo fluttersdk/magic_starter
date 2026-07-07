@@ -96,4 +96,18 @@ void main() {
     expect(ToastVariant.warning, isNotNull);
     expect(ToastVariant.error, isNotNull);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Toast appends caller className onto the recipe base',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(const Toast(message: 'hi', className: 'mt-10')),
+    );
+    final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(wDiv.className, contains('rounded-lg'));
+    expect(wDiv.className, contains('mt-10'));
+  });
 }

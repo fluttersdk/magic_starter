@@ -33,10 +33,11 @@ class Radio<T> extends StatelessWidget {
   /// Whether the radio is disabled.
   final bool disabled;
 
-  /// Optional className override for the shell, bypassing the recipe.
+  /// Optional caller className for the shell, appended after the recipe output.
   final String? className;
 
-  /// Optional className override for the indicator dot, bypassing the recipe.
+  /// Optional caller className for the indicator dot, appended after the
+  /// recipe output.
   final String? indicatorClassName;
 
   /// Accessible label for the radio (required for unlabelled usage).
@@ -54,12 +55,14 @@ class Radio<T> extends StatelessWidget {
     this.semanticLabel,
   });
 
-  /// Resolves the shell className from the recipe or the caller override.
-  String _resolveClassName() => className ?? radioShellRecipe();
+  /// Resolves the shell className from the recipe with the caller className
+  /// appended last.
+  String _resolveClassName() => radioShellRecipe(className: className);
 
-  /// Resolves the indicator className from the recipe or the caller override.
+  /// Resolves the indicator className from the recipe with the caller className
+  /// appended last.
   String _resolveIndicatorClassName() =>
-      indicatorClassName ?? radioIndicatorRecipe();
+      radioIndicatorRecipe(className: indicatorClassName);
 
   @override
   Widget build(BuildContext context) {

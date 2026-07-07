@@ -27,10 +27,10 @@ class Switch extends StatelessWidget {
   /// Whether the switch is disabled.
   final bool disabled;
 
-  /// Optional className override for the track, bypassing the recipe.
+  /// Optional caller className for the track, appended after the recipe output.
   final String? className;
 
-  /// Optional className override for the thumb, bypassing the recipe.
+  /// Optional caller className for the thumb, appended after the recipe output.
   final String? thumbClassName;
 
   /// Accessible label for the switch (required for icon-only usage).
@@ -47,11 +47,14 @@ class Switch extends StatelessWidget {
     this.semanticLabel,
   });
 
-  /// Resolves the track className from the recipe or the caller override.
-  String _resolveClassName() => className ?? switchTrackRecipe();
+  /// Resolves the track className from the recipe with the caller className
+  /// appended last.
+  String _resolveClassName() => switchTrackRecipe(className: className);
 
-  /// Resolves the thumb className from the recipe or the caller override.
-  String _resolveThumbClassName() => thumbClassName ?? switchThumbRecipe();
+  /// Resolves the thumb className from the recipe with the caller className
+  /// appended last.
+  String _resolveThumbClassName() =>
+      switchThumbRecipe(className: thumbClassName);
 
   @override
   Widget build(BuildContext context) {

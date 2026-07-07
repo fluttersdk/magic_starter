@@ -46,7 +46,10 @@ class Toast extends StatelessWidget {
   /// Visual variant controlling the background/text tone.
   final ToastVariant variant;
 
-  /// Optional className override. When provided, replaces the recipe output.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// Creates a [Toast].
@@ -59,11 +62,11 @@ class Toast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Resolve className from recipe (or caller override).
-    final resolvedClassName = className ??
-        buildToastRecipe()(
-          variants: {kToastVariantAxis: variant.name},
-        );
+    // 1. Resolve className from the recipe; the caller className appends last.
+    final resolvedClassName = buildToastRecipe()(
+      variants: {kToastVariantAxis: variant.name},
+      className: className,
+    );
 
     // 2. Render the toast banner.
     return WDiv(

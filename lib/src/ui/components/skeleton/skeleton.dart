@@ -50,7 +50,10 @@ class Skeleton extends StatelessWidget {
   /// The height of the skeleton placeholder in logical pixels.
   final double? height;
 
-  /// Optional className override; bypasses the recipe entirely when supplied.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// Creates a [Skeleton] widget.
@@ -62,22 +65,17 @@ class Skeleton extends StatelessWidget {
     this.className,
   });
 
-  /// Resolves the final className from the recipe or caller override.
-  String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-    return skeletonRecipe(
-      variants: {kSkeletonShapeAxis: shape.name},
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
       height: height,
-      child: WDiv(className: _resolveClassName()),
+      child: WDiv(
+        className: skeletonRecipe(
+          variants: {kSkeletonShapeAxis: shape.name},
+          className: className,
+        ),
+      ),
     );
   }
 }

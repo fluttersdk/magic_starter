@@ -105,4 +105,28 @@ void main() {
     await tester.pump();
     expect(find.byType(RadioPreview), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Radio appends caller className onto shell and indicator recipes',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        Radio<String>(
+          value: 'a',
+          groupValue: 'a',
+          onChanged: (_) {},
+          className: 'mt-10',
+          indicatorClassName: 'mb-10',
+        ),
+      ),
+    );
+    final widget = tester.widget<WRadio<String>>(find.byType(WRadio<String>));
+    expect(widget.className, contains('rounded-full'));
+    expect(widget.className, contains('mt-10'));
+    expect(widget.indicatorClassName, contains('bg-primary'));
+    expect(widget.indicatorClassName, contains('mb-10'));
+  });
 }

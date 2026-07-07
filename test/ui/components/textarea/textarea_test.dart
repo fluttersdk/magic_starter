@@ -76,4 +76,18 @@ void main() {
     await tester.pump();
     expect(find.byType(TextareaPreview), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Textarea appends caller className onto the recipe base',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(const Textarea(placeholder: 'x', className: 'mt-10')),
+    );
+    final widget = tester.widget<WInput>(find.byType(WInput));
+    expect(widget.className, contains('bg-surface-container-high'));
+    expect(widget.className, contains('mt-10'));
+  });
 }

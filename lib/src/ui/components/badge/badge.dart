@@ -59,7 +59,10 @@ class Badge extends StatelessWidget {
   /// Defaults to [BadgeTone.neutral].
   final BadgeTone tone;
 
-  /// Optional className override; bypasses the recipe entirely when supplied.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// Creates a [Badge].
@@ -70,21 +73,14 @@ class Badge extends StatelessWidget {
     this.className,
   });
 
-  /// Resolves the className from the recipe or the caller override.
-  String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-    return badgeRecipe(
-      variants: {kBadgeToneAxis: tone.name},
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return WBadge(
       label,
-      className: _resolveClassName(),
+      className: badgeRecipe(
+        variants: {kBadgeToneAxis: tone.name},
+        className: className,
+      ),
     );
   }
 }

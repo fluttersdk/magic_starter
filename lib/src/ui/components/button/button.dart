@@ -49,7 +49,10 @@ class Button extends StatelessWidget {
   /// Whether the button is disabled.
   final bool disabled;
 
-  /// Optional className override that bypasses the recipe entirely.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// An explicit accessible label for icon-only buttons.
@@ -68,27 +71,19 @@ class Button extends StatelessWidget {
     this.semanticLabel,
   });
 
-  /// Resolves the className from the recipe or the caller override.
-  String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-
-    return buttonRecipe(
-      variants: {
-        kButtonIntentAxis: intent.name,
-        kButtonSizeAxis: size.name,
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return WButton(
       onTap: onPressed,
       isLoading: isLoading,
       disabled: disabled,
-      className: _resolveClassName(),
+      className: buttonRecipe(
+        variants: {
+          kButtonIntentAxis: intent.name,
+          kButtonSizeAxis: size.name,
+        },
+        className: className,
+      ),
       semanticLabel: semanticLabel,
       child: child,
     );

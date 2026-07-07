@@ -72,7 +72,10 @@ class Card extends StatelessWidget {
   /// The main content of the card.
   final Widget child;
 
-  /// Optional className to override the default card styling entirely.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// When `true`, removes the default `p-6 gap-4` padding from the card body
@@ -98,15 +101,9 @@ class Card extends StatelessWidget {
     this.variant = CardVariant.surface,
   });
 
-  /// Resolves the root className from the card recipe (theme-driven).
-  ///
-  /// When [className] is supplied it overrides the recipe output entirely,
-  /// preserving the original escape hatch behaviour.
+  /// Resolves the root className from the card recipe (theme-driven), with any
+  /// caller [className] appended after the recipe output.
   String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-
     final recipe = buildCardRecipe(MagicStarter.cardTheme);
     return recipe(
       variants: {
@@ -114,6 +111,7 @@ class Card extends StatelessWidget {
         kCardPaddingAxis:
             noPadding ? kCardPaddingNoPadding : kCardPaddingPadded,
       },
+      className: className,
     );
   }
 

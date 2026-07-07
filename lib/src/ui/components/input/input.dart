@@ -81,7 +81,10 @@ class Input extends StatelessWidget {
   /// Input formatters.
   final List<TextInputFormatter>? inputFormatters;
 
-  /// Optional className override that bypasses the recipe entirely.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// Widget displayed before the input text.
@@ -119,24 +122,16 @@ class Input extends StatelessWidget {
     this.semanticLabel,
   });
 
-  /// Resolves the className from the recipe or the caller override.
-  String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-
-    return inputRecipe(
-      variants: {kInputStateAxis: state.name},
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return WInput(
       value: value,
       onChanged: onChanged,
       type: type,
-      className: _resolveClassName(),
+      className: inputRecipe(
+        variants: {kInputStateAxis: state.name},
+        className: className,
+      ),
       placeholder: placeholder,
       enabled: enabled,
       readOnly: readOnly,

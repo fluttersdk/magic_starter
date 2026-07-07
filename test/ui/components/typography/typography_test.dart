@@ -153,4 +153,18 @@ void main() {
     final texts = tester.widgetList<WText>(find.byType(WText));
     expect(texts.length, greaterThanOrEqualTo(TypographyVariant.values.length));
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Typography appends caller className onto the recipe base',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(const Typography('Hi', className: 'mt-10')),
+    );
+    final wText = tester.widget<WText>(find.byType(WText).first);
+    expect(wText.className, contains('text-base'));
+    expect(wText.className, contains('mt-10'));
+  });
 }

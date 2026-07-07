@@ -27,7 +27,10 @@ class Checkbox extends StatelessWidget {
   /// Whether the checkbox is disabled.
   final bool disabled;
 
-  /// Optional className override that bypasses the recipe entirely.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// Creates a [Checkbox].
@@ -39,22 +42,13 @@ class Checkbox extends StatelessWidget {
     this.className,
   });
 
-  /// Resolves the className from the recipe or the caller override.
-  String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-
-    return checkboxRecipe();
-  }
-
   @override
   Widget build(BuildContext context) {
     return WCheckbox(
       value: value,
       onChanged: onChanged,
       disabled: disabled,
-      className: _resolveClassName(),
+      className: checkboxRecipe(className: className),
     );
   }
 }

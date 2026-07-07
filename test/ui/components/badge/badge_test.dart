@@ -145,4 +145,18 @@ void main() {
     final badges = tester.widgetList<WBadge>(find.byType(WBadge));
     expect(badges.length, greaterThanOrEqualTo(BadgeTone.values.length));
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Badge appends caller className onto the recipe base',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(const Badge('Label', tone: BadgeTone.primary, className: 'mt-10')),
+    );
+    final wBadge = tester.widget<WBadge>(find.byType(WBadge));
+    expect(wBadge.className, contains('bg-primary'));
+    expect(wBadge.className, contains('mt-10'));
+  });
 }

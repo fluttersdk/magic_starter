@@ -186,4 +186,25 @@ void main() {
     final buttons = tester.widgetList<WButton>(find.byType(WButton));
     expect(buttons.length, greaterThanOrEqualTo(ButtonIntent.values.length));
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Button appends caller className onto the recipe base',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        Button(
+          intent: ButtonIntent.primary,
+          className: 'mt-10',
+          onPressed: () {},
+          child: const SizedBox(),
+        ),
+      ),
+    );
+    final btn = tester.widget<WButton>(find.byType(WButton));
+    expect(btn.className, contains('bg-primary'));
+    expect(btn.className, contains('mt-10'));
+  });
 }

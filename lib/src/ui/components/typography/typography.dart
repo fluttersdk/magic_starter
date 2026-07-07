@@ -48,7 +48,10 @@ class Typography extends StatelessWidget {
   /// Defaults to [TypographyVariant.body].
   final TypographyVariant variant;
 
-  /// Optional className override; bypasses the recipe entirely when supplied.
+  /// Optional caller className appended after the recipe output.
+  ///
+  /// Wind's parse-time per-family last-wins lets these tokens override the
+  /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
   /// Creates a [Typography] widget.
@@ -59,21 +62,14 @@ class Typography extends StatelessWidget {
     this.className,
   });
 
-  /// Resolves the final className from the recipe or caller override.
-  String _resolveClassName() {
-    if (className != null) {
-      return className!;
-    }
-    return typographyRecipe(
-      variants: {kTypographyVariantAxis: variant.name},
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return WText(
       data,
-      className: _resolveClassName(),
+      className: typographyRecipe(
+        variants: {kTypographyVariantAxis: variant.name},
+        className: className,
+      ),
     );
   }
 }

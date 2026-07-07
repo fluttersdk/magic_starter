@@ -50,9 +50,10 @@ const WindRecipe buttonRecipe = WindRecipe(
   // No `justify-center`: in Wind that maps to WButton's Container alignment,
   // which forces the button to expand and fill its constraints (full-width).
   // A default Button shrinks to its content (the `inline-flex` intent); the
-  // single-child label is centered by the shrink-wrapped padding box. Callers
-  // opt into full-width by passing a `className` override (e.g. form themes
-  // ship `w-full`), which bypasses this base entirely.
+  // single-child label is centered by the shrink-wrapped padding box. A caller
+  // `className` APPENDS after this base (parser last-wins resolves conflicts
+  // per family), so it refines the base rather than replacing it; full-width is
+  // the dedicated `fullWidth` prop (a SizedBox wrapper), not a className token.
   base: 'inline-flex items-center font-medium rounded-lg '
       'transition-colors disabled:opacity-50 disabled:cursor-not-allowed '
       'focus:outline-none focus:ring-2 focus:ring-offset-1',

@@ -145,4 +145,18 @@ void main() {
     // Each shape renders at least one WDiv
     expect(find.byType(WDiv), findsWidgets);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Skeleton appends caller className onto the recipe base',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(const Skeleton(width: 100, height: 20, className: 'mt-10')),
+    );
+    final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(wDiv.className, contains('animate-pulse'));
+    expect(wDiv.className, contains('mt-10'));
+  });
 }

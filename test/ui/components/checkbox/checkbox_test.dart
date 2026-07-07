@@ -77,4 +77,18 @@ void main() {
     await tester.pump();
     expect(find.byType(CheckboxPreview), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Checkbox appends caller className onto the recipe base',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(Checkbox(value: false, onChanged: (_) {}, className: 'mt-10')),
+    );
+    final widget = tester.widget<WCheckbox>(find.byType(WCheckbox));
+    expect(widget.className, contains('checked:bg-primary'));
+    expect(widget.className, contains('mt-10'));
+  });
 }

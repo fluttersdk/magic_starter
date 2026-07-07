@@ -89,4 +89,27 @@ void main() {
     await tester.pump();
     expect(find.byType(SwitchPreview), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------------------
+  // Caller className append (WIND-1)
+  // ---------------------------------------------------------------------------
+
+  testWidgets('Switch appends caller className onto track and thumb recipes',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        Switch(
+          value: false,
+          onChanged: (_) {},
+          className: 'mt-10',
+          thumbClassName: 'mb-10',
+        ),
+      ),
+    );
+    final widget = tester.widget<WSwitch>(find.byType(WSwitch));
+    expect(widget.className, contains('rounded-full'));
+    expect(widget.className, contains('mt-10'));
+    expect(widget.thumbClassName, contains('bg-surface'));
+    expect(widget.thumbClassName, contains('mb-10'));
+  });
 }
