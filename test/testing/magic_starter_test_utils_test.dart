@@ -7,11 +7,13 @@ void main() {
   setUp(() {
     MagicApp.reset();
     Magic.flush();
+    MagicStarter.resetFallbackManagerForTests();
   });
 
   tearDown(() {
     MagicApp.reset();
     Magic.flush();
+    MagicStarter.resetFallbackManagerForTests();
   });
 
   group('setUpMagicStarterForTests', () {
@@ -36,10 +38,9 @@ void main() {
   });
 
   group('MagicStarter.manager defensive fallback', () {
-    // NOTE: the one-time warning guard is a process-wide static flag (by
-    // design — see the facade), so this test MUST run before any other test
-    // in this file accesses the unbound fallback, or the guard will already
-    // be tripped and no warning will fire here.
+    // The one-time warning guard is a process-wide static flag, but setUp/
+    // tearDown call resetFallbackManagerForTests(), so each test starts from a
+    // clean guard and this test is order-independent.
     test('emits exactly one kDebugMode warning on unbound access', () {
       final logs = <String>[];
       final originalDebugPrint = debugPrint;

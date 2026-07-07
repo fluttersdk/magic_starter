@@ -61,6 +61,19 @@ class MagicStarter {
     return _fallbackManager ??= MagicStarterManager();
   }
 
+  /// Clears the process-wide unbound-fallback state (the shared fallback
+  /// manager and the one-time-warning guard).
+  ///
+  /// [MagicApp.reset] and [Magic.flush] reset the IoC container but not these
+  /// class-level statics, so a test that exercises the unbound-fallback path
+  /// must call this in `setUp`/`tearDown` to stay order-independent (otherwise
+  /// the one-time warning fires only for whichever test runs first).
+  @visibleForTesting
+  static void resetFallbackManagerForTests() {
+    _fallbackManager = null;
+    _hasWarnedAboutUnboundManager = false;
+  }
+
   /// Global view registry accessor.
   static MagicStarterViewRegistry get view => manager.view;
 

@@ -154,3 +154,15 @@ expressed as semantic className tokens.
 | `guestButtonClassName` | `border-color-border`, `text-fg-muted`, `bg-surface-container` |
 | `registrationLinkClassName` | `text-fg-muted` |
 | `registrationLinkTextClassName` | `text-primary` |
+
+## Note: install the same WindThemeData as the ambient theme
+
+`useWindTheme` derives className strings that reference semantic alias tokens
+(`bg-surface`, `text-fg`, `bg-primary`, ...). Those tokens only resolve to your
+palette when the SAME `WindThemeData` is installed as the ambient `WindTheme`
+that renders the app. `useWindTheme` maps the roles onto the component
+properties; the ambient `WindTheme` is what expands the tokens at paint time.
+For any role the passed theme does not define, the derivation falls back to the
+shipped default palette pair (so an omitted role never produces an invisible
+surface), but a defined role that is missing from the ambient `WindTheme` will
+render its bare token unresolved.
