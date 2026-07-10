@@ -220,9 +220,8 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
                 className: 'flex flex-row justify-center',
                 child: WText(
                   trans('magic_starter.otp.resend_link'),
-                  className: 'text-sm font-medium text-gray-500 '
-                      'dark:text-gray-400 hover:text-primary '
-                      'dark:hover:text-primary',
+                  className: 'text-sm font-medium text-fg-muted '
+                      'hover:text-primary dark:hover:text-primary',
                 ),
               ),
             ),

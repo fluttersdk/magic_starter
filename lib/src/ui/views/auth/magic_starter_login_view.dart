@@ -107,7 +107,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
                     setState(() => _obscurePassword = !_obscurePassword),
                 child: WIcon(
                   _obscurePassword ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               className: MagicStarter.formTheme.inputClassName,
@@ -288,8 +288,8 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
           onTap: onTap,
           child: WDiv(
             className: isActive
-                ? 'py-2.5 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 shadow-sm'
-                : 'py-2.5 px-3 rounded-lg border border-gray-300 dark:border-gray-600',
+                ? 'py-2.5 px-3 rounded-lg border border-color-border bg-surface-container-high shadow-sm'
+                : 'py-2.5 px-3 rounded-lg border border-color-border',
             children: [
               WDiv(
                 className: 'flex flex-row items-center justify-center gap-2',
@@ -298,13 +298,13 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
                     icon,
                     className: isActive
                         ? 'text-primary text-lg'
-                        : 'text-gray-400 dark:text-gray-500 text-lg',
+                        : 'text-fg-muted text-lg',
                   ),
                   WText(
                     label,
                     className: isActive
-                        ? 'text-sm font-semibold text-gray-900 dark:text-white'
-                        : 'text-sm font-medium text-gray-500 dark:text-gray-400',
+                        ? 'text-sm font-semibold text-fg'
+                        : 'text-sm font-medium text-fg-muted',
                   ),
                 ],
               ),

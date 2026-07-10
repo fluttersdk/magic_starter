@@ -71,7 +71,7 @@ class _MagicStarterForgotPasswordViewState extends MagicStatefulViewState<
           ),
           WText(
             trans('auth.reset_link_sent'),
-            className: 'text-sm text-gray-600 dark:text-gray-400 text-center',
+            className: 'text-sm text-fg-muted text-center',
           ),
           const WSpacer(className: 'h-2'),
           WAnchor(

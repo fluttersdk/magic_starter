@@ -139,15 +139,15 @@ class _MagicStarterTwoFactorModalState
         if (secret != null) ...[
           WText(
             trans('profile.two_factor_manual_entry'),
-            className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
+            className: 'text-sm font-medium text-fg',
           ),
           WDiv(
             className:
-                'w-full bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-3',
+                'w-full bg-surface-container-high rounded-lg px-4 py-3',
             child: WText(
               secret,
               className:
-                  'font-mono text-sm text-gray-800 dark:text-gray-200 selectable',
+                  'font-mono text-sm text-fg selectable',
             ),
           ),
         ],
@@ -157,7 +157,7 @@ class _MagicStarterTwoFactorModalState
           placeholder: trans('profile.two_factor_code_placeholder'),
           type: InputType.number,
           labelClassName:
-              'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
+              'text-sm font-medium text-fg mb-1',
           className: theme.inputClassName,
         ),
         if (_errorMessage != null)
@@ -207,7 +207,7 @@ class _MagicStarterTwoFactorModalState
             ...recoveryCodes.map(
               (code) => WDiv(
                 className:
-                    'font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded',
+                    'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
                 child: WText(code),
               ),
             ),

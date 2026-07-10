@@ -126,7 +126,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                     setState(() => _obscurePassword = !_obscurePassword),
                 child: WIcon(
                   _obscurePassword ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               className: MagicStarter.formTheme.inputClassName,
@@ -147,7 +147,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                     () => _obscureConfirmation = !_obscureConfirmation),
                 child: WIcon(
                   _obscureConfirmation ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               className: MagicStarter.formTheme.inputClassName,
@@ -168,7 +168,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                       MagicStarter.manager.newsletterLabel ??
                           trans('magic_starter.newsletter.subscribe_label'),
                       className:
-                          'text-sm text-gray-600 dark:text-gray-400 ml-1',
+                          'text-sm text-fg-muted ml-1',
                     ),
                   ),
                 ],
@@ -303,7 +303,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
       children: [
         WText(
           trans('auth.agree_to_legal'),
-          className: 'text-xs text-gray-500 dark:text-gray-400',
+          className: 'text-xs text-fg-muted',
         ),
         if (termsUrl != null)
           WAnchor(
@@ -317,7 +317,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
         if (termsUrl != null && privacyUrl != null)
           WText(
             trans('auth.legal_and'),
-            className: 'text-xs text-gray-500 dark:text-gray-400',
+            className: 'text-xs text-fg-muted',
           ),
         if (privacyUrl != null)
           WAnchor(
