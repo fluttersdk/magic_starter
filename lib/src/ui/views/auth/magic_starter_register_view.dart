@@ -167,8 +167,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
                     label: WText(
                       MagicStarter.manager.newsletterLabel ??
                           trans('magic_starter.newsletter.subscribe_label'),
-                      className:
-                          'text-sm text-fg-muted ml-1',
+                      className: 'text-sm text-fg-muted ml-1',
                     ),
                   ),
                 ],

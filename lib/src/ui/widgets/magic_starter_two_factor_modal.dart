@@ -142,12 +142,10 @@ class _MagicStarterTwoFactorModalState
             className: 'text-sm font-medium text-fg',
           ),
           WDiv(
-            className:
-                'w-full bg-surface-container-high rounded-lg px-4 py-3',
+            className: 'w-full bg-surface-container-high rounded-lg px-4 py-3',
             child: WText(
               secret,
-              className:
-                  'font-mono text-sm text-fg selectable',
+              className: 'font-mono text-sm text-fg selectable',
             ),
           ),
         ],
@@ -156,8 +154,7 @@ class _MagicStarterTwoFactorModalState
           label: trans('profile.two_factor_code_label'),
           placeholder: trans('profile.two_factor_code_placeholder'),
           type: InputType.number,
-          labelClassName:
-              'text-sm font-medium text-fg mb-1',
+          labelClassName: 'text-sm font-medium text-fg mb-1',
           className: theme.inputClassName,
         ),
         if (_errorMessage != null)

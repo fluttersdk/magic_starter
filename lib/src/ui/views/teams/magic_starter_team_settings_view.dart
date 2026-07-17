@@ -299,8 +299,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   name.isNotEmpty
                       ? name[0].toUpperCase()
                       : trans('common.unknown'),
-                  className:
-                      'text-sm font-semibold text-fg-muted',
+                  className: 'text-sm font-semibold text-fg-muted',
                 ),
               ),
               Expanded(
@@ -309,13 +308,11 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WText(
                       name,
-                      className:
-                          'text-sm font-medium text-fg truncate',
+                      className: 'text-sm font-medium text-fg truncate',
                     ),
                     WText(
                       email,
-                      className:
-                          'text-xs text-fg-muted truncate',
+                      className: 'text-xs text-fg-muted truncate',
                     ),
                   ],
                 ),
@@ -387,8 +384,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WText(
                       email,
-                      className:
-                          'text-sm font-medium text-fg truncate',
+                      className: 'text-sm font-medium text-fg truncate',
                     ),
                     WText(
                       trans('teams.pending'),

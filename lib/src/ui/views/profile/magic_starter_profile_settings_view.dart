@@ -988,8 +988,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                                     trans(
                                       'magic_starter.newsletter.toggle_label',
                                     ),
-                                    className:
-                                        'text-sm font-medium text-fg',
+                                    className: 'text-sm font-medium text-fg',
                                   ),
                                   WText(
                                     isSubscribed
@@ -999,8 +998,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                                         : trans(
                                             'magic_starter.newsletter.unsubscribed_status',
                                           ),
-                                    className:
-                                        'text-xs text-fg-muted',
+                                    className: 'text-xs text-fg-muted',
                                   ),
                                 ],
                               ),
@@ -1029,8 +1027,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WIcon(
                       Icons.refresh,
-                      className:
-                          'text-fg-muted animate-spin text-2xl',
+                      className: 'text-fg-muted animate-spin text-2xl',
                     ),
                   ],
                 ),
@@ -1064,16 +1061,14 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               children: [
                 WIcon(
                   Icons.refresh,
-                  className:
-                      'text-fg-muted animate-spin text-2xl',
+                  className: 'text-fg-muted animate-spin text-2xl',
                 ),
               ],
             )
           else if (_sessions.isEmpty)
             WText(
               trans('profile.no_active_sessions'),
-              className:
-                  'text-sm text-fg-muted text-center py-4',
+              className: 'text-sm text-fg-muted text-center py-4',
             )
           else
             WDiv(
@@ -1136,8 +1131,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               children: [
                 WText(
                   [platform, browser].where((s) => s.isNotEmpty).join(' - '),
-                  className:
-                      'text-sm font-medium text-fg',
+                  className: 'text-sm font-medium text-fg',
                 ),
                 if (isCurrent)
                   WDiv(
