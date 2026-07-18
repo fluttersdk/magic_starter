@@ -515,7 +515,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                       onTap: isLoading ? null : _handlePhotoUpload,
                       isLoading: isLoading,
                       className:
-                          'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-gray-50 dark:hover:bg-gray-700 text-fg text-sm font-medium',
+                          'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                       child: WText(trans('common.upload')),
                     ),
                     if (photoUrl != null && photoUrl.isNotEmpty)
@@ -907,7 +907,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                             : () => _regenerateRecoveryCodes(context),
                         isLoading: isLoading,
                         className:
-                            'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-gray-50 dark:hover:bg-gray-700 text-fg text-sm font-medium',
+                            'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                         child:
                             WText(trans('profile.two_factor_regenerate_codes')),
                       ),
@@ -928,7 +928,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   onTap: isLoading ? null : () => _showRecoveryCodes(context),
                   isLoading: isLoading,
                   className:
-                      'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-gray-50 dark:hover:bg-gray-700 text-fg text-sm font-medium',
+                      'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                   child: WText(trans('profile.two_factor_show_recovery_codes')),
                 ),
               ),
@@ -1117,7 +1117,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     return WDiv(
       className:
-          'flex flex-row items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-color-border',
+          'flex flex-row items-start gap-3 p-3 rounded-lg bg-surface-container border border-color-border',
       children: [
         WIcon(
           isDesktop ? _iconDesktop : _iconMobile,

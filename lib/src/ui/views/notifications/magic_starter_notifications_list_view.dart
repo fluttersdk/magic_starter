@@ -246,7 +246,7 @@ class _MagicStarterNotificationsListViewState
       },
       child: WDiv(
         className:
-            'px-6 py-4 flex flex-row items-center gap-4 border-b border-color-border-subtle hover:bg-gray-50 dark:hover:bg-gray-800/50',
+            'px-6 py-4 flex flex-row items-center gap-4 border-b border-color-border-subtle hover:bg-surface-container',
         children: [
           WDiv(
             className:
