@@ -559,6 +559,44 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'mobile bottom nav renders a registered bottomItem',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        // Below the lg breakpoint the shell renders the bottom tab bar, which
+        // builds one item per registered bottomItem (the semantic-token icon /
+        // label styling lives there). '/' is active, exercising the active
+        // branch too.
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: const [
+            MagicStarterNavItem(
+              icon: Icons.dashboard_outlined,
+              activeIcon: Icons.dashboard,
+              labelKey: 'Overview',
+              path: '/',
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          createApp(
+            child: const SizedBox(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Overview'), findsOneWidget);
+      },
+    );
   });
 
   group('MagicStarterAppLayout sidebar navigation scroll', () {
