@@ -71,7 +71,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
         className: 'flex items-center justify-center p-6',
         child: WText(
           trans('teams.feature_disabled'),
-          className: 'text-sm text-gray-600 dark:text-gray-300',
+          className: 'text-sm text-fg-muted',
         ),
       );
     }
@@ -153,11 +153,11 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WIcon(
                       Icons.group_outlined,
-                      className: 'text-[32px] text-gray-300 dark:text-gray-600',
+                      className: 'text-[32px] text-fg-disabled',
                     ),
                     WText(
                       trans('teams.no_members'),
-                      className: 'text-sm text-gray-500 dark:text-gray-400',
+                      className: 'text-sm text-fg-muted',
                     ),
                   ],
                 ),
@@ -188,11 +188,11 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WIcon(
                       Icons.mail_outline,
-                      className: 'text-[32px] text-gray-300 dark:text-gray-600',
+                      className: 'text-[32px] text-fg-disabled',
                     ),
                     WText(
                       trans('teams.no_invitations'),
-                      className: 'text-sm text-gray-500 dark:text-gray-400',
+                      className: 'text-sm text-fg-muted',
                     ),
                   ],
                 ),
@@ -251,7 +251,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                       labelClassName: formTheme.labelClassName,
                       className: formTheme.inputClassName,
                       menuClassName:
-                          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+                          'bg-surface-container-high border border-color-border',
                     ),
                     WDiv(
                       className: 'flex justify-end',
@@ -286,7 +286,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
     return WDiv(
       className:
-          'px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700',
+          'px-6 py-4 flex items-center justify-between border-b border-color-border-subtle',
       children: [
         Expanded(
           child: WDiv(
@@ -294,13 +294,12 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
             children: [
               WDiv(
                 className:
-                    'w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center',
+                    'w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center',
                 child: WText(
                   name.isNotEmpty
                       ? name[0].toUpperCase()
                       : trans('common.unknown'),
-                  className:
-                      'text-sm font-semibold text-gray-600 dark:text-gray-300',
+                  className: 'text-sm font-semibold text-fg-muted',
                 ),
               ),
               Expanded(
@@ -309,13 +308,11 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WText(
                       name,
-                      className:
-                          'text-sm font-medium text-gray-900 dark:text-white truncate',
+                      className: 'text-sm font-medium text-fg truncate',
                     ),
                     WText(
                       email,
-                      className:
-                          'text-xs text-gray-500 dark:text-gray-400 truncate',
+                      className: 'text-xs text-fg-muted truncate',
                     ),
                   ],
                 ),
@@ -329,7 +326,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
             WDiv(
               className: isOwner
                   ? 'px-2 py-1 rounded-md text-xs font-medium bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary'
-                  : 'px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+                  : 'px-2 py-1 rounded-md text-xs font-medium bg-surface-container-high text-fg-muted',
               child: WText(_roleLabel(role)),
             ),
             if (!isOwner)
@@ -349,7 +346,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                 child: WIcon(
                   Icons.close,
                   semanticLabel: trans('teams.remove_member_label'),
-                  className: 'text-[18px] text-gray-400 hover:text-red-500',
+                  className: 'text-[18px] text-fg-muted hover:text-red-500',
                 ),
               ),
           ],
@@ -367,7 +364,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
 
     return WDiv(
       className:
-          'px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700',
+          'px-6 py-4 flex items-center justify-between border-b border-color-border-subtle',
       children: [
         Expanded(
           child: WDiv(
@@ -387,8 +384,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WText(
                       email,
-                      className:
-                          'text-sm font-medium text-gray-900 dark:text-white truncate',
+                      className: 'text-sm font-medium text-fg truncate',
                     ),
                     WText(
                       trans('teams.pending'),
@@ -405,7 +401,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
           children: [
             WDiv(
               className:
-                  'px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300',
+                  'px-2 py-1 rounded-md bg-surface-container-high text-xs font-medium text-fg-muted',
               child: WText(_roleLabel(role)),
             ),
             WAnchor(
@@ -423,7 +419,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               child: WIcon(
                 Icons.close,
                 semanticLabel: trans('teams.cancel_invite_label'),
-                className: 'text-[18px] text-gray-400 hover:text-red-500',
+                className: 'text-[18px] text-fg-muted hover:text-red-500',
               ),
             ),
           ],

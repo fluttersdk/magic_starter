@@ -88,11 +88,11 @@ class _MagicStarterNotificationPreferencesViewState
               children: [
                 WIcon(
                   Icons.notifications_off_outlined,
-                  className: 'text-4xl text-gray-300 dark:text-gray-600',
+                  className: 'text-4xl text-fg-disabled',
                 ),
                 WText(
                   trans('notifications.no_preferences'),
-                  className: 'text-sm text-gray-500 dark:text-gray-400',
+                  className: 'text-sm text-fg-muted',
                 ),
               ],
             ),
@@ -152,7 +152,7 @@ class _MagicStarterNotificationPreferencesViewState
     return WDiv(
       className: '''
         px-6 py-4 flex items-center justify-between
-        border-b border-gray-100 dark:border-gray-700
+        border-b border-color-border-subtle
         last:border-b-0
       ''',
       children: [
@@ -162,19 +162,19 @@ class _MagicStarterNotificationPreferencesViewState
             WDiv(
               className: '''
                 w-10 h-10 rounded-full flex items-center justify-center
-                ${isEnabled && !isLocked ? 'bg-primary/10 dark:bg-primary/10' : 'bg-gray-100 dark:bg-gray-700'}
+                ${isEnabled && !isLocked ? 'bg-primary/10 dark:bg-primary/10' : 'bg-surface-container-high'}
               ''',
               child: WIcon(
                 isLocked ? _iconLocked : icon,
                 className: '''
                   text-[18px]
-                  ${isEnabled && !isLocked ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}
+                  ${isEnabled && !isLocked ? 'text-primary' : 'text-fg-muted'}
                 ''',
               ),
             ),
             WText(
               _channelLabel(channel),
-              className: 'text-sm font-medium text-gray-900 dark:text-white',
+              className: 'text-sm font-medium text-fg',
             ),
           ],
         ),

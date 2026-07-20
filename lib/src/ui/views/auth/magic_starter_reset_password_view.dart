@@ -91,7 +91,7 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
           ),
           WText(
             trans('auth.password_reset_success'),
-            className: 'text-sm text-gray-600 dark:text-gray-400 text-center',
+            className: 'text-sm text-fg-muted text-center',
           ),
           const WSpacer(className: 'h-2'),
           WAnchor(
@@ -161,7 +161,7 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
                     setState(() => _obscurePassword = !_obscurePassword),
                 child: WIcon(
                   _obscurePassword ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               className: MagicStarter.formTheme.inputClassName,
@@ -183,7 +183,7 @@ class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
                 ),
                 child: WIcon(
                   _obscureConfirmation ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               className: MagicStarter.formTheme.inputClassName,

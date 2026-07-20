@@ -494,10 +494,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                     )
                   : WDiv(
                       className:
-                          'w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center',
+                          'w-full h-full bg-surface-container-high flex items-center justify-center',
                       child: WIcon(
                         Icons.person_outline,
-                        className: 'text-gray-400 text-3xl',
+                        className: 'text-fg-muted text-3xl',
                       ),
                     ),
             ),
@@ -515,7 +515,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                       onTap: isLoading ? null : _handlePhotoUpload,
                       isLoading: isLoading,
                       className:
-                          'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                          'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                       child: WText(trans('common.upload')),
                     ),
                     if (photoUrl != null && photoUrl.isNotEmpty)
@@ -523,7 +523,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                         onTap: isLoading ? null : _handlePhotoRemove,
                         isLoading: isLoading,
                         className:
-                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium',
+                            'px-4 py-2 rounded-lg bg-surface-container-high border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium',
                         child: WText(trans('common.remove')),
                       ),
                   ],
@@ -531,7 +531,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               ),
               WText(
                 trans('profile.photo_requirements'),
-                className: 'text-xs text-gray-500 dark:text-gray-400',
+                className: 'text-xs text-fg-muted',
               ),
             ],
           ),
@@ -618,7 +618,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               labelClassName: formTheme.labelClassName,
               className: formTheme.inputClassName,
               menuClassName:
-                  'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
+                  'bg-surface-container-high border border-color-border rounded-xl shadow-xl',
             ),
           WDiv(
             className: 'flex justify-end',
@@ -660,7 +660,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 onTap: () => setState(() => _obscureCurrent = !_obscureCurrent),
                 child: WIcon(
                   _obscureCurrent ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               labelClassName: formTheme.labelClassName,
@@ -675,7 +675,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                 onTap: () => setState(() => _obscureNew = !_obscureNew),
                 child: WIcon(
                   _obscureNew ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               labelClassName: formTheme.labelClassName,
@@ -691,7 +691,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                     () => _obscureConfirmation = !_obscureConfirmation),
                 child: WIcon(
                   _obscureConfirmation ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               labelClassName: formTheme.labelClassName,
@@ -828,7 +828,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       children: [
         WText(
           trans('profile.two_factor_disabled_description'),
-          className: 'text-sm text-gray-600 dark:text-gray-400',
+          className: 'text-sm text-fg-muted',
         ),
         MagicBuilder<bool>(
           listenable: _twoFactorLoading,
@@ -866,12 +866,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         ),
         WText(
           trans('profile.two_factor_enabled_description'),
-          className: 'text-sm text-gray-600 dark:text-gray-400',
+          className: 'text-sm text-fg-muted',
         ),
         if (_recoveryCodes.isNotEmpty) ...[
           WText(
             trans('profile.two_factor_recovery_codes_description'),
-            className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
+            className: 'text-sm font-medium text-fg',
           ),
           WDiv(
             className: 'wrap gap-2',
@@ -879,7 +879,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               ..._recoveryCodes.map(
                 (code) => WDiv(
                   className:
-                      'font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded',
+                      'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
                   child: WText(code),
                 ),
               ),
@@ -907,7 +907,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                             : () => _regenerateRecoveryCodes(context),
                         isLoading: isLoading,
                         className:
-                            'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                            'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                         child:
                             WText(trans('profile.two_factor_regenerate_codes')),
                       ),
@@ -928,7 +928,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   onTap: isLoading ? null : () => _showRecoveryCodes(context),
                   isLoading: isLoading,
                   className:
-                      'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+                      'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                   child: WText(trans('profile.two_factor_show_recovery_codes')),
                 ),
               ),
@@ -962,7 +962,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         children: [
           WText(
             trans('magic_starter.newsletter.section_description'),
-            className: 'text-sm text-gray-600 dark:text-gray-400',
+            className: 'text-sm text-fg-muted',
           ),
           Builder(
             builder: (context) {
@@ -988,8 +988,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                                     trans(
                                       'magic_starter.newsletter.toggle_label',
                                     ),
-                                    className:
-                                        'text-sm font-medium text-gray-900 dark:text-white',
+                                    className: 'text-sm font-medium text-fg',
                                   ),
                                   WText(
                                     isSubscribed
@@ -999,8 +998,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                                         : trans(
                                             'magic_starter.newsletter.unsubscribed_status',
                                           ),
-                                    className:
-                                        'text-xs text-gray-500 dark:text-gray-400',
+                                    className: 'text-xs text-fg-muted',
                                   ),
                                 ],
                               ),
@@ -1029,8 +1027,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   children: [
                     WIcon(
                       Icons.refresh,
-                      className:
-                          'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
+                      className: 'text-fg-muted animate-spin text-2xl',
                     ),
                   ],
                 ),
@@ -1056,7 +1053,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
         children: [
           WText(
             trans('profile.browser_sessions_description'),
-            className: 'text-sm text-gray-600 dark:text-gray-400',
+            className: 'text-sm text-fg-muted',
           ),
           if (_sessionsLoading)
             WDiv(
@@ -1064,16 +1061,14 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               children: [
                 WIcon(
                   Icons.refresh,
-                  className:
-                      'text-gray-400 dark:text-gray-500 animate-spin text-2xl',
+                  className: 'text-fg-muted animate-spin text-2xl',
                 ),
               ],
             )
           else if (_sessions.isEmpty)
             WText(
               trans('profile.no_active_sessions'),
-              className:
-                  'text-sm text-gray-500 dark:text-gray-400 text-center py-4',
+              className: 'text-sm text-fg-muted text-center py-4',
             )
           else
             WDiv(
@@ -1122,11 +1117,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     return WDiv(
       className:
-          'flex flex-row items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700',
+          'flex flex-row items-start gap-3 p-3 rounded-lg bg-surface-container border border-color-border',
       children: [
         WIcon(
           isDesktop ? _iconDesktop : _iconMobile,
-          className: 'text-gray-500 dark:text-gray-400 mt-1 text-xl',
+          className: 'text-fg-muted mt-1 text-xl',
         ),
         WDiv(
           className: 'flex flex-col flex-1 gap-1',
@@ -1136,8 +1131,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               children: [
                 WText(
                   [platform, browser].where((s) => s.isNotEmpty).join(' - '),
-                  className:
-                      'text-sm font-medium text-gray-900 dark:text-white',
+                  className: 'text-sm font-medium text-fg',
                 ),
                 if (isCurrent)
                   WDiv(
@@ -1150,12 +1144,12 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             if (ip.isNotEmpty)
               WText(
                 ip,
-                className: 'text-xs text-gray-500 dark:text-gray-400',
+                className: 'text-xs text-fg-muted',
               ),
             if (locationText.isNotEmpty)
               WText(
                 locationText,
-                className: 'text-xs text-gray-500 dark:text-gray-400',
+                className: 'text-xs text-fg-muted',
               ),
           ],
         ),
@@ -1229,7 +1223,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           children: [
             WText(
               trans('magic_starter.profile.delete_account.description'),
-              className: 'text-sm text-gray-600 dark:text-gray-400',
+              className: 'text-sm text-fg-muted',
             ),
             WFormInput(
               controller: deleteAccountForm['password'],
@@ -1303,7 +1297,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           children: [
             WText(
               trans('magic_starter.guest_upgrade.description'),
-              className: 'text-sm text-gray-600 dark:text-gray-400',
+              className: 'text-sm text-fg-muted',
             ),
             WFormInput(
               controller: upgradeForm['email'],
@@ -1324,7 +1318,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                     () => _obscureUpgradePassword = !_obscureUpgradePassword),
                 child: WIcon(
                   _obscureUpgradePassword ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               labelClassName: formTheme.labelClassName,
@@ -1342,7 +1336,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                     _obscureUpgradeConfirmation = !_obscureUpgradeConfirmation),
                 child: WIcon(
                   _obscureUpgradeConfirmation ? _iconVisible : _iconHidden,
-                  className: 'text-gray-400 text-xl',
+                  className: 'text-fg-muted text-xl',
                 ),
               ),
               labelClassName: formTheme.labelClassName,

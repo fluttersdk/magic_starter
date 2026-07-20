@@ -99,7 +99,7 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
           ),
           WText(
             trans('teams.invite_accepted'),
-            className: 'text-sm text-gray-600 dark:text-gray-400 text-center',
+            className: 'text-sm text-fg-muted text-center',
           ),
           const WSpacer(className: 'h-2'),
           WAnchor(

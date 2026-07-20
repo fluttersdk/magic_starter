@@ -178,7 +178,7 @@ class _MagicStarterPasswordConfirmDialogState
                       onTap: () => setState(() => _obscure = !_obscure),
                       child: WIcon(
                         _obscure ? _iconVisible : _iconHidden,
-                        className: 'text-gray-400 text-xl',
+                        className: 'text-fg-muted text-xl',
                       ),
                     ),
                     className: '${theme.inputClassName} error:border-red-500',

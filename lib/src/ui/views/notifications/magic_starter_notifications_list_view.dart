@@ -201,8 +201,8 @@ class _MagicStarterNotificationsListViewState
       child: WDiv(
         className: 'flex flex-col items-center justify-center py-20 gap-4',
         children: [
-          WIcon(icon, className: 'text-6xl text-gray-300 dark:text-gray-600'),
-          WText(message, className: 'text-gray-500 dark:text-gray-400'),
+          WIcon(icon, className: 'text-6xl text-fg-disabled'),
+          WText(message, className: 'text-fg-muted'),
         ],
       ),
     );
@@ -246,11 +246,11 @@ class _MagicStarterNotificationsListViewState
       },
       child: WDiv(
         className:
-            'px-6 py-4 flex flex-row items-center gap-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+            'px-6 py-4 flex flex-row items-center gap-4 border-b border-color-border-subtle hover:bg-surface-container',
         children: [
           WDiv(
             className:
-                'w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0',
+                'w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0',
             child: WIcon(icon, className: 'text-xl $iconColor'),
           ),
           Expanded(
@@ -260,18 +260,18 @@ class _MagicStarterNotificationsListViewState
                 WText(
                   notification.title,
                   className: notification.isRead
-                      ? 'text-sm text-gray-900 dark:text-white'
-                      : 'text-sm text-gray-900 dark:text-white font-semibold',
+                      ? 'text-sm text-fg'
+                      : 'text-sm text-fg font-semibold',
                 ),
                 const WSpacer(className: 'h-0.5'),
                 WText(
                   notification.body,
-                  className: 'text-sm text-gray-500 dark:text-gray-400',
+                  className: 'text-sm text-fg-muted',
                 ),
                 const WSpacer(className: 'h-1'),
                 WText(
                   _formatTime(notification.createdAt),
-                  className: 'text-xs text-gray-400 dark:text-gray-500',
+                  className: 'text-xs text-fg-muted',
                 ),
               ],
             ),
@@ -292,7 +292,7 @@ class _MagicStarterNotificationsListViewState
                     'p-2 ml-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20',
                 child: WIcon(
                   Icons.delete_outline,
-                  className: 'text-lg text-gray-400 hover:text-red-500',
+                  className: 'text-lg text-fg-muted hover:text-red-500',
                 ),
               ),
             ),
@@ -309,10 +309,10 @@ class _MagicStarterNotificationsListViewState
           onTap: _currentPage > 1 ? () => _loadPage(_currentPage - 1) : null,
           disabled: _currentPage <= 1,
           className:
-              'px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-50',
+              'px-3 py-2 rounded-lg bg-surface-container-high border border-color-border disabled:opacity-50',
           child: WIcon(
             Icons.chevron_left,
-            className: 'text-gray-600 dark:text-gray-300',
+            className: 'text-fg-muted',
           ),
         ),
         WText(
@@ -320,7 +320,7 @@ class _MagicStarterNotificationsListViewState
             'current': _currentPage,
             'total': totalPages,
           }),
-          className: 'text-sm font-medium text-gray-700 dark:text-gray-300',
+          className: 'text-sm font-medium text-fg',
         ),
         WButton(
           onTap: _currentPage < totalPages
@@ -328,10 +328,10 @@ class _MagicStarterNotificationsListViewState
               : null,
           disabled: _currentPage >= totalPages,
           className:
-              'px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-50',
+              'px-3 py-2 rounded-lg bg-surface-container-high border border-color-border disabled:opacity-50',
           child: WIcon(
             Icons.chevron_right,
-            className: 'text-gray-600 dark:text-gray-300',
+            className: 'text-fg-muted',
           ),
         ),
       ],

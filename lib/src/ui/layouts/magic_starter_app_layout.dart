@@ -237,7 +237,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             onTap: () => Scaffold.of(drawerContext).openDrawer(),
             child: WIcon(
               Icons.menu,
-              className: 'text-gray-600 dark:text-gray-300',
+              className: 'text-fg-muted',
             ),
           ),
         ),
@@ -245,7 +245,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             ? navTheme.brandBuilder!(context)
             : WText(
                 trans('app.name'),
-                className: 'font-bold text-lg text-gray-900 dark:text-white',
+                className: 'font-bold text-lg text-fg',
               ),
         WDiv(
           className: 'flex items-center gap-1',
@@ -284,7 +284,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                             ''',
               child: WIcon(
                 Icons.close,
-                className: 'text-[18px] text-gray-400 dark:text-gray-500',
+                className: 'text-[18px] text-fg-muted',
               ),
             ),
           ),
@@ -387,7 +387,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           WDiv(
             className: '''
                             my-2 mx-3
-                            border-t border-gray-100 dark:border-gray-700
+                            border-t border-color-border-subtle
                         ''',
           ),
           // Section header
@@ -397,7 +397,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               trans('nav.system'),
               className: '''
                                 text-xs font-bold uppercase tracking-wide
-                                text-gray-400 dark:text-gray-500
+                                text-fg-muted
                             ''',
             ),
           ),
@@ -436,7 +436,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         className: '''
                     mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3
                     duration-150 text-sm font-medium
-                    text-gray-600 dark:text-gray-400
+                    text-fg-muted
                     ${navTheme.activeItemClassName}
                     ${navTheme.hoverItemClassName}
                 ''',
@@ -464,8 +464,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
 
     return WDiv(
       className: '''
-                bg-white dark:bg-gray-900
-                border-t border-gray-200 dark:border-gray-700
+                bg-surface
+                border-t border-color-border
             ''',
       children: [
         WDiv(
@@ -507,13 +507,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             isActive ? activeIcon : icon,
             states: isActive ? {'active'} : {},
             className:
-                'text-2xl text-gray-400 ${navTheme.bottomNavActiveClassName}',
+                'text-2xl text-fg-muted ${navTheme.bottomNavActiveClassName}',
           ),
           WText(
             label,
             states: isActive ? {'active'} : {},
             className:
-                'text-xs text-gray-400 ${navTheme.bottomNavActiveClassName}',
+                'text-xs text-fg-muted ${navTheme.bottomNavActiveClassName}',
           ),
         ],
       ),
@@ -533,7 +533,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     final navTheme = MagicStarter.navigationTheme;
 
     return WDiv(
-      className: 'p-3 border-t border-gray-100 dark:border-gray-800',
+      className: 'p-3 border-t border-color-border-subtle',
       child: WDiv(
         className: 'flex items-center gap-3',
         children: [
@@ -574,7 +574,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                           userName,
                           className: '''
                             text-sm font-medium
-                            text-gray-900 dark:text-white truncate
+                            text-fg truncate
                           ''',
                         ),
                         if (userEmail.isNotEmpty)
@@ -582,7 +582,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                             userEmail,
                             className: '''
                               text-xs
-                              text-gray-500 dark:text-gray-400 truncate
+                              text-fg-muted truncate
                             ''',
                           ),
                       ],
