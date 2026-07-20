@@ -172,15 +172,27 @@ class _MagicStarterNotificationPreferencesViewState
                 ''',
               ),
             ),
-            WText(
-              _channelLabel(channel),
-              className: 'text-sm font-medium text-fg',
+            // The switch below carries this same text as its semanticLabel, so
+            // exclude the visible copy from semantics: otherwise the row exposes
+            // TWO nodes with the same name (this paragraph AND the switch) and a
+            // getByLabel / E2E lookup resolves the non-interactive text first,
+            // landing the tap on the label instead of the toggle.
+            ExcludeSemantics(
+              child: WText(
+                _channelLabel(channel),
+                className: 'text-sm font-medium text-fg',
+              ),
             ),
           ],
         ),
         MSSwitch(
           value: isEnabled,
           disabled: isLocked,
+          // Label the toggle with its visible channel name: the channel text is
+          // a sibling WText, so without this the switch had no accessible name
+          // (a screen reader announced a bare "switch") and no stable handle
+          // for an E2E driver to resolve.
+          semanticLabel: _channelLabel(channel),
           onChanged: (newValue) {
             controller.updateTypePreference(
               type,

@@ -94,6 +94,9 @@ All notable changes to this project will be documented in this file.
 ### 🧪 Tests
 - **wind 1.1.x widget-test compatibility**: the two-factor modal and password confirm dialog widget tests drove input via `find.byType(TextField)`, which broke once CI resolved `fluttersdk_wind` 1.1.x (the Material-free `WInput`/`WFormInput` rewrite renders an `EditableText` instead of a Material `TextField`). Both files now resolve the field via `find.descendant(of: find.byType(WFormInput), matching: find.byType(EditableText))`, scoping the search to the single form input so the two-factor setup step's selectable secret-key `EditableText` is not matched by accident.
 
+### Fixed
+- **Notification-preference toggles now carry an accessible name and expose a single Semantics node.** Each channel toggle (`MSSwitch`) had no `semanticLabel` and sat beside a visible `WText` of the same channel name, so a screen reader announced a bare "switch" while the row exposed TWO nodes sharing the label. The switch now takes `semanticLabel: <channel name>` and the visible label is wrapped in `ExcludeSemantics`, so the row exposes one correctly named toggle. This also gives an accessibility / E2E lookup a single stable target instead of resolving the inert text first. Touches `lib/src/ui/views/notifications/magic_starter_notification_preferences_view.dart`.
+
 ## [0.0.1-alpha.14] - 2026-04-16
 
 ### ✨ New Features
