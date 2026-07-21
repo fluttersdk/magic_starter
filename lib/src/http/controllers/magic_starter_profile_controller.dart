@@ -72,7 +72,7 @@ class MagicStarterProfileController extends MagicController
         'email': email,
         if (phone != null && phone.isNotEmpty) 'phone': phone,
         if (timezone != null && timezone.isNotEmpty) 'timezone': timezone,
-        if (language != null && language.isNotEmpty) 'language': language,
+        if (language != null && language.isNotEmpty) 'locale': language,
         if (password != null && password.isNotEmpty) 'password': password,
         if (passwordConfirmation != null && passwordConfirmation.isNotEmpty)
           'password_confirmation': passwordConfirmation,

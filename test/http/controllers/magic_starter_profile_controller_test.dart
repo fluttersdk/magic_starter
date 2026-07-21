@@ -304,6 +304,24 @@ void main() {
         expect(mockGuard.restoreCalled, isFalse);
       });
 
+      test('sends the language param under the locale wire key', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Profile updated'},
+        );
+
+        final result = await controller.doUpdateProfile(
+          name: 'Alice',
+          email: 'alice@example.com',
+          language: 'tr',
+        );
+
+        expect(result, isTrue);
+        final sentData = mockDriver.lastData as Map;
+        expect(sentData['locale'], equals('tr'));
+        expect(sentData.containsKey('language'), isFalse);
+      });
+
       test('prevents duplicate submission', () async {
         mockDriver.mockResponse(
           statusCode: 200,

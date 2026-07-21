@@ -379,7 +379,7 @@ void main() {
 
       expect(mockDriver.lastMethod, 'PUT');
       expect(mockDriver.lastUrl, contains('/user/profile'));
-      expect((mockDriver.lastData as Map)['language'], 'tr');
+      expect((mockDriver.lastData as Map)['locale'], 'tr');
     });
   });
 
