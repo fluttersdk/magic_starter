@@ -15,7 +15,17 @@ import '../../widgets/magic_starter_page_header.dart';
 /// Each notification type shows its available channels as toggle switches with icons.
 class MagicStarterNotificationPreferencesView
     extends MagicStatefulView<MagicStarterNotificationController> {
-  const MagicStarterNotificationPreferencesView({super.key});
+  const MagicStarterNotificationPreferencesView({
+    super.key,
+    this.pushProvisioned = true,
+  });
+
+  /// Whether the host app has provisioned its push integration (for example a
+  /// non-empty OneSignal `app_id`). When `false`, a subtle "push not yet
+  /// configured" hint renders beneath the push channel toggle so the user
+  /// understands the toggle cannot deliver yet. Defaults to `true` so existing
+  /// consumers that do not thread this flag keep their current behavior.
+  final bool pushProvisioned;
 
   @override
   State<MagicStarterNotificationPreferencesView> createState() =>
@@ -148,6 +158,10 @@ class _MagicStarterNotificationPreferencesViewState
     final bool isEnabled = channelData['enabled'] as bool? ?? false;
     final bool isLocked = channelData['locked'] as bool? ?? false;
     final icon = _channelIcon(channel);
+    // The push channel toggle cannot deliver until the host provisions its push
+    // integration; surface a subtle heads-up beneath its label when it has not.
+    final bool showPushHint =
+        channel.toLowerCase() == 'push' && !widget.pushProvisioned;
 
     return WDiv(
       className: '''
@@ -172,16 +186,29 @@ class _MagicStarterNotificationPreferencesViewState
                 ''',
               ),
             ),
-            // The switch below carries this same text as its semanticLabel, so
-            // exclude the visible copy from semantics: otherwise the row exposes
-            // TWO nodes with the same name (this paragraph AND the switch) and a
-            // getByLabel / E2E lookup resolves the non-interactive text first,
-            // landing the tap on the label instead of the toggle.
-            ExcludeSemantics(
-              child: WText(
-                _channelLabel(channel),
-                className: 'text-sm font-medium text-fg',
-              ),
+            WDiv(
+              className: 'flex flex-col gap-1',
+              children: [
+                // The switch below carries this same text as its semanticLabel,
+                // so exclude the visible copy from semantics: otherwise the row
+                // exposes TWO nodes with the same name (this paragraph AND the
+                // switch) and a getByLabel / E2E lookup resolves the
+                // non-interactive text first, landing the tap on the label
+                // instead of the toggle. The hint below stays OUT of the
+                // exclusion: it carries information the switch label does not,
+                // so a screen reader has to announce it.
+                ExcludeSemantics(
+                  child: WText(
+                    _channelLabel(channel),
+                    className: 'text-sm font-medium text-fg',
+                  ),
+                ),
+                if (showPushHint)
+                  WText(
+                    trans('notifications.channel_push_unconfigured'),
+                    className: 'text-xs text-fg-muted',
+                  ),
+              ],
             ),
           ],
         ),

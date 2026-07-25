@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`pushProvisioned` hint on the notification preferences view**: `MagicStarterNotificationPreferencesView` gains an optional `bool pushProvisioned = true`. A host whose push integration is not provisioned yet (an empty OneSignal `app_id`, for example) passes `false`, and a subtle hint renders under the push channel label so the user understands why the toggle cannot deliver. Additive and backward compatible: a consumer that does not thread the flag keeps the current rendering. The hint reads from the new `notifications.channel_push_unconfigured` lang key (added to the published `en` lang stub), so a consumer that installed an earlier stub should add that key to keep the hint translated. The hint deliberately stays OUTSIDE the label's `ExcludeSemantics` (the exclusion exists so an E2E label lookup resolves the switch, not the text), because it carries information the switch label does not and a screen reader has to announce it.
+
 ### Changed
 - **Account views now style through the semantic alias tokens instead of raw Tailwind gray classes.** The auth screens (login, register, forgot / reset password, OTP verify), the profile and notification views, the team settings / invitation views, the app layout, and the password-confirm / two-factor dialogs used literal `gray-*` classes for their surfaces, borders, and text. They now map to the semantic aliases (`bg-surface*`, `text-fg*`, `border-color-border*`), so a consumer's theme and dark-mode pairs drive them and the account surface matches the rest of the design system. Pure class-name refactor, no behavior change. Touches the auth / profile / teams views under `lib/src/ui/views/`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, and the `magic_starter_password_confirm_dialog` / `magic_starter_two_factor_modal` widgets.
 
