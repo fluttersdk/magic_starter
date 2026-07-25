@@ -264,6 +264,61 @@ void main() {
       );
     });
 
+    test('fetchPreferences publishes meta.push_provisioned', () async {
+      expect(controller.pushProvisionedNotifier.value, isTrue);
+
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: {
+          'data': <String, dynamic>{},
+          'meta': {'push_provisioned': false},
+        },
+      );
+
+      await controller.fetchPreferences();
+
+      expect(controller.pushProvisionedNotifier.value, isFalse);
+    });
+
+    test(
+      'fetchPreferences keeps the last known flag when meta is absent',
+      () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': <String, dynamic>{},
+            'meta': {'push_provisioned': false},
+          },
+        );
+        await controller.fetchPreferences();
+        expect(controller.pushProvisionedNotifier.value, isFalse);
+
+        // A backend that predates the flag is a degradation, not a claim that
+        // push became provisioned.
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'data': <String, dynamic>{}},
+        );
+        await controller.fetchPreferences();
+
+        expect(controller.pushProvisionedNotifier.value, isFalse);
+      },
+    );
+
+    test('updateTypePreference republishes the provisioning flag', () async {
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: {
+          'data': <String, dynamic>{},
+          'meta': {'push_provisioned': false},
+        },
+      );
+
+      await controller.updateTypePreference('monitor_down', 'mail', false);
+
+      expect(controller.pushProvisionedNotifier.value, isFalse);
+    });
+
     test('fetchPreferences error (500) — keeps matrixNotifier empty', () async {
       mockDriver.mockResponse(statusCode: 500);
 

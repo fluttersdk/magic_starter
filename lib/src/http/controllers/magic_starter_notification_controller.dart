@@ -18,6 +18,17 @@ class MagicStarterNotificationController extends MagicController
   /// Structure: { "type_key": { "label": "...", "channels": { "channel": { "enabled": bool, "locked": bool } } } }
   final matrixNotifier = ValueNotifier<Map<String, dynamic>>({});
 
+  /// Whether the backend reports its push integration as provisioned, read
+  /// from the preference responses' `meta.push_provisioned`.
+  ///
+  /// A push preference is offered as soon as the backend enables its
+  /// `onesignal` feature flag, but without a configured OneSignal `app_id` the
+  /// channel is dropped at send time, so a `false` here means the toggle cannot
+  /// deliver yet. Starts `true` and only moves on a response that actually
+  /// carries the flag, so a backend that predates it (or a degraded payload)
+  /// never renders a false "not configured" claim.
+  final pushProvisionedNotifier = ValueNotifier<bool>(true);
+
   bool _isSubmitting = false;
   bool _isSaving = false;
 
@@ -43,7 +54,10 @@ class MagicStarterNotificationController extends MagicController
         return;
       }
 
-      // 3. Normalize and publish matrix payload for reactive UI updates.
+      // 3. Publish the push-provisioning flag the same response carries.
+      _publishPushProvisioned(response);
+
+      // 4. Normalize and publish matrix payload for reactive UI updates.
       final data = response.data['data'];
       if (data is Map) {
         matrixNotifier.value = _normalizeMap(data);
@@ -56,6 +70,25 @@ class MagicStarterNotificationController extends MagicController
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
+    }
+  }
+
+  /// Publish `meta.push_provisioned` from [response] into
+  /// [pushProvisionedNotifier], leaving the last known value untouched when the
+  /// payload does not carry the flag as a bool.
+  ///
+  /// A missing flag is a backend that predates it or a degraded payload, not a
+  /// statement that push became unconfigured, so it must never flip the value.
+  void _publishPushProvisioned(MagicResponse response) {
+    final data = response.data;
+    if (data is! Map) return;
+
+    final meta = data['meta'];
+    if (meta is! Map) return;
+
+    final provisioned = meta['push_provisioned'];
+    if (provisioned is bool) {
+      pushProvisionedNotifier.value = provisioned;
     }
   }
 
@@ -125,7 +158,13 @@ class MagicStarterNotificationController extends MagicController
         Log.error(
           '[MagicStarterNotificationController.updateTypePreference] PUT failed: ${response.statusCode}',
         );
+
+        return;
       }
+
+      // 5. The write response republishes the provisioning flag, so a save
+      // keeps the heads-up in sync without a second fetch.
+      _publishPushProvisioned(response);
     } catch (e, stackTrace) {
       matrixNotifier.value = oldMatrix;
       Log.error(
@@ -139,6 +178,7 @@ class MagicStarterNotificationController extends MagicController
   @override
   void dispose() {
     matrixNotifier.dispose();
+    pushProvisionedNotifier.dispose();
     super.dispose();
   }
 }

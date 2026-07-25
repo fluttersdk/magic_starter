@@ -185,8 +185,9 @@ void main() {
   });
 
   group('MagicStarterNotificationPreferencesView — push hint', () {
-    /// Mock a matrix carrying a push channel plus one non-push sibling.
-    void mockPushMatrix() {
+    /// Mock a matrix carrying a push channel plus one non-push sibling, with
+    /// the backend's `meta.push_provisioned` flag when [pushProvisioned] is set.
+    void mockPushMatrix({bool? pushProvisioned}) {
       mockDriver.mockResponse(statusCode: 200, data: {
         'data': {
           'monitor_down': {
@@ -196,7 +197,9 @@ void main() {
               'mail': {'enabled': true, 'locked': false},
             }
           }
-        }
+        },
+        if (pushProvisioned != null)
+          'meta': {'push_provisioned': pushProvisioned},
       });
     }
 
@@ -211,31 +214,66 @@ void main() {
       });
     }
 
-    testWidgets('renders the hint under push when push is not provisioned',
+    testWidgets(
+        'renders the hint when the backend reports push as unprovisioned',
         (tester) async {
       widen(tester);
-      mockPushMatrix();
+      mockPushMatrix(pushProvisioned: false);
 
-      await tester.pumpWidget(wrap(
-        const MagicStarterNotificationPreferencesView(
-          pushProvisioned: false,
-        ),
-      ));
+      await tester
+          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
       await tester.pumpAndSettle();
 
       expect(
         find.text(trans('notifications.channel_push_unconfigured')),
         findsOneWidget,
       );
+      expect(
+        MagicStarterNotificationController
+            .instance.pushProvisionedNotifier.value,
+        isFalse,
+      );
     });
 
-    testWidgets('renders no hint when push is provisioned (the default)',
+    testWidgets('renders no hint when the backend reports push as provisioned',
+        (tester) async {
+      widen(tester);
+      mockPushMatrix(pushProvisioned: true);
+
+      await tester
+          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('notifications.channel_push_unconfigured')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('renders no hint when the payload carries no provisioning flag',
         (tester) async {
       widen(tester);
       mockPushMatrix();
 
       await tester
           .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
+      await tester.pumpAndSettle();
+
+      // A backend that predates the flag (or a degraded payload) must not read
+      // as "push not configured": the optimistic default stands.
+      expect(
+        find.text(trans('notifications.channel_push_unconfigured')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a host override wins over the backend flag', (tester) async {
+      widen(tester);
+      mockPushMatrix(pushProvisioned: false);
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterNotificationPreferencesView(pushProvisioned: true),
+      ));
       await tester.pumpAndSettle();
 
       expect(

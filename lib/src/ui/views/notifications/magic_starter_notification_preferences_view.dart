@@ -17,15 +17,19 @@ class MagicStarterNotificationPreferencesView
     extends MagicStatefulView<MagicStarterNotificationController> {
   const MagicStarterNotificationPreferencesView({
     super.key,
-    this.pushProvisioned = true,
+    this.pushProvisioned,
   });
 
-  /// Whether the host app has provisioned its push integration (for example a
-  /// non-empty OneSignal `app_id`). When `false`, a subtle "push not yet
-  /// configured" hint renders beneath the push channel toggle so the user
-  /// understands the toggle cannot deliver yet. Defaults to `true` so existing
-  /// consumers that do not thread this flag keep their current behavior.
-  final bool pushProvisioned;
+  /// Host override for the push-provisioning state, or `null` (the default) to
+  /// read it from the backend.
+  ///
+  /// The preference responses carry `meta.push_provisioned`, so the controller
+  /// already knows whether the app configured its OneSignal `app_id`; when that
+  /// is `false`, a subtle "push not yet configured" hint renders beneath the
+  /// push channel toggle so the user understands it cannot deliver yet. Pass a
+  /// bool here only to force the hint on or off (a host that resolves push
+  /// provisioning some other way, or a test).
+  final bool? pushProvisioned;
 
   @override
   State<MagicStarterNotificationPreferencesView> createState() =>
@@ -86,9 +90,17 @@ class _MagicStarterNotificationPreferencesViewState
   }
 
   Widget _buildMatrixSettings() {
-    return ValueListenableBuilder<Map<String, dynamic>>(
-      valueListenable: controller.matrixNotifier,
-      builder: (context, matrix, _) {
+    // Both the matrix and the push-provisioning flag are published by the same
+    // preference response, so one merged listenable rebuilds the toggles and
+    // their heads-up together.
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        controller.matrixNotifier,
+        controller.pushProvisionedNotifier,
+      ]),
+      builder: (context, _) {
+        final Map<String, dynamic> matrix = controller.matrixNotifier.value;
+
         if (matrix.isEmpty) {
           return MagicStarterCard(
             title: '',
@@ -158,10 +170,13 @@ class _MagicStarterNotificationPreferencesViewState
     final bool isEnabled = channelData['enabled'] as bool? ?? false;
     final bool isLocked = channelData['locked'] as bool? ?? false;
     final icon = _channelIcon(channel);
-    // The push channel toggle cannot deliver until the host provisions its push
+    // The push channel toggle cannot deliver until the app provisions its push
     // integration; surface a subtle heads-up beneath its label when it has not.
+    // The backend-reported flag drives it, unless the host forced a value.
+    final bool pushProvisioned =
+        widget.pushProvisioned ?? controller.pushProvisionedNotifier.value;
     final bool showPushHint =
-        channel.toLowerCase() == 'push' && !widget.pushProvisioned;
+        channel.toLowerCase() == 'push' && !pushProvisioned;
 
     return WDiv(
       className: '''
