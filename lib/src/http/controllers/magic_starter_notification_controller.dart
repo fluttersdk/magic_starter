@@ -21,12 +21,12 @@ class MagicStarterNotificationController extends MagicController
   /// Whether the backend reports its push integration as provisioned, read
   /// from the preference responses' `meta.push_provisioned`.
   ///
-  /// A push preference is offered as soon as the backend enables the onesignal
-  /// feature, but without a configured `app_id` that channel is dropped at send
-  /// time, so a `false` here means the toggle cannot deliver yet. Starts `true`
-  /// and only moves on a response that actually carries the flag, so a backend
-  /// that predates it (or a degraded payload) never renders a false
-  /// "not configured" claim.
+  /// A push preference is offered as soon as the backend enables its
+  /// `onesignal` feature flag, but without a configured OneSignal `app_id` the
+  /// channel is dropped at send time, so a `false` here means the toggle cannot
+  /// deliver yet. Starts `true` and only moves on a response that actually
+  /// carries the flag, so a backend that predates it (or a degraded payload)
+  /// never renders a false "not configured" claim.
   final pushProvisionedNotifier = ValueNotifier<bool>(true);
 
   bool _isSubmitting = false;
