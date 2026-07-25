@@ -192,7 +192,8 @@
     "no_preferences": "No notification preferences available.",
     "channel_email": "Email",
     "channel_in_app": "In-App",
-    "channel_push": "Push"
+    "channel_push": "Push",
+    "channel_push_unconfigured": "Push not yet configured"
   },
   "profile": {
     "browser_sessions": "Browser Sessions",

@@ -186,28 +186,29 @@ class _MagicStarterNotificationPreferencesViewState
                 ''',
               ),
             ),
-            // The switch below carries this same text as its semanticLabel, so
-            // exclude the visible copy from semantics: otherwise the row exposes
-            // TWO nodes with the same name (this paragraph AND the switch) and a
-            // getByLabel / E2E lookup resolves the non-interactive text first,
-            // landing the tap on the label instead of the toggle.
-            ExcludeSemantics(
-              child: WDiv(
-                className: 'flex flex-col gap-1',
-                children: [
-                  WText(
+            WDiv(
+              className: 'flex flex-col gap-1',
+              children: [
+                // The switch below carries this same text as its semanticLabel,
+                // so exclude the visible copy from semantics: otherwise the row
+                // exposes TWO nodes with the same name (this paragraph AND the
+                // switch) and a getByLabel / E2E lookup resolves the
+                // non-interactive text first, landing the tap on the label
+                // instead of the toggle. The hint below stays OUT of the
+                // exclusion: it carries information the switch label does not,
+                // so a screen reader has to announce it.
+                ExcludeSemantics(
+                  child: WText(
                     _channelLabel(channel),
                     className: 'text-sm font-medium text-fg',
                   ),
-                  if (showPushHint)
-                    WText(
-                      // No lang key ships for this hint and the lang assets are
-                      // out of this step's file scope; see `### Deviations`.
-                      'Push not yet configured',
-                      className: 'text-xs text-fg-muted',
-                    ),
-                ],
-              ),
+                ),
+                if (showPushHint)
+                  WText(
+                    trans('notifications.channel_push_unconfigured'),
+                    className: 'text-xs text-fg-muted',
+                  ),
+              ],
             ),
           ],
         ),

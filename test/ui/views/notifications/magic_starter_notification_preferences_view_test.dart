@@ -184,6 +184,98 @@ void main() {
     });
   });
 
+  group('MagicStarterNotificationPreferencesView — push hint', () {
+    /// Mock a matrix carrying a push channel plus one non-push sibling.
+    void mockPushMatrix() {
+      mockDriver.mockResponse(statusCode: 200, data: {
+        'data': {
+          'monitor_down': {
+            'label': 'Monitor Down Alert',
+            'channels': {
+              'push': {'enabled': true, 'locked': false},
+              'mail': {'enabled': true, 'locked': false},
+            }
+          }
+        }
+      });
+    }
+
+    /// Widen the surface: no lang loader runs here, so trans() yields the raw
+    /// key and the hint is far wider than its translated copy.
+    void widen(WidgetTester tester) {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+    }
+
+    testWidgets('renders the hint under push when push is not provisioned',
+        (tester) async {
+      widen(tester);
+      mockPushMatrix();
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterNotificationPreferencesView(
+          pushProvisioned: false,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('notifications.channel_push_unconfigured')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('renders no hint when push is provisioned (the default)',
+        (tester) async {
+      widen(tester);
+      mockPushMatrix();
+
+      await tester
+          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('notifications.channel_push_unconfigured')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('keeps the hint out of the label semantics exclusion',
+        (tester) async {
+      widen(tester);
+      mockPushMatrix();
+
+      await tester.pumpWidget(wrap(
+        const MagicStarterNotificationPreferencesView(
+          pushProvisioned: false,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // The channel label is excluded (the switch carries it as its
+      // semanticLabel), but the hint must stay announceable: it says something
+      // the switch label does not.
+      expect(
+        find.descendant(
+          of: find.byType(ExcludeSemantics),
+          matching: find.text(trans('notifications.channel_push')),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(ExcludeSemantics),
+          matching: find.text(trans('notifications.channel_push_unconfigured')),
+        ),
+        findsNothing,
+      );
+    });
+  });
+
   group('MagicStarterNotificationPreferencesView — slot injection', () {
     setUp(() {
       MagicApp.reset();
