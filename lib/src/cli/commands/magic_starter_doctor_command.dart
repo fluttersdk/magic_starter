@@ -157,8 +157,14 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
 
     final String content = File(providerPath).readAsStringSync();
 
-    return content.contains('MagicStarter.bootstrap(') ||
-        content.contains('MagicStarter.useUserModel(');
+    // The same call set, and the same anchoring, as the installer's idempotency
+    // guard. Keeping them identical matters: if this probe were narrower, an app
+    // the installer refuses to touch would be reported FAIL alongside advice to
+    // run the installer, which would then do nothing.
+    return RegExp(
+      r'^\s*MagicStarter\.(bootstrap|useUserModel|useLocaleOptions|useLogout)\(',
+      multiLine: true,
+    ).hasMatch(content);
   }
 
   /// Check that the translation file `assets/lang/en.json` exists.
@@ -332,7 +338,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       buffer.writeln('    File: lib/app/providers/app_service_provider.dart');
       buffer.writeln(
         '    Contains: MagicStarter.bootstrap( '
-        '(or the legacy MagicStarter.useUserModel()',
+        '(or a legacy MagicStarter.use* identity setter)',
       );
     }
 

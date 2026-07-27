@@ -764,11 +764,14 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     //    legacy shape is left alone; `starter:doctor` still reports it as
     //    configured, and migrating is a deliberate edit rather than a surprise
     //    from re-running the installer.
-    final bool alreadyConfigured =
-        content.contains('MagicStarter.bootstrap(') ||
-            content.contains('MagicStarter.useUserModel(') ||
-            content.contains('MagicStarter.useLocaleOptions(') ||
-            content.contains('MagicStarter.useLogout(');
+    //    Anchored like the setUserFactory check above, for the same reason: a
+    //    commented-out example call must not suppress the injection. A plain
+    //    `contains` would let a stray `// MagicStarter.useLogout(...)` leave a
+    //    provider permanently unconfigured.
+    final bool alreadyConfigured = RegExp(
+      r'^\s*MagicStarter\.(bootstrap|useUserModel|useLocaleOptions|useLogout)\(',
+      multiLine: true,
+    ).hasMatch(content);
 
     if (!alreadyConfigured) {
       final String teamArgs = (features['teams'] ?? false)

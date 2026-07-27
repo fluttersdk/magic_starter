@@ -27,6 +27,46 @@ void main() {
     ),
   );
 
+  testWidgets('the lock glyph colour token actually resolves', (tester) async {
+    // Guards the whole class of defect that shipped here once: this component
+    // arrived referencing `text-ai` / `bg-ai-soft`, tokens defined only in one
+    // consumer's hand-authored supplement. Wind CLAIMS a `text-<name>` token and
+    // then resolves an unknown name to nothing, so the class is dropped
+    // silently and the glyph simply inherits the default foreground. Asserting
+    // the colour is non-null does not catch it (the inherited value is not
+    // null), and neither does any assertion on the className string. The only
+    // signature is that a dropped token renders IDENTICALLY to no colour token
+    // at all, so this compares against that control.
+    await tester.pumpWidget(wrap(const WIcon(Icons.lock, className: 'text-lg')));
+    final Color? uncoloured =
+        tester.widget<Icon>(find.byType(Icon)).color;
+
+    await tester.pumpWidget(
+      wrap(
+        const MSUpgradeNudge(
+          message: 'AI analysis is gated.',
+          requiredPlan: 'Pro',
+        ),
+      ),
+    );
+    final Color? glyph = tester
+        .widget<Icon>(
+          find.descendant(
+            of: find.byType(MSUpgradeNudge),
+            matching: find.byType(Icon),
+          ),
+        )
+        .color;
+
+    expect(glyph, isNotNull);
+    expect(
+      glyph,
+      isNot(uncoloured),
+      reason: 'the lock glyph colour token resolved to nothing, so it renders '
+          'the same as an icon with no colour class',
+    );
+  });
+
   group('upgradeNudgeRecipe', () {
     test('neutral banner fill plus a themed lock tile', () {
       final slots = upgradeNudgeRecipe(variants: const {});

@@ -73,21 +73,25 @@ void main() {
     expect(find.byKey(actionKey), findsOneWidget);
   });
 
-  testWidgets('ErrorState title uses destructive tone', (tester) async {
+  testWidgets('ErrorState title renders an actually resolved error colour',
+      (tester) async {
     await tester.pumpWidget(
       wrap(const MSErrorState(title: 'Failed')),
     );
-    final texts = tester.widgetList<WText>(find.byType(WText)).toList();
-    // Title should use a destructive/error tone class
-    expect(
-      texts.any(
-        (t) =>
-            t.data == 'Failed' &&
-            (t.className?.contains('red') == true ||
-                t.className?.contains('destructive') == true),
-      ),
-      isTrue,
+
+    // Asserts the RENDERED colour, not the className. A substring check on
+    // "red" or "destructive" cannot tell a resolvable token from one Wind
+    // claims and then drops: `text-destructive` looks semantic but is not in
+    // the alias contract (which ships bg-destructive / text-on-destructive
+    // only), so it resolves to no colour at all. That failure is invisible to
+    // any assertion on the class string.
+    final Text title = tester.widget<Text>(
+      find.descendant(of: find.byType(MSErrorState), matching: find.text('Failed')),
     );
+
+    expect(title.style?.color, isNotNull,
+        reason: 'the title colour token resolved to nothing');
+    expect(title.style?.color, isNot(const Color(0xFF000000)));
   });
 
   testWidgets('ErrorState preview renders without error', (tester) async {
