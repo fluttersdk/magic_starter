@@ -754,9 +754,23 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     //    partial team-callback set, so the trio is emitted all together or
     //    not at all). Guarded on the literal call string rather than on each
     //    former use*() call name, so re-running the installer on an
-    //    already-bootstrapped provider does not append a second call; the
-    //    string is specific enough that no other generated code can match it.
-    if (!content.contains('MagicStarter.bootstrap(')) {
+    //    already-bootstrapped provider does not append a second call.
+    //
+    //    The legacy setters are checked too, not just bootstrap(). This
+    //    injection appends at the END of boot(), so on an app installed before
+    //    bootstrap() existed a generic call would land AFTER that app's own
+    //    useLocaleOptions() and useLogout() and win by write order, silently
+    //    replacing a customized locale list or logout behaviour. An app on the
+    //    legacy shape is left alone; `starter:doctor` still reports it as
+    //    configured, and migrating is a deliberate edit rather than a surprise
+    //    from re-running the installer.
+    final bool alreadyConfigured =
+        content.contains('MagicStarter.bootstrap(') ||
+            content.contains('MagicStarter.useUserModel(') ||
+            content.contains('MagicStarter.useLocaleOptions(') ||
+            content.contains('MagicStarter.useLogout(');
+
+    if (!alreadyConfigured) {
       final String teamArgs = (features['teams'] ?? false)
           ? '''
       currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),

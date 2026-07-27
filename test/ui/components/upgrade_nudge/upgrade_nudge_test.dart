@@ -28,11 +28,15 @@ void main() {
   );
 
   group('upgradeNudgeRecipe', () {
-    test('neutral banner fill + ai-soft lock tile', () {
+    test('neutral banner fill plus a themed lock tile', () {
       final slots = upgradeNudgeRecipe(variants: const {});
       expect(slots['root'], contains('bg-surface-container'));
       expect(slots['root'], contains('rounded-xl'));
-      expect(slots['tile'], contains('bg-ai-soft'));
+      // Must be a token the starter's own theme guarantees: an ai-* token
+      // is a consumer supplement, and Wind drops an unknown token silently,
+      // so the tile would render with no background in every other app.
+      expect(slots['tile'], contains('bg-primary-container'));
+      expect(slots['tile'], isNot(contains('ai-soft')));
     });
   });
 

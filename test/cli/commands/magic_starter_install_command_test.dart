@@ -889,6 +889,38 @@ flutter:
       });
 
       test(
+          'leaves a provider already wired with the legacy setters untouched',
+          () async {
+        // The injection appends at the END of boot(), so on an app installed
+        // before bootstrap() existed a generic call would land AFTER that app's
+        // own useLocaleOptions() and useLogout() and win by write order,
+        // silently replacing a customized locale list and logout behaviour.
+        setupMagicProjectFiles(tempDir);
+        final File provider =
+            File('${tempDir.path}/lib/app/providers/app_service_provider.dart');
+        provider.writeAsStringSync('''
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  Future<void> boot() async {
+    MagicStarter.useUserModel((data) => User.fromMap(data));
+    MagicStarter.useLocaleOptions({'en': 'English', 'tr': 'Turkce'});
+    MagicStarter.useLogout(() async => Auth.logout());
+  }
+}
+''');
+
+        await runInstall(command);
+
+        final String content = provider.readAsStringSync();
+
+        expect(content, isNot(contains('MagicStarter.bootstrap(')));
+        expect(content, contains("'tr': 'Turkce'"));
+        expect(content, contains('MagicStarter.useLogout('));
+      });
+
+      test(
           'includes the team resolver trio inside bootstrap() when the teams '
           'feature is enabled', () async {
         setupMagicProjectFiles(tempDir);

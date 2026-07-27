@@ -10,11 +10,15 @@ String errorStateIconWrapClassName() =>
     'w-16 h-16 rounded-full bg-destructive-container flex items-center justify-center';
 
 /// Icon className (destructive tone).
-String errorStateIconClassName() => 'text-4xl text-red-600 dark:text-red-400';
+///
+/// Uses the semantic `text-destructive` role rather than a raw palette pair, so
+/// a consumer's own destructive colour drives it. The default expansion of that
+/// role is the same `text-red-600 dark:text-red-400` this used to hardcode, so
+/// an app with no override sees no change.
+String errorStateIconClassName() => 'text-4xl text-destructive';
 
 /// Title className (destructive tone).
-String errorStateTitleClassName() =>
-    'text-base font-semibold text-red-700 dark:text-red-400';
+String errorStateTitleClassName() => 'text-base font-semibold text-destructive';
 
 /// Description className.
 String errorStateDescriptionClassName() => 'text-sm text-fg-muted max-w-xs';

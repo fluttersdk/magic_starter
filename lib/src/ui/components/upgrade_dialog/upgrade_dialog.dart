@@ -78,7 +78,7 @@ class MSUpgradeDialog extends StatelessWidget {
           children: [
             WDiv(
               className: slots['tile'],
-              child: WIcon(_lockIcon, className: 'text-ai text-xl'),
+              child: WIcon(_lockIcon, className: 'text-primary text-xl'),
             ),
             const SizedBox(width: 12),
             Expanded(

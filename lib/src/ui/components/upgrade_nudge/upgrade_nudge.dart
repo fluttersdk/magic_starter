@@ -63,7 +63,7 @@ class MSUpgradeNudge extends StatelessWidget {
           // Lock tile (the ai signal).
           WDiv(
             className: slots['tile'],
-            child: WIcon(_lockIcon, className: 'text-ai text-lg'),
+            child: WIcon(_lockIcon, className: 'text-primary text-lg'),
           ),
           const SizedBox(width: 12),
 
