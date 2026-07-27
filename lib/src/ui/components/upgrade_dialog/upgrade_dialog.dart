@@ -11,7 +11,7 @@ import 'upgrade_dialog.recipe.dart';
 /// positioning are the caller's job), passes the backend's own sentence
 /// verbatim, and reacts to [onUpgrade]/[onDismiss] by closing the modal and
 /// routing to billing or dropping the refused action. Sibling of
-/// `lib/src/ui/components/upgrade_nudge/`: same lock-tile treatment and `ai`
+/// `lib/src/ui/components/upgrade_nudge/`: same lock-tile treatment and
 /// accent, scaled up for a dialog body with a two-action row instead of a
 /// single inline CTA.
 ///
@@ -72,7 +72,7 @@ class MSUpgradeDialog extends StatelessWidget {
           ? slots['root']
           : '${slots['root']} $className',
       children: [
-        // Lock tile (the ai signal) + headline + plan line.
+        // Lock tile (carries the gated signal) + headline + plan line.
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

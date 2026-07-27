@@ -258,6 +258,29 @@ void main() {
       },
     );
 
+    test('returns true for an app still wired with the legacy setters', () {
+      // This probe accepts exactly what the installer's idempotency guard
+      // accepts. If it were narrower, an app the installer now declines to
+      // touch would be reported FAIL alongside advice to run that installer.
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        "  MagicStarter.useLocaleOptions({'en': 'English'});\n",
+      );
+      expect(command.checkFacadeSetup(tempDir.path), isTrue);
+    });
+
+    test('returns false when the only identity call is commented out', () {
+      // Anchored for the same reason as the installer guard: a commented-out
+      // example must not read as a configured provider.
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        '  // MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n',
+      );
+      expect(command.checkFacadeSetup(tempDir.path), isFalse);
+    });
+
     test('returns false when the identity contract is absent', () {
       _writeFile(
         tempDir,

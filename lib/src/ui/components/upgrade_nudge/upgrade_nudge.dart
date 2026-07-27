@@ -8,7 +8,9 @@ import 'upgrade_nudge.recipe.dart';
 /// **Inline upsell shown where a plan limit bites.**
 ///
 /// Names the tier that unlocks the gated feature and offers an upgrade action.
-/// Uses the `ai` accent. Sibling of `lib/src/ui/components/upgrade_dialog/`:
+/// Accented with the theme's `primary-container` tile, NOT an `ai-*` token:
+/// see the note in `upgrade_nudge.recipe.dart` for why a shared component
+/// cannot reference one. Sibling of `lib/src/ui/components/upgrade_dialog/`:
 /// same lock-tile treatment, scaled down for a single inline CTA instead of a
 /// two-action row.
 ///
@@ -60,7 +62,7 @@ class MSUpgradeNudge extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Lock tile (the ai signal).
+          // Lock tile (carries the gated signal).
           WDiv(
             className: slots['tile'],
             child: WIcon(_lockIcon, className: 'text-primary text-lg'),
