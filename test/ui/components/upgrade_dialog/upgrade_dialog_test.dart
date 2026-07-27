@@ -9,9 +9,9 @@ import 'package:magic_starter/src/ui/components/upgrade_dialog/upgrade_dialog.pr
 class _UpgradeDialogLangLoader implements TranslationLoader {
   @override
   Future<Map<String, dynamic>> load(Locale locale) async => {
-    'uptizm.common.upgrade_available_on': 'Available on :plan and up.',
-    'uptizm.common.upgrade': 'Upgrade',
-    'uptizm.common.upgrade_dialog_not_now': 'Not now',
+    'common.upgrade_available_on': 'Available on :plan and up.',
+    'common.upgrade': 'Upgrade',
+    'common.upgrade_dialog_not_now': 'Not now',
   };
 }
 

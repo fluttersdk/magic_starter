@@ -9,8 +9,8 @@ import 'package:magic_starter/src/ui/components/upgrade_nudge/upgrade_nudge.prev
 class _UpgradeLangLoader implements TranslationLoader {
   @override
   Future<Map<String, dynamic>> load(Locale locale) async => {
-    'uptizm.common.upgrade_available_on': 'Available on :plan and up.',
-    'uptizm.common.upgrade': 'Upgrade',
+    'common.upgrade_available_on': 'Available on :plan and up.',
+    'common.upgrade': 'Upgrade',
   };
 }
 

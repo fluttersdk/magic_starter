@@ -62,18 +62,21 @@
   "common": {
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "done": "Done",
+    "error_occurred": "An unexpected error occurred. Please try again.",
     "go_to_dashboard": "Go to Dashboard",
     "off": "Off",
     "on": "On",
+    "page_of": ":current / :total",
     "remove": "Remove",
     "save": "Save",
     "toggle_theme": "Toggle theme",
     "unknown": "Unknown",
+    "upgrade": "Upgrade",
+    "upgrade_available_on": "Available on :plan and up.",
+    "upgrade_dialog_not_now": "Not now",
     "upload": "Upload",
-    "user": "User",
-    "done": "Done",
-    "error_occurred": "An unexpected error occurred. Please try again.",
-    "page_of": ":current / :total"
+    "user": "User"
   },
   "errors": {
     "unexpected": "An unexpected error occurred. Please try again.",
