@@ -321,7 +321,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
     buffer.writeln('Facade: ${facadeSetup ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    File: lib/app/providers/app_service_provider.dart');
-      buffer.writeln('    Contains: MagicStarter.useUserModel');
+      buffer.writeln('    Contains: MagicStarter.bootstrap');
     }
 
     // 8. Translation file.

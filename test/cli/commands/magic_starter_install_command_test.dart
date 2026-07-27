@@ -404,7 +404,11 @@ void main() {
           File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
               .readAsStringSync();
       expect(content, contains('MagicStarter.useNavigation('));
-      expect(content, contains('MagicStarter.useLogout(() async {'));
+
+      // The logout body moved inside bootstrap() as the onLogout argument; it
+      // is still wired, just not through the standalone setter.
+      expect(content, contains('onLogout: () async {'));
+      expect(content, contains('await Auth.logout();'));
     });
 
     test('middleware stubs use correct handle() signature', () async {
@@ -460,7 +464,7 @@ void main() {
       expect(content, contains('MagicRoute.to('));
     });
 
-    test('teams block uses correct useTeamResolver named params', () async {
+    test('team callbacks render inside bootstrap() with named params', () async {
       setupMagicProjectFiles(tempDir);
 
       await runInstall(command, force: true, features: 'teams');
@@ -469,12 +473,57 @@ void main() {
           File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
               .readAsStringSync();
 
-      expect(content, contains('MagicStarter.useTeamResolver('));
+      // The team trio lives INSIDE bootstrap() rather than in a separate
+      // useTeamResolver() statement, because bootstrap() takes all three or
+      // none and enforces that at runtime.
+      expect(content, contains('MagicStarter.bootstrap('));
       expect(content, contains('currentTeam:'));
       expect(content, contains('allTeams:'));
       expect(content, contains('onSwitch:'));
+      expect(content, isNot(contains('MagicStarter.useTeamResolver(')));
 
-      expect(content, isNot(contains('useTeamResolver((userId)')));
+      // Guards the callback signature: onSwitch takes the team id, and a
+      // positional or misnamed parameter would silently not compile in the
+      // generated app.
+      expect(content, contains('onSwitch: (teamId)'));
+    });
+
+    test('bootstrap() omits the team trio when teams is off', () async {
+      setupMagicProjectFiles(tempDir);
+
+      await runInstall(command, force: true);
+
+      final String content =
+          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
+              .readAsStringSync();
+
+      // A partial team set throws ArgumentError, so a teamless install must
+      // emit none of the three rather than some of them.
+      expect(content, contains('MagicStarter.bootstrap('));
+      expect(content, isNot(contains('currentTeam:')));
+      expect(content, isNot(contains('allTeams:')));
+      expect(content, isNot(contains('onSwitch:')));
+    });
+
+    test('bootstrap() replaces the loose identity setters entirely', () async {
+      setupMagicProjectFiles(tempDir);
+
+      await runInstall(command, force: true, features: 'teams');
+
+      final String content =
+          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
+              .readAsStringSync();
+
+      // The four identity setters are still public API, but the scaffold must
+      // not emit them: a generated provider on the loose calls would keep the
+      // silent-omission failure mode bootstrap() exists to remove.
+      expect(content, contains('MagicStarter.bootstrap('));
+      expect(content, isNot(contains('MagicStarter.useUserModel(')));
+      expect(content, isNot(contains('MagicStarter.useLogout(')));
+      expect(content, isNot(contains('MagicStarter.useLocaleOptions(')));
+
+      // The optional setters stay outside bootstrap() and must survive.
+      expect(content, contains('MagicStarter.useNavigation('));
     });
 
     test('notifications block uses correct type mapper signature', () async {
@@ -812,6 +861,80 @@ flutter:
                 .readAsStringSync();
 
         expect(content, contains('MagicStarter.useSocialLogin('));
+      });
+    });
+
+    group('bootstrap() injection into an existing app_service_provider.dart',
+        () {
+      test(
+          'injects a single MagicStarter.bootstrap() call instead of the '
+          'four loose use*() calls', () async {
+        setupMagicProjectFiles(tempDir);
+
+        await runInstall(command);
+
+        final String content =
+            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
+                .readAsStringSync();
+
+        expect(content, contains('MagicStarter.bootstrap('));
+        expect(content, contains('userFactory:'));
+        expect(content, contains('onLogout:'));
+        expect(content, contains('locales:'));
+
+        expect(content, isNot(contains('MagicStarter.useUserModel(')));
+        expect(content, isNot(contains('MagicStarter.useLogout(')));
+        expect(content, isNot(contains('MagicStarter.useLocaleOptions(')));
+        expect(content, isNot(contains('MagicStarter.useTeamResolver(')));
+      });
+
+      test(
+          'includes the team resolver trio inside bootstrap() when the teams '
+          'feature is enabled', () async {
+        setupMagicProjectFiles(tempDir);
+
+        await runInstall(command, features: 'teams');
+
+        final String content =
+            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
+                .readAsStringSync();
+
+        expect(content, contains('MagicStarter.bootstrap('));
+        expect(content, contains('currentTeam:'));
+        expect(content, contains('allTeams:'));
+        expect(content, contains('onSwitch:'));
+      });
+
+      test(
+          'omits the team resolver trio from bootstrap() when the teams '
+          'feature is disabled', () async {
+        setupMagicProjectFiles(tempDir);
+
+        await runInstall(command);
+
+        final String content =
+            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
+                .readAsStringSync();
+
+        expect(content, contains('MagicStarter.bootstrap('));
+        expect(content, isNot(contains('currentTeam:')));
+        expect(content, isNot(contains('allTeams:')));
+        expect(content, isNot(contains('onSwitch:')));
+      });
+
+      test(
+          're-running the installer on an already-bootstrapped provider does '
+          'not append a second bootstrap() call', () async {
+        setupMagicProjectFiles(tempDir);
+
+        await runInstall(command);
+        await runInstall(command);
+
+        final String content =
+            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
+                .readAsStringSync();
+
+        expect('MagicStarter.bootstrap('.allMatches(content).length, 1);
       });
     });
 

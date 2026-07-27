@@ -613,14 +613,16 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       searchPaths: getStubSearchPaths(),
     );
 
-    final String teamsBlock = (features['teams'] ?? false)
+    // The team callbacks are rendered INSIDE the generated `bootstrap()` call
+    // rather than as a separate statement, because `bootstrap()` takes all
+    // three or none: a partial set throws an ArgumentError, and omitting them
+    // while the teams feature is enabled throws a StateError. Emitting them as
+    // one indivisible group is what keeps the generated provider valid.
+    final String teamParams = (features['teams'] ?? false)
         ? '''
-    // 5. Register team resolver callback.
-    MagicStarter.useTeamResolver(
-      currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
-      allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
-      onSwitch: (teamId) => MagicStarterTeamController.instance.switchTeam(teamId),
-    );
+            currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
+            allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
+            onSwitch: (teamId) => MagicStarterTeamController.instance.switchTeam(teamId),
 '''
         : '';
 
@@ -628,7 +630,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
 
     final String socialLoginBlock = (features['social_login'] ?? false)
         ? '''
-    // 6. Register social login button builder.
+    // 4. Register social login button builder.
     MagicStarter.useSocialLogin((context, isLoading) {
       // TODO: return your social login widget.
       return const SizedBox.shrink();
@@ -638,7 +640,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
 
     final String notificationsBlock = (features['notifications'] ?? false)
         ? '''
-    // 7. Register notification type mapper callback.
+    // 5. Register notification type mapper callback.
     MagicStarter.useNotificationTypeMapper((type) {
       return (icon: Icons.info_outline, colorClass: 'text-blue-500');
     });
@@ -649,7 +651,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       stub,
       {
         'teams_import': teamsImport,
-        'teams_block': teamsBlock,
+        'team_params': teamParams,
         'social_login_block': socialLoginBlock,
         'notifications_block': notificationsBlock,
       },
@@ -692,7 +694,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     //    Each block uses a marker to prevent duplicate injection.
     String content = FileHelper.readFile(targetPath);
 
-    // 2a. setUserFactory + useUserModel
+    // 2a. setUserFactory (magic's own Auth session-restoration factory).
     //    Check for uncommented call — the magic install stub contains a
     //    commented-out example that must not trigger the idempotency guard.
     final bool hasUncommentedSetUserFactory = RegExp(
@@ -705,7 +707,6 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
         '''
     // Magic Starter: Register user factory for auth session restoration.
     Auth.manager.setUserFactory((data) => User.fromMap(data));
-    MagicStarter.useUserModel((data) => User.fromMap(data));
 ''',
       );
     }
@@ -747,47 +748,38 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       );
     }
 
-    // 2c. useLogout
-    if (!content.contains('useLogout')) {
-      content = _injectBeforeBootClosingBrace(
-        content,
-        '''
-
-    // Magic Starter: Logout callback.
-    MagicStarter.useLogout(() async {
-      await Auth.logout();
-      MagicRoute.to(MagicStarterConfig.loginRoute());
-    });
-''',
-      );
-    }
-
-    // 2d. useLocaleOptions
-    if (!content.contains('useLocaleOptions')) {
-      content = _injectBeforeBootClosingBrace(
-        content,
-        '''
-
-    // Magic Starter: Supported locale options for profile settings.
-    MagicStarter.useLocaleOptions({
-      'en': 'English',
-    });
-''',
-      );
-    }
-
-    // 2e. useTeamResolver (only when teams feature is enabled)
-    if ((features['teams'] ?? false) && !content.contains('useTeamResolver')) {
-      content = _injectBeforeBootClosingBrace(
-        content,
-        '''
-
-    // Magic Starter: Team resolver for sidebar team switcher.
-    MagicStarter.useTeamResolver(
+    // 2c. bootstrap(): the starter's required identity contract in a single
+    //    call: user model, logout, locale options and, only when the teams
+    //    feature is enabled, the team resolver trio (bootstrap() rejects a
+    //    partial team-callback set, so the trio is emitted all together or
+    //    not at all). Guarded on the literal call string rather than on each
+    //    former use*() call name, so re-running the installer on an
+    //    already-bootstrapped provider does not append a second call; the
+    //    string is specific enough that no other generated code can match it.
+    if (!content.contains('MagicStarter.bootstrap(')) {
+      final String teamArgs = (features['teams'] ?? false)
+          ? '''
       currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
       allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
       onSwitch: (teamId) => MagicStarterTeamController.instance.switchTeam(teamId),
-    );
+'''
+          : '';
+
+      content = _injectBeforeBootClosingBrace(
+        content,
+        '''
+
+    // Magic Starter: Register the required identity contract in one call.
+    MagicStarter.bootstrap(
+      userFactory: (data) => User.fromMap(data),
+      onLogout: () async {
+        await Auth.logout();
+        MagicRoute.to(MagicStarterConfig.loginRoute());
+      },
+      locales: {
+        'en': 'English',
+      },
+$teamArgs    );
 ''',
       );
     }

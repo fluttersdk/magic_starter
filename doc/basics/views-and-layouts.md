@@ -11,6 +11,7 @@
 - [Dark Mode](#dark-mode)
 - [View Registry](#view-registry)
 - [Layout Registry](#layout-registry)
+- [Overriding the App Shell](#overriding-the-app-shell)
 - [Feature-Gated Rendering](#feature-gated-rendering)
 - [Zero Business Logic](#zero-business-logic)
 - [Reusable Widgets](#reusable-widgets)
@@ -406,6 +407,27 @@ Built-in layout keys:
 
 > [!TIP]
 > To test views in isolation, register a minimal layout: `MagicStarter.view.registerLayout('layout.guest', (child) => child);`
+
+<a name="overriding-the-app-shell"></a>
+## Overriding the App Shell
+
+All account, profile, team, and settings routes render through the `layout.app` key. Out of the box, `MagicStarterServiceProvider` registers `MagicStarterAppLayout` under that key, so a fresh install already renders those routes in a working shell (sidebar/nav on desktop, drawer + bottom nav on mobile) with no extra setup.
+
+An app that already has its own navigation chrome (its own sidebar, its own bottom nav) does not want starter routes rendering inside a second, different shell on top of its own. That is the case this seam exists for: re-register `layout.app` with your own shell and every starter route (login-gated pages, profile settings, team management, notifications) renders inside it instead:
+
+```dart
+MagicStarter.view.registerLayout(
+  'layout.app',
+  (child) => MyAppShell(child: child),
+);
+```
+
+Call this from your own `AppServiceProvider`'s `boot()` method, alongside other startup customization such as `MagicStarter.useNavigation()` or `MagicStarter.useHeader()`.
+
+`registerLayout()` always overwrites whatever is currently registered under the key: the default registration in `MagicStarterManager` is conditional (`if (!hasLayout(key))`), but `registerLayout()` itself is not. Since the default is registered synchronously the first time the `magic_starter` singleton is resolved (before your own code runs), your override always lands after it and always wins, whether you call `registerLayout()` early or late in your app's boot sequence. There is no ordering to get wrong.
+
+> [!NOTE]
+> Do not add a second layout key for this. `layout.app` is the only authenticated-shell key the starter resolves; overriding it in place is the supported pattern, not adding a new one alongside it.
 
 <a name="feature-gated-rendering"></a>
 ## Feature-Gated Rendering

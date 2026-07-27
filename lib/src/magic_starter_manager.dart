@@ -398,10 +398,16 @@ class MagicStarterManager {
   /// Check if the starter is ready.
   /// Returns false when team features are enabled but no team resolver
   /// is configured.
+  ///
+  /// [MagicStarter.bootstrap] reads this and throws when it is false, so the
+  /// missing team resolver surfaces at configuration time instead of as an
+  /// empty team selector; `MagicStarterServiceProvider.boot()` additionally
+  /// logs a warning for apps that wire the setters up individually.
   bool get isReady {
-    final teamsEnabled =
-        Config.get<bool>('magic_starter.features.teams', false) ?? false;
-    if (teamsEnabled && teamResolver == null) {
+    // Read the flag through MagicStarterConfig so the config key lives in one
+    // place; a second inline Config.get here could drift from the toggle every
+    // other feature check uses.
+    if (MagicStarterConfig.hasTeamFeatures() && teamResolver == null) {
       return false;
     }
     return true;

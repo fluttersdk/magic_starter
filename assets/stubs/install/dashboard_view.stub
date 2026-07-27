@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
-/// Dashboard view — the default landing page after successful authentication.
+/// Dashboard view, the default landing page after successful authentication.
 ///
 /// Centered card layout matching the auth page design pattern.
 /// Displays app name, Magic branding, and quick-link cards.

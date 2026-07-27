@@ -8,14 +8,14 @@ import '../models/user.dart';
 ///
 /// Bootstraps Magic Starter by registering user model, navigation, logout,
 /// locale options, and any optional feature integrations (teams, social login,
-/// notifications). Call order matters — user factory must be set before any
+/// notifications). Call order matters: the user factory must be set before any
 /// Auth restoration attempt.
 class AppServiceProvider extends ServiceProvider {
     AppServiceProvider(super.app);
 
     @override
     void register() {
-        // Bind your application services here (sync only — do not resolve other
+        // Bind your application services here (sync only, do not resolve other
         // services or call facades in this method).
     }
 
@@ -25,9 +25,22 @@ class AppServiceProvider extends ServiceProvider {
         //    session restoration works after token refresh.
         Auth.manager.setUserFactory((data) => User.fromMap(data));
 
-        // 2. Register the same factory with Magic Starter so the plugin's own
-        //    profile/team views receive a typed user instance.
-        MagicStarter.useUserModel((data) => User.fromMap(data));
+        // 2. Register the starter's identity contract in ONE call: the user
+        //    model its profile/team views receive, what logging out does, and
+        //    which locales the language picker offers. bootstrap() makes these
+        //    required arguments, so none of them can be forgotten silently
+        //    (a missing user factory used to fall back to the starter's own
+        //    user type while every screen kept rendering).
+        MagicStarter.bootstrap(
+            userFactory: (data) => User.fromMap(data),
+            onLogout: () async {
+                await Auth.logout();
+                MagicRoute.to(MagicStarterConfig.loginRoute());
+            },
+            locales: {
+                'en': 'English',
+            },
+{{ team_params }}        );
 
         // 3. Register navigation items for both the desktop sidebar (mainItems)
         //    and the mobile bottom bar (bottomItems).
@@ -58,19 +71,6 @@ class AppServiceProvider extends ServiceProvider {
             ],
         );
 
-        // 4. Register logout callback — clear session and redirect to login.
-        MagicStarter.useLogout(() async {
-            await Auth.logout();
-            MagicRoute.to(MagicStarterConfig.loginRoute());
-        });
-
-        // 5. Register supported locale options for language selection in the
-        //    profile settings view.
-        MagicStarter.useLocaleOptions({
-            'en': 'English',
-        });
-
-{{ teams_block }}
 {{ social_login_block }}
 {{ notifications_block }}
 
@@ -88,7 +88,7 @@ class AppServiceProvider extends ServiceProvider {
         // );
 
         // -------------------------------------------------------------------
-        // State Registration (optional — for eager initialization)
+        // State Registration (optional, for eager initialization)
         // -------------------------------------------------------------------
         // Most state classes should use the lazy singleton pattern with a
         // static accessor instead of registering here:
