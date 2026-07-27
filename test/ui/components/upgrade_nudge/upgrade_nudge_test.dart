@@ -37,6 +37,12 @@ void main() {
     // null), and neither does any assertion on the className string. The only
     // signature is that a dropped token renders IDENTICALLY to no colour token
     // at all, so this compares against that control.
+    //
+    // Depends on the recipe's `tile` slot carrying no text colour of its own: if
+    // one is added there, the glyph inherits it, the control no longer matches
+    // the unstyled baseline, and this comparison goes vacuous WITHOUT failing.
+    // `shared_recipe_token_contract_test.dart` is the backstop that stays valid
+    // either way.
     await tester.pumpWidget(wrap(const WIcon(Icons.lock, className: 'text-lg')));
     final Color? uncoloured =
         tester.widget<Icon>(find.byType(Icon)).color;
