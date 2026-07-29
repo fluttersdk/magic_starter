@@ -86,7 +86,8 @@ void main() {
     // only), so it resolves to no colour at all. That failure is invisible to
     // any assertion on the class string.
     final Text title = tester.widget<Text>(
-      find.descendant(of: find.byType(MSErrorState), matching: find.text('Failed')),
+      find.descendant(
+          of: find.byType(MSErrorState), matching: find.text('Failed')),
     );
 
     expect(title.style?.color, isNotNull,

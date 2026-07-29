@@ -9,9 +9,9 @@ import 'package:magic_starter/src/ui/components/upgrade_nudge/upgrade_nudge.prev
 class _UpgradeLangLoader implements TranslationLoader {
   @override
   Future<Map<String, dynamic>> load(Locale locale) async => {
-    'common.upgrade_available_on': 'Available on :plan and up.',
-    'common.upgrade': 'Upgrade',
-  };
+        'common.upgrade_available_on': 'Available on :plan and up.',
+        'common.upgrade': 'Upgrade',
+      };
 }
 
 void main() {
@@ -21,11 +21,11 @@ void main() {
   });
 
   Widget wrap(Widget widget) => MaterialApp(
-    home: WindTheme(
-      data: WindThemeData(),
-      child: Scaffold(body: SingleChildScrollView(child: widget)),
-    ),
-  );
+        home: WindTheme(
+          data: WindThemeData(),
+          child: Scaffold(body: SingleChildScrollView(child: widget)),
+        ),
+      );
 
   testWidgets('the lock glyph colour token actually resolves', (tester) async {
     // Guards the whole class of defect that shipped here once: this component
@@ -43,9 +43,9 @@ void main() {
     // the unstyled baseline, and this comparison goes vacuous WITHOUT failing.
     // `shared_recipe_token_contract_test.dart` is the backstop that stays valid
     // either way.
-    await tester.pumpWidget(wrap(const WIcon(Icons.lock, className: 'text-lg')));
-    final Color? uncoloured =
-        tester.widget<Icon>(find.byType(Icon)).color;
+    await tester
+        .pumpWidget(wrap(const WIcon(Icons.lock, className: 'text-lg')));
+    final Color? uncoloured = tester.widget<Icon>(find.byType(Icon)).color;
 
     await tester.pumpWidget(
       wrap(

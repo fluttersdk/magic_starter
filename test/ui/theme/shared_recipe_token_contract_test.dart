@@ -32,9 +32,28 @@ void main() {
 
   /// `text-*` values that are NOT colours.
   const Set<String> nonColourTextUtilities = <String>{
-    'xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl',
-    'left', 'right', 'center', 'justify', 'start', 'end',
-    'wrap', 'nowrap', 'balance', 'pretty', 'ellipsis', 'clip',
+    'xs',
+    'sm',
+    'base',
+    'lg',
+    'xl',
+    '2xl',
+    '3xl',
+    '4xl',
+    '5xl',
+    '6xl',
+    'left',
+    'right',
+    'center',
+    'justify',
+    'start',
+    'end',
+    'wrap',
+    'nowrap',
+    'balance',
+    'pretty',
+    'ellipsis',
+    'clip',
   };
 
   /// Wind resolves a bare colour family (`primary`) through

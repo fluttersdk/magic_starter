@@ -464,7 +464,8 @@ void main() {
       expect(content, contains('MagicRoute.to('));
     });
 
-    test('team callbacks render inside bootstrap() with named params', () async {
+    test('team callbacks render inside bootstrap() with named params',
+        () async {
       setupMagicProjectFiles(tempDir);
 
       await runInstall(command, force: true, features: 'teams');
@@ -888,8 +889,7 @@ flutter:
         expect(content, isNot(contains('MagicStarter.useTeamResolver(')));
       });
 
-      test(
-          'leaves a provider already wired with the legacy setters untouched',
+      test('leaves a provider already wired with the legacy setters untouched',
           () async {
         // The injection appends at the END of boot(), so on an app installed
         // before bootstrap() existed a generic call would land AFTER that app's
@@ -944,7 +944,8 @@ class AppServiceProvider extends ServiceProvider {
 
         await runInstall(command);
 
-        expect(provider.readAsStringSync(), contains('MagicStarter.bootstrap('));
+        expect(
+            provider.readAsStringSync(), contains('MagicStarter.bootstrap('));
       });
 
       test(

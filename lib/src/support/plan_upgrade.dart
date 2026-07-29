@@ -92,9 +92,9 @@ class PlanUpgradeRequirement {
   /// arrival opened two checkout sessions. A later Upgrade tap mints a new
   /// token and fires again.
   Map<String, String> billingQueryParameters() => {
-    planQueryKey: requiredPlan,
-    intentQueryKey: newIntentToken(),
-  };
+        planQueryKey: requiredPlan,
+        intentQueryKey: newIntentToken(),
+      };
 
   /// Mints a single-use intent token.
   static String newIntentToken() =>

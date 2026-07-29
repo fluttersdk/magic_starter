@@ -252,7 +252,7 @@ void main() {
           tempDir,
           'lib/app/providers/app_service_provider.dart',
           '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
-        '  MagicStarter.useNavigation(mainItems: []);\n',
+              '  MagicStarter.useNavigation(mainItems: []);\n',
         );
         expect(command.checkFacadeSetup(tempDir.path), isTrue);
       },
@@ -674,7 +674,7 @@ void main() {
         "import 'package:magic_starter/magic_starter.dart';\n"
             'void boot() {\n'
             '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
-        '  MagicStarter.useNavigation(mainItems: []);\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n'
             "  MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());\n"
             '}\n',
       );
@@ -705,7 +705,7 @@ void main() {
         "import 'package:magic_starter/magic_starter.dart';\n"
             'void boot() {\n'
             '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
-        '  MagicStarter.useNavigation(mainItems: []);\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n'
             '}\n',
       );
 
@@ -731,7 +731,7 @@ void main() {
         "import 'package:magic_starter/magic_starter.dart';\n"
             'void boot() {\n'
             '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
-        '  MagicStarter.useNavigation(mainItems: []);\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n'
             '}\n',
       );
 

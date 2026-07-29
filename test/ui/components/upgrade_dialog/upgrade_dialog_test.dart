@@ -9,10 +9,10 @@ import 'package:magic_starter/src/ui/components/upgrade_dialog/upgrade_dialog.pr
 class _UpgradeDialogLangLoader implements TranslationLoader {
   @override
   Future<Map<String, dynamic>> load(Locale locale) async => {
-    'common.upgrade_available_on': 'Available on :plan and up.',
-    'common.upgrade': 'Upgrade',
-    'common.upgrade_dialog_not_now': 'Not now',
-  };
+        'common.upgrade_available_on': 'Available on :plan and up.',
+        'common.upgrade': 'Upgrade',
+        'common.upgrade_dialog_not_now': 'Not now',
+      };
 }
 
 void main() {
@@ -22,16 +22,16 @@ void main() {
   });
 
   Widget wrap(Widget widget, {double width = 390}) => MaterialApp(
-    home: WindTheme(
-      data: WindThemeData(),
-      child: Scaffold(
-        body: SizedBox(
-          width: width,
-          child: SingleChildScrollView(child: widget),
+        home: WindTheme(
+          data: WindThemeData(),
+          child: Scaffold(
+            body: SizedBox(
+              width: width,
+              child: SingleChildScrollView(child: widget),
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
   testWidgets('renders the message and the plan line', (tester) async {
     await tester.pumpWidget(

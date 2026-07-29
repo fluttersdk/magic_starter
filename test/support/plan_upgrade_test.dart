@@ -20,13 +20,13 @@ void main() {
     test('reads the plan wall off a gated 403', () {
       final PlanUpgradeRequirement? requirement =
           PlanUpgradeRequirement.fromResponse(
-            gated(
-              upgrade: {
-                'required_plan': 'pro',
-                'feature': 'AI monitor analysis',
-              },
-            ),
-          );
+        gated(
+          upgrade: {
+            'required_plan': 'pro',
+            'feature': 'AI monitor analysis',
+          },
+        ),
+      );
 
       expect(requirement, isNotNull);
       expect(requirement!.requiredPlan, equals('pro'));
@@ -108,12 +108,10 @@ void main() {
       // The billing screen mounts twice per arrival and both mounts read the
       // same query, so the token is what makes one arrival fire one checkout
       // while a later Upgrade tap still fires again.
-      final String first =
-          requirement.billingQueryParameters()[PlanUpgradeRequirement
-              .intentQueryKey]!;
-      final String second =
-          requirement.billingQueryParameters()[PlanUpgradeRequirement
-              .intentQueryKey]!;
+      final String first = requirement
+          .billingQueryParameters()[PlanUpgradeRequirement.intentQueryKey]!;
+      final String second = requirement
+          .billingQueryParameters()[PlanUpgradeRequirement.intentQueryKey]!;
 
       expect(first, isNot(equals(second)));
     });
