@@ -115,5 +115,35 @@ void main() {
 
       expect(first, isNot(equals(second)));
     });
+
+    test('every token carries a monotonic sequence, not just a timestamp', () {
+      // The previous implementation was the timestamp alone, which collides on
+      // WEB: there DateTime.now() resolves to milliseconds, so
+      // microsecondsSinceEpoch advances in steps of 1000 and two calls inside
+      // one millisecond are identical. That collision cannot be reproduced on
+      // the Dart VM, whose clock is genuinely microsecond-resolution, so
+      // asserting "a burst has no duplicates" would pass here even with the bug
+      // present and guard nothing.
+      //
+      // This asserts the MECHANISM that makes uniqueness independent of clock
+      // resolution instead: a trailing sequence that advances by one per call.
+      final List<String> minted = List<String>.generate(
+        3,
+        (_) => PlanUpgradeRequirement.newIntentToken(),
+      );
+
+      final List<int> sequences = minted
+          .map((String token) => int.parse(token.split('-').last, radix: 36))
+          .toList();
+
+      expect(
+        minted.every((String token) => token.contains('-')),
+        isTrue,
+        reason: 'a token without a sequence suffix is only as unique as the '
+            'platform clock, which on web is one millisecond',
+      );
+      expect(sequences[1], sequences[0] + 1);
+      expect(sequences[2], sequences[1] + 1);
+    });
   });
 }

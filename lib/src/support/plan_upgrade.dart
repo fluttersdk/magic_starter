@@ -96,7 +96,20 @@ class PlanUpgradeRequirement {
         intentQueryKey: newIntentToken(),
       };
 
-  /// Mints a single-use intent token.
-  static String newIntentToken() =>
-      DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+  /// Monotonic sequence appended to every minted token.
+  ///
+  /// The timestamp alone is not enough. On web `DateTime.now()` resolves to
+  /// milliseconds, so `microsecondsSinceEpoch` advances in steps of 1000 and two
+  /// calls inside the same millisecond produce an identical token. That is
+  /// exactly the case this token exists to distinguish, since the billing screen
+  /// mounts twice per arrival and both mounts read the same query.
+  static int _intentSequence = 0;
+
+  /// Mints a single-use intent token, unique within the process.
+  static String newIntentToken() {
+    final int sequence = _intentSequence++;
+
+    return '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
+        '-${sequence.toRadixString(36)}';
+  }
 }

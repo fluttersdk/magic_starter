@@ -62,8 +62,12 @@ void main() {
   /// resolves.
   final Set<String> colourFamilies = WindThemeData().colors.keys.toSet();
 
-  /// Palette shades (`red-600`, `gray-100`) are Wind built-ins.
-  final RegExp paletteShade = RegExp(r'^[a-z]+-(?:50|[1-9]00)$');
+  /// Palette shades (`red-600`, `gray-100`, `gray-950`) are Wind built-ins.
+  ///
+  /// 950 is included because the shipped aliases themselves use it
+  /// (`bg-surface` expands to `bg-white dark:bg-gray-950`), so omitting it would
+  /// make this guard reject a token the package already relies on.
+  final RegExp paletteShade = RegExp(r'^[a-z]+-(?:50|950|[1-9]00)$');
 
   bool resolves(String token) {
     if (MagicStarterTokens.defaultAliases.containsKey(token)) return true;
@@ -152,5 +156,6 @@ void main() {
     expect(resolves('bg-primary-container'), isTrue);
     expect(resolves('text-primary'), isTrue);
     expect(resolves('text-red-600'), isTrue);
+    expect(resolves('bg-gray-950'), isTrue);
   });
 }

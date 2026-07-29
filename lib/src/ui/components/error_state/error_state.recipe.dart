@@ -18,8 +18,8 @@ String errorStateIconWrapClassName() =>
 /// for a consumer. Wind's text parser claims a `text-<name>` token and then
 /// resolves `destructive` to no colour, dropping the class silently, so writing
 /// the semantic-looking token here would render no colour at all. See
-/// `_windRoleFallbacks` in `magic_starter_theme.dart`, which encodes the same
-/// gap for the sub-themes.
+/// `_windRoleFallbacks` in `lib/src/configuration/magic_starter_theme.dart`,
+/// which encodes the same gap for the sub-themes.
 String errorStateIconClassName() => 'text-4xl text-red-600 dark:text-red-400';
 
 /// Title className (destructive tone).
