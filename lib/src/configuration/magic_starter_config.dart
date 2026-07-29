@@ -39,6 +39,7 @@ class MagicStarterConfig {
   static const String _defaultTeamsPrefix = '/teams';
   static const String _defaultProfilePrefix = '/settings';
   static const String _defaultNotificationsPrefix = '/notifications';
+  static const String _defaultBillingRoute = '/teams/billing';
 
   // -- HTTP Configuration --
   static const int _defaultRequestTimeoutSeconds = 30;
@@ -342,4 +343,11 @@ class MagicStarterConfig {
   /// Full path for the two-factor challenge page.
   static String twoFactorChallengeRoute() =>
       '${authPrefix()}/two-factor-challenge';
+
+  /// Returns the configured billing route (e.g. `/teams/billing`).
+  static String billingRoute() {
+    return Config.get<String>(
+            'magic_starter.routes.billing', _defaultBillingRoute) ??
+        _defaultBillingRoute;
+  }
 }

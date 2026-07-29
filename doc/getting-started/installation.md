@@ -6,6 +6,7 @@
 - [Running the Install Command](#running-the-install-command)
 - [Registering the Service Provider](#registering-the-service-provider)
 - [Injecting the Config Factory](#injecting-the-config-factory)
+- [Bootstrapping the Starter](#bootstrapping-the-starter)
 - [Configuration Reference](#configuration-reference)
 - [Next Steps](#next-steps)
 
@@ -129,6 +130,82 @@ void main() async {
   runApp(MagicApplication(title: 'My App'));
 }
 ```
+
+<a name="bootstrapping-the-starter"></a>
+## Bootstrapping the Starter
+
+Registering the provider is not enough. The starter also needs to know four host-owned things: how to build **your** user model, how to log out, which locales to offer, and (when the teams feature is enabled) how to read and switch teams. Register all of them with a single required call, `MagicStarter.bootstrap()`, from your `AppServiceProvider.boot()`:
+
+```dart
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  Future<void> boot() async {
+    MagicStarter.bootstrap(
+      userFactory: (data) => User.fromMap(data),
+      onLogout: () async {
+        await Auth.logout();
+        MagicRoute.to('/auth/login');
+      },
+      locales: {
+        'en': 'English',
+        'tr': 'Türkçe',
+      },
+    );
+  }
+}
+```
+
+That is the complete setup for a teamless app. When `magic_starter.features.teams` is `true`, pass the three team callbacks as well:
+
+```dart
+MagicStarter.bootstrap(
+  userFactory: (data) => User.fromMap(data),
+  onLogout: () async => Auth.logout(),
+  locales: {
+    'en': 'English',
+    'tr': 'Türkçe',
+  },
+  currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
+  allTeams: () =>
+      User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
+  onSwitch: (id) => MagicStarterTeamController.instance.switchTeam(id),
+);
+```
+
+The team callbacks are a cohesive group: pass all three or none.
+
+| Situation | Result |
+|-----------|--------|
+| Teams disabled, team callbacks omitted | Valid. No team resolver is registered and no team UI renders. |
+| Teams enabled, all three callbacks passed | Valid. The team selector, team switching, and team settings work. |
+| Teams enabled, team callbacks omitted | Throws a `StateError` naming the missing call and the config flag. |
+| Only some of the three callbacks passed | Throws an `ArgumentError`; the manager is left untouched. |
+
+> [!WARNING]
+> Do not skip `userFactory`. Without it the starter falls back to its own `MagicStarterAuthUser` type, so every screen keeps rendering while silently reading the wrong user model. `bootstrap()` makes that omission impossible: the parameter is required.
+
+The individual setters remain available for partial or advanced setup, and any of them can be called after `bootstrap()` to override what it registered:
+
+```dart
+// Register the team resolver later, once your own team store is warm.
+MagicStarter.useTeamResolver(
+  currentTeam: () => TeamStore.instance.current?.toMagicStarterTeam(),
+  allTeams: () => TeamStore.instance.all,
+  onSwitch: (id) => TeamStore.instance.switchTo(id),
+);
+```
+
+| Setter | Covered by `bootstrap()` |
+|--------|--------------------------|
+| `MagicStarter.useUserModel()` | Yes, as the required `userFactory` argument. |
+| `MagicStarter.useLogout()` | Yes, as the required `onLogout` argument. |
+| `MagicStarter.useLocaleOptions()` | Yes, as the required `locales` argument. |
+| `MagicStarter.useTeamResolver()` | Yes, as the optional `currentTeam` / `allTeams` / `onSwitch` group. |
+
+> [!NOTE]
+> `bootstrap()` covers the identity contract only. Optional presentation setters (`useNavigation()`, `useTheme()`, `useWindTheme()`, `useHeader()`, `useSocialLogin()`, and the per-surface theme setters) stay separate and are called alongside it.
 
 <a name="configuration-reference"></a>
 ## Configuration Reference

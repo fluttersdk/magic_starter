@@ -136,9 +136,17 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
         .contains('registerMagicStarterAuthRoutes');
   }
 
-  /// Check that `MagicStarter.useNavigation` is configured in `app_service_provider.dart`.
+  /// Check that the identity contract is configured in
+  /// `app_service_provider.dart`.
   ///
-  /// Returns `false` when the file is absent or does not contain the facade setup.
+  /// Probes for `MagicStarter.bootstrap(`, the single required call. An app
+  /// installed before that existed wired the same four values through the
+  /// individual setters, which still work, so `MagicStarter.useUserModel(` is
+  /// accepted as the legacy shape rather than reported as a failure: the check
+  /// answers "is the starter configured at all", and a false FAIL on a working
+  /// app is worse than no check.
+  ///
+  /// Returns `false` when the file is absent or contains neither shape.
   bool checkFacadeSetup(String root) {
     final String providerPath =
         '$root/lib/app/providers/app_service_provider.dart';
@@ -147,9 +155,16 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       return false;
     }
 
-    return File(providerPath)
-        .readAsStringSync()
-        .contains('MagicStarter.useNavigation');
+    final String content = File(providerPath).readAsStringSync();
+
+    // The same call set, and the same anchoring, as the installer's idempotency
+    // guard. Keeping them identical matters: if this probe were narrower, an app
+    // the installer refuses to touch would be reported FAIL alongside advice to
+    // run the installer, which would then do nothing.
+    return RegExp(
+      r'^\s*MagicStarter\.(bootstrap|useUserModel|useLocaleOptions|useLogout)\(',
+      multiLine: true,
+    ).hasMatch(content);
   }
 
   /// Check that the translation file `assets/lang/en.json` exists.
@@ -321,7 +336,10 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
     buffer.writeln('Facade: ${facadeSetup ? 'OK' : 'FAIL'}');
     if (verbose) {
       buffer.writeln('    File: lib/app/providers/app_service_provider.dart');
-      buffer.writeln('    Contains: MagicStarter.useUserModel');
+      buffer.writeln(
+        '    Contains: MagicStarter.bootstrap( '
+        '(or a legacy MagicStarter.use* identity setter)',
+      );
     }
 
     // 8. Translation file.

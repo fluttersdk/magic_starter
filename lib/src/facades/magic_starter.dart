@@ -77,6 +77,112 @@ class MagicStarter {
   /// Global view registry accessor.
   static MagicStarterViewRegistry get view => manager.view;
 
+  /// Register the starter's identity contract in a single call.
+  ///
+  /// The starter cannot behave correctly until the host app tells it four
+  /// things: how to build its own user model, how to log out, which locales
+  /// to offer, and (only when the teams feature is on) how to read and switch
+  /// teams. Registering them one setter at a time makes forgetting one silent:
+  /// [MagicStarterManager.userFactory] defaults to `MagicStarterAuthUser`, so
+  /// an app that skips [useUserModel] keeps running while every screen quietly
+  /// reads the starter's own user type instead of the app's. [bootstrap] closes
+  /// that gap by making the three universal pieces required arguments and the
+  /// team trio a checked, all-or-nothing group.
+  ///
+  /// [currentTeam], [allTeams] and [onSwitch] are optional because teams are
+  /// an opt-in feature (`magic_starter.features.teams` defaults to `false`); a
+  /// teamless app must not be forced to pass stub callbacks. They are still
+  /// cohesive: pass all three or none. A partial set throws an [ArgumentError],
+  /// and enabling the teams feature without them throws a [StateError] instead
+  /// of degrading into an empty team selector at runtime.
+  ///
+  /// The individual setters stay public and unchanged: use them for partial or
+  /// advanced setup (for example registering a team resolver later, once the
+  /// host's own team store is warm). [bootstrap] deliberately covers only the
+  /// identity contract, never the optional theming setters.
+  ///
+  /// ```dart
+  /// // Teamless app.
+  /// MagicStarter.bootstrap(
+  ///   userFactory: (data) => User.fromMap(data),
+  ///   onLogout: () async {
+  ///     await Auth.logout();
+  ///     MagicRoute.to('/auth/login');
+  ///   },
+  ///   locales: {'en': 'English', 'tr': 'Türkçe'},
+  /// );
+  /// ```
+  ///
+  /// ```dart
+  /// // Teams enabled (`magic_starter.features.teams: true`).
+  /// MagicStarter.bootstrap(
+  ///   userFactory: (data) => User.fromMap(data),
+  ///   onLogout: () async => Auth.logout(),
+  ///   locales: {'en': 'English', 'tr': 'Türkçe'},
+  ///   currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
+  ///   allTeams: () =>
+  ///       User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
+  ///   onSwitch: (id) => MagicStarterTeamController.instance.switchTeam(id),
+  /// );
+  /// ```
+  ///
+  /// Throws an [ArgumentError] when only some team callbacks are passed, and a
+  /// [StateError] when the teams feature is enabled but none are.
+  static void bootstrap({
+    required UserModelFactory userFactory,
+    required Future<void> Function() onLogout,
+    required Map<String, String> locales,
+    MagicStarterTeam? Function()? currentTeam,
+    List<MagicStarterTeam> Function()? allTeams,
+    Future<void> Function(dynamic teamId)? onSwitch,
+  }) {
+    // 1. A MagicStarterTeamResolverConfig cannot be built from a subset of the
+    //    three callbacks, so a partial set is always a typo. Reject it before
+    //    any setter runs, so a rejected bootstrap leaves the manager untouched
+    //    instead of half-configured.
+    final int teamCallbacks = (currentTeam != null ? 1 : 0) +
+        (allTeams != null ? 1 : 0) +
+        (onSwitch != null ? 1 : 0);
+
+    if (teamCallbacks != 0 && teamCallbacks != 3) {
+      throw ArgumentError(
+        'MagicStarter.bootstrap() takes all three team callbacks '
+        '(currentTeam, allTeams, onSwitch) or none of them; got '
+        '$teamCallbacks of 3.',
+      );
+    }
+
+    // 2. Delegate to the individual setters rather than writing to the manager
+    //    directly, so bootstrap() stays a composition of the public API and
+    //    cannot drift from what those setters do.
+    useUserModel(userFactory);
+    useLogout(onLogout);
+    useLocaleOptions(locales);
+
+    if (teamCallbacks == 3) {
+      useTeamResolver(
+        currentTeam: currentTeam!,
+        allTeams: allTeams!,
+        onSwitch: onSwitch!,
+      );
+    }
+
+    // 3. [isReady] already encodes "teams enabled implies a team resolver",
+    //    but nothing read it, so the contract was enforced by nothing louder
+    //    than a boot-time log line. bootstrap() is the one place where the host
+    //    is provably configuring the starter, which makes it the only place
+    //    where that predicate can fail loudly enough to be fixed.
+    if (!isReady) {
+      throw StateError(
+        'MagicStarter.bootstrap() was called without team callbacks while '
+        '"magic_starter.features.teams" is enabled. Pass currentTeam, '
+        'allTeams and onSwitch (or call MagicStarter.useTeamResolver() '
+        'separately), or disable the teams feature in '
+        'lib/config/magic_starter.dart.',
+      );
+    }
+  }
+
   /// Set a custom user model factory.
   ///
   /// ```dart
