@@ -184,7 +184,8 @@ void main() {
     expect(childArea, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffold outer container has the default cap and mx-auto',
+  testWidgets(
+      'SettingsScaffold outer container has the default cap and mx-auto',
       (tester) async {
     await tester.pumpWidget(
       wrap(
