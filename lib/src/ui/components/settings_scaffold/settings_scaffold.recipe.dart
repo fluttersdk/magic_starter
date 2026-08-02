@@ -23,15 +23,21 @@ String settingsScaffoldScrollableRecipe() {
 ///
 /// Mobile-first and fills the available content width like the other
 /// authenticated pages: `w-full` with comfortable edge padding (`px-4`, wider
-/// `lg:px-8` on desktop). No narrow centred max-width cap — a thin centred strip
-/// left large empty gutters on desktop. A very generous `max-w-7xl` cap only
-/// keeps rows from becoming absurdly wide on ultra-wide monitors.
+/// `lg:px-8` on desktop). [maxWidthClassName] carries the cap, which the host
+/// app owns (see `MagicStarterManager.settingsMaxWidthClassName`) because it has
+/// to match the width the host caps its own pages at.
 ///
-/// Emission order: base (width + padding + cap + mx-auto).
-String settingsScaffoldContainerRecipe() {
+/// The VERTICAL padding is this column's own responsibility. The app layout's
+/// content region is a bare scroll view with no padding, so a scaffold emitting
+/// no `pt-*` glued every settings header to the top edge of the viewport while
+/// every other page in the host sat a notch below it. `pb-16` keeps the last
+/// row from ending flush against the fold.
+///
+/// Emission order: base (width + padding + mx-auto) then the caller's cap.
+String settingsScaffoldContainerRecipe({required String maxWidthClassName}) {
   return const WindRecipe(
-    base: 'w-full px-4 lg:px-8 max-w-7xl mx-auto',
-  )();
+    base: 'w-full px-4 lg:px-8 pt-6 sm:pt-8 pb-16 mx-auto',
+  )(className: maxWidthClassName);
 }
 
 /// Returns the className for the children area (SettingsSections column).

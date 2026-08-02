@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import '../page_header/page_header.dart';
 import 'settings_scaffold.recipe.dart';
 
@@ -91,7 +92,11 @@ class MSSettingsScaffold extends StatelessWidget {
       child: SingleChildScrollView(
         primary: false,
         child: WDiv(
-          className: settingsScaffoldContainerRecipe(),
+          // The cap comes from the host: these pages share the host's shell, so
+          // they have to share the width the host caps its own pages at.
+          className: settingsScaffoldContainerRecipe(
+            maxWidthClassName: MagicStarter.manager.settingsMaxWidthClassName,
+          ),
           children: [
             // 2. Unified page header — back affordance is composed here.
             MSPageHeader(

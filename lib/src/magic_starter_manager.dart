@@ -151,6 +151,23 @@ class MagicStarterManager {
   /// the sidebar, header, content background, drawer, and brand bar.
   MagicStarterLayoutTheme layoutTheme = const MagicStarterLayoutTheme();
 
+  /// The cap [MSSettingsScaffold] applies when the host configures nothing.
+  ///
+  /// Generous on purpose: a narrow centred strip leaves large empty gutters on
+  /// a desktop window, which is what this value was widened to avoid.
+  static const String defaultSettingsMaxWidth = 'max-w-7xl';
+
+  /// Wind max-width utility capping the Settings sub-page content column.
+  ///
+  /// A host app caps its own pages at its own width, and the settings pages
+  /// render inside that same shell. When this stayed at
+  /// [defaultSettingsMaxWidth] in an app whose pages cap narrower, both columns
+  /// centred inside the same content region but at different widths, so every
+  /// settings header started tens of pixels further out than every other page
+  /// (64px per side against a `max-w-6xl` host). Set it to the host's own page
+  /// width so the two line up.
+  String settingsMaxWidthClassName = defaultSettingsMaxWidth;
+
   /// Get the unified theme built from all individual sub-theme fields.
   ///
   /// Reading this constructs a [MagicStarterTheme] from the current values of

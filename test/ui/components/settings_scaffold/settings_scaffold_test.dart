@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_starter/src/facades/magic_starter.dart';
 import 'package:magic_starter/src/magic_starter_manager.dart';
 import 'package:magic_starter/src/ui/components/settings_scaffold/settings_scaffold.dart';
 import 'package:magic_starter/src/ui/components/settings_scaffold/settings_scaffold.recipe.dart';
@@ -37,19 +38,45 @@ void main() {
       expect(cls, contains('w-full'));
     });
 
-    test('container recipe emits max-w-7xl token', () {
-      final cls = settingsScaffoldContainerRecipe();
-      expect(cls, contains('max-w-7xl'));
+    test('container recipe caps at the max width it is handed', () {
+      final cls = settingsScaffoldContainerRecipe(
+        maxWidthClassName: 'max-w-6xl',
+      );
+      expect(cls, contains('max-w-6xl'));
+      expect(cls, isNot(contains('max-w-7xl')));
     });
 
     test('container recipe emits mx-auto token', () {
-      final cls = settingsScaffoldContainerRecipe();
+      final cls = settingsScaffoldContainerRecipe(
+        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
+      );
       expect(cls, contains('mx-auto'));
     });
 
     test('container recipe emits px-4 token', () {
-      final cls = settingsScaffoldContainerRecipe();
+      final cls = settingsScaffoldContainerRecipe(
+        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
+      );
       expect(cls, contains('px-4'));
+    });
+
+    // A Settings sub-page owns its own top offset: the app layout's content
+    // region is a bare scroll view with no padding, so a scaffold with no
+    // `pt-*` glued every settings header to the top edge of the viewport while
+    // every other page in the host sat a comfortable notch below it.
+    test('container recipe emits the page top padding', () {
+      final cls = settingsScaffoldContainerRecipe(
+        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
+      );
+      expect(cls, contains('pt-6'));
+      expect(cls, contains('sm:pt-8'));
+    });
+
+    test('container recipe emits a bottom padding', () {
+      final cls = settingsScaffoldContainerRecipe(
+        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
+      );
+      expect(cls, contains('pb-16'));
     });
 
     test('children area recipe emits mt-6 token', () {
@@ -157,7 +184,7 @@ void main() {
     expect(childArea, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffold outer container has max-w-7xl and mx-auto',
+  testWidgets('SettingsScaffold outer container has the default cap and mx-auto',
       (tester) async {
     await tester.pumpWidget(
       wrap(
@@ -172,9 +199,36 @@ void main() {
         .widgetList<WDiv>(find.byType(WDiv))
         .where(
           (w) =>
-              w.className?.contains('max-w-7xl') == true &&
+              w.className?.contains(
+                    MagicStarterManager.defaultSettingsMaxWidth,
+                  ) ==
+                  true &&
               w.className?.contains('mx-auto') == true,
         )
+        .toList();
+    expect(constrainedDivs, isNotEmpty);
+  });
+
+  // A host app caps its own pages at its own width. When the scaffold ignored
+  // that and always capped at its default, every settings header started tens
+  // of pixels further out than every other page in the same app on a wide
+  // window: same sidebar, same chrome, two different content columns.
+  testWidgets('SettingsScaffold caps at the width the host configured',
+      (tester) async {
+    MagicStarter.manager.settingsMaxWidthClassName = 'max-w-6xl';
+
+    await tester.pumpWidget(
+      wrap(
+        const MSSettingsScaffold(
+          title: 'Profile',
+          children: [],
+        ),
+      ),
+    );
+
+    final constrainedDivs = tester
+        .widgetList<WDiv>(find.byType(WDiv))
+        .where((w) => w.className?.contains('max-w-6xl') == true)
         .toList();
     expect(constrainedDivs, isNotEmpty);
   });
