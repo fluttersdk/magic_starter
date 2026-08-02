@@ -12,9 +12,18 @@ import 'settings_scaffold.recipe.dart';
 /// affordance) and a `mt-6 flex flex-col gap-6` children area intended for
 /// [MSSettingsSection] widgets.
 ///
-/// Works identically on mobile and desktop inside `layout.app`: the inner
-/// column is always `w-full max-w-2xl mx-auto px-4 lg:px-0` so content is
-/// edge-padded on narrow screens and centred with no padding on wide ones.
+/// Works on mobile and desktop inside `layout.app` from one className: the inner
+/// column is `w-full px-4 lg:px-8 pt-6 sm:pt-8 pb-16 mx-auto` plus a max-width
+/// cap, so content is edge-padded on narrow screens, more generously padded from
+/// `lg`, and centred once it reaches the cap. The VERTICAL padding is this
+/// column's own: the app layout's content region is a bare scroll view, so
+/// without it the page header would touch the top edge of the viewport.
+///
+/// The cap is the HOST's to choose, through
+/// `MagicStarterManager.settingsMaxWidthClassName`. It has to match the width the
+/// host caps its own pages at, or these pages centre at a different width inside
+/// the same shell and every settings header starts further out than the header on
+/// every other page in the app.
 ///
 /// The [SingleChildScrollView] uses `primary: false` so it owns its own
 /// implicit scroll controller and never contends with the ambient
