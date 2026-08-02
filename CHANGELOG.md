@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.18] - 2026-08-02
+
+### Added
+
+- **`MagicStarterManager.settingsMaxWidthClassName`: the host now owns how wide the Settings pages are.** `MSSettingsScaffold` centres its own content column, and it always capped that column at its own `max-w-7xl` regardless of the app it was rendering in. A host app caps its own pages wherever it likes, so in any app that does not happen to use the same value both columns centred inside the SAME content region at DIFFERENT widths: same sidebar, same chrome, and every settings header starting tens of pixels further out than the header on every other page (64px per side against a `max-w-6xl` host, measured on a 1800px viewport). Registering the host's own shell as `layout.app` does not fix this and in fact hides it, because the two columns then differ inside identical chrome. Set the field once, from the same constant the host's own page container uses, and the two cannot drift: `MagicStarter.manager.settingsMaxWidthClassName = PageContainer.maxWidthClassName;`. It defaults to `MagicStarterManager.defaultSettingsMaxWidth` (`max-w-7xl`), the value the scaffold has always used, so **an app that configures nothing sees no change in width.**
+
+### Fixed
+
+- **Every Settings page sat 32px higher than every other page in the app, because the scaffold emitted no vertical page padding at all.** The app layout's content region is a bare scroll view with no padding of its own, so a page's own `pt-*` is the only thing standing between its header and the top edge of the viewport, and `settingsScaffoldContainerRecipe` emitted none. The header was therefore glued to the top edge on every settings screen, in every consumer, since the recipe was written. It now emits `pt-6 sm:pt-8` plus a `pb-16` so the last section does not end flush against the fold. Verified against a host app on a 1800px viewport: content top and the full content column (left AND right edge) now identical across the host's dashboard, its list pages and the starter's settings pages, checked in production rather than only locally.
+- **The class docblock described a column the widget had stopped rendering.** It claimed the inner column was always `w-full max-w-2xl mx-auto px-4 lg:px-0`; the recipe had been emitting `px-4 lg:px-8` with a `max-w-7xl` cap for some time, so the documentation was already wrong before this release and would have sent a reader looking for padding that was not there. It now states the real className, says why the vertical padding is this column's own responsibility, and names the host as the owner of the cap.
+
+### Breaking
+
+- **`settingsScaffoldContainerRecipe()` now takes a required `maxWidthClassName`.** The recipe is exported from the package barrel, so a consumer calling it directly must pass a cap. Migration is one argument: `settingsScaffoldContainerRecipe(maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth)` reproduces the previous output exactly. The parameter is required rather than defaulted on purpose: a cap nobody had to think about is precisely how the widths drifted apart in the first place. `MSSettingsScaffold` itself is unchanged for callers, and passes the host's configured value for you.
+
 ## [0.0.1-alpha.17] - 2026-07-29
 
 ### Added
