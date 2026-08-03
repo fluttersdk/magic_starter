@@ -5,7 +5,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
 import '../../components/card/card.dart';
-import '../../components/page_header/page_header.dart';
+import '../../components/page_scaffold/page_scaffold.dart';
 
 class MagicStarterTeamCreateView
     extends MagicStatefulView<MagicStarterTeamController> {
@@ -48,16 +48,13 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
     final footerSlot =
         MagicStarter.view.buildSlot('teams.create', 'footer', context);
 
-    return WDiv(
-      className: 'p-4 lg:p-6 flex flex-col gap-6',
+    return MSPageScaffold(
+      title: trans('teams.create_team'),
+      subtitle: trans('teams.create_team_subtitle'),
+      backLabel: trans('teams.settings'),
+      backFallback: MagicStarterConfig.teamSettingsRoute(),
       children: [
         if (headerSlot != null) headerSlot,
-        MSPageHeader(
-          title: trans('teams.create_team'),
-          subtitle: trans('teams.create_team_subtitle'),
-          backLabel: trans('teams.settings'),
-          backFallback: MagicStarterConfig.teamSettingsRoute(),
-        ),
         _buildForm(),
         if (footerSlot != null) footerSlot,
       ],

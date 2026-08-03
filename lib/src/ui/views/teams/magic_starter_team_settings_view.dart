@@ -6,7 +6,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
 import '../../components/card/card.dart';
-import '../../components/page_header/page_header.dart';
+import '../../components/page_scaffold/page_scaffold.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
 
 class MagicStarterTeamSettingsView
@@ -83,14 +83,11 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
     final afterMembersSlot = MagicStarter.view
         .buildSlot('teams.settings', 'afterSection:members', context);
 
-    return WDiv(
-      className: 'p-4 lg:p-6 flex flex-col gap-6',
+    return MSPageScaffold(
+      title: trans('teams.settings'),
+      subtitle: trans('teams.settings_subtitle'),
       children: [
         if (headerSlot != null) headerSlot,
-        MSPageHeader(
-          title: trans('teams.settings'),
-          subtitle: trans('teams.settings_subtitle'),
-        ),
         _buildGeneralSection(),
         _buildMembersSection(),
         if (afterMembersSlot != null) afterMembersSlot,
