@@ -118,10 +118,10 @@ Locked channels display a lock icon and their toggle is disabled — the backend
 <a name="notification-dropdown"></a>
 ## Notification Dropdown
 
-`MagicStarterNotificationDropdown` is a standalone widget (not a view) that renders a bell icon with a live unread badge. It uses `StreamBuilder<List<DatabaseNotification>>` to reactively display the current notification count:
+`MSNotificationDropdown` is a standalone widget (not a view) that renders a bell icon with a live unread badge. It uses `StreamBuilder<List<DatabaseNotification>>` to reactively display the current notification count:
 
 ```dart
-MagicStarterNotificationDropdown(
+MSNotificationDropdown(
   notificationStream: Notify.notifications(),
   onMarkAsRead: (id) => Notify.markAsRead(id),
   onMarkAllAsRead: () => Notify.markAllAsRead(),

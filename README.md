@@ -252,7 +252,7 @@ collision:
 | `Badge` | `MSBadge` | `SettingsSection` | `MSSettingsSection` |
 | `Typography` | `MSTypography` | `SettingsRow` | `MSSettingsRow` |
 | `Skeleton` | `MSSkeleton` | `SettingsNavRow` | `MSSettingsNavRow` |
-| `Select` | `MSSelect` | `SettingsScaffold` | `MSSettingsScaffold` |
+| `Select` | `MSSelect` | `SettingsScaffold` | `MSPageScaffold` |
 | `Combobox` | `MSCombobox` | `Card` | `MSCard` |
 | `SegmentedControl` | `MSSegmentedControl` | `PageHeader` | `MSPageHeader` |
 | `Tabs` | `MSTabs` | `SocialDivider` | `MSSocialDivider` |
@@ -262,7 +262,7 @@ collision:
 | `BottomSheet` | `MSBottomSheet` | `ConfirmDialog` | `MSConfirmDialog` |
 | `Toast` | `MSToast` | `Tooltip` | `MSTooltip` |
 
-The `MagicStarter*` public widgets (`MagicStarterCard`, `MagicStarterPageHeader`, ...), the per-axis enums (`ButtonIntent`, `InputState`, ...), and the recipe functions are unchanged.
+The per-axis enums (`ButtonIntent`, `InputState`, ...) and the recipe functions are unchanged. `MagicStarterCard` and `MagicStarterPageHeader` are gone: use `MSCard` and `MSPageHeader` directly. The remaining `MagicStarter*` widgets (`MagicStarterConfirmDialog`, `MagicStarterDialogShell`, ...) keep their names.
 
 ---
 
@@ -270,12 +270,12 @@ The `MagicStarter*` public widgets (`MagicStarterCard`, `MagicStarterPageHeader`
 
 Magic Starter also exports a set of standalone UI widgets that consumer apps can use directly. No internal controller coupling required.
 
-### MagicStarterPageHeader
+### MSPageHeader
 
 Full-width page header with title, optional subtitle, optional leading widget, and an `actions` list. Renders `sm:flex-row` responsive layout with a `border-b` divider:
 
 ```dart
-MagicStarterPageHeader(
+MSPageHeader(
   title: trans('projects.title'),
   subtitle: trans('projects.manage_subtitle'),
   leading: BackButton(),
@@ -285,7 +285,7 @@ MagicStarterPageHeader(
 )
 ```
 
-### MagicStarterCard
+### MSCard
 
 Card wrapper with optional `title` slot, `noPadding` mode for full-bleed content, and three visual `variant` styles:
 
@@ -297,20 +297,20 @@ Card wrapper with optional `title` slot, `noPadding` mode for full-bleed content
 
 ```dart
 // Default surface card with title
-MagicStarterCard(
+MSCard(
   title: 'Team Members',
   child: memberList,
 )
 
 // Full-bleed elevated card
-MagicStarterCard(
+MSCard(
   variant: CardVariant.elevated,
   noPadding: true,
   child: dataTable,
 )
 
 // Inset section card
-MagicStarterCard(
+MSCard(
   variant: CardVariant.inset,
   title: 'Danger Zone',
   child: deleteAccountButton,
@@ -355,10 +355,10 @@ final success = await MagicStarterTwoFactorModal.show(
 |--------|---------|
 | `MagicStarterAuthFormCard` | Centered card wrapper for auth-adjacent screens (invite accept, onboarding) |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
-| `MagicStarterTeamSelector` | Current-team switcher dropdown with create/settings links |
-| `MagicStarterUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
-| `MagicStarterNotificationDropdown` | Bell-icon dropdown with live unread badge and mark-as-read |
-| `MagicStarterSocialDivider` | "Or continue with" divider for auth forms |
+| `MSTeamSelector` | Current-team switcher dropdown with create/settings links |
+| `MSUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
+| `MSNotificationDropdown` | Bell-icon dropdown with live unread badge and mark-as-read |
+| `MSSocialDivider` | "Or continue with" divider for auth forms |
 
 All widgets are exported from `package:magic_starter/magic_starter.dart`.
 

@@ -20,7 +20,7 @@
 
 Magic Starter ships a complete atomic design-system component library under `lib/src/ui/components/`. Every component is driven by a `WindRecipe` that resolves colors through the `MagicStarterTokens` semantic alias layer, so a single brand configuration flows into all built-in screens and every component your host app composes directly.
 
-All 29 components (plus the migrated aliases) are exported from `package:magic_starter/magic_starter.dart`.
+All 39 components are exported from `package:magic_starter/magic_starter.dart`.
 
 <a name="semantic-token-layer"></a>
 ## Semantic Token Layer
@@ -174,12 +174,14 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 | Component | Notes |
 |-----------|-------|
 | `MSFormField` | Label + input + hint + error layout wrapper |
-| `MSCard` | Surface/inset/elevated variants; `MagicStarterCard` is a stable alias |
-| `MSPageHeader` | Full-width responsive header; `MagicStarterPageHeader` is a stable alias |
-| `MSSocialDivider` | "Or continue with" separator; `MagicStarterSocialDivider` is a stable alias |
-| `MSNotificationDropdown` | Bell-icon dropdown with live unread badge; `MagicStarterNotificationDropdown` is a stable alias |
-| `MSUserProfileDropdown` | Avatar menu with profile links and logout; `MagicStarterUserProfileDropdown` is a stable alias |
-| `MSTeamSelector` | Current-team switcher; `MagicStarterTeamSelector` is a stable alias |
+| `MSCard` | Surface/inset/elevated variants |
+| `MSPageHeader` | Full-width responsive header (title, subtitle, leading, actions) |
+| `MSSocialDivider` | "Or continue with" separator for auth forms |
+| `MSNotificationDropdown` | Bell-icon dropdown with a live unread badge, backed by a notification stream |
+| `MSUserProfileDropdown` | Avatar menu with profile links, theme toggle and logout |
+| `MSTeamSelector` | Current-team switcher; requires a registered team resolver |
+| `MSPageContainer` | Shared page geometry: width cap, edge margins, vertical rhythm, horizontal safe area. Reads `MagicStarter.manager.pageContainerClassName` |
+| `MSPageScaffold` | Full page treatment: page surface + own scroll + `MSPageContainer` + `MSPageHeader` + `gap-6` sections column |
 
 <a name="import-collisions"></a>
 ## Import Collisions
