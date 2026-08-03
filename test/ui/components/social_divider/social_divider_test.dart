@@ -26,7 +26,7 @@ void main() {
   }
 
   // ---------------------------------------------------------------------------
-  // Behavior equivalence gate — mirrors magic_starter_social_divider_test.dart
+  // Behavior gate: these assertions came from the pre-MS-prefix alias test.
   // ---------------------------------------------------------------------------
 
   testWidgets('SocialDivider renders divider with translated text',

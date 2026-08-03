@@ -151,22 +151,29 @@ class MagicStarterManager {
   /// the sidebar, header, content background, drawer, and brand bar.
   MagicStarterLayoutTheme layoutTheme = const MagicStarterLayoutTheme();
 
-  /// The cap [MSSettingsScaffold] applies when the host configures nothing.
+  /// The page geometry [MSPageContainer] applies when the host configures
+  /// nothing: width cap, horizontal edge margins, and vertical rhythm.
   ///
-  /// Generous on purpose: a narrow centred strip leaves large empty gutters on
-  /// a desktop window, which is what this value was widened to avoid.
-  static const String defaultSettingsMaxWidth = 'max-w-7xl';
+  /// The cap is generous on purpose: a narrow centred strip leaves large empty
+  /// gutters on a desktop window, which is what this value was widened to avoid.
+  static const String defaultPageContainerClassName =
+      'max-w-7xl px-4 lg:px-8 pt-6 sm:pt-8 pb-16';
 
-  /// Wind max-width utility capping the Settings sub-page content column.
+  /// The Wind geometry every page container in the app shares.
   ///
-  /// A host app caps its own pages at its own width, and the settings pages
-  /// render inside that same shell. When this stayed at
-  /// [defaultSettingsMaxWidth] in an app whose pages cap narrower, both columns
-  /// centred inside the same content region but at different widths, so every
-  /// settings header started tens of pixels further out than every other page
-  /// (64px per side against a `max-w-6xl` host). Set it to the host's own page
-  /// width so the two line up.
-  String settingsMaxWidthClassName = defaultSettingsMaxWidth;
+  /// A host app caps its own pages at its own width and pads them on its own
+  /// grid, and this package's pages render inside that same shell. So the
+  /// geometry is the HOST's to choose, and it has to be ONE choice: when the
+  /// starter kept its own answer here, its settings pages centred 64px further
+  /// out per side than the host's pages (`max-w-7xl` against a `max-w-6xl`
+  /// host), and its team pages, which capped at nothing at all, spread the full
+  /// width of the window. Set it once in a service provider and every page in
+  /// the app, starter-owned or host-owned, lines up by construction.
+  ///
+  /// Carry the whole geometry in this one string rather than splitting it across
+  /// several knobs: a cap that agrees while the padding does not still reads as
+  /// two different pages.
+  String pageContainerClassName = defaultPageContainerClassName;
 
   /// Get the unified theme built from all individual sub-theme fields.
   ///

@@ -6,8 +6,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 /// Bell icon dropdown with real-time unread badge powered by a notification stream.
 ///
 /// Uses [WPopover] for overlay mechanics and [StreamBuilder] for live unread
-/// counts. StreamBuilder unread badge and callbacks are preserved verbatim from
-/// the pre-migration [MagicStarterNotificationDropdown].
+/// counts.
 ///
 /// ### Example
 /// ```dart

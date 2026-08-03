@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/components/card/card.recipe.dart';
 
 /// Reproduces the pre-migration `_defaultClassName` interpolation verbatim.
 ///
@@ -47,13 +46,12 @@ void main() {
     );
   }
 
-  testWidgets('MagicStarterCard renders child correctly',
-      (WidgetTester tester) async {
+  testWidgets('MSCard renders child correctly', (WidgetTester tester) async {
     const childKey = Key('test-child');
 
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           child: SizedBox(key: childKey),
         ),
       ),
@@ -63,13 +61,13 @@ void main() {
     expect(find.byType(WText), findsNothing);
   });
 
-  testWidgets('MagicStarterCard renders title when provided',
+  testWidgets('MSCard renders title when provided',
       (WidgetTester tester) async {
     const title = 'Test Title';
 
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           title: title,
           child: SizedBox(),
         ),
@@ -80,13 +78,13 @@ void main() {
     expect(find.byType(WText), findsOneWidget);
   });
 
-  testWidgets('MagicStarterCard uses custom className when provided',
+  testWidgets('MSCard uses custom className when provided',
       (WidgetTester tester) async {
     const customClassName = 'custom-class';
 
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           className: customClassName,
           child: SizedBox(),
         ),
@@ -163,7 +161,7 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           variant: CardVariant.surface,
           child: SizedBox(),
         ),
@@ -180,7 +178,7 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           variant: CardVariant.inset,
           child: SizedBox(),
         ),
@@ -197,7 +195,7 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           variant: CardVariant.elevated,
           child: SizedBox(),
         ),
@@ -212,12 +210,12 @@ void main() {
   testWidgets('default variant is CardVariant.surface', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(child: SizedBox()),
+        const MSCard(child: SizedBox()),
       ),
     );
 
-    final card = tester.widget<MagicStarterCard>(
-      find.byType(MagicStarterCard),
+    final card = tester.widget<MSCard>(
+      find.byType(MSCard),
     );
     expect(card.variant, CardVariant.surface);
   });
@@ -226,7 +224,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           variant: CardVariant.inset,
           noPadding: true,
           child: SizedBox(),
@@ -244,7 +242,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MagicStarterCard(
+        const MSCard(
           variant: CardVariant.elevated,
           noPadding: true,
           child: SizedBox(),
@@ -270,7 +268,7 @@ void main() {
 
       await tester.pumpWidget(
         wrap(
-          const MagicStarterCard(
+          const MSCard(
             variant: CardVariant.surface,
             child: SizedBox(),
           ),
@@ -288,7 +286,7 @@ void main() {
 
       await tester.pumpWidget(
         wrap(
-          const MagicStarterCard(
+          const MSCard(
             title: 'My Card',
             child: SizedBox(),
           ),
@@ -307,7 +305,7 @@ void main() {
 
       await tester.pumpWidget(
         wrap(
-          const MagicStarterCard(
+          const MSCard(
             variant: CardVariant.elevated,
             child: SizedBox(),
           ),

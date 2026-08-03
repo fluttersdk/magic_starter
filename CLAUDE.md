@@ -119,7 +119,7 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | Manual `refreshNotifier` poke | `MagicStarterAppLayout.refreshNotifier` triggers layout rebuilds on auth change — don't poke manually |
 | Missing ValueNotifier disposal | Controllers with `ValueNotifier` fields must have `notifier.dispose()` in tearDown |
 | Unnormalized notification keys | `NotificationController._normalizeMap()` is critical — backend returns mixed-case keys |
-| `MagicStarterCard` title padding in `noPadding` mode | When `noPadding: true`, title gets `px-6 pt-6 pb-3` — do NOT add extra padding around it manually |
+| `MSCard` title padding in `noPadding` mode | When `noPadding: true`, title gets `px-6 pt-6 pb-3` — do NOT add extra padding around it manually |
 | `CardVariant` import | `CardVariant` is exported from the main barrel; import `package:magic_starter/magic_starter.dart` — no direct widget file import needed |
 | Navigation theme not affecting UI | `MagicStarter.useNavigationTheme()` must be called before the app layout is first painted — ideally in `AppServiceProvider.boot()` |
 | `brandBuilder` + `brandClassName` both set | `brandBuilder` wins — `brandClassName` is ignored when a builder is registered |
@@ -129,11 +129,13 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | Slot not rendering | `MagicStarter.view.slot(viewKey, slotName, builder)` must be called before the view is built. Views call `buildSlot()` at build time |
 | Published view not loading | `dart run <app>:artisan starter:publish` copies views to `lib/resources/views/starter/`. Auto-wire adds `MagicStarter.view.register()` to AppServiceProvider |
 | `Icons.*` in `build()` | Extract as `static const _iconName = Icons.xxx` — required for Flutter web tree-shaking |
+| A page building its own container | Every authenticated page goes through `MSPageScaffold` (or `MSPageContainer` for a bare page). A page that opens with `WDiv(className: 'p-4 lg:p-6 ...')` has invented its own width and padding and will not line up with its neighbours |
+| Hardcoding a page width | Page geometry comes from `MagicStarter.manager.pageContainerClassName`, which the HOST sets once. Never put a `max-w-*` or `px-*` on a page root |
 
 ## Skills & Extensions
 
 - `fluttersdk:magic-framework` — Magic Framework patterns: facades, service providers, IoC, Eloquent ORM, controllers, routing. Use for ANY code touching Magic APIs.
-- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MagicStarterCard` (with `CardVariant` enum: surface/inset/elevated), `MagicStarterPageHeader` (title, subtitle, leading, actions, titleSuffix, inlineActions), `MagicStarterConfirmDialog` (with `ConfirmDialogVariant` enum: primary/danger/warning), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`, `MagicStarterDialogShell` (sticky header/footer + scrollable body shell; accepts `footerBuilder: Widget Function(BuildContext dialogContext)?` so callers can `Navigator.pop(dialogContext)` safely), `MagicStarterHideBottomNav` (wrap route group to suppress mobile bottom nav bar). All accept plain callbacks — no internal controller coupling required. All modals read `MagicStarterModalTheme` tokens at build time.
+- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MSCard` (with `CardVariant` enum: surface/inset/elevated), `MSPageHeader` (title, subtitle, leading, actions, titleSuffix, inlineActions), `MagicStarterConfirmDialog` (with `ConfirmDialogVariant` enum: primary/danger/warning), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`, `MagicStarterDialogShell` (sticky header/footer + scrollable body shell; accepts `footerBuilder: Widget Function(BuildContext dialogContext)?` so callers can `Navigator.pop(dialogContext)` safely), `MagicStarterHideBottomNav` (wrap route group to suppress mobile bottom nav bar). All accept plain callbacks — no internal controller coupling required. All modals read `MagicStarterModalTheme` tokens at build time.
 
 ## CI
 

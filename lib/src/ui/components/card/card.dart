@@ -26,7 +26,7 @@ enum CardVariant {
 ///
 /// Provides a consistent background, border, and padding through a
 /// [WindRecipe] (`card.recipe.dart`) whose output is byte-identical to the
-/// pre-migration `MagicStarterCard` for every variant x [noPadding] combo.
+/// pre-migration widget for every variant x [noPadding] combo.
 /// Optionally includes a title at the top.
 ///
 /// ### Variant styles

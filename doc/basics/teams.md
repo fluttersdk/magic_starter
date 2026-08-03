@@ -14,7 +14,7 @@
 - [Feature Gate](#feature-gate)
 - [Controller](#controller)
 - [Views](#views)
-- [Widget: MagicStarterTeamSelector](#widget-magicstarterteamselector)
+- [Widget: MSTeamSelector](#widget-msteamselector)
 - [Model: MagicStarterTeam](#model-magicstarterteam)
 
 <a name="introduction"></a>
@@ -83,7 +83,7 @@ final success = await MagicStarterTeamController.instance.switchTeam(teamId);
 
 This sends `PUT /user/current-team` with the target `team_id`. On success, the controller updates `currentTeamId.value` and calls `Auth.restore()` to refresh the user model with the new team context.
 
-The team selector dropdown (see [Widget: MagicStarterTeamSelector](#widget-magicstarterteamselector)) is built from the resolver's `allTeams()` callback and triggers `onSwitch()` when a selection changes.
+The team selector dropdown (see [Widget: MSTeamSelector](#widget-msteamselector)) is built from the resolver's `allTeams()` callback and triggers `onSwitch()` when a selection changes.
 
 <a name="invitation"></a>
 ## Invitation
@@ -242,13 +242,13 @@ MagicStarter.view.make('teams.invitation_accept');
 
 The host app can override any view by registering a custom builder under the same key.
 
-<a name="widget-magicstarterteamselector"></a>
-## Widget: MagicStarterTeamSelector
+<a name="widget-msteamselector"></a>
+## Widget: MSTeamSelector
 
-The `MagicStarterTeamSelector` is a dropdown widget built from the team resolver callbacks. It displays the user's teams and triggers a team switch on selection:
+The `MSTeamSelector` is a dropdown widget built from the team resolver callbacks. It displays the user's teams and triggers a team switch on selection:
 
 ```dart
-MagicStarterTeamSelector()
+MSTeamSelector()
 ```
 
 The widget reads `MagicStarter.teamResolver` to populate the dropdown options and calls the resolver's `onSwitch` callback when the user selects a different team. It is typically placed in the app layout's sidebar or header.

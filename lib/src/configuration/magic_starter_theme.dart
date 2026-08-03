@@ -86,7 +86,7 @@ class MagicStarterNavigationTheme {
   /// Profile dropdown trigger avatar background className.
   ///
   /// Used for the default circular avatar rendered in
-  /// [MagicStarterUserProfileDropdown] when no custom [triggerBuilder] is set.
+  /// [MSUserProfileDropdown] when no custom [triggerBuilder] is set.
   ///
   /// Defaults to `'bg-gradient-to-tr from-primary to-gray-200'`.
   final String dropdownAvatarClassName;
@@ -305,7 +305,7 @@ class MagicStarterFormTheme {
 // Card theme
 // ---------------------------------------------------------------------------
 
-/// Theme configuration for [MagicStarterCard] widget styling.
+/// Theme configuration for [MSCard] widget styling.
 ///
 /// Controls Wind UI class names for card variants (surface, inset, elevated),
 /// title text, border radius, and padding.
@@ -374,7 +374,7 @@ class MagicStarterCardTheme {
 // Page header theme
 // ---------------------------------------------------------------------------
 
-/// Theme configuration for [MagicStarterPageHeader] widget styling.
+/// Theme configuration for [MSPageHeader] widget styling.
 ///
 /// Controls Wind UI class names for the header container, title, subtitle,
 /// and action button row.

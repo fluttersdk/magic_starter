@@ -273,8 +273,8 @@ void main() {
         // Verify WButton widgets exist (action buttons including delete).
         expect(find.byType(WButton), findsWidgets);
 
-        // Verify the delete card exists (MagicStarterCard).
-        expect(find.byType(MagicStarterCard), findsWidgets);
+        // Verify the delete card exists (MSCard).
+        expect(find.byType(MSCard), findsWidgets);
       },
     );
   });

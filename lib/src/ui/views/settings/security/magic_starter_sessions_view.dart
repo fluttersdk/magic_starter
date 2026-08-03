@@ -5,7 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../../components/settings_row/index.dart';
-import '../../../components/settings_scaffold/settings_scaffold.dart';
+import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 import '../../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../../widgets/magic_starter_confirm_dialog.dart';
@@ -13,7 +13,7 @@ import '../../../widgets/magic_starter_confirm_dialog.dart';
 /// Active sessions settings sub-page.
 ///
 /// Drilled into from the Settings hub. Wraps the browser-sessions list in a
-/// [MSSettingsScaffold] with a unified back affordance returning to the hub.
+/// [MSPageScaffold] with a unified back affordance returning to the hub.
 ///
 /// Each device is rendered as a [MSSettingsRow] (destructive-tone revoke control
 /// for non-current devices). The load + revoke wiring is lifted verbatim from
@@ -142,7 +142,7 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    return MSSettingsScaffold(
+    return MSPageScaffold(
       title: trans('profile.browser_sessions'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),

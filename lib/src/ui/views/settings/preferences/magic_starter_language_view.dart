@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
-import '../../../components/settings_scaffold/index.dart';
+import '../../../components/page_scaffold/index.dart';
 import '../../../components/settings_section/index.dart';
 
 /// Language settings sub-page — locale selector persisted to the profile.
@@ -88,7 +88,7 @@ class _MagicStarterLanguageViewState extends MagicStatefulViewState<
   Widget build(BuildContext context) {
     final formTheme = MagicStarter.formTheme;
 
-    return MSSettingsScaffold(
+    return MSPageScaffold(
       title: trans('profile.language_label'),
       subtitle: trans('magic_starter.language.subtitle'),
       backLabel: trans('profile.settings'),

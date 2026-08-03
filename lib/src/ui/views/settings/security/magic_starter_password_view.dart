@@ -5,13 +5,13 @@ import 'package:magic/magic.dart';
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
-import '../../../components/settings_scaffold/settings_scaffold.dart';
+import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 
 /// Password update settings sub-page.
 ///
 /// Drilled into from the Settings hub. Wraps the current/new/confirm password
-/// form in a [MSSettingsScaffold] with a unified back affordance returning to
+/// form in a [MSPageScaffold] with a unified back affordance returning to
 /// the hub.
 ///
 /// The form wiring is lifted verbatim from the original long-form profile
@@ -93,7 +93,7 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
   Widget build(BuildContext context) {
     final formTheme = MagicStarter.formTheme;
 
-    return MSSettingsScaffold(
+    return MSPageScaffold(
       title: trans('profile.update_password'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),

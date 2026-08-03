@@ -7,6 +7,7 @@
 - [Form Handling](#form-handling)
 - [AppLayout](#applayout)
 - [GuestLayout](#guestlayout)
+- [Page Chrome](#page-chrome)
 - [Wind UI System](#wind-ui-system)
 - [Dark Mode](#dark-mode)
 - [View Registry](#view-registry)
@@ -60,7 +61,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
 The `MagicStatefulViewState` base class provides access to the controller singleton via `controller` and lifecycle hooks via `onInit()` and `onClose()`.
 
 > [!NOTE]
-> Views are NOT widgets like `MagicStarterNotificationDropdown` — those extend `StatelessWidget` or `StatefulWidget` directly. Only full-page views that need a controller binding use `MagicStatefulView`.
+> Views are NOT widgets like `MSNotificationDropdown` — those extend `StatelessWidget` or `StatefulWidget` directly. Only full-page views that need a controller binding use `MagicStatefulView`.
 
 <a name="view-lifecycle"></a>
 ## View Lifecycle
@@ -264,6 +265,57 @@ The layout uses `wColor()` for theme-aware background colors and wraps content i
 > [!NOTE]
 > Guest routes use `RouteTransition.none` — there is no animation between auth screens (login to register, etc.). This is intentional for a seamless form-flow experience.
 
+<a name="page-chrome"></a>
+## Page Chrome
+
+The layout shell owns the sidebar, the header, and the scroll region. What is left is page chrome: how wide the content column is, how far it sits from the edges, and where the page title goes. Two components own that, and every authenticated page goes through one of them.
+
+`MSPageScaffold` is the full treatment. Give it a title and a list of sections, and it renders the page surface, its own vertical scroll, the shared content geometry, a unified `MSPageHeader`, and a `gap-6` column for the sections:
+
+```dart
+MSPageScaffold(
+  title: trans('teams.settings'),
+  subtitle: trans('teams.settings_subtitle'),
+  children: [
+    MSCard(title: 'General', child: generalForm),
+    MSCard(title: 'Members', child: memberList),
+  ],
+)
+```
+
+A sub-page adds a back affordance, and a top-level page can put an action next to the title:
+
+```dart
+MSPageScaffold(
+  title: trans('notifications.title'),
+  actions: [markAllAsReadButton],
+  children: [MSCard(noPadding: true, child: notificationList)],
+)
+
+MSPageScaffold(
+  title: trans('profile.settings'),
+  backLabel: trans('magic_starter.nav.settings'),
+  backFallback: MagicStarterConfig.settingsHubRoute(),
+  children: [profileForm],
+)
+```
+
+`MSPageContainer` is the geometry alone: width cap, edge margins, vertical rhythm, and a horizontal safe-area guard. Reach for it when the page brings its own header or scrolls its own way, which is the usual shape in a host app:
+
+```dart
+MSPageContainer(
+  children: [
+    MSPageHeader(title: 'Monitors', actions: [newMonitorButton]),
+    monitorTable,
+  ],
+)
+```
+
+Neither component decides the numbers. They read `MagicStarter.manager.pageContainerClassName`, which the host sets once (see [Page Geometry](https://magic.fluttersdk.com/packages/starter/architecture/manager#page-geometry)). That is what makes a starter account page and a host domain page line up inside the same shell.
+
+> [!WARNING]
+> Do not open a page with its own `WDiv(className: 'p-4 lg:p-6 flex flex-col gap-6')`. It looks harmless and it is how the settings, team, and notification pages ended up at three different widths in the same app: one capped at `max-w-7xl`, one at `max-w-6xl`, and one at nothing at all. A page that needs to tune one axis passes `className` to `MSPageContainer` instead.
+
 <a name="wind-ui-system"></a>
 ## Wind UI System
 
@@ -452,7 +504,7 @@ WDiv(
     ],
     if (MagicStarterConfig.hasSocialLoginFeatures() &&
         MagicStarter.hasSocialLogin) ...[
-      const MagicStarterSocialDivider(),
+      const MSSocialDivider(),
       MagicStarter.socialLoginBuilder!(context, isLoading),
     ],
   ],
@@ -508,12 +560,12 @@ Magic Starter exports standalone UI widgets that consumer apps can import and us
 
 All widgets are exported from `package:magic_starter/magic_starter.dart`.
 
-### MagicStarterPageHeader
+### MSPageHeader
 
 Full-width page header with responsive `sm:flex-row` layout and a `border-b` separator. All parameters beyond `title` are optional:
 
 ```dart
-MagicStarterPageHeader(
+MSPageHeader(
   title: trans('projects.title'),
   subtitle: trans('projects.manage_subtitle'),  // optional
   leading: const BackButton(),                  // optional
@@ -526,7 +578,7 @@ MagicStarterPageHeader(
 Detail view with status badge and always-inline layout:
 
 ```dart
-MagicStarterPageHeader(
+MSPageHeader(
   title: 'Task Details',
   leading: Icon(Icons.arrow_back),
   titleSuffix: StatusBadge(status: 'done'),
@@ -544,7 +596,7 @@ MagicStarterPageHeader(
 | `titleSuffix` | `Widget?` | — | Optional widget rendered inline after the title (e.g. status badge). Stays on the same row as the title text. |
 | `inlineActions` | `bool` | — | When `true`, forces single-row layout on all screen sizes (no mobile stacking). Useful for detail views where actions must stay inline with the title. |
 
-### MagicStarterCard
+### MSCard
 
 Card wrapper with an optional `title` slot, `noPadding` mode for full-bleed content, and three visual variants:
 
@@ -556,20 +608,20 @@ Card wrapper with an optional `title` slot, `noPadding` mode for full-bleed cont
 
 ```dart
 // Default padded surface card with title
-MagicStarterCard(
+MSCard(
   title: 'Team Members',
   child: memberList,
 )
 
 // Full-bleed elevated card (e.g. data table)
-MagicStarterCard(
+MSCard(
   variant: CardVariant.elevated,
   noPadding: true,
   child: dataTable,
 )
 
 // Inset danger-zone card
-MagicStarterCard(
+MSCard(
   variant: CardVariant.inset,
   title: 'Danger Zone',
   child: deleteButton,
@@ -675,8 +727,8 @@ The modal can also be used for standalone re-authentication (e.g. before a sensi
 |--------|-------------|
 | `MagicStarterAuthFormCard` | Centered card wrapper (max 480 px) for auth-adjacent screens — invite accept, onboarding, etc. Accepts `title`, `subtitle`, optional `errorMessage`, and a theme-toggle button. |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones?search=...`. Debounces search at 300 ms and always includes the pre-selected value in options. |
-| `MagicStarterTeamSelector` | Current-team switcher dropdown. Requires `MagicStarter.teamResolver` to be registered. `compact` mode hides the team name label. |
-| `MagicStarterUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, theme toggle, and logout. Supports a custom `triggerBuilder`. |
-| `MagicStarterNotificationDropdown` | Bell-icon dropdown backed by a `Stream<List<DatabaseNotification>>`. Displays live unread badge, color-coded icons, and mark-as-read callbacks. |
-| `MagicStarterSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |
+| `MSTeamSelector` | Current-team switcher dropdown. Requires `MagicStarter.teamResolver` to be registered. `compact` mode hides the team name label. |
+| `MSUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, theme toggle, and logout. Supports a custom `triggerBuilder`. |
+| `MSNotificationDropdown` | Bell-icon dropdown backed by a `Stream<List<DatabaseNotification>>`. Displays live unread badge, color-coded icons, and mark-as-read callbacks. |
+| `MSSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |
 | `MagicStarterHideBottomNav` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar. Wrap a route layout with this widget and check `MagicStarterHideBottomNav.of(context)` in the layout's build method. |

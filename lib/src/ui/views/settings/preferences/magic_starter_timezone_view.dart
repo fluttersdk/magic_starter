@@ -3,7 +3,7 @@ import 'package:magic/magic.dart';
 
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
-import '../../../components/settings_scaffold/index.dart';
+import '../../../components/page_scaffold/index.dart';
 import '../../../components/settings_section/index.dart';
 import '../../../widgets/magic_starter_timezone_select.dart';
 
@@ -74,7 +74,7 @@ class _MagicStarterTimezoneViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    return MSSettingsScaffold(
+    return MSPageScaffold(
       title: trans('profile.timezone_label'),
       subtitle: trans('magic_starter.timezone.subtitle'),
       backLabel: trans('profile.settings'),

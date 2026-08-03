@@ -208,7 +208,7 @@ class _ProjectListViewState
     return WDiv(
       className: 'flex flex-col',
       children: [
-        MagicStarterPageHeader(
+        MSPageHeader(
           title: 'Projects',
           subtitle: 'Manage your projects',
           actions: [
@@ -223,7 +223,7 @@ class _ProjectListViewState
           className: 'flex flex-col gap-2 p-6',
           children: [
             for (final project in projects)
-              MagicStarterCard(
+              MSCard(
                 child: WText(
                   project['name'] as String,
                   className: 'text-gray-900 dark:text-white text-sm',
@@ -616,7 +616,7 @@ class _ProjectListViewState
     return WDiv(
       className: 'flex flex-col',
       children: [
-        MagicStarterPageHeader(
+        MSPageHeader(
           title: 'Projects',
           subtitle: '${projects.length} total',
           actions: [
@@ -631,7 +631,7 @@ class _ProjectListViewState
           className: 'flex flex-col gap-3 p-6',
           children: [
             for (final project in projects)
-              MagicStarterCard(
+              MSCard(
                 child: WDiv(
                   className: 'flex flex-col gap-1',
                   children: [

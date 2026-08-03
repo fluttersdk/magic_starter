@@ -4,8 +4,8 @@ import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
 import '../../../facades/magic_starter.dart';
-import '../../widgets/magic_starter_card.dart';
-import '../../widgets/magic_starter_page_header.dart';
+import '../../components/card/card.dart';
+import '../../components/page_scaffold/page_scaffold.dart';
 
 /// Full-page view for listing all notifications with mark as read,
 /// delete, pagination, and view all functionality.
@@ -114,42 +114,44 @@ class _MagicStarterNotificationsListViewState
     final footerSlot =
         MagicStarter.view.buildSlot('notifications.list', 'footer', context);
 
-    return WDiv(
-      className: 'p-4 lg:p-6 flex flex-col gap-6',
+    return MSPageScaffold(
+      title: trans('notifications.title'),
+      subtitle: trans('notifications.list_subtitle'),
+      actions: _buildHeaderActions(hasUnread: hasUnread),
       children: [
         if (headerSlot != null) headerSlot,
-        _buildHeader(context, hasUnread: hasUnread),
         _buildBody(context, notifications, totalPages),
         if (footerSlot != null) footerSlot,
       ],
     );
   }
 
-  Widget _buildHeader(BuildContext context, {required bool hasUnread}) {
-    return MagicStarterPageHeader(
-      title: trans('notifications.title'),
-      subtitle: trans('notifications.list_subtitle'),
-      actions: hasUnread
-          ? [
-              WButton(
-                onTap: () async {
-                  if (widget.onMarkAllAsRead != null) {
-                    await widget.onMarkAllAsRead!.call();
-                  } else {
-                    await Notify.markAllAsRead();
-                  }
-                  _loadPage(_currentPage);
-                },
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white font-medium text-sm',
-                child: WText(
-                  trans('notifications.mark_all_read'),
-                  className: 'text-white font-medium text-sm',
-                ),
-              ),
-            ]
-          : null,
-    );
+  /// Builds the mark-all-as-read action, or nothing when everything is read.
+  ///
+  /// The action rides in the shared page header rather than a header this page
+  /// builds for itself: a page that owns its header ends up owning its container
+  /// too, which is how this surface drifted off the app's page geometry.
+  List<Widget>? _buildHeaderActions({required bool hasUnread}) {
+    if (!hasUnread) return null;
+
+    return [
+      WButton(
+        onTap: () async {
+          if (widget.onMarkAllAsRead != null) {
+            await widget.onMarkAllAsRead!.call();
+          } else {
+            await Notify.markAllAsRead();
+          }
+          _loadPage(_currentPage);
+        },
+        className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 '
+            'text-white font-medium text-sm',
+        child: WText(
+          trans('notifications.mark_all_read'),
+          className: 'text-white font-medium text-sm',
+        ),
+      ),
+    ];
   }
 
   Widget _buildBody(
@@ -158,7 +160,7 @@ class _MagicStarterNotificationsListViewState
     int totalPages,
   ) {
     if (_isLoading && notifications.isEmpty) {
-      return const MagicStarterCard(
+      return const MSCard(
         child: WDiv(
           className: 'flex items-center justify-center py-20',
           child: CircularProgressIndicator(),
@@ -183,7 +185,7 @@ class _MagicStarterNotificationsListViewState
     return WDiv(
       className: 'flex flex-col gap-6',
       children: [
-        MagicStarterCard(
+        MSCard(
           noPadding: true,
           child: WDiv(
             className: 'flex flex-col',
@@ -197,7 +199,7 @@ class _MagicStarterNotificationsListViewState
   }
 
   Widget _buildEmptyState({required IconData icon, required String message}) {
-    return MagicStarterCard(
+    return MSCard(
       child: WDiv(
         className: 'flex flex-col items-center justify-center py-20 gap-4',
         children: [

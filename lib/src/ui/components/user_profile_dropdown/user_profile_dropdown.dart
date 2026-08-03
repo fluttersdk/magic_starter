@@ -9,9 +9,8 @@ import '../../../http/controllers/magic_starter_auth_controller.dart';
 /// A dropdown widget for the user profile.
 ///
 /// Renders the user's avatar, name, and email, along with profile links and
-/// a logout action. Preserves all behavior from the pre-migration
-/// [MagicStarterUserProfileDropdown]: StreamBuilder unread badge, teamResolver
-/// callbacks, avatar theme tokens, logout callback, theme toggle.
+/// a logout action, plus a StreamBuilder unread badge, teamResolver callbacks,
+/// avatar theme tokens and a theme toggle.
 ///
 /// ### Example
 /// ```dart

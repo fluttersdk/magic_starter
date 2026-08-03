@@ -6,8 +6,8 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_notification_controller.dart';
 import '../../components/switch/switch.dart';
-import '../../widgets/magic_starter_card.dart';
-import '../../widgets/magic_starter_page_header.dart';
+import '../../components/card/card.dart';
+import '../../components/page_scaffold/page_scaffold.dart';
 
 /// Notification preferences view for Magic Starter.
 ///
@@ -73,16 +73,13 @@ class _MagicStarterNotificationPreferencesViewState
       context,
     );
 
-    return WDiv(
-      className: 'p-4 lg:p-6 flex flex-col gap-6',
+    return MSPageScaffold(
+      title: trans('notifications.preferences_title'),
+      subtitle: trans('notifications.preferences_description'),
+      backLabel: trans('profile.settings'),
+      backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
         if (headerSlot != null) headerSlot,
-        MagicStarterPageHeader(
-          title: trans('notifications.preferences_title'),
-          subtitle: trans('notifications.preferences_description'),
-          backLabel: trans('profile.settings'),
-          backFallback: MagicStarterConfig.settingsHubRoute(),
-        ),
         _buildMatrixSettings(),
         if (footerSlot != null) footerSlot,
       ],
@@ -102,7 +99,7 @@ class _MagicStarterNotificationPreferencesViewState
         final Map<String, dynamic> matrix = controller.matrixNotifier.value;
 
         if (matrix.isEmpty) {
-          return MagicStarterCard(
+          return MSCard(
             title: '',
             child: WDiv(
               className:
@@ -145,7 +142,7 @@ class _MagicStarterNotificationPreferencesViewState
     final channels = typeData['channels'] as Map<String, dynamic>? ?? {};
     final channelKeys = channels.keys.toList();
 
-    return MagicStarterCard(
+    return MSCard(
       title: title,
       noPadding: true,
       child: WDiv(

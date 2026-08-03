@@ -7,8 +7,8 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../components/switch/switch.dart';
-import '../../widgets/magic_starter_card.dart';
-import '../../widgets/magic_starter_page_header.dart';
+import '../../components/card/card.dart';
+import '../../components/page_scaffold/page_scaffold.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
 import '../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../widgets/magic_starter_two_factor_modal.dart';
@@ -424,14 +424,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     final afterSessionsSlot = MagicStarter.view
         .buildSlot('profile.settings', 'afterSection:sessions', context);
 
-    return WDiv(
-      className: 'p-4 lg:p-6 flex flex-col gap-6',
+    return MSPageScaffold(
+      title: trans('profile.settings'),
+      subtitle: trans('profile.settings_subtitle'),
       children: [
         if (headerSlot != null) headerSlot,
-        MagicStarterPageHeader(
-          title: trans('profile.settings'),
-          subtitle: trans('profile.settings_subtitle'),
-        ),
         if (MagicStarterConfig.hasProfilePhotoFeatures() &&
             Gate.allows('starter.update-profile-photo')) ...[
           if (beforePhotoSlot != null) beforePhotoSlot,
@@ -478,7 +475,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     final user = Auth.user();
     final photoUrl = user?.get<String>('profile_photo_url');
 
-    return MagicStarterCard(
+    return MSCard(
       title: trans('profile.profile_photo'),
       child: WDiv(
         className: 'w-full flex flex-col sm:flex-row items-center gap-6',
@@ -571,7 +568,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
           ];
     final hasExtended = MagicStarterConfig.hasExtendedProfileFeatures();
 
-    return MagicStarterCard(
+    return MSCard(
       title: trans('profile.profile_information'),
       child: WDiv(
         className: 'flex flex-col gap-4',
@@ -646,7 +643,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     final formTheme = MagicStarter.formTheme;
     return MagicForm(
       formData: passwordForm,
-      child: MagicStarterCard(
+      child: MSCard(
         title: trans('profile.update_password'),
         child: WDiv(
           className: 'flex flex-col gap-4',
@@ -727,7 +724,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// or a yellow warning banner with a resend button when unverified.
   Widget _buildEmailVerificationSection() {
     if (controller.isEmailVerified) {
-      return MagicStarterCard(
+      return MSCard(
         title: trans('magic_starter.email_verification.section_title'),
         child: WDiv(
           className: 'flex items-center gap-3 py-1',
@@ -746,7 +743,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       );
     }
 
-    return MagicStarterCard(
+    return MSCard(
       title: trans('magic_starter.email_verification.section_title'),
       child: WDiv(
         className: 'flex flex-col gap-4',
@@ -809,7 +806,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Gated behind [MagicStarterConfig.hasTwoFactorFeatures].
   /// Renders one of two states: disabled, enabled.
   Widget _buildTwoFactorSection() {
-    return MagicStarterCard(
+    return MSCard(
       title: trans('profile.two_factor_authentication'),
       child: WDiv(
         className: 'flex flex-col gap-4',
@@ -955,7 +952,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Gated behind [MagicStarterConfig.hasNewsletterFeatures] and
   /// the `starter.manage-newsletter` Gate ability.
   Widget _buildNewsletterSection() {
-    return MagicStarterCard(
+    return MSCard(
       title: trans('magic_starter.newsletter.section_title'),
       child: WDiv(
         className: 'flex flex-col gap-4',
@@ -1046,7 +1043,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Gated behind [MagicStarterConfig.hasSessionsFeatures].
   /// Shows a loading indicator, empty state, or a list of active sessions.
   Widget _buildSessionsSection() {
-    return MagicStarterCard(
+    return MSCard(
       title: trans('profile.browser_sessions'),
       child: WDiv(
         className: 'flex flex-col gap-4',
@@ -1175,7 +1172,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   Widget _buildDeleteAccountSection() {
     // Gate: guests see an upgrade prompt instead of the delete form.
     if (Gate.denies('starter.delete-account')) {
-      return MagicStarterCard(
+      return MSCard(
         title: trans('magic_starter.profile.delete_account.title'),
         child: WDiv(
           className: 'flex flex-col gap-4',
@@ -1216,7 +1213,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     return MagicForm(
       formData: deleteAccountForm,
-      child: MagicStarterCard(
+      child: MSCard(
         title: trans('magic_starter.profile.delete_account.title'),
         child: WDiv(
           className: 'flex flex-col gap-4',
@@ -1290,7 +1287,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
     return MagicForm(
       formData: upgradeForm,
-      child: MagicStarterCard(
+      child: MSCard(
         title: trans('magic_starter.guest_upgrade.title'),
         child: WDiv(
           className: 'flex flex-col gap-4',

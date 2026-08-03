@@ -18,6 +18,7 @@
 - [Card Theme](#card-theme)
 - [Page Header Theme](#page-header-theme)
 - [Layout Theme](#layout-theme)
+- [Page Geometry](#page-geometry)
 - [View Registry Integration](#view-registry-integration)
 - [Default Views](#default-views)
 - [MagicStarter Facade](#magicstarter-facade)
@@ -408,7 +409,7 @@ MagicStarter.useAuthTheme(
 <a name="card-theme"></a>
 ## Card Theme
 
-`MagicStarterCardTheme` overrides Wind UI tokens for `MagicStarterCard` variant backgrounds, border radius, padding, and title styles.
+`MagicStarterCardTheme` overrides Wind UI tokens for `MSCard` variant backgrounds, border radius, padding, and title styles.
 
 ```dart
 MagicStarter.useCardTheme(
@@ -422,7 +423,7 @@ MagicStarter.useCardTheme(
 <a name="page-header-theme"></a>
 ## Page Header Theme
 
-`MagicStarterPageHeaderTheme` overrides Wind UI tokens for the `MagicStarterPageHeader` container, title, subtitle, and action container.
+`MagicStarterPageHeaderTheme` overrides Wind UI tokens for the `MSPageHeader` container, title, subtitle, and action container.
 
 ```dart
 MagicStarter.usePageHeaderTheme(
@@ -446,6 +447,35 @@ MagicStarter.useLayoutTheme(
     contentBackgroundLightShade: 50,
   ),
 );
+```
+
+<a name="page-geometry"></a>
+## Page Geometry
+
+`pageContainerClassName` is the Wind geometry every page in the app shares: the width cap, the horizontal edge margins, and the vertical rhythm. `MSPageContainer` reads it, and `MSPageScaffold` composes `MSPageContainer`, so every page in this package and every page in the host app resolve to the same numbers.
+
+```dart
+// In AppServiceProvider.boot()
+MagicStarter.manager.pageContainerClassName =
+    'max-w-6xl px-4 sm:px-5 lg:px-8 pt-6 sm:pt-8 pb-24';
+```
+
+The geometry belongs to the host, not to this package. Magic Starter's account pages render inside the host's own shell (see [Layout Theme](#layout-theme) and the `layout.app` view key), so a width chosen here is a guess about someone else's layout. While each surface carried its own answer, the settings pages centred 64px further out per side than the host's pages and the team pages capped at nothing at all, all inside identical chrome.
+
+Carry the whole geometry in the one string. A cap that agrees while the padding does not still reads as two different pages.
+
+It defaults to `MagicStarterManager.defaultPageContainerClassName` (`max-w-7xl px-4 lg:px-8 pt-6 sm:pt-8 pb-16`), so an app that configures nothing still gets a complete, capped, edge-padded page.
+
+> [!NOTE]
+> The vertical padding matters as much as the cap. The app layout's content region is a bare scroll view with no padding of its own, so a geometry with no `pt-*` glues the page header to the top edge of the viewport. If the host floats anything over its content region (a FAB, for instance), the bottom pad has to clear it.
+
+Per-page tuning goes through `MSPageContainer`'s `className`, which is appended after the shared geometry:
+
+```dart
+MSPageContainer(
+  className: 'pb-0', // This page ends with its own footer bar.
+  child: pageBody,
+)
 ```
 
 <a name="view-registry-integration"></a>

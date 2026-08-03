@@ -6,7 +6,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../components/settings_section/index.dart';
-import '../../components/settings_scaffold/index.dart';
+import '../../components/page_scaffold/index.dart';
 
 /// Profile sub-page view (`profile.profile`).
 ///
@@ -141,7 +141,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
 
     final isGuest = Gate.denies('starter.delete-account');
 
-    return MSSettingsScaffold(
+    return MSPageScaffold(
       title: trans('profile.settings'),
       subtitle: trans('profile.settings_subtitle'),
       backLabel: trans('magic_starter.nav.settings'),
