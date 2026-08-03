@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.19] - 2026-08-03
+
 ### Added
 
 - **`MSPageContainer`: one page container for every page, in this package and in the host app.** The width cap the previous release handed to the host fixed the settings pages and nothing else, because the cap was only ever half the geometry and only one of three surfaces read it. The team pages (`/teams/create`, `/teams/settings`) and the notification pages (`/notifications`, `/notifications/preferences`) opened with a bare `WDiv(className: 'p-4 lg:p-6 flex flex-col gap-6')`: no cap at all, so on a desktop window they spread the full width of the content region while the settings and host pages centred in a column, and `p-4 lg:p-6` against the settings scaffold's `px-4 lg:px-8` put their headers on a different vertical and horizontal grid. Three surfaces, three answers, one shell. `MSPageContainer` now owns the geometry (width, edge margins, vertical rhythm, plus a horizontal safe-area guard so content never slides under a rounded display corner), `MSPageScaffold` composes it, and a host app uses the same component for its own pages. Nothing per page is left to disagree about.
