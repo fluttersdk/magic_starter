@@ -99,7 +99,7 @@ void main() {
   }
 
   // ---------------------------------------------------------------------------
-  // Behavior equivalence gate — mirrors magic_starter_user_profile_dropdown_test
+  // Behavior gate: these assertions came from the pre-MS-prefix alias test.
   // ---------------------------------------------------------------------------
 
   testWidgets('renders avatar with user initial when authenticated',
@@ -168,5 +168,115 @@ void main() {
     await tester.pumpWidget(wrap(const UserProfileDropdownPreview()));
     await tester.pump();
     expect(find.byType(UserProfileDropdownPreview), findsOneWidget);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Menu contents. The dropdown assembles its items from three sources (the
+  // built-in profile link, the host's registered profileMenuItems, and logout),
+  // so each source needs its own assertion: a regression in one is invisible
+  // through the others.
+  // ---------------------------------------------------------------------------
+
+  testWidgets('shows profile settings menu item in dropdown', (tester) async {
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    // trans('common.user')[0] is the fallback avatar initial.
+    await tester.tap(find.text('C'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('auth.profile'), findsOneWidget);
+    expect(find.byIcon(Icons.person_outline), findsOneWidget);
+  });
+
+  testWidgets('shows custom profileMenuItems in dropdown', (tester) async {
+    MagicStarter.useNavigation(
+      mainItems: [],
+      profileMenuItems: [
+        MagicStarterNavItem(
+          icon: Icons.notifications_outlined,
+          labelKey: 'Notifications',
+          path: '/notifications',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('C'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Notifications'), findsOneWidget);
+    expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+  });
+
+  testWidgets('shows logout item in dropdown and handles tap', (tester) async {
+    bool logoutCalled = false;
+    MagicStarter.manager.onLogout = () async {
+      logoutCalled = true;
+    };
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('C'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('auth.logout'), findsOneWidget);
+    expect(find.byIcon(Icons.logout), findsOneWidget);
+
+    await tester.tap(find.text('auth.logout'));
+    await tester.pumpAndSettle();
+
+    expect(logoutCalled, isTrue);
+  });
+
+  testWidgets('menu items are scrollable when many items registered',
+      (tester) async {
+    MagicStarter.useNavigation(
+      mainItems: [],
+      profileMenuItems: [
+        for (int i = 0; i < 10; i++)
+          MagicStarterNavItem(
+            icon: Icons.settings,
+            labelKey: 'Item $i',
+            path: '/item-$i',
+          ),
+      ],
+    );
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('C'));
+    await tester.pumpAndSettle();
+
+    for (int i = 0; i < 10; i++) {
+      expect(find.text('Item $i'), findsOneWidget);
+    }
+  });
+
+  testWidgets('shows theme toggle in dropdown and toggles without closing',
+      (tester) async {
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('C'));
+    await tester.pumpAndSettle();
+
+    // Light mode shows the dark-mode affordance, not both.
+    expect(find.text('common.toggle_theme'), findsOneWidget);
+    expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.light_mode_outlined), findsNothing);
+
+    await tester.tap(find.text('common.toggle_theme'));
+    await tester.pumpAndSettle();
+
+    // The icon flips and the dropdown stays open: toggling the theme must not
+    // dismiss the menu the operator is still reading.
+    expect(find.byIcon(Icons.light_mode_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.dark_mode_outlined), findsNothing);
+    expect(find.text('common.toggle_theme'), findsOneWidget);
   });
 }

@@ -6,11 +6,11 @@ import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
 
-import '../widgets/magic_starter_team_selector.dart';
-import '../widgets/magic_starter_user_profile_dropdown.dart';
+import '../components/team_selector/team_selector.dart';
+import '../components/user_profile_dropdown/user_profile_dropdown.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
-import '../widgets/magic_starter_notification_dropdown.dart';
+import '../components/notification_dropdown/notification_dropdown.dart';
 
 /// Default App Layout for Magic Starter.
 ///
@@ -251,7 +251,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           className: 'flex items-center gap-1',
           children: [
             _buildNotificationBell(),
-            const MagicStarterUserProfileDropdown(),
+            const MSUserProfileDropdown(),
           ],
         ),
       ],
@@ -306,7 +306,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     }
 
     if (MagicStarter.hasTeamResolver) {
-      return MagicStarterTeamSelector();
+      return MSTeamSelector();
     }
 
     return const SizedBox.shrink();
@@ -539,7 +539,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         children: [
           // User profile dropdown (reuses the same dropdown menu)
           Expanded(
-            child: MagicStarterUserProfileDropdown(
+            child: MSUserProfileDropdown(
               alignment: PopoverAlignment.topRight,
               triggerBuilder: (context, isOpen, isHovering) => WDiv(
                 states: {
@@ -613,7 +613,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       return const SizedBox.shrink();
     }
 
-    return MagicStarterNotificationDropdown(
+    return MSNotificationDropdown(
       notificationStream: Notify.notifications(),
       onMarkAsRead: (id) => Notify.markAsRead(id),
       onMarkAllAsRead: () => Notify.markAllAsRead(),

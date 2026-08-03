@@ -26,7 +26,7 @@ void main() {
   }
 
   // ---------------------------------------------------------------------------
-  // Behavior equivalence gate — mirrors magic_starter_page_header_test.dart
+  // Behavior gate: these assertions came from the pre-MS-prefix alias test.
   // ---------------------------------------------------------------------------
 
   testWidgets('renders required title', (tester) async {
@@ -235,5 +235,75 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNotNull);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Optional-slot omission — an absent slot must add no wrapper, not an empty
+  // one. A wrapper that renders for a null slot still consumes a gap row, which
+  // is how a self-hiding child ends up pushing its neighbours out of rhythm.
+  // ---------------------------------------------------------------------------
+
+  testWidgets('renders multiple actions', (tester) async {
+    const firstKey = Key('btn-1');
+    const secondKey = Key('btn-2');
+
+    await tester.pumpWidget(
+      wrap(
+        MSPageHeader(
+          title: 'Settings',
+          actions: [
+            ElevatedButton(
+              key: firstKey,
+              onPressed: () {},
+              child: const Text('Save'),
+            ),
+            ElevatedButton(
+              key: secondKey,
+              onPressed: () {},
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.byKey(firstKey), findsOneWidget);
+    expect(find.byKey(secondKey), findsOneWidget);
+  });
+
+  testWidgets('renders no actions row when actions is null', (tester) async {
+    await tester.pumpWidget(wrap(const MSPageHeader(title: 'No Actions')));
+
+    expect(find.text('No Actions'), findsOneWidget);
+  });
+
+  testWidgets('renders no actions row when actions list is empty', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const MSPageHeader(
+          title: 'Empty Actions',
+          actions: [],
+        ),
+      ),
+    );
+
+    expect(find.text('Empty Actions'), findsOneWidget);
+  });
+
+  testWidgets('adds no suffix wrapper when titleSuffix is null', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSPageHeader(title: 'My Page')));
+
+    final innerDivs = find.descendant(
+      of: find.byType(MSPageHeader),
+      matching: find.byType(WDiv),
+    );
+
+    // Outer WDiv + inner title row WDiv + title column WDiv = 3. No suffix
+    // wrapper WDiv should be present.
+    expect(innerDivs, findsNWidgets(3));
   });
 }

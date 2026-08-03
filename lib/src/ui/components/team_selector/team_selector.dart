@@ -11,8 +11,7 @@ import '../../../magic_starter_manager.dart';
 ///
 /// Displays the current team initial and allows switching between teams via a
 /// [WPopover] dropdown. Uses the team resolver registered via
-/// `MagicStarter.useTeamResolver()`. Preserves all behavior from the
-/// pre-migration [MagicStarterTeamSelector]: teamResolver callbacks, team list
+/// `MagicStarter.useTeamResolver()`: teamResolver callbacks, team list
 /// rendering, settings/create links.
 ///
 /// ### Example

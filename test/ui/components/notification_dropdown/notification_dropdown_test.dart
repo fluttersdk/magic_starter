@@ -53,7 +53,7 @@ void main() {
   }
 
   // ---------------------------------------------------------------------------
-  // Behavior equivalence gate — mirrors magic_starter_notification_dropdown_test
+  // Behavior gate: these assertions came from the pre-MS-prefix alias test.
   // ---------------------------------------------------------------------------
 
   testWidgets('renders bell icon', (tester) async {
