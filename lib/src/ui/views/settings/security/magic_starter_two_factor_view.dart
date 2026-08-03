@@ -4,7 +4,7 @@ import 'package:magic/magic.dart';
 
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
-import '../../../components/settings_scaffold/settings_scaffold.dart';
+import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 import '../../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../../widgets/magic_starter_two_factor_modal.dart';
@@ -13,7 +13,7 @@ import '../../../widgets/magic_starter_confirm_dialog.dart';
 /// Two-factor authentication settings sub-page.
 ///
 /// Drilled into from the Settings hub. Wraps the 2FA management surface in a
-/// [MSSettingsScaffold] with a unified back affordance returning to the hub.
+/// [MSPageScaffold] with a unified back affordance returning to the hub.
 ///
 /// The interaction wiring (enable / disable / show + regenerate recovery codes)
 /// is lifted verbatim from the original long-form profile settings view: it
@@ -192,7 +192,7 @@ class _MagicStarterTwoFactorViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    return MSSettingsScaffold(
+    return MSPageScaffold(
       title: trans('profile.two_factor_authentication'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),

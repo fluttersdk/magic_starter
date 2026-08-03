@@ -284,10 +284,10 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterTwoFactorView()));
       await tester.pump();
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<MSSettingsScaffold>(
-        find.byType(MSSettingsScaffold),
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
       );
       expect(scaffold.backLabel, isNotNull);
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
@@ -364,10 +364,10 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterPasswordView()));
       await tester.pump();
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<MSSettingsScaffold>(
-        find.byType(MSSettingsScaffold),
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
       );
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
@@ -419,10 +419,10 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<MSSettingsScaffold>(
-        find.byType(MSSettingsScaffold),
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
       );
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });

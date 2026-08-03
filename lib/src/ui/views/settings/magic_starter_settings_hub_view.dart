@@ -6,7 +6,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../components/settings_nav_row/index.dart';
-import '../../components/settings_scaffold/index.dart';
+import '../../components/page_scaffold/index.dart';
 import '../../components/settings_section/index.dart';
 
 /// iOS-style Settings hub --- the drill-down index for the starter.
@@ -185,7 +185,7 @@ class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
     final preferencesRows = _preferencesRows();
 
     // 3. Assemble the scaffold children, omitting any section with no rows.
-    return MSSettingsScaffold(
+    return MSPageScaffold(
       title: trans('magic_starter.nav.settings'),
       children: [
         if (headerSlot != null) headerSlot,

@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/src/facades/magic_starter.dart';
 import 'package:magic_starter/src/magic_starter_manager.dart';
-import 'package:magic_starter/src/ui/components/settings_scaffold/settings_scaffold.dart';
-import 'package:magic_starter/src/ui/components/settings_scaffold/settings_scaffold.recipe.dart';
-import 'package:magic_starter/src/ui/components/settings_scaffold/settings_scaffold.preview.dart';
+import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.dart';
+import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.recipe.dart';
+import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.preview.dart';
 
 void main() {
   setUp(() {
@@ -32,65 +32,53 @@ void main() {
   // Recipe assertions (pure unit tests — no widget pump required)
   // -------------------------------------------------------------------------
 
-  group('SettingsScaffoldRecipe', () {
-    test('scrollable recipe emits w-full token', () {
-      final cls = settingsScaffoldScrollableRecipe();
+  group('PageScaffoldRecipe', () {
+    test('surface recipe emits w-full token', () {
+      final cls = pageScaffoldSurfaceRecipe();
       expect(cls, contains('w-full'));
     });
 
-    test('container recipe caps at the max width it is handed', () {
-      final cls = settingsScaffoldContainerRecipe(
-        maxWidthClassName: 'max-w-6xl',
-      );
-      expect(cls, contains('max-w-6xl'));
-      expect(cls, isNot(contains('max-w-7xl')));
+    // The geometry itself now belongs to MSPageContainer and arrives from the
+    // host; what stays asserted here is that the fallback the starter ships is
+    // a COMPLETE page geometry. A consumer that configures nothing still has to
+    // get a capped, edge-padded, vertically-rhythmic page.
+    test('the default host geometry caps the page width', () {
+      const cls = MagicStarterManager.defaultPageContainerClassName;
+      expect(cls, contains('max-w-'));
     });
 
-    test('container recipe emits mx-auto token', () {
-      final cls = settingsScaffoldContainerRecipe(
-        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
-      );
-      expect(cls, contains('mx-auto'));
-    });
-
-    test('container recipe emits px-4 token', () {
-      final cls = settingsScaffoldContainerRecipe(
-        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
-      );
+    test('the default host geometry emits horizontal edge margins', () {
+      const cls = MagicStarterManager.defaultPageContainerClassName;
       expect(cls, contains('px-4'));
+      expect(cls, contains('lg:px-8'));
     });
 
-    // A Settings sub-page owns its own top offset: the app layout's content
-    // region is a bare scroll view with no padding, so a scaffold with no
-    // `pt-*` glued every settings header to the top edge of the viewport while
-    // every other page in the host sat a comfortable notch below it.
-    test('container recipe emits the page top padding', () {
-      final cls = settingsScaffoldContainerRecipe(
-        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
-      );
+    // A page owns its own top offset: the app layout's content region is a bare
+    // scroll view with no padding, so a geometry with no `pt-*` glued every
+    // page header to the top edge of the viewport.
+    test('the default host geometry emits the page top padding', () {
+      const cls = MagicStarterManager.defaultPageContainerClassName;
       expect(cls, contains('pt-6'));
       expect(cls, contains('sm:pt-8'));
     });
 
-    test('container recipe emits a bottom padding', () {
-      final cls = settingsScaffoldContainerRecipe(
-        maxWidthClassName: MagicStarterManager.defaultSettingsMaxWidth,
-      );
+    test('the default host geometry emits a bottom padding', () {
+      const cls = MagicStarterManager.defaultPageContainerClassName;
       expect(cls, contains('pb-16'));
     });
 
     test('children area recipe emits mt-6 token', () {
-      final cls = settingsScaffoldChildrenAreaRecipe();
+      final cls = pageScaffoldChildrenAreaRecipe();
       expect(cls, contains('mt-6'));
     });
 
     test('children area recipe emits flex-col token', () {
-      final cls = settingsScaffoldChildrenAreaRecipe();
+      final cls = pageScaffoldChildrenAreaRecipe();
       expect(cls, contains('flex-col'));
     });
 
     test('children area recipe emits gap-6 token', () {
-      final cls = settingsScaffoldChildrenAreaRecipe();
+      final cls = pageScaffoldChildrenAreaRecipe();
       expect(cls, contains('gap-6'));
     });
   });
@@ -99,10 +87,10 @@ void main() {
   // Widget tests
   // -------------------------------------------------------------------------
 
-  testWidgets('SettingsScaffold renders title via PageHeader', (tester) async {
+  testWidgets('PageScaffold renders title via PageHeader', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           children: [],
         ),
@@ -116,11 +104,11 @@ void main() {
     expect(titleTexts, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffold renders icon-only back via PageHeader',
+  testWidgets('PageScaffold renders icon-only back via PageHeader',
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           backLabel: 'Settings',
           backFallback: '/settings',
@@ -133,11 +121,11 @@ void main() {
     expect(find.text('Settings'), findsNothing);
   });
 
-  testWidgets('SettingsScaffold renders no back when backLabel is null',
+  testWidgets('PageScaffold renders no back when backLabel is null',
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Settings',
           children: [],
         ),
@@ -146,10 +134,10 @@ void main() {
     expect(find.byIcon(Icons.chevron_left), findsNothing);
   });
 
-  testWidgets('SettingsScaffold renders child widgets', (tester) async {
+  testWidgets('PageScaffold renders child widgets', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           children: [
             Text('Section 1'),
@@ -162,11 +150,11 @@ void main() {
     expect(find.text('Section 2'), findsOneWidget);
   });
 
-  testWidgets('SettingsScaffold children area uses gap-6 column className',
+  testWidgets('PageScaffold children area uses gap-6 column className',
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           children: [Text('Child')],
         ),
@@ -184,12 +172,11 @@ void main() {
     expect(childArea, isNotEmpty);
   });
 
-  testWidgets(
-      'SettingsScaffold outer container has the default cap and mx-auto',
+  testWidgets('PageScaffold outer container has the default cap and mx-auto',
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           children: [],
         ),
@@ -201,7 +188,7 @@ void main() {
         .where(
           (w) =>
               w.className?.contains(
-                    MagicStarterManager.defaultSettingsMaxWidth,
+                    MagicStarterManager.defaultPageContainerClassName,
                   ) ==
                   true &&
               w.className?.contains('mx-auto') == true,
@@ -214,13 +201,13 @@ void main() {
   // that and always capped at its default, every settings header started tens
   // of pixels further out than every other page in the same app on a wide
   // window: same sidebar, same chrome, two different content columns.
-  testWidgets('SettingsScaffold caps at the width the host configured',
+  testWidgets('PageScaffold caps at the width the host configured',
       (tester) async {
-    MagicStarter.manager.settingsMaxWidthClassName = 'max-w-6xl';
+    MagicStarter.manager.pageContainerClassName = 'max-w-6xl';
 
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           children: [],
         ),
@@ -234,11 +221,11 @@ void main() {
     expect(constrainedDivs, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffold uses SingleChildScrollView with primary: false',
+  testWidgets('PageScaffold uses SingleChildScrollView with primary: false',
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           children: [],
         ),
@@ -253,11 +240,11 @@ void main() {
     expect(scrollViews, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffold renders subtitle via PageHeader when provided',
+  testWidgets('PageScaffold renders subtitle via PageHeader when provided',
       (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsScaffold(
+        const MSPageScaffold(
           title: 'Profile',
           subtitle: 'Manage your account',
           children: [],
@@ -271,9 +258,28 @@ void main() {
     expect(subtitleTexts, isNotEmpty);
   });
 
-  testWidgets('SettingsScaffoldPreview renders without error', (tester) async {
-    await tester.pumpWidget(wrap(const SettingsScaffoldPreview()));
+  // A page-level action belongs in the shared header next to the title. Before
+  // the scaffold forwarded them, a page that needed one (Notifications and its
+  // "mark all read") had to build its own header, and building its own header
+  // is how it ended up building its own container too.
+  testWidgets('PageScaffold renders header actions when provided',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        const MSPageScaffold(
+          title: 'Notifications',
+          actions: [Text('Mark all read')],
+          children: [],
+        ),
+      ),
+    );
+
+    expect(find.text('Mark all read'), findsOneWidget);
+  });
+
+  testWidgets('PageScaffoldPreview renders without error', (tester) async {
+    await tester.pumpWidget(wrap(const PageScaffoldPreview()));
     await tester.pump();
-    expect(find.byType(SettingsScaffoldPreview), findsOneWidget);
+    expect(find.byType(PageScaffoldPreview), findsOneWidget);
   });
 }

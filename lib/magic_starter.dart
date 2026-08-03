@@ -82,6 +82,7 @@ export 'src/ui/components/error_state/index.dart';
 export 'src/ui/components/settings_section/index.dart';
 export 'src/ui/components/settings_row/index.dart';
 export 'src/ui/components/settings_nav_row/index.dart';
+export 'src/ui/components/page_container/index.dart';
 export 'src/ui/components/page_scaffold/index.dart';
 export 'src/ui/components/upgrade_dialog/index.dart';
 export 'src/ui/components/upgrade_nudge/index.dart';

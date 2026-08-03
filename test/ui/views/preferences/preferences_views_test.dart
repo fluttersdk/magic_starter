@@ -234,9 +234,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterAppearanceView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
+          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
       expect(scaffold.backLabel, isNotNull);
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
@@ -351,9 +351,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterLanguageView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
+          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -393,9 +393,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterTimezoneView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
+          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -441,9 +441,9 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterNewsletterView()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
       final scaffold =
-          tester.widget<MSSettingsScaffold>(find.byType(MSSettingsScaffold));
+          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 

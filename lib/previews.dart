@@ -18,7 +18,8 @@ import 'src/ui/components/accordion/accordion.preview.dart';
 import 'src/ui/components/badge/badge.preview.dart';
 import 'src/ui/components/settings_nav_row/settings_nav_row.preview.dart';
 import 'src/ui/components/settings_row/settings_row.preview.dart';
-import 'src/ui/components/settings_scaffold/settings_scaffold.preview.dart';
+import 'src/ui/components/page_container/page_container.preview.dart';
+import 'src/ui/components/page_scaffold/page_scaffold.preview.dart';
 import 'src/ui/components/settings_section/settings_section.preview.dart';
 import 'src/ui/components/bottom_sheet/bottom_sheet.preview.dart';
 import 'src/ui/components/button/button.preview.dart';
@@ -142,9 +143,14 @@ List<StarterComponentPreview> starterComponentPreviews() {
       builder: (_) => const SettingsRowPreview()
     ),
     (
-      label: 'Settings Scaffold',
-      slug: 'settings_scaffold',
-      builder: (_) => const SettingsScaffoldPreview()
+      label: 'Page Container',
+      slug: 'page_container',
+      builder: (_) => const PageContainerPreview()
+    ),
+    (
+      label: 'Page Scaffold',
+      slug: 'page_scaffold',
+      builder: (_) => const PageScaffoldPreview()
     ),
     (
       label: 'Settings Section',

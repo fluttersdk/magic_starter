@@ -2,17 +2,17 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../settings_section/settings_section.dart';
-import 'settings_scaffold.dart';
+import 'page_scaffold.dart';
 
-/// Static preview for [MSSettingsScaffold].
+/// Static preview for [MSPageScaffold].
 ///
 /// Renders representative configurations — top-level (no back) and sub-page
 /// (with back affordance) — so the dev catalog (`/preview`) can show the full
 /// surface in both light and dark mode. One preview class per file is the
 /// canonical 4-file contract.
-class SettingsScaffoldPreview extends StatelessWidget {
-  /// Creates the [MSSettingsScaffold] preview.
-  const SettingsScaffoldPreview({super.key});
+class PageScaffoldPreview extends StatelessWidget {
+  /// Creates the [MSPageScaffold] preview.
+  const PageScaffoldPreview({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class SettingsScaffoldPreview extends StatelessWidget {
       className: 'flex flex-col gap-8 bg-surface',
       children: [
         // 1. Sub-page with back affordance.
-        MSSettingsScaffold(
+        MSPageScaffold(
           title: 'Profile',
           subtitle: 'Update your personal information',
           backLabel: 'Settings',
@@ -44,7 +44,7 @@ class SettingsScaffoldPreview extends StatelessWidget {
         ),
 
         // 2. Top-level hub (no back affordance).
-        MSSettingsScaffold(
+        MSPageScaffold(
           title: 'Settings',
           children: [
             const MSSettingsSection(

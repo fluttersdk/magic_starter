@@ -219,10 +219,10 @@ void main() {
         (tester) async {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
-      expect(find.byType(MSSettingsScaffold), findsOneWidget);
+      expect(find.byType(MSPageScaffold), findsOneWidget);
 
-      final scaffold = tester.widget<MSSettingsScaffold>(
-        find.byType(MSSettingsScaffold),
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
       );
       expect(scaffold.backLabel, isNotNull);
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
