@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart' show Drawer, Scaffold, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
 
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
-
+import '../components/notification_dropdown/notification_dropdown.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
-import 'package:magic_notifications/magic_notifications.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
-import '../components/notification_dropdown/notification_dropdown.dart';
 
 /// Default App Layout for Magic Starter.
 ///

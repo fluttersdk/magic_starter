@@ -262,7 +262,18 @@ collision:
 | `BottomSheet` | `MSBottomSheet` | `ConfirmDialog` | `MSConfirmDialog` |
 | `Toast` | `MSToast` | `Tooltip` | `MSTooltip` |
 
-The per-axis enums (`ButtonIntent`, `InputState`, ...) and the recipe functions are unchanged. `MagicStarterCard` and `MagicStarterPageHeader` are gone: use `MSCard` and `MSPageHeader` directly. The remaining `MagicStarter*` widgets (`MagicStarterConfirmDialog`, `MagicStarterDialogShell`, ...) keep their names.
+The per-axis enums (`ButtonIntent`, `InputState`, ...) are unchanged.
+
+Two later changes go beyond that table. The six alias widgets are gone: use `MSCard`, `MSPageHeader`, `MSSocialDivider`, `MSNotificationDropdown`, `MSTeamSelector` and `MSUserProfileDropdown` directly. The remaining `MagicStarter*` widgets (`MagicStarterConfirmDialog`, `MagicStarterDialogShell`, `MagicStarterTimezoneSelect`, ...) keep their names. And the settings scaffold became the page scaffold, which renamed its recipes:
+
+| Before | After |
+|--------|-------|
+| `MSSettingsScaffold` | `MSPageScaffold` |
+| `settingsScaffoldScrollableRecipe()` | `pageScaffoldSurfaceRecipe()` |
+| `settingsScaffoldChildrenAreaRecipe()` | `pageScaffoldChildrenAreaRecipe()` |
+| `settingsScaffoldContainerRecipe()` | removed; render `MSPageContainer`, or call `pageContainerRecipe()` for the className alone |
+
+Every other recipe function is unchanged.
 
 ---
 
