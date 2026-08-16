@@ -147,6 +147,113 @@ void main() {
     expect(outerDiv.className, contains('sm:flex-row'));
   });
 
+  testWidgets('the theme can turn every header inline without an argument',
+      (tester) async {
+    // An app that themes the container into a row at every width has to be able
+    // to say so once. `MSPageScaffold` does not expose `inlineActions`, so
+    // before this the theme was the only half of the decision a scaffold
+    // consumer could set, and setting it alone is what overflows.
+    MagicStarter.usePageHeaderTheme(
+      const MagicStarterPageHeaderTheme(inlineActions: true),
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        MSPageHeader(
+          title: 'Themed inline',
+          actions: [
+            ElevatedButton(onPressed: () {}, child: const Text('Go')),
+          ],
+        ),
+      ),
+    );
+
+    final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(outerDiv.className, contains('flex-row'));
+    expect(outerDiv.className, isNot(contains('flex-col')));
+  });
+
+  testWidgets('inline mode gives the title row flex-1 so a long title shrinks',
+      (tester) async {
+    // **The half that was missing, and the one that actually overflows.**
+    // `inlineActions` swaps the container class AND claims the remaining width
+    // for the title row. The title column is `flex-initial`, a loose fit, so
+    // without `flex-1` on the row the text takes its intrinsic width and runs
+    // past the actions: measured at 40 logical pixels on a 390px viewport.
+    MagicStarter.usePageHeaderTheme(
+      const MagicStarterPageHeaderTheme(inlineActions: true),
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        MSPageHeader(
+          title: 'A title long enough to need the whole row to itself',
+          actions: [
+            ElevatedButton(onPressed: () {}, child: const Text('Go')),
+          ],
+        ),
+      ),
+    );
+
+    final titleRow = tester.widgetList<WDiv>(find.byType(WDiv)).elementAt(1);
+
+    expect(titleRow.className, contains('flex-1'));
+    expect(titleRow.className, isNot(contains('sm:flex-1')));
+    expect(titleRow.className, contains('min-w-0'));
+  });
+
+  testWidgets('an explicit argument still beats the theme', (tester) async {
+    // The theme is a default rather than a lock: a single screen that wants the
+    // stacked layout can still ask for it.
+    MagicStarter.usePageHeaderTheme(
+      const MagicStarterPageHeaderTheme(inlineActions: true),
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        MSPageHeader(
+          title: 'Explicitly stacked',
+          inlineActions: false,
+          actions: [
+            ElevatedButton(onPressed: () {}, child: const Text('Go')),
+          ],
+        ),
+      ),
+    );
+
+    final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+    expect(outerDiv.className, contains('flex-col'));
+  });
+
+  testWidgets('a header does not overflow at phone width when themed inline',
+      (tester) async {
+    // **The defect itself, as a test.** Depools themed the container into a row
+    // at every width so a phone header keeps its action beside the title, and
+    // the product screen then reported `A RenderFlex overflowed by 40 pixels`
+    // at 390. Nothing in the app's own code was in that row.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    MagicStarter.usePageHeaderTheme(
+      const MagicStarterPageHeaderTheme(inlineActions: true),
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        MSPageHeader(
+          title: 'Dishwasher Tablets',
+          actions: [
+            for (int i = 0; i < 3; i++)
+              const SizedBox(width: 44, height: 44, child: Icon(Icons.more_horiz)),
+          ],
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+  });
+
   // ---------------------------------------------------------------------------
   // Theme consumption
   // ---------------------------------------------------------------------------

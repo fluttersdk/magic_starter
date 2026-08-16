@@ -428,6 +428,35 @@ class MagicStarterPageHeaderTheme {
   /// `'flex items-center justify-center size-9 -ml-1 text-2xl text-fg-muted hover:text-fg'`.
   final String backControlClassName;
 
+  /// Whether every [MSPageHeader] lays its title and actions out on ONE row.
+  ///
+  /// Defaults to `false`, which keeps the responsive behaviour: stacked below
+  /// `sm`, a row above it.
+  ///
+  /// ### Why this is a theme field and not only a widget parameter
+  ///
+  /// [MSPageHeader.inlineActions] already existed, and it does two things at
+  /// once: it swaps [containerClassName] for [containerInlineClassName], and it
+  /// gives the title row `flex-1 min-w-0` unconditionally instead of only under
+  /// `sm:`. Those are two halves of ONE decision, and until now a consumer could
+  /// set the first half and not the second, because the container class is a
+  /// theme string while the flex behaviour is a widget argument.
+  ///
+  /// **That combination silently overflows.** An app that overrides
+  /// [containerClassName] to `flex-row` at every width, so a phone header keeps
+  /// its action beside the title, leaves the title row without `flex-1` below
+  /// `sm`. The title column is `flex-initial`, a loose fit, so the text takes
+  /// its intrinsic width, and a title long enough to need the space runs past
+  /// the edge: measured at 40 logical pixels on a 390px viewport with a
+  /// two-word title and three icon buttons. `line-clamp-2` on the title cannot
+  /// save it, for the same reason `truncate` cannot without a constrained box.
+  ///
+  /// Putting the flag here means the app states the layout intent once, beside
+  /// the container class that requires it, instead of remembering to pass an
+  /// argument on every screen. [MSPageScaffold] does not forward the widget
+  /// parameter at all, so a consumer using the scaffold had no way to reach it.
+  final bool inlineActions;
+
   const MagicStarterPageHeaderTheme({
     this.containerClassName =
         'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
@@ -440,6 +469,7 @@ class MagicStarterPageHeaderTheme {
     this.actionContainerClassName = 'flex flex-row items-center gap-2',
     this.backControlClassName =
         'flex items-center justify-center size-9 -ml-1 text-2xl text-fg-muted hover:text-fg',
+    this.inlineActions = false,
   });
 }
 
