@@ -175,7 +175,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 |-----------|-------|
 | `MSFormField` | Label + input + hint + error layout wrapper |
 | `MSCard` | Surface/inset/elevated variants |
-| `MSPageHeader` | Full-width responsive header (title, subtitle, leading, actions) |
+| `MSPageHeader` | Full-width responsive header (title, subtitle, leading, actions). Stacked below `sm`, a row above it; `inlineActions` (or `MagicStarterPageHeaderTheme.inlineActions`) makes it a row at every width AND lets a long title shrink instead of overflowing |
 | `MSSocialDivider` | "Or continue with" separator for auth forms |
 | `MSNotificationDropdown` | Bell-icon dropdown with a live unread badge, backed by a notification stream |
 | `MSUserProfileDropdown` | Avatar menu with profile links, theme toggle and logout |

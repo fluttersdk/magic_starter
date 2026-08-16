@@ -423,7 +423,7 @@ MagicStarter.useCardTheme(
 <a name="page-header-theme"></a>
 ## Page Header Theme
 
-`MagicStarterPageHeaderTheme` overrides Wind UI tokens for the `MSPageHeader` container, title, subtitle, and action container.
+`MagicStarterPageHeaderTheme` overrides Wind UI tokens for the `MSPageHeader` container, title, subtitle, and action container, plus one layout switch.
 
 ```dart
 MagicStarter.usePageHeaderTheme(
@@ -432,6 +432,34 @@ MagicStarter.usePageHeaderTheme(
   ),
 );
 ```
+
+### `inlineActions`, and the one combination that overflows
+
+The header stacks below `sm` and lays out as a row above it. An app that wants a
+row at EVERY width, so a phone header keeps its action beside the title instead
+of dropping it under the subtitle, overrides `containerClassName`:
+
+```dart
+MagicStarter.usePageHeaderTheme(
+  const MagicStarterPageHeaderTheme(
+    containerClassName: 'w-full flex flex-row items-start justify-between gap-3 ...',
+    // Required with the override above, and easy to miss.
+    inlineActions: true,
+  ),
+);
+```
+
+**Setting the container alone overflows.** `inlineActions` does two things: it
+selects `containerInlineClassName`, and it gives the title row `flex-1 min-w-0`
+instead of `sm:flex-1`. Without the second half the title column is
+`flex-initial`, a loose fit, so a long title takes its intrinsic width and runs
+past the actions rather than shrinking. `line-clamp-2` on the title does not
+help, for the same reason `truncate` does not without a constrained box.
+
+`MSPageHeader.inlineActions` is `bool?` and defaults to this field, so a single
+screen can still opt out with `inlineActions: false`. `MSPageScaffold` does not
+expose the argument, which is why the theme is the only reachable switch for a
+scaffold consumer.
 
 <a name="layout-theme"></a>
 ## Layout Theme
