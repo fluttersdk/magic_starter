@@ -245,7 +245,8 @@ void main() {
           title: 'Dishwasher Tablets',
           actions: [
             for (int i = 0; i < 3; i++)
-              const SizedBox(width: 44, height: 44, child: Icon(Icons.more_horiz)),
+              const SizedBox(
+                  width: 44, height: 44, child: Icon(Icons.more_horiz)),
           ],
         ),
       ),

@@ -69,7 +69,8 @@ class MSPageHeader extends StatelessWidget {
   final bool? inlineActions;
 
   /// Whether this header lays out on one row, resolving the theme default.
-  bool get isInline => inlineActions ?? MagicStarter.pageHeaderTheme.inlineActions;
+  bool get isInline =>
+      inlineActions ?? MagicStarter.pageHeaderTheme.inlineActions;
 
   /// Back-affordance label (e.g. `'Settings'`).
   ///
