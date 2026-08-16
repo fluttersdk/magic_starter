@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.20] - 2026-08-17
+
 ### Fixed
 
 - **`MSPageHeader`'s inline mode is settable from the theme, so its two halves cannot drift apart.** `inlineActions` does two things at once: it swaps `containerClassName` for `containerInlineClassName`, and it gives the title row `flex-1 min-w-0` instead of only `sm:flex-1`. Those are two halves of one decision, and until now a consumer could set the first and not the second, because the container class is a theme string while the flex behaviour was a widget argument. That combination silently overflows: an app that themes the container into a row at every width, so a phone header keeps its action beside the title rather than dropping it under the subtitle, leaves the title row without `flex-1` below `sm`. The title column is `flex-initial`, a loose fit, so the text takes its intrinsic width and runs past the actions. Measured in a host app at 40 logical pixels on a 390px viewport with a two-word title and three icon buttons, and reproduced in the suite at 79. `line-clamp-2` on the title cannot save it, for the same reason `truncate` cannot without a constrained box. `MSPageScaffold` does not forward `inlineActions` at all, so a scaffold consumer had no way to reach the second half even knowing it existed; the flag now lives on `MagicStarterPageHeaderTheme`, beside the container class that requires it.
