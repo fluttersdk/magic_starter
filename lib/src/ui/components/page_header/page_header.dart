@@ -57,8 +57,20 @@ class MSPageHeader extends StatelessWidget {
   final Widget? titleSuffix;
 
   /// When `true`, the outer container uses `flex-row` instead of the default
-  /// responsive `flex-col sm:flex-row` stacked layout.
-  final bool inlineActions;
+  /// responsive `flex-col sm:flex-row` stacked layout, and the title row claims
+  /// the remaining width with `flex-1 min-w-0` so a long title SHRINKS instead
+  /// of pushing past the actions.
+  ///
+  /// Null (the default) reads
+  /// `MagicStarter.pageHeaderTheme.inlineActions`, so an app that has themed
+  /// the container into a row at every width states that once rather than on
+  /// every screen. [MSPageScaffold] does not expose this argument at all, which
+  /// is why the theme is the only reachable switch for a scaffold consumer.
+  final bool? inlineActions;
+
+  /// Whether this header lays out on one row, resolving the theme default.
+  bool get isInline =>
+      inlineActions ?? MagicStarter.pageHeaderTheme.inlineActions;
 
   /// Back-affordance label (e.g. `'Settings'`).
   ///
@@ -82,7 +94,7 @@ class MSPageHeader extends StatelessWidget {
     this.leading,
     this.actions,
     this.titleSuffix,
-    this.inlineActions = false,
+    this.inlineActions,
     this.backLabel,
     this.backFallback,
   });
@@ -119,13 +131,13 @@ class MSPageHeader extends StatelessWidget {
         leading ?? (backLabel != null ? _buildBackControl(context) : null);
 
     return WDiv(
-      className: inlineActions
+      className: isInline
           ? MagicStarter.pageHeaderTheme.containerInlineClassName
           : MagicStarter.pageHeaderTheme.containerClassName,
       children: [
         // 1. Title row: optional leading + title column + optional titleSuffix.
         WDiv(
-          className: inlineActions
+          className: isInline
               ? 'flex flex-row items-center gap-3 flex-1 min-w-0'
               : 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
           children: [
