@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -127,5 +129,85 @@ void main() {
       ),
     );
     expect(fullWidthWrapper, findsNothing);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Keyboard dismissal
+  // ---------------------------------------------------------------------------
+
+  group('keyboard dismissal', () {
+    testWidgets('a focused textarea offers a Done button on iOS', (
+      tester,
+    ) async {
+      // Return inserts a newline in a multiline field, so without this the
+      // keyboard has no key that closes it: a phone user who tabbed in from the
+      // field above was left with an open keyboard over a hidden form.
+      // Reset inside the body, not in a tearDown: flutter_test asserts every
+      // foundation debug variable is unset BEFORE tearDowns run.
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        await tester.pumpWidget(wrap(const MSTextarea(placeholder: 'Notes')));
+
+        expect(
+          find.descendant(
+            of: find.byType(Overlay),
+            matching: find.byType(TextButton),
+          ),
+          findsNothing,
+          reason: 'the toolbar belongs to a focused field, not to the page',
+        );
+
+        await tester.tap(find.byType(MSTextarea));
+        await tester.pump(const Duration(milliseconds: 16));
+
+        expect(
+          find.descendant(
+            of: find.byType(Overlay),
+            matching: find.byType(TextButton),
+          ),
+          findsOneWidget,
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    testWidgets('a read-only textarea takes no toolbar', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        // No keyboard opens, so a Done button would dismiss nothing.
+        await tester.pumpWidget(
+          wrap(const MSTextarea(placeholder: 'Notes', readOnly: true)),
+        );
+
+        await tester.tap(find.byType(MSTextarea));
+        await tester.pump(const Duration(milliseconds: 16));
+
+        expect(
+          find.descendant(
+            of: find.byType(Overlay),
+            matching: find.byType(TextButton),
+          ),
+          findsNothing,
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    testWidgets('an external focus node is not disposed by the textarea', (
+      tester,
+    ) async {
+      final FocusNode external = FocusNode();
+      addTearDown(external.dispose);
+
+      await tester.pumpWidget(wrap(MSTextarea(focusNode: external)));
+      await tester.pumpWidget(wrap(const SizedBox.shrink()));
+
+      // Disposing a node the caller owns would throw on their next use of it,
+      // which is the failure this asserts against rather than a leak.
+      expect(external.hasListeners, isFalse);
+      expect(() => external.requestFocus(), returnsNormally);
+    });
   });
 }
