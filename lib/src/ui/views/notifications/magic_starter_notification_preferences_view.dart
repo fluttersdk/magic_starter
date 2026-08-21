@@ -183,7 +183,14 @@ class _MagicStarterNotificationPreferencesViewState
       ''',
       children: [
         WDiv(
-          className: 'flex items-center gap-4',
+          // `flex-1 min-w-0` so the icon-plus-text half yields to the switch
+          // instead of demanding its intrinsic width. Without it the row
+          // overflowed by 14 pixels at 430px on any channel carrying the push
+          // hint below (measured in the uptizm app: Flutter painted the "RIGHT
+          // OVERFLOWED BY 14 PIXELS" stripe over every Push row), because a
+          // two-line text column is wider than a one-line one and nothing told
+          // it to shrink.
+          className: 'flex-1 min-w-0 flex items-center gap-4',
           children: [
             WDiv(
               className: '''
@@ -199,7 +206,9 @@ class _MagicStarterNotificationPreferencesViewState
               ),
             ),
             WDiv(
-              className: 'flex flex-col gap-1',
+              // `min-w-0` so the label and the hint can wrap rather than force
+              // the row wider than its container.
+              className: 'flex-1 min-w-0 flex flex-col gap-1',
               children: [
                 // The switch below carries this same text as its semanticLabel,
                 // so exclude the visible copy from semantics: otherwise the row
