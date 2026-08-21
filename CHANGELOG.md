@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A selected tab underlined itself in the colour of the rule it sits on, and the first fix put it one brand shade off.** The indicator used `border-color-border`, the same token as the tab list's own bottom rule, so a selection marked itself with a thicker length of the very line under it and read as a grey smudge. Replacing it with a bare `selected:border-primary` fixed the smudge and introduced a subtler wrong: there is no `border-color-primary` alias, so the alias layer passes the token through untouched and wind's border parser defaults the missing shade to 500, while every other brand surface resolves `bg-primary` to primary-600 in light mode. An active tab therefore underlined in primary-500 beside a primary-600 button, and the bare token carried no `dark:` half at all, contrary to this project's own widget rules. Now `selected:border-primary-600 dark:selected:border-primary-500`, asserted against the colour wind itself resolves for those shades in both modes rather than against a hardcoded hex. (`lib/src/ui/components/tabs/tabs.recipe.dart`, `test/ui/components/tabs/tabs_test.dart`)
+
 ## [0.0.1-alpha.20] - 2026-08-17
 
 ### Fixed
