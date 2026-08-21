@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -374,12 +375,55 @@ void main() {
         const MSPageHeader(
           title: 'Profile',
           backLabel: 'Settings',
+          backFallback: '/settings',
         ),
       ),
     );
     // Icon-only: the chevron renders, the parent label text is NOT shown.
     expect(find.byIcon(Icons.chevron_left), findsOneWidget);
     expect(find.text('Settings'), findsNothing);
+  });
+
+  testWidgets('the back control announces the parent it returns to',
+      (tester) async {
+    // `backLabel` was a presence flag and nothing else: its string was never
+    // rendered and never announced, so every page carrying a back control
+    // offered a screen reader an unnamed button. The label is the one thing
+    // that says where the control goes, and the caller already passes it.
+    final SemanticsHandle handle = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      wrap(
+        const MSPageHeader(
+          title: 'Profile',
+          backLabel: 'Settings',
+          backFallback: '/settings',
+        ),
+      ),
+    );
+
+    final Iterable<SemanticsNode> named = _buttonNodes(
+      tester,
+    ).where((SemanticsNode n) => n.getSemanticsData().label == 'Settings');
+
+    expect(named, hasLength(1));
+    // Still icon-only on screen: the name reaches assistive technology, not the
+    // layout.
+    expect(find.text('Settings'), findsNothing);
+    handle.dispose();
+  });
+
+  testWidgets('no back control without a backFallback to navigate to',
+      (tester) async {
+    // `backFallback` is the control's only destination, so gating the render on
+    // `backLabel` alone produced a chevron that announced itself as a button
+    // (named, after this PR) and did nothing when pressed. A control that
+    // cannot act is worse than no control.
+    await tester.pumpWidget(
+      wrap(const MSPageHeader(title: 'Profile', backLabel: 'Settings')),
+    );
+
+    expect(find.byIcon(Icons.chevron_left), findsNothing);
   });
 
   testWidgets('no back leading when backLabel is null', (tester) async {
@@ -483,4 +527,27 @@ void main() {
     // wrapper WDiv should be present.
     expect(innerDivs, findsNWidgets(3));
   });
+}
+
+/// Every button node the platform would receive.
+///
+/// A node with `isMergedIntoParent` is folded into its parent and never sent to
+/// assistive technology, so counting one reports a control that does not exist.
+List<SemanticsNode> _buttonNodes(WidgetTester tester) {
+  final List<SemanticsNode> found = <SemanticsNode>[];
+
+  void walk(SemanticsNode node) {
+    if (!node.isMergedIntoParent &&
+        node.getSemanticsData().flagsCollection.isButton) {
+      found.add(node);
+    }
+    node.visitChildren((SemanticsNode child) {
+      walk(child);
+      return true;
+    });
+  }
+
+  walk(tester.getSemantics(find.byType(MaterialApp)));
+
+  return found;
 }

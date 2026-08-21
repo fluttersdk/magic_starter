@@ -11,11 +11,13 @@ import '../../../facades/magic_starter.dart';
 /// an [inlineActions] flag to force a single-row layout.
 ///
 /// When [backLabel] is set, a unified back affordance is rendered in the leading
-/// slot: a `Icons.chevron_left` icon followed by the [backLabel] text. Tapping
-/// it calls `MagicRoute.back(fallback: backFallback)`, which tries a native pop
-/// first, then the internal history stack, then navigates to [backFallback] if
-/// both are empty. When [backLabel] is null (default) the header is unchanged
-/// and top-level pages show no back affordance.
+/// slot: a `Icons.chevron_left` icon alone on screen, with [backLabel] as its
+/// accessible name so a screen reader says which parent it returns to. Tapping
+/// it navigates straight to [backFallback] with `MagicRoute.to`, rather than
+/// popping the navigator: the settings surface uses `RouteTransition.none` and
+/// popping that instant-swap stack triggered a teardown assertion. The control
+/// needs BOTH [backLabel] and [backFallback]; with either missing the header is
+/// unchanged and top-level pages show no back affordance.
 ///
 /// ### Example
 /// ```dart
@@ -74,16 +76,19 @@ class MSPageHeader extends StatelessWidget {
 
   /// Back-affordance label (e.g. `'Settings'`).
   ///
-  /// When set and [leading] is null, renders a `chevron_left` icon + this
-  /// label as a tappable leading control that calls
-  /// `MagicRoute.back(fallback: backFallback)`. When null (default), no back
-  /// control is rendered.
+  /// When set alongside [backFallback], and [leading] is null, renders a
+  /// `chevron_left` icon as a tappable leading control that navigates to
+  /// [backFallback]. This string is
+  /// the control's ACCESSIBLE NAME rather than visible text: the chevron is
+  /// icon-only on screen, and without a name the control reads as an unnamed
+  /// button. When null (default), no back control is rendered.
   final String? backLabel;
 
-  /// Fallback route passed to `MagicRoute.back({fallback})` when the native pop
-  /// stack and internal history are both empty.
+  /// The route the back control navigates to, with `MagicRoute.to`.
   ///
-  /// Only used when [backLabel] is set.
+  /// Required for the control to render at all: it is the only destination the
+  /// control has, so a [backLabel] without one produced a chevron that
+  /// announced itself as a button and did nothing when pressed.
   final String? backFallback;
 
   /// Creates a [MSPageHeader].
@@ -99,10 +104,10 @@ class MSPageHeader extends StatelessWidget {
     this.backFallback,
   });
 
-  /// Builds the back affordance control when [backLabel] is set and no explicit
-  /// [leading] widget was provided.
-  Widget _buildBackControl(BuildContext context) {
-    final fallback = backFallback;
+  /// Builds the back affordance control from [backLabel] and [backFallback].
+  ///
+  /// Only called when both are set, so [fallback] needs no null branch.
+  Widget _buildBackControl(String fallback) {
     // Icon-only back control. It sits in the title row's leading slot
     // (`items-center`), so the chevron vertically centres against the
     // title + subtitle block. Navigation goes straight to the parent route
@@ -111,11 +116,14 @@ class MSPageHeader extends StatelessWidget {
     // triggered a teardown assertion (`_owner != null`); going to the parent
     // is stable and lands on the correct hub/parent.
     return WAnchor(
-      onTap: () {
-        if (fallback != null) {
-          MagicRoute.to(fallback);
-        }
-      },
+      // The control is a chevron and nothing else, so there is no child text
+      // for the anchor's `MergeSemantics` to absorb, and `backLabel` was a
+      // presence flag whose string went nowhere: every page carrying a back
+      // control offered assistive technology an unnamed button. The label the
+      // caller already passes is exactly the name it needs, since it says which
+      // parent the control returns to.
+      semanticLabel: backLabel,
+      onTap: () => MagicRoute.to(fallback),
       child: WDiv(
         className: MagicStarter.pageHeaderTheme.backControlClassName,
         child: WIcon(_chevronLeft),
@@ -126,9 +134,17 @@ class MSPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Resolve the effective leading: an explicit widget takes priority; when
-    // backLabel is set, auto-build the unified back control.
-    final Widget? effectiveLeading =
-        leading ?? (backLabel != null ? _buildBackControl(context) : null);
+    // both back arguments are set, auto-build the unified back control.
+    //
+    // BOTH, because `backFallback` is the control's only destination. Gated on
+    // `backLabel` alone, a caller passing just the label got a chevron that
+    // announced itself as a button and did nothing when pressed, which is worse
+    // than no control at all. Every in-package caller passes both.
+    final String? fallback = backFallback;
+    final Widget? effectiveLeading = leading ??
+        (backLabel != null && fallback != null
+            ? _buildBackControl(fallback)
+            : null);
 
     return WDiv(
       className: isInline

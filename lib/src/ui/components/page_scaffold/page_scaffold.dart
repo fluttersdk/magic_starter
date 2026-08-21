@@ -64,14 +64,17 @@ class MSPageScaffold extends StatelessWidget {
 
   /// Optional back-affordance label forwarded to [MSPageHeader].
   ///
-  /// When set, a chevron + label back control appears in the header leading
-  /// slot; tapping it calls `MagicRoute.back(fallback: backFallback)`.
-  /// When null (default), no back affordance is rendered.
+  /// When set alongside [backFallback], a `chevron_left` control appears in the
+  /// header leading slot and this string is its ACCESSIBLE NAME rather than
+  /// visible text: the chevron is icon-only on screen. Tapping it navigates to
+  /// [backFallback]. With either argument missing, no back affordance is
+  /// rendered.
   final String? backLabel;
 
-  /// Fallback route forwarded to [MSPageHeader]'s `MagicRoute.back` call.
+  /// The route the back control navigates to, forwarded to [MSPageHeader].
   ///
-  /// Only used when [backLabel] is set.
+  /// Required alongside [backLabel] for the control to render: it is the only
+  /// destination the control has.
   final String? backFallback;
 
   /// The page sections to render in the `mt-6 flex flex-col gap-6` children
