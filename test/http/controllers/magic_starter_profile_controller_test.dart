@@ -1,4 +1,7 @@
+import 'dart:ui' show Locale;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show SizedBox;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -281,6 +284,63 @@ void main() {
           mockDriver.lastData,
           equals({'name': 'Alice Updated', 'email': 'alice@example.com'}),
         );
+      });
+
+      testWidgets(
+        'a saved language is applied to the running app, not only persisted',
+        (tester) async {
+          // Saving a locale persisted it and confirmed it, and the app kept
+          // speaking the old language until its next boot: nothing re-pointed
+          // the translator after `Auth.restore()`.
+          await tester.pumpWidget(const SizedBox.shrink());
+          Translator.instance.setLoader(_StubLangLoader());
+          await Translator.instance.setLocale(const Locale('en'));
+          expect(Lang.current.languageCode, equals('en'));
+
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {'message': 'Profile updated'},
+          );
+
+          final result = await controller.doUpdateProfile(
+            name: 'Alice',
+            email: 'alice@example.com',
+            language: 'tr',
+          );
+
+          expect(result, isTrue);
+          // Applied after the current frame on purpose: `Lang.setLocale` calls
+          // `Magic.reload()`, which unmounts the caller mid-await. The
+          // controller asks for that frame itself, so one pump runs it and the
+          // settle finishes the catalogue load it starts.
+          await tester.pump();
+          await tester.pumpAndSettle();
+
+          expect(Lang.current.languageCode, equals('tr'));
+        },
+      );
+
+      testWidgets('re-saving the same language does not switch anything', (
+        tester,
+      ) async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        Translator.instance.setLoader(_StubLangLoader());
+        await Translator.instance.setLocale(const Locale('en'));
+
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Profile updated'},
+        );
+
+        await controller.doUpdateProfile(
+          name: 'Alice',
+          email: 'alice@example.com',
+          language: 'en',
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(Lang.current.languageCode, equals('en'));
       });
 
       test('failure (422) — returns false and sets error state', () async {
@@ -1149,4 +1209,11 @@ void main() {
       });
     });
   });
+}
+
+/// Serves an empty catalogue for any locale, so a locale switch in these tests
+/// succeeds without shipping copy for it.
+class _StubLangLoader implements TranslationLoader {
+  @override
+  Future<Map<String, dynamic>> load(Locale locale) async => <String, dynamic>{};
 }

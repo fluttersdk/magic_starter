@@ -93,6 +93,7 @@ class MagicStarterProfileController extends MagicController
 
       await Auth.restore();
       Magic.toast(trans('profile.updated'));
+      _applySavedLanguage(language);
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
@@ -103,6 +104,35 @@ class MagicStarterProfileController extends MagicController
     } finally {
       _isSubmitting = false;
     }
+  }
+
+  /// Re-point the running app at a language the profile just saved.
+  ///
+  /// Saving a locale persisted it and confirmed it, and then the app went on
+  /// speaking the old language until its next boot. Five views pass `language`
+  /// to [doUpdateProfile], so this belongs here rather than in each of them.
+  ///
+  /// Scheduled after the current frame ON PURPOSE. [Lang.setLocale] loads the
+  /// catalogue and calls `Magic.reload()`, which swaps a key above the whole tree
+  /// and UNMOUNTS the view that is still inside its own `await` on this method.
+  /// The language page, for one, clears an isolated save spinner in a `finally`
+  /// on a `ValueNotifier` its own state owns and disposes; rebuilding before that
+  /// runs would use it after disposal. Letting the caller finish first costs one
+  /// frame and keeps every call site correct without any of them knowing.
+  ///
+  /// A no-op when the language is absent or already current, so re-saving a
+  /// profile without touching the selector does not flash a rebuild.
+  void _applySavedLanguage(String? language) {
+    if (language == null || language.isEmpty) return;
+    if (language == Lang.current.languageCode) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Lang.setLocale(Locale(language));
+    });
+    // `addPostFrameCallback` does not ASK for a frame, and an idle app stops
+    // producing them, so without this the switch could sit unapplied until the
+    // next interaction happened to schedule one.
+    WidgetsBinding.instance.scheduleFrame();
   }
 
   /// Update password.

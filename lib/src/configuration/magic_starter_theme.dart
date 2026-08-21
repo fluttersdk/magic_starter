@@ -425,7 +425,7 @@ class MagicStarterPageHeaderTheme {
   /// size, color, or hover states.
   ///
   /// Defaults to
-  /// `'flex items-center justify-center size-9 -ml-1 text-2xl text-fg-muted hover:text-fg'`.
+  /// `'flex items-center justify-center size-9 text-2xl text-fg-muted hover:text-fg'`.
   final String backControlClassName;
 
   /// Whether every [MSPageHeader] lays its title and actions out on ONE row.
@@ -468,7 +468,7 @@ class MagicStarterPageHeaderTheme {
         'text-sm text-gray-600 dark:text-gray-400 line-clamp-2',
     this.actionContainerClassName = 'flex flex-row items-center gap-2',
     this.backControlClassName =
-        'flex items-center justify-center size-9 -ml-1 text-2xl text-fg-muted hover:text-fg',
+        'flex items-center justify-center size-9 text-2xl text-fg-muted hover:text-fg',
     this.inlineActions = false,
   });
 }
@@ -876,7 +876,7 @@ class MagicStarterTheme {
         titleClassName: 'text-2xl font-bold $fg line-clamp-2',
         subtitleClassName: 'text-sm $fgMuted line-clamp-2',
         backControlClassName:
-            'flex items-center justify-center size-9 -ml-1 text-2xl $fgMuted hover:$fg',
+            'flex items-center justify-center size-9 text-2xl $fgMuted hover:$fg',
       ),
       layout: MagicStarterLayoutTheme(
         sidebarClassName: 'h-full flex flex-col $surface border-r $border',
