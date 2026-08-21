@@ -195,6 +195,43 @@ void main() {
       }
     });
 
+    /// The transition nothing covered, and where a data-loss defect lived.
+    ///
+    /// `enabled` is commonly dynamic (`enabled: !controller.isLoading` while a
+    /// form submits). Gating the TREE SHAPE on it changed the element type at
+    /// this slot, so the `WInput` below was unmounted and rebuilt and
+    /// `_WInputState.initState` re-seeded its controller from `widget.value ?? ''`
+    /// — uncontrolled usage lost whatever the user had typed. Verified both ways
+    /// before the fix: this case passes on the commit before the toolbar landed
+    /// and fails on the toolbar commit itself.
+    testWidgets('typed text survives a flip of enabled', (tester) async {
+      await tester.pumpWidget(wrap(const MSTextarea()));
+      await tester.enterText(find.byType(EditableText), 'hello world');
+      await tester.pump();
+      expect(find.text('hello world'), findsOneWidget);
+
+      await tester.pumpWidget(wrap(const MSTextarea(enabled: false)));
+      await tester.pump();
+
+      expect(
+        find.text('hello world'),
+        findsOneWidget,
+        reason: 'flipping enabled must not remount the field',
+      );
+    });
+
+    /// The same for readOnly, which a form flips for the same reasons.
+    testWidgets('typed text survives a flip of readOnly', (tester) async {
+      await tester.pumpWidget(wrap(const MSTextarea()));
+      await tester.enterText(find.byType(EditableText), 'still here');
+      await tester.pump();
+
+      await tester.pumpWidget(wrap(const MSTextarea(readOnly: true)));
+      await tester.pump();
+
+      expect(find.text('still here'), findsOneWidget);
+    });
+
     testWidgets('an external focus node is not disposed by the textarea', (
       tester,
     ) async {

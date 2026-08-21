@@ -26,6 +26,12 @@ import 'textarea.recipe.dart';
 /// per frame, and `pumpAndSettle` on a page holding a focused textarea then
 /// never settles.
 ///
+/// That hazard is still live for a test that opts INTO iOS. A consumer setting
+/// `debugDefaultTargetPlatformOverride = TargetPlatform.iOS` and focusing a
+/// textarea has to pump explicitly rather than settle, and the override has to be
+/// reset inside the test body. Nothing in the component's surface hints at it, so
+/// it is written down here.
+///
 /// ### Basic usage
 ///
 /// ```dart
@@ -146,15 +152,25 @@ class _MSTextareaState extends State<MSTextarea> {
       textarea = SizedBox(width: double.infinity, child: textarea);
     }
 
+    // A read-only or disabled field takes no keyboard, so it takes no toolbar
+    // either. That is expressed by handing WKeyboardActions an EMPTY node list
+    // rather than by returning early, and the difference is data loss.
+    //
+    // `enabled` is commonly dynamic (`enabled: !controller.isLoading` while a
+    // form submits). An early return makes the element at this slot change type
+    // when it flips, so the WInput below is unmounted and rebuilt, and
+    // `_WInputState.initState` re-seeds its controller from `widget.value ?? ''`.
+    // Uncontrolled usage, which is the common case and what these tests
+    // construct, therefore loses whatever the user had typed. Reproduced both
+    // ways: type "hello world", rebuild with `enabled: false`, and the text is
+    // gone on the early-return shape and present on this one.
+    //
     // `nextFocus: false`: one node has nowhere to navigate, and a pair of dead
-    // arrows beside the Done button is worse than no arrows. A read-only field
-    // takes no keyboard, so it takes no toolbar either.
-    if (widget.readOnly || !widget.enabled) {
-      return textarea;
-    }
+    // arrows beside the Done button is worse than no arrows.
+    final bool takesKeyboard = widget.enabled && !widget.readOnly;
 
     return WKeyboardActions(
-      focusNodes: [_focusNode],
+      focusNodes: takesKeyboard ? [_focusNode] : const <FocusNode>[],
       platform: 'ios',
       nextFocus: false,
       child: textarea,

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A focused multiline field on iOS had no way to close the keyboard, and the first shape of the fix silently ate what the user had typed.** `MSTextarea` is `InputType.multiline`, so its Return key inserts a newline rather than dismissing the keyboard, and on iOS there is no hardware way out: a form whose textarea sits above the fold left the keyboard covering the submit button with nothing to tap. The field now carries `WKeyboardActions` with a Done toolbar, `platform: 'ios'` (Android has a system back gesture and needs none) and `nextFocus: false` (one node has nowhere to navigate, and dead arrows beside Done are worse than no arrows). A read-only or disabled field takes no keyboard, so it takes no toolbar, and that is expressed by handing the toolbar an EMPTY node list rather than by returning early: gating the tree shape on `enabled` changed the element type at that slot when a form flipped it mid-submit, which unmounted the `WInput` below and let `_WInputState.initState` re-seed its controller from `widget.value ?? ''`, losing the typed text in the uncontrolled case. Reproduced both ways and pinned by two cases over the `enabled` and `readOnly` transitions. Two dead recipe classes went with it: `resize-none` and `focus:outline-none` are unparsed by Wind, so neither ever reached the layout. (`lib/src/ui/components/textarea/textarea.dart`, `test/ui/components/textarea/textarea_test.dart`, `doc/basics/components.md`)
+
 ## [0.0.1-alpha.20] - 2026-08-17
 
 ### Fixed

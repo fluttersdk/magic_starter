@@ -129,7 +129,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 |-----------|----------------|-------|
 | `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`) |
 | `MSInput` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`) |
-| `MSTextarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `MSInput`; `fullWidth: true` fills the parent width (defaults `false`) |
+| `MSTextarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `MSInput`; `fullWidth: true` fills the parent width (defaults `false`). On iOS a focused field carries a Done toolbar above the keyboard, since a multiline field's Return key inserts a newline and would otherwise leave the keyboard with no way out. One consequence for consumer TESTS: while that toolbar is up it schedules a frame callback every frame, so `pumpAndSettle` under `debugDefaultTargetPlatformOverride = TargetPlatform.iOS` never settles; pump explicitly instead |
 | `MSCheckbox` | | Boolean toggle; Wind-only, no Material dependency |
 | `MSSwitch` | | Toggle; replaces Flutter's `MSSwitch` in Wind layouts |
 | `MSRadio` | | Single-select option |
