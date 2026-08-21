@@ -154,6 +154,65 @@ void main() {
       expect(find.byType(MSSwitch), findsNWidgets(2));
     });
 
+    testWidgets('a push row with its hint fits a phone width', (tester) async {
+      // Every other case in this file runs at 1280 or 1920, which is why this
+      // never showed: the row overflowed by 14 pixels at 430px on any channel
+      // carrying the push hint, and Flutter painted its yellow-and-black stripe
+      // across it. Measured in the uptizm app before the fix.
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final matrix = {
+        'incident_opened': {
+          'label': 'Incident opened',
+          'channels': {
+            'mail': {'enabled': true, 'locked': false},
+            'push': {'enabled': true, 'locked': false},
+          }
+        }
+      };
+      mockDriver.mockResponse(statusCode: 200, data: {'data': matrix});
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: WindTheme(
+            data: WindThemeData(),
+            child: MediaQuery(
+              data: const MediaQueryData(size: Size(430, 900)),
+              child: const Scaffold(
+                body: SizedBox(
+                  width: 430,
+                  height: 900,
+                  child: SingleChildScrollView(
+                    child: MagicStarterNotificationPreferencesView(
+                      pushProvisioned: false,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The hint is what makes the row two lines tall, so its presence is what
+      // makes this case the right one.
+      expect(
+        find.text(trans('notifications.channel_push_unconfigured')),
+        findsOneWidget,
+      );
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'the preference row must not overflow at a phone width',
+      );
+    });
+
     testWidgets('locked channel checkbox is disabled', (tester) async {
       // Widen the test surface so untranslated trans() keys fit without overflow.
       tester.view.physicalSize = const Size(1920, 1080);
