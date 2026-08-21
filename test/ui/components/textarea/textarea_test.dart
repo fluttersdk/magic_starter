@@ -198,7 +198,7 @@ void main() {
     testWidgets('an external focus node is not disposed by the textarea', (
       tester,
     ) async {
-      final FocusNode external = FocusNode();
+      final _ProbeFocusNode external = _ProbeFocusNode();
       addTearDown(external.dispose);
 
       await tester.pumpWidget(wrap(MSTextarea(focusNode: external)));
@@ -206,8 +206,20 @@ void main() {
 
       // Disposing a node the caller owns would throw on their next use of it,
       // which is the failure this asserts against rather than a leak.
-      expect(external.hasListeners, isFalse);
+      expect(external.retainsAListener, isFalse);
       expect(() => external.requestFocus(), returnsNormally);
     });
   });
+}
+
+/// A [FocusNode] that can answer whether anything is still listening to it.
+///
+/// `ChangeNotifier.hasListeners` is `@protected`, so reading it from a test body
+/// is an analyzer warning and `dart analyze` treats warnings as failures in CI.
+/// A subclass is where that member is legitimately visible, which keeps the
+/// assertion exactly as strong as it was: the widget must leave a caller-owned
+/// node with no listener of its own attached after unmount.
+class _ProbeFocusNode extends FocusNode {
+  /// Whether any listener is still attached.
+  bool get retainsAListener => hasListeners;
 }
