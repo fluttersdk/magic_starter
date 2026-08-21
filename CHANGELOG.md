@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`MSPageHeader`'s back control was an unnamed button on every page that has one.** `backLabel` was used as a presence flag and nothing else: `leading ?? (backLabel != null ? _buildBackControl(context) : null)`. Its string was never rendered and never announced, so the control reached assistive technology as a button with no name at all, and a screen reader user navigating a detail page heard "button" with nothing to say where it goes. Found by walking a consumer app's component previews and asserting that no platform `button` node is nameless; the back control was the finding with the widest reach, because it is on every page that sets `backLabel`. It now passes `semanticLabel: backLabel` to the anchor, which is the name it should always have had, since the label already names the parent the control returns to. Nothing changes on screen: the chevron stays icon-only, and `semanticLabel` reaches assistive technology rather than the layout. Two docblocks are corrected with it: the class comment claimed the leading slot renders "a `Icons.chevron_left` icon followed by the [backLabel] text", which it never did, and the field comment claimed the same. (`lib/src/ui/components/page_header/page_header.dart`)
+
 ## [0.0.1-alpha.20] - 2026-08-17
 
 ### Fixed
