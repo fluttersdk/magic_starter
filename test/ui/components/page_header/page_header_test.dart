@@ -306,6 +306,7 @@ void main() {
         const MSPageHeader(
           title: 'Profile',
           backLabel: 'Settings',
+          backFallback: '/settings',
         ),
       ),
     );
@@ -327,6 +328,7 @@ void main() {
         const MSPageHeader(
           title: 'Profile',
           backLabel: 'Settings',
+          backFallback: '/settings',
         ),
       ),
     );
@@ -340,6 +342,19 @@ void main() {
     // layout.
     expect(find.text('Settings'), findsNothing);
     handle.dispose();
+  });
+
+  testWidgets('no back control without a backFallback to navigate to',
+      (tester) async {
+    // `backFallback` is the control's only destination, so gating the render on
+    // `backLabel` alone produced a chevron that announced itself as a button
+    // (named, after this PR) and did nothing when pressed. A control that
+    // cannot act is worse than no control.
+    await tester.pumpWidget(
+      wrap(const MSPageHeader(title: 'Profile', backLabel: 'Settings')),
+    );
+
+    expect(find.byIcon(Icons.chevron_left), findsNothing);
   });
 
   testWidgets('no back leading when backLabel is null', (tester) async {
