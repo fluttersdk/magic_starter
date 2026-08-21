@@ -113,6 +113,75 @@ void main() {
     expect(find.byKey(suffixKey), findsOneWidget);
   });
 
+  testWidgets(
+    'inlineActions keeps the title readable beside a leading and a suffix',
+    (tester) async {
+      // The className assertion below cannot see this: with a leading control,
+      // a long title and a titleSuffix, the inline row collapsed the title to a
+      // couple of glyphs on a phone while leaving most of the row EMPTY.
+      // Measured on an iPhone at 402pt: the title occupied about 10pt and
+      // everything past the suffix was blank, because `justify-between` handed
+      // the icon-sized actions column an EQUAL flex share and it reserved half
+      // the header.
+      //
+      // Asserted on the two wrappers, not on the text: a widget test lays text
+      // out in a placeholder font roughly one em per glyph, so any assertion
+      // that compares a title against a badge measures the harness. An icon
+      // column's width and a row's share of the header are layout.
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(402, 900);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        wrap(
+          MSPageHeader(
+            title: 'iOS Sweep Monitor',
+            subtitle: 'https://example.com',
+            inlineActions: true,
+            leading: const Icon(Icons.chevron_left),
+            titleSuffix: const Text('Operational'),
+            actions: [const Icon(Icons.more_horiz)],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final double actionsWidth = tester
+          .getSize(
+            find
+                .ancestor(
+                  of: find.byIcon(Icons.more_horiz),
+                  matching: find.byType(WDiv),
+                )
+                .first,
+          )
+          .width;
+      final double titleRowWidth = tester
+          .getSize(
+            find
+                .byWidgetPredicate(
+                  (w) => w is WDiv && (w.className ?? '').contains('flex-1'),
+                )
+                .first,
+          )
+          .width;
+
+      expect(
+        actionsWidth,
+        lessThan(64),
+        reason: 'a single icon action is icon-sized; it cannot reserve a share '
+            'of the header it never paints',
+      );
+      expect(
+        titleRowWidth,
+        greaterThan(300),
+        reason: 'the title row is the page identity and takes what the actions '
+            'do not need, so on a 402pt phone it spans nearly the whole header',
+      );
+    },
+  );
+
   testWidgets('inlineActions: true outer WDiv className contains flex-row',
       (tester) async {
     await tester.pumpWidget(
