@@ -23,7 +23,7 @@ enum InputState {
 /// baked-in `w-full` token, so the default renders at content width.
 const WindRecipe inputRecipe = WindRecipe(
   base: 'rounded-lg border text-fg text-sm '
-      'focus:outline-none focus:ring-2 '
+      'focus:ring-2 '
       'disabled:opacity-50 disabled:cursor-not-allowed',
   variants: {
     kInputStateAxis: {
