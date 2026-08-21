@@ -22,7 +22,7 @@ Map<String, String> tabsRecipe({
       // tab used to mark itself with a thicker length of the very line it was
       // sitting on. It read as a grey smudge rather than a selection.
       'tab':
-          'px-4 py-2 text-sm font-medium text-fg-muted cursor-pointer selected:text-fg selected:border-b-2 selected:border-primary',
+          'px-4 py-2 text-sm font-medium text-fg-muted cursor-pointer selected:text-fg selected:border-b-2 selected:border-primary-600 dark:selected:border-primary-500',
       'panel': 'pt-4',
     },
   );
