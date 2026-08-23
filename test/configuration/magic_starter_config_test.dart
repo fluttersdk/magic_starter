@@ -64,6 +64,10 @@ void main() {
       test('hasTimezoneFeatures() returns false by default', () {
         expect(MagicStarterConfig.hasTimezoneFeatures(), isFalse);
       });
+
+      test('hasBillingFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasBillingFeatures(), isFalse);
+      });
     });
     // -------------------------------------------------------------------------
     // Route accessors — default values
@@ -232,6 +236,12 @@ void main() {
           MagicStarterConfig.hasExtendedProfileFeatures(),
           isTrue,
         );
+      });
+
+      test('hasBillingFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.billing', true);
+
+        expect(MagicStarterConfig.hasBillingFeatures(), isTrue);
       });
 
       test(
@@ -526,6 +536,64 @@ void main() {
         );
 
         expect(MagicStarterConfig.hasLegalLinks(), isTrue);
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // Billing web origin — the checkout CTA's gate, not a decorative field.
+    // -------------------------------------------------------------------------
+
+    group('billingWebOrigin()', () {
+      test('returns null when unset, not a default host', () {
+        // This is the case that matters: an unset origin must disable the
+        // checkout CTA rather than let it build a relative Stripe url.
+        // Testing only the "set" case below cannot distinguish "gated when
+        // unset" from "always on with a default", which read the same green.
+        expect(MagicStarterConfig.billingWebOrigin(), isNull);
+      });
+
+      test('returns the configured origin unchanged when set', () {
+        Config.set(
+          'magic_starter.billing.web_origin',
+          'https://example.com',
+        );
+
+        expect(
+          MagicStarterConfig.billingWebOrigin(),
+          equals('https://example.com'),
+        );
+      });
+
+      test('returns null for an empty string, the half-filled .env case', () {
+        // An empty string is what a half-filled `.env` produces. It must not
+        // sail through a bare null check: it would still yield a broken
+        // relative url when concatenated with a checkout path.
+        Config.set('magic_starter.billing.web_origin', '');
+
+        expect(MagicStarterConfig.billingWebOrigin(), isNull);
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // Billing route — untouched by this step, asserted so a regression here
+    // would be caught even though the step's own diff does not name it.
+    // -------------------------------------------------------------------------
+
+    group('billingRoute()', () {
+      test('returns "/teams/billing" by default', () {
+        expect(
+          MagicStarterConfig.billingRoute(),
+          equals('/teams/billing'),
+        );
+      });
+
+      test('returns configured value', () {
+        Config.set('magic_starter.routes.billing', '/organizations/plan');
+
+        expect(
+          MagicStarterConfig.billingRoute(),
+          equals('/organizations/plan'),
+        );
       });
     });
   });

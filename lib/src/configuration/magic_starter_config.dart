@@ -21,6 +21,7 @@ class MagicStarterConfig {
   static const bool _defaultNewsletter = false;
   static const bool _defaultEmailVerification = false;
   static const bool _defaultTimezones = false;
+  static const bool _defaultBilling = false;
   static const bool _defaultEmailIdentity = true;
   static const bool _defaultPhoneIdentity = false;
 
@@ -164,6 +165,15 @@ class MagicStarterConfig {
           _defaultEmailVerification,
         ) ??
         _defaultEmailVerification;
+  }
+
+  /// Returns whether billing starter features are enabled.
+  static bool hasBillingFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.billing',
+          _defaultBilling,
+        ) ??
+        _defaultBilling;
   }
 
   /// Returns whether email-based identity is enabled.
@@ -349,5 +359,33 @@ class MagicStarterConfig {
     return Config.get<String>(
             'magic_starter.routes.billing', _defaultBillingRoute) ??
         _defaultBillingRoute;
+  }
+
+  /// Returns the host app's configured web origin
+  /// (`magic_starter.billing.web_origin`), or `null` when it is unset.
+  ///
+  /// Deliberately carries NO default. The billing view builds Stripe's
+  /// checkout `successUrl`/`cancelUrl` and the billing portal `returnUrl` by
+  /// concatenating this value with a path, and Stripe requires those to be
+  /// ABSOLUTE urls. A guessed or empty origin would produce a relative url
+  /// that fails session creation at Stripe, silently: the resulting
+  /// [BillingException] is logged rather than shown to the customer, so an
+  /// adopter who forgot this key would never be told why checkout fails.
+  ///
+  /// **Callers must treat `null` as "web checkout is not configurable"**
+  /// and must not render the checkout call-to-action in that case, the same
+  /// way the source screen this was ported from gates on its web rail
+  /// existing at all.
+  ///
+  /// An empty string reads as unset, not as a valid origin: a half-filled
+  /// `.env` produces `''` rather than an absent key, and `''` would still
+  /// yield the same broken relative url.
+  static String? billingWebOrigin() {
+    final String? origin =
+        Config.get<String?>('magic_starter.billing.web_origin', null);
+
+    if (origin == null || origin.isEmpty) return null;
+
+    return origin;
   }
 }

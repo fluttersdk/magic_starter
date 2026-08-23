@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:fluttersdk_artisan/artisan.dart';
@@ -178,6 +179,28 @@ void main() {
 
       expect(hostFileExists('assets/lang/en.json'), isTrue);
       expect(readHostFile('assets/lang/en.json'), '{"auth.login":"Login"}');
+    });
+
+    test('--tag=lang skips when destination already exists and no --force',
+        () async {
+      // Step 16b depends on this: an installed app carries a hand-merged
+      // translation catalogue (e.g. Turkish), and re-running `starter:publish`
+      // must never clobber it with the package's English-only stub.
+      createPluginFile(
+        'assets/stubs/install/en.stub',
+        '{"billing":{"title":"new stub content"}}',
+      );
+
+      final existing = File('${tempDir.path}/assets/lang/en.json');
+      existing.createSync(recursive: true);
+      existing.writeAsStringSync('{"billing":{"title":"host-owned content"}}');
+
+      await _runPublish(command, tag: 'lang');
+
+      expect(
+        existing.readAsStringSync(),
+        '{"billing":{"title":"host-owned content"}}',
+      );
     });
 
     test('--tag=middleware copies middleware files', () async {
@@ -750,6 +773,128 @@ class AppServiceProvider extends ServiceProvider {
         1,
         reason: 'Import should appear exactly once',
       );
+    });
+
+    // -------------------------------------------------------------------
+    // Shipped en.stub billing block (Step 6, billing-screen-into-magic-starter)
+    // -------------------------------------------------------------------
+
+    group('shipped en.stub billing block', () {
+      /// The full set of `magic_starter.billing.*` keys the ported billing
+      /// view reads, flattened to dotted paths (`invoice_status.paid`, etc.).
+      /// Mirrors `uptizm`'s `plan_billing_view.dart` `trans('uptizm.teams.
+      /// billing_*')` / `trans('uptizm.enums.invoice_status.*')` calls with
+      /// the `uptizm.teams.billing_` / `uptizm.enums.` prefixes stripped.
+      const expectedKeys = <String>[
+        'description',
+        'invoice_receipt_button',
+        'invoice_status.failed',
+        'invoice_status.paid',
+        'invoice_status.pending',
+        'invoices_header',
+        'manage_app_store_text',
+        'manage_header',
+        'manage_play_store_text',
+        'manage_store_button',
+        'manage_store_no_url',
+        'owner_only_notice',
+        'payment_expires',
+        'payment_header',
+        'payment_none',
+        'payment_update_button',
+        'plan_billing_annual',
+        'plan_billing_custom',
+        'plan_billing_free',
+        'plan_billing_monthly',
+        'plan_button_contact',
+        'plan_button_current',
+        'plan_button_downgrade',
+        'plan_button_unranked',
+        'plan_button_unresolved',
+        'plan_button_upgrade',
+        'plan_current_badge',
+        'plan_price_custom',
+        'plan_price_monthly',
+        'plan_price_store',
+        'plan_recommended_badge',
+        'plan_unavailable_text',
+        'plans_annual',
+        'plans_heading',
+        'plans_monthly',
+        'renewal_cycle_annual',
+        'renewal_cycle_monthly',
+        'renewal_free',
+        'renewal_store',
+        'renewal_text',
+        'renewal_unbilled',
+        'store_bound_text',
+        'store_bound_title',
+        'store_purchase_text',
+        'store_purchase_title',
+        'store_restore_button',
+        'store_restore_found_title',
+        'store_restore_none_text',
+        'store_restore_none_title',
+        'title',
+        'toast_change_description',
+        'toast_checkout_failed_title',
+        'toast_contact_description',
+        'toast_contact_title',
+        'toast_deferred_text',
+        'toast_deferred_title',
+        'toast_failed_text',
+        'toast_switch_title',
+        'toast_upgrade_title',
+      ];
+
+      late Map<String, dynamic> stub;
+
+      setUpAll(() {
+        final stubFile = File(
+          '${Directory.current.path}/assets/stubs/install/en.stub',
+        );
+        stub = jsonDecode(stubFile.readAsStringSync()) as Map<String, dynamic>;
+      });
+
+      test('parses as valid JSON', () {
+        expect(stub, isA<Map<String, dynamic>>());
+      });
+
+      test('every key the ported billing view reads is present and non-empty',
+          () {
+        final billing = (stub['magic_starter']
+            as Map<String, dynamic>)['billing'] as Map<String, dynamic>;
+
+        for (final dottedKey in expectedKeys) {
+          final segments = dottedKey.split('.');
+          dynamic value = billing;
+          for (final segment in segments) {
+            expect(
+              value,
+              isA<Map<String, dynamic>>(),
+              reason: 'magic_starter.billing.$dottedKey should resolve '
+                  'through nested objects',
+            );
+            expect(
+              (value as Map<String, dynamic>).containsKey(segment),
+              isTrue,
+              reason: 'magic_starter.billing.$dottedKey is missing',
+            );
+            value = value[segment];
+          }
+
+          expect(
+            value,
+            isA<String>(),
+            reason: 'magic_starter.billing.$dottedKey should be a string',
+          );
+          expect(
+            (value as String).isNotEmpty,
+            isTrue,
+            reason: 'magic_starter.billing.$dottedKey should not be empty',
+          );
+        }
+      });
     });
 
     test('auto-wire skips when AppServiceProvider not found', () async {
