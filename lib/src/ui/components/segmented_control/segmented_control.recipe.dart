@@ -29,8 +29,11 @@ Map<String, String> segmentedControlRecipe({
       'root':
           'flex flex-row items-center rounded-lg bg-surface-container-high '
           'p-1 gap-1',
+      // `text-center` keeps a label that wrapped onto a second line (the
+      // segment is capped at an equal share of a row too narrow for its
+      // labels) centred under the first, whatever the caller aligns.
       'item':
-          'px-3 py-1.5 rounded-md text-sm font-medium text-fg-muted cursor-pointer selected:bg-surface selected:text-fg selected:shadow-sm transition-colors',
+          'px-3 py-1.5 rounded-md text-sm font-medium text-center text-fg-muted cursor-pointer selected:bg-surface selected:text-fg selected:shadow-sm transition-colors',
     },
     variants: {
       kSegmentedControlSizeAxis: {
