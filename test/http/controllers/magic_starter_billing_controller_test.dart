@@ -903,6 +903,136 @@ void main() {
       controller.dispose();
     });
   });
+
+  group('MagicStarterBillingController, session scoping', () {
+    test('a session change clears every field BEFORE it refills, not just at '
+        'the end', () async {
+      // 1. Populate fully as team A: all six reads resolved with real
+      //    values in every field a session change must clear. Gated on
+      //    `billing.gate` on the same terms as `_FakeBilling._enter`, so
+      //    that setting the gate before firing the session change parks
+      //    this read too; an ungated reader would resolve inside the
+      //    single microtask turn below and refill before the checkpoint,
+      //    hiding exactly the window this test exists to catch.
+      Future<String?> gatedStoreFundedTeamReader() async {
+        final Completer<void>? held = billing.gate;
+        if (held != null) await held.future;
+        return 'Other Team';
+      }
+
+      final MagicStarterBillingController controller = build(
+        storeFundedTeamReader: gatedStoreFundedTeamReader,
+      );
+      await controller.load();
+
+      expect(controller.currentPlanId, 'tier-b');
+      expect(controller.entitlementLoaded, isTrue);
+      expect(controller.manageVia, ManageVia.portal);
+      expect(controller.manageUrl, isNotNull);
+      expect(controller.plans, isNotEmpty);
+      expect(controller.usage, isNotEmpty);
+      expect(controller.invoices, isNotEmpty);
+      expect(controller.paymentMethod, isNotNull);
+      expect(controller.pmLoading, isFalse);
+      expect(controller.storeFundedTeam, 'Other Team');
+
+      // 2. Fire the session change, but hold every read open so nothing
+      //    can refill yet. Asserting empty only AFTER the refetch settles
+      //    would also pass against a controller that never clears,
+      //    because the second read overwrites regardless; the window this
+      //    guards is the one in between, where team A's rows would
+      //    otherwise still be on team B's screen.
+      final Completer<void> gate = Completer<void>();
+      billing.gate = gate;
+      final Future<void> resetting = controller.resetForSession();
+
+      // One microtask turn is enough for the cleared state to publish and
+      // for the refetch to dispatch and park on the gate; it is not enough
+      // for the gate to open.
+      await Future<void>.delayed(Duration.zero);
+
+      // 3. Assert EMPTY first, field by field, including the two fields a
+      //    careless reset gets backwards: pmLoading back to true (its own
+      //    declaration's start state, not false) and pmError back to
+      //    false.
+      expect(controller.currentPlanId, isNull);
+      expect(controller.entitlementLoaded, isFalse);
+      expect(controller.manageVia, isNull);
+      expect(controller.manageUrl, isNull);
+      expect(controller.plans, isEmpty);
+      expect(controller.usage, isEmpty);
+      expect(controller.invoices, isEmpty);
+      expect(controller.paymentMethod, isNull);
+      expect(controller.pmLoading, isTrue);
+      expect(controller.pmError, isFalse);
+      expect(controller.storeFundedTeam, isNull);
+
+      // 4. Only now let the refetch complete, and assert it refills.
+      gate.complete();
+      await resetting;
+
+      expect(controller.currentPlanId, 'tier-b');
+      expect(controller.entitlementLoaded, isTrue);
+      expect(controller.plans, isNotEmpty);
+      expect(controller.usage, isNotEmpty);
+      expect(controller.invoices, isNotEmpty);
+      expect(controller.paymentMethod, isNotNull);
+      expect(controller.pmLoading, isFalse);
+      expect(controller.storeFundedTeam, 'Other Team');
+      controller.dispose();
+    });
+
+    test('the reset is exhaustive: every public getter the six reads populate '
+        'reports its declaration-time initial value', () async {
+      // Reflection is not available, so completeness is proven
+      // structurally: every public getter the six reads populate is
+      // enumerated below against the literal value ITS OWN field
+      // declaration starts at, which is what a reset must reproduce.
+      // Parking the refetch on the gate (as the ordering test above does)
+      // is what makes this a check of the CLEARED state rather than of
+      // whatever the refill happens to publish; asserting after a full
+      // `resetForSession()` completes, as an earlier draft of this test
+      // did, made every field pass by refilling regardless of whether the
+      // reset had cleared it first, which is precisely the false-pass the
+      // step's QA warns about.
+      //
+      // Honest limit: this enumeration is only as complete as the list
+      // below. A future field the six reads add and this list forgets to
+      // name is invisible to it, the same way it would be invisible to a
+      // reset that forgot to clear it.
+      Future<String?> gatedStoreFundedTeamReader() async {
+        final Completer<void>? held = billing.gate;
+        if (held != null) await held.future;
+        return 'Other Team';
+      }
+
+      final MagicStarterBillingController controller = build(
+        storeFundedTeamReader: gatedStoreFundedTeamReader,
+      );
+      await controller.load();
+
+      final Completer<void> gate = Completer<void>();
+      billing.gate = gate;
+      final Future<void> resetting = controller.resetForSession();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.currentPlanId, isNull);
+      expect(controller.entitlementLoaded, isFalse);
+      expect(controller.manageVia, isNull);
+      expect(controller.manageUrl, isNull);
+      expect(controller.plans, isEmpty);
+      expect(controller.usage, isEmpty);
+      expect(controller.invoices, isEmpty);
+      expect(controller.paymentMethod, isNull);
+      expect(controller.pmLoading, isTrue);
+      expect(controller.pmError, isFalse);
+      expect(controller.storeFundedTeam, isNull);
+
+      gate.complete();
+      await resetting;
+      controller.dispose();
+    });
+  });
 }
 
 /// A read contract that serves neither rail, modelling a build with no purchase

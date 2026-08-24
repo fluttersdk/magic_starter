@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import 'package:magic_payments/magic_payments.dart';
 
 import '../../models/magic_starter_plan.dart';
+import '../session_scoped_controller.dart';
 
 /// Pairs the consumer's display copy onto the usage stats the billing wire
 /// carries.
@@ -111,7 +112,8 @@ typedef MagicStarterTeamOwnershipReader = bool? Function();
 ///   ),
 /// );
 /// ```
-class MagicStarterBillingController extends MagicController {
+class MagicStarterBillingController extends MagicController
+    implements SessionScopedController {
   /// Creates the billing controller.
   ///
   /// [billingService] overrides [Payments.billing] for tests. A fake that also
@@ -401,6 +403,51 @@ class MagicStarterBillingController extends MagicController {
   void onInit() {
     super.onInit();
     unawaited(load());
+  }
+
+  /// Drops every field the six reads populate, publishes the cleared state,
+  /// then refetches for the identity that is now authenticated.
+  ///
+  /// Called on login and on team switch (see [SessionScopedController]),
+  /// never from [onInit]: this controller is a `Magic.findOrPut` singleton
+  /// and `onInit` runs once per instance lifetime, so without this reset a
+  /// team switch would leave the previous team's plan, invoices, usage and
+  /// card on screen until the app restarts.
+  ///
+  /// Clears BEFORE refetching. The six `load*` methods are deliberately
+  /// non-destructive (a transport failure keeps last-known-good state so a
+  /// blip does not blank a card), and that is the wrong behaviour across an
+  /// identity change: a failed refetch must leave the screen empty, never
+  /// populated with the previous team's rows.
+  ///
+  /// Every field resets to the same initializer its declaration carries.
+  /// [pmLoading] is worth calling out explicitly: it resets to `true`, the
+  /// same value its field declaration starts at, and NOT to `false`. A card
+  /// that reset to `pmLoading: false` with a null [paymentMethod] would
+  /// render "no card on file" for the new team before anything had been
+  /// read, a confident wrong answer rather than a loading state.
+  ///
+  /// Three fields are deliberately left untouched because they are not
+  /// session state: [usageCopy], [storeFundedTeamReader] and [isOwnerReader]
+  /// are consumer collaborators supplied at construction, and [billing],
+  /// [webRail] and [storeRail] are `late final` rail resolutions that a
+  /// reassignment would not even compile against.
+  @override
+  Future<void> resetForSession() async {
+    _currentPlanId = null;
+    _entitlementLoaded = false;
+    _manageVia = null;
+    _manageUrl = null;
+    _plans = const <MagicStarterPlan>[];
+    _usage = const <UsageStat>[];
+    _invoices = const <Invoice>[];
+    _paymentMethod = null;
+    _pmLoading = true;
+    _pmError = false;
+    _storeFundedTeam = null;
+    refreshUI();
+
+    await load();
   }
 
   /// Dispatches all six reads AT ONCE and resolves when the last one settles.
