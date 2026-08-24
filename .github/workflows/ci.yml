@@ -6,10 +6,107 @@ on:
   pull_request:
     branches: [main, master]
 
+# Two jobs on purpose, because there are two different questions and one job can
+# only answer one of them. `siblings` resolves the fluttersdk packages from their
+# working trees, which is what this repo develops against and what a local
+# `pubspec_overrides.yaml` reproduces. `published` resolves them from pub.dev,
+# which is what an adopter actually installs. A CI that only ever cloned the
+# siblings would go green on a dependency nobody outside this org can resolve;
+# a CI that only ever resolved pub.dev would hide an unreleased sibling API
+# until release day. Both facts stay visible.
 jobs:
-  analyze-and-test:
-    name: Lint & Test
+  siblings:
+    name: Sibling working trees (analyze + format + test)
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      # Into a subdirectory, because the overrides written below point at
+      # ../<pkg> and the siblings therefore have to sit beside the checkout.
+      - name: Check out magic_starter
+        uses: actions/checkout@v7
+        with:
+          path: magic_starter
+
+      # All six are public repositories in the fluttersdk org. The directory
+      # name is what the override expects, and it differs from the package name
+      # for artisan and the two wind repositories.
+      - name: Check out the fluttersdk siblings
+        run: |
+          set -euo pipefail
+          for repo in magic magic_notifications magic_payments artisan \
+                      wind wind_diagnostics_contracts; do
+            git clone --depth 1 "https://github.com/fluttersdk/$repo.git" "$repo"
+          done
+
+      # `pubspec_overrides.yaml` is gitignored, so it does not arrive with the
+      # checkout and CI has to write the same file a developer keeps locally.
+      # Keep this list in step with the local one; a sibling missing here is a
+      # sibling CI silently resolves from pub.dev.
+      - name: Point the resolution at the sibling checkouts
+        working-directory: magic_starter
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            magic:
+              path: ../magic
+            magic_notifications:
+              path: ../magic_notifications
+            magic_payments:
+              path: ../magic_payments
+            fluttersdk_artisan:
+              path: ../artisan
+            fluttersdk_wind:
+              path: ../wind
+            fluttersdk_wind_diagnostics_contracts:
+              path: ../wind_diagnostics_contracts
+          YAML
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: magic_starter
+        run: flutter pub get
+
+      - name: Analyze code
+        working-directory: magic_starter
+        run: flutter analyze --no-fatal-infos
+
+      - name: Check formatting
+        working-directory: magic_starter
+        run: dart format --set-exit-if-changed .
+
+      - name: Run tests
+        working-directory: magic_starter
+        run: flutter test --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v7
+        with:
+          files: magic_starter/coverage/lcov.info
+          fail_ci_if_error: false
+
+  published:
+    # KNOWN RED, and the name says why so a reader does not have to open this
+    # file. `magic_payments 0.0.1` is not on pub.dev yet, so the resolution below
+    # fails with "could not find package magic_payments" and nothing else. That
+    # is the truth about this package right now: an adopter cannot install it
+    # either, and hiding that behind a sibling clone would be the whole point of
+    # this job thrown away.
+    #
+    # Remove `continue-on-error` the day magic_payments 0.0.1 is published. The
+    # check is one command: `curl -sI https://pub.dev/api/packages/magic_payments`
+    # returning 200 rather than 404. Nothing else in this job is allowed to be
+    # non-blocking, and this package must not be published before magic_payments
+    # is, or every adopter meets the same failure.
+    name: Published graph (red until magic_payments 0.0.1 is on pub.dev)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v7
@@ -20,20 +117,13 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
+      # No sibling clones and no overrides on purpose: this is the graph a third
+      # party gets from `flutter pub add magic_starter`.
+      - name: Resolve against pub.dev
         run: flutter pub get
 
-      - name: Analyze code
+      # Resolving proves the constraints are satisfiable; analyzing proves this
+      # package's own source compiles against the sibling versions that are
+      # actually released, which is where an unreleased API surfaces.
+      - name: Analyze against the published siblings
         run: flutter analyze --no-fatal-infos
-
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
-
-      - name: Run tests
-        run: flutter test --coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v7
-        with:
-          files: coverage/lcov.info
-          fail_ci_if_error: false
