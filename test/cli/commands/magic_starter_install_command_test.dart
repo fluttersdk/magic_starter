@@ -109,8 +109,9 @@ void main() {
 
       await runInstall(command);
 
-      final File configFile =
-          File('${tempDir.path}/lib/config/magic_starter.dart');
+      final File configFile = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      );
       expect(configFile.existsSync(), isTrue);
       expect(configFile.readAsStringSync(), contains('magicStarterConfig'));
     });
@@ -118,8 +119,9 @@ void main() {
     test('skips config write when exists and no --force', () async {
       setupMagicProjectFiles(tempDir);
 
-      final File configFile =
-          File('${tempDir.path}/lib/config/magic_starter.dart');
+      final File configFile = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      );
       configFile.createSync(recursive: true);
       configFile.writeAsStringSync('// existing config');
 
@@ -131,8 +133,9 @@ void main() {
     test('overwrites config when --force set', () async {
       setupMagicProjectFiles(tempDir);
 
-      final File configFile =
-          File('${tempDir.path}/lib/config/magic_starter.dart');
+      final File configFile = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      );
       configFile.createSync(recursive: true);
       configFile.writeAsStringSync('// existing config');
 
@@ -147,45 +150,58 @@ void main() {
 
       await runInstall(command);
 
-      final String appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
-      expect(appContent,
-          contains("import 'package:magic_starter/magic_starter.dart';"));
-    });
-
-    test('injects MagicStarterServiceProvider into app.dart providers list',
-        () async {
-      setupMagicProjectFiles(tempDir);
-
-      await runInstall(command);
-
-      final String appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
+      final String appContent = File(
+        '${tempDir.path}/lib/config/app.dart',
+      ).readAsStringSync();
       expect(
-          appContent, contains('(app) => MagicStarterServiceProvider(app),'));
+        appContent,
+        contains("import 'package:magic_starter/magic_starter.dart';"),
+      );
     });
 
-    test('skips provider injection when already present (idempotency)',
-        () async {
-      setupMagicProjectFiles(tempDir);
+    test(
+      'injects MagicStarterServiceProvider into app.dart providers list',
+      () async {
+        setupMagicProjectFiles(tempDir);
 
-      await runInstall(command);
-      await runInstall(command);
+        await runInstall(command);
 
-      final String appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
-      final int providerCount =
-          RegExp('MagicStarterServiceProvider').allMatches(appContent).length;
-      expect(providerCount, 1);
-    });
+        final String appContent = File(
+          '${tempDir.path}/lib/config/app.dart',
+        ).readAsStringSync();
+        expect(
+          appContent,
+          contains('(app) => MagicStarterServiceProvider(app),'),
+        );
+      },
+    );
+
+    test(
+      'skips provider injection when already present (idempotency)',
+      () async {
+        setupMagicProjectFiles(tempDir);
+
+        await runInstall(command);
+        await runInstall(command);
+
+        final String appContent = File(
+          '${tempDir.path}/lib/config/app.dart',
+        ).readAsStringSync();
+        final int providerCount = RegExp(
+          'MagicStarterServiceProvider',
+        ).allMatches(appContent).length;
+        expect(providerCount, 1);
+      },
+    );
 
     test('injects magic_starter import into main.dart', () async {
       setupMagicProjectFiles(tempDir);
 
       await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/main.dart',
+      ).readAsStringSync();
       expect(content, contains("import 'config/magic_starter.dart';"));
     });
 
@@ -194,41 +210,48 @@ void main() {
 
       await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/main.dart',
+      ).readAsStringSync();
       expect(content, contains('() => magicStarterConfig,'));
     });
 
-    test('skips main.dart injection when already present (idempotency)',
-        () async {
-      setupMagicProjectFiles(tempDir);
+    test(
+      'skips main.dart injection when already present (idempotency)',
+      () async {
+        setupMagicProjectFiles(tempDir);
 
-      await runInstall(command);
-      await runInstall(command);
+        await runInstall(command);
+        await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      final int factoryCount =
-          RegExp(r'\(\) => magicStarterConfig').allMatches(content).length;
-      expect(factoryCount, 1);
-    });
-
-    test('injects WindThemeData with primary color palette into main.dart',
-        () async {
-      setupMagicProjectFiles(tempDir);
-
-      await runInstall(command);
-
-      final String content =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      expect(content, contains('WindThemeData'));
-      expect(content, contains("'primary'"));
-      expect(content, contains('MaterialColor'));
-      expect(content, contains('windTheme: windTheme'));
-    });
+        final String content = File(
+          '${tempDir.path}/lib/main.dart',
+        ).readAsStringSync();
+        final int factoryCount = RegExp(
+          r'\(\) => magicStarterConfig',
+        ).allMatches(content).length;
+        expect(factoryCount, 1);
+      },
+    );
 
     test(
-        'injects windTheme into multi-arg MagicApplication preserving '
+      'injects WindThemeData with primary color palette into main.dart',
+      () async {
+        setupMagicProjectFiles(tempDir);
+
+        await runInstall(command);
+
+        final String content = File(
+          '${tempDir.path}/lib/main.dart',
+        ).readAsStringSync();
+        expect(content, contains('WindThemeData'));
+        expect(content, contains("'primary'"));
+        expect(content, contains('MaterialColor'));
+        expect(content, contains('windTheme: windTheme'));
+      },
+    );
+
+    test('injects windTheme into multi-arg MagicApplication preserving '
         'title and titleSuffix', () async {
       setupMagicProjectFiles(tempDir);
 
@@ -237,10 +260,10 @@ void main() {
       final File mainFile = File('${tempDir.path}/lib/main.dart');
       mainFile.writeAsStringSync(
         mainFile.readAsStringSync().replaceFirst(
-              "MagicApplication(title: 'Starter App'),",
-              "MagicApplication(title: 'Starter App', "
-                  "titleSuffix: 'Starter App'),",
-            ),
+          "MagicApplication(title: 'Starter App'),",
+          "MagicApplication(title: 'Starter App', "
+              "titleSuffix: 'Starter App'),",
+        ),
       );
 
       await runInstall(command);
@@ -263,34 +286,43 @@ void main() {
 
       await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/main.dart',
+      ).readAsStringSync();
       expect(content, contains("import 'package:flutter/material.dart';"));
     });
 
-    test('skips WindThemeData injection when already present (idempotency)',
-        () async {
-      setupMagicProjectFiles(tempDir);
+    test(
+      'skips WindThemeData injection when already present (idempotency)',
+      () async {
+        setupMagicProjectFiles(tempDir);
 
-      await runInstall(command);
-      await runInstall(command);
+        await runInstall(command);
+        await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      final int themeCount = RegExp('WindThemeData').allMatches(content).length;
-      expect(themeCount, 1);
-    });
+        final String content = File(
+          '${tempDir.path}/lib/main.dart',
+        ).readAsStringSync();
+        final int themeCount = RegExp(
+          'WindThemeData',
+        ).allMatches(content).length;
+        expect(themeCount, 1);
+      },
+    );
 
     test('creates ensure_authenticated middleware file', () async {
       setupMagicProjectFiles(tempDir);
 
       await runInstall(command);
 
-      final File middlewareFile =
-          File('${tempDir.path}/lib/app/middleware/ensure_authenticated.dart');
+      final File middlewareFile = File(
+        '${tempDir.path}/lib/app/middleware/ensure_authenticated.dart',
+      );
       expect(middlewareFile.existsSync(), isTrue);
-      expect(middlewareFile.readAsStringSync(),
-          contains('class EnsureAuthenticated'));
+      expect(
+        middlewareFile.readAsStringSync(),
+        contains('class EnsureAuthenticated'),
+      );
     });
 
     test('creates redirect_if_authenticated middleware file', () async {
@@ -299,17 +331,21 @@ void main() {
       await runInstall(command);
 
       final File middlewareFile = File(
-          '${tempDir.path}/lib/app/middleware/redirect_if_authenticated.dart');
+        '${tempDir.path}/lib/app/middleware/redirect_if_authenticated.dart',
+      );
       expect(middlewareFile.existsSync(), isTrue);
-      expect(middlewareFile.readAsStringSync(),
-          contains('class RedirectIfAuthenticated'));
+      expect(
+        middlewareFile.readAsStringSync(),
+        contains('class RedirectIfAuthenticated'),
+      );
     });
 
     test('skips middleware creation when exists and no --force', () async {
       setupMagicProjectFiles(tempDir);
 
-      final File middlewareFile =
-          File('${tempDir.path}/lib/app/middleware/ensure_authenticated.dart');
+      final File middlewareFile = File(
+        '${tempDir.path}/lib/app/middleware/ensure_authenticated.dart',
+      );
       middlewareFile.createSync(recursive: true);
       middlewareFile.writeAsStringSync('// keep this middleware');
 
@@ -323,52 +359,67 @@ void main() {
 
       await runInstall(command);
 
-      final String kernelContent =
-          File('${tempDir.path}/lib/app/kernel.dart').readAsStringSync();
+      final String kernelContent = File(
+        '${tempDir.path}/lib/app/kernel.dart',
+      ).readAsStringSync();
 
       expect(
-        RegExp(r"^\s*Kernel\.registerAll\(", multiLine: true)
-            .hasMatch(kernelContent),
+        RegExp(
+          r"^\s*Kernel\.registerAll\(",
+          multiLine: true,
+        ).hasMatch(kernelContent),
         isTrue,
         reason: 'Kernel.registerAll must be uncommented',
       );
       expect(kernelContent, contains("'auth': () => EnsureAuthenticated(),"));
       expect(
-          kernelContent, contains("'guest': () => RedirectIfAuthenticated(),"));
+        kernelContent,
+        contains("'guest': () => RedirectIfAuthenticated(),"),
+      );
 
       expect(
-        RegExp(r"^import 'package:magic/magic\.dart';", multiLine: true)
-            .hasMatch(kernelContent),
+        RegExp(
+          r"^import 'package:magic/magic\.dart';",
+          multiLine: true,
+        ).hasMatch(kernelContent),
         isTrue,
         reason: 'import magic must be uncommented',
       );
-      expect(kernelContent,
-          contains("import 'middleware/ensure_authenticated.dart';"));
-      expect(kernelContent,
-          contains("import 'middleware/redirect_if_authenticated.dart';"));
+      expect(
+        kernelContent,
+        contains("import 'middleware/ensure_authenticated.dart';"),
+      );
+      expect(
+        kernelContent,
+        contains("import 'middleware/redirect_if_authenticated.dart';"),
+      );
     });
 
-    test('injects auth route import into route_service_provider.dart',
-        () async {
-      setupMagicProjectFiles(tempDir);
+    test(
+      'injects auth route import into route_service_provider.dart',
+      () async {
+        setupMagicProjectFiles(tempDir);
 
-      await runInstall(command);
+        await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
-              .readAsStringSync();
-      expect(content,
-          contains("import 'package:magic_starter/magic_starter.dart';"));
-    });
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+        ).readAsStringSync();
+        expect(
+          content,
+          contains("import 'package:magic_starter/magic_starter.dart';"),
+        );
+      },
+    );
 
     test('injects auth route registration call into RSP boot()', () async {
       setupMagicProjectFiles(tempDir);
 
       await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+      ).readAsStringSync();
       expect(content, contains('registerMagicStarterAuthRoutes();'));
       expect(content, contains('registerMagicStarterProfileRoutes();'));
     });
@@ -378,9 +429,9 @@ void main() {
 
       await runInstall(command, force: true, features: 'teams');
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+      ).readAsStringSync();
       expect(content, contains('registerMagicStarterTeamRoutes();'));
     });
 
@@ -389,9 +440,9 @@ void main() {
 
       await runInstall(command, features: 'social_login');
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+      ).readAsStringSync();
       expect(content, isNot(contains('registerMagicStarterTeamRoutes();')));
     });
 
@@ -400,9 +451,9 @@ void main() {
 
       await runInstall(command, force: true);
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+      ).readAsStringSync();
       expect(content, contains('MagicStarter.useNavigation('));
 
       // The logout body moved inside bootstrap() as the onLogout argument; it
@@ -416,12 +467,12 @@ void main() {
 
       await runInstall(command);
 
-      final String ensureContent =
-          File('${tempDir.path}/lib/app/middleware/ensure_authenticated.dart')
-              .readAsStringSync();
+      final String ensureContent = File(
+        '${tempDir.path}/lib/app/middleware/ensure_authenticated.dart',
+      ).readAsStringSync();
       final String redirectContent = File(
-              '${tempDir.path}/lib/app/middleware/redirect_if_authenticated.dart')
-          .readAsStringSync();
+        '${tempDir.path}/lib/app/middleware/redirect_if_authenticated.dart',
+      ).readAsStringSync();
 
       expect(ensureContent, contains('handle(void Function() next)'));
       expect(redirectContent, contains('handle(void Function() next)'));
@@ -440,63 +491,67 @@ void main() {
       expect(redirectContent, isNot(contains('await next()')));
     });
 
-    test('app_service_provider uses correct MagicStarterNavItem params',
-        () async {
-      setupMagicProjectFiles(tempDir);
+    test(
+      'app_service_provider uses correct MagicStarterNavItem params',
+      () async {
+        setupMagicProjectFiles(tempDir);
 
-      await runInstall(command, force: true);
+        await runInstall(command, force: true);
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-              .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+        ).readAsStringSync();
 
-      expect(content, contains('icon:'));
-      expect(content, contains('labelKey:'));
-      expect(content, contains('path:'));
+        expect(content, contains('icon:'));
+        expect(content, contains('labelKey:'));
+        expect(content, contains('path:'));
 
-      expect(content, isNot(contains("label: 'Dashboard'")));
-      expect(
-        content,
-        isNot(contains('route: MagicStarterConfig.homeRoute()')),
-      );
+        expect(content, isNot(contains("label: 'Dashboard'")));
+        expect(
+          content,
+          isNot(contains('route: MagicStarterConfig.homeRoute()')),
+        );
 
-      expect(content, isNot(contains('offAllNamed')));
-      expect(content, contains('MagicRoute.to('));
-    });
+        expect(content, isNot(contains('offAllNamed')));
+        expect(content, contains('MagicRoute.to('));
+      },
+    );
 
-    test('team callbacks render inside bootstrap() with named params',
-        () async {
-      setupMagicProjectFiles(tempDir);
+    test(
+      'team callbacks render inside bootstrap() with named params',
+      () async {
+        setupMagicProjectFiles(tempDir);
 
-      await runInstall(command, force: true, features: 'teams');
+        await runInstall(command, force: true, features: 'teams');
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-              .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+        ).readAsStringSync();
 
-      // The team trio lives INSIDE bootstrap() rather than in a separate
-      // useTeamResolver() statement, because bootstrap() takes all three or
-      // none and enforces that at runtime.
-      expect(content, contains('MagicStarter.bootstrap('));
-      expect(content, contains('currentTeam:'));
-      expect(content, contains('allTeams:'));
-      expect(content, contains('onSwitch:'));
-      expect(content, isNot(contains('MagicStarter.useTeamResolver(')));
+        // The team trio lives INSIDE bootstrap() rather than in a separate
+        // useTeamResolver() statement, because bootstrap() takes all three or
+        // none and enforces that at runtime.
+        expect(content, contains('MagicStarter.bootstrap('));
+        expect(content, contains('currentTeam:'));
+        expect(content, contains('allTeams:'));
+        expect(content, contains('onSwitch:'));
+        expect(content, isNot(contains('MagicStarter.useTeamResolver(')));
 
-      // Guards the callback signature: onSwitch takes the team id, and a
-      // positional or misnamed parameter would silently not compile in the
-      // generated app.
-      expect(content, contains('onSwitch: (teamId)'));
-    });
+        // Guards the callback signature: onSwitch takes the team id, and a
+        // positional or misnamed parameter would silently not compile in the
+        // generated app.
+        expect(content, contains('onSwitch: (teamId)'));
+      },
+    );
 
     test('bootstrap() omits the team trio when teams is off', () async {
       setupMagicProjectFiles(tempDir);
 
       await runInstall(command, force: true);
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+      ).readAsStringSync();
 
       // A partial team set throws ArgumentError, so a teamless install must
       // emit none of the three rather than some of them.
@@ -511,9 +566,9 @@ void main() {
 
       await runInstall(command, force: true, features: 'teams');
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+      ).readAsStringSync();
 
       // The four identity setters are still public API, but the scaffold must
       // not emit them: a generated provider on the loose calls would keep the
@@ -532,28 +587,32 @@ void main() {
 
       await runInstall(command, force: true, features: 'notifications');
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+      ).readAsStringSync();
 
       expect(content, contains('useNotificationTypeMapper((type)'));
       expect(
-          content, isNot(contains('useNotificationTypeMapper((notification)')));
+        content,
+        isNot(contains('useNotificationTypeMapper((notification)')),
+      );
     });
 
-    test('config file uses // comments not /// to avoid dangling doc lint',
-        () async {
-      setupMagicProjectFiles(tempDir);
+    test(
+      'config file uses // comments not /// to avoid dangling doc lint',
+      () async {
+        setupMagicProjectFiles(tempDir);
 
-      await runInstall(command, force: true);
+        await runInstall(command, force: true);
 
-      final String content =
-          File('${tempDir.path}/lib/config/magic_starter.dart')
-              .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/config/magic_starter.dart',
+        ).readAsStringSync();
 
-      expect(content.trimLeft().startsWith('///'), isFalse);
-      expect(content, contains('// Magic Starter Configuration.'));
-    });
+        expect(content.trimLeft().startsWith('///'), isFalse);
+        expect(content, contains('// Magic Starter Configuration.'));
+      },
+    );
 
     test('--features flag auto-enables non-interactive mode', () async {
       setupMagicProjectFiles(tempDir);
@@ -565,9 +624,9 @@ void main() {
         features: 'teams,social_login',
       );
 
-      final String config =
-          File('${tempDir.path}/lib/config/magic_starter.dart')
-              .readAsStringSync();
+      final String config = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
 
       expect(config, contains("'teams': true"));
       expect(config, contains("'social_login': true"));
@@ -589,8 +648,9 @@ void main() {
 
       await runInstall(command);
 
-      final String content =
-          File('${tempDir.path}/pubspec.yaml').readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/pubspec.yaml',
+      ).readAsStringSync();
       expect(content, contains('- assets/lang/en.json'));
     });
 
@@ -600,37 +660,43 @@ void main() {
       await runInstall(command);
       await runInstall(command);
 
-      final String app =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
-      final String main =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      final String rsp =
-          File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
-              .readAsStringSync();
+      final String app = File(
+        '${tempDir.path}/lib/config/app.dart',
+      ).readAsStringSync();
+      final String main = File(
+        '${tempDir.path}/lib/main.dart',
+      ).readAsStringSync();
+      final String rsp = File(
+        '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+      ).readAsStringSync();
 
       expect(RegExp('MagicStarterServiceProvider').allMatches(app).length, 1);
       expect(RegExp(r'\(\) => magicStarterConfig').allMatches(main).length, 1);
       expect(
-          RegExp('registerMagicStarterAuthRoutes').allMatches(rsp).length, 1);
-    });
-
-    test('non-interactive mode with --non-interactive --features flag',
-        () async {
-      setupMagicProjectFiles(tempDir);
-
-      await runInstall(
-        command,
-        features: 'teams,social_login,notifications,email_verification',
+        RegExp('registerMagicStarterAuthRoutes').allMatches(rsp).length,
+        1,
       );
-
-      final String config =
-          File('${tempDir.path}/lib/config/magic_starter.dart')
-              .readAsStringSync();
-      expect(config, contains("'teams': true"));
-      expect(config, contains("'social_login': true"));
-      expect(config, contains("'notifications': true"));
-      expect(config, contains("'email_verification': true"));
     });
+
+    test(
+      'non-interactive mode with --non-interactive --features flag',
+      () async {
+        setupMagicProjectFiles(tempDir);
+
+        await runInstall(
+          command,
+          features: 'teams,social_login,notifications,email_verification',
+        );
+
+        final String config = File(
+          '${tempDir.path}/lib/config/magic_starter.dart',
+        ).readAsStringSync();
+        expect(config, contains("'teams': true"));
+        expect(config, contains("'social_login': true"));
+        expect(config, contains("'notifications': true"));
+        expect(config, contains("'email_verification': true"));
+      },
+    );
 
     test('runs dart format after install', () async {
       setupMagicProjectFiles(tempDir);
@@ -645,9 +711,9 @@ void main() {
 
       await runInstall(command, features: 'teams');
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
-              .readAsStringSync();
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+      ).readAsStringSync();
 
       final List<String> lines = content.split('\n');
       for (final String line in lines) {
@@ -660,10 +726,11 @@ void main() {
       }
     });
 
-    test('pubspec does not get duplicate assets: key with existing assets',
-        () async {
-      final File pubspecFile = File('${tempDir.path}/pubspec.yaml');
-      pubspecFile.writeAsStringSync('''
+    test(
+      'pubspec does not get duplicate assets: key with existing assets',
+      () async {
+        final File pubspecFile = File('${tempDir.path}/pubspec.yaml');
+        pubspecFile.writeAsStringSync('''
 name: test_app
 description: Test host app
 dependencies:
@@ -683,30 +750,32 @@ flutter:
   #   - images/a_dot_burr.jpeg
 ''');
 
-      setupAppFile(tempDir);
-      setupMainFile(tempDir);
-      setupKernelFile(tempDir);
-      setupRouteServiceProviderFile(tempDir);
-      setupAppServiceProviderFile(tempDir);
+        setupAppFile(tempDir);
+        setupMainFile(tempDir);
+        setupKernelFile(tempDir);
+        setupRouteServiceProviderFile(tempDir);
+        setupAppServiceProviderFile(tempDir);
 
-      await runInstall(command);
+        await runInstall(command);
 
-      final String content = pubspecFile.readAsStringSync();
+        final String content = pubspecFile.readAsStringSync();
 
-      final int assetsKeyCount =
-          RegExp(r'^  assets:\s*$', multiLine: true).allMatches(content).length;
-      expect(
-        assetsKeyCount,
-        equals(1),
-        reason: 'Duplicate assets: key found in pubspec.yaml.\n\n$content',
-      );
+        final int assetsKeyCount = RegExp(
+          r'^  assets:\s*$',
+          multiLine: true,
+        ).allMatches(content).length;
+        expect(
+          assetsKeyCount,
+          equals(1),
+          reason: 'Duplicate assets: key found in pubspec.yaml.\n\n$content',
+        );
 
-      expect(content, contains('- assets/lang/en.json'));
-      expect(content, contains('- .env'));
-    });
+        expect(content, contains('- assets/lang/en.json'));
+        expect(content, contains('- .env'));
+      },
+    );
 
-    test(
-        'pubspec with only the commented `# assets:` example does not get a '
+    test('pubspec with only the commented `# assets:` example does not get a '
         'duplicate flutter: section (invalid YAML)', () async {
       // Reproduces the real `flutter create` pubspec: a flutter: section whose
       // ONLY assets reference is the commented-out example. A naive
@@ -740,8 +809,10 @@ flutter:
 
       final String content = pubspecFile.readAsStringSync();
 
-      final int flutterKeyCount =
-          RegExp(r'^flutter:\s*$', multiLine: true).allMatches(content).length;
+      final int flutterKeyCount = RegExp(
+        r'^flutter:\s*$',
+        multiLine: true,
+      ).allMatches(content).length;
       expect(
         flutterKeyCount,
         equals(1),
@@ -761,40 +832,57 @@ flutter:
       });
 
       test(
-          'creates team model and team accessors when teams feature is enabled',
-          () async {
-        setupMagicProjectFiles(tempDir);
+        'creates team model and team accessors when teams feature is enabled',
+        () async {
+          setupMagicProjectFiles(tempDir);
 
-        await runInstall(command, features: 'teams');
+          await runInstall(command, features: 'teams');
 
-        final File teamFile = File('${tempDir.path}/lib/app/models/team.dart');
-        final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
+          final File teamFile = File(
+            '${tempDir.path}/lib/app/models/team.dart',
+          );
+          final File userFile = File(
+            '${tempDir.path}/lib/app/models/user.dart',
+          );
 
-        expect(teamFile.existsSync(), isTrue);
-        expect(userFile.readAsStringSync(), contains('Team? get currentTeam'));
-      });
+          expect(teamFile.existsSync(), isTrue);
+          expect(
+            userFile.readAsStringSync(),
+            contains('Team? get currentTeam'),
+          );
+        },
+      );
 
-      test('skips team model and team accessors when teams feature is disabled',
-          () async {
-        setupMagicProjectFiles(tempDir);
+      test(
+        'skips team model and team accessors when teams feature is disabled',
+        () async {
+          setupMagicProjectFiles(tempDir);
 
-        await runInstall(command, force: true);
+          await runInstall(command, force: true);
 
-        final File teamFile = File('${tempDir.path}/lib/app/models/team.dart');
-        final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
+          final File teamFile = File(
+            '${tempDir.path}/lib/app/models/team.dart',
+          );
+          final File userFile = File(
+            '${tempDir.path}/lib/app/models/user.dart',
+          );
 
-        expect(teamFile.existsSync(), isFalse);
-        expect(userFile.readAsStringSync(),
-            isNot(contains('Team? get currentTeam')));
-      });
+          expect(teamFile.existsSync(), isFalse);
+          expect(
+            userFile.readAsStringSync(),
+            isNot(contains('Team? get currentTeam')),
+          );
+        },
+      );
 
       test('creates dashboard view scaffold file', () async {
         setupMagicProjectFiles(tempDir);
 
         await runInstall(command);
 
-        final File dashboardFile =
-            File('${tempDir.path}/lib/resources/views/dashboard_view.dart');
+        final File dashboardFile = File(
+          '${tempDir.path}/lib/resources/views/dashboard_view.dart',
+        );
 
         expect(dashboardFile.existsSync(), isTrue);
       });
@@ -808,19 +896,23 @@ flutter:
         expect(routesFile.existsSync(), isTrue);
       });
 
-      test('safe-write skips existing files on second install without --force',
-          () async {
-        setupMagicProjectFiles(tempDir);
+      test(
+        'safe-write skips existing files on second install without --force',
+        () async {
+          setupMagicProjectFiles(tempDir);
 
-        await runInstall(command);
+          await runInstall(command);
 
-        final File userFile = File('${tempDir.path}/lib/app/models/user.dart');
-        userFile.writeAsStringSync('// keep this user');
+          final File userFile = File(
+            '${tempDir.path}/lib/app/models/user.dart',
+          );
+          userFile.writeAsStringSync('// keep this user');
 
-        await runInstall(command);
+          await runInstall(command);
 
-        expect(userFile.readAsStringSync(), '// keep this user');
-      });
+          expect(userFile.readAsStringSync(), '// keep this user');
+        },
+      );
 
       test('safe-write overwrites existing files with --force', () async {
         setupMagicProjectFiles(tempDir);
@@ -832,51 +924,54 @@ flutter:
 
         await runInstall(command, force: true);
 
-        expect(userFile.readAsStringSync(),
-            isNot(contains('// mutated user model')));
+        expect(
+          userFile.readAsStringSync(),
+          isNot(contains('// mutated user model')),
+        );
       });
 
       test(
-          'app service provider excludes teams import and mapping when teams disabled',
-          () async {
-        setupMagicProjectFiles(tempDir);
+        'app service provider excludes teams import and mapping when teams disabled',
+        () async {
+          setupMagicProjectFiles(tempDir);
 
-        await runInstall(command);
+          await runInstall(command);
 
-        final String content =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-                .readAsStringSync();
+          final String content = File(
+            '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+          ).readAsStringSync();
 
-        expect(content, isNot(contains("import '../models/team.dart';")));
-        expect(content, isNot(contains('Team.fromMap')));
-      });
+          expect(content, isNot(contains("import '../models/team.dart';")));
+          expect(content, isNot(contains('Team.fromMap')));
+        },
+      );
 
-      test('app service provider includes social login block when enabled',
-          () async {
-        setupMagicProjectFiles(tempDir);
+      test(
+        'app service provider includes social login block when enabled',
+        () async {
+          setupMagicProjectFiles(tempDir);
 
-        await runInstall(command, force: true, features: 'social_login');
+          await runInstall(command, force: true, features: 'social_login');
 
-        final String content =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-                .readAsStringSync();
+          final String content = File(
+            '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+          ).readAsStringSync();
 
-        expect(content, contains('MagicStarter.useSocialLogin('));
-      });
+          expect(content, contains('MagicStarter.useSocialLogin('));
+        },
+      );
     });
 
-    group('bootstrap() injection into an existing app_service_provider.dart',
-        () {
-      test(
-          'injects a single MagicStarter.bootstrap() call instead of the '
+    group('bootstrap() injection into an existing app_service_provider.dart', () {
+      test('injects a single MagicStarter.bootstrap() call instead of the '
           'four loose use*() calls', () async {
         setupMagicProjectFiles(tempDir);
 
         await runInstall(command);
 
-        final String content =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-                .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+        ).readAsStringSync();
 
         expect(content, contains('MagicStarter.bootstrap('));
         expect(content, contains('userFactory:'));
@@ -889,16 +984,18 @@ flutter:
         expect(content, isNot(contains('MagicStarter.useTeamResolver(')));
       });
 
-      test('leaves a provider already wired with the legacy setters untouched',
-          () async {
-        // The injection appends at the END of boot(), so on an app installed
-        // before bootstrap() existed a generic call would land AFTER that app's
-        // own useLocaleOptions() and useLogout() and win by write order,
-        // silently replacing a customized locale list and logout behaviour.
-        setupMagicProjectFiles(tempDir);
-        final File provider =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart');
-        provider.writeAsStringSync('''
+      test(
+        'leaves a provider already wired with the legacy setters untouched',
+        () async {
+          // The injection appends at the END of boot(), so on an app installed
+          // before bootstrap() existed a generic call would land AFTER that app's
+          // own useLocaleOptions() and useLogout() and win by write order,
+          // silently replacing a customized locale list and logout behaviour.
+          setupMagicProjectFiles(tempDir);
+          final File provider = File(
+            '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+          );
+          provider.writeAsStringSync('''
 class AppServiceProvider extends ServiceProvider {
   AppServiceProvider(super.app);
 
@@ -911,26 +1008,29 @@ class AppServiceProvider extends ServiceProvider {
 }
 ''');
 
-        await runInstall(command);
+          await runInstall(command);
 
-        final String content = provider.readAsStringSync();
+          final String content = provider.readAsStringSync();
 
-        expect(content, isNot(contains('MagicStarter.bootstrap(')));
-        expect(content, contains("'tr': 'Turkce'"));
-        expect(content, contains('MagicStarter.useLogout('));
-      });
+          expect(content, isNot(contains('MagicStarter.bootstrap(')));
+          expect(content, contains("'tr': 'Turkce'"));
+          expect(content, contains('MagicStarter.useLogout('));
+        },
+      );
 
-      test('a commented-out identity call does not suppress the injection',
-          () async {
-        // The guard is anchored (`^\s*MagicStarter\.…`) for this reason: with a
-        // plain `contains`, a commented-out example call would match and leave
-        // the provider permanently unconfigured. The magic install stub ships
-        // exactly such a commented example, which is why the neighbouring
-        // setUserFactory check is anchored too.
-        setupMagicProjectFiles(tempDir);
-        final File provider =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart');
-        provider.writeAsStringSync('''
+      test(
+        'a commented-out identity call does not suppress the injection',
+        () async {
+          // The guard is anchored (`^\s*MagicStarter\.…`) for this reason: with a
+          // plain `contains`, a commented-out example call would match and leave
+          // the provider permanently unconfigured. The magic install stub ships
+          // exactly such a commented example, which is why the neighbouring
+          // setUserFactory check is anchored too.
+          setupMagicProjectFiles(tempDir);
+          final File provider = File(
+            '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+          );
+          provider.writeAsStringSync('''
 class AppServiceProvider extends ServiceProvider {
   AppServiceProvider(super.app);
 
@@ -942,22 +1042,24 @@ class AppServiceProvider extends ServiceProvider {
 }
 ''');
 
-        await runInstall(command);
+          await runInstall(command);
 
-        expect(
-            provider.readAsStringSync(), contains('MagicStarter.bootstrap('));
-      });
+          expect(
+            provider.readAsStringSync(),
+            contains('MagicStarter.bootstrap('),
+          );
+        },
+      );
 
-      test(
-          'includes the team resolver trio inside bootstrap() when the teams '
+      test('includes the team resolver trio inside bootstrap() when the teams '
           'feature is enabled', () async {
         setupMagicProjectFiles(tempDir);
 
         await runInstall(command, features: 'teams');
 
-        final String content =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-                .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+        ).readAsStringSync();
 
         expect(content, contains('MagicStarter.bootstrap('));
         expect(content, contains('currentTeam:'));
@@ -965,16 +1067,15 @@ class AppServiceProvider extends ServiceProvider {
         expect(content, contains('onSwitch:'));
       });
 
-      test(
-          'omits the team resolver trio from bootstrap() when the teams '
+      test('omits the team resolver trio from bootstrap() when the teams '
           'feature is disabled', () async {
         setupMagicProjectFiles(tempDir);
 
         await runInstall(command);
 
-        final String content =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-                .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+        ).readAsStringSync();
 
         expect(content, contains('MagicStarter.bootstrap('));
         expect(content, isNot(contains('currentTeam:')));
@@ -982,17 +1083,16 @@ class AppServiceProvider extends ServiceProvider {
         expect(content, isNot(contains('onSwitch:')));
       });
 
-      test(
-          're-running the installer on an already-bootstrapped provider does '
+      test('re-running the installer on an already-bootstrapped provider does '
           'not append a second bootstrap() call', () async {
         setupMagicProjectFiles(tempDir);
 
         await runInstall(command);
         await runInstall(command);
 
-        final String content =
-            File('${tempDir.path}/lib/app/providers/app_service_provider.dart')
-                .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/app_service_provider.dart',
+        ).readAsStringSync();
 
         expect('MagicStarter.bootstrap('.allMatches(content).length, 1);
       });
@@ -1006,8 +1106,9 @@ class AppServiceProvider extends ServiceProvider {
 
         await runInstall(command, force: true, features: 'notifications');
 
-        final String pubspecContent =
-            File('${tempDir.path}/pubspec.yaml').readAsStringSync();
+        final String pubspecContent = File(
+          '${tempDir.path}/pubspec.yaml',
+        ).readAsStringSync();
 
         expect(
           pubspecContent,
@@ -1022,18 +1123,19 @@ class AppServiceProvider extends ServiceProvider {
       },
     );
 
-    test('install.yaml manifest exists and declares the starter provider',
-        () async {
-      final File manifestFile = File(manifestPath);
-      expect(manifestFile.existsSync(), isTrue);
-
-      final manifest = ManifestParser.parseFile(p.normalize(manifestPath));
-      expect(manifest.pluginName, 'magic_starter');
-      expect(manifest.magic.provider, 'MagicStarterServiceProvider');
-    });
-
     test(
-        'provider injection is staged AFTER all transactional writeFile ops '
+      'install.yaml manifest exists and declares the starter provider',
+      () async {
+        final File manifestFile = File(manifestPath);
+        expect(manifestFile.existsSync(), isTrue);
+
+        final manifest = ManifestParser.parseFile(p.normalize(manifestPath));
+        expect(manifest.pluginName, 'magic_starter');
+        expect(manifest.magic.provider, 'MagicStarterServiceProvider');
+      },
+    );
+
+    test('provider injection is staged AFTER all transactional writeFile ops '
         '(no-rollback ordering)', () async {
       setupMagicProjectFiles(tempDir);
 
@@ -1041,7 +1143,9 @@ class AppServiceProvider extends ServiceProvider {
       final installer = command.stageInstaller(
         command.buildContext(
           ArtisanContext.bare(
-              MapInput(const <String, dynamic>{}), BufferedOutput()),
+            MapInput(const <String, dynamic>{}),
+            BufferedOutput(),
+          ),
         ),
         manifest,
         features: <String, bool>{
@@ -1060,8 +1164,11 @@ class AppServiceProvider extends ServiceProvider {
         (InstallOperation op) =>
             op is InjectImport && op.targetFile == 'lib/config/app.dart',
       );
-      expect(providerInjectIndex, greaterThanOrEqualTo(0),
-          reason: 'provider injection must be staged');
+      expect(
+        providerInjectIndex,
+        greaterThanOrEqualTo(0),
+        reason: 'provider injection must be staged',
+      );
 
       // Every transactional WriteFile op must precede the helper-backed
       // provider injection (the .tmp swap covers WriteFile only; injectProvider
@@ -1070,13 +1177,17 @@ class AppServiceProvider extends ServiceProvider {
         for (int i = 0; i < ops.length; i++)
           if (ops[i] is WriteFile) i,
       ];
-      expect(writeFileIndexes, isNotEmpty,
-          reason: 'transactional writes must be staged');
+      expect(
+        writeFileIndexes,
+        isNotEmpty,
+        reason: 'transactional writes must be staged',
+      );
       for (final int writeIndex in writeFileIndexes) {
         expect(
           writeIndex,
           lessThan(providerInjectIndex),
-          reason: 'writeFile op at $writeIndex must precede the provider '
+          reason:
+              'writeFile op at $writeIndex must precede the provider '
               'injection at $providerInjectIndex',
         );
       }
@@ -1206,8 +1317,9 @@ void registerKernel() {
 }
 
 void setupRouteServiceProviderFile(Directory directory) {
-  final File file =
-      File('${directory.path}/lib/app/providers/route_service_provider.dart');
+  final File file = File(
+    '${directory.path}/lib/app/providers/route_service_provider.dart',
+  );
   file.createSync(recursive: true);
   file.writeAsStringSync('''
 import 'package:magic/magic.dart';
@@ -1232,8 +1344,9 @@ class RouteServiceProvider extends ServiceProvider {
 }
 
 void setupAppServiceProviderFile(Directory directory) {
-  final File file =
-      File('${directory.path}/lib/app/providers/app_service_provider.dart');
+  final File file = File(
+    '${directory.path}/lib/app/providers/app_service_provider.dart',
+  );
   file.createSync(recursive: true);
   file.writeAsStringSync('''
 import 'package:magic/magic.dart';

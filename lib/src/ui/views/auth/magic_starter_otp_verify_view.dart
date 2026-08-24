@@ -28,23 +28,21 @@ class MagicStarterOtpVerifyView
       _MagicStarterOtpVerifyViewState();
 }
 
-class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
-    MagicStarterOtpController, MagicStarterOtpVerifyView> {
+class _MagicStarterOtpVerifyViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterOtpController,
+          MagicStarterOtpVerifyView
+        > {
   // -------------------------------------------------------------------------
   // Form state — both forms declared upfront; only the active one is rendered.
   // -------------------------------------------------------------------------
 
   /// Step 1 form: phone number field.
-  late final _phoneForm = MagicFormData(
-    {'phone': ''},
-    controller: controller,
-  );
+  late final _phoneForm = MagicFormData({'phone': ''}, controller: controller);
 
   /// Step 2 form: 6-digit code field.
-  late final _codeForm = MagicFormData(
-    {'code': ''},
-    controller: controller,
-  );
+  late final _codeForm = MagicFormData({'code': ''}, controller: controller);
 
   // -------------------------------------------------------------------------
   // Lifecycle
@@ -79,10 +77,14 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
   /// Delegates to the correct step widget based on [MagicStarterOtpController.step].
   Widget _buildCurrentStep(BuildContext context, {String? errorMessage}) {
     return switch (controller.step) {
-      OtpStep.phoneInput =>
-        _buildPhoneInputStep(context, errorMessage: errorMessage),
-      OtpStep.codeInput =>
-        _buildCodeInputStep(context, errorMessage: errorMessage),
+      OtpStep.phoneInput => _buildPhoneInputStep(
+        context,
+        errorMessage: errorMessage,
+      ),
+      OtpStep.codeInput => _buildCodeInputStep(
+        context,
+        errorMessage: errorMessage,
+      ),
     };
   }
 
@@ -195,10 +197,7 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
               placeholder: trans('fields.otp_placeholder'),
               type: InputType.number,
               inputFormatters: [LengthLimitingTextInputFormatter(6)],
-              validator: rules(
-                [Required(), Min(6), Max(6)],
-                field: 'code',
-              ),
+              validator: rules([Required(), Min(6), Max(6)], field: 'code'),
               className: MagicStarter.formTheme.inputClassName,
               placeholderClassName: MagicStarter.formTheme.placeholderClassName,
               labelClassName: MagicStarter.formTheme.labelClassName,
@@ -220,7 +219,8 @@ class _MagicStarterOtpVerifyViewState extends MagicStatefulViewState<
                 className: 'flex flex-row justify-center',
                 child: WText(
                   trans('magic_starter.otp.resend_link'),
-                  className: 'text-sm font-medium text-fg-muted '
+                  className:
+                      'text-sm font-medium text-fg-muted '
                       'hover:text-primary dark:hover:text-primary',
                 ),
               ),

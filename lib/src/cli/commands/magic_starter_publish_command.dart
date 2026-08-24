@@ -51,7 +51,8 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   };
 
   @override
-  String get signature => 'starter:publish '
+  String get signature =>
+      'starter:publish '
       '{--force : Overwrite existing files} '
       '{--tag=all : Publish group (config|views|layouts|middleware|lang|all) with optional scope (views:auth, views:auth.login, layouts:app)}';
 
@@ -86,7 +87,8 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
     if (pluginSourceDir == null) {
       ctx.output.error(
-          'Could not resolve the magic_starter plugin source directory.');
+        'Could not resolve the magic_starter plugin source directory.',
+      );
       return 1;
     }
 
@@ -106,13 +108,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
     if (group == 'views' || group == 'all') {
       published.addAll(
-        _publishViewsWithScope(
-          ctx,
-          projectRoot,
-          pluginSourceDir,
-          force,
-          scope,
-        ),
+        _publishViewsWithScope(ctx, projectRoot, pluginSourceDir, force, scope),
       );
     }
 
@@ -135,9 +131,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
     }
 
     if (group == 'lang' || group == 'all') {
-      published.addAll(
-        _publishLang(ctx, projectRoot, pluginSourceDir, force),
-      );
+      published.addAll(_publishLang(ctx, projectRoot, pluginSourceDir, force));
     }
 
     // 2. Validate unknown tag groups.
@@ -147,7 +141,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
       'layouts',
       'middleware',
       'lang',
-      'all'
+      'all',
     };
     if (!knownGroups.contains(group)) {
       ctx.output.error('Unknown tag: $tag');
@@ -258,12 +252,14 @@ class MagicStarterPublishCommand extends ArtisanCommand {
     String pluginSourceDir,
     bool force,
   ) {
-    final sourceViewsDir =
-        Directory(p.join(pluginSourceDir, 'lib', 'src', 'ui', 'views'));
+    final sourceViewsDir = Directory(
+      p.join(pluginSourceDir, 'lib', 'src', 'ui', 'views'),
+    );
 
     if (!sourceViewsDir.existsSync()) {
-      ctx.output
-          .warning('Views source directory not found: ${sourceViewsDir.path}');
+      ctx.output.warning(
+        'Views source directory not found: ${sourceViewsDir.path}',
+      );
       return [];
     }
 
@@ -276,11 +272,15 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
       final relativePath = p.relative(entry.path, from: sourceViewsDir.path);
       final destination = p.join(
-          projectRoot, 'lib', 'resources', 'views', 'starter', relativePath);
-
-      published.addAll(
-        _copyFile(ctx, entry.path, destination, force),
+        projectRoot,
+        'lib',
+        'resources',
+        'views',
+        'starter',
+        relativePath,
       );
+
+      published.addAll(_copyFile(ctx, entry.path, destination, force));
     }
 
     return published;
@@ -324,12 +324,16 @@ class MagicStarterPublishCommand extends ArtisanCommand {
       final subDirParts = parts.sublist(2, parts.length - 1);
       final destination = subDirParts.isEmpty
           ? p.join(projectRoot, 'lib', 'resources', destinationPrefix, fileName)
-          : p.join(projectRoot, 'lib', 'resources', destinationPrefix,
-              p.joinAll(subDirParts), fileName);
+          : p.join(
+              projectRoot,
+              'lib',
+              'resources',
+              destinationPrefix,
+              p.joinAll(subDirParts),
+              fileName,
+            );
 
-      published.addAll(
-        _copyFile(ctx, source, destination, force),
-      );
+      published.addAll(_copyFile(ctx, source, destination, force));
     }
 
     return published;
@@ -398,10 +402,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
     final content = FileHelper.readFile(sourcePath);
     FileHelper.ensureDirectoryExists(File(destinationPath).parent.path);
-    FileHelper.writeFile(
-      destinationPath,
-      content,
-    );
+    FileHelper.writeFile(destinationPath, content);
 
     ctx.output.info('Published: $destinationPath');
     return [destinationPath];
@@ -439,8 +440,9 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
     // Collect view registrations.
     if (group == 'views' || group == 'all') {
-      final viewEntries =
-          scope != null ? _resolveViewEntries(scope) : _viewFileMap;
+      final viewEntries = scope != null
+          ? _resolveViewEntries(scope)
+          : _viewFileMap;
       for (final entry in viewEntries.entries) {
         final parts = p.split(entry.value);
         final fileName = parts.last;
@@ -452,12 +454,15 @@ class MagicStarterPublishCommand extends ArtisanCommand {
             ? '../../resources/views/starter/$fileName'
             : '../../resources/views/starter/$subDir/$fileName';
 
-        registrations.add(_AutoWireEntry(
-          importLine: "import '$importPath';",
-          registrationLine: "    MagicStarter.view.register('${entry.key}', "
-              '() => const $className());',
-          displayLabel: "MagicStarter.view.register('${entry.key}', ...)",
-        ));
+        registrations.add(
+          _AutoWireEntry(
+            importLine: "import '$importPath';",
+            registrationLine:
+                "    MagicStarter.view.register('${entry.key}', "
+                '() => const $className());',
+            displayLabel: "MagicStarter.view.register('${entry.key}', ...)",
+          ),
+        );
       }
     }
 
@@ -481,14 +486,16 @@ class MagicStarterPublishCommand extends ArtisanCommand {
             ? '../../resources/layouts/starter/$fileName'
             : '../../resources/layouts/starter/$subDir/$fileName';
 
-        registrations.add(_AutoWireEntry(
-          importLine: "import '$importPath';",
-          registrationLine:
-              "    MagicStarter.view.registerLayout('layout.${entry.key}', "
-              '(child) => $className(child: child));',
-          displayLabel:
-              "MagicStarter.view.registerLayout('layout.${entry.key}', ...)",
-        ));
+        registrations.add(
+          _AutoWireEntry(
+            importLine: "import '$importPath';",
+            registrationLine:
+                "    MagicStarter.view.registerLayout('layout.${entry.key}', "
+                '(child) => $className(child: child));',
+            displayLabel:
+                "MagicStarter.view.registerLayout('layout.${entry.key}', ...)",
+          ),
+        );
       }
     }
 
@@ -502,7 +509,8 @@ class MagicStarterPublishCommand extends ArtisanCommand {
       // Check idempotency: skip if the registration line already exists.
       if (content.contains(reg.registrationLine)) {
         ctx.output.info(
-            'Auto-wire: Skipped (already registered) ${reg.displayLabel}');
+          'Auto-wire: Skipped (already registered) ${reg.displayLabel}',
+        );
         continue;
       }
 

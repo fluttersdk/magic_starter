@@ -14,21 +14,11 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
-  MagicResponse _respond(
-    String method,
-    String url, {
-    dynamic data,
-  }) {
+  MagicResponse _respond(String method, String url, {dynamic data}) {
     lastMethod = method;
     lastUrl = url;
     lastData = data;
@@ -43,55 +33,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -99,16 +82,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -116,8 +97,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -200,9 +180,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -245,10 +223,7 @@ void main() {
       Config.set('magic_starter.features.email_verification', true);
 
       // 6. Bind MagicStarterManager.
-      Magic.singleton(
-        'magic_starter',
-        () => MagicStarterManager(),
-      );
+      Magic.singleton('magic_starter', () => MagicStarterManager());
 
       // 7. Create and inject controller.
       Magic.put(MagicStarterProfileController());
@@ -271,96 +246,79 @@ void main() {
       Gate.flush();
     });
 
-    testWidgets(
-      'banner is hidden when feature is disabled',
-      (tester) async {
-        Config.set('magic_starter.features.email_verification', false);
+    testWidgets('banner is hidden when feature is disabled', (tester) async {
+      Config.set('magic_starter.features.email_verification', false);
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pump();
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        // The unverified banner text should NOT be visible.
-        expect(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is WText &&
-                widget.data ==
-                    trans('magic_starter.email_verification.unverified_title'),
-          ),
-          findsNothing,
-        );
-      },
-    );
+      // The unverified banner text should NOT be visible.
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WText &&
+              widget.data ==
+                  trans('magic_starter.email_verification.unverified_title'),
+        ),
+        findsNothing,
+      );
+    });
 
-    testWidgets(
-      'unverified banner renders when email_verified_at is null',
-      (tester) async {
-        mockGuard.setUnverifiedUser();
+    testWidgets('unverified banner renders when email_verified_at is null', (
+      tester,
+    ) async {
+      mockGuard.setUnverifiedUser();
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pump();
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        // Unverified title should be visible.
-        expect(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is WText &&
-                widget.data ==
-                    trans('magic_starter.email_verification.unverified_title'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
+      // Unverified title should be visible.
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WText &&
+              widget.data ==
+                  trans('magic_starter.email_verification.unverified_title'),
+        ),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'unverified banner shows resend button',
-      (tester) async {
-        mockGuard.setUnverifiedUser();
+    testWidgets('unverified banner shows resend button', (tester) async {
+      mockGuard.setUnverifiedUser();
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pump();
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        expect(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is WButton &&
-                widget.child is WText &&
-                (widget.child as WText).data ==
-                    trans('magic_starter.email_verification.resend_button'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WButton &&
+              widget.child is WText &&
+              (widget.child as WText).data ==
+                  trans('magic_starter.email_verification.resend_button'),
+        ),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'verified badge renders when email_verified_at has a value',
-      (tester) async {
-        mockGuard.setVerifiedUser();
+    testWidgets('verified badge renders when email_verified_at has a value', (
+      tester,
+    ) async {
+      mockGuard.setVerifiedUser();
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pump();
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        expect(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is WText &&
-                widget.data ==
-                    trans('magic_starter.email_verification.verified'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WText &&
+              widget.data == trans('magic_starter.email_verification.verified'),
+        ),
+        findsOneWidget,
+      );
+    });
 
     testWidgets(
       'tapping resend button calls POST /email/verification-notification',
@@ -368,9 +326,7 @@ void main() {
         mockGuard.setUnverifiedUser();
         mockDriver.mockResponse(statusCode: 202, data: {});
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
         await tester.pump();
 
         final resendButton = find.byWidgetPredicate(

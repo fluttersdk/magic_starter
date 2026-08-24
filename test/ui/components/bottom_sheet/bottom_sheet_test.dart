@@ -19,9 +19,7 @@ void main() {
   });
 
   Widget wrap(Widget widget) {
-    final themeData = WindThemeData(
-      colors: {'primary': Colors.indigo},
-    );
+    final themeData = WindThemeData(colors: {'primary': Colors.indigo});
     return WindTheme(
       data: themeData,
       child: MaterialApp(
@@ -38,12 +36,11 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MSBottomSheet(
-          title: 'Sheet Title',
-          body: Text('sheet body'),
+      await tester.pumpWidget(
+        wrap(
+          const MSBottomSheet(title: 'Sheet Title', body: Text('sheet body')),
         ),
-      ));
+      );
 
       expect(find.text('Sheet Title'), findsOneWidget);
     });
@@ -54,11 +51,9 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MSBottomSheet(
-          body: Text('unique sheet content'),
-        ),
-      ));
+      await tester.pumpWidget(
+        wrap(const MSBottomSheet(body: Text('unique sheet content'))),
+      );
 
       expect(find.text('unique sheet content'), findsOneWidget);
     });
@@ -69,18 +64,20 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => MSBottomSheet.show(
-              context,
-              title: 'Bottom Sheet',
-              body: const Text('sheet body'),
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => MSBottomSheet.show(
+                context,
+                title: 'Bottom Sheet',
+                body: const Text('sheet body'),
+              ),
+              child: const Text('Open'),
             ),
-            child: const Text('Open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -95,12 +92,14 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        MSBottomSheet(
-          body: const Text('body'),
-          footerBuilder: (_) => const Text('footer content'),
+      await tester.pumpWidget(
+        wrap(
+          MSBottomSheet(
+            body: const Text('body'),
+            footerBuilder: (_) => const Text('footer content'),
+          ),
         ),
-      ));
+      );
 
       expect(find.text('footer content'), findsOneWidget);
     });

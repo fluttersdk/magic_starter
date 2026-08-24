@@ -14,21 +14,11 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
-  MagicResponse _respond(
-    String method,
-    String url, {
-    dynamic data,
-  }) {
+  MagicResponse _respond(String method, String url, {dynamic data}) {
     lastMethod = method;
     lastUrl = url;
     lastData = data;
@@ -43,55 +33,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -99,16 +82,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -116,8 +97,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 
   bool get hasInterceptors => false;
 }
@@ -173,10 +153,7 @@ class MockGuard implements Guard {
   Future<void> restore() async {
     restoreCalled = true;
     if (mockToken != null) {
-      _user = MagicStarterAuthUser.fromMap({
-        'id': 1,
-        'name': 'Restored User',
-      });
+      _user = MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Restored User'});
     }
   }
 
@@ -193,9 +170,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -234,10 +209,7 @@ void main() {
       );
 
       // 5. Bind MagicStarterManager.
-      Magic.singleton(
-        'magic_starter',
-        () => MagicStarterManager(),
-      );
+      Magic.singleton('magic_starter', () => MagicStarterManager());
 
       // 6. Create and inject controller.
       Magic.put(MagicStarterProfileController());
@@ -263,9 +235,7 @@ void main() {
     testWidgets(
       'delete account section renders with password input and button',
       (tester) async {
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
         // Verify WFormInput widgets exist (password input).
         expect(find.byType(WFormInput), findsWidgets);

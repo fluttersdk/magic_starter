@@ -26,7 +26,7 @@ class MSUserProfileDropdown extends StatelessWidget {
   ///
   /// When null, renders the default circular avatar with user initial.
   final Widget Function(BuildContext context, bool isOpen, bool isHovering)?
-      triggerBuilder;
+  triggerBuilder;
 
   const MSUserProfileDropdown({
     super.key,
@@ -66,11 +66,9 @@ class MSUserProfileDropdown extends StatelessWidget {
     final navTheme = MagicStarter.navigationTheme;
 
     return WDiv(
-      states: {
-        if (isOpen) 'active',
-        if (isHovering) 'hover',
-      },
-      className: '''
+      states: {if (isOpen) 'active', if (isHovering) 'hover'},
+      className:
+          '''
                 w-8 h-8
                 rounded-full
                 ${navTheme.dropdownAvatarClassName}
@@ -81,10 +79,7 @@ class MSUserProfileDropdown extends StatelessWidget {
                 hover:scale-105
                 active:scale-95
             ''',
-      child: WText(
-        initial,
-        className: 'text-sm font-bold text-white',
-      ),
+      child: WText(initial, className: 'text-sm font-bold text-white'),
     );
   }
 
@@ -154,7 +149,8 @@ class MSUserProfileDropdown extends StatelessWidget {
                 onTap: () {
                   close();
                   MagicRoute.to(
-                      MagicStarterConfig.notificationPreferencesRoute());
+                    MagicStarterConfig.notificationPreferencesRoute(),
+                  );
                 },
               ),
             _buildMenuItem(
@@ -165,7 +161,8 @@ class MSUserProfileDropdown extends StatelessWidget {
           ],
         ),
         WDiv(
-            className: 'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full'),
+          className: 'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full',
+        ),
         _buildMenuItem(
           icon: Icons.logout,
           label: trans('auth.logout'),

@@ -51,16 +51,12 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets('Switch renders a WSwitch', (tester) async {
-    await tester.pumpWidget(
-      wrap(MSSwitch(value: false, onChanged: (_) {})),
-    );
+    await tester.pumpWidget(wrap(MSSwitch(value: false, onChanged: (_) {})));
     expect(find.byType(WSwitch), findsOneWidget);
   });
 
   testWidgets('Switch reflects value prop on WSwitch', (tester) async {
-    await tester.pumpWidget(
-      wrap(MSSwitch(value: true, onChanged: (_) {})),
-    );
+    await tester.pumpWidget(wrap(MSSwitch(value: true, onChanged: (_) {})));
     final widget = tester.widget<WSwitch>(find.byType(WSwitch));
     expect(widget.value, isTrue);
   });
@@ -75,11 +71,10 @@ void main() {
     expect(newValue, isTrue);
   });
 
-  testWidgets('Switch applies track className with bg-surface-container-high',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(MSSwitch(value: false, onChanged: (_) {})),
-    );
+  testWidgets('Switch applies track className with bg-surface-container-high', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(MSSwitch(value: false, onChanged: (_) {})));
     final widget = tester.widget<WSwitch>(find.byType(WSwitch));
     expect(widget.className, contains('bg-surface-container-high'));
   });
@@ -94,8 +89,9 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Switch appends caller className onto track and thumb recipes',
-      (tester) async {
+  testWidgets('Switch appends caller className onto track and thumb recipes', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSSwitch(

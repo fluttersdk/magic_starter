@@ -16,8 +16,12 @@ class MagicStarterTeamInvitationAcceptView
       _MagicStarterTeamInvitationAcceptViewState();
 }
 
-class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
-    MagicStarterTeamController, MagicStarterTeamInvitationAcceptView> {
+class _MagicStarterTeamInvitationAcceptViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterTeamController,
+          MagicStarterTeamInvitationAcceptView
+        > {
   late final _token = MagicRouter.instance.pathParameter('token') ?? '';
 
   @override
@@ -35,10 +39,16 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    final headerSlot = MagicStarter.view
-        .buildSlot('teams.invitation_accept', 'header', context);
-    final footerSlot = MagicStarter.view
-        .buildSlot('teams.invitation_accept', 'footer', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'teams.invitation_accept',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'teams.invitation_accept',
+      'footer',
+      context,
+    );
 
     return controller.renderState(
       (_) => _buildSuccess(headerSlot: headerSlot, footerSlot: footerSlot),
@@ -115,11 +125,7 @@ class _MagicStarterTeamInvitationAcceptViewState extends MagicStatefulViewState<
     );
   }
 
-  Widget _buildError(
-    String message, {
-    Widget? headerSlot,
-    Widget? footerSlot,
-  }) {
+  Widget _buildError(String message, {Widget? headerSlot, Widget? footerSlot}) {
     return MagicStarterAuthFormCard(
       title: trans('teams.accept_invitation'),
       subtitle: trans('teams.accept_invitation_subtitle'),

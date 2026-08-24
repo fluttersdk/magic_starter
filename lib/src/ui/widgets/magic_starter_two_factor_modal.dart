@@ -130,10 +130,7 @@ class _MagicStarterTwoFactorModalState
             child: WDiv(
               className:
                   'p-3 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-gray-200',
-              child: WSvg.string(
-                qrSvg,
-                className: 'preserve-colors w-48 h-48',
-              ),
+              child: WSvg.string(qrSvg, className: 'preserve-colors w-48 h-48'),
             ),
           ),
         if (secret != null) ...[
@@ -158,10 +155,7 @@ class _MagicStarterTwoFactorModalState
           className: theme.inputClassName,
         ),
         if (_errorMessage != null)
-          WText(
-            _errorMessage!,
-            className: theme.errorClassName,
-          ),
+          WText(_errorMessage!, className: theme.errorClassName),
         WDiv(
           className: _footerClassName,
           children: [
@@ -186,7 +180,8 @@ class _MagicStarterTwoFactorModalState
 
   Widget _buildRecoveryStep() {
     final theme = MagicStarter.manager.modalTheme;
-    final recoveryCodes = (widget.setupData['recovery_codes'] as List<dynamic>?)
+    final recoveryCodes =
+        (widget.setupData['recovery_codes'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         [];
@@ -246,17 +241,15 @@ class _MagicStarterTwoFactorModalState
   Widget build(BuildContext context) {
     final theme = MagicStarter.manager.modalTheme;
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight = (MediaQuery.sizeOf(context).height -
-            viewPadding.top -
-            viewPadding.bottom)
-        .clamp(0.0, double.infinity);
+    final safeHeight =
+        (MediaQuery.sizeOf(context).height -
+                viewPadding.top -
+                viewPadding.bottom)
+            .clamp(0.0, double.infinity);
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 24,
-      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: theme.maxWidth,

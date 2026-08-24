@@ -43,14 +43,9 @@ void main() {
         const customForm = MagicStarterFormTheme(
           inputClassName: 'custom-input-class',
         );
-        const customCard = MagicStarterCardTheme(
-          borderRadius: 'rounded-xl',
-        );
+        const customCard = MagicStarterCardTheme(borderRadius: 'rounded-xl');
 
-        final unified = MagicStarterTheme(
-          form: customForm,
-          card: customCard,
-        );
+        final unified = MagicStarterTheme(form: customForm, card: customCard);
 
         manager.theme = unified;
 
@@ -69,21 +64,24 @@ void main() {
       });
 
       test(
-          'setting navigationTheme still works and is reflected in theme.navigation',
-          () {
-        const customNav = MagicStarterNavigationTheme(
-          activeItemClassName: 'active:text-amber-500',
-        );
+        'setting navigationTheme still works and is reflected in theme.navigation',
+        () {
+          const customNav = MagicStarterNavigationTheme(
+            activeItemClassName: 'active:text-amber-500',
+          );
 
-        manager.navigationTheme = customNav;
+          manager.navigationTheme = customNav;
 
-        expect(
-          manager.theme.navigation.activeItemClassName,
-          'active:text-amber-500',
-        );
-        expect(manager.navigationTheme.activeItemClassName,
-            'active:text-amber-500');
-      });
+          expect(
+            manager.theme.navigation.activeItemClassName,
+            'active:text-amber-500',
+          );
+          expect(
+            manager.navigationTheme.activeItemClassName,
+            'active:text-amber-500',
+          );
+        },
+      );
 
       test('reset() clears all theme fields to const defaults', () {
         manager.theme = MagicStarterTheme(
@@ -94,7 +92,8 @@ void main() {
           ),
           auth: const MagicStarterAuthTheme(titleClassName: 'custom-title'),
           pageHeader: const MagicStarterPageHeaderTheme(
-              titleClassName: 'custom-header'),
+            titleClassName: 'custom-header',
+          ),
           layout: const MagicStarterLayoutTheme(sidebarWidth: 300),
         );
 

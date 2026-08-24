@@ -10,7 +10,8 @@ import 'package:magic/magic.dart';
 /// `bg-blue-500`) that would bypass semantic aliases. Passing a className
 /// entirely overrides the wind primitive defaults.
 const WindRecipe radioShellRecipe = WindRecipe(
-  base: 'w-5 h-5 rounded-full border border-color-border '
+  base:
+      'w-5 h-5 rounded-full border border-color-border '
       'items-center justify-center '
       'selected:border-color-border '
       'selected:bg-primary-container '

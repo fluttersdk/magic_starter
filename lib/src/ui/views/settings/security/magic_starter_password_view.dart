@@ -27,19 +27,20 @@ class MagicStarterPasswordView
       _MagicStarterPasswordViewState();
 }
 
-class _MagicStarterPasswordViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterPasswordView> {
+class _MagicStarterPasswordViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterPasswordView
+        > {
   static const _iconVisible = Icons.visibility;
   static const _iconHidden = Icons.visibility_off;
 
-  late final passwordForm = MagicFormData(
-    {
-      'current_password': '',
-      'password': '',
-      'password_confirmation': '',
-    },
-    controller: controller,
-  );
+  late final passwordForm = MagicFormData({
+    'current_password': '',
+    'password': '',
+    'password_confirmation': '',
+  }, controller: controller);
 
   bool _obscureCurrent = true;
   bool _obscureNew = true;
@@ -71,14 +72,15 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
 
   Future<void> _submitPassword() async {
     if (!passwordForm.validate()) return;
-    final success =
-        await passwordForm.process(() => controller.withoutNotifying(
-              () => controller.doUpdatePassword(
-                currentPassword: passwordForm.get('current_password'),
-                password: passwordForm.get('password'),
-                passwordConfirmation: passwordForm.get('password_confirmation'),
-              ),
-            ));
+    final success = await passwordForm.process(
+      () => controller.withoutNotifying(
+        () => controller.doUpdatePassword(
+          currentPassword: passwordForm.get('current_password'),
+          password: passwordForm.get('password'),
+          passwordConfirmation: passwordForm.get('password_confirmation'),
+        ),
+      ),
+    );
     _rebuildIfValidationErrors();
     if (success) {
       passwordForm.set('current_password', '');
@@ -114,11 +116,13 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
                         type: _obscureCurrent
                             ? InputType.password
                             : InputType.text,
-                        validator:
-                            rules([Required()], field: 'current_password'),
+                        validator: rules([
+                          Required(),
+                        ], field: 'current_password'),
                         suffix: WAnchor(
                           onTap: () => setState(
-                              () => _obscureCurrent = !_obscureCurrent),
+                            () => _obscureCurrent = !_obscureCurrent,
+                          ),
                           child: WIcon(
                             _obscureCurrent ? _iconVisible : _iconHidden,
                             className: 'text-fg-muted text-xl',
@@ -131,8 +135,10 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
                         controller: passwordForm['password'],
                         label: trans('attributes.new_password'),
                         type: _obscureNew ? InputType.password : InputType.text,
-                        validator:
-                            rules([Required(), Min(8)], field: 'password'),
+                        validator: rules([
+                          Required(),
+                          Min(8),
+                        ], field: 'password'),
                         suffix: WAnchor(
                           onTap: () =>
                               setState(() => _obscureNew = !_obscureNew),
@@ -150,11 +156,13 @@ class _MagicStarterPasswordViewState extends MagicStatefulViewState<
                         type: _obscureConfirmation
                             ? InputType.password
                             : InputType.text,
-                        validator:
-                            rules([Required()], field: 'password_confirmation'),
+                        validator: rules([
+                          Required(),
+                        ], field: 'password_confirmation'),
                         suffix: WAnchor(
-                          onTap: () => setState(() =>
-                              _obscureConfirmation = !_obscureConfirmation),
+                          onTap: () => setState(
+                            () => _obscureConfirmation = !_obscureConfirmation,
+                          ),
                           child: WIcon(
                             _obscureConfirmation ? _iconVisible : _iconHidden,
                             className: 'text-fg-muted text-xl',

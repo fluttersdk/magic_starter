@@ -8,9 +8,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -32,17 +30,15 @@ void main() {
     // Step 1 — Phone input
     // -----------------------------------------------------------------------
 
-    testWidgets('step 1: renders phone input field and send code button',
-        (tester) async {
+    testWidgets('step 1: renders phone input field and send code button', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterOtpVerifyView()));
       await tester.pumpAndSettle();
 
       // Phone field is visible.
       expect(
-        find.widgetWithText(
-          WFormInput,
-          trans('attributes.phone'),
-        ),
+        find.widgetWithText(WFormInput, trans('attributes.phone')),
         findsOneWidget,
       );
 
@@ -56,16 +52,14 @@ void main() {
       );
     });
 
-    testWidgets('step 1: code input is NOT shown in initial state',
-        (tester) async {
+    testWidgets('step 1: code input is NOT shown in initial state', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterOtpVerifyView()));
       await tester.pumpAndSettle();
 
       expect(
-        find.widgetWithText(
-          WFormInput,
-          trans('magic_starter.otp.code_label'),
-        ),
+        find.widgetWithText(WFormInput, trans('magic_starter.otp.code_label')),
         findsNothing,
       );
     });
@@ -75,27 +69,28 @@ void main() {
     // -----------------------------------------------------------------------
 
     testWidgets(
-        'step 2: renders code input field when controller is on codeInput step',
-        (tester) async {
-      // Advance controller to step 2 without network call.
-      final controller = Magic.find<MagicStarterOtpController>();
-      // ignore: invalid_use_of_protected_member
-      // Advance step by setting success (simulates sendOtp completing).
-      controller.setSuccess(null);
-      // Manually set the step by exposing it via sendOtp mechanism.
-      // We test the view rendering here, not the controller logic.
-      // Use the controller's internal step — reflect codeInput.
-      // Since we can't directly set _step, let's pump with a subclassed
-      // wrapper that creates a controller already in codeInput step.
-      // Instead, test via the testable controller after calling sendOtp
-      // but that requires network. For a compile/render test, we verify
-      // the step 1 widgets as a smoke test and confirm no crash.
-      await tester.pumpWidget(wrap(const MagicStarterOtpVerifyView()));
-      await tester.pumpAndSettle();
+      'step 2: renders code input field when controller is on codeInput step',
+      (tester) async {
+        // Advance controller to step 2 without network call.
+        final controller = Magic.find<MagicStarterOtpController>();
+        // ignore: invalid_use_of_protected_member
+        // Advance step by setting success (simulates sendOtp completing).
+        controller.setSuccess(null);
+        // Manually set the step by exposing it via sendOtp mechanism.
+        // We test the view rendering here, not the controller logic.
+        // Use the controller's internal step — reflect codeInput.
+        // Since we can't directly set _step, let's pump with a subclassed
+        // wrapper that creates a controller already in codeInput step.
+        // Instead, test via the testable controller after calling sendOtp
+        // but that requires network. For a compile/render test, we verify
+        // the step 1 widgets as a smoke test and confirm no crash.
+        await tester.pumpWidget(wrap(const MagicStarterOtpVerifyView()));
+        await tester.pumpAndSettle();
 
-      // View renders without crash — smoke test.
-      expect(find.byType(MagicStarterOtpVerifyView), findsOneWidget);
-    });
+        // View renders without crash — smoke test.
+        expect(find.byType(MagicStarterOtpVerifyView), findsOneWidget);
+      },
+    );
 
     // -----------------------------------------------------------------------
     // Smoke test — no crash on pump

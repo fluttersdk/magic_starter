@@ -26,13 +26,14 @@ class MagicStarterTimezoneView
       _MagicStarterTimezoneViewState();
 }
 
-class _MagicStarterTimezoneViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterTimezoneView> {
+class _MagicStarterTimezoneViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterTimezoneView
+        > {
   /// Single-field form for the timezone identifier.
-  late final form = MagicFormData(
-    {'timezone': ''},
-    controller: controller,
-  );
+  late final form = MagicFormData({'timezone': ''}, controller: controller);
 
   /// Isolated save-button spinner, decoupled from the controller's global
   /// loading flag (mirrors the source view's per-section notifier pattern).

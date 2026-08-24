@@ -56,8 +56,9 @@ class MSUpgradeNudge extends StatelessWidget {
     final slots = upgradeNudgeRecipe(variants: const <String, String>{});
 
     return WDiv(
-      className:
-          className == null ? slots['root'] : '${slots['root']} $className',
+      className: className == null
+          ? slots['root']
+          : '${slots['root']} $className',
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -75,9 +76,7 @@ class MSUpgradeNudge extends StatelessWidget {
               children: [
                 WText(message, className: slots['message']),
                 WText(
-                  trans('common.upgrade_available_on', {
-                    'plan': requiredPlan,
-                  }),
+                  trans('common.upgrade_available_on', {'plan': requiredPlan}),
                   className: slots['sub'],
                 ),
               ],

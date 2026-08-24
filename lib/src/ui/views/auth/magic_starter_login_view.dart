@@ -23,22 +23,23 @@ class MagicStarterLoginView
   State<MagicStarterLoginView> createState() => _MagicStarterLoginViewState();
 }
 
-class _MagicStarterLoginViewState extends MagicStatefulViewState<
-    MagicStarterAuthController, MagicStarterLoginView> {
+class _MagicStarterLoginViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterAuthController,
+          MagicStarterLoginView
+        > {
   static const _iconVisible = Icons.visibility;
   static const _iconHidden = Icons.visibility_off;
 
   /// Both email and phone fields are always declared — the controller decides
   /// which one to include in the payload based on identity mode.
-  late final form = MagicFormData(
-    {
-      'email': '',
-      'phone': '',
-      'password': '',
-      'remember_me': false,
-    },
-    controller: controller,
-  );
+  late final form = MagicFormData({
+    'email': '',
+    'phone': '',
+    'password': '',
+    'remember_me': false,
+  }, controller: controller);
 
   bool _obscurePassword = true;
 
@@ -77,12 +78,21 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
   Widget _buildForm({String? errorMessage}) {
     final isLoading = controller.isLoading;
 
-    final headerSlot =
-        MagicStarter.view.buildSlot('auth.login', 'header', context);
-    final formFooterSlot =
-        MagicStarter.view.buildSlot('auth.login', 'formFooter', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('auth.login', 'footer', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'auth.login',
+      'header',
+      context,
+    );
+    final formFooterSlot = MagicStarter.view.buildSlot(
+      'auth.login',
+      'formFooter',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'auth.login',
+      'footer',
+      context,
+    );
 
     return MagicStarterAuthFormCard(
       title: trans('auth.login_title'),

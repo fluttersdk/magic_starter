@@ -141,7 +141,8 @@ class MSPageHeader extends StatelessWidget {
     // announced itself as a button and did nothing when pressed, which is worse
     // than no control at all. Every in-package caller passes both.
     final String? fallback = backFallback;
-    final Widget? effectiveLeading = leading ??
+    final Widget? effectiveLeading =
+        leading ??
         (backLabel != null && fallback != null
             ? _buildBackControl(fallback)
             : null);
@@ -178,10 +179,7 @@ class MSPageHeader extends StatelessWidget {
               ],
             ),
             if (titleSuffix != null)
-              WDiv(
-                className: 'flex-shrink-0',
-                child: titleSuffix!,
-              ),
+              WDiv(className: 'flex-shrink-0', child: titleSuffix!),
           ],
         ),
         // 2. Optional actions row.

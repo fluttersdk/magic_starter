@@ -47,10 +47,7 @@ void main() {
       Auth.fake(user: _fakeUser());
       final middleware = RedirectIfAuthenticated();
 
-      expect(
-        middleware.redirectTarget(MagicStarterConfig.homeRoute()),
-        isNull,
-      );
+      expect(middleware.redirectTarget(MagicStarterConfig.homeRoute()), isNull);
     });
 
     test('allows an unauthenticated navigation to any guest route', () {

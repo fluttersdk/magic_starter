@@ -39,9 +39,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: widget,
-        ),
+        child: Scaffold(body: widget),
       ),
     );
   }
@@ -49,46 +47,32 @@ void main() {
   testWidgets('MSCard renders child correctly', (WidgetTester tester) async {
     const childKey = Key('test-child');
 
-    await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          child: SizedBox(key: childKey),
-        ),
-      ),
-    );
+    await tester.pumpWidget(wrap(const MSCard(child: SizedBox(key: childKey))));
 
     expect(find.byKey(childKey), findsOneWidget);
     expect(find.byType(WText), findsNothing);
   });
 
-  testWidgets('MSCard renders title when provided',
-      (WidgetTester tester) async {
+  testWidgets('MSCard renders title when provided', (
+    WidgetTester tester,
+  ) async {
     const title = 'Test Title';
 
     await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          title: title,
-          child: SizedBox(),
-        ),
-      ),
+      wrap(const MSCard(title: title, child: SizedBox())),
     );
 
     expect(find.text(title), findsOneWidget);
     expect(find.byType(WText), findsOneWidget);
   });
 
-  testWidgets('MSCard uses custom className when provided',
-      (WidgetTester tester) async {
+  testWidgets('MSCard uses custom className when provided', (
+    WidgetTester tester,
+  ) async {
     const customClassName = 'custom-class';
 
     await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          className: customClassName,
-          child: SizedBox(),
-        ),
-      ),
+      wrap(const MSCard(className: customClassName, child: SizedBox())),
     );
 
     final wDiv = tester.widget<WDiv>(find.byType(WDiv));
@@ -101,30 +85,34 @@ void main() {
 
   group('card recipe equivalence', () {
     test(
-        'recipe output is byte-identical to legacy _defaultClassName for every '
-        'variant x noPadding combo (default theme)', () {
-      const theme = MagicStarterCardTheme();
-      final recipe = buildCardRecipe(theme);
+      'recipe output is byte-identical to legacy _defaultClassName for every '
+      'variant x noPadding combo (default theme)',
+      () {
+        const theme = MagicStarterCardTheme();
+        final recipe = buildCardRecipe(theme);
 
-      for (final variant in CardVariant.values) {
-        for (final noPadding in [false, true]) {
-          final actual = recipe(
-            variants: {
-              kCardVariantAxis: variant.name,
-              kCardPaddingAxis:
-                  noPadding ? kCardPaddingNoPadding : kCardPaddingPadded,
-            },
-          );
-          final expected = legacyDefaultClassName(theme, variant, noPadding);
+        for (final variant in CardVariant.values) {
+          for (final noPadding in [false, true]) {
+            final actual = recipe(
+              variants: {
+                kCardVariantAxis: variant.name,
+                kCardPaddingAxis: noPadding
+                    ? kCardPaddingNoPadding
+                    : kCardPaddingPadded,
+              },
+            );
+            final expected = legacyDefaultClassName(theme, variant, noPadding);
 
-          expect(
-            actual,
-            expected,
-            reason: 'variant=$variant noPadding=$noPadding must match exactly',
-          );
+            expect(
+              actual,
+              expected,
+              reason:
+                  'variant=$variant noPadding=$noPadding must match exactly',
+            );
+          }
         }
-      }
-    });
+      },
+    );
 
     test('recipe output stays byte-identical under a custom theme', () {
       const theme = MagicStarterCardTheme(
@@ -141,8 +129,9 @@ void main() {
           final actual = recipe(
             variants: {
               kCardVariantAxis: variant.name,
-              kCardPaddingAxis:
-                  noPadding ? kCardPaddingNoPadding : kCardPaddingPadded,
+              kCardPaddingAxis: noPadding
+                  ? kCardPaddingNoPadding
+                  : kCardPaddingPadded,
             },
           );
           final expected = legacyDefaultClassName(theme, variant, noPadding);
@@ -157,15 +146,11 @@ void main() {
   // CardVariant tests
   // -------------------------------------------------------------------------
 
-  testWidgets('CardVariant.surface uses white background and border classes',
-      (WidgetTester tester) async {
+  testWidgets('CardVariant.surface uses white background and border classes', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          variant: CardVariant.surface,
-          child: SizedBox(),
-        ),
-      ),
+      wrap(const MSCard(variant: CardVariant.surface, child: SizedBox())),
     );
 
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
@@ -174,15 +159,11 @@ void main() {
     expect(wDiv.className, isNot(contains('shadow-md')));
   });
 
-  testWidgets('CardVariant.inset uses gray-50 background and border classes',
-      (WidgetTester tester) async {
+  testWidgets('CardVariant.inset uses gray-50 background and border classes', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          variant: CardVariant.inset,
-          child: SizedBox(),
-        ),
-      ),
+      wrap(const MSCard(variant: CardVariant.inset, child: SizedBox())),
     );
 
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
@@ -191,15 +172,11 @@ void main() {
     expect(wDiv.className, isNot(contains('shadow-md')));
   });
 
-  testWidgets('CardVariant.elevated uses shadow-md and no border',
-      (WidgetTester tester) async {
+  testWidgets('CardVariant.elevated uses shadow-md and no border', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          variant: CardVariant.elevated,
-          child: SizedBox(),
-        ),
-      ),
+      wrap(const MSCard(variant: CardVariant.elevated, child: SizedBox())),
     );
 
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
@@ -208,71 +185,64 @@ void main() {
   });
 
   testWidgets('default variant is CardVariant.surface', (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSCard(child: SizedBox()),
-      ),
-    );
+    await tester.pumpWidget(wrap(const MSCard(child: SizedBox())));
 
-    final card = tester.widget<MSCard>(
-      find.byType(MSCard),
-    );
+    final card = tester.widget<MSCard>(find.byType(MSCard));
     expect(card.variant, CardVariant.surface);
   });
 
-  testWidgets('CardVariant.inset with noPadding produces overflow-hidden class',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          variant: CardVariant.inset,
-          noPadding: true,
-          child: SizedBox(),
+  testWidgets(
+    'CardVariant.inset with noPadding produces overflow-hidden class',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSCard(
+            variant: CardVariant.inset,
+            noPadding: true,
+            child: SizedBox(),
+          ),
         ),
-      ),
-    );
+      );
 
-    final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
-    expect(wDiv.className, contains('overflow-hidden'));
-    expect(wDiv.className, contains('bg-gray-50'));
-  });
+      final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+      expect(wDiv.className, contains('overflow-hidden'));
+      expect(wDiv.className, contains('bg-gray-50'));
+    },
+  );
 
   testWidgets(
-      'CardVariant.elevated with noPadding produces overflow-hidden class',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          variant: CardVariant.elevated,
-          noPadding: true,
-          child: SizedBox(),
+    'CardVariant.elevated with noPadding produces overflow-hidden class',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSCard(
+            variant: CardVariant.elevated,
+            noPadding: true,
+            child: SizedBox(),
+          ),
         ),
-      ),
-    );
+      );
 
-    final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
-    expect(wDiv.className, contains('overflow-hidden'));
-    expect(wDiv.className, contains('shadow-md'));
-  });
+      final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
+      expect(wDiv.className, contains('overflow-hidden'));
+      expect(wDiv.className, contains('shadow-md'));
+    },
+  );
 
   // -------------------------------------------------------------------------
   // Theme consumption tests
   // -------------------------------------------------------------------------
 
   group('theme consumption', () {
-    testWidgets('custom surfaceClassName is used for surface variant',
-        (tester) async {
+    testWidgets('custom surfaceClassName is used for surface variant', (
+      tester,
+    ) async {
       MagicStarter.manager.cardTheme = const MagicStarterCardTheme(
         surfaceClassName: 'custom-surface',
       );
 
       await tester.pumpWidget(
-        wrap(
-          const MSCard(
-            variant: CardVariant.surface,
-            child: SizedBox(),
-          ),
-        ),
+        wrap(const MSCard(variant: CardVariant.surface, child: SizedBox())),
       );
 
       final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
@@ -285,31 +255,22 @@ void main() {
       );
 
       await tester.pumpWidget(
-        wrap(
-          const MSCard(
-            title: 'My Card',
-            child: SizedBox(),
-          ),
-        ),
+        wrap(const MSCard(title: 'My Card', child: SizedBox())),
       );
 
       final wText = tester.widget<WText>(find.byType(WText).first);
       expect(wText.className, contains('custom-title-class'));
     });
 
-    testWidgets('custom elevatedClassName is used for elevated variant',
-        (tester) async {
+    testWidgets('custom elevatedClassName is used for elevated variant', (
+      tester,
+    ) async {
       MagicStarter.manager.cardTheme = const MagicStarterCardTheme(
         elevatedClassName: 'custom-elevated',
       );
 
       await tester.pumpWidget(
-        wrap(
-          const MSCard(
-            variant: CardVariant.elevated,
-            child: SizedBox(),
-          ),
-        ),
+        wrap(const MSCard(variant: CardVariant.elevated, child: SizedBox())),
       );
 
       final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);

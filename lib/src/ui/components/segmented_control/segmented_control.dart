@@ -67,9 +67,7 @@ class MSSegmentedControl<T> extends StatelessWidget {
   /// the currently selected index.
   Widget _buildSegment(int index, String itemClassName) {
     final bool isSelected = index == selectedIndex;
-    final Set<String> segmentStates = {
-      if (isSelected) 'selected',
-    };
+    final Set<String> segmentStates = {if (isSelected) 'selected'};
 
     return WAnchor(
       onTap: () => onChanged?.call(index),

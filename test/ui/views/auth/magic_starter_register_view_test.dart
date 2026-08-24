@@ -8,9 +8,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -24,8 +22,9 @@ void main() {
       Magic.put(MagicStarterAuthController());
     });
 
-    testWidgets('shows newsletter checkbox when feature enabled',
-        (tester) async {
+    testWidgets('shows newsletter checkbox when feature enabled', (
+      tester,
+    ) async {
       Config.set('magic_starter.features.newsletter', true);
 
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
@@ -35,8 +34,9 @@ void main() {
       expect(find.byType(WFormCheckbox), findsOneWidget);
     });
 
-    testWidgets('hides newsletter checkbox when feature disabled',
-        (tester) async {
+    testWidgets('hides newsletter checkbox when feature disabled', (
+      tester,
+    ) async {
       Config.set('magic_starter.features.newsletter', false);
 
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
@@ -46,8 +46,9 @@ void main() {
       expect(find.byType(WFormCheckbox), findsNothing);
     });
 
-    testWidgets('shows email field in email-only mode (default)',
-        (tester) async {
+    testWidgets('shows email field in email-only mode (default)', (
+      tester,
+    ) async {
       Config.set('magic_starter.auth.email', true);
       Config.set('magic_starter.auth.phone', false);
 
@@ -55,14 +56,19 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
-          findsOneWidget);
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
-          findsNothing);
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.email')),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.phone')),
+        findsNothing,
+      );
     });
 
-    testWidgets('shows phone field without country code in phone-only mode',
-        (tester) async {
+    testWidgets('shows phone field without country code in phone-only mode', (
+      tester,
+    ) async {
       Config.set('magic_starter.auth.email', false);
       Config.set('magic_starter.auth.phone', true);
 
@@ -70,32 +76,45 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
-          findsOneWidget);
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone_country')),
-          findsNothing);
-      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
-          findsNothing);
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.phone')),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.phone_country')),
+        findsNothing,
+      );
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.email')),
+        findsNothing,
+      );
     });
 
     testWidgets(
-        'shows both email and phone fields without country code in both mode',
-        (tester) async {
-      Config.set('magic_starter.auth.email', true);
-      Config.set('magic_starter.auth.phone', true);
+      'shows both email and phone fields without country code in both mode',
+      (tester) async {
+        Config.set('magic_starter.auth.email', true);
+        Config.set('magic_starter.auth.phone', true);
 
-      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+        await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      // Register shows both fields simultaneously — no toggle.
-      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
-          findsOneWidget);
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
-          findsOneWidget);
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone_country')),
-          findsNothing);
-    });
+        // Register shows both fields simultaneously — no toggle.
+        expect(
+          find.widgetWithText(WFormInput, trans('attributes.email')),
+          findsOneWidget,
+        );
+        expect(
+          find.widgetWithText(WFormInput, trans('attributes.phone')),
+          findsOneWidget,
+        );
+        expect(
+          find.widgetWithText(WFormInput, trans('attributes.phone_country')),
+          findsNothing,
+        );
+      },
+    );
 
     testWidgets('hides legal links when no URLs configured', (tester) async {
       // No legal config set — should not show any legal text.
@@ -106,8 +125,9 @@ void main() {
       expect(find.text(trans('auth.privacy_policy')), findsNothing);
     });
 
-    testWidgets('shows terms link when terms_url is configured',
-        (tester) async {
+    testWidgets('shows terms link when terms_url is configured', (
+      tester,
+    ) async {
       Config.set('magic_starter.legal.terms_url', 'https://example.com/terms');
 
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
@@ -118,8 +138,9 @@ void main() {
       expect(find.text(trans('auth.privacy_policy')), findsNothing);
     });
 
-    testWidgets('shows privacy link when privacy_url is configured',
-        (tester) async {
+    testWidgets('shows privacy link when privacy_url is configured', (
+      tester,
+    ) async {
       Config.set(
         'magic_starter.legal.privacy_url',
         'https://example.com/privacy',
@@ -133,8 +154,9 @@ void main() {
       expect(find.text(trans('auth.terms_of_service')), findsNothing);
     });
 
-    testWidgets('shows both legal links when both URLs are configured',
-        (tester) async {
+    testWidgets('shows both legal links when both URLs are configured', (
+      tester,
+    ) async {
       Config.set('magic_starter.legal.terms_url', 'https://example.com/terms');
       Config.set(
         'magic_starter.legal.privacy_url',
@@ -196,8 +218,9 @@ void main() {
       Magic.put(MagicStarterAuthController());
     });
 
-    testWidgets('renders without crash when custom FormTheme is set',
-        (tester) async {
+    testWidgets('renders without crash when custom FormTheme is set', (
+      tester,
+    ) async {
       MagicStarter.useFormTheme(
         const MagicStarterFormTheme(
           inputClassName: 'custom-input',

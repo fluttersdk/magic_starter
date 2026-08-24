@@ -35,8 +35,8 @@ import 'ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 import 'ui/views/teams/magic_starter_team_settings_view.dart';
 
 /// Social login builder type.
-typedef SocialLoginBuilder = Widget Function(
-    BuildContext context, bool isLoading);
+typedef SocialLoginBuilder =
+    Widget Function(BuildContext context, bool isLoading);
 
 typedef UserModelFactory = Authenticatable Function(Map<String, dynamic> data);
 
@@ -181,14 +181,14 @@ class MagicStarterManager {
   /// [navigationTheme], [modalTheme], [formTheme], [cardTheme],
   /// [pageHeaderTheme], [layoutTheme], and [authTheme].
   MagicStarterTheme get theme => MagicStarterTheme(
-        navigation: navigationTheme,
-        modal: modalTheme,
-        form: formTheme,
-        card: cardTheme,
-        pageHeader: pageHeaderTheme,
-        layout: layoutTheme,
-        auth: authTheme,
-      );
+    navigation: navigationTheme,
+    modal: modalTheme,
+    form: formTheme,
+    card: cardTheme,
+    pageHeader: pageHeaderTheme,
+    layout: layoutTheme,
+    auth: authTheme,
+  );
 
   /// Set the unified theme, distributing each sub-theme to its individual field.
   ///
@@ -235,7 +235,8 @@ class MagicStarterManager {
         .map(
           (locale) => SelectOption<String>(
             value: locale.languageCode,
-            label: _nativeLanguageNames[locale.languageCode] ??
+            label:
+                _nativeLanguageNames[locale.languageCode] ??
                 locale.languageCode.toUpperCase(),
           ),
         )
@@ -290,10 +291,7 @@ class MagicStarterManager {
     // Settings — iOS-style hub + drill-down sub-pages. The hub, Profile,
     // Appearance, and Password sub-pages are always registered; the rest
     // mirror their feature toggles (and the routes that gate them).
-    _registerDefault(
-      'settings.hub',
-      () => const MagicStarterSettingsHubView(),
-    );
+    _registerDefault('settings.hub', () => const MagicStarterSettingsHubView());
     _registerDefault(
       'profile.profile',
       () => const MagicStarterProfileSubPageView(),

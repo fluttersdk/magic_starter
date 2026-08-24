@@ -22,17 +22,9 @@ class RadioPreview extends StatelessWidget {
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [
-                MSRadio<String>(
-                  value: 'a',
-                  groupValue: 'b',
-                  onChanged: (_) {},
-                ),
+                MSRadio<String>(value: 'a', groupValue: 'b', onChanged: (_) {}),
                 WText('Unselected', className: 'text-sm text-fg'),
-                MSRadio<String>(
-                  value: 'a',
-                  groupValue: 'a',
-                  onChanged: (_) {},
-                ),
+                MSRadio<String>(value: 'a', groupValue: 'a', onChanged: (_) {}),
                 WText('Selected', className: 'text-sm text-fg'),
               ],
             ),
@@ -41,10 +33,7 @@ class RadioPreview extends StatelessWidget {
         WDiv(
           className: 'flex flex-col gap-3',
           children: [
-            WText(
-              'Disabled',
-              className: 'text-sm font-semibold text-fg-muted',
-            ),
+            WText('Disabled', className: 'text-sm font-semibold text-fg-muted'),
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [

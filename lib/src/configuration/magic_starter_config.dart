@@ -28,10 +28,7 @@ class MagicStarterConfig {
   static const String _defaultLocale = 'en';
   static const String _defaultTimezone = 'UTC';
 
-  static const List<String> _defaultSupportedLocales = [
-    'en',
-    'tr',
-  ];
+  static const List<String> _defaultSupportedLocales = ['en', 'tr'];
 
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
@@ -230,28 +227,36 @@ class MagicStarterConfig {
   /// Returns the configured login route path.
   static String loginRoute() {
     return Config.get<String>(
-            'magic_starter.routes.login', _defaultLoginRoute) ??
+          'magic_starter.routes.login',
+          _defaultLoginRoute,
+        ) ??
         _defaultLoginRoute;
   }
 
   /// Returns the configured auth route prefix (e.g. `/auth`).
   static String authPrefix() {
     return Config.get<String>(
-            'magic_starter.routes.auth_prefix', _defaultAuthPrefix) ??
+          'magic_starter.routes.auth_prefix',
+          _defaultAuthPrefix,
+        ) ??
         _defaultAuthPrefix;
   }
 
   /// Returns the configured teams route prefix (e.g. `/teams`).
   static String teamsPrefix() {
     return Config.get<String>(
-            'magic_starter.routes.teams_prefix', _defaultTeamsPrefix) ??
+          'magic_starter.routes.teams_prefix',
+          _defaultTeamsPrefix,
+        ) ??
         _defaultTeamsPrefix;
   }
 
   /// Returns the configured profile route prefix (e.g. `/settings`).
   static String profilePrefix() {
     return Config.get<String>(
-            'magic_starter.routes.profile_prefix', _defaultProfilePrefix) ??
+          'magic_starter.routes.profile_prefix',
+          _defaultProfilePrefix,
+        ) ??
         _defaultProfilePrefix;
   }
 
@@ -357,7 +362,9 @@ class MagicStarterConfig {
   /// Returns the configured billing route (e.g. `/teams/billing`).
   static String billingRoute() {
     return Config.get<String>(
-            'magic_starter.routes.billing', _defaultBillingRoute) ??
+          'magic_starter.routes.billing',
+          _defaultBillingRoute,
+        ) ??
         _defaultBillingRoute;
   }
 
@@ -381,8 +388,10 @@ class MagicStarterConfig {
   /// `.env` produces `''` rather than an absent key, and `''` would still
   /// yield the same broken relative url.
   static String? billingWebOrigin() {
-    final String? origin =
-        Config.get<String?>('magic_starter.billing.web_origin', null);
+    final String? origin = Config.get<String?>(
+      'magic_starter.billing.web_origin',
+      null,
+    );
 
     if (origin == null || origin.isEmpty) return null;
 

@@ -67,34 +67,23 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets('SettingsRow renders title text', (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(title: 'Notifications'),
-      ),
-    );
+    await tester.pumpWidget(wrap(const MSSettingsRow(title: 'Notifications')));
     expect(find.text('Notifications'), findsOneWidget);
   });
 
-  testWidgets('SettingsRow leading icon is optional — absent by default',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(title: 'Profile'),
-      ),
-    );
+  testWidgets('SettingsRow leading icon is optional — absent by default', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSSettingsRow(title: 'Profile')));
     // WIcon should not be present when no icon is given.
     expect(find.byType(WIcon), findsNothing);
   });
 
-  testWidgets('SettingsRow renders leading icon tile when icon is provided',
-      (tester) async {
+  testWidgets('SettingsRow renders leading icon tile when icon is provided', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(
-          title: 'Profile',
-          icon: Icons.person_outline,
-        ),
-      ),
+      wrap(const MSSettingsRow(title: 'Profile', icon: Icons.person_outline)),
     );
     expect(find.byType(WIcon), findsOneWidget);
   });
@@ -111,13 +100,10 @@ void main() {
     expect(find.text('Edit your name and email'), findsOneWidget);
   });
 
-  testWidgets('SettingsRow subtitle is absent when not provided',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(title: 'Profile'),
-      ),
-    );
+  testWidgets('SettingsRow subtitle is absent when not provided', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSSettingsRow(title: 'Profile')));
     // Only one text widget (the title).
     expect(find.byType(WText), findsOneWidget);
   });
@@ -138,12 +124,7 @@ void main() {
   testWidgets('SettingsRow onTap fires when row is tapped', (tester) async {
     var tapped = false;
     await tester.pumpWidget(
-      wrap(
-        MSSettingsRow(
-          title: 'Profile',
-          onTap: () => tapped = true,
-        ),
-      ),
+      wrap(MSSettingsRow(title: 'Profile', onTap: () => tapped = true)),
     );
     // Tap via the title text that the WAnchor wraps.
     await tester.tap(find.text('Profile'));
@@ -152,22 +133,15 @@ void main() {
   });
 
   testWidgets('SettingsRow is not tappable when onTap is null', (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(title: 'Profile'),
-      ),
-    );
+    await tester.pumpWidget(wrap(const MSSettingsRow(title: 'Profile')));
     // WAnchor should not be present when onTap is null.
     expect(find.byType(WAnchor), findsNothing);
   });
 
-  testWidgets('SettingsRow default tone title uses text-fg className',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(title: 'Appearance'),
-      ),
-    );
+  testWidgets('SettingsRow default tone title uses text-fg className', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSSettingsRow(title: 'Appearance')));
     final titleTexts = tester
         .widgetList<WText>(find.byType(WText))
         .where((w) => w.data == 'Appearance');
@@ -176,30 +150,28 @@ void main() {
   });
 
   testWidgets(
-      'SettingsRow destructive tone title uses text-destructive className',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(
-          title: 'Delete Account',
-          tone: SettingsRowTone.destructive,
+    'SettingsRow destructive tone title uses text-destructive className',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSSettingsRow(
+            title: 'Delete Account',
+            tone: SettingsRowTone.destructive,
+          ),
         ),
-      ),
-    );
-    final titleTexts = tester
-        .widgetList<WText>(find.byType(WText))
-        .where((w) => w.data == 'Delete Account');
-    expect(titleTexts, isNotEmpty);
-    expect(titleTexts.first.className, contains('text-destructive'));
-  });
+      );
+      final titleTexts = tester
+          .widgetList<WText>(find.byType(WText))
+          .where((w) => w.data == 'Delete Account');
+      expect(titleTexts, isNotEmpty);
+      expect(titleTexts.first.className, contains('text-destructive'));
+    },
+  );
 
-  testWidgets('SettingsRow row container has min-h-12 className',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(title: 'Sessions'),
-      ),
-    );
+  testWidgets('SettingsRow row container has min-h-12 className', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSSettingsRow(title: 'Sessions')));
     // The root WDiv should carry a 44pt+ minimum height (min-h-12 = 48px).
     final divs = tester.widgetList<WDiv>(find.byType(WDiv));
     final hasMinHeight = divs.any(
@@ -211,11 +183,7 @@ void main() {
   testWidgets('SettingsRow has no internal divider', (tester) async {
     // The row must not render a border-b or border-t divider — the section owns
     // dividers.
-    await tester.pumpWidget(
-      wrap(
-        const MSSettingsRow(title: 'Profile'),
-      ),
-    );
+    await tester.pumpWidget(wrap(const MSSettingsRow(title: 'Profile')));
     final divs = tester.widgetList<WDiv>(find.byType(WDiv));
     final hasDividerClass = divs.any(
       (d) => d.className != null && d.className!.contains('border-b'),
@@ -223,8 +191,9 @@ void main() {
     expect(hasDividerClass, isFalse);
   });
 
-  testWidgets('SettingsRow light+dark preview renders without error',
-      (tester) async {
+  testWidgets('SettingsRow light+dark preview renders without error', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const SettingsRowPreview()));
     await tester.pump();
     expect(find.byType(SettingsRowPreview), findsOneWidget);

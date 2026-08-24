@@ -62,33 +62,34 @@ void main() {
     });
 
     test(
-        'bg-prefixed keys have bg- values; text-prefixed keys have text- values',
-        () {
-      for (final entry in MagicStarterTokens.defaultAliases.entries) {
-        final key = entry.key;
-        final value = entry.value;
+      'bg-prefixed keys have bg- values; text-prefixed keys have text- values',
+      () {
+        for (final entry in MagicStarterTokens.defaultAliases.entries) {
+          final key = entry.key;
+          final value = entry.value;
 
-        if (key.startsWith('bg-')) {
-          expect(
-            value,
-            startsWith('bg-'),
-            reason: '$key value should start with bg-: got "$value"',
-          );
-        } else if (key.startsWith('text-')) {
-          expect(
-            value.contains('text-'),
-            isTrue,
-            reason: '$key value should contain text-: got "$value"',
-          );
-        } else if (key.startsWith('border-color-')) {
-          expect(
-            value.contains('border-'),
-            isTrue,
-            reason: '$key value should contain border-: got "$value"',
-          );
+          if (key.startsWith('bg-')) {
+            expect(
+              value,
+              startsWith('bg-'),
+              reason: '$key value should start with bg-: got "$value"',
+            );
+          } else if (key.startsWith('text-')) {
+            expect(
+              value.contains('text-'),
+              isTrue,
+              reason: '$key value should contain text-: got "$value"',
+            );
+          } else if (key.startsWith('border-color-')) {
+            expect(
+              value.contains('border-'),
+              isTrue,
+              reason: '$key value should contain border-: got "$value"',
+            );
+          }
         }
-      }
-    });
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -108,11 +109,10 @@ void main() {
       );
     }
 
-    testWidgets('bg-surface resolves (not a silent no-op) in light mode',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        wrap(const WDiv(className: 'bg-surface')),
-      );
+    testWidgets('bg-surface resolves (not a silent no-op) in light mode', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(wrap(const WDiv(className: 'bg-surface')));
 
       // WindParser expands aliases pre-parse. bg-surface -> bg-white which
       // the background parser resolves to a Color, so the WDiv renders a
@@ -122,21 +122,20 @@ void main() {
       expect(find.byType(Container), findsWidgets);
     });
 
-    testWidgets('bg-surface resolves (not a silent no-op) in dark mode',
-        (WidgetTester tester) async {
+    testWidgets('bg-surface resolves (not a silent no-op) in dark mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        wrap(
-          const WDiv(className: 'bg-surface'),
-          brightness: Brightness.dark,
-        ),
+        wrap(const WDiv(className: 'bg-surface'), brightness: Brightness.dark),
       );
 
       expect(find.byType(WDiv), findsOneWidget);
       expect(find.byType(Container), findsWidgets);
     });
 
-    testWidgets('bg-surface text-fg builds without exception',
-        (WidgetTester tester) async {
+    testWidgets('bg-surface text-fg builds without exception', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         wrap(
           const WDiv(
@@ -150,11 +149,10 @@ void main() {
       expect(find.text('hello'), findsOneWidget);
     });
 
-    testWidgets('aliases map wired into WindThemeData is not empty',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        wrap(const SizedBox()),
-      );
+    testWidgets('aliases map wired into WindThemeData is not empty', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(wrap(const SizedBox()));
 
       final theme = WindTheme.of(tester.element(find.byType(Scaffold)));
       expect(theme.data.aliases, isNotEmpty);

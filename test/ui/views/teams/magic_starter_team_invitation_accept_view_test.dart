@@ -8,9 +8,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }

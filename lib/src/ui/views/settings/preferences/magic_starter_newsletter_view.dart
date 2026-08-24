@@ -26,8 +26,12 @@ class MagicStarterNewsletterView
       _MagicStarterNewsletterViewState();
 }
 
-class _MagicStarterNewsletterViewState extends MagicStatefulViewState<
-    MagicStarterNewsletterController, MagicStarterNewsletterView> {
+class _MagicStarterNewsletterViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterNewsletterController,
+          MagicStarterNewsletterView
+        > {
   static const _iconNewsletter = Icons.mail_outline;
   static const _iconLoading = Icons.refresh;
 

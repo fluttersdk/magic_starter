@@ -13,10 +13,7 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
+  void mockResponse({required int statusCode, dynamic data}) {
     nextResponse = MagicResponse(
       data: data ?? <String, dynamic>{},
       statusCode: statusCode,
@@ -27,15 +24,9 @@ class MockNetworkDriver implements NetworkDriver {
     _pendingResponse = Completer<MagicResponse>();
   }
 
-  void completePendingResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
+  void completePendingResponse({required int statusCode, dynamic data}) {
     _pendingResponse?.complete(
-      MagicResponse(
-        data: data ?? <String, dynamic>{},
-        statusCode: statusCode,
-      ),
+      MagicResponse(data: data ?? <String, dynamic>{}, statusCode: statusCode),
     );
     // _pendingResponse = null;
   }
@@ -52,10 +43,7 @@ class MockNetworkDriver implements NetworkDriver {
       return _pendingResponse!.future;
     }
     return nextResponse ??
-        MagicResponse(
-          data: <String, dynamic>{},
-          statusCode: 500,
-        );
+        MagicResponse(data: <String, dynamic>{}, statusCode: 500);
   }
 
   @override
@@ -66,79 +54,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'GET',
-        url,
-      );
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'POST',
-        url,
-        data: data,
-      );
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'PUT',
-        url,
-        data: data,
-      );
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'DELETE',
-        url,
-      );
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'INDEX',
-        resource,
-      );
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'SHOW',
-        '$resource/$id',
-      );
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'STORE',
-        resource,
-        data: data,
-      );
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -146,23 +103,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'UPDATE',
-        '$resource/$id',
-        data: data,
-      );
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'DESTROY',
-        '$resource/$id',
-      );
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -170,12 +118,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond(
-        'UPLOAD',
-        url,
-        data: data,
-      );
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 class MockGuard implements Guard {
@@ -184,10 +127,7 @@ class MockGuard implements Guard {
   String? mockToken = 'mock-token';
 
   @override
-  Future<void> login(
-    Map<String, dynamic> data,
-    Authenticatable user,
-  ) async {
+  Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
     mockToken = data['token'] as String?;
     _user = user;
   }
@@ -226,12 +166,10 @@ class MockGuard implements Guard {
   @override
   Future<void> restore() async {
     if (mockToken != null) {
-      _user = MagicStarterAuthUser.fromMap(
-        <String, dynamic>{
-          'id': 1,
-          'name': 'Restored User',
-        },
-      );
+      _user = MagicStarterAuthUser.fromMap(<String, dynamic>{
+        'id': 1,
+        'name': 'Restored User',
+      });
     }
   }
 
@@ -277,10 +215,8 @@ void main() {
       test('success: loading to success and returns setup payload', () async {
         mockDriver.startPendingResponse();
 
-        final Future<Map<String, dynamic>?> future =
-            controller.doEnableTwoFactor(
-          password: 'secret123',
-        );
+        final Future<Map<String, dynamic>?> future = controller
+            .doEnableTwoFactor(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -290,10 +226,7 @@ void main() {
               'secret': 'BASE32SECRET',
               'qr_url': 'otpauth://totp/app:user?secret=BASE32SECRET',
               'qr_svg': '<svg>...</svg>',
-              'recovery_codes': <String>[
-                'code-1',
-                'code-2',
-              ],
+              'recovery_codes': <String>['code-1', 'code-2'],
             },
           },
         );
@@ -307,58 +240,48 @@ void main() {
         expect(mockDriver.lastUrl, equals('/two-factor-authentication'));
         expect(
           mockDriver.lastData,
-          equals(
-            <String, dynamic>{
-              'password': 'secret123',
-            },
-          ),
+          equals(<String, dynamic>{'password': 'secret123'}),
         );
         expect(controller.isLoading, isFalse);
         expect(controller.isSuccess, isTrue);
       });
 
-      test('failure: 422 on wrong password returns null and sets error',
-          () async {
-        mockDriver.startPendingResponse();
+      test(
+        'failure: 422 on wrong password returns null and sets error',
+        () async {
+          mockDriver.startPendingResponse();
 
-        final Future<Map<String, dynamic>?> future =
-            controller.doEnableTwoFactor(
-          password: 'wrong-password',
-        );
-        expect(controller.isLoading, isTrue);
+          final Future<Map<String, dynamic>?> future = controller
+              .doEnableTwoFactor(password: 'wrong-password');
+          expect(controller.isLoading, isTrue);
 
-        mockDriver.completePendingResponse(
-          statusCode: 422,
-          data: <String, dynamic>{
-            'errors': <String, dynamic>{
-              'password': <String>[
-                'The password is incorrect.',
-              ],
+          mockDriver.completePendingResponse(
+            statusCode: 422,
+            data: <String, dynamic>{
+              'errors': <String, dynamic>{
+                'password': <String>['The password is incorrect.'],
+              },
             },
-          },
-        );
+          );
 
-        final Map<String, dynamic>? result = await future;
+          final Map<String, dynamic>? result = await future;
 
-        expect(result, isNull);
-        expect(controller.isLoading, isFalse);
-        expect(controller.isError, isTrue);
-      });
+          expect(result, isNull);
+          expect(controller.isLoading, isFalse);
+          expect(controller.isError, isTrue);
+        },
+      );
 
       test('failure: loading to error and returns null', () async {
         mockDriver.startPendingResponse();
 
-        final Future<Map<String, dynamic>?> future =
-            controller.doEnableTwoFactor(
-          password: 'secret123',
-        );
+        final Future<Map<String, dynamic>?> future = controller
+            .doEnableTwoFactor(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
           statusCode: 500,
-          data: <String, dynamic>{
-            'message': 'Server error',
-          },
+          data: <String, dynamic>{'message': 'Server error'},
         );
 
         final Map<String, dynamic>? result = await future;
@@ -380,9 +303,7 @@ void main() {
 
         mockDriver.completePendingResponse(
           statusCode: 200,
-          data: <String, dynamic>{
-            'message': 'Two factor confirmed.',
-          },
+          data: <String, dynamic>{'message': 'Two factor confirmed.'},
         );
 
         final bool result = await future;
@@ -390,14 +311,12 @@ void main() {
         expect(result, isTrue);
         expect(mockDriver.lastMethod, equals('POST'));
         expect(
-            mockDriver.lastUrl, equals('/two-factor-authentication/confirm'));
+          mockDriver.lastUrl,
+          equals('/two-factor-authentication/confirm'),
+        );
         expect(
           mockDriver.lastData,
-          equals(
-            <String, dynamic>{
-              'code': '123456',
-            },
-          ),
+          equals(<String, dynamic>{'code': '123456'}),
         );
         expect(controller.isLoading, isFalse);
         expect(controller.isSuccess, isTrue);
@@ -416,9 +335,7 @@ void main() {
           data: <String, dynamic>{
             'message': 'Invalid two-factor code.',
             'errors': <String, dynamic>{
-              'code': <String>[
-                'Invalid code.',
-              ],
+              'code': <String>['Invalid code.'],
             },
           },
         );
@@ -442,9 +359,7 @@ void main() {
 
         mockDriver.completePendingResponse(
           statusCode: 200,
-          data: <String, dynamic>{
-            'message': 'Two factor disabled.',
-          },
+          data: <String, dynamic>{'message': 'Two factor disabled.'},
         );
 
         final bool result = await future;
@@ -454,12 +369,10 @@ void main() {
         expect(mockDriver.lastUrl, equals('/two-factor-authentication'));
         expect(
           mockDriver.lastData,
-          equals(
-            <String, dynamic>{
-              '_method': 'DELETE',
-              'password': 'valid-password',
-            },
-          ),
+          equals(<String, dynamic>{
+            '_method': 'DELETE',
+            'password': 'valid-password',
+          }),
         );
         expect(controller.isLoading, isFalse);
         expect(controller.isSuccess, isTrue);
@@ -478,9 +391,7 @@ void main() {
           data: <String, dynamic>{
             'message': 'Invalid password.',
             'errors': <String, dynamic>{
-              'password': <String>[
-                'The password is incorrect.',
-              ],
+              'password': <String>['The password is incorrect.'],
             },
           },
         );
@@ -497,18 +408,16 @@ void main() {
       test('success: loading to success and returns codes', () async {
         mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future =
-            controller.getRecoveryCodes(password: 'secret123');
+        final Future<List<String>?> future = controller.getRecoveryCodes(
+          password: 'secret123',
+        );
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
           statusCode: 200,
           data: <String, dynamic>{
             'data': <Map<String, dynamic>>[
-              <String, dynamic>{
-                'code': 'rc-1',
-                'used_at': null,
-              },
+              <String, dynamic>{'code': 'rc-1', 'used_at': null},
               <String, dynamic>{
                 'code': 'rc-2',
                 'used_at': '2026-03-01T09:00:00Z',
@@ -528,26 +437,21 @@ void main() {
         expect(controller.isSuccess, isTrue);
         expect(
           mockDriver.lastData,
-          equals(
-            <String, dynamic>{
-              'password': 'secret123',
-            },
-          ),
+          equals(<String, dynamic>{'password': 'secret123'}),
         );
       });
 
       test('failure: loading to error and returns null', () async {
         mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future =
-            controller.getRecoveryCodes(password: 'secret123');
+        final Future<List<String>?> future = controller.getRecoveryCodes(
+          password: 'secret123',
+        );
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
           statusCode: 500,
-          data: <String, dynamic>{
-            'message': 'Server error',
-          },
+          data: <String, dynamic>{'message': 'Server error'},
         );
 
         final List<String>? result = await future;
@@ -559,64 +463,50 @@ void main() {
     });
 
     group('doRegenerateRecoveryCodes', () {
-      test('success: loading to success and returns regenerated list',
-          () async {
-        mockDriver.startPendingResponse();
+      test(
+        'success: loading to success and returns regenerated list',
+        () async {
+          mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future =
-            controller.doRegenerateRecoveryCodes(password: 'secret123');
-        expect(controller.isLoading, isTrue);
+          final Future<List<String>?> future = controller
+              .doRegenerateRecoveryCodes(password: 'secret123');
+          expect(controller.isLoading, isTrue);
 
-        mockDriver.completePendingResponse(
-          statusCode: 200,
-          data: <String, dynamic>{
-            'data': <String>[
-              'new-code-1',
-              'new-code-2',
-              'new-code-3',
-            ],
-          },
-        );
-
-        final List<String>? result = await future;
-
-        expect(result, isNotNull);
-        expect(
-          result,
-          equals(
-            <String>[
-              'new-code-1',
-              'new-code-2',
-              'new-code-3',
-            ],
-          ),
-        );
-        expect(mockDriver.lastMethod, equals('POST'));
-        expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes'));
-        expect(controller.isLoading, isFalse);
-        expect(controller.isSuccess, isTrue);
-        expect(
-          mockDriver.lastData,
-          equals(
-            <String, dynamic>{
-              'password': 'secret123',
+          mockDriver.completePendingResponse(
+            statusCode: 200,
+            data: <String, dynamic>{
+              'data': <String>['new-code-1', 'new-code-2', 'new-code-3'],
             },
-          ),
-        );
-      });
+          );
+
+          final List<String>? result = await future;
+
+          expect(result, isNotNull);
+          expect(
+            result,
+            equals(<String>['new-code-1', 'new-code-2', 'new-code-3']),
+          );
+          expect(mockDriver.lastMethod, equals('POST'));
+          expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes'));
+          expect(controller.isLoading, isFalse);
+          expect(controller.isSuccess, isTrue);
+          expect(
+            mockDriver.lastData,
+            equals(<String, dynamic>{'password': 'secret123'}),
+          );
+        },
+      );
 
       test('failure: loading to error and returns null', () async {
         mockDriver.startPendingResponse();
 
-        final Future<List<String>?> future =
-            controller.doRegenerateRecoveryCodes(password: 'secret123');
+        final Future<List<String>?> future = controller
+            .doRegenerateRecoveryCodes(password: 'secret123');
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
           statusCode: 500,
-          data: <String, dynamic>{
-            'message': 'Unable to regenerate.',
-          },
+          data: <String, dynamic>{'message': 'Unable to regenerate.'},
         );
 
         final List<String>? result = await future;
@@ -630,38 +520,32 @@ void main() {
     group('isTwoFactorEnabled getter', () {
       test('returns true when user has two_factor_enabled: true', () {
         mockGuard.setUser(
-          MagicStarterAuthUser.fromMap(
-            <String, dynamic>{
-              'id': 1,
-              'name': 'Test User',
-              'two_factor_enabled': true,
-            },
-          ),
+          MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 1,
+            'name': 'Test User',
+            'two_factor_enabled': true,
+          }),
         );
         expect(controller.isTwoFactorEnabled, isTrue);
       });
 
       test('returns false when user has two_factor_enabled: false', () {
         mockGuard.setUser(
-          MagicStarterAuthUser.fromMap(
-            <String, dynamic>{
-              'id': 1,
-              'name': 'Test User',
-              'two_factor_enabled': false,
-            },
-          ),
+          MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 1,
+            'name': 'Test User',
+            'two_factor_enabled': false,
+          }),
         );
         expect(controller.isTwoFactorEnabled, isFalse);
       });
 
       test('returns false when user has no two_factor_enabled field', () {
         mockGuard.setUser(
-          MagicStarterAuthUser.fromMap(
-            <String, dynamic>{
-              'id': 1,
-              'name': 'Test User',
-            },
-          ),
+          MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 1,
+            'name': 'Test User',
+          }),
         );
         expect(controller.isTwoFactorEnabled, isFalse);
       });

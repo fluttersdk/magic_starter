@@ -68,8 +68,9 @@ class MSUpgradeDialog extends StatelessWidget {
     final slots = upgradeDialogRecipe(variants: const <String, String>{});
 
     return WDiv(
-      className:
-          className == null ? slots['root'] : '${slots['root']} $className',
+      className: className == null
+          ? slots['root']
+          : '${slots['root']} $className',
       children: [
         // Lock tile (carries the gated signal) + headline + plan line.
         Row(

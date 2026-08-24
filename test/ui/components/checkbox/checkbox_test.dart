@@ -48,16 +48,12 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets('Checkbox renders a WCheckbox', (tester) async {
-    await tester.pumpWidget(
-      wrap(MSCheckbox(value: false, onChanged: (_) {})),
-    );
+    await tester.pumpWidget(wrap(MSCheckbox(value: false, onChanged: (_) {})));
     expect(find.byType(WCheckbox), findsOneWidget);
   });
 
   testWidgets('Checkbox reflects value prop on WCheckbox', (tester) async {
-    await tester.pumpWidget(
-      wrap(MSCheckbox(value: true, onChanged: (_) {})),
-    );
+    await tester.pumpWidget(wrap(MSCheckbox(value: true, onChanged: (_) {})));
     final widget = tester.widget<WCheckbox>(find.byType(WCheckbox));
     expect(widget.value, isTrue);
   });
@@ -82,8 +78,9 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Checkbox appends caller className onto the recipe base',
-      (tester) async {
+  testWidgets('Checkbox appends caller className onto the recipe base', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(MSCheckbox(value: false, onChanged: (_) {}, className: 'mt-10')),
     );

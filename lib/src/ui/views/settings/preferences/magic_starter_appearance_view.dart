@@ -39,8 +39,12 @@ class MagicStarterAppearanceView
       _MagicStarterAppearanceViewState();
 }
 
-class _MagicStarterAppearanceViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterAppearanceView> {
+class _MagicStarterAppearanceViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterAppearanceView
+        > {
   // Static icon constants extracted for Flutter web tree-shaking.
   static const _iconLight = Icons.light_mode_outlined;
   static const _iconDark = Icons.dark_mode_outlined;
@@ -154,10 +158,7 @@ class _MagicStarterAppearanceViewState extends MagicStatefulViewState<
       subtitle: subtitle,
       onTap: () => _selectMode(theme, mode),
       trailing: isSelected
-          ? WIcon(
-              _iconSelected,
-              className: 'text-primary',
-            )
+          ? WIcon(_iconSelected, className: 'text-primary')
           : null,
     );
   }

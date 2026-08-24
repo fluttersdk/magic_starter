@@ -108,8 +108,9 @@ class MSCard extends StatelessWidget {
     return recipe(
       variants: {
         kCardVariantAxis: variant.name,
-        kCardPaddingAxis:
-            noPadding ? kCardPaddingNoPadding : kCardPaddingPadded,
+        kCardPaddingAxis: noPadding
+            ? kCardPaddingNoPadding
+            : kCardPaddingPadded,
       },
       className: className,
     );
@@ -134,10 +135,7 @@ class MSCard extends StatelessWidget {
             )
           else
             // Padded mode: card already provides p-6, title renders directly.
-            WText(
-              title!,
-              className: MagicStarter.cardTheme.titleClassName,
-            ),
+            WText(title!, className: MagicStarter.cardTheme.titleClassName),
         child,
       ],
     );

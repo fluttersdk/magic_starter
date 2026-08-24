@@ -8,9 +8,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -24,39 +22,43 @@ void main() {
       Magic.put(MagicStarterAuthController());
     });
 
-    testWidgets('does not show social login when feature disabled (default)',
-        (tester) async {
+    testWidgets('does not show social login when feature disabled (default)', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
       expect(find.byType(MSSocialDivider), findsNothing);
     });
 
     testWidgets(
-        'does not show social login when feature enabled but no builder',
-        (tester) async {
-      Config.set('magic_starter.features.social_login', true);
+      'does not show social login when feature enabled but no builder',
+      (tester) async {
+        Config.set('magic_starter.features.social_login', true);
 
-      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+        await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
-      expect(find.byType(MSSocialDivider), findsNothing);
-    });
+        expect(find.byType(MSSocialDivider), findsNothing);
+      },
+    );
 
     testWidgets(
-        'shows social login when feature enabled AND builder registered',
-        (tester) async {
-      Config.set('magic_starter.features.social_login', true);
-      MagicStarter.useSocialLogin((context, isLoading) {
-        return const SizedBox(key: Key('social-buttons'));
-      });
+      'shows social login when feature enabled AND builder registered',
+      (tester) async {
+        Config.set('magic_starter.features.social_login', true);
+        MagicStarter.useSocialLogin((context, isLoading) {
+          return const SizedBox(key: Key('social-buttons'));
+        });
 
-      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+        await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
-      expect(find.byType(MSSocialDivider), findsOneWidget);
-      expect(find.byKey(const Key('social-buttons')), findsOneWidget);
-    });
+        expect(find.byType(MSSocialDivider), findsOneWidget);
+        expect(find.byKey(const Key('social-buttons')), findsOneWidget);
+      },
+    );
 
-    testWidgets('passes isLoading=false to builder when not submitting',
-        (tester) async {
+    testWidgets('passes isLoading=false to builder when not submitting', (
+      tester,
+    ) async {
       Config.set('magic_starter.features.social_login', true);
       bool? receivedIsLoading;
       MagicStarter.useSocialLogin((context, isLoading) {

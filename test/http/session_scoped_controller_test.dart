@@ -131,10 +131,7 @@ void main() {
     Config.set('logging', {
       'default': 'console',
       'channels': {
-        'console': {
-          'driver': 'console',
-          'level': 'debug',
-        },
+        'console': {'driver': 'console', 'level': 'debug'},
       },
     });
 
@@ -144,9 +141,7 @@ void main() {
     Auth.manager.extend('mock', (_) => mockGuard);
     Config.set('auth.defaults.guard', 'mock');
     Config.set('auth.guards', {
-      'mock': {
-        'driver': 'mock',
-      },
+      'mock': {'driver': 'mock'},
     });
 
     Magic.singleton('magic_starter', () => MagicStarterManager());
@@ -175,10 +170,9 @@ void main() {
   Future<void> loginAs(dynamic id, {dynamic teamId}) async {
     currentTeam = teamId == null ? null : MagicStarterTeam(id: teamId);
 
-    await Auth.login(
-      {'token': 'token-$id'},
-      MagicStarterAuthUser.fromMap({'id': id, 'name': 'User $id'}),
-    );
+    await Auth.login({
+      'token': 'token-$id',
+    }, MagicStarterAuthUser.fromMap({'id': id, 'name': 'User $id'}));
   }
 
   /// Switches the active team for the signed-in user, the way
@@ -205,33 +199,26 @@ void main() {
       await loginAs(1, teamId: 10);
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
       await pumpEventQueue();
 
       expect(controller.resetCount, 0);
     });
 
-    test(
-      'drops the previous tenant rows when another user logs in',
-      () async {
-        await loginAs(1, teamId: 10);
-        SessionScopeSync.attach();
+    test('drops the previous tenant rows when another user logs in', () async {
+      await loginAs(1, teamId: 10);
+      SessionScopeSync.attach();
 
-        final FakeScopedController controller = Magic.put(
-          FakeScopedController(),
-        );
-        controller.rows.addAll(['rows-for-1']);
+      final FakeScopedController controller = Magic.put(FakeScopedController());
+      controller.rows.addAll(['rows-for-1']);
 
-        await loginAs(2, teamId: 20);
-        await pumpEventQueue();
+      await loginAs(2, teamId: 20);
+      await pumpEventQueue();
 
-        expect(controller.resetCount, 1);
-        expect(controller.rows, ['rows-for-2']);
-        expect(controller.rows, isNot(contains('rows-for-1')));
-      },
-    );
+      expect(controller.resetCount, 1);
+      expect(controller.rows, ['rows-for-2']);
+      expect(controller.rows, isNot(contains('rows-for-1')));
+    });
 
     test(
       'leaves the screen empty when the refetch after the clear fails',
@@ -258,9 +245,7 @@ void main() {
       await loginAs(1, teamId: 10);
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
       controller.rows.addAll(['rows-for-team-10']);
 
       await switchTeam(20);
@@ -274,9 +259,7 @@ void main() {
       await loginAs(1, teamId: 10);
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
       controller.rows.addAll(['rows-for-1']);
 
       await Auth.logout();
@@ -292,9 +275,7 @@ void main() {
       await loginAs(1, teamId: 10);
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
       controller.rows.addAll(['rows-for-1']);
 
       await Auth.logout();
@@ -308,9 +289,7 @@ void main() {
     test('does not reset twice for an unchanged identity', () async {
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
 
       await loginAs(1, teamId: 10);
       await pumpEventQueue();
@@ -333,9 +312,7 @@ void main() {
       final ThrowingScopedController throwing = Magic.put(
         ThrowingScopedController(),
       );
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
       controller.rows.addAll(['rows-for-1']);
 
       await loginAs(2, teamId: 20);
@@ -362,9 +339,7 @@ void main() {
       await loginAs(1, teamId: 10);
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
 
       SessionScopeSync.detach();
       await loginAs(2, teamId: 20);
@@ -378,9 +353,7 @@ void main() {
       SessionScopeSync.attach();
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
 
       await loginAs(2, teamId: 20);
       await pumpEventQueue();
@@ -395,9 +368,7 @@ void main() {
       await loginAs(1);
       SessionScopeSync.attach();
 
-      final FakeScopedController controller = Magic.put(
-        FakeScopedController(),
-      );
+      final FakeScopedController controller = Magic.put(FakeScopedController());
       controller.rows.addAll(['rows-for-1']);
 
       await loginAs(2);

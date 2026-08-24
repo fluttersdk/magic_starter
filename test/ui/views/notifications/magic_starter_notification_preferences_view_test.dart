@@ -7,60 +7,75 @@ class MockNetworkDriver implements NetworkDriver {
   MagicResponse? nextResponse;
 
   void mockResponse({required int statusCode, dynamic data}) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   @override
-  Future<MagicResponse> get(String url,
-      {Map<String, dynamic>? query, Map<String, String>? headers}) async {
+  Future<MagicResponse> get(
+    String url, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async {
     return nextResponse ?? MagicResponse(data: {}, statusCode: 500);
   }
 
   @override
   void addInterceptor(MagicNetworkInterceptor interceptor) {}
   @override
-  Future<MagicResponse> post(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> post(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
-  Future<MagicResponse> put(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> put(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
-  Future<MagicResponse> delete(String url,
-          {Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
-  Future<MagicResponse> index(String resource,
-          {Map<String, dynamic>? filters,
-          Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> index(
+    String resource, {
+    Map<String, dynamic>? filters,
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
-  Future<MagicResponse> show(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> show(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
-  Future<MagicResponse> store(String resource, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> store(
+    String resource,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
   Future<MagicResponse> update(
-          String resource, String id, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      nextResponse!;
+    String resource,
+    String id,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
-  Future<MagicResponse> destroy(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> destroy(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => nextResponse!;
   @override
-  Future<MagicResponse> upload(String url,
-          {required Map<String, dynamic> data,
-          required Map<String, dynamic> files,
-          Map<String, String>? headers}) async =>
-      nextResponse!;
+  Future<MagicResponse> upload(
+    String url, {
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> files,
+    Map<String, String>? headers,
+  }) async => nextResponse!;
 }
 
 void main() {
@@ -87,11 +102,7 @@ void main() {
         child: MediaQuery(
           data: const MediaQueryData(size: Size(1280, 800)),
           child: Scaffold(
-            body: SizedBox(
-              width: 1280,
-              height: 800,
-              child: widget,
-            ),
+            body: SizedBox(width: 1280, height: 800, child: widget),
           ),
         ),
       ),
@@ -99,30 +110,35 @@ void main() {
   }
 
   group('MagicStarterNotificationPreferencesView', () {
-    testWidgets('renders loading state when preferences are loading',
-        (tester) async {
+    testWidgets('renders loading state when preferences are loading', (
+      tester,
+    ) async {
       // Set loading state before pumping to avoid race condition with onInit
       controller.setLoading();
 
-      await tester
-          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
+      await tester.pumpWidget(
+        wrap(const MagicStarterNotificationPreferencesView()),
+      );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('renders empty matrix state when matrix is empty',
-        (tester) async {
+    testWidgets('renders empty matrix state when matrix is empty', (
+      tester,
+    ) async {
       mockDriver.mockResponse(statusCode: 200, data: {'data': {}});
 
-      await tester
-          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
+      await tester.pumpWidget(
+        wrap(const MagicStarterNotificationPreferencesView()),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text(trans('notifications.no_preferences')), findsOneWidget);
     });
 
-    testWidgets('renders matrix with checkboxes for each type and channel',
-        (tester) async {
+    testWidgets('renders matrix with checkboxes for each type and channel', (
+      tester,
+    ) async {
       // Widen the test surface so untranslated trans() keys fit without overflow.
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
@@ -136,14 +152,15 @@ void main() {
           'channels': {
             'mail': {'enabled': true, 'locked': false},
             'slack': {'enabled': false, 'locked': false},
-          }
-        }
+          },
+        },
       };
 
       mockDriver.mockResponse(statusCode: 200, data: {'data': matrix});
 
-      await tester
-          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
+      await tester.pumpWidget(
+        wrap(const MagicStarterNotificationPreferencesView()),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Monitor Down Alert'), findsOneWidget);
@@ -172,8 +189,8 @@ void main() {
           'channels': {
             'mail': {'enabled': true, 'locked': false},
             'push': {'enabled': true, 'locked': false},
-          }
-        }
+          },
+        },
       };
       mockDriver.mockResponse(statusCode: 200, data: {'data': matrix});
 
@@ -226,14 +243,15 @@ void main() {
           'label': 'Monitor Down Alert',
           'channels': {
             'mail': {'enabled': true, 'locked': true},
-          }
-        }
+          },
+        },
       };
 
       mockDriver.mockResponse(statusCode: 200, data: {'data': matrix});
 
-      await tester
-          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
+      await tester.pumpWidget(
+        wrap(const MagicStarterNotificationPreferencesView()),
+      );
       await tester.pumpAndSettle();
 
       // The design-system Switch uses disabled:true for locked channels
@@ -247,19 +265,22 @@ void main() {
     /// Mock a matrix carrying a push channel plus one non-push sibling, with
     /// the backend's `meta.push_provisioned` flag when [pushProvisioned] is set.
     void mockPushMatrix({bool? pushProvisioned}) {
-      mockDriver.mockResponse(statusCode: 200, data: {
-        'data': {
-          'monitor_down': {
-            'label': 'Monitor Down Alert',
-            'channels': {
-              'push': {'enabled': true, 'locked': false},
-              'mail': {'enabled': true, 'locked': false},
-            }
-          }
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: {
+          'data': {
+            'monitor_down': {
+              'label': 'Monitor Down Alert',
+              'channels': {
+                'push': {'enabled': true, 'locked': false},
+                'mail': {'enabled': true, 'locked': false},
+              },
+            },
+          },
+          if (pushProvisioned != null)
+            'meta': {'push_provisioned': pushProvisioned},
         },
-        if (pushProvisioned != null)
-          'meta': {'push_provisioned': pushProvisioned},
-      });
+      );
     }
 
     /// Widen the surface: no lang loader runs here, so trans() yields the raw
@@ -274,65 +295,77 @@ void main() {
     }
 
     testWidgets(
-        'renders the hint when the backend reports push as unprovisioned',
-        (tester) async {
-      widen(tester);
-      mockPushMatrix(pushProvisioned: false);
+      'renders the hint when the backend reports push as unprovisioned',
+      (tester) async {
+        widen(tester);
+        mockPushMatrix(pushProvisioned: false);
 
-      await tester
-          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          wrap(const MagicStarterNotificationPreferencesView()),
+        );
+        await tester.pumpAndSettle();
 
-      expect(
-        find.text(trans('notifications.channel_push_unconfigured')),
-        findsOneWidget,
-      );
-      expect(
-        MagicStarterNotificationController
-            .instance.pushProvisionedNotifier.value,
-        isFalse,
-      );
-    });
+        expect(
+          find.text(trans('notifications.channel_push_unconfigured')),
+          findsOneWidget,
+        );
+        expect(
+          MagicStarterNotificationController
+              .instance
+              .pushProvisionedNotifier
+              .value,
+          isFalse,
+        );
+      },
+    );
 
-    testWidgets('renders no hint when the backend reports push as provisioned',
-        (tester) async {
-      widen(tester);
-      mockPushMatrix(pushProvisioned: true);
+    testWidgets(
+      'renders no hint when the backend reports push as provisioned',
+      (tester) async {
+        widen(tester);
+        mockPushMatrix(pushProvisioned: true);
 
-      await tester
-          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          wrap(const MagicStarterNotificationPreferencesView()),
+        );
+        await tester.pumpAndSettle();
 
-      expect(
-        find.text(trans('notifications.channel_push_unconfigured')),
-        findsNothing,
-      );
-    });
+        expect(
+          find.text(trans('notifications.channel_push_unconfigured')),
+          findsNothing,
+        );
+      },
+    );
 
-    testWidgets('renders no hint when the payload carries no provisioning flag',
-        (tester) async {
-      widen(tester);
-      mockPushMatrix();
+    testWidgets(
+      'renders no hint when the payload carries no provisioning flag',
+      (tester) async {
+        widen(tester);
+        mockPushMatrix();
 
-      await tester
-          .pumpWidget(wrap(const MagicStarterNotificationPreferencesView()));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          wrap(const MagicStarterNotificationPreferencesView()),
+        );
+        await tester.pumpAndSettle();
 
-      // A backend that predates the flag (or a degraded payload) must not read
-      // as "push not configured": the optimistic default stands.
-      expect(
-        find.text(trans('notifications.channel_push_unconfigured')),
-        findsNothing,
-      );
-    });
+        // A backend that predates the flag (or a degraded payload) must not read
+        // as "push not configured": the optimistic default stands.
+        expect(
+          find.text(trans('notifications.channel_push_unconfigured')),
+          findsNothing,
+        );
+      },
+    );
 
     testWidgets('a host override wins over the backend flag', (tester) async {
       widen(tester);
       mockPushMatrix(pushProvisioned: false);
 
-      await tester.pumpWidget(wrap(
-        const MagicStarterNotificationPreferencesView(pushProvisioned: true),
-      ));
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterNotificationPreferencesView(pushProvisioned: true),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(
@@ -341,16 +374,17 @@ void main() {
       );
     });
 
-    testWidgets('keeps the hint out of the label semantics exclusion',
-        (tester) async {
+    testWidgets('keeps the hint out of the label semantics exclusion', (
+      tester,
+    ) async {
       widen(tester);
       mockPushMatrix();
 
-      await tester.pumpWidget(wrap(
-        const MagicStarterNotificationPreferencesView(
-          pushProvisioned: false,
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterNotificationPreferencesView(pushProvisioned: false),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       // The channel label is excluded (the switch carries it as its

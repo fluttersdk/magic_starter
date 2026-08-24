@@ -49,10 +49,7 @@ class MSNavbar extends StatelessWidget {
           WDiv(className: navbarBrandClassName(), child: brand!),
         // 2. Children (nav links) — responsive.
         if (children.isNotEmpty)
-          WDiv(
-            className: navbarChildrenClassName(),
-            children: children,
-          ),
+          WDiv(className: navbarChildrenClassName(), children: children),
         // 3. Trailing slot.
         if (trailing != null)
           WDiv(className: navbarTrailingClassName(), child: trailing!),

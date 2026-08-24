@@ -16,12 +16,13 @@ class MagicStarterTeamCreateView
       _MagicStarterTeamCreateViewState();
 }
 
-class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
-    MagicStarterTeamController, MagicStarterTeamCreateView> {
-  late final form = MagicFormData(
-    {'name': ''},
-    controller: controller,
-  );
+class _MagicStarterTeamCreateViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterTeamController,
+          MagicStarterTeamCreateView
+        > {
+  late final form = MagicFormData({'name': ''}, controller: controller);
 
   @override
   void onInit() {
@@ -43,10 +44,16 @@ class _MagicStarterTeamCreateViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    final headerSlot =
-        MagicStarter.view.buildSlot('teams.create', 'header', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('teams.create', 'footer', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'teams.create',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'teams.create',
+      'footer',
+      context,
+    );
 
     return MSPageScaffold(
       title: trans('teams.create_team'),

@@ -27,38 +27,41 @@ void main() {
     });
 
     test(
-        'the default MagicStarterAppLayout renders when no override is registered',
-        () {
-      final Widget resolved = manager.view.makeLayout(
-        'layout.app',
-        child: const SizedBox(),
-      );
+      'the default MagicStarterAppLayout renders when no override is registered',
+      () {
+        final Widget resolved = manager.view.makeLayout(
+          'layout.app',
+          child: const SizedBox(),
+        );
 
-      expect(resolved, isA<MagicStarterAppLayout>());
-      expect(resolved, isNot(isA<_CustomAppShell>()));
-    });
+        expect(resolved, isA<MagicStarterAppLayout>());
+        expect(resolved, isNot(isA<_CustomAppShell>()));
+      },
+    );
 
-    test('a registered override replaces the default, regardless of call order',
-        () {
-      // 1. The manager's constructor already registered the default
-      //    'layout.app' builder (conditionally, via _registerDefaultLayout).
-      expect(manager.view.hasLayout('layout.app'), isTrue);
+    test(
+      'a registered override replaces the default, regardless of call order',
+      () {
+        // 1. The manager's constructor already registered the default
+        //    'layout.app' builder (conditionally, via _registerDefaultLayout).
+        expect(manager.view.hasLayout('layout.app'), isTrue);
 
-      // 2. registerLayout() is an unconditional write, so calling it after
-      //    the default was set still replaces the entry outright.
-      manager.view.registerLayout(
-        'layout.app',
-        (child) => _CustomAppShell(child: child),
-      );
+        // 2. registerLayout() is an unconditional write, so calling it after
+        //    the default was set still replaces the entry outright.
+        manager.view.registerLayout(
+          'layout.app',
+          (child) => _CustomAppShell(child: child),
+        );
 
-      final Widget resolved = manager.view.makeLayout(
-        'layout.app',
-        child: const SizedBox(),
-      );
+        final Widget resolved = manager.view.makeLayout(
+          'layout.app',
+          child: const SizedBox(),
+        );
 
-      expect(resolved, isA<_CustomAppShell>());
-      expect(resolved, isNot(isA<MagicStarterAppLayout>()));
-    });
+        expect(resolved, isA<_CustomAppShell>());
+        expect(resolved, isNot(isA<MagicStarterAppLayout>()));
+      },
+    );
 
     test('the key stays "layout.app" after an override is registered', () {
       manager.view.registerLayout(

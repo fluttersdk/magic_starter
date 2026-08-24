@@ -29,8 +29,9 @@ class MagicStarterServiceProvider extends ServiceProvider {
     app.singleton('magic_starter', () => MagicStarterManager());
 
     // Register event listener to reload app after team switch
-    EventDispatcher.instance
-        .register(AuthRestored, [() => _ReloadOnAuthRestored()]);
+    EventDispatcher.instance.register(AuthRestored, [
+      () => _ReloadOnAuthRestored(),
+    ]);
   }
 
   @override
@@ -110,11 +111,10 @@ class MagicStarterServiceProvider extends ServiceProvider {
       final windTheme = WindTheme.of(context);
       if (!windTheme.data.isValidColor('primary')) {
         Log.info(
-            '[MagicStarter] No primary color defined — using indigo as fallback.');
+          '[MagicStarter] No primary color defined — using indigo as fallback.',
+        );
         windTheme.updateTheme(
-          colors: {
-            'primary': windTheme.data.colors['indigo']!,
-          },
+          colors: {'primary': windTheme.data.colors['indigo']!},
         );
       }
     });

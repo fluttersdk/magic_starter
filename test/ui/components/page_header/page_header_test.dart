@@ -31,19 +31,14 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets('renders required title', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSPageHeader(title: 'My Page')),
-    );
+    await tester.pumpWidget(wrap(const MSPageHeader(title: 'My Page')));
     expect(find.text('My Page'), findsOneWidget);
   });
 
   testWidgets('renders subtitle when provided', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const MSPageHeader(
-          title: 'Projects',
-          subtitle: 'Manage your projects',
-        ),
+        const MSPageHeader(title: 'Projects', subtitle: 'Manage your projects'),
       ),
     );
     expect(find.text('Projects'), findsOneWidget);
@@ -51,9 +46,7 @@ void main() {
   });
 
   testWidgets('does not render subtitle when omitted', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSPageHeader(title: 'Projects')),
-    );
+    await tester.pumpWidget(wrap(const MSPageHeader(title: 'Projects')));
     final texts = tester.widgetList<WText>(find.byType(WText)).toList();
     expect(texts.length, 1);
     expect(texts.first.data, 'Projects');
@@ -92,15 +85,14 @@ void main() {
   });
 
   testWidgets('outer WDiv has responsive sm:flex-row class', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSPageHeader(title: 'Responsive')),
-    );
+    await tester.pumpWidget(wrap(const MSPageHeader(title: 'Responsive')));
     final outerDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(outerDiv.className, contains('sm:flex-row'));
   });
 
-  testWidgets('titleSuffix renders inline after title when provided',
-      (tester) async {
+  testWidgets('titleSuffix renders inline after title when provided', (
+    tester,
+  ) async {
     const suffixKey = Key('test_suffix');
     await tester.pumpWidget(
       wrap(
@@ -170,28 +162,29 @@ void main() {
       expect(
         actionsWidth,
         lessThan(64),
-        reason: 'a single icon action is icon-sized; it cannot reserve a share '
+        reason:
+            'a single icon action is icon-sized; it cannot reserve a share '
             'of the header it never paints',
       );
       expect(
         titleRowWidth,
         greaterThan(300),
-        reason: 'the title row is the page identity and takes what the actions '
+        reason:
+            'the title row is the page identity and takes what the actions '
             'do not need, so on a 402pt phone it spans nearly the whole header',
       );
     },
   );
 
-  testWidgets('inlineActions: true outer WDiv className contains flex-row',
-      (tester) async {
+  testWidgets('inlineActions: true outer WDiv className contains flex-row', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSPageHeader(
           title: 'Inline',
           inlineActions: true,
-          actions: [
-            ElevatedButton(onPressed: () {}, child: const Text('Go')),
-          ],
+          actions: [ElevatedButton(onPressed: () {}, child: const Text('Go'))],
         ),
       ),
     );
@@ -200,15 +193,14 @@ void main() {
     expect(outerDiv.className, isNot(contains('flex-col')));
   });
 
-  testWidgets('inlineActions: false (default) retains flex-col sm:flex-row',
-      (tester) async {
+  testWidgets('inlineActions: false (default) retains flex-col sm:flex-row', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSPageHeader(
           title: 'Default Layout',
-          actions: [
-            ElevatedButton(onPressed: () {}, child: const Text('Go')),
-          ],
+          actions: [ElevatedButton(onPressed: () {}, child: const Text('Go'))],
         ),
       ),
     );
@@ -217,8 +209,9 @@ void main() {
     expect(outerDiv.className, contains('sm:flex-row'));
   });
 
-  testWidgets('the theme can turn every header inline without an argument',
-      (tester) async {
+  testWidgets('the theme can turn every header inline without an argument', (
+    tester,
+  ) async {
     // An app that themes the container into a row at every width has to be able
     // to say so once. `MSPageScaffold` does not expose `inlineActions`, so
     // before this the theme was the only half of the decision a scaffold
@@ -231,9 +224,7 @@ void main() {
       wrap(
         MSPageHeader(
           title: 'Themed inline',
-          actions: [
-            ElevatedButton(onPressed: () {}, child: const Text('Go')),
-          ],
+          actions: [ElevatedButton(onPressed: () {}, child: const Text('Go'))],
         ),
       ),
     );
@@ -243,8 +234,9 @@ void main() {
     expect(outerDiv.className, isNot(contains('flex-col')));
   });
 
-  testWidgets('inline mode gives the title row flex-1 so a long title shrinks',
-      (tester) async {
+  testWidgets('inline mode gives the title row flex-1 so a long title shrinks', (
+    tester,
+  ) async {
     // **The half that was missing, and the one that actually overflows.**
     // `inlineActions` swaps the container class AND claims the remaining width
     // for the title row. The title column is `flex-initial`, a loose fit, so
@@ -258,9 +250,7 @@ void main() {
       wrap(
         MSPageHeader(
           title: 'A title long enough to need the whole row to itself',
-          actions: [
-            ElevatedButton(onPressed: () {}, child: const Text('Go')),
-          ],
+          actions: [ElevatedButton(onPressed: () {}, child: const Text('Go'))],
         ),
       ),
     );
@@ -284,9 +274,7 @@ void main() {
         MSPageHeader(
           title: 'Explicitly stacked',
           inlineActions: false,
-          actions: [
-            ElevatedButton(onPressed: () {}, child: const Text('Go')),
-          ],
+          actions: [ElevatedButton(onPressed: () {}, child: const Text('Go'))],
         ),
       ),
     );
@@ -295,8 +283,9 @@ void main() {
     expect(outerDiv.className, contains('flex-col'));
   });
 
-  testWidgets('a header does not overflow at phone width when themed inline',
-      (tester) async {
+  testWidgets('a header does not overflow at phone width when themed inline', (
+    tester,
+  ) async {
     // **The defect itself, as a test.** Depools themed the container into a row
     // at every width so a phone header keeps its action beside the title, and
     // the product screen then reported `A RenderFlex overflowed by 40 pixels`
@@ -316,7 +305,10 @@ void main() {
           actions: [
             for (int i = 0; i < 3; i++)
               const SizedBox(
-                  width: 44, height: 44, child: Icon(Icons.more_horiz)),
+                width: 44,
+                height: 44,
+                child: Icon(Icons.more_horiz),
+              ),
           ],
         ),
       ),
@@ -334,9 +326,7 @@ void main() {
       MagicStarter.manager.pageHeaderTheme = const MagicStarterPageHeaderTheme(
         titleClassName: 'custom-header-title',
       );
-      await tester.pumpWidget(
-        wrap(const MSPageHeader(title: 'My Page')),
-      );
+      await tester.pumpWidget(wrap(const MSPageHeader(title: 'My Page')));
       final titleText = tester.widgetList<WText>(find.byType(WText)).first;
       expect(titleText.className, contains('custom-header-title'));
     });
@@ -346,12 +336,7 @@ void main() {
         subtitleClassName: 'custom-header-subtitle',
       );
       await tester.pumpWidget(
-        wrap(
-          const MSPageHeader(
-            title: 'My Page',
-            subtitle: 'A subtitle',
-          ),
-        ),
+        wrap(const MSPageHeader(title: 'My Page', subtitle: 'A subtitle')),
       );
       final texts = tester.widgetList<WText>(find.byType(WText)).toList();
       expect(texts[1].className, contains('custom-header-subtitle'));
@@ -368,8 +353,9 @@ void main() {
   // Back affordance — TDD cases
   // ---------------------------------------------------------------------------
 
-  testWidgets('renders icon-only back leading when backLabel is set',
-      (tester) async {
+  testWidgets('renders icon-only back leading when backLabel is set', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSPageHeader(
@@ -384,8 +370,9 @@ void main() {
     expect(find.text('Settings'), findsNothing);
   });
 
-  testWidgets('the back control announces the parent it returns to',
-      (tester) async {
+  testWidgets('the back control announces the parent it returns to', (
+    tester,
+  ) async {
     // `backLabel` was a presence flag and nothing else: its string was never
     // rendered and never announced, so every page carrying a back control
     // offered a screen reader an unnamed button. The label is the one thing
@@ -413,8 +400,9 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('no back control without a backFallback to navigate to',
-      (tester) async {
+  testWidgets('no back control without a backFallback to navigate to', (
+    tester,
+  ) async {
     // `backFallback` is the control's only destination, so gating the render on
     // `backLabel` alone produced a chevron that announced itself as a button
     // (named, after this PR) and did nothing when pressed. A control that
@@ -427,15 +415,14 @@ void main() {
   });
 
   testWidgets('no back leading when backLabel is null', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSPageHeader(title: 'Dashboard')),
-    );
+    await tester.pumpWidget(wrap(const MSPageHeader(title: 'Dashboard')));
     // Without backLabel the chevron must not appear.
     expect(find.byIcon(Icons.chevron_left), findsNothing);
   });
 
-  testWidgets('tap on back leading navigates to the parent route',
-      (tester) async {
+  testWidgets('tap on back leading navigates to the parent route', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSPageHeader(
@@ -502,12 +489,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSPageHeader(
-          title: 'Empty Actions',
-          actions: [],
-        ),
-      ),
+      wrap(const MSPageHeader(title: 'Empty Actions', actions: [])),
     );
 
     expect(find.text('Empty Actions'), findsOneWidget);

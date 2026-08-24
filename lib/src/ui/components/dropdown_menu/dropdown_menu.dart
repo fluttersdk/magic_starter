@@ -97,9 +97,7 @@ class MSDropdownMenu extends StatelessWidget {
   Widget _buildItems(VoidCallback close) {
     return WDiv(
       className: 'flex flex-col',
-      children: [
-        for (final item in items) _buildItem(item, close),
-      ],
+      children: [for (final item in items) _buildItem(item, close)],
     );
   }
 
@@ -108,10 +106,7 @@ class MSDropdownMenu extends StatelessWidget {
     if (item.disabled) {
       return WDiv(
         className: dropdownMenuItemDisabledRecipe(className: item.className),
-        children: [
-          if (item.leading != null) item.leading!,
-          WText(item.label),
-        ],
+        children: [if (item.leading != null) item.leading!, WText(item.label)],
       );
     }
 
@@ -123,10 +118,7 @@ class MSDropdownMenu extends StatelessWidget {
       },
       child: WDiv(
         className: dropdownMenuItemRecipe(className: item.className),
-        children: [
-          if (item.leading != null) item.leading!,
-          WText(item.label),
-        ],
+        children: [if (item.leading != null) item.leading!, WText(item.label)],
       ),
     );
   }

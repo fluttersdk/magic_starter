@@ -18,15 +18,18 @@ class MagicStarterNewsletterController extends MagicController
       final response = await Http.get('/user/newsletter');
 
       if (!response.successful) {
-        handleApiError(response,
-            fallback: trans('magic_starter.newsletter.fetch_error'));
+        handleApiError(
+          response,
+          fallback: trans('magic_starter.newsletter.fetch_error'),
+        );
         return;
       }
 
       setSuccess(response.data as Map<String, dynamic>?);
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterNewsletterController.getNewsletterStatus] $e\n$stackTrace');
+        '[MagicStarterNewsletterController.getNewsletterStatus] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -46,15 +49,18 @@ class MagicStarterNewsletterController extends MagicController
       );
 
       if (!response.successful) {
-        handleApiError(response,
-            fallback: trans('magic_starter.newsletter.update_error'));
+        handleApiError(
+          response,
+          fallback: trans('magic_starter.newsletter.update_error'),
+        );
         return;
       }
 
       setSuccess(response.data as Map<String, dynamic>?);
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterNewsletterController.updateNewsletterSubscription] $e\n$stackTrace');
+        '[MagicStarterNewsletterController.updateNewsletterSubscription] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

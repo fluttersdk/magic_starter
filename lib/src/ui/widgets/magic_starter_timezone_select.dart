@@ -113,17 +113,20 @@ class _MagicStarterTimezoneSelectState
           return [];
         }
         return data
-            .where((tz) =>
-                tz != null &&
-                tz is Map &&
-                tz['identifier'] != null &&
-                tz['label'] != null)
+            .where(
+              (tz) =>
+                  tz != null &&
+                  tz is Map &&
+                  tz['identifier'] != null &&
+                  tz['label'] != null,
+            )
             .map((tz) {
-          return SelectOption<String>(
-            value: tz['identifier'] as String,
-            label: tz['label'] as String,
-          );
-        }).toList();
+              return SelectOption<String>(
+                value: tz['identifier'] as String,
+                label: tz['label'] as String,
+              );
+            })
+            .toList();
       }
     } catch (e) {
       Log.error('Failed to fetch timezones: $e');
@@ -158,8 +161,9 @@ class _MagicStarterTimezoneSelectState
             (opt) => opt.value == widget.value,
           );
           if (!selectedExists) {
-            final selectedInAll =
-                _allOptions.where((opt) => opt.value == widget.value).toList();
+            final selectedInAll = _allOptions
+                .where((opt) => opt.value == widget.value)
+                .toList();
             if (selectedInAll.isNotEmpty) {
               results.insert(0, selectedInAll.first);
             }
@@ -209,7 +213,8 @@ class _MagicStarterTimezoneSelectState
           if (widget.label != null)
             WText(
               widget.label!,
-              className: widget.labelClassName ??
+              className:
+                  widget.labelClassName ??
                   'text-sm font-medium text-fg-muted mb-1',
             ),
           WDiv(

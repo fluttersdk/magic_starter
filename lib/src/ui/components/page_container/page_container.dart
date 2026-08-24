@@ -57,19 +57,15 @@ class MSPageContainer extends StatelessWidget {
   final String? className;
 
   /// Creates a [MSPageContainer] around [child] or [children].
-  const MSPageContainer({
-    super.key,
-    this.child,
-    this.children,
-    this.className,
-  })  : assert(
-          child == null || children == null,
-          'MSPageContainer: Cannot provide both child and children.',
-        ),
-        assert(
-          child != null || children != null,
-          'MSPageContainer: Provide either child or children.',
-        );
+  const MSPageContainer({super.key, this.child, this.children, this.className})
+    : assert(
+        child == null || children == null,
+        'MSPageContainer: Cannot provide both child and children.',
+      ),
+      assert(
+        child != null || children != null,
+        'MSPageContainer: Provide either child or children.',
+      );
 
   @override
   Widget build(BuildContext context) {

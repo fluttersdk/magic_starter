@@ -73,8 +73,7 @@ void main() {
       expect(find.text('Panel 2'), findsNothing);
     });
 
-    testWidgets(
-        'the selected tab does not underline itself in the rule '
+    testWidgets('the selected tab does not underline itself in the rule '
         'colour', (tester) async {
       // The indicator used `border-color-border`, the same token as the rule
       // the tab list sits on, so a selected tab marked itself with a thicker
@@ -104,7 +103,8 @@ void main() {
       expect(
         bottomBorders.length,
         greaterThan(1),
-        reason: 'the active indicator and the list rule cannot be the same '
+        reason:
+            'the active indicator and the list rule cannot be the same '
             'colour, or the selection is invisible',
       );
 

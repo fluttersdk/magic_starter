@@ -51,24 +51,14 @@ class MSFormField extends StatelessWidget {
       className: formFieldRootClassName(),
       children: [
         // 1. Optional label slot.
-        if (label != null)
-          WText(
-            label!,
-            className: formFieldLabelClassName(),
-          ),
+        if (label != null) WText(label!, className: formFieldLabelClassName()),
         // 2. Child input slot.
         child,
         // 3. Error slot takes priority over hint.
         if (error != null)
-          WText(
-            error!,
-            className: formFieldErrorClassName(),
-          )
+          WText(error!, className: formFieldErrorClassName())
         else if (hint != null)
-          WText(
-            hint!,
-            className: formFieldHintClassName(),
-          ),
+          WText(hint!, className: formFieldHintClassName()),
       ],
     );
   }

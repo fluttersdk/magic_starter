@@ -26,26 +26,19 @@ Map<String, String> segmentedControlRecipe({
 }) {
   const recipe = WindSlotRecipe(
     slots: {
-      'root': 'flex flex-row items-center rounded-lg bg-surface-container-high '
+      'root':
+          'flex flex-row items-center rounded-lg bg-surface-container-high '
           'p-1 gap-1',
       'item':
           'px-3 py-1.5 rounded-md text-sm font-medium text-fg-muted cursor-pointer selected:bg-surface selected:text-fg selected:shadow-sm transition-colors',
     },
     variants: {
       kSegmentedControlSizeAxis: {
-        'sm': {
-          'root': '',
-          'item': 'px-2 py-1 text-sm',
-        },
-        'md': {
-          'root': '',
-          'item': 'px-3 py-1.5 text-sm',
-        },
+        'sm': {'root': '', 'item': 'px-2 py-1 text-sm'},
+        'md': {'root': '', 'item': 'px-3 py-1.5 text-sm'},
       },
     },
-    defaultVariants: {
-      kSegmentedControlSizeAxis: 'md',
-    },
+    defaultVariants: {kSegmentedControlSizeAxis: 'md'},
   );
   return recipe(variants: variants, classNames: classNames);
 }

@@ -20,7 +20,8 @@ class SettingsNavRowPreview extends StatelessWidget {
       children: [
         // 1. Title only (no icon, no subtitle, no value).
         WDiv(
-          className: 'flex flex-col overflow-hidden rounded-lg '
+          className:
+              'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
           child: const MSSettingsNavRow(
             title: 'Profile',
@@ -30,7 +31,8 @@ class SettingsNavRowPreview extends StatelessWidget {
 
         // 2. With leading icon and subtitle.
         WDiv(
-          className: 'flex flex-col overflow-hidden rounded-lg '
+          className:
+              'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
           child: const MSSettingsNavRow(
             title: 'Security',
@@ -42,7 +44,8 @@ class SettingsNavRowPreview extends StatelessWidget {
 
         // 3. With leading icon and trailing value.
         WDiv(
-          className: 'flex flex-col overflow-hidden rounded-lg '
+          className:
+              'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
           child: const MSSettingsNavRow(
             title: 'Two-Factor Auth',
@@ -54,7 +57,8 @@ class SettingsNavRowPreview extends StatelessWidget {
 
         // 4. With icon, subtitle, and value.
         WDiv(
-          className: 'flex flex-col overflow-hidden rounded-lg '
+          className:
+              'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
           child: const MSSettingsNavRow(
             title: 'Active Sessions',
@@ -67,7 +71,8 @@ class SettingsNavRowPreview extends StatelessWidget {
 
         // 5. Multiple rows in a grouped section (edge-to-edge).
         WDiv(
-          className: 'flex flex-col overflow-hidden rounded-lg '
+          className:
+              'flex flex-col overflow-hidden rounded-lg '
               'border border-color-border-subtle',
           children: const [
             MSSettingsNavRow(

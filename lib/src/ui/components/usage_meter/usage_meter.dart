@@ -126,10 +126,10 @@ class MSUsageMeter extends StatelessWidget {
     final tone = unlimited
         ? UsageMeterTone.success
         : ratio >= 1
-            ? UsageMeterTone.destructive
-            : ratio >= 0.8
-                ? UsageMeterTone.warning
-                : UsageMeterTone.success;
+        ? UsageMeterTone.destructive
+        : ratio >= 0.8
+        ? UsageMeterTone.warning
+        : UsageMeterTone.success;
     final slots = usageMeterRecipe(variants: {kUsageMeterToneAxis: tone.name});
 
     // 3. Resolve the fill width and the display strings.
@@ -138,8 +138,9 @@ class MSUsageMeter extends StatelessWidget {
     final limitText = unlimited ? '∞' : '${formatNumber(lim)}$suffix';
 
     return WDiv(
-      className:
-          className == null ? slots['root'] : '${slots['root']} $className',
+      className: className == null
+          ? slots['root']
+          : '${slots['root']} $className',
       children: [
         WDiv(
           className: slots['head'],

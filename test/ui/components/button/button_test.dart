@@ -34,7 +34,7 @@ void main() {
       final cls = buttonRecipe(
         variants: {
           'intent': ButtonIntent.primary.name,
-          'size': ButtonSize.md.name
+          'size': ButtonSize.md.name,
         },
       );
       expect(cls, contains('bg-primary'));
@@ -44,7 +44,7 @@ void main() {
       final cls = buttonRecipe(
         variants: {
           'intent': ButtonIntent.secondary.name,
-          'size': ButtonSize.md.name
+          'size': ButtonSize.md.name,
         },
       );
       expect(cls, contains('bg-surface-container-high'));
@@ -54,7 +54,7 @@ void main() {
       final cls = buttonRecipe(
         variants: {
           'intent': ButtonIntent.ghost.name,
-          'size': ButtonSize.md.name
+          'size': ButtonSize.md.name,
         },
       );
       expect(cls, isNot(contains('bg-primary')));
@@ -66,7 +66,7 @@ void main() {
       final cls = buttonRecipe(
         variants: {
           'intent': ButtonIntent.destructive.name,
-          'size': ButtonSize.md.name
+          'size': ButtonSize.md.name,
         },
       );
       expect(cls, contains('bg-destructive'));
@@ -76,7 +76,7 @@ void main() {
       final cls = buttonRecipe(
         variants: {
           'intent': ButtonIntent.primary.name,
-          'size': ButtonSize.sm.name
+          'size': ButtonSize.sm.name,
         },
       );
       expect(cls, contains('text-sm'));
@@ -86,7 +86,7 @@ void main() {
       final cls = buttonRecipe(
         variants: {
           'intent': ButtonIntent.primary.name,
-          'size': ButtonSize.lg.name
+          'size': ButtonSize.lg.name,
         },
       );
       // lg size should have some text size token
@@ -102,7 +102,7 @@ void main() {
       final cls = buttonRecipe(
         variants: {
           'intent': ButtonIntent.primary.name,
-          'size': ButtonSize.md.name
+          'size': ButtonSize.md.name,
         },
       );
       // base contains inline-flex; primary bg-primary
@@ -131,19 +131,15 @@ void main() {
 
   testWidgets('Button applies primary className by default', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        MSButton(
-          onPressed: () {},
-          child: const SizedBox(),
-        ),
-      ),
+      wrap(MSButton(onPressed: () {}, child: const SizedBox())),
     );
     final btn = tester.widget<WButton>(find.byType(WButton));
     expect(btn.className, contains('bg-primary'));
   });
 
-  testWidgets('Button applies destructive className for destructive intent',
-      (tester) async {
+  testWidgets('Button applies destructive className for destructive intent', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSButton(
@@ -160,19 +156,16 @@ void main() {
   testWidgets('Button respects isLoading prop', (tester) async {
     await tester.pumpWidget(
       wrap(
-        MSButton(
-          onPressed: () {},
-          isLoading: true,
-          child: const SizedBox(),
-        ),
+        MSButton(onPressed: () {}, isLoading: true, child: const SizedBox()),
       ),
     );
     final btn = tester.widget<WButton>(find.byType(WButton));
     expect(btn.isLoading, isTrue);
   });
 
-  testWidgets('Button light+dark preview renders without error',
-      (tester) async {
+  testWidgets('Button light+dark preview renders without error', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const ButtonPreview()));
     await tester.pump();
     expect(find.byType(ButtonPreview), findsOneWidget);
@@ -191,8 +184,9 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Button appends caller className onto the recipe base',
-      (tester) async {
+  testWidgets('Button appends caller className onto the recipe base', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSButton(
@@ -213,50 +207,48 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets(
-      'Button(fullWidth: true) fills the parent width, centers its label, '
-      'and keeps intent styling', (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        SizedBox(
-          width: 300,
-          child: Column(
-            children: [
-              MSButton(
-                fullWidth: true,
-                intent: ButtonIntent.primary,
-                onPressed: () {},
-                child: const WText('Save'),
-              ),
-            ],
+    'Button(fullWidth: true) fills the parent width, centers its label, '
+    'and keeps intent styling',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          SizedBox(
+            width: 300,
+            child: Column(
+              children: [
+                MSButton(
+                  fullWidth: true,
+                  intent: ButtonIntent.primary,
+                  onPressed: () {},
+                  child: const WText('Save'),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    final size = tester.getSize(find.byType(MSButton));
-    expect(size.width, 300);
+      final size = tester.getSize(find.byType(MSButton));
+      expect(size.width, 300);
 
-    final buttonCenter = tester.getCenter(find.byType(MSButton));
-    final labelCenter = tester.getCenter(find.text('Save'));
-    expect(labelCenter.dx, closeTo(buttonCenter.dx, 1.0));
+      final buttonCenter = tester.getCenter(find.byType(MSButton));
+      final labelCenter = tester.getCenter(find.text('Save'));
+      expect(labelCenter.dx, closeTo(buttonCenter.dx, 1.0));
 
-    final btn = tester.widget<WButton>(find.byType(WButton));
-    expect(btn.className, contains('bg-primary'));
-  });
+      final btn = tester.widget<WButton>(find.byType(WButton));
+      expect(btn.className, contains('bg-primary'));
+    },
+  );
 
-  testWidgets('Button fullWidth defaults to false (content-width)',
-      (tester) async {
+  testWidgets('Button fullWidth defaults to false (content-width)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         SizedBox(
           width: 300,
           child: Column(
-            children: [
-              MSButton(
-                onPressed: () {},
-                child: const WText('Save'),
-              ),
-            ],
+            children: [MSButton(onPressed: () {}, child: const WText('Save'))],
           ),
         ),
       ),

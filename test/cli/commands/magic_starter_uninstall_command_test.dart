@@ -18,12 +18,7 @@ class TestMagicStarterUninstallCommand extends MagicStarterUninstallCommand {
   Future<ProcessResult> runDartFormat(String rootPath) async {
     didRunDartFormat = true;
 
-    return ProcessResult(
-      1,
-      0,
-      'formatted',
-      '',
-    );
+    return ProcessResult(1, 0, 'formatted', '');
   }
 }
 
@@ -65,8 +60,9 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final File configFile =
-          File('${tempDir.path}/lib/config/magic_starter.dart');
+      final File configFile = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      );
       expect(configFile.existsSync(), isFalse);
     });
 
@@ -75,8 +71,9 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
+      final String appContent = File(
+        '${tempDir.path}/lib/config/app.dart',
+      ).readAsStringSync();
 
       expect(appContent, isNot(contains('MagicStarterServiceProvider')));
     });
@@ -86,8 +83,9 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
+      final String appContent = File(
+        '${tempDir.path}/lib/config/app.dart',
+      ).readAsStringSync();
 
       expect(
         appContent,
@@ -100,8 +98,9 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final String mainContent = File(
+        '${tempDir.path}/lib/main.dart',
+      ).readAsStringSync();
 
       expect(mainContent, isNot(contains('() => magicStarterConfig,')));
     });
@@ -111,8 +110,9 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final String mainContent = File(
+        '${tempDir.path}/lib/main.dart',
+      ).readAsStringSync();
 
       expect(
         mainContent,
@@ -125,8 +125,9 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String kernelContent =
-          File('${tempDir.path}/lib/app/kernel.dart').readAsStringSync();
+      final String kernelContent = File(
+        '${tempDir.path}/lib/app/kernel.dart',
+      ).readAsStringSync();
 
       expect(kernelContent, isNot(contains('EnsureAuthenticated')));
       expect(kernelContent, isNot(contains('RedirectIfAuthenticated')));
@@ -140,28 +141,33 @@ void main() {
       );
     });
 
-    test('removes route registrations from route_service_provider.dart',
-        () async {
-      setupInstalledProject(tempDir);
+    test(
+      'removes route registrations from route_service_provider.dart',
+      () async {
+        setupInstalledProject(tempDir);
 
-      await _runUninstall(command, force: true);
+        await _runUninstall(command, force: true);
 
-      final String content =
-          File('${tempDir.path}/lib/app/providers/route_service_provider.dart')
-              .readAsStringSync();
+        final String content = File(
+          '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+        ).readAsStringSync();
 
-      expect(content, isNot(contains('registerMagicStarterAuthRoutes();')));
-      expect(content, isNot(contains('registerMagicStarterProfileRoutes();')));
-      expect(content, isNot(contains('registerMagicStarterTeamRoutes();')));
-      expect(
-        content,
-        isNot(contains('registerMagicStarterNotificationRoutes();')),
-      );
-      expect(
-        content,
-        isNot(contains("import 'package:magic_starter/magic_starter.dart';")),
-      );
-    });
+        expect(content, isNot(contains('registerMagicStarterAuthRoutes();')));
+        expect(
+          content,
+          isNot(contains('registerMagicStarterProfileRoutes();')),
+        );
+        expect(content, isNot(contains('registerMagicStarterTeamRoutes();')));
+        expect(
+          content,
+          isNot(contains('registerMagicStarterNotificationRoutes();')),
+        );
+        expect(
+          content,
+          isNot(contains("import 'package:magic_starter/magic_starter.dart';")),
+        );
+      },
+    );
 
     test('--force skips confirmation prompt', () async {
       setupInstalledProject(tempDir);
@@ -186,10 +192,7 @@ void main() {
     test('handles already-clean app.dart gracefully (no crash)', () async {
       setupInstalledProject(tempDir);
 
-      _writeFile(
-        tempDir,
-        'lib/config/app.dart',
-        '''
+      _writeFile(tempDir, 'lib/config/app.dart', '''
 import 'package:magic/magic.dart';
 
 Map<String, dynamic> get appConfig => {
@@ -199,8 +202,7 @@ Map<String, dynamic> get appConfig => {
     ],
   },
 };
-''',
-      );
+''');
 
       await _runUninstall(command, force: true);
 
@@ -220,8 +222,9 @@ Map<String, dynamic> get appConfig => {
 
       await _runUninstall(command, force: true);
 
-      final String pubspecContent =
-          File('${tempDir.path}/pubspec.yaml').readAsStringSync();
+      final String pubspecContent = File(
+        '${tempDir.path}/pubspec.yaml',
+      ).readAsStringSync();
 
       expect(pubspecContent, isNot(contains('magic_starter:')));
     });
@@ -229,10 +232,7 @@ Map<String, dynamic> get appConfig => {
 }
 
 void setupInstalledProject(Directory dir) {
-  _writeFile(
-    dir,
-    'pubspec.yaml',
-    '''
+  _writeFile(dir, 'pubspec.yaml', '''
 name: test_app
 description: Test host app
 dependencies:
@@ -242,8 +242,7 @@ dependencies:
     path: ../magic
   magic_starter:
     path: ../magic_starter
-''',
-  );
+''');
 
   _writeFile(
     dir,
@@ -251,10 +250,7 @@ dependencies:
     'Map<String, dynamic> get magicStarterConfig => {};',
   );
 
-  _writeFile(
-    dir,
-    'lib/config/app.dart',
-    '''
+  _writeFile(dir, 'lib/config/app.dart', '''
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
@@ -266,13 +262,9 @@ Map<String, dynamic> get appConfig => {
     ],
   },
 };
-''',
-  );
+''');
 
-  _writeFile(
-    dir,
-    'lib/main.dart',
-    '''
+  _writeFile(dir, 'lib/main.dart', '''
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 import 'config/app.dart';
@@ -288,13 +280,9 @@ void main() async {
     ],
   );
 }
-''',
-  );
+''');
 
-  _writeFile(
-    dir,
-    'lib/app/kernel.dart',
-    '''
+  _writeFile(dir, 'lib/app/kernel.dart', '''
 import 'package:magic/magic.dart';
 import 'middleware/ensure_authenticated.dart';
 import 'middleware/redirect_if_authenticated.dart';
@@ -305,13 +293,9 @@ void registerKernel() {
     'guest': () => RedirectIfAuthenticated(),
   });
 }
-''',
-  );
+''');
 
-  _writeFile(
-    dir,
-    'lib/app/providers/route_service_provider.dart',
-    '''
+  _writeFile(dir, 'lib/app/providers/route_service_provider.dart', '''
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
@@ -327,15 +311,10 @@ class RouteServiceProvider extends ServiceProvider {
     registerAppRoutes();
   }
 }
-''',
-  );
+''');
 }
 
-void _writeFile(
-  Directory root,
-  String relativePath,
-  String content,
-) {
+void _writeFile(Directory root, String relativePath, String content) {
   final File file = File('${root.path}/$relativePath');
   file.parent.createSync(recursive: true);
   file.writeAsStringSync(content);

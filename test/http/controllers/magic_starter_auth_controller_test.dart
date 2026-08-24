@@ -15,14 +15,8 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
@@ -40,55 +34,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -96,16 +83,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -113,8 +98,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -168,10 +152,7 @@ class MockGuard implements Guard {
   @override
   Future<void> restore() async {
     if (mockToken != null) {
-      _user = MagicStarterAuthUser.fromMap({
-        'id': 1,
-        'name': 'Restored User',
-      });
+      _user = MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Restored User'});
     }
   }
 
@@ -214,9 +195,7 @@ void main() {
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-        'mock': {
-          'driver': 'mock',
-        },
+        'mock': {'driver': 'mock'},
       });
 
       // 5. Bind MagicStarterManager for MagicStarter facade.
@@ -250,11 +229,7 @@ void main() {
           data: {
             'data': {
               'token': 'test-token-123',
-              'user': {
-                'id': 1,
-                'name': 'Alice',
-                'email': 'alice@example.com',
-              },
+              'user': {'id': 1, 'name': 'Alice', 'email': 'alice@example.com'},
             },
           },
         );
@@ -282,10 +257,7 @@ void main() {
           },
         );
 
-        await controller.doLogin(
-          email: 'bad@example.com',
-          password: 'wrong',
-        );
+        await controller.doLogin(email: 'bad@example.com', password: 'wrong');
 
         expect(controller.isSuccess, isFalse);
         expect(mockGuard.check(), isFalse);
@@ -318,15 +290,9 @@ void main() {
           },
         );
 
-        final future1 = controller.doLogin(
-          email: 'a@b.com',
-          password: 'pass',
-        );
+        final future1 = controller.doLogin(email: 'a@b.com', password: 'pass');
         // Second call should be a no-op (already submitting).
-        final future2 = controller.doLogin(
-          email: 'a@b.com',
-          password: 'pass',
-        );
+        final future2 = controller.doLogin(email: 'a@b.com', password: 'pass');
 
         await Future.wait([future1, future2]);
 
@@ -351,10 +317,7 @@ void main() {
           },
         );
 
-        await controller.doLogin(
-          email: 'a@b.com',
-          password: 'pass',
-        );
+        await controller.doLogin(email: 'a@b.com', password: 'pass');
 
         expect(controller.isSuccess, isTrue);
         expect(mockGuard.check(), isTrue);
@@ -363,16 +326,10 @@ void main() {
       test('intercepts 2fa response at root level', () async {
         mockDriver.mockResponse(
           statusCode: 200,
-          data: {
-            'two_factor': true,
-            'two_factor_token': 'enc-tok-123',
-          },
+          data: {'two_factor': true, 'two_factor_token': 'enc-tok-123'},
         );
 
-        await controller.doLogin(
-          email: 'a@b.com',
-          password: 'pass',
-        );
+        await controller.doLogin(email: 'a@b.com', password: 'pass');
 
         // Auth.login should NOT be called
         expect(mockGuard.check(), isFalse);
@@ -385,17 +342,11 @@ void main() {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
-            'data': {
-              'two_factor': true,
-              'two_factor_token': 'enc-tok-123',
-            },
+            'data': {'two_factor': true, 'two_factor_token': 'enc-tok-123'},
           },
         );
 
-        await controller.doLogin(
-          email: 'a@b.com',
-          password: 'pass',
-        );
+        await controller.doLogin(email: 'a@b.com', password: 'pass');
 
         // Auth.login should NOT be called
         expect(mockGuard.check(), isFalse);
@@ -484,11 +435,7 @@ void main() {
           data: {
             'data': {
               'token': 'reg-token',
-              'user': {
-                'id': 2,
-                'name': 'Bob',
-                'email': 'bob@example.com',
-              },
+              'user': {'id': 2, 'name': 'Bob', 'email': 'bob@example.com'},
             },
           },
         );
@@ -510,9 +457,7 @@ void main() {
         mockDriver.mockResponse(
           statusCode: 200,
           data: {
-            'data': {
-              'message': 'Verification email sent',
-            },
+            'data': {'message': 'Verification email sent'},
           },
         );
 
@@ -642,19 +587,21 @@ void main() {
         expect(mockGuard.logoutCalled, isTrue);
       });
 
-      test('stops notification polling when notification features are enabled',
-          () async {
-        Config.set('magic_starter.features.notifications', true);
+      test(
+        'stops notification polling when notification features are enabled',
+        () async {
+          Config.set('magic_starter.features.notifications', true);
 
-        // Start polling to create an active poller.
-        Notify.startPolling();
+          // Start polling to create an active poller.
+          Notify.startPolling();
 
-        await controller.logout();
+          await controller.logout();
 
-        // Polling should be stopped — starting again should create a fresh poller
-        // that fetches immediately, proving the old one was cleaned up.
-        expect(mockGuard.logoutCalled, isTrue);
-      });
+          // Polling should be stopped — starting again should create a fresh poller
+          // that fetches immediately, proving the old one was cleaned up.
+          expect(mockGuard.logoutCalled, isTrue);
+        },
+      );
 
       test('calls logoutPush when notification features are enabled', () async {
         Config.set('magic_starter.features.notifications', true);
@@ -666,15 +613,17 @@ void main() {
         expect(mockGuard.logoutCalled, isTrue);
       });
 
-      test('skips notification cleanup when notification features are disabled',
-          () async {
-        Config.set('magic_starter.features.notifications', false);
+      test(
+        'skips notification cleanup when notification features are disabled',
+        () async {
+          Config.set('magic_starter.features.notifications', false);
 
-        await controller.logout();
+          await controller.logout();
 
-        // Auth logout should still be called even without notification cleanup.
-        expect(mockGuard.logoutCalled, isTrue);
-      });
+          // Auth logout should still be called even without notification cleanup.
+          expect(mockGuard.logoutCalled, isTrue);
+        },
+      );
 
       test('completes logout even when notification cleanup throws', () async {
         Config.set('magic_starter.features.notifications', true);
@@ -709,10 +658,7 @@ void main() {
           },
         );
 
-        await controller.doLogin(
-          email: 'test@example.com',
-          password: 'secret',
-        );
+        await controller.doLogin(email: 'test@example.com', password: 'secret');
 
         final body = mockDriver.lastData as Map<String, dynamic>?;
         expect(body?['email'], equals('test@example.com'));
@@ -738,10 +684,7 @@ void main() {
           },
         );
 
-        await controller.doLogin(
-          phone: '+905301234567',
-          password: 'secret',
-        );
+        await controller.doLogin(phone: '+905301234567', password: 'secret');
 
         final body = mockDriver.lastData as Map<String, dynamic>?;
         expect(body?['phone'], equals('+905301234567'));
@@ -767,10 +710,7 @@ void main() {
           },
         );
 
-        await controller.doLogin(
-          phone: '+905301234567',
-          password: 'secret',
-        );
+        await controller.doLogin(phone: '+905301234567', password: 'secret');
 
         final body = mockDriver.lastData as Map<String, dynamic>?;
         expect(body?['phone'], equals('+905301234567'));
@@ -788,10 +728,7 @@ void main() {
           },
         );
 
-        await controller.doLogin(
-          email: 'a@b.com',
-          password: 'secret',
-        );
+        await controller.doLogin(email: 'a@b.com', password: 'secret');
 
         final body = mockDriver.lastData as Map<String, dynamic>?;
         expect(body?['email'], equals('a@b.com'));

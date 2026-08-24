@@ -31,58 +31,75 @@ class MockNetworkDriver implements NetworkDriver {
   void addInterceptor(MagicNetworkInterceptor interceptor) {}
 
   @override
-  Future<MagicResponse> get(String url,
-          {Map<String, dynamic>? query, Map<String, String>? headers}) async =>
-      _respond('GET', url);
+  Future<MagicResponse> get(
+    String url, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async => _respond('GET', url);
 
   @override
-  Future<MagicResponse> post(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('POST', url, data: data);
+  Future<MagicResponse> post(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('POST', url, data: data);
 
   @override
-  Future<MagicResponse> put(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('PUT', url, data: data);
+  Future<MagicResponse> put(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('PUT', url, data: data);
 
   @override
-  Future<MagicResponse> delete(String url,
-          {Map<String, String>? headers}) async =>
-      _respond('DELETE', url);
+  Future<MagicResponse> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async => _respond('DELETE', url);
 
   @override
-  Future<MagicResponse> index(String resource,
-          {Map<String, dynamic>? filters,
-          Map<String, String>? headers}) async =>
-      _respond('INDEX', resource);
+  Future<MagicResponse> index(
+    String resource, {
+    Map<String, dynamic>? filters,
+    Map<String, String>? headers,
+  }) async => _respond('INDEX', resource);
 
   @override
-  Future<MagicResponse> show(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('SHOW', '$resource/$id');
+  Future<MagicResponse> show(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
-  Future<MagicResponse> store(String resource, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('STORE', resource, data: data);
+  Future<MagicResponse> store(
+    String resource,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
-          String resource, String id, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+    String resource,
+    String id,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
-  Future<MagicResponse> destroy(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('DESTROY', '$resource/$id');
+  Future<MagicResponse> destroy(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
-  Future<MagicResponse> upload(String url,
-          {required Map<String, dynamic> data,
-          required Map<String, dynamic> files,
-          Map<String, String>? headers}) async =>
-      _respond('UPLOAD', url, data: data);
+  Future<MagicResponse> upload(
+    String url, {
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> files,
+    Map<String, String>? headers,
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -153,9 +170,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: widget,
-        ),
+        child: Scaffold(body: widget),
       ),
     );
   }
@@ -183,9 +198,7 @@ void main() {
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-        'mock': {
-          'driver': 'mock',
-        },
+        'mock': {'driver': 'mock'},
       });
 
       mockGuard.setUser(
@@ -215,8 +228,9 @@ void main() {
       Gate.flush();
     });
 
-    testWidgets('renders inside a SettingsScaffold with Settings back label',
-        (tester) async {
+    testWidgets('renders inside a SettingsScaffold with Settings back label', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
       expect(find.byType(MSPageScaffold), findsOneWidget);
@@ -256,8 +270,9 @@ void main() {
       expect(mockDriver.lastUrl, contains('/user/profile'));
     });
 
-    testWidgets('backend validation errors display after a failed save',
-        (tester) async {
+    testWidgets('backend validation errors display after a failed save', (
+      tester,
+    ) async {
       mockDriver.mockResponse(
         statusCode: 422,
         data: {
@@ -279,8 +294,9 @@ void main() {
       expect(find.text('The name field is required.'), findsOneWidget);
     });
 
-    testWidgets('does NOT render a Delete Account row (moved to Sessions)',
-        (tester) async {
+    testWidgets('does NOT render a Delete Account row (moved to Sessions)', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
       // Account deletion now lives on the Security > Sessions sub-page, not on
@@ -292,8 +308,9 @@ void main() {
       expect(destructiveRows, isEmpty);
     });
 
-    testWidgets('email verification resend submits when unverified',
-        (tester) async {
+    testWidgets('email verification resend submits when unverified', (
+      tester,
+    ) async {
       // Unverified user (no email_verified_at).
       mockDriver.mockResponse(statusCode: 200, data: {});
 
@@ -314,8 +331,9 @@ void main() {
       expect(mockDriver.lastUrl, contains('/email/verification-notification'));
     });
 
-    testWidgets('does not render password / sessions / 2FA sections',
-        (tester) async {
+    testWidgets('does not render password / sessions / 2FA sections', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
       // These live on their own Security sub-pages (Step 9).

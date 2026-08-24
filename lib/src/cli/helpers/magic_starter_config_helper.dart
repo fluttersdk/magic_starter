@@ -85,11 +85,7 @@ abstract class MagicStarterConfigHelper {
   /// final updated = MagicStarterConfigHelper.updateFeature(content, 'teams', true);
   /// print(updated); // "'teams': true,"
   /// ```
-  static String updateFeature(
-    String content,
-    String featureName,
-    bool value,
-  ) {
+  static String updateFeature(String content, String featureName, bool value) {
     final pattern = RegExp(
       r"(" + featureName + r"':\s*)(true|false)",
       caseSensitive: false,
@@ -147,9 +143,7 @@ abstract class MagicStarterConfigHelper {
   /// - Searches for entry with `"name": "magic_starter"`
   /// - Resolves the `rootUri` value, handling file:// and relative paths
   /// - Returns normalized path with forward slashes
-  static String? resolvePluginSourceDir({
-    required String projectRoot,
-  }) {
+  static String? resolvePluginSourceDir({required String projectRoot}) {
     final packageConfigPath = '$projectRoot/.dart_tool/package_config.json';
     final packageConfigFile = File(packageConfigPath);
 
@@ -178,12 +172,9 @@ abstract class MagicStarterConfigHelper {
           }
           // 2. Handle relative paths (../).
           else if (rootUri.startsWith('../')) {
-            parsedPath = File(packageConfigPath)
-                .parent
-                .parent
-                .uri
-                .resolve(rootUri)
-                .toFilePath();
+            parsedPath = File(
+              packageConfigPath,
+            ).parent.parent.uri.resolve(rootUri).toFilePath();
           }
           // 3. Handle absolute paths.
           else {

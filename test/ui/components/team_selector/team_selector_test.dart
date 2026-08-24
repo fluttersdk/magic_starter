@@ -25,21 +25,29 @@ void main() {
     );
   }
 
-  testWidgets('TeamSelector returns empty when no resolver registered',
-      (tester) async {
+  testWidgets('TeamSelector returns empty when no resolver registered', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const MSTeamSelector()));
     await tester.pump();
     // When no resolver, renders SizedBox.shrink
     expect(find.byType(WPopover), findsNothing);
   });
 
-  testWidgets('TeamSelector renders team initial when resolver has teams',
-      (tester) async {
+  testWidgets('TeamSelector renders team initial when resolver has teams', (
+    tester,
+  ) async {
     final teams = [
-      MagicStarterTeam.fromMap(
-          {'id': 1, 'name': 'Acme Corp', 'personal_team': false}),
-      MagicStarterTeam.fromMap(
-          {'id': 2, 'name': 'Beta Inc', 'personal_team': false}),
+      MagicStarterTeam.fromMap({
+        'id': 1,
+        'name': 'Acme Corp',
+        'personal_team': false,
+      }),
+      MagicStarterTeam.fromMap({
+        'id': 2,
+        'name': 'Beta Inc',
+        'personal_team': false,
+      }),
     ];
     MagicStarter.useTeamResolver(
       currentTeam: () => teams.first,
@@ -54,8 +62,9 @@ void main() {
     expect(find.text('A'), findsOneWidget);
   });
 
-  testWidgets('TeamSelector returns empty when teams list is empty',
-      (tester) async {
+  testWidgets('TeamSelector returns empty when teams list is empty', (
+    tester,
+  ) async {
     MagicStarter.useTeamResolver(
       currentTeam: () => null,
       allTeams: () => [],

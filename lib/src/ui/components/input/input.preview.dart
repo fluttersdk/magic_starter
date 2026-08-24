@@ -25,10 +25,7 @@ class InputPreview extends StatelessWidget {
                 state.name,
                 className: 'text-sm font-semibold text-fg-muted',
               ),
-              MSInput(
-                state: state,
-                placeholder: 'Enter text (${state.name})',
-              ),
+              MSInput(state: state, placeholder: 'Enter text (${state.name})'),
             ],
           ),
       ],

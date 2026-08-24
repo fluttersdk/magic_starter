@@ -22,10 +22,7 @@ class ErrorStatePreview extends StatelessWidget {
           icon: Icons.error_outline,
           title: 'Failed to load data',
           description: 'Please check your connection and try again.',
-          action: MSButton(
-            onPressed: () {},
-            child: const WText('Retry'),
-          ),
+          action: MSButton(onPressed: () {}, child: const WText('Retry')),
         ),
       ],
     );

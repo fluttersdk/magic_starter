@@ -30,30 +30,23 @@ void main() {
   });
 
   Widget wrap(Widget widget) {
-    final themeData = WindThemeData(
-      colors: {
-        'primary': Colors.indigo,
-      },
-    );
+    final themeData = WindThemeData(colors: {'primary': Colors.indigo});
     return WindTheme(
       data: themeData,
       child: MaterialApp(
         theme: themeData.toThemeData(),
         home: Scaffold(
           body: SingleChildScrollView(
-            child: SizedBox(
-              width: 1200,
-              height: 800,
-              child: widget,
-            ),
+            child: SizedBox(width: 1200, height: 800, child: widget),
           ),
         ),
       ),
     );
   }
 
-  testWidgets('MagicStarterPasswordConfirmDialog renders correctly',
-      (WidgetTester tester) async {
+  testWidgets('MagicStarterPasswordConfirmDialog renders correctly', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
@@ -68,8 +61,9 @@ void main() {
     expect(find.byType(WButton), findsOneWidget);
   });
 
-  testWidgets('MagicStarterPasswordConfirmDialog returns false on cancel',
-      (WidgetTester tester) async {
+  testWidgets('MagicStarterPasswordConfirmDialog returns false on cancel', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
@@ -77,16 +71,18 @@ void main() {
 
     bool result = true;
 
-    await tester.pumpWidget(wrap(
-      Builder(
-        builder: (context) => ElevatedButton(
-          onPressed: () async {
-            result = await MagicStarterPasswordConfirmDialog.show(context);
-          },
-          child: const Text('Show'),
+    await tester.pumpWidget(
+      wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              result = await MagicStarterPasswordConfirmDialog.show(context);
+            },
+            child: const Text('Show'),
+          ),
         ),
       ),
-    ));
+    );
 
     await tester.tap(find.text('Show'));
     await tester.pumpAndSettle();
@@ -103,19 +99,21 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(
-      Builder(
-        builder: (context) => ElevatedButton(
-          onPressed: () async {
-            await MagicStarterPasswordConfirmDialog.show(
-              context,
-              onConfirm: (password) async => 'Invalid password',
-            );
-          },
-          child: const Text('Show'),
+    await tester.pumpWidget(
+      wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              await MagicStarterPasswordConfirmDialog.show(
+                context,
+                onConfirm: (password) async => 'Invalid password',
+              );
+            },
+            child: const Text('Show'),
+          ),
         ),
       ),
-    ));
+    );
 
     await tester.tap(find.text('Show'));
     await tester.pumpAndSettle();
@@ -131,8 +129,9 @@ void main() {
     expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
   });
 
-  testWidgets('MagicStarterPasswordConfirmDialog returns true on confirm',
-      (WidgetTester tester) async {
+  testWidgets('MagicStarterPasswordConfirmDialog returns true on confirm', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
@@ -140,19 +139,21 @@ void main() {
 
     bool result = false;
 
-    await tester.pumpWidget(wrap(
-      Builder(
-        builder: (context) => ElevatedButton(
-          onPressed: () async {
-            result = await MagicStarterPasswordConfirmDialog.show(
-              context,
-              onConfirm: (password) async => null, // success
-            );
-          },
-          child: const Text('Show'),
+    await tester.pumpWidget(
+      wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              result = await MagicStarterPasswordConfirmDialog.show(
+                context,
+                onConfirm: (password) async => null, // success
+              );
+            },
+            child: const Text('Show'),
+          ),
         ),
       ),
-    ));
+    );
 
     await tester.tap(find.text('Show'));
     await tester.pumpAndSettle();
@@ -178,10 +179,7 @@ void main() {
 
       // Locate the footer container (the Wrap rendered by Wind's justify-end).
       final footerWrapFinder = find
-          .ancestor(
-            of: find.text('common.cancel'),
-            matching: find.byType(Wrap),
-          )
+          .ancestor(of: find.text('common.cancel'), matching: find.byType(Wrap))
           .first;
 
       // No flex-1 WDiv wrappers inside the footer.
@@ -195,8 +193,9 @@ void main() {
       expect(flex1Divs, findsNothing);
     });
 
-    testWidgets('footer container uses justify-end for right-alignment',
-        (tester) async {
+    testWidgets('footer container uses justify-end for right-alignment', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1200, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -271,18 +270,21 @@ void main() {
       expect(dialog.variant, ConfirmDialogVariant.primary);
     });
 
-    testWidgets('danger variant renders danger-styled confirm button',
-        (tester) async {
+    testWidgets('danger variant renders danger-styled confirm button', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1200, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MagicStarterPasswordConfirmDialog(
-          variant: ConfirmDialogVariant.danger,
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterPasswordConfirmDialog(
+            variant: ConfirmDialogVariant.danger,
+          ),
         ),
-      ));
+      );
 
       // Confirm button should use dangerButtonClassName (contains bg-red-500).
       final dangerButton = find.byWidgetPredicate(
@@ -294,18 +296,21 @@ void main() {
       expect(dangerButton, findsOneWidget);
     });
 
-    testWidgets('warning variant renders warning-styled confirm button',
-        (tester) async {
+    testWidgets('warning variant renders warning-styled confirm button', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1200, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MagicStarterPasswordConfirmDialog(
-          variant: ConfirmDialogVariant.warning,
+      await tester.pumpWidget(
+        wrap(
+          const MagicStarterPasswordConfirmDialog(
+            variant: ConfirmDialogVariant.warning,
+          ),
         ),
-      ));
+      );
 
       // Confirm button should use warningButtonClassName (contains bg-amber-500).
       final warningButton = find.byWidgetPredicate(
@@ -323,19 +328,21 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () async {
-              await MagicStarterPasswordConfirmDialog.show(
-                context,
-                variant: ConfirmDialogVariant.danger,
-              );
-            },
-            child: const Text('Show'),
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                await MagicStarterPasswordConfirmDialog.show(
+                  context,
+                  variant: ConfirmDialogVariant.danger,
+                );
+              },
+              child: const Text('Show'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Show'));
       await tester.pumpAndSettle();
@@ -369,10 +376,7 @@ void main() {
     testWidgets('maxHeight accounts for viewPadding safe area', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;
-      tester.view.viewPadding = const FakeViewPadding(
-        top: 44,
-        bottom: 34,
-      );
+      tester.view.viewPadding = const FakeViewPadding(top: 44, bottom: 34);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetViewPadding);
@@ -397,8 +401,9 @@ void main() {
   });
 
   group('modal theme integration', () {
-    testWidgets('uses custom containerClassName from modal theme',
-        (WidgetTester tester) async {
+    testWidgets('uses custom containerClassName from modal theme', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1200, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -423,8 +428,9 @@ void main() {
       );
     });
 
-    testWidgets('uses custom titleClassName from modal theme',
-        (WidgetTester tester) async {
+    testWidgets('uses custom titleClassName from modal theme', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1200, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);

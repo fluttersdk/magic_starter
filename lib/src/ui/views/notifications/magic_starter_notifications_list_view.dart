@@ -109,10 +109,16 @@ class _MagicStarterNotificationsListViewState
     final hasUnread = notifications.any((n) => !n.isRead);
     final totalPages = _paginatedData?.lastPage ?? 1;
 
-    final headerSlot =
-        MagicStarter.view.buildSlot('notifications.list', 'header', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('notifications.list', 'footer', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'notifications.list',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'notifications.list',
+      'footer',
+      context,
+    );
 
     return MSPageScaffold(
       title: trans('notifications.title'),
@@ -144,7 +150,8 @@ class _MagicStarterNotificationsListViewState
           }
           _loadPage(_currentPage);
         },
-        className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 '
+        className:
+            'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 '
             'text-white font-medium text-sm',
         child: WText(
           trans('notifications.mark_all_read'),
@@ -189,8 +196,9 @@ class _MagicStarterNotificationsListViewState
           noPadding: true,
           child: WDiv(
             className: 'flex flex-col',
-            children:
-                notifications.map((n) => _buildNotificationItem(n)).toList(),
+            children: notifications
+                .map((n) => _buildNotificationItem(n))
+                .toList(),
           ),
         ),
         if (totalPages > 1) _buildPagination(totalPages),
@@ -214,11 +222,13 @@ class _MagicStarterNotificationsListViewState
     final mapper = MagicStarter.notificationTypeMapper;
     final mapping = mapper?.call(notification.type);
 
-    final IconData icon = mapping?.icon ??
+    final IconData icon =
+        mapping?.icon ??
         _notificationTypeIcons[notification.type] ??
         _defaultNotificationIcon;
 
-    final String iconColor = mapping?.colorClass ??
+    final String iconColor =
+        mapping?.colorClass ??
         switch (notification.type) {
           'monitor_up' => 'text-green-500',
           'monitor_degraded' => 'text-yellow-500',
@@ -266,10 +276,7 @@ class _MagicStarterNotificationsListViewState
                       : 'text-sm text-fg font-semibold',
                 ),
                 const WSpacer(className: 'h-0.5'),
-                WText(
-                  notification.body,
-                  className: 'text-sm text-fg-muted',
-                ),
+                WText(notification.body, className: 'text-sm text-fg-muted'),
                 const WSpacer(className: 'h-1'),
                 WText(
                   _formatTime(notification.createdAt),
@@ -312,10 +319,7 @@ class _MagicStarterNotificationsListViewState
           disabled: _currentPage <= 1,
           className:
               'px-3 py-2 rounded-lg bg-surface-container-high border border-color-border disabled:opacity-50',
-          child: WIcon(
-            Icons.chevron_left,
-            className: 'text-fg-muted',
-          ),
+          child: WIcon(Icons.chevron_left, className: 'text-fg-muted'),
         ),
         WText(
           trans('common.page_of', {
@@ -331,10 +335,7 @@ class _MagicStarterNotificationsListViewState
           disabled: _currentPage >= totalPages,
           className:
               'px-3 py-2 rounded-lg bg-surface-container-high border border-color-border disabled:opacity-50',
-          child: WIcon(
-            Icons.chevron_right,
-            className: 'text-fg-muted',
-          ),
+          child: WIcon(Icons.chevron_right, className: 'text-fg-muted'),
         ),
       ],
     );

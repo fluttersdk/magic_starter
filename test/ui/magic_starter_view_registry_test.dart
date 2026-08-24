@@ -87,15 +87,10 @@ void main() {
         const child = SizedBox(key: Key('child'));
 
         registry.registerLayout('guest', (Widget child) {
-          return Column(
-            children: [child],
-          );
+          return Column(children: [child]);
         });
 
-        final Widget result = registry.makeLayout(
-          'guest',
-          child: child,
-        );
+        final Widget result = registry.makeLayout('guest', child: child);
 
         expect(result, isA<Column>());
         expect((result as Column).children, contains(child));
@@ -103,10 +98,7 @@ void main() {
 
       test('throws StateError for unregistered key', () {
         expect(
-          () => registry.makeLayout(
-            'missing',
-            child: const SizedBox(),
-          ),
+          () => registry.makeLayout('missing', child: const SizedBox()),
           throwsA(
             isA<StateError>().having(
               (e) => e.message,
@@ -141,10 +133,7 @@ void main() {
         registry.register('login', () => const SizedBox());
         registry.clear();
 
-        expect(
-          () => registry.make('login'),
-          throwsA(isA<StateError>()),
-        );
+        expect(() => registry.make('login'), throwsA(isA<StateError>()));
       });
 
       test('makeLayout() throws after clear()', () {
@@ -152,10 +141,7 @@ void main() {
         registry.clear();
 
         expect(
-          () => registry.makeLayout(
-            'guest',
-            child: const SizedBox(),
-          ),
+          () => registry.makeLayout('guest', child: const SizedBox()),
           throwsA(isA<StateError>()),
         );
       });
@@ -176,8 +162,9 @@ void main() {
         expect(registry.hasSlot('auth.login', 'header'), isFalse);
       });
 
-      testWidgets('buildSlot() returns widget for registered slot',
-          (WidgetTester tester) async {
+      testWidgets('buildSlot() returns widget for registered slot', (
+        WidgetTester tester,
+      ) async {
         const expected = SizedBox(key: Key('slot-widget'));
         registry.slot('auth.login', 'header', (context) => expected);
 
@@ -194,8 +181,9 @@ void main() {
         expect(result, same(expected));
       });
 
-      testWidgets('buildSlot() returns null for unregistered slot',
-          (WidgetTester tester) async {
+      testWidgets('buildSlot() returns null for unregistered slot', (
+        WidgetTester tester,
+      ) async {
         late Widget? result;
         await tester.pumpWidget(
           Builder(
@@ -212,7 +200,10 @@ void main() {
       test('clear() removes all slots', () {
         registry.slot('auth.login', 'header', (context) => const SizedBox());
         registry.slot(
-            'profile.edit', 'footer', (context) => const Placeholder());
+          'profile.edit',
+          'footer',
+          (context) => const Placeholder(),
+        );
 
         registry.clear();
 
@@ -243,15 +234,16 @@ void main() {
 
     group('modal registry', () {
       test(
-          'registerModal() stores a builder that can be retrieved via makeModal()',
-          () {
-        const expected = SizedBox(key: Key('modal-widget'));
-        registry.registerModal('confirm', () => expected);
+        'registerModal() stores a builder that can be retrieved via makeModal()',
+        () {
+          const expected = SizedBox(key: Key('modal-widget'));
+          registry.registerModal('confirm', () => expected);
 
-        final Widget result = registry.makeModal('confirm');
+          final Widget result = registry.makeModal('confirm');
 
-        expect(result, same(expected));
-      });
+          expect(result, same(expected));
+        },
+      );
 
       test('hasModal() returns true for registered key', () {
         registry.registerModal('confirm', () => const SizedBox());
@@ -285,25 +277,23 @@ void main() {
       });
 
       test(
-          'clear() clears modal builders — hasModal() returns false after clear()',
-          () {
-        registry.registerModal('confirm', () => const SizedBox());
-        registry.registerModal('alert', () => const Placeholder());
+        'clear() clears modal builders — hasModal() returns false after clear()',
+        () {
+          registry.registerModal('confirm', () => const SizedBox());
+          registry.registerModal('alert', () => const Placeholder());
 
-        registry.clear();
+          registry.clear();
 
-        expect(registry.hasModal('confirm'), isFalse);
-        expect(registry.hasModal('alert'), isFalse);
-      });
+          expect(registry.hasModal('confirm'), isFalse);
+          expect(registry.hasModal('alert'), isFalse);
+        },
+      );
 
       test('makeModal() throws after clear()', () {
         registry.registerModal('confirm', () => const SizedBox());
         registry.clear();
 
-        expect(
-          () => registry.makeModal('confirm'),
-          throwsA(isA<StateError>()),
-        );
+        expect(() => registry.makeModal('confirm'), throwsA(isA<StateError>()));
       });
     });
   });

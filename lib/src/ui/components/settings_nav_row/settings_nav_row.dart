@@ -101,19 +101,14 @@ class MSSettingsNavRow extends StatelessWidget {
       onTap: _handleTap,
       child: WDiv(
         className: settingsNavRowRecipe(
-          variants: {
-            kSettingsNavRowLayoutAxis: kSettingsNavRowLayoutDefault,
-          },
+          variants: {kSettingsNavRowLayoutAxis: kSettingsNavRowLayoutDefault},
         ),
         children: [
           // 1. Optional leading icon tile.
           if (icon != null) ...[
             WDiv(
               className: kSettingsNavRowIconTileClassName,
-              child: WIcon(
-                icon!,
-                className: kSettingsNavRowIconClassName,
-              ),
+              child: WIcon(icon!, className: kSettingsNavRowIconClassName),
             ),
             const WDiv(className: 'w-3'),
           ],
@@ -122,25 +117,16 @@ class MSSettingsNavRow extends StatelessWidget {
           WDiv(
             className: 'flex flex-col flex-1 min-w-0 gap-0.5',
             children: [
-              WText(
-                title,
-                className: kSettingsNavRowTitleClassName,
-              ),
+              WText(title, className: kSettingsNavRowTitleClassName),
               if (subtitle != null)
-                WText(
-                  subtitle!,
-                  className: kSettingsNavRowSubtitleClassName,
-                ),
+                WText(subtitle!, className: kSettingsNavRowSubtitleClassName),
             ],
           ),
 
           // 3. Optional trailing value text.
           if (value != null) ...[
             const WDiv(className: 'w-2'),
-            WText(
-              value!,
-              className: kSettingsNavRowValueClassName,
-            ),
+            WText(value!, className: kSettingsNavRowValueClassName),
           ],
 
           // 4. Trailing chevron — always present on a drill row.

@@ -14,30 +14,20 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
+  void mockResponse({required int statusCode, dynamic data}) {
     nextResponse = MagicResponse(
       data: data ?? <String, dynamic>{},
       statusCode: statusCode,
     );
   }
 
-  MagicResponse _respond(
-    String method,
-    String url, {
-    dynamic data,
-  }) {
+  MagicResponse _respond(String method, String url, {dynamic data}) {
     lastMethod = method;
     lastUrl = url;
     lastData = data;
 
     return nextResponse ??
-        MagicResponse(
-          data: <String, dynamic>{},
-          statusCode: 500,
-        );
+        MagicResponse(data: <String, dynamic>{}, statusCode: 500);
   }
 
   @override
@@ -48,55 +38,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -104,16 +87,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -121,8 +102,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -208,13 +188,9 @@ class MockGuard implements Guard {
 void main() {
   Widget wrap(Widget widget) {
     return MaterialApp(
-      builder: (context, child) => WindTheme(
-        data: WindThemeData(),
-        child: child!,
-      ),
-      home: Scaffold(
-        body: SingleChildScrollView(child: widget),
-      ),
+      builder: (context, child) =>
+          WindTheme(data: WindThemeData(), child: child!),
+      home: Scaffold(body: SingleChildScrollView(child: widget)),
     );
   }
 
@@ -235,10 +211,7 @@ void main() {
       Config.set('logging', <String, dynamic>{
         'default': 'console',
         'channels': <String, dynamic>{
-          'console': <String, dynamic>{
-            'driver': 'console',
-            'level': 'debug',
-          },
+          'console': <String, dynamic>{'driver': 'console', 'level': 'debug'},
         },
       });
 
@@ -259,10 +232,7 @@ void main() {
       Config.set('magic_starter.features.two_factor', true);
 
       // 6. Bind MagicStarterManager.
-      Magic.singleton(
-        'magic_starter',
-        () => MagicStarterManager(),
-      );
+      Magic.singleton('magic_starter', () => MagicStarterManager());
 
       // 7. Create and inject controller.
       Magic.put(MagicStarterProfileController());
@@ -285,25 +255,22 @@ void main() {
       Gate.flush();
     });
 
-    testWidgets(
-      '2FA section is visible when hasTwoFactorFeatures is true',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pump();
+    testWidgets('2FA section is visible when hasTwoFactorFeatures is true', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        // The 2FA card title must be rendered when feature is enabled.
-        expect(
-          find.byWidgetPredicate(
-            (Widget widget) =>
-                widget is WText &&
-                widget.data == trans('profile.two_factor_authentication'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
+      // The 2FA card title must be rendered when feature is enabled.
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WText &&
+              widget.data == trans('profile.two_factor_authentication'),
+        ),
+        findsOneWidget,
+      );
+    });
 
     testWidgets(
       '2FA section shows disabled state when two_factor_enabled is false on user',
@@ -313,9 +280,7 @@ void main() {
         // disabled description and the Enable button.
         mockGuard.setUserWithTwoFactorDisabled();
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
         await tester.pump();
 
         // Disabled description must be visible.
@@ -348,9 +313,7 @@ void main() {
         // status badge and management buttons.
         mockGuard.setUserWithTwoFactorEnabled();
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
         await tester.pump();
 
         // Green enabled status badge must be visible.
@@ -375,105 +338,100 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Enable button is visible in disabled state',
-      (WidgetTester tester) async {
-        mockGuard.setUserWithTwoFactorDisabled();
+    testWidgets('Enable button is visible in disabled state', (
+      WidgetTester tester,
+    ) async {
+      mockGuard.setUserWithTwoFactorDisabled();
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pump();
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        // The Enable button must be visible when 2FA is disabled.
-        expect(
-          find.byWidgetPredicate(
-            (Widget widget) =>
-                widget is WButton &&
-                widget.child is WText &&
-                (widget.child as WText).data ==
-                    trans('profile.two_factor_enable'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
+      // The Enable button must be visible when 2FA is disabled.
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WButton &&
+              widget.child is WText &&
+              (widget.child as WText).data ==
+                  trans('profile.two_factor_enable'),
+        ),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'Disable button is visible in enabled state',
-      (WidgetTester tester) async {
-        // User with 2FA enabled — view should show the Disable button.
-        mockGuard.setUserWithTwoFactorEnabled();
+    testWidgets('Disable button is visible in enabled state', (
+      WidgetTester tester,
+    ) async {
+      // User with 2FA enabled — view should show the Disable button.
+      mockGuard.setUserWithTwoFactorEnabled();
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pump();
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        // The Disable button must be visible when 2FA is enabled.
-        expect(
-          find.byWidgetPredicate(
-            (Widget widget) =>
-                widget is WButton &&
-                widget.child is WText &&
-                (widget.child as WText).data ==
-                    trans('profile.two_factor_disable'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
-    testWidgets(
-      'Disable button shows PasswordConfirmDialog',
-      (WidgetTester tester) async {
-        mockGuard.setUserWithTwoFactorEnabled();
+      // The Disable button must be visible when 2FA is enabled.
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WButton &&
+              widget.child is WText &&
+              (widget.child as WText).data ==
+                  trans('profile.two_factor_disable'),
+        ),
+        findsOneWidget,
+      );
+    });
+    testWidgets('Disable button shows PasswordConfirmDialog', (
+      WidgetTester tester,
+    ) async {
+      mockGuard.setUserWithTwoFactorEnabled();
 
-        // Ensure enough viewport width for dialog buttons.
-        tester.view.physicalSize = const Size(1200, 900);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
-        await tester.pump();
+      // Ensure enough viewport width for dialog buttons.
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
 
-        final btn = find.byWidgetPredicate((Widget widget) =>
+      final btn = find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data == trans('profile.two_factor_disable'),
+      );
+      await tester.ensureVisible(btn);
+      await tester.tap(btn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+    });
+
+    testWidgets('Show Recovery Codes button shows PasswordConfirmDialog', (
+      WidgetTester tester,
+    ) async {
+      mockGuard.setUserWithTwoFactorEnabled();
+
+      // Ensure enough viewport width for dialog buttons.
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
+
+      final btn = find.byWidgetPredicate(
+        (Widget widget) =>
             widget is WButton &&
             widget.child is WText &&
             (widget.child as WText).data ==
-                trans('profile.two_factor_disable'));
-        await tester.ensureVisible(btn);
-        await tester.tap(btn);
-        await tester.pumpAndSettle();
+                trans('profile.two_factor_show_recovery_codes'),
+      );
+      await tester.ensureVisible(btn);
+      await tester.tap(btn);
+      await tester.pumpAndSettle();
 
-        expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'Show Recovery Codes button shows PasswordConfirmDialog',
-      (WidgetTester tester) async {
-        mockGuard.setUserWithTwoFactorEnabled();
-
-        // Ensure enough viewport width for dialog buttons.
-        tester.view.physicalSize = const Size(1200, 900);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
-        await tester.pump();
-
-        final btn = find.byWidgetPredicate((Widget widget) =>
-            widget is WButton &&
-            widget.child is WText &&
-            (widget.child as WText).data ==
-                trans('profile.two_factor_show_recovery_codes'));
-        await tester.ensureVisible(btn);
-        await tester.tap(btn);
-        await tester.pumpAndSettle();
-
-        expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
-      },
-    );
+      expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+    });
 
     testWidgets(
       'Regenerate Recovery Codes button is visible after showing recovery codes',
@@ -489,11 +447,13 @@ void main() {
         await tester.pump();
 
         // 1. Tap Show Recovery Codes to reveal them.
-        final showBtn = find.byWidgetPredicate((Widget widget) =>
-            widget is WButton &&
-            widget.child is WText &&
-            (widget.child as WText).data ==
-                trans('profile.two_factor_show_recovery_codes'));
+        final showBtn = find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WButton &&
+              widget.child is WText &&
+              (widget.child as WText).data ==
+                  trans('profile.two_factor_show_recovery_codes'),
+        );
         await tester.ensureVisible(showBtn);
         await tester.tap(showBtn);
         await tester.pumpAndSettle();
@@ -503,17 +463,21 @@ void main() {
 
         // 2. Cancel dialog — we can't easily confirm via mock in widget test,
         //    so we verify the Regenerate button is NOT visible before codes.
-        final cancelBtn = find.byWidgetPredicate((Widget widget) =>
-            widget is WText && widget.data == trans('common.cancel'));
+        final cancelBtn = find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WText && widget.data == trans('common.cancel'),
+        );
         await tester.tap(cancelBtn);
         await tester.pumpAndSettle();
 
         // Regenerate button must NOT be visible when no codes are shown.
-        final regenBtn = find.byWidgetPredicate((Widget widget) =>
-            widget is WButton &&
-            widget.child is WText &&
-            (widget.child as WText).data ==
-                trans('profile.two_factor_regenerate_codes'));
+        final regenBtn = find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WButton &&
+              widget.child is WText &&
+              (widget.child as WText).data ==
+                  trans('profile.two_factor_regenerate_codes'),
+        );
         expect(regenBtn, findsNothing);
       },
     );

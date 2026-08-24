@@ -89,12 +89,7 @@ void main() {
 
   testWidgets('PageScaffold renders title via PageHeader', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSPageScaffold(
-          title: 'Profile',
-          children: [],
-        ),
-      ),
+      wrap(const MSPageScaffold(title: 'Profile', children: [])),
     );
     // PageHeader renders the title as a WText.
     final titleTexts = tester
@@ -104,8 +99,9 @@ void main() {
     expect(titleTexts, isNotEmpty);
   });
 
-  testWidgets('PageScaffold renders icon-only back via PageHeader',
-      (tester) async {
+  testWidgets('PageScaffold renders icon-only back via PageHeader', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSPageScaffold(
@@ -121,15 +117,11 @@ void main() {
     expect(find.text('Settings'), findsNothing);
   });
 
-  testWidgets('PageScaffold renders no back when backLabel is null',
-      (tester) async {
+  testWidgets('PageScaffold renders no back when backLabel is null', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSPageScaffold(
-          title: 'Settings',
-          children: [],
-        ),
-      ),
+      wrap(const MSPageScaffold(title: 'Settings', children: [])),
     );
     expect(find.byIcon(Icons.chevron_left), findsNothing);
   });
@@ -139,10 +131,7 @@ void main() {
       wrap(
         const MSPageScaffold(
           title: 'Profile',
-          children: [
-            Text('Section 1'),
-            Text('Section 2'),
-          ],
+          children: [Text('Section 1'), Text('Section 2')],
         ),
       ),
     );
@@ -150,15 +139,11 @@ void main() {
     expect(find.text('Section 2'), findsOneWidget);
   });
 
-  testWidgets('PageScaffold children area uses gap-6 column className',
-      (tester) async {
+  testWidgets('PageScaffold children area uses gap-6 column className', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSPageScaffold(
-          title: 'Profile',
-          children: [Text('Child')],
-        ),
-      ),
+      wrap(const MSPageScaffold(title: 'Profile', children: [Text('Child')])),
     );
     // The children-area WDiv must carry `gap-6` and `flex-col`.
     final childArea = tester
@@ -172,15 +157,11 @@ void main() {
     expect(childArea, isNotEmpty);
   });
 
-  testWidgets('PageScaffold outer container has the default cap and mx-auto',
-      (tester) async {
+  testWidgets('PageScaffold outer container has the default cap and mx-auto', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSPageScaffold(
-          title: 'Profile',
-          children: [],
-        ),
-      ),
+      wrap(const MSPageScaffold(title: 'Profile', children: [])),
     );
     // The centered constrained column WDiv must carry both tokens.
     final constrainedDivs = tester
@@ -201,17 +182,13 @@ void main() {
   // that and always capped at its default, every settings header started tens
   // of pixels further out than every other page in the same app on a wide
   // window: same sidebar, same chrome, two different content columns.
-  testWidgets('PageScaffold caps at the width the host configured',
-      (tester) async {
+  testWidgets('PageScaffold caps at the width the host configured', (
+    tester,
+  ) async {
     MagicStarter.manager.pageContainerClassName = 'max-w-6xl';
 
     await tester.pumpWidget(
-      wrap(
-        const MSPageScaffold(
-          title: 'Profile',
-          children: [],
-        ),
-      ),
+      wrap(const MSPageScaffold(title: 'Profile', children: [])),
     );
 
     final constrainedDivs = tester
@@ -221,15 +198,11 @@ void main() {
     expect(constrainedDivs, isNotEmpty);
   });
 
-  testWidgets('PageScaffold uses SingleChildScrollView with primary: false',
-      (tester) async {
+  testWidgets('PageScaffold uses SingleChildScrollView with primary: false', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSPageScaffold(
-          title: 'Profile',
-          children: [],
-        ),
-      ),
+      wrap(const MSPageScaffold(title: 'Profile', children: [])),
     );
     // There must be exactly one non-primary SingleChildScrollView
     // (primary: false is required to avoid PrimaryScrollController contention).
@@ -240,8 +213,9 @@ void main() {
     expect(scrollViews, isNotEmpty);
   });
 
-  testWidgets('PageScaffold renders subtitle via PageHeader when provided',
-      (tester) async {
+  testWidgets('PageScaffold renders subtitle via PageHeader when provided', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSPageScaffold(
@@ -262,8 +236,9 @@ void main() {
   // the scaffold forwarded them, a page that needed one (Notifications and its
   // "mark all read") had to build its own header, and building its own header
   // is how it ended up building its own container too.
-  testWidgets('PageScaffold renders header actions when provided',
-      (tester) async {
+  testWidgets('PageScaffold renders header actions when provided', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSPageScaffold(

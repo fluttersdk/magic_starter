@@ -101,10 +101,7 @@ class MagicStarterOtpController extends MagicController
   /// @param phone  E.164-formatted phone number — may be omitted to fall back
   ///               to the value stored by [sendOtp].
   /// @param code   The 6-digit OTP code received via SMS.
-  Future<void> verifyOtp({
-    required String phone,
-    required String code,
-  }) async {
+  Future<void> verifyOtp({required String phone, required String code}) async {
     if (_isSubmitting) return;
     _isSubmitting = true;
     setLoading();
@@ -116,10 +113,7 @@ class MagicStarterOtpController extends MagicController
 
       final response = await Http.post(
         '/auth/otp/verify',
-        data: {
-          'phone': resolvedPhone,
-          'code': code,
-        },
+        data: {'phone': resolvedPhone, 'code': code},
       );
 
       if (!response.successful) {
@@ -136,12 +130,7 @@ class MagicStarterOtpController extends MagicController
       final userData = data?['user'] as Map<String, dynamic>?;
 
       if (token != null && userData != null) {
-        await Auth.login(
-          {
-            'token': token,
-          },
-          MagicStarter.createUser(userData),
-        );
+        await Auth.login({'token': token}, MagicStarter.createUser(userData));
       }
 
       // 3. Navigate home on successful authentication.

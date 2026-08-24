@@ -224,7 +224,8 @@ class MSNotificationDropdown extends StatelessWidget {
         close();
       },
       child: WDiv(
-        className: '''
+        className:
+            '''
           flex flex-row items-start gap-3 px-4 py-3 w-full
           border-b border-gray-100 dark:border-gray-700
           hover:bg-gray-50 dark:hover:bg-gray-700
@@ -244,7 +245,8 @@ class MSNotificationDropdown extends StatelessWidget {
             children: [
               WText(
                 notification.title,
-                className: '''
+                className:
+                    '''
                   text-sm text-gray-900 dark:text-white truncate
                   ${notification.isRead ? '' : 'font-semibold'}
                 ''',

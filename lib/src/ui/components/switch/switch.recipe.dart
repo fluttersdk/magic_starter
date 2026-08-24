@@ -11,7 +11,8 @@ import 'package:magic/magic.dart';
 /// deliberately does NOT use `translate-x-*`: Wind has no transform parser, so
 /// a translate-based thumb would never move.
 const WindRecipe switchTrackRecipe = WindRecipe(
-  base: 'w-11 h-6 rounded-full px-0.5 '
+  base:
+      'w-11 h-6 rounded-full px-0.5 '
       'flex items-center justify-start checked:justify-end '
       'bg-surface-container-high checked:bg-primary '
       'disabled:opacity-50',

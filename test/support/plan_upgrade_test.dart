@@ -20,13 +20,13 @@ void main() {
     test('reads the plan wall off a gated 403', () {
       final PlanUpgradeRequirement? requirement =
           PlanUpgradeRequirement.fromResponse(
-        gated(
-          upgrade: {
-            'required_plan': 'pro',
-            'feature': 'AI monitor analysis',
-          },
-        ),
-      );
+            gated(
+              upgrade: {
+                'required_plan': 'pro',
+                'feature': 'AI monitor analysis',
+              },
+            ),
+          );
 
       expect(requirement, isNotNull);
       expect(requirement!.requiredPlan, equals('pro'));
@@ -139,7 +139,8 @@ void main() {
       expect(
         minted.every((String token) => token.contains('-')),
         isTrue,
-        reason: 'a token without a sequence suffix is only as unique as the '
+        reason:
+            'a token without a sequence suffix is only as unique as the '
             'platform clock, which on web is one millisecond',
       );
       expect(sequences[1], sequences[0] + 1);

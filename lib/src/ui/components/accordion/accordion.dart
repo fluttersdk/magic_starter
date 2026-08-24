@@ -21,10 +21,7 @@ class MSAccordionItem {
   final Widget body;
 
   /// Creates an [MSAccordionItem].
-  const MSAccordionItem({
-    required this.title,
-    required this.body,
-  });
+  const MSAccordionItem({required this.title, required this.body});
 }
 
 /// A recipe-driven accordion component for Magic Starter.
@@ -57,11 +54,7 @@ class MSAccordion extends StatefulWidget {
   final Map<String, String>? classNames;
 
   /// Creates an [MSAccordion] widget.
-  const MSAccordion({
-    super.key,
-    required this.items,
-    this.classNames,
-  });
+  const MSAccordion({super.key, required this.items, this.classNames});
 
   @override
   State<MSAccordion> createState() => _AccordionState();
@@ -110,11 +103,7 @@ class _AccordionState extends State<MSAccordion> {
           // Header row — tappable trigger.
           _buildTrigger(index, isExpanded, item.title, slots),
           // Collapsible panel — only rendered when this item is expanded.
-          if (isExpanded)
-            WDiv(
-              className: slots['panel'],
-              child: item.body,
-            ),
+          if (isExpanded) WDiv(className: slots['panel'], child: item.body),
         ],
       ),
     );
@@ -137,14 +126,8 @@ class _AccordionState extends State<MSAccordion> {
       child: WDiv(
         className: slots['trigger'],
         children: [
-          WDiv(
-            className: 'flex-1',
-            child: WText(title),
-          ),
-          Icon(
-            isExpanded ? _kIconExpanded : _kIconCollapsed,
-            size: 18,
-          ),
+          WDiv(className: 'flex-1', child: WText(title)),
+          Icon(isExpanded ? _kIconExpanded : _kIconCollapsed, size: 18),
         ],
       ),
     );

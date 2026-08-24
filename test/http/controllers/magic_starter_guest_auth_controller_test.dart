@@ -15,14 +15,8 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
@@ -40,55 +34,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -96,16 +83,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -113,8 +98,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -168,10 +152,7 @@ class MockGuard implements Guard {
   @override
   Future<void> restore() async {
     if (mockToken != null) {
-      _user = MagicStarterAuthUser.fromMap({
-        'id': 1,
-        'name': 'Restored User',
-      });
+      _user = MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Restored User'});
     }
   }
 
@@ -244,9 +225,7 @@ void main() {
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-        'mock': {
-          'driver': 'mock',
-        },
+        'mock': {'driver': 'mock'},
       });
 
       // 5. Bind MagicStarterManager for MagicStarter facade.
@@ -279,11 +258,7 @@ void main() {
           data: {
             'data': {
               'token': 'guest-token-abc',
-              'user': {
-                'id': 99,
-                'name': 'Guest User',
-                'is_guest': true,
-              },
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
             },
           },
         );
@@ -304,8 +279,11 @@ void main() {
         final uuidPattern = RegExp(
           r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
         );
-        expect(uuidPattern.hasMatch(deviceId!), isTrue,
-            reason: 'device_id must be a valid UUID v4, got: $deviceId');
+        expect(
+          uuidPattern.hasMatch(deviceId!),
+          isTrue,
+          reason: 'device_id must be a valid UUID v4, got: $deviceId',
+        );
       });
 
       test('success — stores UUID in Vault', () async {
@@ -314,11 +292,7 @@ void main() {
           data: {
             'data': {
               'token': 'guest-token-abc',
-              'user': {
-                'id': 99,
-                'name': 'Guest User',
-                'is_guest': true,
-              },
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
             },
           },
         );
@@ -342,11 +316,7 @@ void main() {
           data: {
             'data': {
               'token': 'guest-token-xyz',
-              'user': {
-                'id': 99,
-                'name': 'Guest User',
-                'is_guest': true,
-              },
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
             },
           },
         );
@@ -354,10 +324,7 @@ void main() {
         await controller.doGuestLogin();
 
         expect(mockGuard.check(), isTrue);
-        expect(
-          mockGuard.lastLoginData?['token'],
-          equals('guest-token-xyz'),
-        );
+        expect(mockGuard.lastLoginData?['token'], equals('guest-token-xyz'));
       });
 
       test('success — reuses stored UUID on subsequent calls', () async {
@@ -370,11 +337,7 @@ void main() {
           data: {
             'data': {
               'token': 'guest-token-reused',
-              'user': {
-                'id': 99,
-                'name': 'Guest User',
-                'is_guest': true,
-              },
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
             },
           },
         );
@@ -388,9 +351,7 @@ void main() {
       test('API error — sets error state', () async {
         mockDriver.mockResponse(
           statusCode: 400,
-          data: {
-            'message': 'Guest login not supported',
-          },
+          data: {'message': 'Guest login not supported'},
         );
 
         await controller.doGuestLogin();
@@ -417,11 +378,7 @@ void main() {
           data: {
             'data': {
               'token': 'guest-token-abc',
-              'user': {
-                'id': 99,
-                'name': 'Guest User',
-                'is_guest': true,
-              },
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
             },
           },
         );

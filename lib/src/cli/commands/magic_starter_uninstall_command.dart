@@ -9,7 +9,8 @@ import 'package:fluttersdk_artisan/artisan.dart';
 /// intact whenever possible.
 class MagicStarterUninstallCommand extends ArtisanCommand {
   @override
-  String get signature => 'starter:uninstall '
+  String get signature =>
+      'starter:uninstall '
       '{--force : Skip confirmation prompt}';
 
   @override
@@ -30,14 +31,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   ///
   /// Overridable in tests.
   Future<ProcessResult> runDartFormat(String rootPath) {
-    return Process.run(
-      'dart',
-      [
-        'format',
-        '.',
-      ],
-      workingDirectory: rootPath,
-    );
+    return Process.run('dart', ['format', '.'], workingDirectory: rootPath);
   }
 
   @override
@@ -85,14 +79,18 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
     ctx.output.info('The following will be removed:');
     ctx.output.info('  • lib/config/magic_starter.dart');
     ctx.output.info('  • magic_starter dependency from pubspec.yaml');
-    ctx.output
-        .info('  • Magic Starter import/provider from lib/config/app.dart');
-    ctx.output
-        .info('  • magic_starter import/configFactory from lib/main.dart');
     ctx.output.info(
-        '  • Magic Starter middleware aliases/imports from lib/app/kernel.dart');
+      '  • Magic Starter import/provider from lib/config/app.dart',
+    );
     ctx.output.info(
-        '  • Magic Starter route imports/registrations from RouteServiceProvider');
+      '  • magic_starter import/configFactory from lib/main.dart',
+    );
+    ctx.output.info(
+      '  • Magic Starter middleware aliases/imports from lib/app/kernel.dart',
+    );
+    ctx.output.info(
+      '  • Magic Starter route imports/registrations from RouteServiceProvider',
+    );
     ctx.output.writeln('');
   }
 
@@ -164,8 +162,9 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
     final String pubspecPath = '$projectRoot/pubspec.yaml';
 
     if (!FileHelper.fileExists(pubspecPath)) {
-      ctx.output
-          .warning('pubspec.yaml not found. Skipping dependency cleanup.');
+      ctx.output.warning(
+        'pubspec.yaml not found. Skipping dependency cleanup.',
+      );
       return;
     }
 
@@ -182,8 +181,9 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
     final String appPath = '$projectRoot/lib/config/app.dart';
 
     if (!FileHelper.fileExists(appPath)) {
-      ctx.output
-          .warning('lib/config/app.dart not found. Skipping app cleanup.');
+      ctx.output.warning(
+        'lib/config/app.dart not found. Skipping app cleanup.',
+      );
       return;
     }
 
@@ -205,8 +205,9 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
     );
 
     FileHelper.writeFile(appPath, content);
-    ctx.output
-        .success('Removed Magic Starter entries from lib/config/app.dart');
+    ctx.output.success(
+      'Removed Magic Starter entries from lib/config/app.dart',
+    );
   }
 
   /// Removes Magic Starter import/configFactory lines from `lib/main.dart`.
@@ -214,8 +215,9 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
     final String mainPath = '$projectRoot/lib/main.dart';
 
     if (!FileHelper.fileExists(mainPath)) {
-      ctx.output
-          .warning('lib/main.dart not found. Skipping main.dart cleanup.');
+      ctx.output.warning(
+        'lib/main.dart not found. Skipping main.dart cleanup.',
+      );
       return;
     }
 
@@ -240,8 +242,9 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
     final String kernelPath = '$projectRoot/lib/app/kernel.dart';
 
     if (!FileHelper.fileExists(kernelPath)) {
-      ctx.output
-          .warning('lib/app/kernel.dart not found. Skipping kernel cleanup.');
+      ctx.output.warning(
+        'lib/app/kernel.dart not found. Skipping kernel cleanup.',
+      );
       return;
     }
 
@@ -290,7 +293,8 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
 
     FileHelper.writeFile(kernelPath, content);
     ctx.output.success(
-        'Removed Magic Starter middleware entries from lib/app/kernel.dart');
+      'Removed Magic Starter middleware entries from lib/app/kernel.dart',
+    );
   }
 
   /// Removes Magic Starter route imports and registrations from

@@ -25,8 +25,12 @@ class MagicStarterTwoFactorChallengeView
       _MagicStarterTwoFactorChallengeViewState();
 }
 
-class _MagicStarterTwoFactorChallengeViewState extends MagicStatefulViewState<
-    MagicStarterAuthController, MagicStarterTwoFactorChallengeView> {
+class _MagicStarterTwoFactorChallengeViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterAuthController,
+          MagicStarterTwoFactorChallengeView
+        > {
   bool _useRecoveryCode = false;
   final TextEditingController _codeController = TextEditingController();
 

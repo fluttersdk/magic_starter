@@ -90,10 +90,7 @@ void main() {
           checkboxLabelClassName: 'custom-checkbox-label',
         );
 
-        expect(
-          theme.checkboxLabelClassName,
-          equals('custom-checkbox-label'),
-        );
+        expect(theme.checkboxLabelClassName, equals('custom-checkbox-label'));
       });
 
       test('non-overridden fields keep their defaults', () {
@@ -141,7 +138,9 @@ void main() {
         const theme = MagicStarterCardTheme();
 
         expect(
-            theme.titleNoPaddingContainerClassName, equals('px-6 pt-6 pb-3'));
+          theme.titleNoPaddingContainerClassName,
+          equals('px-6 pt-6 pb-3'),
+        );
       });
 
       test('borderRadius is rounded-2xl', () {
@@ -574,9 +573,7 @@ void main() {
       });
 
       test('stores custom auth sub-theme', () {
-        const customAuth = MagicStarterAuthTheme(
-          cardClassName: 'custom-card',
-        );
+        const customAuth = MagicStarterAuthTheme(cardClassName: 'custom-card');
         const theme = MagicStarterTheme(auth: customAuth);
 
         expect(theme.auth.cardClassName, equals('custom-card'));

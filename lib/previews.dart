@@ -67,129 +67,129 @@ List<StarterComponentPreview> starterComponentPreviews() {
     (
       label: 'Accordion',
       slug: 'accordion',
-      builder: (_) => const AccordionPreview()
+      builder: (_) => const AccordionPreview(),
     ),
     (label: 'Badge', slug: 'badge', builder: (_) => const BadgePreview()),
     (
       label: 'Bottom Sheet',
       slug: 'bottom_sheet',
-      builder: (_) => const BottomSheetPreview()
+      builder: (_) => const BottomSheetPreview(),
     ),
     (label: 'Button', slug: 'button', builder: (_) => const ButtonPreview()),
     (label: 'Card', slug: 'card', builder: (_) => const CardPreview()),
     (
       label: 'Checkbox',
       slug: 'checkbox',
-      builder: (_) => const CheckboxPreview()
+      builder: (_) => const CheckboxPreview(),
     ),
     (
       label: 'Combobox',
       slug: 'combobox',
-      builder: (_) => const ComboboxPreview()
+      builder: (_) => const ComboboxPreview(),
     ),
     (
       label: 'Confirm Dialog',
       slug: 'confirm_dialog',
-      builder: (_) => const ConfirmDialogPreview()
+      builder: (_) => const ConfirmDialogPreview(),
     ),
     (label: 'Dialog', slug: 'dialog', builder: (_) => const DialogPreview()),
     (
       label: 'Dropdown Menu',
       slug: 'dropdown_menu',
-      builder: (_) => const DropdownMenuPreview()
+      builder: (_) => const DropdownMenuPreview(),
     ),
     (
       label: 'Empty State',
       slug: 'empty_state',
-      builder: (_) => const EmptyStatePreview()
+      builder: (_) => const EmptyStatePreview(),
     ),
     (
       label: 'Error State',
       slug: 'error_state',
-      builder: (_) => const ErrorStatePreview()
+      builder: (_) => const ErrorStatePreview(),
     ),
     (
       label: 'Form Field',
       slug: 'form_field',
-      builder: (_) => const MagicFormFieldPreview()
+      builder: (_) => const MagicFormFieldPreview(),
     ),
     (label: 'Input', slug: 'input', builder: (_) => const InputPreview()),
     (label: 'Navbar', slug: 'navbar', builder: (_) => const NavbarPreview()),
     (
       label: 'Notification Dropdown',
       slug: 'notification_dropdown',
-      builder: (_) => const NotificationDropdownPreview()
+      builder: (_) => const NotificationDropdownPreview(),
     ),
     (
       label: 'Page Header',
       slug: 'page_header',
-      builder: (_) => const PageHeaderPreview()
+      builder: (_) => const PageHeaderPreview(),
     ),
     (label: 'Radio', slug: 'radio', builder: (_) => const RadioPreview()),
     (
       label: 'Segmented Control',
       slug: 'segmented_control',
-      builder: (_) => const SegmentedControlPreview()
+      builder: (_) => const SegmentedControlPreview(),
     ),
     (label: 'Select', slug: 'select', builder: (_) => const SelectPreview()),
     (
       label: 'Settings Nav Row',
       slug: 'settings_nav_row',
-      builder: (_) => const SettingsNavRowPreview()
+      builder: (_) => const SettingsNavRowPreview(),
     ),
     (
       label: 'Settings Row',
       slug: 'settings_row',
-      builder: (_) => const SettingsRowPreview()
+      builder: (_) => const SettingsRowPreview(),
     ),
     (
       label: 'Page Container',
       slug: 'page_container',
-      builder: (_) => const PageContainerPreview()
+      builder: (_) => const PageContainerPreview(),
     ),
     (
       label: 'Page Scaffold',
       slug: 'page_scaffold',
-      builder: (_) => const PageScaffoldPreview()
+      builder: (_) => const PageScaffoldPreview(),
     ),
     (
       label: 'Settings Section',
       slug: 'settings_section',
-      builder: (_) => const SettingsSectionPreview()
+      builder: (_) => const SettingsSectionPreview(),
     ),
     (
       label: 'Skeleton',
       slug: 'skeleton',
-      builder: (_) => const SkeletonPreview()
+      builder: (_) => const SkeletonPreview(),
     ),
     (
       label: 'Social Divider',
       slug: 'social_divider',
-      builder: (_) => const SocialDividerPreview()
+      builder: (_) => const SocialDividerPreview(),
     ),
     (label: 'Switch', slug: 'switch', builder: (_) => const SwitchPreview()),
     (label: 'Tabs', slug: 'tabs', builder: (_) => const TabsPreview()),
     (
       label: 'Team Selector',
       slug: 'team_selector',
-      builder: (_) => const TeamSelectorPreview()
+      builder: (_) => const TeamSelectorPreview(),
     ),
     (
       label: 'Textarea',
       slug: 'textarea',
-      builder: (_) => const TextareaPreview()
+      builder: (_) => const TextareaPreview(),
     ),
     (label: 'Toast', slug: 'toast', builder: (_) => const ToastPreview()),
     (label: 'Tooltip', slug: 'tooltip', builder: (_) => const TooltipPreview()),
     (
       label: 'Typography',
       slug: 'typography',
-      builder: (_) => const TypographyPreview()
+      builder: (_) => const TypographyPreview(),
     ),
     (
       label: 'User Profile Dropdown',
       slug: 'user_profile_dropdown',
-      builder: (_) => const UserProfileDropdownPreview()
+      builder: (_) => const UserProfileDropdownPreview(),
     ),
   ];
 }

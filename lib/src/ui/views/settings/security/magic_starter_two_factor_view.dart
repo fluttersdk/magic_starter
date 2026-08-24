@@ -29,8 +29,12 @@ class MagicStarterTwoFactorView
       _MagicStarterTwoFactorViewState();
 }
 
-class _MagicStarterTwoFactorViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterTwoFactorView> {
+class _MagicStarterTwoFactorViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterTwoFactorView
+        > {
   // -- 2FA UI state: 'disabled' | 'enabled' ----------------------------------
 
   String _twoFactorState = 'disabled';
@@ -60,7 +64,9 @@ class _MagicStarterTwoFactorViewState extends MagicStatefulViewState<
 
   /// Execute [action] while driving [notifier] to `true`/`false`.
   Future<T> _trackLoading<T>(
-      ValueNotifier<bool> notifier, Future<T> Function() action) async {
+    ValueNotifier<bool> notifier,
+    Future<T> Function() action,
+  ) async {
     notifier.value = true;
     try {
       return await action();
@@ -299,8 +305,9 @@ class _MagicStarterTwoFactorViewState extends MagicStatefulViewState<
                         isLoading: isLoading,
                         className:
                             'px-4 py-2 rounded-lg bg-surface-container border border-color-border hover:bg-surface-container-high text-fg text-sm font-medium',
-                        child:
-                            WText(trans('profile.two_factor_regenerate_codes')),
+                        child: WText(
+                          trans('profile.two_factor_regenerate_codes'),
+                        ),
                       ),
                     ),
                   ),

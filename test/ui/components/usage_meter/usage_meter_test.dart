@@ -56,59 +56,64 @@ void main() {
 
   group('usageMeterRecipe', () {
     test('success tone emits the bg-success alias key', () {
-      final slots =
-          usageMeterRecipe(variants: {kUsageMeterToneAxis: 'success'});
+      final slots = usageMeterRecipe(
+        variants: {kUsageMeterToneAxis: 'success'},
+      );
       expect(slots['bar'], contains('bg-success'));
     });
 
     test('warning tone emits the bg-warning alias key', () {
-      final slots =
-          usageMeterRecipe(variants: {kUsageMeterToneAxis: 'warning'});
+      final slots = usageMeterRecipe(
+        variants: {kUsageMeterToneAxis: 'warning'},
+      );
       expect(slots['bar'], contains('bg-warning'));
     });
 
     test('destructive tone emits the bg-destructive alias key', () {
-      final slots =
-          usageMeterRecipe(variants: {kUsageMeterToneAxis: 'destructive'});
+      final slots = usageMeterRecipe(
+        variants: {kUsageMeterToneAxis: 'destructive'},
+      );
       expect(slots['bar'], contains('bg-destructive'));
     });
 
     test(
-        'every colour token is one MagicStarterTokens.defaultAliases guarantees',
-        () {
-      const guaranteedColourTokens = {
-        'text-fg',
-        'text-fg-muted',
-        'bg-surface-container-high',
-        'bg-success',
-        'bg-warning',
-        'bg-destructive',
-      };
-      // `text-sm` / `text-xs` are font-size utilities, not colour tokens; a
-      // bare `text-` prefix is not enough to tell the two apart.
-      const nonColourTextUtilities = {'text-sm', 'text-xs'};
+      'every colour token is one MagicStarterTokens.defaultAliases guarantees',
+      () {
+        const guaranteedColourTokens = {
+          'text-fg',
+          'text-fg-muted',
+          'bg-surface-container-high',
+          'bg-success',
+          'bg-warning',
+          'bg-destructive',
+        };
+        // `text-sm` / `text-xs` are font-size utilities, not colour tokens; a
+        // bare `text-` prefix is not enough to tell the two apart.
+        const nonColourTextUtilities = {'text-sm', 'text-xs'};
 
-      for (final tone in ['success', 'warning', 'destructive']) {
-        final slots = usageMeterRecipe(variants: {kUsageMeterToneAxis: tone});
-        for (final className in slots.values) {
-          for (final token in className.split(' ')) {
-            if (!token.startsWith('bg-') && !token.startsWith('text-')) {
-              continue;
+        for (final tone in ['success', 'warning', 'destructive']) {
+          final slots = usageMeterRecipe(variants: {kUsageMeterToneAxis: tone});
+          for (final className in slots.values) {
+            for (final token in className.split(' ')) {
+              if (!token.startsWith('bg-') && !token.startsWith('text-')) {
+                continue;
+              }
+              if (nonColourTextUtilities.contains(token)) {
+                continue;
+              }
+              expect(
+                guaranteedColourTokens.contains(token),
+                isTrue,
+                reason:
+                    '"$token" is not a key MagicStarterTokens.defaultAliases '
+                    'guarantees, so it renders no colour in every app that has '
+                    'not hand-authored it',
+              );
             }
-            if (nonColourTextUtilities.contains(token)) {
-              continue;
-            }
-            expect(
-              guaranteedColourTokens.contains(token),
-              isTrue,
-              reason: '"$token" is not a key MagicStarterTokens.defaultAliases '
-                  'guarantees, so it renders no colour in every app that has '
-                  'not hand-authored it',
-            );
           }
         }
-      }
-    });
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -119,58 +124,67 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets(
-      'the fill is visible with only MagicStarterTokens.defaultAliases wired, '
-      'no consumer supplement', (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSUsageMeter(
-          label: 'Monitors',
-          used: 4,
-          limit: 50,
-          formatNumber: toStringFormatter,
+    'the fill is visible with only MagicStarterTokens.defaultAliases wired, '
+    'no consumer supplement',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSUsageMeter(
+            label: 'Monitors',
+            used: 4,
+            limit: 50,
+            formatNumber: toStringFormatter,
+          ),
         ),
-      ),
-    );
+      );
 
-    final color = fillColor(tester);
-    expect(color, isNotNull,
-        reason: 'the fill colour token resolved to nothing');
-    expect(
-      color,
-      isNot(Colors.transparent),
-      reason: 'the fill colour token resolved to transparent, same as no '
-          'colour at all',
-    );
-  });
+      final color = fillColor(tester);
+      expect(
+        color,
+        isNotNull,
+        reason: 'the fill colour token resolved to nothing',
+      );
+      expect(
+        color,
+        isNot(Colors.transparent),
+        reason:
+            'the fill colour token resolved to transparent, same as no '
+            'colour at all',
+      );
+    },
+  );
 
   // ---------------------------------------------------------------------------
   // A null limit
   // ---------------------------------------------------------------------------
 
   testWidgets(
-      'a null limit renders the used count without a denominator and does '
-      'not divide by null or by zero', (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        const MSUsageMeter(
-          label: 'Monitors',
-          used: 420,
-          limit: null,
-          formatNumber: toStringFormatter,
+    'a null limit renders the used count without a denominator and does '
+    'not divide by null or by zero',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSUsageMeter(
+            label: 'Monitors',
+            used: 420,
+            limit: null,
+            formatNumber: toStringFormatter,
+          ),
         ),
-      ),
-    );
+      );
 
-    expect(tester.takeException(), isNull);
-    expect(find.text('420 / ∞'), findsOneWidget);
-  });
+      expect(tester.takeException(), isNull);
+      expect(find.text('420 / ∞'), findsOneWidget);
+    },
+  );
 
   // ---------------------------------------------------------------------------
   // Over-quota
   // ---------------------------------------------------------------------------
 
-  testWidgets('used greater than limit does not overflow the bar or throw',
-      (tester) async {
+  testWidgets('used greater than limit does not overflow the bar or throw', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSUsageMeter(
@@ -183,12 +197,14 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    final fractionallySizedBox =
-        tester.widget<FractionallySizedBox>(find.byType(FractionallySizedBox));
+    final fractionallySizedBox = tester.widget<FractionallySizedBox>(
+      find.byType(FractionallySizedBox),
+    );
     expect(
       fractionallySizedBox.widthFactor,
       1.0,
-      reason: 'an over-quota ratio must be capped at 1.0, not overflow the '
+      reason:
+          'an over-quota ratio must be capped at 1.0, not overflow the '
           'track',
     );
     expect(find.text('120 / 100'), findsOneWidget);
@@ -203,55 +219,60 @@ void main() {
 
   group('a non-positive limit', () {
     testWidgets(
-        'used: 0, limit: 0 renders as fully consumed at the destructive tone, '
-        'not NaN', (tester) async {
-      await tester.pumpWidget(
-        wrap(
-          const MSUsageMeter(
-            label: 'Responders',
-            used: 0,
-            limit: 0,
-            formatNumber: toStringFormatter,
+      'used: 0, limit: 0 renders as fully consumed at the destructive tone, '
+      'not NaN',
+      (tester) async {
+        await tester.pumpWidget(
+          wrap(
+            const MSUsageMeter(
+              label: 'Responders',
+              used: 0,
+              limit: 0,
+              formatNumber: toStringFormatter,
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(tester.takeException(), isNull);
-      final fractionallySizedBox = tester
-          .widget<FractionallySizedBox>(find.byType(FractionallySizedBox));
-      expect(
-        fractionallySizedBox.widthFactor,
-        1.0,
-        reason: '0 / 0 must resolve to fully consumed, not NaN',
-      );
-      expect(find.text('0 / 0'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        final fractionallySizedBox = tester.widget<FractionallySizedBox>(
+          find.byType(FractionallySizedBox),
+        );
+        expect(
+          fractionallySizedBox.widthFactor,
+          1.0,
+          reason: '0 / 0 must resolve to fully consumed, not NaN',
+        );
+        expect(find.text('0 / 0'), findsOneWidget);
 
-      final zeroLimitColor = fillColor(tester);
+        final zeroLimitColor = fillColor(tester);
 
-      // Prove the tone is genuinely destructive (not merely "some colour")
-      // by comparing against an explicit over-quota meter's fill.
-      await tester.pumpWidget(
-        wrap(
-          const MSUsageMeter(
-            label: 'Responders',
-            used: 120,
-            limit: 100,
-            formatNumber: toStringFormatter,
+        // Prove the tone is genuinely destructive (not merely "some colour")
+        // by comparing against an explicit over-quota meter's fill.
+        await tester.pumpWidget(
+          wrap(
+            const MSUsageMeter(
+              label: 'Responders',
+              used: 120,
+              limit: 100,
+              formatNumber: toStringFormatter,
+            ),
           ),
-        ),
-      );
-      final overQuotaColor = fillColor(tester);
+        );
+        final overQuotaColor = fillColor(tester);
 
-      expect(
-        zeroLimitColor,
-        overQuotaColor,
-        reason: 'a zero limit must render at the same at-limit tone as an '
-            'explicit over-quota meter',
-      );
-    });
+        expect(
+          zeroLimitColor,
+          overQuotaColor,
+          reason:
+              'a zero limit must render at the same at-limit tone as an '
+              'explicit over-quota meter',
+        );
+      },
+    );
 
-    testWidgets('used: 4, limit: 0 also renders as fully consumed, not NaN',
-        (tester) async {
+    testWidgets('used: 4, limit: 0 also renders as fully consumed, not NaN', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(
           const MSUsageMeter(
@@ -264,14 +285,16 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      final fractionallySizedBox = tester
-          .widget<FractionallySizedBox>(find.byType(FractionallySizedBox));
+      final fractionallySizedBox = tester.widget<FractionallySizedBox>(
+        find.byType(FractionallySizedBox),
+      );
       expect(fractionallySizedBox.widthFactor, 1.0);
       expect(find.text('4 / 0'), findsOneWidget);
     });
 
-    testWidgets('a negative limit does not reach the division either',
-        (tester) async {
+    testWidgets('a negative limit does not reach the division either', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(
           const MSUsageMeter(
@@ -284,8 +307,9 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      final fractionallySizedBox = tester
-          .widget<FractionallySizedBox>(find.byType(FractionallySizedBox));
+      final fractionallySizedBox = tester.widget<FractionallySizedBox>(
+        find.byType(FractionallySizedBox),
+      );
       expect(fractionallySizedBox.widthFactor, 1.0);
       expect(find.text('4 / -5'), findsOneWidget);
     });
@@ -295,8 +319,9 @@ void main() {
   // formatNumber is actually wired, not merely accepted
   // ---------------------------------------------------------------------------
 
-  testWidgets('formatNumber is called for the rendered numbers',
-      (tester) async {
+  testWidgets('formatNumber is called for the rendered numbers', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSUsageMeter(

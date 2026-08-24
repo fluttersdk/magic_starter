@@ -31,14 +31,11 @@ void main() {
   const Map<String, dynamic> kSetupData = {
     'secret': 'ABCDEFGHIJK',
     'qr_url': 'otpauth://totp/app:user?secret=ABCDEFGHIJK',
-    'qr_svg': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+    'qr_svg':
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
         '<rect width="100" height="100" fill="black"/>'
         '</svg>',
-    'recovery_codes': [
-      'code-1',
-      'code-2',
-      'code-3',
-    ],
+    'recovery_codes': ['code-1', 'code-2', 'code-3'],
   };
 
   setUp(() {
@@ -59,22 +56,14 @@ void main() {
 
   /// Wraps a widget in the minimum scaffold required by Wind UI rendering.
   Widget wrap(Widget widget) {
-    final themeData = WindThemeData(
-      colors: {
-        'primary': Colors.indigo,
-      },
-    );
+    final themeData = WindThemeData(colors: {'primary': Colors.indigo});
     return WindTheme(
       data: themeData,
       child: MaterialApp(
         theme: themeData.toThemeData(),
         home: Scaffold(
           body: SingleChildScrollView(
-            child: SizedBox(
-              width: 1200,
-              height: 800,
-              child: widget,
-            ),
+            child: SizedBox(width: 1200, height: 800, child: widget),
           ),
         ),
       ),
@@ -151,10 +140,7 @@ void main() {
     'Step 2 renders recovery codes and a Copy All button after transition',
     (WidgetTester tester) async {
       // onConfirm always succeeds so the modal advances to Step 2.
-      await pumpModal(
-        tester,
-        onConfirm: (_) async => true,
-      );
+      await pumpModal(tester, onConfirm: (_) async => true);
 
       // Enter a valid-looking 6-digit code and tap confirm.
       await tester.enterText(otpInput, '123456');
@@ -169,10 +155,7 @@ void main() {
       expect(find.text('code-3'), findsOneWidget);
 
       // Copy All button must be present.
-      expect(
-        find.text('profile.two_factor.copy_codes'),
-        findsOneWidget,
-      );
+      expect(find.text('profile.two_factor.copy_codes'), findsOneWidget);
     },
   );
 
@@ -182,10 +165,7 @@ void main() {
   testWidgets(
     'Step transition: confirming a valid code moves wizard to Step 2',
     (WidgetTester tester) async {
-      await pumpModal(
-        tester,
-        onConfirm: (_) async => true,
-      );
+      await pumpModal(tester, onConfirm: (_) async => true);
 
       // Step 1 landmark: WSvg (QR) is visible.
       expect(find.byType(WSvg), findsOneWidget);
@@ -206,35 +186,28 @@ void main() {
   // -------------------------------------------------------------------------
   // Test 5: Invalid OTP shows error without closing the modal
   // -------------------------------------------------------------------------
-  testWidgets(
-    'Invalid OTP shows error message and keeps modal on Step 1',
-    (WidgetTester tester) async {
-      // onConfirm returns false to simulate a wrong OTP response.
-      await pumpModal(
-        tester,
-        onConfirm: (_) async => false,
-      );
+  testWidgets('Invalid OTP shows error message and keeps modal on Step 1', (
+    WidgetTester tester,
+  ) async {
+    // onConfirm returns false to simulate a wrong OTP response.
+    await pumpModal(tester, onConfirm: (_) async => false);
 
-      await tester.enterText(otpInput, '000000');
-      await tester.pump();
+    await tester.enterText(otpInput, '000000');
+    await tester.pump();
 
-      await tester.tap(find.text('common.confirm'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('common.confirm'));
+    await tester.pumpAndSettle();
 
-      // An error message must appear — the key returned when no
-      // translations are loaded is the translation key itself.
-      expect(
-        find.text('profile.two_factor.invalid_code'),
-        findsOneWidget,
-      );
+    // An error message must appear — the key returned when no
+    // translations are loaded is the translation key itself.
+    expect(find.text('profile.two_factor.invalid_code'), findsOneWidget);
 
-      // Modal must remain on Step 1 — QR code is still visible.
-      expect(find.byType(WSvg), findsOneWidget);
+    // Modal must remain on Step 1 — QR code is still visible.
+    expect(find.byType(WSvg), findsOneWidget);
 
-      // Recovery codes must NOT be visible yet.
-      expect(find.text('code-1'), findsNothing);
-    },
-  );
+    // Recovery codes must NOT be visible yet.
+    expect(find.text('code-1'), findsNothing);
+  });
 
   // -------------------------------------------------------------------------
   // Test 6: QR code wrapper has white background class (dark-mode safe)
@@ -258,7 +231,8 @@ void main() {
       expect(
         foundWhiteBackground,
         isTrue,
-        reason: 'Expected at least one WDiv with className containing '
+        reason:
+            'Expected at least one WDiv with className containing '
             "'bg-white' to wrap the QR code for dark-mode scannability.",
       );
     },
@@ -277,11 +251,7 @@ void main() {
 
       bool? dialogResult;
 
-      final themeData = WindThemeData(
-        colors: {
-          'primary': Colors.indigo,
-        },
-      );
+      final themeData = WindThemeData(colors: {'primary': Colors.indigo});
 
       await tester.pumpWidget(
         WindTheme(
@@ -332,17 +302,15 @@ void main() {
   // Compact right-aligned button layout
   // -------------------------------------------------------------------------
   group('compact right-aligned button layout', () {
-    testWidgets('setup step footer has no flex-1 wrapper divs',
-        (WidgetTester tester) async {
+    testWidgets('setup step footer has no flex-1 wrapper divs', (
+      WidgetTester tester,
+    ) async {
       await pumpModal(tester);
 
       // Locate the footer container (the Wrap rendered by Wind's justify-end).
       // Setup step has 'common.cancel' button as first button.
       final footerWrapFinder = find
-          .ancestor(
-            of: find.text('common.cancel'),
-            matching: find.byType(Wrap),
-          )
+          .ancestor(of: find.text('common.cancel'), matching: find.byType(Wrap))
           .first;
 
       // No flex-1 WDiv wrappers inside the footer.
@@ -357,29 +325,31 @@ void main() {
     });
 
     testWidgets(
-        'setup step footer has w-full and justify-end for right-alignment',
-        (WidgetTester tester) async {
-      await pumpModal(tester);
+      'setup step footer has w-full and justify-end for right-alignment',
+      (WidgetTester tester) async {
+        await pumpModal(tester);
 
-      // The setup step footer should be the WDiv ancestor of the cancel button
-      // and should include both justify-end and w-full in its className.
-      final footerDivFinder = find.ancestor(
-        of: find.text('common.cancel'),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is WDiv &&
-              widget.className != null &&
-              widget.className!.contains('justify-end') &&
-              widget.className!.contains('w-full'),
-        ),
-      );
+        // The setup step footer should be the WDiv ancestor of the cancel button
+        // and should include both justify-end and w-full in its className.
+        final footerDivFinder = find.ancestor(
+          of: find.text('common.cancel'),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is WDiv &&
+                widget.className != null &&
+                widget.className!.contains('justify-end') &&
+                widget.className!.contains('w-full'),
+          ),
+        );
 
-      // Expect exactly one footer div with justify-end and w-full.
-      expect(footerDivFinder, findsOneWidget);
-    });
+        // Expect exactly one footer div with justify-end and w-full.
+        expect(footerDivFinder, findsOneWidget);
+      },
+    );
 
-    testWidgets('setup step footer confirm WButton has no w-full className',
-        (WidgetTester tester) async {
+    testWidgets('setup step footer confirm WButton has no w-full className', (
+      WidgetTester tester,
+    ) async {
       await pumpModal(tester);
 
       // Find all WButton widgets.
@@ -397,13 +367,11 @@ void main() {
       expect(confirmButton, findsNothing);
     });
 
-    testWidgets('recovery step footer has no flex-1 wrapper divs',
-        (WidgetTester tester) async {
+    testWidgets('recovery step footer has no flex-1 wrapper divs', (
+      WidgetTester tester,
+    ) async {
       // onConfirm always succeeds to advance to recovery step.
-      await pumpModal(
-        tester,
-        onConfirm: (_) async => true,
-      );
+      await pumpModal(tester, onConfirm: (_) async => true);
 
       // Enter a valid 6-digit code and tap confirm to advance to recovery step.
       await tester.enterText(otpInput, '123456');
@@ -414,10 +382,7 @@ void main() {
 
       // Now on recovery step — find the footer Wrap via the 'common.done' button.
       final footerWrapFinder = find
-          .ancestor(
-            of: find.text('common.done'),
-            matching: find.byType(Wrap),
-          )
+          .ancestor(of: find.text('common.done'), matching: find.byType(Wrap))
           .first;
 
       // No flex-1 WDiv wrappers inside the footer.
@@ -432,37 +397,35 @@ void main() {
     });
 
     testWidgets(
-        'recovery step footer has w-full and justify-end for right-alignment',
-        (WidgetTester tester) async {
-      // onConfirm always succeeds to advance to recovery step.
-      await pumpModal(
-        tester,
-        onConfirm: (_) async => true,
-      );
+      'recovery step footer has w-full and justify-end for right-alignment',
+      (WidgetTester tester) async {
+        // onConfirm always succeeds to advance to recovery step.
+        await pumpModal(tester, onConfirm: (_) async => true);
 
-      // Enter a valid 6-digit code and tap confirm.
-      await tester.enterText(otpInput, '123456');
-      await tester.pump();
+        // Enter a valid 6-digit code and tap confirm.
+        await tester.enterText(otpInput, '123456');
+        await tester.pump();
 
-      await tester.tap(find.text('common.confirm'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('common.confirm'));
+        await tester.pumpAndSettle();
 
-      // Recovery step footer should be the WDiv ancestor of the Done button
-      // and should include both justify-end and w-full in its className.
-      final footerDivFinder = find.ancestor(
-        of: find.text('common.done'),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is WDiv &&
-              widget.className != null &&
-              widget.className!.contains('justify-end') &&
-              widget.className!.contains('w-full'),
-        ),
-      );
+        // Recovery step footer should be the WDiv ancestor of the Done button
+        // and should include both justify-end and w-full in its className.
+        final footerDivFinder = find.ancestor(
+          of: find.text('common.done'),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is WDiv &&
+                widget.className != null &&
+                widget.className!.contains('justify-end') &&
+                widget.className!.contains('w-full'),
+          ),
+        );
 
-      // Expect exactly one footer div with justify-end and w-full.
-      expect(footerDivFinder, findsOneWidget);
-    });
+        // Expect exactly one footer div with justify-end and w-full.
+        expect(footerDivFinder, findsOneWidget);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -475,12 +438,14 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        MagicStarterTwoFactorModal(
-          setupData: kSetupData,
-          onConfirm: (_) async => true,
+      await tester.pumpWidget(
+        wrap(
+          MagicStarterTwoFactorModal(
+            setupData: kSetupData,
+            onConfirm: (_) async => true,
+          ),
         ),
-      ));
+      );
 
       final dialog = tester.widget<Dialog>(find.byType(Dialog));
       final insetPadding = dialog.insetPadding as EdgeInsets;
@@ -494,20 +459,19 @@ void main() {
     testWidgets('maxHeight accounts for viewPadding safe area', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;
-      tester.view.viewPadding = const FakeViewPadding(
-        top: 44,
-        bottom: 34,
-      );
+      tester.view.viewPadding = const FakeViewPadding(top: 44, bottom: 34);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetViewPadding);
 
-      await tester.pumpWidget(wrap(
-        MagicStarterTwoFactorModal(
-          setupData: kSetupData,
-          onConfirm: (_) async => true,
+      await tester.pumpWidget(
+        wrap(
+          MagicStarterTwoFactorModal(
+            setupData: kSetupData,
+            onConfirm: (_) async => true,
+          ),
         ),
-      ));
+      );
 
       final constrainedBox = tester.widget<ConstrainedBox>(
         find.byWidgetPredicate(
@@ -530,8 +494,9 @@ void main() {
   // Modal theme integration
   // -------------------------------------------------------------------------
   group('modal theme integration', () {
-    testWidgets('uses custom containerClassName from modal theme',
-        (WidgetTester tester) async {
+    testWidgets('uses custom containerClassName from modal theme', (
+      WidgetTester tester,
+    ) async {
       MagicStarter.useModalTheme(
         const MagicStarterModalTheme(
           containerClassName: 'bg-custom-test-container rounded-3xl',

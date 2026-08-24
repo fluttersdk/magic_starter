@@ -13,14 +13,8 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
@@ -38,55 +32,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -94,16 +81,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -111,8 +96,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 void main() {
@@ -146,11 +130,14 @@ void main() {
     });
 
     test('getNewsletterStatus — calls GET /user/newsletter', () async {
-      mockDriver.mockResponse(statusCode: 200, data: {
-        'subscribed': true,
-        'source': 'register',
-        'subscribed_at': '2025-01-01'
-      });
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: {
+          'subscribed': true,
+          'source': 'register',
+          'subscribed_at': '2025-01-01',
+        },
+      );
       await controller.getNewsletterStatus();
       expect(mockDriver.lastUrl, '/user/newsletter');
       expect(mockDriver.lastMethod, 'GET');
@@ -158,14 +145,15 @@ void main() {
     });
 
     test(
-        'updateNewsletterSubscription — subscribe: calls PUT with correct payload',
-        () async {
-      mockDriver.mockResponse(statusCode: 200, data: {'subscribed': true});
-      await controller.updateNewsletterSubscription(subscribe: true);
-      expect(mockDriver.lastUrl, '/user/newsletter');
-      expect(mockDriver.lastMethod, 'PUT');
-      expect(mockDriver.lastData?['subscribe'], isTrue);
-    });
+      'updateNewsletterSubscription — subscribe: calls PUT with correct payload',
+      () async {
+        mockDriver.mockResponse(statusCode: 200, data: {'subscribed': true});
+        await controller.updateNewsletterSubscription(subscribe: true);
+        expect(mockDriver.lastUrl, '/user/newsletter');
+        expect(mockDriver.lastMethod, 'PUT');
+        expect(mockDriver.lastData?['subscribe'], isTrue);
+      },
+    );
 
     test('updateNewsletterSubscription — unsubscribe: sends false', () async {
       mockDriver.mockResponse(statusCode: 200, data: {'subscribed': false});

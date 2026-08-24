@@ -22,34 +22,40 @@ void main() {
 
   group('DropdownMenu', () {
     testWidgets('renders trigger child', (tester) async {
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          items: const [MSDropdownMenuItem(label: 'Item 1')],
-          child: const Text('open menu'),
+      await tester.pumpWidget(
+        wrap(
+          MSDropdownMenu(
+            items: const [MSDropdownMenuItem(label: 'Item 1')],
+            child: const Text('open menu'),
+          ),
         ),
-      ));
+      );
 
       expect(find.text('open menu'), findsOneWidget);
     });
 
     testWidgets('items are not visible when closed', (tester) async {
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          items: const [MSDropdownMenuItem(label: 'Hidden Item')],
-          child: const Text('open menu'),
+      await tester.pumpWidget(
+        wrap(
+          MSDropdownMenu(
+            items: const [MSDropdownMenuItem(label: 'Hidden Item')],
+            child: const Text('open menu'),
+          ),
         ),
-      ));
+      );
 
       expect(find.text('Hidden Item'), findsNothing);
     });
 
     testWidgets('tapping trigger opens the menu items', (tester) async {
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          items: const [MSDropdownMenuItem(label: 'Visible Item')],
-          child: const Text('open menu'),
+      await tester.pumpWidget(
+        wrap(
+          MSDropdownMenu(
+            items: const [MSDropdownMenuItem(label: 'Visible Item')],
+            child: const Text('open menu'),
+          ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('open menu'));
       await tester.pump();
@@ -60,17 +66,16 @@ void main() {
     testWidgets('tapping an item invokes onTap callback', (tester) async {
       bool tapped = false;
 
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          items: [
-            MSDropdownMenuItem(
-              label: 'Tap me',
-              onTap: () => tapped = true,
-            ),
-          ],
-          child: const Text('open menu'),
+      await tester.pumpWidget(
+        wrap(
+          MSDropdownMenu(
+            items: [
+              MSDropdownMenuItem(label: 'Tap me', onTap: () => tapped = true),
+            ],
+            child: const Text('open menu'),
+          ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('open menu'));
       await tester.pump();
@@ -80,17 +85,20 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('DropdownMenuItem disabled label is rendered in menu',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          items: const [
-            MSDropdownMenuItem(label: 'Normal'),
-            MSDropdownMenuItem(label: 'Disabled', disabled: true),
-          ],
-          child: const Text('open menu'),
+    testWidgets('DropdownMenuItem disabled label is rendered in menu', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          MSDropdownMenu(
+            items: const [
+              MSDropdownMenuItem(label: 'Normal'),
+              MSDropdownMenuItem(label: 'Disabled', disabled: true),
+            ],
+            child: const Text('open menu'),
+          ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('open menu'));
       await tester.pump();
@@ -124,28 +132,36 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('DropdownMenu className append', () {
-    testWidgets('panel appends caller className onto the default',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          className: 'mt-10',
-          items: const [MSDropdownMenuItem(label: 'Item 1')],
-          child: const Text('open menu'),
+    testWidgets('panel appends caller className onto the default', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          MSDropdownMenu(
+            className: 'mt-10',
+            items: const [MSDropdownMenuItem(label: 'Item 1')],
+            child: const Text('open menu'),
+          ),
         ),
-      ));
+      );
       final popover = tester.widget<WPopover>(find.byType(WPopover));
       expect(popover.className, contains('bg-surface'));
       expect(popover.className, contains('mt-10'));
     });
 
-    testWidgets('item appends caller className onto the item default',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          items: const [MSDropdownMenuItem(label: 'Edit', className: 'mt-10')],
-          child: const Text('open menu'),
+    testWidgets('item appends caller className onto the item default', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          MSDropdownMenu(
+            items: const [
+              MSDropdownMenuItem(label: 'Edit', className: 'mt-10'),
+            ],
+            child: const Text('open menu'),
+          ),
         ),
-      ));
+      );
       await tester.tap(find.text('open menu'));
       await tester.pump();
       final itemDiv = tester
@@ -155,23 +171,29 @@ void main() {
     });
 
     testWidgets(
-        'disabled item appends caller className onto the disabled default',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-        MSDropdownMenu(
-          items: const [
-            MSDropdownMenuItem(
-                label: 'Gone', disabled: true, className: 'mt-10'),
-          ],
-          child: const Text('open menu'),
-        ),
-      ));
-      await tester.tap(find.text('open menu'));
-      await tester.pump();
-      final itemDiv = tester
-          .widgetList<WDiv>(find.byType(WDiv))
-          .firstWhere((w) => w.className?.contains('mt-10') == true);
-      expect(itemDiv.className, contains('text-fg-disabled'));
-    });
+      'disabled item appends caller className onto the disabled default',
+      (tester) async {
+        await tester.pumpWidget(
+          wrap(
+            MSDropdownMenu(
+              items: const [
+                MSDropdownMenuItem(
+                  label: 'Gone',
+                  disabled: true,
+                  className: 'mt-10',
+                ),
+              ],
+              child: const Text('open menu'),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open menu'));
+        await tester.pump();
+        final itemDiv = tester
+            .widgetList<WDiv>(find.byType(WDiv))
+            .firstWhere((w) => w.className?.contains('mt-10') == true);
+        expect(itemDiv.className, contains('text-fg-disabled'));
+      },
+    );
   });
 }

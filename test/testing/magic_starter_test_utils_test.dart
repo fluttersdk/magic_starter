@@ -62,17 +62,19 @@ void main() {
       expect(warnings.length, 1);
     });
 
-    test('returns a shared default manager instead of throwing when unbound',
-        () {
-      expect(Magic.bound('magic_starter'), isFalse);
+    test(
+      'returns a shared default manager instead of throwing when unbound',
+      () {
+        expect(Magic.bound('magic_starter'), isFalse);
 
-      final first = MagicStarter.manager;
-      final second = MagicStarter.manager;
+        final first = MagicStarter.manager;
+        final second = MagicStarter.manager;
 
-      expect(first, isNotNull);
-      // Repeated unbound access returns the SAME cached instance.
-      expect(identical(first, second), isTrue);
-    });
+        expect(first, isNotNull);
+        // Repeated unbound access returns the SAME cached instance.
+        expect(identical(first, second), isTrue);
+      },
+    );
 
     test('a bound manager still wins over the fallback', () {
       final boundManager = MagicStarterManager()

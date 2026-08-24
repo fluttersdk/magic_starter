@@ -31,13 +31,7 @@ void main() {
       data: themeData,
       child: MaterialApp(
         theme: themeData.toThemeData(),
-        home: Scaffold(
-          body: SizedBox(
-            width: 1200,
-            height: 800,
-            child: widget,
-          ),
-        ),
+        home: Scaffold(body: SizedBox(width: 1200, height: 800, child: widget)),
       ),
     );
   }
@@ -86,9 +80,9 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MSConfirmDialog(title: 'Are you sure?'),
-      ));
+      await tester.pumpWidget(
+        wrap(const MSConfirmDialog(title: 'Are you sure?')),
+      );
 
       expect(find.text('Are you sure?'), findsOneWidget);
     });
@@ -99,18 +93,21 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MSConfirmDialog(
-          title: 'Delete?',
-          description: 'This cannot be undone.',
+      await tester.pumpWidget(
+        wrap(
+          const MSConfirmDialog(
+            title: 'Delete?',
+            description: 'This cannot be undone.',
+          ),
         ),
-      ));
+      );
 
       expect(find.text('This cannot be undone.'), findsOneWidget);
     });
 
-    testWidgets('renders confirm and cancel buttons with default labels',
-        (tester) async {
+    testWidgets('renders confirm and cancel buttons with default labels', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1200, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -142,15 +139,18 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MSConfirmDialog(
-          title: 'Delete?',
-          variant: ConfirmDialogVariant.danger,
+      await tester.pumpWidget(
+        wrap(
+          const MSConfirmDialog(
+            title: 'Delete?',
+            variant: ConfirmDialogVariant.danger,
+          ),
         ),
-      ));
+      );
 
-      final dialog =
-          tester.widget<MSConfirmDialog>(find.byType(MSConfirmDialog));
+      final dialog = tester.widget<MSConfirmDialog>(
+        find.byType(MSConfirmDialog),
+      );
       expect(dialog.variant, ConfirmDialogVariant.danger);
     });
   });
@@ -168,16 +168,18 @@ void main() {
 
       bool result = true;
 
-      await tester.pumpWidget(wrap(
-        Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () async {
-              result = await MSConfirmDialog.show(context, title: 'Delete?');
-            },
-            child: const Text('Show'),
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                result = await MSConfirmDialog.show(context, title: 'Delete?');
+              },
+              child: const Text('Show'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Show'));
       await tester.pumpAndSettle();
@@ -195,20 +197,22 @@ void main() {
 
       bool result = false;
 
-      await tester.pumpWidget(wrap(
-        Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () async {
-              result = await MSConfirmDialog.show(
-                context,
-                title: 'Delete?',
-                onConfirm: () async {},
-              );
-            },
-            child: const Text('Show'),
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                result = await MSConfirmDialog.show(
+                  context,
+                  title: 'Delete?',
+                  onConfirm: () async {},
+                );
+              },
+              child: const Text('Show'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Show'));
       await tester.pumpAndSettle();
@@ -232,10 +236,7 @@ void main() {
     await tester.pumpWidget(wrap(const MSConfirmDialog(title: 'Confirm?')));
 
     final footerWrapFinder = find
-        .ancestor(
-          of: find.text('common.cancel'),
-          matching: find.byType(Wrap),
-        )
+        .ancestor(of: find.text('common.cancel'), matching: find.byType(Wrap))
         .first;
 
     final wrapWidget = tester.widget<Wrap>(footerWrapFinder);

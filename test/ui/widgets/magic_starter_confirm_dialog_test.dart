@@ -32,11 +32,7 @@ void main() {
         theme: themeData.toThemeData(),
         home: Scaffold(
           body: SingleChildScrollView(
-            child: SizedBox(
-              width: 1200,
-              height: 800,
-              child: widget,
-            ),
+            child: SizedBox(width: 1200, height: 800, child: widget),
           ),
         ),
       ),
@@ -54,11 +50,7 @@ void main() {
     addTearDown(() => tester.view.resetDevicePixelRatio());
 
     await tester.pumpWidget(
-      wrap(
-        const MagicStarterConfirmDialog(
-          title: 'Delete item',
-        ),
-      ),
+      wrap(const MagicStarterConfirmDialog(title: 'Delete item')),
     );
 
     expect(find.text('Delete item'), findsOneWidget);
@@ -82,87 +74,82 @@ void main() {
     expect(find.text('This action cannot be undone.'), findsOneWidget);
   });
 
-  testWidgets(
-    'renders confirm and cancel buttons with default labels',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-      addTearDown(() => tester.view.resetDevicePixelRatio());
+  testWidgets('renders confirm and cancel buttons with default labels', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
 
-      await tester.pumpWidget(
-        wrap(
-          const MagicStarterConfirmDialog(title: 'Confirm?'),
+    await tester.pumpWidget(
+      wrap(const MagicStarterConfirmDialog(title: 'Confirm?')),
+    );
+
+    expect(find.text('common.confirm'), findsOneWidget);
+    expect(find.text('common.cancel'), findsOneWidget);
+  });
+
+  testWidgets('renders custom confirm and cancel labels when provided', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
+
+    await tester.pumpWidget(
+      wrap(
+        const MagicStarterConfirmDialog(
+          title: 'Remove?',
+          confirmLabel: 'Yes, remove',
+          cancelLabel: 'No, keep it',
         ),
-      );
+      ),
+    );
 
-      expect(find.text('common.confirm'), findsOneWidget);
-      expect(find.text('common.cancel'), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'renders custom confirm and cancel labels when provided',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-      addTearDown(() => tester.view.resetDevicePixelRatio());
-
-      await tester.pumpWidget(
-        wrap(
-          const MagicStarterConfirmDialog(
-            title: 'Remove?',
-            confirmLabel: 'Yes, remove',
-            cancelLabel: 'No, keep it',
-          ),
-        ),
-      );
-
-      expect(find.text('Yes, remove'), findsOneWidget);
-      expect(find.text('No, keep it'), findsOneWidget);
-    },
-  );
+    expect(find.text('Yes, remove'), findsOneWidget);
+    expect(find.text('No, keep it'), findsOneWidget);
+  });
 
   // ---------------------------------------------------------------------------
   // Return values
   // ---------------------------------------------------------------------------
 
-  testWidgets(
-    'returns false when cancel button is tapped',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-      addTearDown(() => tester.view.resetDevicePixelRatio());
+  testWidgets('returns false when cancel button is tapped', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
 
-      bool result = true;
+    bool result = true;
 
-      await tester.pumpWidget(
-        wrap(
-          Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                result = await MagicStarterConfirmDialog.show(
-                  context,
-                  title: 'Are you sure?',
-                );
-              },
-              child: const Text('Show'),
-            ),
+    await tester.pumpWidget(
+      wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              result = await MagicStarterConfirmDialog.show(
+                context,
+                title: 'Are you sure?',
+              );
+            },
+            child: const Text('Show'),
           ),
         ),
-      );
+      ),
+    );
 
-      await tester.tap(find.text('Show'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Show'));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('common.cancel'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('common.cancel'));
+    await tester.pumpAndSettle();
 
-      expect(result, isFalse);
-    },
-  );
+    expect(result, isFalse);
+  });
 
   testWidgets(
     'returns true when confirm button is tapped and onConfirm succeeds',
@@ -205,27 +192,22 @@ void main() {
   // Variants
   // ---------------------------------------------------------------------------
 
-  testWidgets(
-    'default variant is primary',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-      addTearDown(() => tester.view.resetDevicePixelRatio());
+  testWidgets('default variant is primary', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
 
-      await tester.pumpWidget(
-        wrap(
-          const MagicStarterConfirmDialog(title: 'Confirm?'),
-        ),
-      );
+    await tester.pumpWidget(
+      wrap(const MagicStarterConfirmDialog(title: 'Confirm?')),
+    );
 
-      final dialog = tester.widget<MagicStarterConfirmDialog>(
-        find.byType(MagicStarterConfirmDialog),
-      );
+    final dialog = tester.widget<MagicStarterConfirmDialog>(
+      find.byType(MagicStarterConfirmDialog),
+    );
 
-      expect(dialog.variant, ConfirmDialogVariant.primary);
-    },
-  );
+    expect(dialog.variant, ConfirmDialogVariant.primary);
+  });
 
   testWidgets(
     'ConfirmDialogVariant.danger renders danger-styled confirm button',
@@ -284,42 +266,38 @@ void main() {
   // Static show() factory
   // ---------------------------------------------------------------------------
 
-  testWidgets(
-    'static show() opens dialog via Builder pattern',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-      addTearDown(() => tester.view.resetDevicePixelRatio());
+  testWidgets('static show() opens dialog via Builder pattern', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
 
-      await tester.pumpWidget(
-        wrap(
-          Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                await MagicStarterConfirmDialog.show(
-                  context,
-                  title: 'Are you sure?',
-                  description: 'This cannot be undone.',
-                );
-              },
-              child: const Text('Open'),
-            ),
+    await tester.pumpWidget(
+      wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              await MagicStarterConfirmDialog.show(
+                context,
+                title: 'Are you sure?',
+                description: 'This cannot be undone.',
+              );
+            },
+            child: const Text('Open'),
           ),
         ),
-      );
+      ),
+    );
 
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
 
-      expect(
-        find.byType(MagicStarterConfirmDialog),
-        findsOneWidget,
-      );
-      expect(find.text('Are you sure?'), findsOneWidget);
-      expect(find.text('This cannot be undone.'), findsOneWidget);
-    },
-  );
+    expect(find.byType(MagicStarterConfirmDialog), findsOneWidget);
+    expect(find.text('Are you sure?'), findsOneWidget);
+    expect(find.text('This cannot be undone.'), findsOneWidget);
+  });
 
   // ---------------------------------------------------------------------------
   // Button layout
@@ -334,17 +312,12 @@ void main() {
       addTearDown(() => tester.view.resetDevicePixelRatio());
 
       await tester.pumpWidget(
-        wrap(
-          const MagicStarterConfirmDialog(title: 'Confirm?'),
-        ),
+        wrap(const MagicStarterConfirmDialog(title: 'Confirm?')),
       );
 
       // Locate the specific footer Wrap that contains the cancel button.
       final footerWrapFinder = find
-          .ancestor(
-            of: find.text('common.cancel'),
-            matching: find.byType(Wrap),
-          )
+          .ancestor(of: find.text('common.cancel'), matching: find.byType(Wrap))
           .first;
 
       final wrapWidget = tester.widget<Wrap>(footerWrapFinder);
@@ -379,51 +352,45 @@ void main() {
   // Theme integration
   // ---------------------------------------------------------------------------
 
-  testWidgets(
-    'custom MagicStarterModalTheme className appears in dialog',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-      addTearDown(() => tester.view.resetDevicePixelRatio());
+  testWidgets('custom MagicStarterModalTheme className appears in dialog', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
 
-      MagicStarter.useModalTheme(
-        const MagicStarterModalTheme(
-          containerClassName: 'rounded-3xl bg-white',
-        ),
-      );
+    MagicStarter.useModalTheme(
+      const MagicStarterModalTheme(containerClassName: 'rounded-3xl bg-white'),
+    );
 
-      await tester.pumpWidget(
-        wrap(
-          Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                await MagicStarterConfirmDialog.show(
-                  context,
-                  title: 'Themed dialog',
-                );
-              },
-              child: const Text('Show'),
-            ),
+    await tester.pumpWidget(
+      wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              await MagicStarterConfirmDialog.show(
+                context,
+                title: 'Themed dialog',
+              );
+            },
+            child: const Text('Show'),
           ),
         ),
-      );
+      ),
+    );
 
-      await tester.tap(find.text('Show'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Show'));
+    await tester.pumpAndSettle();
 
-      // The dialog should open and carry the theme override.
-      expect(find.byType(MagicStarterConfirmDialog), findsOneWidget);
+    // The dialog should open and carry the theme override.
+    expect(find.byType(MagicStarterConfirmDialog), findsOneWidget);
 
-      final dialog = tester.widget<MagicStarterConfirmDialog>(
-        find.byType(MagicStarterConfirmDialog),
-      );
+    final dialog = tester.widget<MagicStarterConfirmDialog>(
+      find.byType(MagicStarterConfirmDialog),
+    );
 
-      expect(
-        MagicStarter.modalTheme.containerClassName,
-        'rounded-3xl bg-white',
-      );
-      expect(dialog, isNotNull);
-    },
-  );
+    expect(MagicStarter.modalTheme.containerClassName, 'rounded-3xl bg-white');
+    expect(dialog, isNotNull);
+  });
 }

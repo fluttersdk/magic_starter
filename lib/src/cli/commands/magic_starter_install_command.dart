@@ -65,7 +65,8 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
   ];
 
   @override
-  String get signature => 'starter:install '
+  String get signature =>
+      'starter:install '
       '$baseFlags'
       '{--features= : Comma-separated feature keys for non-interactive mode}';
 
@@ -90,24 +91,14 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
   ///
   /// Overridable in tests.
   List<String> getStubSearchPaths() {
-    return [
-      _resolvePluginStubsDir(),
-      '${Directory.current.path}/assets/stubs',
-    ];
+    return [_resolvePluginStubsDir(), '${Directory.current.path}/assets/stubs'];
   }
 
   /// Runs `dart format .` from [rootPath].
   ///
   /// Overridable in tests.
   Future<ProcessResult> runDartFormat(String rootPath) {
-    return Process.run(
-      'dart',
-      [
-        'format',
-        '.',
-      ],
-      workingDirectory: rootPath,
-    );
+    return Process.run('dart', ['format', '.'], workingDirectory: rootPath);
   }
 
   /// Resolves the absolute filesystem path of magic_starter's `install.yaml`.
@@ -147,7 +138,8 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     final String appPath = '$projectRoot/lib/config/app.dart';
     if (!FileHelper.fileExists(appPath)) {
       throw Exception(
-          'Magic Framework not detected. Run `magic install` first.');
+        'Magic Framework not detected. Run `magic install` first.',
+      );
     }
 
     // 2. Resolve features using interactive or non-interactive flow.
@@ -230,8 +222,10 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     required Map<String, bool> features,
     required bool force,
   }) {
-    final PluginInstaller installer =
-        PluginInstaller(installContext, pluginName: manifest.pluginName);
+    final PluginInstaller installer = PluginInstaller(
+      installContext,
+      pluginName: manifest.pluginName,
+    );
 
     // 1. Transactional writes FIRST (ride the atomic .tmp swap).
     _applyFluentOverride(installer, features: features, force: force);
@@ -312,13 +306,10 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       searchPaths: getStubSearchPaths(),
     );
 
-    final String rendered = StubLoader.replace(
-      stub,
-      {
-        for (final String key in dynamicFeatureKeys)
-          'feature_$key': (features[key] ?? false).toString(),
-      },
-    );
+    final String rendered = StubLoader.replace(stub, {
+      for (final String key in dynamicFeatureKeys)
+        'feature_$key': (features[key] ?? false).toString(),
+    });
 
     installer.writeFile(targetPath: configPath, content: rendered);
   }
@@ -426,10 +417,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     }
   }
 
-  void _stageMiddlewareFiles(
-    PluginInstaller installer, {
-    required bool force,
-  }) {
+  void _stageMiddlewareFiles(PluginInstaller installer, {required bool force}) {
     _stageMiddlewareFile(
       installer,
       force: force,
@@ -526,9 +514,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     FileHelper.writeFile(kernelPath, updated);
   }
 
-  void _injectIntoRouteServiceProvider({
-    required Map<String, bool> features,
-  }) {
+  void _injectIntoRouteServiceProvider({required Map<String, bool> features}) {
     final String providerPath =
         '$projectRoot/lib/app/providers/route_service_provider.dart';
 
@@ -647,19 +633,17 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
 '''
         : '';
 
-    final String rendered = StubLoader.replace(
-      stub,
-      {
-        'teams_import': teamsImport,
-        'team_params': teamParams,
-        'social_login_block': socialLoginBlock,
-        'notifications_block': notificationsBlock,
-      },
-    );
+    final String rendered = StubLoader.replace(stub, {
+      'teams_import': teamsImport,
+      'team_params': teamParams,
+      'social_login_block': socialLoginBlock,
+      'notifications_block': notificationsBlock,
+    });
 
     FileHelper.writeFile(targetPath, rendered);
-    ctx.output
-        .warning('Overwritten: lib/app/providers/app_service_provider.dart');
+    ctx.output.warning(
+      'Overwritten: lib/app/providers/app_service_provider.dart',
+    );
   }
 
   /// Injects essential Magic Starter code into an existing AppServiceProvider.
@@ -702,20 +686,15 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       multiLine: true,
     ).hasMatch(content);
     if (!hasUncommentedSetUserFactory) {
-      content = _injectBeforeBootClosingBrace(
-        content,
-        '''
+      content = _injectBeforeBootClosingBrace(content, '''
     // Magic Starter: Register user factory for auth session restoration.
     Auth.manager.setUserFactory((data) => User.fromMap(data));
-''',
-      );
+''');
     }
 
     // 2b. useNavigation
     if (!content.contains('useNavigation')) {
-      content = _injectBeforeBootClosingBrace(
-        content,
-        '''
+      content = _injectBeforeBootClosingBrace(content, '''
 
     // Magic Starter: Navigation items for sidebar and mobile bottom bar.
     MagicStarter.useNavigation(
@@ -744,8 +723,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
         ),
       ],
     );
-''',
-      );
+''');
     }
 
     // 2c. bootstrap(): the starter's required identity contract in a single
@@ -782,9 +760,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
 '''
           : '';
 
-      content = _injectBeforeBootClosingBrace(
-        content,
-        '''
+      content = _injectBeforeBootClosingBrace(content, '''
 
     // Magic Starter: Register the required identity contract in one call.
     MagicStarter.bootstrap(
@@ -797,8 +773,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
         'en': 'English',
       },
 $teamArgs    );
-''',
-      );
+''');
     }
 
     FileHelper.writeFile(targetPath, content);
@@ -829,10 +804,7 @@ $teamArgs    );
     return '${content.substring(0, bootBrace)}$code  ${content.substring(bootBrace)}';
   }
 
-  void _createTranslationFile(
-    ArtisanContext ctx, {
-    required bool force,
-  }) {
+  void _createTranslationFile(ArtisanContext ctx, {required bool force}) {
     final String targetPath = '$projectRoot/assets/lang/en.json';
     final String relativePath = targetPath.replaceFirst('$projectRoot/', '');
 
@@ -893,25 +865,20 @@ $teamArgs    );
 '''
         : '';
 
-    final String teamsImport =
-        (features['teams'] ?? false) ? "import 'team.dart';" : '';
+    final String teamsImport = (features['teams'] ?? false)
+        ? "import 'team.dart';"
+        : '';
 
-    final String rendered = StubLoader.replace(
-      stub,
-      {
-        'teams_block': teamsBlock,
-        'teams_import': teamsImport,
-      },
-    );
+    final String rendered = StubLoader.replace(stub, {
+      'teams_block': teamsBlock,
+      'teams_import': teamsImport,
+    });
 
     Directory('$projectRoot/lib/app/models').createSync(recursive: true);
     installer.writeFile(targetPath: targetPath, content: rendered);
   }
 
-  void _stageTeamModel(
-    PluginInstaller installer, {
-    required bool force,
-  }) {
+  void _stageTeamModel(PluginInstaller installer, {required bool force}) {
     final String targetPath = '$projectRoot/lib/app/models/team.dart';
     if (_shouldSkip(targetPath, force: force)) {
       return;
@@ -925,10 +892,7 @@ $teamArgs    );
     installer.writeFile(targetPath: targetPath, content: stub);
   }
 
-  void _stageDashboardView(
-    PluginInstaller installer, {
-    required bool force,
-  }) {
+  void _stageDashboardView(PluginInstaller installer, {required bool force}) {
     final String targetPath =
         '$projectRoot/lib/resources/views/dashboard_view.dart';
     if (_shouldSkip(targetPath, force: force)) {
@@ -944,10 +908,7 @@ $teamArgs    );
     installer.writeFile(targetPath: targetPath, content: stub);
   }
 
-  void _stageAppRoutes(
-    PluginInstaller installer, {
-    required bool force,
-  }) {
+  void _stageAppRoutes(PluginInstaller installer, {required bool force}) {
     final String targetPath = '$projectRoot/lib/routes/app.dart';
 
     // When routes file already exists and --force is not set, inject the
@@ -972,9 +933,7 @@ $teamArgs    );
   /// existing routes/app.dart file.
   ///
   /// Each injection is idempotent — checks for markers before adding code.
-  void _injectIntoExistingAppRoutes({
-    required String targetPath,
-  }) {
+  void _injectIntoExistingAppRoutes({required String targetPath}) {
     // 1. Add imports.
     ConfigEditor.addImportToFile(
       filePath: targetPath,
@@ -1069,13 +1028,12 @@ $teamArgs    );
 
   /// Injects the asset into an existing flutter: section that has an
   /// assets: list. Returns true if successful, false otherwise.
-  bool _tryInjectIntoFlutterAssets(
-    String pubspecPath,
-    String content,
-  ) {
+  bool _tryInjectIntoFlutterAssets(String pubspecPath, String content) {
     // Find the flutter: section at the start of a line.
-    final flutterMatch =
-        RegExp(r'^flutter:\s*$', multiLine: true).firstMatch(content);
+    final flutterMatch = RegExp(
+      r'^flutter:\s*$',
+      multiLine: true,
+    ).firstMatch(content);
     if (flutterMatch == null) {
       return false;
     }
@@ -1097,8 +1055,10 @@ $teamArgs    );
     }
 
     // Find the position of 'assets:' within the flutter section.
-    final assetsMatch =
-        RegExp(r'^  assets:\s*$', multiLine: true).firstMatch(flutterSection);
+    final assetsMatch = RegExp(
+      r'^  assets:\s*$',
+      multiLine: true,
+    ).firstMatch(flutterSection);
     if (assetsMatch == null) {
       return false;
     }
@@ -1127,13 +1087,12 @@ $teamArgs    );
 
   /// Creates an assets: list in an existing flutter: section that lacks one.
   /// Returns true if successful, false otherwise.
-  bool _tryCreateAssetsInFlutterSection(
-    String pubspecPath,
-    String content,
-  ) {
+  bool _tryCreateAssetsInFlutterSection(String pubspecPath, String content) {
     // Find flutter: at the beginning of a line.
-    final flutterMatch =
-        RegExp(r'^flutter:\s*$', multiLine: true).firstMatch(content);
+    final flutterMatch = RegExp(
+      r'^flutter:\s*$',
+      multiLine: true,
+    ).firstMatch(content);
     if (flutterMatch == null) {
       return false;
     }
@@ -1171,10 +1130,7 @@ $teamArgs    );
   }
 
   /// Appends a new flutter: section to the end of the pubspec.yaml.
-  void _appendFlutterSection(
-    String pubspecPath,
-    String content,
-  ) {
+  void _appendFlutterSection(String pubspecPath, String content) {
     final String trailing = content.endsWith('\n') ? '' : '\n';
     final String updated =
         '$content${trailing}flutter:\n  assets:\n    - assets/lang/en.json\n';
@@ -1238,11 +1194,9 @@ $teamArgs    );
           if (rootUri.startsWith('file://')) {
             packageRoot = Uri.parse(rootUri).toFilePath();
           } else if (rootUri.startsWith('../')) {
-            packageRoot = File(packageConfigPath)
-                .parent
-                .uri
-                .resolve(rootUri)
-                .toFilePath();
+            packageRoot = File(
+              packageConfigPath,
+            ).parent.uri.resolve(rootUri).toFilePath();
           } else {
             packageRoot = rootUri;
           }

@@ -30,8 +30,12 @@ class MagicStarterSessionsView
       _MagicStarterSessionsViewState();
 }
 
-class _MagicStarterSessionsViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterSessionsView> {
+class _MagicStarterSessionsViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterSessionsView
+        > {
   static const _iconDesktop = Icons.computer;
   static const _iconMobile = Icons.phone_android;
 
@@ -62,7 +66,9 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
 
   /// Execute [action] while driving [notifier] to `true`/`false`.
   Future<T> _trackLoading<T>(
-      ValueNotifier<bool> notifier, Future<T> Function() action) async {
+    ValueNotifier<bool> notifier,
+    Future<T> Function() action,
+  ) async {
     notifier.value = true;
     try {
       return await action();
@@ -91,10 +97,8 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
       onConfirm: (password) async {
         final ok = await _trackLoading(
           _sessionActionLoading,
-          () => controller.doRevokeSession(
-            tokenId: tokenId,
-            password: password,
-          ),
+          () =>
+              controller.doRevokeSession(tokenId: tokenId, password: password),
         );
         if (!ok) {
           final error =
@@ -266,8 +270,10 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
 
     final title = [platform, browser].where((s) => s.isNotEmpty).join(' - ');
     final locationText = [city, country].where((s) => s.isNotEmpty).join(', ');
-    final subtitleText =
-        [ip, locationText].where((s) => s.isNotEmpty).join('  ');
+    final subtitleText = [
+      ip,
+      locationText,
+    ].where((s) => s.isNotEmpty).join('  ');
 
     return MSSettingsRow(
       icon: isDesktop ? _iconDesktop : _iconMobile,
@@ -283,8 +289,9 @@ class _MagicStarterSessionsViewState extends MagicStatefulViewState<
               listenable: _sessionActionLoading,
               builder: (isLoading) => Builder(
                 builder: (context) => WButton(
-                  onTap:
-                      isLoading ? null : () => _revokeSession(context, tokenId),
+                  onTap: isLoading
+                      ? null
+                      : () => _revokeSession(context, tokenId),
                   isLoading: isLoading,
                   className:
                       'text-destructive text-sm px-3 py-1 rounded border border-color-border hover:bg-surface-container',

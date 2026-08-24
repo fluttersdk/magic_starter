@@ -96,7 +96,9 @@ void main() {
 
       test('notificationsPrefix() returns "/notifications" by default', () {
         expect(
-            MagicStarterConfig.notificationsPrefix(), equals('/notifications'));
+          MagicStarterConfig.notificationsPrefix(),
+          equals('/notifications'),
+        );
       });
     });
 
@@ -106,10 +108,7 @@ void main() {
 
     group('computed routes (defaults)', () {
       test('teamCreateRoute() returns "/teams/create"', () {
-        expect(
-          MagicStarterConfig.teamCreateRoute(),
-          equals('/teams/create'),
-        );
+        expect(MagicStarterConfig.teamCreateRoute(), equals('/teams/create'));
       });
 
       test('teamSettingsRoute() returns "/teams/settings"', () {
@@ -120,10 +119,7 @@ void main() {
       });
 
       test('profileRoute() returns "/settings/profile"', () {
-        expect(
-          MagicStarterConfig.profileRoute(),
-          equals('/settings/profile'),
-        );
+        expect(MagicStarterConfig.profileRoute(), equals('/settings/profile'));
       });
 
       test('notificationsRoute() returns "/notifications"', () {
@@ -133,22 +129,25 @@ void main() {
         );
       });
 
-      test('notificationPreferencesRoute() returns "/settings/notifications"',
-          () {
-        expect(
-          MagicStarterConfig.notificationPreferencesRoute(),
-          equals('/settings/notifications'),
-        );
-      });
+      test(
+        'notificationPreferencesRoute() returns "/settings/notifications"',
+        () {
+          expect(
+            MagicStarterConfig.notificationPreferencesRoute(),
+            equals('/settings/notifications'),
+          );
+        },
+      );
 
       test(
-          'twoFactorChallengeRoute() returns "/auth/two-factor-challenge" by default',
-          () {
-        expect(
-          MagicStarterConfig.twoFactorChallengeRoute(),
-          equals('/auth/two-factor-challenge'),
-        );
-      });
+        'twoFactorChallengeRoute() returns "/auth/two-factor-challenge" by default',
+        () {
+          expect(
+            MagicStarterConfig.twoFactorChallengeRoute(),
+            equals('/auth/two-factor-challenge'),
+          );
+        },
+      );
     });
 
     // -------------------------------------------------------------------------
@@ -216,12 +215,14 @@ void main() {
         expect(MagicStarterConfig.hasNewsletterFeatures(), isTrue);
       });
 
-      test('hasEmailVerificationFeatures() returns true when config is set',
-          () {
-        Config.set('magic_starter.features.email_verification', true);
+      test(
+        'hasEmailVerificationFeatures() returns true when config is set',
+        () {
+          Config.set('magic_starter.features.email_verification', true);
 
-        expect(MagicStarterConfig.hasEmailVerificationFeatures(), isTrue);
-      });
+          expect(MagicStarterConfig.hasEmailVerificationFeatures(), isTrue);
+        },
+      );
 
       test('hasTimezoneFeatures() returns true when config is set', () {
         Config.set('magic_starter.features.timezones', true);
@@ -232,10 +233,7 @@ void main() {
       test('hasExtendedProfileFeatures() returns true when config is set', () {
         Config.set('magic_starter.features.extended_profile', true);
 
-        expect(
-          MagicStarterConfig.hasExtendedProfileFeatures(),
-          isTrue,
-        );
+        expect(MagicStarterConfig.hasExtendedProfileFeatures(), isTrue);
       });
 
       test('hasBillingFeatures() returns true when config is set', () {
@@ -254,46 +252,37 @@ void main() {
         },
       );
 
-      test(
-        'hasTimezoneOrExtendedProfileFeatures() returns true when '
-        'timezone feature is enabled',
-        () {
-          Config.set('magic_starter.features.timezones', true);
+      test('hasTimezoneOrExtendedProfileFeatures() returns true when '
+          'timezone feature is enabled', () {
+        Config.set('magic_starter.features.timezones', true);
 
-          expect(
-            MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
-            isTrue,
-          );
-        },
-      );
+        expect(
+          MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
+          isTrue,
+        );
+      });
 
-      test(
-        'hasTimezoneOrExtendedProfileFeatures() returns true when '
-        'extended profile feature is enabled',
-        () {
-          Config.set('magic_starter.features.extended_profile', true);
+      test('hasTimezoneOrExtendedProfileFeatures() returns true when '
+          'extended profile feature is enabled', () {
+        Config.set('magic_starter.features.extended_profile', true);
 
-          expect(
-            MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
-            isTrue,
-          );
-        },
-      );
+        expect(
+          MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
+          isTrue,
+        );
+      });
 
-      test(
-        'hasTimezoneOrExtendedProfileFeatures() returns true when both '
-        'timezone and extended profile features are enabled',
-        () {
-          Config.set('magic_starter.features.timezones', true);
+      test('hasTimezoneOrExtendedProfileFeatures() returns true when both '
+          'timezone and extended profile features are enabled', () {
+        Config.set('magic_starter.features.timezones', true);
 
-          Config.set('magic_starter.features.extended_profile', true);
+        Config.set('magic_starter.features.extended_profile', true);
 
-          expect(
-            MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
-            isTrue,
-          );
-        },
-      );
+        expect(
+          MagicStarterConfig.hasTimezoneOrExtendedProfileFeatures(),
+          isTrue,
+        );
+      });
     });
     // -------------------------------------------------------------------------
     // Route accessors — configured overrides
@@ -303,55 +292,37 @@ void main() {
       test('homeRoute() returns configured value', () {
         Config.set('magic_starter.routes.home', '/dashboard');
 
-        expect(
-          MagicStarterConfig.homeRoute(),
-          equals('/dashboard'),
-        );
+        expect(MagicStarterConfig.homeRoute(), equals('/dashboard'));
       });
 
       test('loginRoute() returns configured value', () {
         Config.set('magic_starter.routes.login', '/sign-in');
 
-        expect(
-          MagicStarterConfig.loginRoute(),
-          equals('/sign-in'),
-        );
+        expect(MagicStarterConfig.loginRoute(), equals('/sign-in'));
       });
 
       test('authPrefix() returns configured value', () {
         Config.set('magic_starter.routes.auth_prefix', '/authentication');
 
-        expect(
-          MagicStarterConfig.authPrefix(),
-          equals('/authentication'),
-        );
+        expect(MagicStarterConfig.authPrefix(), equals('/authentication'));
       });
 
       test('teamsPrefix() returns configured value', () {
         Config.set('magic_starter.routes.teams_prefix', '/organizations');
 
-        expect(
-          MagicStarterConfig.teamsPrefix(),
-          equals('/organizations'),
-        );
+        expect(MagicStarterConfig.teamsPrefix(), equals('/organizations'));
       });
 
       test('profilePrefix() returns configured value', () {
         Config.set('magic_starter.routes.profile_prefix', '/account');
 
-        expect(
-          MagicStarterConfig.profilePrefix(),
-          equals('/account'),
-        );
+        expect(MagicStarterConfig.profilePrefix(), equals('/account'));
       });
 
       test('notificationsPrefix() returns configured value', () {
         Config.set('magic_starter.routes.notifications_prefix', '/alerts');
 
-        expect(
-          MagicStarterConfig.notificationsPrefix(),
-          equals('/alerts'),
-        );
+        expect(MagicStarterConfig.notificationsPrefix(), equals('/alerts'));
       });
     });
 
@@ -381,19 +352,13 @@ void main() {
       test('profileRoute() uses configured profilePrefix', () {
         Config.set('magic_starter.routes.profile_prefix', '/account');
 
-        expect(
-          MagicStarterConfig.profileRoute(),
-          equals('/account/profile'),
-        );
+        expect(MagicStarterConfig.profileRoute(), equals('/account/profile'));
       });
 
       test('notificationsRoute() uses configured notificationsPrefix', () {
         Config.set('magic_starter.routes.notifications_prefix', '/alerts');
 
-        expect(
-          MagicStarterConfig.notificationsRoute(),
-          equals('/alerts'),
-        );
+        expect(MagicStarterConfig.notificationsRoute(), equals('/alerts'));
       });
 
       test('notificationPreferencesRoute() uses configured profilePrefix', () {
@@ -465,10 +430,7 @@ void main() {
       test('defaultTimezone() returns configured value', () {
         Config.set('magic_starter.defaults.timezone', 'Europe/Istanbul');
 
-        expect(
-          MagicStarterConfig.defaultTimezone(),
-          equals('Europe/Istanbul'),
-        );
+        expect(MagicStarterConfig.defaultTimezone(), equals('Europe/Istanbul'));
       });
     });
 
@@ -491,7 +453,9 @@ void main() {
 
       test('termsUrl() returns configured value', () {
         Config.set(
-            'magic_starter.legal.terms_url', 'https://example.com/terms');
+          'magic_starter.legal.terms_url',
+          'https://example.com/terms',
+        );
 
         expect(
           MagicStarterConfig.termsUrl(),
@@ -513,7 +477,9 @@ void main() {
 
       test('hasLegalLinks() returns true when terms_url is set', () {
         Config.set(
-            'magic_starter.legal.terms_url', 'https://example.com/terms');
+          'magic_starter.legal.terms_url',
+          'https://example.com/terms',
+        );
 
         expect(MagicStarterConfig.hasLegalLinks(), isTrue);
       });
@@ -529,7 +495,9 @@ void main() {
 
       test('hasLegalLinks() returns true when both URLs are set', () {
         Config.set(
-            'magic_starter.legal.terms_url', 'https://example.com/terms');
+          'magic_starter.legal.terms_url',
+          'https://example.com/terms',
+        );
         Config.set(
           'magic_starter.legal.privacy_url',
           'https://example.com/privacy',
@@ -553,10 +521,7 @@ void main() {
       });
 
       test('returns the configured origin unchanged when set', () {
-        Config.set(
-          'magic_starter.billing.web_origin',
-          'https://example.com',
-        );
+        Config.set('magic_starter.billing.web_origin', 'https://example.com');
 
         expect(
           MagicStarterConfig.billingWebOrigin(),
@@ -581,10 +546,7 @@ void main() {
 
     group('billingRoute()', () {
       test('returns "/teams/billing" by default', () {
-        expect(
-          MagicStarterConfig.billingRoute(),
-          equals('/teams/billing'),
-        );
+        expect(MagicStarterConfig.billingRoute(), equals('/teams/billing'));
       });
 
       test('returns configured value', () {

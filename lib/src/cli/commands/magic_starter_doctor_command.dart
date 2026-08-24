@@ -17,7 +17,8 @@ import 'package:path/path.dart' as p;
 /// ```
 class MagicStarterDoctorCommand extends ArtisanCommand {
   @override
-  String get signature => 'starter:doctor '
+  String get signature =>
+      'starter:doctor '
       '{--verbose : Show file paths and detailed information for each check}';
 
   @override
@@ -88,9 +89,9 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       return false;
     }
 
-    return File(appPath)
-        .readAsStringSync()
-        .contains('MagicStarterServiceProvider');
+    return File(
+      appPath,
+    ).readAsStringSync().contains('MagicStarterServiceProvider');
   }
 
   /// Check that the `magicStarterConfig` factory is wired into `main.dart`.
@@ -131,9 +132,9 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       return false;
     }
 
-    return File(providerPath)
-        .readAsStringSync()
-        .contains('registerMagicStarterAuthRoutes');
+    return File(
+      providerPath,
+    ).readAsStringSync().contains('registerMagicStarterAuthRoutes');
   }
 
   /// Check that the identity contract is configured in
@@ -236,13 +237,15 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
     }
 
     if (!checkConfigExists(root)) {
-      missing
-          .add('Starter config file not found (lib/config/magic_starter.dart)');
+      missing.add(
+        'Starter config file not found (lib/config/magic_starter.dart)',
+      );
     }
 
     if (!checkProviderRegistered(root)) {
       missing.add(
-          'MagicStarterServiceProvider not registered in lib/config/app.dart');
+        'MagicStarterServiceProvider not registered in lib/config/app.dart',
+      );
     }
 
     if (!checkConfigFactory(root)) {
@@ -251,7 +254,8 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
 
     if (!checkMiddleware(root)) {
       missing.add(
-          'EnsureAuthenticated middleware not registered in lib/app/kernel.dart');
+        'EnsureAuthenticated middleware not registered in lib/app/kernel.dart',
+      );
     }
 
     if (!checkRoutes(root)) {
@@ -262,7 +266,8 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
 
     if (!checkFacadeSetup(root)) {
       missing.add(
-          'MagicStarter facade not configured in app_service_provider.dart');
+        'MagicStarter facade not configured in app_service_provider.dart',
+      );
     }
 
     if (!checkTranslations(root)) {

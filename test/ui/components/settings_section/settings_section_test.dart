@@ -72,13 +72,15 @@ void main() {
       expect(cls, contains('border-color-border-subtle'));
     });
 
-    test('emission order: base precedes variant classes in container recipe',
-        () {
-      final cls = settingsSectionContainerRecipe();
-      final baseIdx = cls.indexOf('bg-surface-container');
-      final roundedIdx = cls.indexOf('rounded-lg');
-      expect(baseIdx, lessThan(roundedIdx));
-    });
+    test(
+      'emission order: base precedes variant classes in container recipe',
+      () {
+        final cls = settingsSectionContainerRecipe();
+        final baseIdx = cls.indexOf('bg-surface-container');
+        final roundedIdx = cls.indexOf('rounded-lg');
+        expect(baseIdx, lessThan(roundedIdx));
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -87,25 +89,17 @@ void main() {
 
   testWidgets('SettingsSection renders a single child', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsSection(
-          children: [
-            Text('Row 1'),
-          ],
-        ),
-      ),
+      wrap(const MSSettingsSection(children: [Text('Row 1')])),
     );
     expect(find.text('Row 1'), findsOneWidget);
   });
 
-  testWidgets('SettingsSection renders header caption when provided',
-      (tester) async {
+  testWidgets('SettingsSection renders header caption when provided', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsSection(
-          header: 'Account',
-          children: [Text('Row 1')],
-        ),
+        const MSSettingsSection(header: 'Account', children: [Text('Row 1')]),
       ),
     );
     // Wind applies the `uppercase` CSS token at the style layer — the Flutter
@@ -118,14 +112,11 @@ void main() {
     expect(headerTexts, isNotEmpty);
   });
 
-  testWidgets('SettingsSection does not render header when omitted',
-      (tester) async {
+  testWidgets('SettingsSection does not render header when omitted', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsSection(
-          children: [Text('Row 1')],
-        ),
-      ),
+      wrap(const MSSettingsSection(children: [Text('Row 1')])),
     );
     // No WText carrying the caption className should be present.
     final captionTexts = tester
@@ -135,8 +126,9 @@ void main() {
     expect(captionTexts, isEmpty);
   });
 
-  testWidgets('SettingsSection renders footer caption when provided',
-      (tester) async {
+  testWidgets('SettingsSection renders footer caption when provided', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSSettingsSection(
@@ -156,11 +148,7 @@ void main() {
     await tester.pumpWidget(
       wrap(
         const MSSettingsSection(
-          children: [
-            Text('Row 1'),
-            Text('Row 2'),
-            Text('Row 3'),
-          ],
+          children: [Text('Row 1'), Text('Row 2'), Text('Row 3')],
         ),
       ),
     );
@@ -169,16 +157,13 @@ void main() {
     expect(find.text('Row 3'), findsOneWidget);
   });
 
-  testWidgets('SettingsSection inserts N-1 dividers between N children',
-      (tester) async {
+  testWidgets('SettingsSection inserts N-1 dividers between N children', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSSettingsSection(
-          children: [
-            Text('Row 1'),
-            Text('Row 2'),
-            Text('Row 3'),
-          ],
+          children: [Text('Row 1'), Text('Row 2'), Text('Row 3')],
         ),
       ),
     );
@@ -192,14 +177,11 @@ void main() {
     expect(dividers.length, equals(2));
   });
 
-  testWidgets('SettingsSection with single child has no dividers',
-      (tester) async {
+  testWidgets('SettingsSection with single child has no dividers', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsSection(
-          children: [Text('Only row')],
-        ),
-      ),
+      wrap(const MSSettingsSection(children: [Text('Only row')])),
     );
     final dividers = tester
         .widgetList<WDiv>(find.byType(WDiv))
@@ -208,14 +190,11 @@ void main() {
     expect(dividers.length, equals(0));
   });
 
-  testWidgets('SettingsSection container uses bg-surface-container className',
-      (tester) async {
+  testWidgets('SettingsSection container uses bg-surface-container className', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsSection(
-          children: [Text('Row 1')],
-        ),
-      ),
+      wrap(const MSSettingsSection(children: [Text('Row 1')])),
     );
     // The container WDiv should carry the bg-surface-container token.
     final containers = tester
@@ -225,14 +204,12 @@ void main() {
     expect(containers, isNotEmpty);
   });
 
-  testWidgets('SettingsSection header WText carries uppercase token',
-      (tester) async {
+  testWidgets('SettingsSection header WText carries uppercase token', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
-        const MSSettingsSection(
-          header: 'Security',
-          children: [Text('Row 1')],
-        ),
+        const MSSettingsSection(header: 'Security', children: [Text('Row 1')]),
       ),
     );
     final headerTexts = tester
@@ -242,8 +219,9 @@ void main() {
     expect(headerTexts, isNotEmpty);
   });
 
-  testWidgets('SettingsSection light+dark tokens present in container',
-      (tester) async {
+  testWidgets('SettingsSection light+dark tokens present in container', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSSettingsSection(
@@ -280,29 +258,35 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('SettingsSection className append', () {
-    testWidgets('container appends caller className onto the recipe base',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-        const MSSettingsSection(
-          containerClassName: 'mt-10',
-          children: [Text('row')],
+    testWidgets('container appends caller className onto the recipe base', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSSettingsSection(
+            containerClassName: 'mt-10',
+            children: [Text('row')],
+          ),
         ),
-      ));
+      );
       final containerDiv = tester
           .widgetList<WDiv>(find.byType(WDiv))
           .firstWhere((w) => w.className?.contains('mt-10') == true);
       expect(containerDiv.className, contains('rounded-lg'));
     });
 
-    testWidgets('caption appends caller className onto the recipe base',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-        const MSSettingsSection(
-          header: 'Account',
-          captionClassName: 'mt-10',
-          children: [Text('row')],
+    testWidgets('caption appends caller className onto the recipe base', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSSettingsSection(
+            header: 'Account',
+            captionClassName: 'mt-10',
+            children: [Text('row')],
+          ),
         ),
-      ));
+      );
       final captionText = tester
           .widgetList<WText>(find.byType(WText))
           .firstWhere((w) => w.className?.contains('mt-10') == true);

@@ -16,21 +16,22 @@ class MagicStarterResetPasswordView
       _MagicStarterResetPasswordViewState();
 }
 
-class _MagicStarterResetPasswordViewState extends MagicStatefulViewState<
-    MagicStarterAuthController, MagicStarterResetPasswordView> {
+class _MagicStarterResetPasswordViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterAuthController,
+          MagicStarterResetPasswordView
+        > {
   static const _iconVisible = Icons.visibility;
   static const _iconHidden = Icons.visibility_off;
   static const _iconCheck = Icons.check_circle_outline;
 
   late final _token = MagicRouter.instance.pathParameter('token') ?? '';
-  late final form = MagicFormData(
-    {
-      'email': '',
-      'password': '',
-      'password_confirmation': '',
-    },
-    controller: controller,
-  );
+  late final form = MagicFormData({
+    'email': '',
+    'password': '',
+    'password_confirmation': '',
+  }, controller: controller);
 
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;

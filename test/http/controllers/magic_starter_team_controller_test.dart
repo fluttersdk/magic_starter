@@ -25,14 +25,8 @@ class MockNetworkDriver implements NetworkDriver {
   }
 
   /// Set a default response for any un-stubbed URL.
-  void setDefaultResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    _defaultResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void setDefaultResponse({required int statusCode, dynamic data}) {
+    _defaultResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
@@ -62,55 +56,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -118,16 +105,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -135,8 +120,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 class RecordedCall {
@@ -144,11 +128,7 @@ class RecordedCall {
   final String url;
   final dynamic data;
 
-  const RecordedCall({
-    required this.method,
-    required this.url,
-    this.data,
-  });
+  const RecordedCall({required this.method, required this.url, this.data});
 }
 
 // ---------------------------------------------------------------------------
@@ -239,9 +219,7 @@ void main() {
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-        'mock': {
-          'driver': 'mock',
-        },
+        'mock': {'driver': 'mock'},
       });
 
       // 5. Bind MagicStarterManager for MagicStarter facade.
@@ -264,38 +242,37 @@ void main() {
     // ---------------------------------------------------------------------
 
     group('doCreate', () {
-      test('success — returns true, sets success, calls Auth.restore()',
-          () async {
-        mockDriver.stubResponse(
-          '/teams',
-          statusCode: 200,
-          data: {
-            'data': {
-              'id': 10,
-              'name': 'New Team',
+      test(
+        'success — returns true, sets success, calls Auth.restore()',
+        () async {
+          mockDriver.stubResponse(
+            '/teams',
+            statusCode: 200,
+            data: {
+              'data': {'id': 10, 'name': 'New Team'},
             },
-          },
-        );
-        // doCreate switches the backend current team to the new one.
-        mockDriver.stubResponse(
-          '/user/current-team',
-          statusCode: 200,
-          data: {'data': {}},
-        );
+          );
+          // doCreate switches the backend current team to the new one.
+          mockDriver.stubResponse(
+            '/user/current-team',
+            statusCode: 200,
+            data: {'data': {}},
+          );
 
-        final result = await controller.doCreate(name: 'New Team');
+          final result = await controller.doCreate(name: 'New Team');
 
-        expect(result, isTrue);
-        expect(controller.isSuccess, isTrue);
-        expect(controller.currentTeamId.value, equals(10));
-        expect(mockGuard.restoreCalled, isTrue);
+          expect(result, isTrue);
+          expect(controller.isSuccess, isTrue);
+          expect(controller.currentTeamId.value, equals(10));
+          expect(mockGuard.restoreCalled, isTrue);
 
-        // Verify POST was made to /teams.
-        final postCalls = mockDriver.calls.where(
-          (c) => c.method == 'POST' && c.url == '/teams',
-        );
-        expect(postCalls, hasLength(1));
-      });
+          // Verify POST was made to /teams.
+          final postCalls = mockDriver.calls.where(
+            (c) => c.method == 'POST' && c.url == '/teams',
+          );
+          expect(postCalls, hasLength(1));
+        },
+      );
 
       // REPORT #14: after creating a team, the team settings view opens the
       // OLD team's settings. The settings view pre-fills its name field from
@@ -323,10 +300,7 @@ void main() {
             '/teams',
             statusCode: 200,
             data: {
-              'data': {
-                'id': 10,
-                'name': 'New Team',
-              },
+              'data': {'id': 10, 'name': 'New Team'},
             },
           );
           mockDriver.stubResponse(
@@ -386,10 +360,7 @@ void main() {
           '/teams/5',
           statusCode: 200,
           data: {
-            'data': {
-              'id': 5,
-              'name': 'Updated Team',
-            },
+            'data': {'id': 5, 'name': 'Updated Team'},
           },
         );
 
@@ -441,10 +412,7 @@ void main() {
 
         // Stub both invitations POST and the subsequent
         // loadMembersAndInvitations GET calls.
-        mockDriver.setDefaultResponse(
-          statusCode: 200,
-          data: {'data': []},
-        );
+        mockDriver.setDefaultResponse(statusCode: 200, data: {'data': []});
 
         final result = await controller.doInvite(
           email: 'new@example.com',
@@ -602,10 +570,7 @@ void main() {
 
         expect(result, isTrue);
         expect(controller.invitations.value, hasLength(1));
-        expect(
-          controller.invitations.value.first['email'],
-          equals('c@d.com'),
-        );
+        expect(controller.invitations.value.first['email'], equals('c@d.com'));
       });
     });
 
@@ -662,7 +627,7 @@ void main() {
         mockDriver.setDefaultResponse(
           statusCode: 200,
           data: {
-            'data': {'id': 10}
+            'data': {'id': 10},
           },
         );
 
@@ -672,9 +637,7 @@ void main() {
         await Future.wait([future1, future2]);
 
         // Only one POST should have been made.
-        final postCalls = mockDriver.calls.where(
-          (c) => c.method == 'POST',
-        );
+        final postCalls = mockDriver.calls.where((c) => c.method == 'POST');
         expect(postCalls, hasLength(1));
       });
     });

@@ -28,7 +28,5 @@ const WindRecipe typographyRecipe = WindRecipe(
       'caption': 'text-sm font-normal text-fg-muted',
     },
   },
-  defaultVariants: {
-    kTypographyVariantAxis: 'body',
-  },
+  defaultVariants: {kTypographyVariantAxis: 'body'},
 );

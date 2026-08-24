@@ -24,11 +24,7 @@ void main() {
   /// Colour-bearing prefixes Wind resolves through the alias map or the palette.
   /// A `text-` class can also be a size or weight, so those are filtered out by
   /// the known-utility list rather than treated as colours.
-  const List<String> colourPrefixes = <String>[
-    'bg-',
-    'text-',
-    'border-color-',
-  ];
+  const List<String> colourPrefixes = <String>['bg-', 'text-', 'border-color-'];
 
   /// `text-*` values that are NOT colours.
   const Set<String> nonColourTextUtilities = <String>{
@@ -90,17 +86,20 @@ void main() {
 
   /// Pulls the candidate colour tokens out of a className string.
   Iterable<String> colourTokensIn(String className) {
-    return className.split(RegExp(r'\s+')).where((String raw) {
-      if (raw.isEmpty) return false;
-      // Drop variant prefixes (`dark:`, `md:`, `hover:`) and test the base.
-      final String token = raw.contains(':') ? raw.split(':').last : raw;
-      if (!colourPrefixes.any(token.startsWith)) return false;
-      if (token.startsWith('text-') &&
-          nonColourTextUtilities.contains(token.substring(5))) {
-        return false;
-      }
-      return true;
-    }).map((String raw) => raw.contains(':') ? raw.split(':').last : raw);
+    return className
+        .split(RegExp(r'\s+'))
+        .where((String raw) {
+          if (raw.isEmpty) return false;
+          // Drop variant prefixes (`dark:`, `md:`, `hover:`) and test the base.
+          final String token = raw.contains(':') ? raw.split(':').last : raw;
+          if (!colourPrefixes.any(token.startsWith)) return false;
+          if (token.startsWith('text-') &&
+              nonColourTextUtilities.contains(token.substring(5))) {
+            return false;
+          }
+          return true;
+        })
+        .map((String raw) => raw.contains(':') ? raw.split(':').last : raw);
   }
 
   /// Every className string the four shared components emit, keyed by origin so
@@ -116,25 +115,28 @@ void main() {
     'errorState.icon': errorStateIconClassName(),
     'errorState.title': errorStateTitleClassName(),
     'errorState.description': errorStateDescriptionClassName(),
-    for (final MapEntry<String, String> slot
-        in upgradeNudgeRecipe(variants: const {}).entries)
+    for (final MapEntry<String, String> slot in upgradeNudgeRecipe(
+      variants: const {},
+    ).entries)
       'upgradeNudge.${slot.key}': slot.value,
-    for (final MapEntry<String, String> slot
-        in upgradeDialogRecipe(variants: const {}).entries)
+    for (final MapEntry<String, String> slot in upgradeDialogRecipe(
+      variants: const {},
+    ).entries)
       'upgradeDialog.${slot.key}': slot.value,
   };
 
   group('shared component recipes only emit resolvable colour tokens', () {
     sharedClassNames.forEach((String origin, String className) {
       test(origin, () {
-        final List<String> unresolvable = colourTokensIn(className)
-            .where((String token) => !resolves(token))
-            .toList();
+        final List<String> unresolvable = colourTokensIn(
+          className,
+        ).where((String token) => !resolves(token)).toList();
 
         expect(
           unresolvable,
           isEmpty,
-          reason: 'these tokens resolve to nothing, so the class is dropped '
+          reason:
+              'these tokens resolve to nothing, so the class is dropped '
               'silently and the surface renders the inherited value: '
               '$unresolvable (in "$className"). Use a key from '
               'MagicStarterTokens.defaultAliases, a colour family, or a raw '
@@ -146,8 +148,10 @@ void main() {
 
   test('the guard itself rejects a token that resolves to nothing', () {
     // Without this, a bug in `resolves` would make every case above vacuous.
-    expect(colourTokensIn('bg-ai-soft text-ai p-4').toList(),
-        <String>['bg-ai-soft', 'text-ai']);
+    expect(colourTokensIn('bg-ai-soft text-ai p-4').toList(), <String>[
+      'bg-ai-soft',
+      'text-ai',
+    ]);
     expect(resolves('bg-ai-soft'), isFalse);
     expect(resolves('text-ai'), isFalse);
     expect(resolves('text-destructive'), isFalse);

@@ -14,30 +14,20 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
+  void mockResponse({required int statusCode, dynamic data}) {
     nextResponse = MagicResponse(
       data: data ?? <String, dynamic>{},
       statusCode: statusCode,
     );
   }
 
-  MagicResponse _respond(
-    String method,
-    String url, {
-    dynamic data,
-  }) {
+  MagicResponse _respond(String method, String url, {dynamic data}) {
     lastMethod = method;
     lastUrl = url;
     lastData = data;
 
     return nextResponse ??
-        MagicResponse(
-          data: <String, dynamic>{},
-          statusCode: 500,
-        );
+        MagicResponse(data: <String, dynamic>{}, statusCode: 500);
   }
 
   @override
@@ -48,55 +38,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -104,16 +87,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -121,8 +102,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -197,13 +177,9 @@ class MockGuard implements Guard {
 void main() {
   Widget wrap(Widget widget) {
     return MaterialApp(
-      builder: (context, child) => WindTheme(
-        data: WindThemeData(),
-        child: child!,
-      ),
-      home: Scaffold(
-        body: SingleChildScrollView(child: widget),
-      ),
+      builder: (context, child) =>
+          WindTheme(data: WindThemeData(), child: child!),
+      home: Scaffold(body: SingleChildScrollView(child: widget)),
     );
   }
 
@@ -224,10 +200,7 @@ void main() {
       Config.set('logging', <String, dynamic>{
         'default': 'console',
         'channels': <String, dynamic>{
-          'console': <String, dynamic>{
-            'driver': 'console',
-            'level': 'debug',
-          },
+          'console': <String, dynamic>{'driver': 'console', 'level': 'debug'},
         },
       });
 
@@ -248,10 +221,7 @@ void main() {
       Config.set('magic_starter.features.newsletter', true);
 
       // 6. Bind MagicStarterManager.
-      Magic.singleton(
-        'magic_starter',
-        () => MagicStarterManager(),
-      );
+      Magic.singleton('magic_starter', () => MagicStarterManager());
 
       // 7. Create and inject controller.
       Magic.put(MagicStarterProfileController());
@@ -284,9 +254,7 @@ void main() {
       'newsletter section is visible when hasNewsletterFeatures is true',
       (WidgetTester tester) async {
         // Feature flag is already enabled in setUp — section must render.
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
         await tester.pumpAndSettle();
 
         expect(
@@ -306,9 +274,7 @@ void main() {
         // Override feature flag — section must not be rendered.
         Config.set('magic_starter.features.newsletter', false);
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
         await tester.pumpAndSettle();
 
         expect(
@@ -322,82 +288,74 @@ void main() {
       },
     );
 
-    testWidgets(
-      'switch shows OFF when API returns subscribed false',
-      (WidgetTester tester) async {
-        // Default mock from setUp already returns subscribed: false.
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pumpAndSettle();
+    testWidgets('switch shows OFF when API returns subscribed false', (
+      WidgetTester tester,
+    ) async {
+      // Default mock from setUp already returns subscribed: false.
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pumpAndSettle();
 
-        // Switch must reflect the unsubscribed state.
-        expect(
-          find.byWidgetPredicate(
-            (Widget widget) => widget is MSSwitch && widget.value == false,
-          ),
-          findsOneWidget,
-        );
+      // Switch must reflect the unsubscribed state.
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) => widget is MSSwitch && widget.value == false,
+        ),
+        findsOneWidget,
+      );
 
-        // Unsubscribed status label must be visible.
-        expect(
-          find.byWidgetPredicate(
-            (Widget widget) =>
-                widget is WText &&
-                widget.data ==
-                    trans('magic_starter.newsletter.unsubscribed_status'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
+      // Unsubscribed status label must be visible.
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WText &&
+              widget.data ==
+                  trans('magic_starter.newsletter.unsubscribed_status'),
+        ),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'switch shows ON when API returns subscribed true',
-      (WidgetTester tester) async {
-        // Override mock to return subscribed: true before pumping.
-        mockDriver.mockResponse(
-          statusCode: 200,
-          data: <String, dynamic>{
-            'subscribed': true,
-            'source': 'register',
-            'subscribed_at': '2025-01-01',
-          },
-        );
+    testWidgets('switch shows ON when API returns subscribed true', (
+      WidgetTester tester,
+    ) async {
+      // Override mock to return subscribed: true before pumping.
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: <String, dynamic>{
+          'subscribed': true,
+          'source': 'register',
+          'subscribed_at': '2025-01-01',
+        },
+      );
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pumpAndSettle();
 
-        // Switch must reflect the subscribed state.
-        expect(
-          find.byWidgetPredicate(
-            (Widget widget) => widget is MSSwitch && widget.value == true,
-          ),
-          findsOneWidget,
-        );
+      // Switch must reflect the subscribed state.
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) => widget is MSSwitch && widget.value == true,
+        ),
+        findsOneWidget,
+      );
 
-        // Subscribed status label must be visible.
-        expect(
-          find.byWidgetPredicate(
-            (Widget widget) =>
-                widget is WText &&
-                widget.data ==
-                    trans('magic_starter.newsletter.subscribed_status'),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
+      // Subscribed status label must be visible.
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WText &&
+              widget.data ==
+                  trans('magic_starter.newsletter.subscribed_status'),
+        ),
+        findsOneWidget,
+      );
+    });
 
     testWidgets(
       'toggling switch calls PUT /user/newsletter with subscribe true',
       (WidgetTester tester) async {
         // Default mock starts with subscribed: false.
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
         await tester.pumpAndSettle();
 
         // Queue PUT response before tapping the switch.
@@ -432,9 +390,7 @@ void main() {
           },
         );
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
         await tester.pumpAndSettle();
 
         // Queue PUT response before tapping the switch.

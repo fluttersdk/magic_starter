@@ -14,17 +14,14 @@ const String kSettingsNavRowLayoutDefault = 'default';
 ///
 /// Emission order: `base ++ layout-variant`.
 const WindRecipe settingsNavRowRecipe = WindRecipe(
-  base: 'w-full flex flex-row items-center min-h-12 px-5 py-4 '
+  base:
+      'w-full flex flex-row items-center min-h-12 px-5 py-4 '
       'bg-surface-container '
       'hover:bg-surface-container-high',
   variants: {
-    kSettingsNavRowLayoutAxis: {
-      kSettingsNavRowLayoutDefault: '',
-    },
+    kSettingsNavRowLayoutAxis: {kSettingsNavRowLayoutDefault: ''},
   },
-  defaultVariants: {
-    kSettingsNavRowLayoutAxis: kSettingsNavRowLayoutDefault,
-  },
+  defaultVariants: {kSettingsNavRowLayoutAxis: kSettingsNavRowLayoutDefault},
 );
 
 /// Leading icon tile className (the colored square behind the icon).

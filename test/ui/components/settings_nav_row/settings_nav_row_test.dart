@@ -31,12 +31,7 @@ void main() {
 
   testWidgets('renders required title', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsNavRow(
-          title: 'Profile',
-          to: '/settings/profile',
-        ),
-      ),
+      wrap(const MSSettingsNavRow(title: 'Profile', to: '/settings/profile')),
     );
     expect(find.text('Profile'), findsOneWidget);
   });
@@ -61,12 +56,7 @@ void main() {
 
   testWidgets('does not render subtitle when omitted', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsNavRow(
-          title: 'Profile',
-          to: '/settings/profile',
-        ),
-      ),
+      wrap(const MSSettingsNavRow(title: 'Profile', to: '/settings/profile')),
     );
     expect(find.text('Profile'), findsOneWidget);
     // Only one WText (the title).
@@ -93,12 +83,7 @@ void main() {
 
   testWidgets('does not render trailing value when omitted', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsNavRow(
-          title: 'Profile',
-          to: '/settings/profile',
-        ),
-      ),
+      wrap(const MSSettingsNavRow(title: 'Profile', to: '/settings/profile')),
     );
     // Only the title WText; no value text.
     expect(find.text('Profile'), findsOneWidget);
@@ -112,12 +97,7 @@ void main() {
 
   testWidgets('renders trailing chevron icon', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsNavRow(
-          title: 'Profile',
-          to: '/settings/profile',
-        ),
-      ),
+      wrap(const MSSettingsNavRow(title: 'Profile', to: '/settings/profile')),
     );
     // The chevron is a WIcon; verify at least one icon is present in the row.
     expect(find.byType(WIcon), findsAtLeast(1));
@@ -127,8 +107,9 @@ void main() {
   // Rendering — leading icon tile
   // ---------------------------------------------------------------------------
 
-  testWidgets('renders leading icon tile when icon is provided',
-      (tester) async {
+  testWidgets('renders leading icon tile when icon is provided', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const MSSettingsNavRow(
@@ -143,12 +124,7 @@ void main() {
 
   testWidgets('renders without leading icon when icon is null', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsNavRow(
-          title: 'Profile',
-          to: '/settings/profile',
-        ),
-      ),
+      wrap(const MSSettingsNavRow(title: 'Profile', to: '/settings/profile')),
     );
     // Should still render — no crash when icon is omitted.
     expect(find.text('Profile'), findsOneWidget);
@@ -179,8 +155,9 @@ void main() {
     expect(tappedPath, '/settings/profile');
   });
 
-  testWidgets('delivers correct path when different `to` values used',
-      (tester) async {
+  testWidgets('delivers correct path when different `to` values used', (
+    tester,
+  ) async {
     String? tappedPath;
 
     await tester.pumpWidget(
@@ -203,15 +180,11 @@ void main() {
   // Light + dark className pairs
   // ---------------------------------------------------------------------------
 
-  testWidgets('row container WDiv carries bg-surface-container class',
-      (tester) async {
+  testWidgets('row container WDiv carries bg-surface-container class', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsNavRow(
-          title: 'Profile',
-          to: '/settings/profile',
-        ),
-      ),
+      wrap(const MSSettingsNavRow(title: 'Profile', to: '/settings/profile')),
     );
 
     // The outermost WDiv for the row must reference the surface-container token.
@@ -245,12 +218,7 @@ void main() {
 
   testWidgets('title WText carries text-fg class', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSSettingsNavRow(
-          title: 'Profile',
-          to: '/settings/profile',
-        ),
-      ),
+      wrap(const MSSettingsNavRow(title: 'Profile', to: '/settings/profile')),
     );
 
     final texts = tester.widgetList<WText>(find.byType(WText)).toList();

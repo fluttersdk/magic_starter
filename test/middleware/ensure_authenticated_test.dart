@@ -37,10 +37,7 @@ void main() {
       Auth.fake();
       final middleware = EnsureAuthenticated();
 
-      expect(
-        middleware.redirectTarget('/'),
-        MagicStarterConfig.loginRoute(),
-      );
+      expect(middleware.redirectTarget('/'), MagicStarterConfig.loginRoute());
     });
 
     test('allows a guest already resting on the login route (no loop)', () {

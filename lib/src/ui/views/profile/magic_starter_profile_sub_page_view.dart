@@ -36,32 +36,30 @@ class MagicStarterProfileSubPageView
       _MagicStarterProfileSubPageViewState();
 }
 
-class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterProfileSubPageView> {
+class _MagicStarterProfileSubPageViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterProfileSubPageView
+        > {
   static const _iconVisible = Icons.visibility;
   static const _iconHidden = Icons.visibility_off;
 
   // -- Forms ------------------------------------------------------------------
 
-  late final profileForm = MagicFormData(
-    {
-      'name': '',
-      'email': '',
-      'phone': '',
-      'timezone': '',
-      'language': '',
-    },
-    controller: controller,
-  );
+  late final profileForm = MagicFormData({
+    'name': '',
+    'email': '',
+    'phone': '',
+    'timezone': '',
+    'language': '',
+  }, controller: controller);
 
-  late final upgradeForm = MagicFormData(
-    {
-      'email': '',
-      'password': '',
-      'password_confirmation': '',
-    },
-    controller: controller,
-  );
+  late final upgradeForm = MagicFormData({
+    'email': '',
+    'password': '',
+    'password_confirmation': '',
+  }, controller: controller);
 
   bool _obscureUpgradePassword = true;
   bool _obscureUpgradeConfirmation = true;
@@ -75,8 +73,9 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
   /// decouple each section's loading indicator from the controller's global
   /// state, lifted verbatim from the legacy long-form profile view.
   final ValueNotifier<bool> _photoLoading = ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _emailVerificationLoading =
-      ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _emailVerificationLoading = ValueNotifier<bool>(
+    false,
+  );
   final ValueNotifier<bool> _profileSaveLoading = ValueNotifier<bool>(false);
 
   // -- Lifecycle -------------------------------------------------------------
@@ -134,10 +133,16 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    final headerSlot =
-        MagicStarter.view.buildSlot('profile.profile', 'header', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('profile.profile', 'footer', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'profile.profile',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'profile.profile',
+      'footer',
+      context,
+    );
 
     final isGuest = Gate.denies('starter.delete-account');
 
@@ -160,10 +165,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
           _buildEmailVerificationSection(),
 
         // 3. Profile information form.
-        MagicForm(
-          formData: profileForm,
-          child: _buildProfileSection(),
-        ),
+        MagicForm(formData: profileForm, child: _buildProfileSection()),
 
         // 4. Guest upgrade (guests only). Account deletion lives on the
         //    Security > Browser Sessions sub-page (a destructive account action),
@@ -198,7 +200,8 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
                         className: 'w-full h-full object-cover',
                       )
                     : WDiv(
-                        className: 'w-full h-full bg-surface-container-high '
+                        className:
+                            'w-full h-full bg-surface-container-high '
                             'flex items-center justify-center',
                         child: WIcon(
                           Icons.person_outline,
@@ -213,13 +216,15 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
                 MagicBuilder<bool>(
                   listenable: _photoLoading,
                   builder: (isLoading) => WDiv(
-                    className: 'flex flex-col sm:flex-row items-stretch '
+                    className:
+                        'flex flex-col sm:flex-row items-stretch '
                         'sm:items-center gap-2 sm:gap-3',
                     children: [
                       WButton(
                         onTap: isLoading ? null : _handlePhotoUpload,
                         isLoading: isLoading,
-                        className: 'px-4 py-2 rounded-lg bg-surface '
+                        className:
+                            'px-4 py-2 rounded-lg bg-surface '
                             'border border-color-border hover:bg-surface-container '
                             'text-fg text-sm font-medium',
                         child: WText(trans('common.upload')),
@@ -228,7 +233,8 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
                         WButton(
                           onTap: isLoading ? null : _handlePhotoRemove,
                           isLoading: isLoading,
-                          className: 'px-4 py-2 rounded-lg bg-surface '
+                          className:
+                              'px-4 py-2 rounded-lg bg-surface '
                               'border border-color-border '
                               'hover:bg-surface-container '
                               'text-destructive text-sm font-medium',
@@ -259,10 +265,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
   }
 
   Future<void> _handlePhotoRemove() async {
-    await _trackLoading(
-      _photoLoading,
-      () => controller.doDeleteProfilePhoto(),
-    );
+    await _trackLoading(_photoLoading, () => controller.doDeleteProfilePhoto());
   }
 
   // -- Email Verification Section -------------------------------------------
@@ -279,10 +282,7 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
           WDiv(
             className: 'flex items-center gap-3 px-5 py-4',
             children: [
-              WIcon(
-                Icons.verified,
-                className: 'text-primary text-xl',
-              ),
+              WIcon(Icons.verified, className: 'text-primary text-xl'),
               WText(
                 trans('magic_starter.email_verification.verified'),
                 className: 'text-sm font-medium text-fg',
@@ -300,7 +300,8 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
           className: 'flex flex-col gap-4 px-5 py-4',
           children: [
             WDiv(
-              className: 'flex items-start gap-3 p-3 rounded-lg '
+              className:
+                  'flex items-start gap-3 p-3 rounded-lg '
                   'bg-surface-container-high border border-color-border',
               children: [
                 WIcon(
@@ -331,7 +332,8 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
               builder: (isLoading) => WButton(
                 onTap: isLoading ? null : _handleSendEmailVerification,
                 isLoading: isLoading,
-                className: 'self-start px-4 py-2 rounded-lg bg-primary '
+                className:
+                    'self-start px-4 py-2 rounded-lg bg-primary '
                     'hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(
                   trans('magic_starter.email_verification.resend_button'),
@@ -409,7 +411,8 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
               builder: (isProcessing) => WButton(
                 onTap: isProcessing ? null : _submitProfile,
                 isLoading: isProcessing,
-                className: 'px-4 py-2 rounded-lg bg-primary '
+                className:
+                    'px-4 py-2 rounded-lg bg-primary '
                     'hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(trans('common.save')),
               ),
@@ -510,7 +513,8 @@ class _MagicStarterProfileSubPageViewState extends MagicStatefulViewState<
                     builder: (isProcessing) => WButton(
                       onTap: isProcessing ? null : _submitGuestUpgrade,
                       isLoading: isProcessing,
-                      className: 'px-4 py-2 rounded-lg bg-primary '
+                      className:
+                          'px-4 py-2 rounded-lg bg-primary '
                           'hover:bg-primary/80 text-white text-sm font-medium',
                       child: WText(trans('magic_starter.guest_upgrade.button')),
                     ),

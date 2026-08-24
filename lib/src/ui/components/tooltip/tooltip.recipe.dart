@@ -10,6 +10,7 @@ import 'package:magic/magic.dart';
 /// A caller `className` is APPENDED after the base (parser last-wins resolves
 /// conflicts per family), so it refines the default rather than replacing it.
 const WindRecipe tooltipPanelRecipe = WindRecipe(
-  base: 'bg-surface-container-high text-fg border border-color-border '
+  base:
+      'bg-surface-container-high text-fg border border-color-border '
       'text-xs px-2 py-1 rounded max-w-xs',
 );

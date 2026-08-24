@@ -84,8 +84,10 @@ void main() {
       test('raw[responder_add_on] survives verbatim', () {
         final plan = MagicStarterPlan.fromMap(uptizmProTier);
 
-        expect(plan.raw['responder_add_on'],
-            equals(r'+$9/mo per extra responder'));
+        expect(
+          plan.raw['responder_add_on'],
+          equals(r'+$9/mo per extra responder'),
+        );
       });
 
       test('raw[limits] is reachable and its nested values survive', () {
@@ -132,18 +134,19 @@ void main() {
       });
 
       test(
-          'a null monthly/annual (the enterprise "contact us" case) stays null',
-          () {
-        final plan = MagicStarterPlan.fromMap(<String, dynamic>{
-          'id': 'enterprise',
-          'name': 'Enterprise',
-          'monthly': null,
-          'annual': null,
-        });
+        'a null monthly/annual (the enterprise "contact us" case) stays null',
+        () {
+          final plan = MagicStarterPlan.fromMap(<String, dynamic>{
+            'id': 'enterprise',
+            'name': 'Enterprise',
+            'monthly': null,
+            'annual': null,
+          });
 
-        expect(plan.monthly, isNull);
-        expect(plan.annual, isNull);
-      });
+          expect(plan.monthly, isNull);
+          expect(plan.annual, isNull);
+        },
+      );
     });
 
     // ---------------------------------------------------------------------
