@@ -151,6 +151,16 @@ class _CatalogueLoader implements TranslationLoader {
 /// back, in the order it sent them, and one this table has no word for keeps a
 /// NULL label rather than falling back to its wire key. A meter labelled
 /// `widgets_provisioned` is a raw key on a customer's screen.
+/// The consumer's number format, which this package requires and never
+/// supplies.
+///
+/// Plain digits, because the ported scenarios assert on rendered prices and
+/// usage readouts and a sentinel would have to be threaded through every
+/// expectation. The separator behaviour itself is the consumer's to test; what
+/// matters here is that the screen renders through THIS function rather than
+/// through a hardcoded one.
+String _formatNumber(int value) => value.toString();
+
 List<UsageStat> _usageCopy(List<UsageStat> stats) {
   final Map<String, ({String label, String unit})> copy =
       <String, ({String label, String unit})>{
@@ -762,6 +772,7 @@ void main() {
     Magic.put(
       MagicStarterBillingController(
         usageCopy: _usageCopy,
+        formatNumber: _formatNumber,
         isOwnerReader: isOwner == null ? null : () => isOwner,
         storeFundedTeamReader: storeFundedTeam ?? () async => null,
         billingService: billing,
@@ -1399,6 +1410,7 @@ void main() {
       Magic.put(
         MagicStarterBillingController(
           usageCopy: _usageCopy,
+          formatNumber: _formatNumber,
           isOwnerReader: () => true,
           billingService: store,
         ),

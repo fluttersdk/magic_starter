@@ -151,6 +151,13 @@ class _FakeBilling
 /// Modelled on a real consumer helper: every stat the producer reported comes
 /// back, in the order it sent them, and one this table cannot name keeps a NULL
 /// label rather than falling back to its wire key.
+/// The consumer's number format, which this package requires and never
+/// supplies.
+///
+/// A recognisable sentinel rather than `toString`, so a case that cares can
+/// tell a formatted number from an interpolated one.
+String _format(int value) => 'N$value';
+
 List<UsageStat> _copy(List<UsageStat> stats) {
   return stats.map((UsageStat stat) {
     if (stat.key != 'seats') return stat;
@@ -175,6 +182,7 @@ void main() {
   }) {
     return MagicStarterBillingController(
       usageCopy: usageCopy ?? _copy,
+      formatNumber: _format,
       storeFundedTeamReader: storeFundedTeamReader,
       billingService: billing,
     );
@@ -516,6 +524,7 @@ void main() {
       final MagicStarterBillingController controller =
           MagicStarterBillingController(
             usageCopy: _copy,
+            formatNumber: _format,
             storeFundedTeamReader: () async {
               calls++;
               return 'Other Team';
@@ -547,6 +556,7 @@ void main() {
     final MagicStarterBillingController controller =
         MagicStarterBillingController(
           usageCopy: _copy,
+          formatNumber: _format,
           storeFundedTeamReader: storeFundedTeamReader,
           isOwnerReader: isOwnerReader,
           billingService: service,
@@ -563,6 +573,7 @@ void main() {
       final MagicStarterBillingController controller =
           MagicStarterBillingController(
             usageCopy: _copy,
+            formatNumber: _format,
             billingService: _WebGateBilling(),
           );
 
@@ -597,6 +608,7 @@ void main() {
       final MagicStarterBillingController controller =
           MagicStarterBillingController(
             usageCopy: _copy,
+            formatNumber: _format,
             billingService: _WebGateBilling(),
           );
 

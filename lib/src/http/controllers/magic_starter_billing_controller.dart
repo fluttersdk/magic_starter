@@ -20,6 +20,23 @@ import '../session_scoped_controller.dart';
 /// `requests_this_month` is a raw key on a customer's screen.
 typedef MagicStarterUsageCopy = List<UsageStat> Function(List<UsageStat> stats);
 
+/// Renders an integer the way the consumer's locale writes one.
+///
+/// Every number this screen shows goes through it: the used and limit halves of
+/// each usage meter, and the price on each plan card.
+///
+/// Consumer-supplied for the same reason as [MagicStarterUsageCopy], and it is
+/// the more dangerous of the two because its wrong answer is legible. A
+/// thousands separator is a comma in English and a full stop in Turkish, and
+/// this package cannot know which one an adopter writes. Shipping a default
+/// would re-ship a defect this ecosystem has already shipped and fixed, where
+/// two private copies of a separator helper both hardcoded a comma and a
+/// Turkish billing page reported `83,365` for a number Turkish writes as
+/// `83.365`. A consumer with no locale-aware formatter passes
+/// `(int n) => n.toString()`, which is a visible choice rather than a silent
+/// one.
+typedef MagicStarterNumberFormat = String Function(int value);
+
 /// Reads the NAME of another of the caller's teams that a store account already
 /// funds, or `null` when none does.
 ///
@@ -123,6 +140,7 @@ class MagicStarterBillingController extends MagicController
   /// or portal affordance may render.
   MagicStarterBillingController({
     required this.usageCopy,
+    required this.formatNumber,
     this.storeFundedTeamReader,
     this.isOwnerReader,
     @visibleForTesting BillingService? billingService,
@@ -131,6 +149,14 @@ class MagicStarterBillingController extends MagicController
   /// Pairs the consumer's display copy onto every [UsageStat] the producer
   /// reported. Required; see the class docblock for why it has no default.
   final MagicStarterUsageCopy usageCopy;
+
+  /// Renders every integer this screen shows, in the consumer's locale.
+  ///
+  /// Required, and it lives here rather than on the view because the view
+  /// registry's builder takes no arguments, so a view parameter would need a
+  /// default at the registration site and every default available there is a
+  /// wrong answer shipped silently. See [MagicStarterNumberFormat].
+  final MagicStarterNumberFormat formatNumber;
 
   /// The consumer's cross-team store check, or `null` when the consumer
   /// registered none.
