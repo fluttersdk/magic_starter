@@ -19,6 +19,7 @@ export 'src/http/controllers/magic_starter_team_controller.dart';
 export 'src/http/controllers/magic_starter_notification_controller.dart';
 export 'src/http/controllers/magic_starter_otp_controller.dart';
 export 'src/http/controllers/magic_starter_guest_auth_controller.dart';
+export 'src/http/controllers/magic_starter_billing_controller.dart';
 
 export 'src/http/controllers/magic_starter_newsletter_controller.dart';
 export 'src/routes/auth_routes.dart';
