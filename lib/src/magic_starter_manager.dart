@@ -30,6 +30,7 @@ import 'ui/views/settings/preferences/magic_starter_timezone_view.dart';
 import 'ui/views/settings/security/magic_starter_password_view.dart';
 import 'ui/views/settings/security/magic_starter_sessions_view.dart';
 import 'ui/views/settings/security/magic_starter_two_factor_view.dart';
+import 'ui/views/teams/magic_starter_billing_view.dart';
 import 'ui/views/teams/magic_starter_team_create_view.dart';
 import 'ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 import 'ui/views/teams/magic_starter_team_settings_view.dart';
@@ -359,6 +360,17 @@ class MagicStarterManager {
         'teams.invitation_accept',
         () => const MagicStarterTeamInvitationAcceptView(),
       );
+    }
+
+    // Billing, conditional on its OWN feature flag rather than on teams'.
+    //
+    // The key sits in the `teams.` area because that is where the route lives
+    // (`MagicStarterConfig.billingRoute()` defaults to `/teams/billing`), but a
+    // subscription is bought by whoever holds the account, so an app with no
+    // team features can still sell one. Nesting this inside the teams block
+    // above would make the billing toggle silently depend on a second one.
+    if (MagicStarterConfig.hasBillingFeatures()) {
+      _registerDefault('teams.billing', () => const MagicStarterBillingView());
     }
 
     // Notifications — conditional on feature flag.

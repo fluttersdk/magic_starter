@@ -33,6 +33,7 @@ export 'src/ui/views/auth/magic_starter_reset_password_view.dart';
 export 'src/ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 export 'src/ui/views/auth/magic_starter_otp_verify_view.dart';
 export 'src/ui/views/profile/magic_starter_profile_settings_view.dart';
+export 'src/ui/views/teams/magic_starter_billing_view.dart';
 export 'src/ui/views/teams/magic_starter_team_create_view.dart';
 export 'src/ui/views/teams/magic_starter_team_settings_view.dart';
 export 'src/ui/views/notifications/magic_starter_notification_preferences_view.dart';

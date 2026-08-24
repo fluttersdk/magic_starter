@@ -1652,6 +1652,46 @@ void main() {
     });
   });
 
+  group('MagicStarterBillingView registration', () {
+    testWidgets('the registry answers under teams.billing, and what it '
+        'answers wears the shared page chrome', (tester) async {
+      // The half a consumer actually depends on. The screen is reached BY KEY
+      // (the route resolves `teams.billing` through the registry), so a view
+      // that exists but is not registered is a screen nobody can open, and a
+      // case that constructed the widget directly would pass against exactly
+      // that.
+      expect(MagicStarter.view.has('teams.billing'), isTrue);
+
+      await mount(tester, _RailBillingService());
+
+      expect(tester.takeException(), isNull);
+      // Through MSPageScaffold rather than hand-rolled page chrome: the
+      // scaffold is what routes the page through the host's one container
+      // geometry, and a page that painted its own would centre at its own
+      // width inside the same shell.
+      expect(find.byType(MSPageScaffold), findsOneWidget);
+      expect(find.text(trans('magic_starter.billing.title')), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.billing.description')),
+        findsOneWidget,
+      );
+    });
+
+    test('the feature flag off leaves the key unregistered entirely', () {
+      // Not "registered and then refused at build": absent. The manager
+      // registers its defaults in its constructor, so the flag is flipped
+      // before the singleton is ever resolved.
+      Config.set('magic_starter.features.billing', false);
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+
+      expect(MagicStarter.view.has('teams.billing'), isFalse);
+      expect(
+        () => MagicStarter.view.make('teams.billing'),
+        throwsA(isA<StateError>()),
+      );
+    });
+  });
+
   group('an unresolved rail claims neither sentence', () {
     testWidgets('the payment card waits instead of picking one', (
       tester,
