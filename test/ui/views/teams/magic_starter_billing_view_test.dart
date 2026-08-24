@@ -145,12 +145,6 @@ class _CatalogueLoader implements TranslationLoader {
 // The consumer's collaborators
 // ---------------------------------------------------------------------------
 
-/// The consumer's usage copy, paired on by [UsageStat.key].
-///
-/// Modelled on a real adopter's helper: every stat the producer reported comes
-/// back, in the order it sent them, and one this table has no word for keeps a
-/// NULL label rather than falling back to its wire key. A meter labelled
-/// `widgets_provisioned` is a raw key on a customer's screen.
 /// The consumer's number format, which this package requires and never
 /// supplies.
 ///
@@ -161,6 +155,12 @@ class _CatalogueLoader implements TranslationLoader {
 /// through a hardcoded one.
 String _formatNumber(int value) => value.toString();
 
+/// The consumer's usage copy, paired on by [UsageStat.key].
+///
+/// Modelled on a real adopter's helper: every stat the producer reported comes
+/// back, in the order it sent them, and one this table has no word for keeps a
+/// NULL label rather than falling back to its wire key. A meter labelled
+/// `widgets_provisioned` is a raw key on a customer's screen.
 List<UsageStat> _usageCopy(List<UsageStat> stats) {
   final Map<String, ({String label, String unit})> copy =
       <String, ({String label, String unit})>{
@@ -507,6 +507,57 @@ class _UnresolvedRailBillingService extends _ReadsBillingService {
 
   @override
   Future<PaymentMethod> getPaymentMethod() async => const PaymentMethod();
+}
+
+/// A payment-method read that RESOLVED and carried no card, with the producer's
+/// own [PaymentMethod.available] answer under the test's control.
+///
+/// The three sibling fixtures above each pin ONE of the three states, which is
+/// what makes each of their scenarios readable and what makes the fourth
+/// question, "do the states actually render differently", impossible to ask
+/// from any one of them. This one varies the single axis so the bodies can be
+/// compared side by side.
+class _EmptyCardBillingService extends _ReadsBillingService {
+  _EmptyCardBillingService({this.available, super.manageVia = 'none'});
+
+  /// The producer's answer to whether its rail could be asked at all.
+  final bool? available;
+
+  @override
+  Future<PaymentMethod> getPaymentMethod() async =>
+      PaymentMethod(available: available);
+}
+
+/// A payment-method read that never ARRIVED.
+///
+/// Distinct from every `available` state above, and not expressible by any of
+/// them: `available` is the producer's answer about its rail, and this is the
+/// response failing to reach the client at all, which no server flag can carry
+/// because no server flag was received. It is what keeps the controller's own
+/// `pmError` load-bearing.
+class _TransportFailedPaymentBillingService extends _ReadsBillingService {
+  @override
+  Future<PaymentMethod> getPaymentMethod() async {
+    throw const BillingException('Failed to load the payment method.');
+  }
+}
+
+/// The catalogue with its CUSTOM tier renamed to something no English literal
+/// in the view could produce.
+///
+/// The sales-handoff toast interpolates the tier's name, and in a catalogue
+/// whose top tier is called "Enterprise" a hardcoded "Enterprise" passes by
+/// construction. This renames it, so the assertion can only pass if the name
+/// travelled from the catalogue row.
+class _RenamedCustomTierBillingService extends _RailBillingService {
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async {
+    return _planWireRows.map((Map<String, dynamic> row) {
+      if (row['id'] != 'enterprise') return row;
+
+      return <String, dynamic>{...row, 'name': 'Kurumsal Ölçek'};
+    }).toList();
+  }
 }
 
 /// The reads PLUS the WEB rail, recording every purchase-affecting call so a
@@ -1722,6 +1773,360 @@ void main() {
         findsNothing,
       );
       expect(find.text(trans('common.error_occurred')), findsNothing);
+    });
+  });
+
+  /// Which of the payment card's two sentences a build put on screen.
+  ///
+  /// A record rather than a pair of expectations inside each scenario, because
+  /// the subject below is that the bodies DIFFER FROM EACH OTHER, and that
+  /// comparison cannot be made one scenario at a time. Neither sentence is
+  /// rendered anywhere else on this screen, so their presence is the body.
+  ({bool none, bool failed}) paymentBody(WidgetTester tester) {
+    return (
+      none: find
+          .text(trans('magic_starter.billing.payment_none'))
+          .evaluate()
+          .isNotEmpty,
+      failed: find.text(trans('common.error_occurred')).evaluate().isNotEmpty,
+    );
+  }
+
+  /// Tears the screen down between two mounts inside one case.
+  ///
+  /// Not optional, and not tidiness. [mount] pumps the same widget shape every
+  /// time, so Flutter matches the existing element and REUSES the state: the
+  /// second mount's controller is registered but never resolved, and every
+  /// assertion after it silently re-reads the first scenario's body. Every
+  /// comparison below would pass by construction without this.
+  Future<void> unmount(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  }
+
+  group('an empty card read is four questions, not one', () {
+    testWidgets('the three available states render three different bodies, and '
+        'a transport failure renders the failure one', (tester) async {
+      // 1. The producer says its rail answered and there is genuinely no card.
+      await mount(
+        tester,
+        _EmptyCardBillingService(available: true),
+        isOwner: true,
+      );
+      final ({bool none, bool failed}) resolvedEmpty = paymentBody(tester);
+      await unmount(tester);
+
+      // 2. The producer says its rail could not be asked. Note the entitlement
+      //    is `none` here as well: `available` OVERRIDES the reconstruction
+      //    rather than agreeing with it, which is the whole reason the field was
+      //    added. A screen that kept reading `manage_via` would answer 1 and 2
+      //    identically.
+      await mount(
+        tester,
+        _EmptyCardBillingService(available: false),
+        isOwner: true,
+      );
+      final ({bool none, bool failed}) railUnreachable = paymentBody(tester);
+      await unmount(tester);
+
+      // 3. A producer too old to report the field at all, on a screen whose
+      //    entitlement read has not resolved either. Neither sentence is
+      //    knowable, so neither is claimed.
+      await mount(tester, _UnresolvedRailBillingService(), isOwner: true);
+      final ({bool none, bool failed}) unreported = paymentBody(tester);
+      await unmount(tester);
+
+      // 4. The response never arrived. No producer flag can express this,
+      //    because no producer flag was received.
+      await mount(
+        tester,
+        _TransportFailedPaymentBillingService(),
+        isOwner: true,
+      );
+      final ({bool none, bool failed}) transportFailed = paymentBody(tester);
+
+      expect(tester.takeException(), isNull);
+
+      expect(resolvedEmpty, (none: true, failed: false));
+      expect(railUnreachable, (none: false, failed: true));
+      expect(unreported, (none: false, failed: false));
+      expect(transportFailed, (none: false, failed: true));
+
+      // The three `available` states differ from each other, which is the
+      // collapse this guards: every earlier version of this branch answered two
+      // of the three with one sentence, and each time the sentence was
+      // confident and wrong rather than missing.
+      expect(<({bool none, bool failed})>{
+        resolvedEmpty,
+        railUnreachable,
+        unreported,
+      }, hasLength(3));
+
+      // A transport failure deliberately reads the SAME as a rail the producer
+      // could not ask, and that is not a fourth distinct body by oversight: both
+      // are "we could not read your card", the customer's action is the same in
+      // both, and the package ships one sentence for it. Pinned rather than left
+      // implicit, because the temptation on seeing three bodies for four inputs
+      // is to invent a fourth sentence that names an internal distinction the
+      // customer cannot act on.
+      expect(transportFailed, railUnreachable);
+    });
+
+    testWidgets('an unreported field falls back to the reconstruction, so an '
+        'adopter on an older producer still gets both sentences', (
+      tester,
+    ) async {
+      // The reason the `null` arm may not read as `false`: this is what a
+      // backend that predates the field sends, and answering "the rail is down"
+      // for every one of them would be a screen-wide regression on upgrade.
+      await mount(
+        tester,
+        _EmptyCardBillingService(manageVia: 'none'),
+        isOwner: true,
+      );
+      expect(paymentBody(tester), (none: true, failed: false));
+      await unmount(tester);
+
+      await mount(
+        tester,
+        _EmptyCardBillingService(manageVia: 'portal'),
+        isOwner: true,
+      );
+      expect(paymentBody(tester), (none: false, failed: true));
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the plan card is complete without the consumer, and richer with it', () {
+    /// The two product lines the shipped catalogue carries and this package
+    /// deliberately does not name: a value claim, and a recurring SURCHARGE.
+    const String proAiLine =
+        'Full AI incident analysis: evidence, confidence, citations, '
+        'drafted updates.';
+    const String responderAddOn = r'+$9/mo per extra responder';
+
+    testWidgets('with no slot registered the card still names, prices and sells '
+        'the tier, and claims nothing it cannot', (tester) async {
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+
+      // Complete: the tier, its positioning, its price, its cadence, every
+      // feature bullet the catalogue carries, and a way to buy it.
+      //
+      // Twice for the name, because the held tier is `pro` in this fixture and
+      // the current-plan card above the grid names it too.
+      expect(find.text('Pro'), findsNWidgets(2));
+      expect(find.text('Startups and small teams that page.'), findsOneWidget);
+      expect(find.text(r'$29'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_annual')),
+        findsWidgets,
+      );
+      for (final String feature in <String>[
+        '50 monitors · 30-second checks',
+        '3 status pages · 1,000 subscribers',
+        '3 responders · on-call schedules & escalation policies',
+        'SLO targets & error budgets',
+      ]) {
+        expect(find.text(feature), findsOneWidget);
+      }
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+
+      // Honest: the two fields the package never typed are absent rather than
+      // guessed at. A package that picked one of them would pick the wrong one
+      // for the next adopter.
+      expect(find.text(proAiLine), findsNothing);
+      expect(find.text(responderAddOn), findsNothing);
+    });
+
+    testWidgets('a registered slot receives the whole catalogue row, so BOTH '
+        'product lines reach the card', (tester) async {
+      // The slot renders two fields, and that is the point of handing the raw
+      // map over rather than a field the package chose: dropping the surcharge
+      // line omits a recurring CHARGE from a purchase decision, which is a
+      // different class of harm from dropping the value claim beside it.
+      MagicStarter.view.slot('teams.billing', 'plan_card_highlight', (
+        BuildContext context,
+      ) {
+        final MagicStarterPlan plan = MagicStarterPlanCardScope.of(context);
+        final Object? aiLine = plan.raw['ai_line'];
+        final Object? addOn = plan.raw['responder_add_on'];
+
+        return WDiv(
+          className: 'flex flex-col gap-1',
+          children: <Widget>[
+            if (aiLine is String) WText(aiLine, className: 'text-xs'),
+            if (addOn is String) WText(addOn, className: 'text-xs'),
+          ],
+        );
+      });
+
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(proAiLine), findsOneWidget);
+      // Two of the four catalogue rows carry the surcharge, and both render it:
+      // the slot is built per CARD, not once for the grid.
+      expect(find.text(responderAddOn), findsNWidgets(2));
+      // And the card the package builds is unchanged around it.
+      expect(find.text(r'$29'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('a store build names no catalogue price', () {
+    testWidgets('every priced tier states where its price comes from, and no '
+        'catalogue figure reaches the screen', (tester) async {
+      // A store-BILLED team, so the renewal line above the grid carries no
+      // figure either and the assertion can be a substring search over the whole
+      // tree rather than an exact-text one. The catalogue's integers are in the
+      // vendor's own currency; a storefront charges a localised amount on its
+      // own cadence, so every one of these figures would be wrong.
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      for (final String figure in <String>[r'$29', r'$34', r'$99', r'$119']) {
+        expect(
+          find.textContaining(figure),
+          findsNothing,
+          reason: 'a store build must not name a catalogue price',
+        );
+      }
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_store')),
+        findsNWidgets(2),
+        reason: 'both priced tiers say where the price comes from instead',
+      );
+      // The free tier keeps its zero, which is true in every currency, and the
+      // custom tier keeps its own word.
+      expect(find.text(r'$0'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_custom')),
+        findsOneWidget,
+      );
+      // And no annual cadence anywhere: a store catalogue sells the monthly
+      // SKUs only, so the toggle is gone and no card claims an annual bill.
+      expect(
+        find.text(trans('magic_starter.billing.plans_annual')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_annual')),
+        findsNothing,
+      );
+    });
+  });
+
+  group('an unset web origin cannot sell', () {
+    testWidgets('no checkout CTA renders, because the session it would open '
+        'cannot be created', (tester) async {
+      // An empty value rather than an absent key: a half-filled `.env` produces
+      // exactly this, and the config reads it as unset for the same reason (it
+      // would still yield a relative url). Without this gate the CTA renders,
+      // the rail refuses the session, and the refusal names the config key to
+      // the LOG and nothing at all to the adopter who forgot it.
+      Config.set('magic_starter.billing.web_origin', '');
+
+      final _RailBillingService billing = _RailBillingService(
+        invoices: <Invoice>[invoice],
+      );
+
+      await mount(tester, billing, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsNothing,
+      );
+      expect(billing.checkoutPlans, isEmpty);
+
+      // The two labels that are not purchases survive, because neither spends
+      // anything: the active tier's read-out and the custom tier's sales
+      // handoff.
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_contact')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the portal affordances survive it, since a return url is '
+        'optional where a checkout redirect is not', (tester) async {
+      Config.set('magic_starter.billing.web_origin', '');
+
+      await mount(
+        tester,
+        _RailBillingService(manageVia: 'portal', invoices: <Invoice>[invoice]),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.payment_update_button')),
+        findsOneWidget,
+        reason:
+            'an unconfigured origin must not take a customer away from '
+            'their own card',
+      );
+      expect(
+        find.text(trans('magic_starter.billing.invoice_receipt_button')),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('the sales handoff names the tier the catalogue named', () {
+    testWidgets('the toast carries the plan name, not a tier this package '
+        'hardcoded', (tester) async {
+      // A framework package may not ship one vendor's tier name, and English is
+      // where a hardcoded "Enterprise" passes by construction, so the catalogue
+      // renames its custom tier to something no literal here could produce.
+      final _RenamedCustomTierBillingService billing =
+          _RenamedCustomTierBillingService();
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_contact')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.toast_contact_description',
+            <String, dynamic>{'name': 'Kurumsal Ölçek'},
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Enterprise'), findsNothing);
+      // A sales handoff spends nothing, so it reaches no rail.
+      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.portalCalls, 0);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
     });
   });
 }
