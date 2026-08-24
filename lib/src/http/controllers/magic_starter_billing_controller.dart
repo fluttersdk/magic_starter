@@ -29,6 +29,31 @@ typedef MagicStarterUsageCopy = List<UsageStat> Function(List<UsageStat> stats);
 /// unregistered is a distinct state from a read that answered nothing.
 typedef MagicStarterStoreFundedTeamReader = Future<String?> Function();
 
+/// Reads whether the signed-in user OWNS the team whose billing is on screen,
+/// or `null` when that is genuinely unresolved.
+///
+/// Consumer-supplied because this package cannot answer it: `MagicStarterTeam`
+/// carries an id, a name, a photo and whether the team is personal, and no
+/// membership ROLE at all, so the caller's own role on the current team exists
+/// only in the consumer's model. Adding one here would be a different package
+/// surface and a different piece of work.
+///
+/// Asked as a callback rather than taken as a value, because ownership moves
+/// under this controller: it is a singleton, a team switch changes the answer,
+/// and a bool captured at construction goes stale on exactly the transition
+/// that matters. Every gate asks again.
+///
+/// Answer `null`, not `false`, for anything unresolved: no signed-in user yet,
+/// no current team, a payload that carried no role. The gates read all three
+/// states and only a KNOWN `false` refuses anything; see
+/// [MagicStarterBillingController.isOwner] for why the two negatives lead
+/// somewhere different.
+///
+/// It is asked during build, so it has to ANSWER rather than throw. An exception
+/// out of a gate takes down a screen whose entire design is that no single read
+/// can.
+typedef MagicStarterTeamOwnershipReader = bool? Function();
+
 /// Backs the billing screen: six independent reads of what a customer is
 /// entitled to, what they have spent, and where they manage it.
 ///
@@ -62,6 +87,15 @@ typedef MagicStarterStoreFundedTeamReader = Future<String?> Function();
 /// screen, and a drop would silently remove the usage surface from every app
 /// that forgot to pass one. Neither may be reachable by forgetting.
 ///
+/// The other two collaborators are optional, and leaving one out is answered in
+/// OPPOSITE directions, which is a decision rather than an inconsistency. No
+/// [MagicStarterTeamOwnershipReader] leaves ownership unresolved and every gate
+/// permissive, because hiding a purchase button from a real owner stands between
+/// them and paying while the server refuses a non-owner regardless. No
+/// [MagicStarterStoreFundedTeamReader] REFUSES the store purchase, because
+/// nothing in that build can promise a second purchase will not transfer another
+/// team's subscription away, and a customer cannot undo that.
+///
 /// Because it takes required collaborators, this controller is registered with
 /// `Magic.put(...)` rather than resolved through the `Magic.findOrPut` singleton
 /// getter the sibling controllers expose; there is no zero-argument constructor
@@ -73,6 +107,7 @@ typedef MagicStarterStoreFundedTeamReader = Future<String?> Function();
 ///   MagicStarterBillingController(
 ///     usageCopy: withUsageCopy,
 ///     storeFundedTeamReader: readStoreFundedTeam,
+///     isOwnerReader: readTeamOwnership,
 ///   ),
 /// );
 /// ```
@@ -87,7 +122,7 @@ class MagicStarterBillingController extends MagicController {
   MagicStarterBillingController({
     required this.usageCopy,
     this.storeFundedTeamReader,
-    this.isOwnerOverride,
+    this.isOwnerReader,
     @visibleForTesting BillingService? billingService,
   }) : _injectedBilling = billingService;
 
@@ -102,12 +137,14 @@ class MagicStarterBillingController extends MagicController {
   /// are opposite states: see [storeCheckRegistered].
   final MagicStarterStoreFundedTeamReader? storeFundedTeamReader;
 
-  /// Overrides the resolved team ownership.
+  /// The consumer's ownership check, or `null` when the consumer registered
+  /// none.
   ///
-  /// `null` (the production value) means "resolve it", which the owner gate
-  /// does. A test mounting this controller without an auth container has no
-  /// resolvable membership, so the gate needs a seam to be testable at all.
-  final bool? isOwnerOverride;
+  /// An unregistered check leaves [isOwner] UNRESOLVED, and unresolved is
+  /// permissive here. That is the opposite direction from an unregistered
+  /// [storeFundedTeamReader], which refuses, and both are deliberate: see
+  /// [canPurchaseViaStore] for the pair of them side by side.
+  final MagicStarterTeamOwnershipReader? isOwnerReader;
 
   /// The injected read contract, held for the rail resolution below as well as
   /// for [billing].
@@ -244,6 +281,121 @@ class MagicStarterBillingController extends MagicController {
   ///
   /// A resolved name is the third state and lives in [storeFundedTeam] itself.
   bool get storeCheckRegistered => storeFundedTeamReader != null;
+
+  // ---------------------------------------------------------------------------
+  // The six gates: what this screen may offer, and to whom
+  // ---------------------------------------------------------------------------
+  //
+  // Every one of them is PERMISSIVE while the read behind it is unresolved, and
+  // that is the property to preserve rather than an accident of the ordering.
+  // These are plain nullable fields that nothing in `MagicController` resets, so
+  // a gate reads "not answered yet" as "do not stand in the way": a screen that
+  // hid its own management affordances for the duration of one fetch would
+  // flicker them in, and a slow or failed read would leave a paying customer
+  // with no way to reach their card. The server still refuses what it must.
+  //
+  // The one exception is the store-purchase gate, and it is an exception on
+  // purpose: see [canPurchaseViaStore].
+
+  /// Whether a store owns this subscription, so the store owns its management
+  /// too and nothing here may offer a competing purchase or a web billing
+  /// surface.
+  bool get storeManaged =>
+      _manageVia == ManageVia.appStore || _manageVia == ManageVia.playStore;
+
+  /// Whether the signed-in user owns the team, or `null` when that is genuinely
+  /// unresolved.
+  ///
+  /// Tri-state rather than a bool, because the two negative answers lead
+  /// somewhere different: a KNOWN non-owner is told the owner handles billing,
+  /// while an UNRESOLVED membership must not stand between an owner and paying.
+  /// A consumer that registered no [isOwnerReader], or one that has no signed-in
+  /// user to ask about yet, is unresolved rather than "not the owner"; the gates
+  /// below refuse only on a known `false`.
+  ///
+  /// Resolved on every read rather than cached, so a team switch answers as the
+  /// team now on screen. The reader is the only source: this package has no
+  /// membership role of its own to fall back on, so an absent reader cannot be
+  /// improved on by guessing.
+  bool? get isOwner => isOwnerReader?.call();
+
+  /// Whether the web billing portal is a surface this caller can reach.
+  ///
+  /// True while [manageVia] is unresolved (see its docblock), false on
+  /// [ManageVia.none] because the portal endpoint refuses a customer with no
+  /// billing account, and false on both store rails, whose management belongs to
+  /// the store.
+  ///
+  /// A known non-owner loses it too: the portal endpoint resolves its team
+  /// through the same owner check as the write routes, so a member's "Update"
+  /// and "Receipt" buttons are 403s waiting to happen rather than actions. The
+  /// rail decides WHERE management lives; the membership decides WHETHER this
+  /// caller may go there.
+  ///
+  /// A build with no [webRail] loses it as well, and that is a separate fact
+  /// from the entitlement's: the portal is a call this build has no
+  /// implementation for, so the button would have nothing to invoke.
+  bool get portalAvailable =>
+      webRail != null &&
+      (_manageVia == null || _manageVia == ManageVia.portal) &&
+      isOwner != false;
+
+  /// Whether this screen may offer to start or change a paid plan through the
+  /// WEB rail.
+  ///
+  /// Three independent refusals: no web rail in this build (there is nothing to
+  /// call), a store already charging this customer (a second rail must not open
+  /// a parallel subscription, which the checkout endpoint also refuses with a
+  /// 409), and a member who is not the owner (which the write routes refuse with
+  /// a 403). The last two are affordances rather than enforcement; the server
+  /// still decides.
+  bool get canPurchaseViaWeb =>
+      webRail != null && !storeManaged && isOwner != false;
+
+  /// Whether this screen may offer to buy through the STORE rail.
+  ///
+  /// Five refusals. Four of them are the rail's own: no store rail in this build;
+  /// a member who is not the owner; the web rail already charging this customer,
+  /// which is the mirror image of the refusal above (whichever rail is second
+  /// must not open a parallel subscription, and unlike an upgrade WITHIN the
+  /// store's own subscription group that would be a second charge); and another
+  /// of the caller's teams already funded by a store account, which a second
+  /// purchase would transfer rather than duplicate.
+  ///
+  /// The two store [ManageVia] values are deliberately NOT refusals: the tiers
+  /// share one subscription group, so buying the other tier there IS the upgrade
+  /// path, and the store replaces rather than adds.
+  ///
+  /// The fifth refusal is this package's own and it is the one place a gate here
+  /// is STRICT while unresolved. [storeFundedTeam] has two null sources with
+  /// opposite meanings (see [storeCheckRegistered]), and reading them as one
+  /// would make the transfer refusal unreachable in every app that registered no
+  /// check: the notice above the plan grid would never render, "Restore
+  /// purchases" would be offered, and the re-ask at the moment money moves would
+  /// ask nothing. A registered check that FAILED keeps the deliberate fail-open,
+  /// because the producer's transfer handling keeps the entitlement itself
+  /// honest either way and what this gate prevents is a surprised customer. An
+  /// unregistered check promises nothing at all, and nothing is not a promise
+  /// this screen may spend a customer's subscription on.
+  ///
+  /// That is the opposite direction from [isOwner], where an absent answer is
+  /// permissive, and both are right: an unresolved membership hides a button
+  /// from a real owner who wants to pay, and the server would have refused a
+  /// non-owner anyway, while an unasked transfer check hides nothing and permits
+  /// a move the customer cannot undo.
+  bool get canPurchaseViaStore =>
+      storeRail != null &&
+      isOwner != false &&
+      _manageVia != ManageVia.portal &&
+      storeCheckRegistered &&
+      _storeFundedTeam == null;
+
+  /// Whether this screen may offer to start or change a paid plan on ANY rail.
+  ///
+  /// The plan grid's CTA gate. No build serves both rails, so this is a union of
+  /// two mutually exclusive answers rather than a choice between them; which one
+  /// is live decides what a tap does.
+  bool get canPurchase => canPurchaseViaWeb || canPurchaseViaStore;
 
   @override
   void onInit() {

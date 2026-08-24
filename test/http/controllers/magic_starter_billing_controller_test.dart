@@ -533,6 +533,376 @@ void main() {
       controller.dispose();
     });
   });
+
+  /// Builds a controller over one of the rail fakes below and runs its reads.
+  ///
+  /// Separate from [build], which is pinned to the both-rails fake: the axis
+  /// every gate case varies is which rails a build serves, and a fake that
+  /// always serves both can never model a build that serves one.
+  Future<MagicStarterBillingController> loaded(
+    BillingService service, {
+    MagicStarterStoreFundedTeamReader? storeFundedTeamReader,
+    MagicStarterTeamOwnershipReader? isOwnerReader,
+  }) async {
+    final MagicStarterBillingController controller =
+        MagicStarterBillingController(
+          usageCopy: _copy,
+          storeFundedTeamReader: storeFundedTeamReader,
+          isOwnerReader: isOwnerReader,
+          billingService: service,
+        );
+
+    await controller.load();
+
+    return controller;
+  }
+
+  group('MagicStarterBillingController, the gates are permissive until a read '
+      'resolves', () {
+    test('with NOTHING read, the web affordances are open', () {
+      final MagicStarterBillingController controller =
+          MagicStarterBillingController(
+            usageCopy: _copy,
+            billingService: _WebGateBilling(),
+          );
+
+      // Deliberately NOT loaded. This is the state a customer sees for the
+      // duration of the first fetch, and a suite that only asserts after
+      // `load()` cannot see it at all: the property being pinned is that a slow
+      // read never hides a paying customer's card.
+      expect(controller.manageVia, isNull);
+      expect(controller.isOwner, isNull);
+      expect(controller.storeManaged, isFalse);
+      expect(controller.portalAvailable, isTrue);
+      expect(controller.canPurchaseViaWeb, isTrue);
+      expect(controller.canPurchase, isTrue);
+      controller.dispose();
+    });
+
+    test('a FAILED entitlement read stays permissive too', () async {
+      final MagicStarterBillingController controller = await loaded(
+        _WebGateBilling(resolveEntitlement: false),
+      );
+
+      // The unresolved state is permanent here, not a window: the read failed
+      // and no retry has run. It still may not stand between an owner and the
+      // portal that holds their card.
+      expect(controller.manageVia, isNull);
+      expect(controller.portalAvailable, isTrue);
+      expect(controller.canPurchaseViaWeb, isTrue);
+      controller.dispose();
+    });
+
+    test('an unregistered ownership reader is unresolved, not a refusal', () {
+      final MagicStarterBillingController controller =
+          MagicStarterBillingController(
+            usageCopy: _copy,
+            billingService: _WebGateBilling(),
+          );
+
+      expect(controller.isOwner, isNull);
+      expect(controller.isOwner, isNot(false));
+      expect(controller.portalAvailable, isTrue);
+      expect(controller.canPurchaseViaWeb, isTrue);
+      controller.dispose();
+    });
+
+    test('the ownership reader is asked again on every gate read', () async {
+      var owner = false;
+      final MagicStarterBillingController controller = await loaded(
+        _WebGateBilling(),
+        isOwnerReader: () => owner,
+      );
+
+      expect(controller.canPurchaseViaWeb, isFalse);
+
+      // A team switch moves the answer under a singleton controller, so a value
+      // captured at construction would go stale on exactly the transition that
+      // matters.
+      owner = true;
+
+      expect(controller.canPurchaseViaWeb, isTrue);
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, every gate can go false', () {
+    test('storeManaged follows the two store rails only', () async {
+      final MagicStarterBillingController appStore = await loaded(
+        _WebGateBilling(manageVia: ManageVia.appStore),
+      );
+      final MagicStarterBillingController playStore = await loaded(
+        _WebGateBilling(manageVia: ManageVia.playStore),
+      );
+      final MagicStarterBillingController portal = await loaded(
+        _WebGateBilling(manageVia: ManageVia.portal),
+      );
+      final MagicStarterBillingController none = await loaded(
+        _WebGateBilling(),
+      );
+
+      expect(appStore.storeManaged, isTrue);
+      expect(playStore.storeManaged, isTrue);
+      expect(portal.storeManaged, isFalse);
+      expect(none.storeManaged, isFalse);
+
+      appStore.dispose();
+      playStore.dispose();
+      portal.dispose();
+      none.dispose();
+    });
+
+    test('portalAvailable refuses on each of its four axes', () async {
+      final MagicStarterBillingController open = await loaded(
+        _WebGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => true,
+      );
+      // No web rail: the portal call has no implementation to invoke.
+      final MagicStarterBillingController noRail = await loaded(
+        _StoreGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => true,
+      );
+      // `none` is the rail saying there is nowhere to send this customer.
+      final MagicStarterBillingController nowhere = await loaded(
+        _WebGateBilling(),
+        isOwnerReader: () => true,
+      );
+      // A store rail owns its own management surface.
+      final MagicStarterBillingController store = await loaded(
+        _WebGateBilling(manageVia: ManageVia.appStore),
+        isOwnerReader: () => true,
+      );
+      // A KNOWN non-owner: the portal endpoint refuses through the same owner
+      // check as the write routes, so the button is a 403 waiting to happen.
+      final MagicStarterBillingController member = await loaded(
+        _WebGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => false,
+      );
+
+      expect(open.portalAvailable, isTrue);
+      expect(noRail.portalAvailable, isFalse);
+      expect(nowhere.portalAvailable, isFalse);
+      expect(store.portalAvailable, isFalse);
+      expect(member.portalAvailable, isFalse);
+
+      open.dispose();
+      noRail.dispose();
+      nowhere.dispose();
+      store.dispose();
+      member.dispose();
+    });
+
+    test('canPurchaseViaWeb refuses on each of its three axes', () async {
+      final MagicStarterBillingController open = await loaded(
+        _WebGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => true,
+      );
+      final MagicStarterBillingController noRail = await loaded(
+        _StoreGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => true,
+      );
+      // A store already charging: a second rail must not open a parallel
+      // subscription.
+      final MagicStarterBillingController storeCharging = await loaded(
+        _WebGateBilling(manageVia: ManageVia.playStore),
+        isOwnerReader: () => true,
+      );
+      final MagicStarterBillingController member = await loaded(
+        _WebGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => false,
+      );
+
+      expect(open.canPurchaseViaWeb, isTrue);
+      expect(noRail.canPurchaseViaWeb, isFalse);
+      expect(storeCharging.canPurchaseViaWeb, isFalse);
+      expect(member.canPurchaseViaWeb, isFalse);
+
+      open.dispose();
+      noRail.dispose();
+      storeCharging.dispose();
+      member.dispose();
+    });
+
+    test('canPurchaseViaStore refuses on each of its five axes', () async {
+      final MagicStarterBillingController open = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      final MagicStarterBillingController noRail = await loaded(
+        _WebGateBilling(),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      final MagicStarterBillingController member = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => false,
+        storeFundedTeamReader: () async => null,
+      );
+      // The web rail already charging, the mirror image of the refusal above.
+      final MagicStarterBillingController webCharging = await loaded(
+        _StoreGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      final MagicStarterBillingController unregistered = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => true,
+      );
+      final MagicStarterBillingController funded = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => 'Second Team',
+      );
+
+      expect(open.canPurchaseViaStore, isTrue);
+      expect(noRail.canPurchaseViaStore, isFalse);
+      expect(member.canPurchaseViaStore, isFalse);
+      expect(webCharging.canPurchaseViaStore, isFalse);
+      expect(unregistered.canPurchaseViaStore, isFalse);
+      expect(funded.canPurchaseViaStore, isFalse);
+
+      open.dispose();
+      noRail.dispose();
+      member.dispose();
+      webCharging.dispose();
+      unregistered.dispose();
+      funded.dispose();
+    });
+
+    test(
+      'the two store manage_via values are NOT store-purchase refusals',
+      () async {
+        final MagicStarterBillingController appStore = await loaded(
+          _StoreGateBilling(manageVia: ManageVia.appStore),
+          isOwnerReader: () => true,
+          storeFundedTeamReader: () async => null,
+        );
+        final MagicStarterBillingController playStore = await loaded(
+          _StoreGateBilling(manageVia: ManageVia.playStore),
+          isOwnerReader: () => true,
+          storeFundedTeamReader: () async => null,
+        );
+
+        // The tiers share one subscription group, so buying the other tier there
+        // IS the upgrade path: the store replaces rather than adds.
+        expect(appStore.canPurchaseViaStore, isTrue);
+        expect(playStore.canPurchaseViaStore, isTrue);
+
+        appStore.dispose();
+        playStore.dispose();
+      },
+    );
+
+    test('canPurchase is the union, and goes false when both do', () async {
+      final MagicStarterBillingController web = await loaded(
+        _WebGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => true,
+      );
+      final MagicStarterBillingController store = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      // No rail at all: nothing to buy through, on either side.
+      final MagicStarterBillingController neither = await loaded(
+        _GateBilling(),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+
+      expect(web.canPurchaseViaWeb, isTrue);
+      expect(web.canPurchaseViaStore, isFalse);
+      expect(web.canPurchase, isTrue);
+
+      expect(store.canPurchaseViaStore, isTrue);
+      expect(store.canPurchaseViaWeb, isFalse);
+      expect(store.canPurchase, isTrue);
+
+      expect(neither.canPurchase, isFalse);
+
+      web.dispose();
+      store.dispose();
+      neither.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, the store gate reads two nulls', () {
+    test('unregistered refuses, a failed read does not, a name refuses BY '
+        'name', () async {
+      // All three run on the same store build, with the same owner, so the only
+      // axis that moves is the store check itself.
+      final MagicStarterBillingController unregistered = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => true,
+      );
+      final MagicStarterBillingController failedRead = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async =>
+            throw const BillingException('store check failed'),
+      );
+      final MagicStarterBillingController named = await loaded(
+        _StoreGateBilling(),
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => 'Second Team',
+      );
+
+      // 1. Never asked, and never can be. Nothing here can promise a purchase
+      //    will not transfer another team's subscription away, so it refuses.
+      expect(unregistered.storeCheckRegistered, isFalse);
+      expect(unregistered.storeFundedTeam, isNull);
+      expect(unregistered.canPurchaseViaStore, isFalse);
+      expect(unregistered.canPurchase, isFalse);
+
+      // 2. Asked, and the read broke. The SAME null as case 1, and the opposite
+      //    answer: the deliberate fail-open the producer's transfer handling
+      //    backs up. A refusal here would be this gate regressing into strict.
+      expect(failedRead.storeCheckRegistered, isTrue);
+      expect(failedRead.storeFundedTeam, isNull);
+      expect(failedRead.canPurchaseViaStore, isTrue);
+
+      // 3. Asked, and it named a team. The refusal carries the NAME, because a
+      //    refusal this screen cannot name is one it cannot explain.
+      expect(named.storeCheckRegistered, isTrue);
+      expect(named.storeFundedTeam, 'Second Team');
+      expect(named.canPurchaseViaStore, isFalse);
+
+      unregistered.dispose();
+      failedRead.dispose();
+      named.dispose();
+    });
+
+    test(
+      'a registered check that found nothing permits the purchase',
+      () async {
+        final MagicStarterBillingController controller = await loaded(
+          _StoreGateBilling(),
+          isOwnerReader: () => true,
+          storeFundedTeamReader: () async => null,
+        );
+
+        expect(controller.storeCheckRegistered, isTrue);
+        expect(controller.storeFundedTeam, isNull);
+        expect(controller.canPurchaseViaStore, isTrue);
+        controller.dispose();
+      },
+    );
+
+    test('an unregistered check does NOT refuse the web purchase', () async {
+      final MagicStarterBillingController controller = await loaded(
+        _WebGateBilling(manageVia: ManageVia.portal),
+        isOwnerReader: () => true,
+      );
+
+      // The refusal is about a store account funding a second team, so it
+      // belongs to the store gate alone. Spreading it onto the web rail would
+      // block a purchase the check has nothing to say about.
+      expect(controller.storeCheckRegistered, isFalse);
+      expect(controller.canPurchaseViaWeb, isTrue);
+      controller.dispose();
+    });
+  });
 }
 
 /// A read contract that serves neither rail, modelling a build with no purchase
@@ -559,4 +929,101 @@ class _ReadOnlyBilling implements BillingService {
 
   @override
   Future<PaymentMethod> getPaymentMethod() async => const PaymentMethod();
+}
+
+/// A read contract for the GATE cases: it serves no rail, and its entitlement
+/// carries whichever [ManageVia] the case needs.
+///
+/// The four reads besides the entitlement answer empty, because no gate looks at
+/// a plan row, a meter, an invoice or a card. What a gate does look at is which
+/// rails the build serves, which is why this comes in three subclasses rather
+/// than as one fake serving both: a fake that always serves both can never model
+/// a build that serves one, and "no rail in this build" is a refusal every gate
+/// here carries.
+class _GateBilling implements BillingService {
+  _GateBilling({
+    this.manageVia = ManageVia.none,
+    this.resolveEntitlement = true,
+  });
+
+  /// Where the server says management lives.
+  final ManageVia manageVia;
+
+  /// Whether the entitlement read answers at all. `false` fails it, which is how
+  /// a case reaches the permanently unresolved state.
+  final bool resolveEntitlement;
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    if (!resolveEntitlement) {
+      throw const BillingException('entitlement read failed');
+    }
+
+    return BillingEntitlement(
+      plan: 'tier-b',
+      manageVia: manageVia,
+      aiAnalysisTrialsRemaining: null,
+      raw: const <String, dynamic>{},
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async =>
+      const <Map<String, dynamic>>[];
+
+  @override
+  Future<List<UsageStat>> getUsage() async => const <UsageStat>[];
+
+  @override
+  Future<BillingInvoicesPage> getInvoices({String? cursor}) async =>
+      const BillingInvoicesPage(invoices: <Invoice>[], nextCursor: null);
+
+  @override
+  Future<PaymentMethod> getPaymentMethod() async => const PaymentMethod();
+}
+
+/// The web rail's four calls, none of which a gate invokes: serving the contract
+/// is the whole point, because its presence IS the availability answer.
+mixin _WebRailStubs implements WebBillingService {
+  @override
+  Future<BillingCheckoutSession> checkout({
+    required String plan,
+    String? successUrl,
+    String? cancelUrl,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> swap({required String plan}) => throw UnimplementedError();
+
+  @override
+  Future<void> cancel() => throw UnimplementedError();
+
+  @override
+  Future<String> openPortal({String? returnUrl}) => throw UnimplementedError();
+}
+
+/// The store rail's four calls, on the same terms as [_WebRailStubs].
+mixin _StoreRailStubs implements StoreBillingService {
+  @override
+  Future<void> identify(String appUserId) => throw UnimplementedError();
+
+  @override
+  Future<bool> purchase({required String plan}) => throw UnimplementedError();
+
+  @override
+  Future<bool> restore() => throw UnimplementedError();
+
+  @override
+  Future<void> openStoreManagement() => throw UnimplementedError();
+}
+
+/// A build that serves the WEB rail only, which is every browser and desktop
+/// build.
+class _WebGateBilling extends _GateBilling with _WebRailStubs {
+  _WebGateBilling({super.manageVia, super.resolveEntitlement});
+}
+
+/// A build that serves the STORE rail only, which is iOS and Android.
+class _StoreGateBilling extends _GateBilling with _StoreRailStubs {
+  _StoreGateBilling({super.manageVia});
 }
