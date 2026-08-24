@@ -574,10 +574,16 @@ class _RailBillingService extends _ReadsBillingService
     super.manageUrl,
     super.invoices = const <Invoice>[],
     super.usage = const <UsageStat>[],
+    this.checkoutError,
   });
 
   /// Every `plan` passed to [checkout], in call order.
   final List<String> checkoutPlans = <String>[];
+
+  /// A rail failure to raise instead of answering, so [checkout]'s error
+  /// paths (a generic [BillingException] and its [UnsupportedPlatformException]
+  /// subtype) are reachable without a real rail.
+  final BillingException? checkoutError;
 
   /// How many times [openPortal] was called.
   int portalCalls = 0;
@@ -589,6 +595,8 @@ class _RailBillingService extends _ReadsBillingService
     required String cancelUrl,
   }) async {
     checkoutPlans.add(plan);
+    final BillingException? error = checkoutError;
+    if (error != null) throw error;
 
     return const BillingCheckoutSession(
       checkoutUrl: 'https://checkout.example.test/test_session',
@@ -1196,6 +1204,68 @@ void main() {
       // The date table itself is English-only by decision (it always was), so
       // this locks the shape rather than claiming a translation.
       expect(find.text('Jun 1, 2026'), findsOneWidget);
+    });
+  });
+
+  group('MagicStarterBillingView web checkout', () {
+    testWidgets('tapping the Upgrade CTA starts a checkout for the tapped '
+        'plan', (tester) async {
+      final _RailBillingService billing = _RailBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      // 'business' sits above the fixture's 'pro', so its CTA reads Upgrade.
+      expect(billing.checkoutPlans, <String>['business']);
+      // Flush the confirmation toast's auto-dismiss timer.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('an UnsupportedPlatformException renders the deferred info '
+        'toast instead of the generic failure one', (tester) async {
+      final _RailBillingService billing = _RailBillingService(
+        checkoutError: const UnsupportedPlatformException(
+          'Web checkout is not available on this platform.',
+        ),
+      );
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.checkoutPlans, <String>['business']);
+      expect(
+        find.text(trans('magic_starter.billing.toast_deferred_title')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_deferred_text')),
+        findsOneWidget,
+      );
+      // The generic failure sentence must not render alongside it: the two
+      // toasts have to stay distinguishable, or this case could not tell a
+      // deferral from a real failure.
+      expect(
+        find.text(trans('magic_starter.billing.toast_checkout_failed_title')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_failed_text')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
     });
   });
 
