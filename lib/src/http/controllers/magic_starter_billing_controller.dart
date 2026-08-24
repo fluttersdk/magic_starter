@@ -209,6 +209,7 @@ class MagicStarterBillingController extends MagicController
   bool _entitlementLoaded = false;
   ManageVia? _manageVia;
   String? _manageUrl;
+  bool? _renews;
   List<MagicStarterPlan> _plans = const <MagicStarterPlan>[];
   List<UsageStat> _usage = const <UsageStat>[];
   List<Invoice> _invoices = const <Invoice>[];
@@ -243,6 +244,20 @@ class MagicStarterBillingController extends MagicController
   /// The store-management destination the server passed through from the rail,
   /// or `null` when the rail reported none (which is always, on Stripe).
   String? get manageUrl => _manageUrl;
+
+  /// Whether the subscription will renew at the end of its paid period, or
+  /// `null` while no entitlement read has answered.
+  ///
+  /// `false` is a CANCELLED subscription that is still granting: on this rail a
+  /// cancellation is normally end-of-period, so the customer keeps their tier
+  /// and the date attached to it stops being a renewal and becomes an expiry.
+  /// The renewal line is the one place that distinction is visible, and without
+  /// this field it told somebody who had just cancelled that their plan renews.
+  ///
+  /// `null` is read as renewing, which keeps the sentence unchanged for the
+  /// window before the entitlement resolves. That window shows no date either,
+  /// so the line is already saying it does not know.
+  bool? get renews => _renews;
 
   /// The plan catalogue, in the order the backend served it (cheapest first).
   ///
@@ -464,6 +479,7 @@ class MagicStarterBillingController extends MagicController
     _entitlementLoaded = false;
     _manageVia = null;
     _manageUrl = null;
+    _renews = null;
     _plans = const <MagicStarterPlan>[];
     _usage = const <UsageStat>[];
     _invoices = const <Invoice>[];
@@ -513,6 +529,7 @@ class MagicStarterBillingController extends MagicController
       final String? plan = entitlement.plan;
       _manageVia = entitlement.manageVia;
       _manageUrl = entitlement.manageUrl;
+      _renews = entitlement.renews;
       if (plan != null) {
         _currentPlanId = plan;
         _entitlementLoaded = true;

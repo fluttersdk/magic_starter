@@ -445,7 +445,7 @@ class _MagicStarterBillingViewState
     );
   }
 
-  /// The one line under the current plan's name, in its four states.
+  /// The one line under the current plan's name, in its five states.
   ///
   /// A FREE plan never renews and carries no payment method, so it reads "free
   /// forever" rather than a renewal line whose date is a neutral placeholder.
@@ -476,6 +476,10 @@ class _MagicStarterBillingViewState
   /// than "not portal" keeps the unresolved state out, matching how every other
   /// gate here treats it.
   ///
+  /// A CANCELLED subscription still grants until its period ends, so it gets the
+  /// live sentence with the verb changed: the date it carries is an expiry, and
+  /// "renews" over it contradicts the action the customer just took.
+  ///
   /// Otherwise the live sentence, whose date comes from the payment-method read
   /// and falls back to a neutral label while that read is pending or after its
   /// soft-fail, never to a fabricated date. That neutral label survives on
@@ -497,7 +501,20 @@ class _MagicStarterBillingViewState
       return trans('magic_starter.billing.renewal_unbilled');
     }
 
-    return trans('magic_starter.billing.renewal_text', <String, dynamic>{
+    // A CANCELLED subscription keeps its tier to the end of the paid period, so
+    // the date is still shown, but it is an expiry rather than a renewal and
+    // saying "renews" over it is a confident wrong sentence aimed at the one
+    // customer who has just cancelled and is checking that it took.
+    //
+    // `renews == null` takes the renewing sentence, which leaves the window
+    // before the entitlement resolves reading exactly as it did. Nothing is
+    // claimed in that window that is not already hedged: the date comes from a
+    // separate read and renders as unknown until it lands.
+    final String key = controller.renews == false
+        ? 'magic_starter.billing.renewal_ends'
+        : 'magic_starter.billing.renewal_text';
+
+    return trans(key, <String, dynamic>{
       'price': _priceLabel(current, MagicStarterBillingCycle.annual),
       'cycle': trans('magic_starter.billing.renewal_cycle_annual'),
       'date':
