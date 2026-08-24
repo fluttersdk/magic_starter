@@ -13,13 +13,16 @@ void registerMagicStarterAuthRoutes() {
     layout: (child) =>
         MagicStarter.view.makeLayout('layout.guest', child: child),
     routes: () {
-      MagicRoute.page('/login', MagicStarterAuthController.instance.login)
-          .transition(RouteTransition.none);
+      MagicRoute.page(
+        '/login',
+        MagicStarterAuthController.instance.login,
+      ).transition(RouteTransition.none);
 
       if (MagicStarterConfig.hasRegistrationFeatures()) {
         MagicRoute.page(
-                '/register', MagicStarterAuthController.instance.register)
-            .transition(RouteTransition.none);
+          '/register',
+          MagicStarterAuthController.instance.register,
+        ).transition(RouteTransition.none);
       }
 
       MagicRoute.page(

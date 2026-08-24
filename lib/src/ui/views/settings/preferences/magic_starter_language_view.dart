@@ -26,13 +26,14 @@ class MagicStarterLanguageView
       _MagicStarterLanguageViewState();
 }
 
-class _MagicStarterLanguageViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterLanguageView> {
+class _MagicStarterLanguageViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterLanguageView
+        > {
   /// Single-field form for the locale value.
-  late final form = MagicFormData(
-    {'language': ''},
-    controller: controller,
-  );
+  late final form = MagicFormData({'language': ''}, controller: controller);
 
   /// Isolated save-button spinner, decoupled from the controller's global
   /// loading flag (mirrors the source view's per-section notifier pattern).

@@ -57,34 +57,24 @@ void main() {
 
   testWidgets('Radio renders a WRadio widget', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        MSRadio<String>(
-          value: 'a',
-          groupValue: 'a',
-          onChanged: (_) {},
-        ),
-      ),
+      wrap(MSRadio<String>(value: 'a', groupValue: 'a', onChanged: (_) {})),
     );
     expect(find.byType(WRadio<String>), findsOneWidget);
   });
 
-  testWidgets('Radio reflects selected state when value == groupValue',
-      (tester) async {
+  testWidgets('Radio reflects selected state when value == groupValue', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        MSRadio<String>(
-          value: 'a',
-          groupValue: 'a',
-          onChanged: (_) {},
-        ),
-      ),
+      wrap(MSRadio<String>(value: 'a', groupValue: 'a', onChanged: (_) {})),
     );
     final widget = tester.widget<WRadio<String>>(find.byType(WRadio<String>));
     expect(widget.value, equals(widget.groupValue));
   });
 
-  testWidgets('Radio fires onChanged when tapped while not selected',
-      (tester) async {
+  testWidgets('Radio fires onChanged when tapped while not selected', (
+    tester,
+  ) async {
     String? selected;
     await tester.pumpWidget(
       wrap(
@@ -110,23 +100,25 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Radio appends caller className onto shell and indicator recipes',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(
-        MSRadio<String>(
-          value: 'a',
-          groupValue: 'a',
-          onChanged: (_) {},
-          className: 'mt-10',
-          indicatorClassName: 'mb-10',
+  testWidgets(
+    'Radio appends caller className onto shell and indicator recipes',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          MSRadio<String>(
+            value: 'a',
+            groupValue: 'a',
+            onChanged: (_) {},
+            className: 'mt-10',
+            indicatorClassName: 'mb-10',
+          ),
         ),
-      ),
-    );
-    final widget = tester.widget<WRadio<String>>(find.byType(WRadio<String>));
-    expect(widget.className, contains('rounded-full'));
-    expect(widget.className, contains('mt-10'));
-    expect(widget.indicatorClassName, contains('bg-primary'));
-    expect(widget.indicatorClassName, contains('mb-10'));
-  });
+      );
+      final widget = tester.widget<WRadio<String>>(find.byType(WRadio<String>));
+      expect(widget.className, contains('rounded-full'));
+      expect(widget.className, contains('mt-10'));
+      expect(widget.indicatorClassName, contains('bg-primary'));
+      expect(widget.indicatorClassName, contains('mb-10'));
+    },
+  );
 }

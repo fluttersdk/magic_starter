@@ -19,58 +19,75 @@ class MockNetworkDriver implements NetworkDriver {
   void addInterceptor(MagicNetworkInterceptor interceptor) {}
 
   @override
-  Future<MagicResponse> get(String url,
-          {Map<String, dynamic>? query, Map<String, String>? headers}) async =>
-      _respond('GET', url);
+  Future<MagicResponse> get(
+    String url, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async => _respond('GET', url);
 
   @override
-  Future<MagicResponse> post(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('POST', url, data: data);
+  Future<MagicResponse> post(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('POST', url, data: data);
 
   @override
-  Future<MagicResponse> put(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('PUT', url, data: data);
+  Future<MagicResponse> put(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('PUT', url, data: data);
 
   @override
-  Future<MagicResponse> delete(String url,
-          {Map<String, String>? headers}) async =>
-      _respond('DELETE', url);
+  Future<MagicResponse> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async => _respond('DELETE', url);
 
   @override
-  Future<MagicResponse> index(String resource,
-          {Map<String, dynamic>? filters,
-          Map<String, String>? headers}) async =>
-      _respond('INDEX', resource);
+  Future<MagicResponse> index(
+    String resource, {
+    Map<String, dynamic>? filters,
+    Map<String, String>? headers,
+  }) async => _respond('INDEX', resource);
 
   @override
-  Future<MagicResponse> show(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('SHOW', '$resource/$id');
+  Future<MagicResponse> show(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
-  Future<MagicResponse> store(String resource, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('STORE', resource, data: data);
+  Future<MagicResponse> store(
+    String resource,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
-          String resource, String id, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+    String resource,
+    String id,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
-  Future<MagicResponse> destroy(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('DESTROY', '$resource/$id');
+  Future<MagicResponse> destroy(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
-  Future<MagicResponse> upload(String url,
-          {required Map<String, dynamic> data,
-          required Map<String, dynamic> files,
-          Map<String, String>? headers}) async =>
-      _respond('UPLOAD', url, data: data);
+  Future<MagicResponse> upload(
+    String url, {
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> files,
+    Map<String, String>? headers,
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -143,8 +160,9 @@ void main() {
 
   /// Returns the [MSSettingsNavRow] whose `to` matches [path], or null.
   MSSettingsNavRow? navRowFor(WidgetTester tester, String path) {
-    final rows =
-        tester.widgetList<MSSettingsNavRow>(find.byType(MSSettingsNavRow));
+    final rows = tester.widgetList<MSSettingsNavRow>(
+      find.byType(MSSettingsNavRow),
+    );
     for (final row in rows) {
       if (row.to == path) {
         return row;
@@ -206,30 +224,35 @@ void main() {
   // -------------------------------------------------------------------------
 
   testWidgets(
-      'always renders the Profile nav row pointing at the profile route',
-      (tester) async {
-    await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+    'always renders the Profile nav row pointing at the profile route',
+    (tester) async {
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
 
-    final row = navRowFor(tester, MagicStarterConfig.profileRoute());
-    expect(row, isNotNull);
-  });
+      final row = navRowFor(tester, MagicStarterConfig.profileRoute());
+      expect(row, isNotNull);
+    },
+  );
 
   // -------------------------------------------------------------------------
   // Security section — feature gating toggles row presence
   // -------------------------------------------------------------------------
 
-  testWidgets('Two-Factor row is hidden when the two-factor feature is off',
-      (tester) async {
+  testWidgets('Two-Factor row is hidden when the two-factor feature is off', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.two_factor', false);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
 
     expect(
-        navRowFor(tester, MagicStarterConfig.settingsTwoFactorRoute()), isNull);
+      navRowFor(tester, MagicStarterConfig.settingsTwoFactorRoute()),
+      isNull,
+    );
   });
 
-  testWidgets('Two-Factor row appears when the two-factor feature is on',
-      (tester) async {
+  testWidgets('Two-Factor row appears when the two-factor feature is on', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.two_factor', true);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
@@ -238,8 +261,9 @@ void main() {
     expect(row, isNotNull);
   });
 
-  testWidgets('Sessions row appears only when the sessions feature is on',
-      (tester) async {
+  testWidgets('Sessions row appears only when the sessions feature is on', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.sessions', true);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
@@ -250,8 +274,9 @@ void main() {
     );
   });
 
-  testWidgets('Sessions row is hidden when the sessions feature is off',
-      (tester) async {
+  testWidgets('Sessions row is hidden when the sessions feature is off', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.sessions', false);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
@@ -266,8 +291,9 @@ void main() {
   // Preferences section — Appearance always present, others gated
   // -------------------------------------------------------------------------
 
-  testWidgets('Appearance row is always present in Preferences',
-      (tester) async {
+  testWidgets('Appearance row is always present in Preferences', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
 
     expect(
@@ -276,20 +302,23 @@ void main() {
     );
   });
 
-  testWidgets('Notifications row appears only when notifications feature is on',
-      (tester) async {
-    Config.set('magic_starter.features.notifications', true);
+  testWidgets(
+    'Notifications row appears only when notifications feature is on',
+    (tester) async {
+      Config.set('magic_starter.features.notifications', true);
 
-    await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
 
-    expect(
-      navRowFor(tester, MagicStarterConfig.notificationPreferencesRoute()),
-      isNotNull,
-    );
-  });
+      expect(
+        navRowFor(tester, MagicStarterConfig.notificationPreferencesRoute()),
+        isNotNull,
+      );
+    },
+  );
 
-  testWidgets('Notifications row is hidden when notifications feature is off',
-      (tester) async {
+  testWidgets('Notifications row is hidden when notifications feature is off', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.notifications', false);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
@@ -300,8 +329,9 @@ void main() {
     );
   });
 
-  testWidgets('Language row appears only when extended-profile feature is on',
-      (tester) async {
+  testWidgets('Language row appears only when extended-profile feature is on', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.extended_profile', true);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
@@ -312,8 +342,9 @@ void main() {
     );
   });
 
-  testWidgets('Timezone row appears only when timezones feature is on',
-      (tester) async {
+  testWidgets('Timezone row appears only when timezones feature is on', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.timezones', true);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
@@ -324,8 +355,9 @@ void main() {
     );
   });
 
-  testWidgets('Newsletter row appears only when newsletter feature is on',
-      (tester) async {
+  testWidgets('Newsletter row appears only when newsletter feature is on', (
+    tester,
+  ) async {
     Config.set('magic_starter.features.newsletter', true);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
@@ -340,40 +372,46 @@ void main() {
   // Empty-section omission — a section with zero enabled rows must not render
   // -------------------------------------------------------------------------
 
-  testWidgets('Security section is omitted entirely when all its features off',
-      (tester) async {
-    Config.set('magic_starter.features.two_factor', false);
-    Config.set('magic_starter.features.sessions', false);
-    // Password change is gated by the ability alone; deny it so the whole
-    // Security group has zero rows and must not render.
-    Gate.flush();
-    Gate.define('starter.delete-account', (user, [_]) => true);
+  testWidgets(
+    'Security section is omitted entirely when all its features off',
+    (tester) async {
+      Config.set('magic_starter.features.two_factor', false);
+      Config.set('magic_starter.features.sessions', false);
+      // Password change is gated by the ability alone; deny it so the whole
+      // Security group has zero rows and must not render.
+      Gate.flush();
+      Gate.define('starter.delete-account', (user, [_]) => true);
 
-    await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
 
-    // No security rows of any kind.
-    expect(
-        navRowFor(tester, MagicStarterConfig.settingsTwoFactorRoute()), isNull);
-    expect(
-        navRowFor(tester, MagicStarterConfig.settingsPasswordRoute()), isNull);
-    expect(
-        navRowFor(tester, MagicStarterConfig.settingsSessionsRoute()), isNull);
-  });
+      // No security rows of any kind.
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsTwoFactorRoute()),
+        isNull,
+      );
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsPasswordRoute()),
+        isNull,
+      );
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsSessionsRoute()),
+        isNull,
+      );
+    },
+  );
 
   // -------------------------------------------------------------------------
   // Guest upgrade row — only when the user is a guest
   // -------------------------------------------------------------------------
 
-  testWidgets('Guest upgrade row is hidden for a non-guest user',
-      (tester) async {
+  testWidgets('Guest upgrade row is hidden for a non-guest user', (
+    tester,
+  ) async {
     Gate.define('starter.delete-account', (user, [_]) => true);
 
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
 
-    expect(
-      navRowFor(tester, MagicStarterConfig.profileRoute()),
-      isNotNull,
-    );
+    expect(navRowFor(tester, MagicStarterConfig.profileRoute()), isNotNull);
     // The guest upgrade row would point at the profile route's upgrade flow;
     // for a non-guest there is exactly one Account row (Profile).
     final accountRows = tester
@@ -386,8 +424,9 @@ void main() {
   // Slot hooks
   // -------------------------------------------------------------------------
 
-  testWidgets('renders the registered header slot above the sections',
-      (tester) async {
+  testWidgets('renders the registered header slot above the sections', (
+    tester,
+  ) async {
     MagicStarter.view.slot(
       'settings.hub',
       'header',

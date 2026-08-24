@@ -19,22 +19,12 @@ void main() {
   });
 
   Widget wrap(Widget widget) {
-    final themeData = WindThemeData(
-      colors: {
-        'primary': Colors.indigo,
-      },
-    );
+    final themeData = WindThemeData(colors: {'primary': Colors.indigo});
     return WindTheme(
       data: themeData,
       child: MaterialApp(
         theme: themeData.toThemeData(),
-        home: Scaffold(
-          body: SizedBox(
-            width: 1200,
-            height: 800,
-            child: widget,
-          ),
-        ),
+        home: Scaffold(body: SizedBox(width: 1200, height: 800, child: widget)),
       ),
     );
   }
@@ -46,12 +36,9 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MSDialog(
-          title: 'Test Dialog',
-          body: Text('body content'),
-        ),
-      ));
+      await tester.pumpWidget(
+        wrap(const MSDialog(title: 'Test Dialog', body: Text('body content'))),
+      );
 
       expect(find.text('Test Dialog'), findsOneWidget);
     });
@@ -62,11 +49,9 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        const MSDialog(
-          body: Text('unique body text'),
-        ),
-      ));
+      await tester.pumpWidget(
+        wrap(const MSDialog(body: Text('unique body text'))),
+      );
 
       expect(find.text('unique body text'), findsOneWidget);
     });
@@ -77,12 +62,14 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        MSDialog(
-          body: const Text('body'),
-          footerBuilder: (_) => const Text('footer widget'),
+      await tester.pumpWidget(
+        wrap(
+          MSDialog(
+            body: const Text('body'),
+            footerBuilder: (_) => const Text('footer widget'),
+          ),
         ),
-      ));
+      );
 
       expect(find.text('footer widget'), findsOneWidget);
     });
@@ -93,18 +80,20 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(
-        Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => MSDialog.show(
-              context,
-              title: 'Opened Dialog',
-              body: const Text('dialog body'),
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => MSDialog.show(
+                context,
+                title: 'Opened Dialog',
+                body: const Text('dialog body'),
+              ),
+              child: const Text('Open'),
             ),
-            child: const Text('Open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -125,9 +114,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(wrap(
-        const MSDialog(body: Text('themed')),
-      ));
+      await tester.pumpWidget(wrap(const MSDialog(body: Text('themed'))));
 
       expect(find.byType(MSDialog), findsOneWidget);
     });

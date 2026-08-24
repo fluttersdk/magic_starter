@@ -18,8 +18,9 @@ class MagicStarterTeamController extends MagicController
   final ValueNotifier<List<Map<String, dynamic>>> members = ValueNotifier([]);
 
   /// Pending invitations.
-  final ValueNotifier<List<Map<String, dynamic>>> invitations =
-      ValueNotifier([]);
+  final ValueNotifier<List<Map<String, dynamic>>> invitations = ValueNotifier(
+    [],
+  );
 
   /// Get the active team ID — from explicit value or team resolver.
   dynamic get activeTeamId =>
@@ -76,8 +77,9 @@ class MagicStarterTeamController extends MagicController
       if (membersResponse.successful) {
         final data = membersResponse['data'];
         if (data is List) {
-          members.value =
-              data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          members.value = data
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
         }
       } else {
         hasFailure = true;
@@ -85,8 +87,9 @@ class MagicStarterTeamController extends MagicController
       if (invitationsResponse.successful) {
         final data = invitationsResponse['data'];
         if (data is List) {
-          invitations.value =
-              data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          invitations.value = data
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
         }
       } else {
         hasFailure = true;
@@ -98,7 +101,8 @@ class MagicStarterTeamController extends MagicController
       }
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterTeamController.loadMembersAndInvitations] $e\n$stackTrace');
+        '[MagicStarterTeamController.loadMembersAndInvitations] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
     } finally {
       _isLoadingMembers = false;
@@ -121,25 +125,25 @@ class MagicStarterTeamController extends MagicController
     clearErrors();
 
     try {
-      final response =
-          await Http.delete('/teams/$teamId/invitations/$invitationId');
+      final response = await Http.delete(
+        '/teams/$teamId/invitations/$invitationId',
+      );
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('teams.cancel_invite_failed'),
-        );
+        handleApiError(response, fallback: trans('teams.cancel_invite_failed'));
         return false;
       }
 
-      invitations.value =
-          invitations.value.where((inv) => inv['id'] != invitationId).toList();
+      invitations.value = invitations.value
+          .where((inv) => inv['id'] != invitationId)
+          .toList();
       Magic.toast(trans('teams.invite_canceled'));
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterTeamController.cancelInvitation] $e\n$stackTrace');
+        '[MagicStarterTeamController.cancelInvitation] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -158,10 +162,7 @@ class MagicStarterTeamController extends MagicController
       final response = await Http.post('/teams', data: {'name': name});
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('teams.create_failed'),
-        );
+        handleApiError(response, fallback: trans('teams.create_failed'));
         return false;
       }
 
@@ -220,10 +221,7 @@ class MagicStarterTeamController extends MagicController
       final response = await Http.put('/teams/$teamId', data: {'name': name});
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('teams.update_failed'),
-        );
+        handleApiError(response, fallback: trans('teams.update_failed'));
         return false;
       }
 
@@ -262,10 +260,7 @@ class MagicStarterTeamController extends MagicController
       );
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('teams.invite_failed'),
-        );
+        handleApiError(response, fallback: trans('teams.invite_failed'));
         return false;
       }
 
@@ -303,10 +298,7 @@ class MagicStarterTeamController extends MagicController
       final response = await Http.delete('/teams/$teamId/members/$memberId');
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('teams.member_remove_failed'),
-        );
+        handleApiError(response, fallback: trans('teams.member_remove_failed'));
         return false;
       }
 
@@ -339,10 +331,7 @@ class MagicStarterTeamController extends MagicController
       );
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('teams.switch_failed'),
-        );
+        handleApiError(response, fallback: trans('teams.switch_failed'));
         return false;
       }
 
@@ -370,10 +359,7 @@ class MagicStarterTeamController extends MagicController
       final response = await Http.post('/invitations/$token/accept');
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('teams.accept_invite_failed'),
-        );
+        handleApiError(response, fallback: trans('teams.accept_invite_failed'));
         return false;
       }
 
@@ -383,7 +369,8 @@ class MagicStarterTeamController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterTeamController.doAcceptInvitation] $e\n$stackTrace');
+        '[MagicStarterTeamController.doAcceptInvitation] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {

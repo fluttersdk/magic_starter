@@ -36,8 +36,12 @@ class MagicStarterSettingsHubView
       _MagicStarterSettingsHubViewState();
 }
 
-class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterSettingsHubView> {
+class _MagicStarterSettingsHubViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterSettingsHubView
+        > {
   // Icons referenced in build() are hoisted to static fields so Flutter web
   // tree-shaking keeps them (const tear-offs inside build() get dropped).
   static const _iconProfile = Icons.person_outline;
@@ -174,10 +178,16 @@ class _MagicStarterSettingsHubViewState extends MagicStatefulViewState<
   @override
   Widget build(BuildContext context) {
     // 1. Resolve registry slots so host apps can inject around the hub.
-    final headerSlot =
-        MagicStarter.view.buildSlot('settings.hub', 'header', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('settings.hub', 'footer', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'settings.hub',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'settings.hub',
+      'footer',
+      context,
+    );
 
     // 2. Build each group's rows up front so empty groups can be dropped.
     final accountRows = _accountRows();

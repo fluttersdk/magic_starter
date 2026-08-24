@@ -129,8 +129,9 @@ class SessionScopeSync {
 
     // Snapshot first: a reset may resolve another controller and register it,
     // which would otherwise mutate the registry mid-iteration.
-    final List<SessionScopedController> scoped =
-        Magic.controllers.whereType<SessionScopedController>().toList();
+    final List<SessionScopedController> scoped = Magic.controllers
+        .whereType<SessionScopedController>()
+        .toList();
 
     for (final SessionScopedController controller in scoped) {
       // Isolated per controller: `Auth.stateNotifier` listeners are synchronous

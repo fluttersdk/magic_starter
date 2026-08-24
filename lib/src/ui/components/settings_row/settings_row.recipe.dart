@@ -35,7 +35,5 @@ const WindRecipe settingsRowRecipe = WindRecipe(
       'destructive': 'text-destructive',
     },
   },
-  defaultVariants: {
-    kSettingsRowToneAxis: 'defaultTone',
-  },
+  defaultVariants: {kSettingsRowToneAxis: 'defaultTone'},
 );

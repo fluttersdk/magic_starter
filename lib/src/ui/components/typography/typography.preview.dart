@@ -25,10 +25,7 @@ class TypographyPreview extends StatelessWidget {
                 'The quick brown fox — ${variant.name}',
                 variant: variant,
               ),
-              WText(
-                variant.name,
-                className: 'text-xs text-fg-muted',
-              ),
+              WText(variant.name, className: 'text-xs text-fg-muted'),
             ],
           ),
       ],

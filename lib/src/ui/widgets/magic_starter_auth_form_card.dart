@@ -42,17 +42,11 @@ class MagicStarterAuthFormCard extends StatelessWidget {
         ),
 
         // Title
-        WText(
-          title,
-          className: MagicStarter.authTheme.titleClassName,
-        ),
+        WText(title, className: MagicStarter.authTheme.titleClassName),
         const WSpacer(className: 'h-1'),
 
         // Subtitle
-        WText(
-          subtitle,
-          className: MagicStarter.authTheme.subtitleClassName,
-        ),
+        WText(subtitle, className: MagicStarter.authTheme.subtitleClassName),
         const WSpacer(className: 'h-6'),
 
         // Error Banner

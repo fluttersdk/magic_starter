@@ -146,8 +146,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       ),
       bottomNavigationBar:
           (!isDesktop && hasBottomNav && !MagicStarterHideBottomNav.of(context))
-              ? _buildBottomNav(context, currentPath)
-              : null,
+          ? _buildBottomNav(context, currentPath)
+          : null,
     );
   }
 
@@ -234,24 +234,15 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         Builder(
           builder: (drawerContext) => WAnchor(
             onTap: () => Scaffold.of(drawerContext).openDrawer(),
-            child: WIcon(
-              Icons.menu,
-              className: 'text-fg-muted',
-            ),
+            child: WIcon(Icons.menu, className: 'text-fg-muted'),
           ),
         ),
         navTheme.brandBuilder != null
             ? navTheme.brandBuilder!(context)
-            : WText(
-                trans('app.name'),
-                className: 'font-bold text-lg text-fg',
-              ),
+            : WText(trans('app.name'), className: 'font-bold text-lg text-fg'),
         WDiv(
           className: 'flex items-center gap-1',
-          children: [
-            _buildNotificationBell(),
-            const MSUserProfileDropdown(),
-          ],
+          children: [_buildNotificationBell(), const MSUserProfileDropdown()],
         ),
       ],
     );
@@ -269,10 +260,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       children: [
         navTheme.brandBuilder != null
             ? navTheme.brandBuilder!(context)
-            : WText(
-                trans('app.name'),
-                className: navTheme.brandClassName,
-              ),
+            : WText(trans('app.name'), className: navTheme.brandClassName),
         if (showClose)
           WAnchor(
             onTap: () => Navigator.pop(context),
@@ -281,10 +269,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                                 w-8 h-8 rounded-lg flex items-center justify-center
                                 hover:bg-gray-100 dark:hover:bg-gray-800
                             ''',
-              child: WIcon(
-                Icons.close,
-                className: 'text-[18px] text-fg-muted',
-              ),
+              child: WIcon(Icons.close, className: 'text-[18px] text-fg-muted'),
             ),
           ),
       ],
@@ -432,7 +417,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       },
       child: WDiv(
         states: {if (isActive) 'active'},
-        className: '''
+        className:
+            '''
                     mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3
                     duration-150 text-sm font-medium
                     text-fg-muted
@@ -441,9 +427,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 ''',
         children: [
           WIcon(icon, className: 'text-[20px]'),
-          Expanded(
-            child: WText(label, className: 'truncate'),
-          ),
+          Expanded(child: WText(label, className: 'truncate')),
         ],
       ),
     );
@@ -541,10 +525,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             child: MSUserProfileDropdown(
               alignment: PopoverAlignment.topRight,
               triggerBuilder: (context, isOpen, isHovering) => WDiv(
-                states: {
-                  if (isOpen) 'active',
-                  if (isHovering) 'hover',
-                },
+                states: {if (isOpen) 'active', if (isHovering) 'hover'},
                 className: '''
                   flex items-center gap-3 px-1 py-1
                   rounded-lg cursor-pointer
@@ -555,7 +536,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 children: [
                   // Avatar
                   WDiv(
-                    className: '''
+                    className:
+                        '''
                       w-9 h-9 rounded-full ${navTheme.avatarClassName}
                       flex items-center justify-center flex-shrink-0
                     ''',

@@ -36,9 +36,7 @@ class PageScaffoldPreview extends StatelessWidget {
             ),
             const MSSettingsSection(
               header: 'Danger',
-              children: [
-                _PreviewRow(label: 'Delete Account'),
-              ],
+              children: [_PreviewRow(label: 'Delete Account')],
             ),
           ],
         ),
@@ -49,9 +47,7 @@ class PageScaffoldPreview extends StatelessWidget {
           children: [
             const MSSettingsSection(
               header: 'Account',
-              children: [
-                _PreviewRow(label: 'Profile'),
-              ],
+              children: [_PreviewRow(label: 'Profile')],
             ),
             const MSSettingsSection(
               header: 'Security',

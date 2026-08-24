@@ -104,24 +104,13 @@ class MSSettingsSection extends StatelessWidget {
       className: 'flex flex-col gap-1.5',
       children: [
         // 1. Optional header caption.
-        if (header != null)
-          WText(
-            header!,
-            className: _captionClass(),
-          ),
+        if (header != null) WText(header!, className: _captionClass()),
 
         // 2. Grouped rounded container with interleaved dividers.
-        WDiv(
-          className: _containerClass(),
-          children: _buildRows(),
-        ),
+        WDiv(className: _containerClass(), children: _buildRows()),
 
         // 3. Optional footer caption.
-        if (footer != null)
-          WText(
-            footer!,
-            className: _captionClass(),
-          ),
+        if (footer != null) WText(footer!, className: _captionClass()),
       ],
     );
   }

@@ -18,29 +18,16 @@ class PageHeaderPreview extends StatelessWidget {
       className: 'flex flex-col gap-6 p-6',
       children: [
         const MSPageHeader(title: 'Dashboard'),
-        const MSPageHeader(
-          title: 'Projects',
-          subtitle: 'Manage your projects',
-        ),
+        const MSPageHeader(title: 'Projects', subtitle: 'Manage your projects'),
         MSPageHeader(
           title: 'Settings',
-          actions: [
-            MSButton(
-              onPressed: () {},
-              child: const WText('Save'),
-            ),
-          ],
+          actions: [MSButton(onPressed: () {}, child: const WText('Save'))],
         ),
         MSPageHeader(
           title: 'Create',
           inlineActions: true,
           leading: const Icon(Icons.arrow_back),
-          actions: [
-            MSButton(
-              onPressed: () {},
-              child: const WText('Create'),
-            ),
-          ],
+          actions: [MSButton(onPressed: () {}, child: const WText('Create'))],
         ),
         // Back-enabled variant: auto-back via backLabel + backFallback.
         const MSPageHeader(

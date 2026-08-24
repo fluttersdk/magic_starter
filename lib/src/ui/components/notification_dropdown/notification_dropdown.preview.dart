@@ -41,9 +41,7 @@ class _NotificationDropdownPreviewState
     return WDiv(
       className: 'flex flex-row items-start gap-6 p-6',
       children: [
-        MSNotificationDropdown(
-          notificationStream: _controller.stream,
-        ),
+        MSNotificationDropdown(notificationStream: _controller.stream),
       ],
     );
   }

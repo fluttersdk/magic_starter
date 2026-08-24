@@ -100,11 +100,7 @@ class MagicStarterViewRegistry {
   ///   return WText('Welcome back!', className: 'text-2xl font-bold text-center');
   /// });
   /// ```
-  void slot(
-    String viewKey,
-    String slotName,
-    MagicStarterSlotBuilder builder,
-  ) {
+  void slot(String viewKey, String slotName, MagicStarterSlotBuilder builder) {
     _slots['$viewKey.$slotName'] = builder;
   }
 

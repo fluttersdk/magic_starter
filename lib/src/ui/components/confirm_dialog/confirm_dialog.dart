@@ -130,23 +130,23 @@ class _ConfirmDialogState extends State<MSConfirmDialog> {
     final theme = MagicStarter.manager.modalTheme;
     final confirmLabel = widget.confirmLabel ?? trans('common.confirm');
     final cancelLabel = widget.cancelLabel ?? trans('common.cancel');
-    final confirmClassName =
-        resolveConfirmButtonClassName(widget.variant, theme);
+    final confirmClassName = resolveConfirmButtonClassName(
+      widget.variant,
+      theme,
+    );
 
     // 1. Compute safe height, subtracting system insets.
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight = (MediaQuery.sizeOf(context).height -
-            viewPadding.top -
-            viewPadding.bottom)
-        .clamp(0.0, double.infinity);
+    final safeHeight =
+        (MediaQuery.sizeOf(context).height -
+                viewPadding.top -
+                viewPadding.bottom)
+            .clamp(0.0, double.infinity);
 
     // 2. Build dialog shell with footer carrying compact right-aligned buttons.
     return m.Dialog(
       backgroundColor: m.Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 24,
-      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: theme.maxWidth,

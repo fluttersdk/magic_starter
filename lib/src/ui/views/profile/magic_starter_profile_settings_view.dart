@@ -33,8 +33,12 @@ class MagicStarterProfileSettingsView
       _MagicStarterProfileSettingsViewState();
 }
 
-class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
-    MagicStarterProfileController, MagicStarterProfileSettingsView> {
+class _MagicStarterProfileSettingsViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterProfileController,
+          MagicStarterProfileSettingsView
+        > {
   static const _iconVisible = Icons.visibility;
   static const _iconHidden = Icons.visibility_off;
   static const _iconDesktop = Icons.computer;
@@ -42,39 +46,29 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   // -- Profile & password forms -----------------------------------------------
 
-  late final profileForm = MagicFormData(
-    {
-      'name': '',
-      'email': '',
-      'phone': '',
-      'timezone': '',
-      'language': '',
-    },
-    controller: controller,
-  );
+  late final profileForm = MagicFormData({
+    'name': '',
+    'email': '',
+    'phone': '',
+    'timezone': '',
+    'language': '',
+  }, controller: controller);
 
-  late final passwordForm = MagicFormData(
-    {
-      'current_password': '',
-      'password': '',
-      'password_confirmation': '',
-    },
-    controller: controller,
-  );
+  late final passwordForm = MagicFormData({
+    'current_password': '',
+    'password': '',
+    'password_confirmation': '',
+  }, controller: controller);
 
-  late final deleteAccountForm = MagicFormData(
-    {'password': ''},
-    controller: controller,
-  );
+  late final deleteAccountForm = MagicFormData({
+    'password': '',
+  }, controller: controller);
 
-  late final upgradeForm = MagicFormData(
-    {
-      'email': '',
-      'password': '',
-      'password_confirmation': '',
-    },
-    controller: controller,
-  );
+  late final upgradeForm = MagicFormData({
+    'email': '',
+    'password': '',
+    'password_confirmation': '',
+  }, controller: controller);
 
   bool _obscureUpgradePassword = true;
   bool _obscureUpgradeConfirmation = true;
@@ -100,8 +94,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// spinner simultaneously. These per-section notifiers decouple each
   /// section's loading indicator from the controller's global state.
   final ValueNotifier<bool> _photoLoading = ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _emailVerificationLoading =
-      ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _emailVerificationLoading = ValueNotifier<bool>(
+    false,
+  );
   final ValueNotifier<bool> _twoFactorLoading = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _sessionActionLoading = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _newsletterLoading = ValueNotifier<bool>(false);
@@ -160,7 +155,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Use this instead of [controller.isLoading] to isolate loading indicators
   /// to a single section of the profile page.
   Future<T> _trackLoading<T>(
-      ValueNotifier<bool> notifier, Future<T> Function() action) async {
+    ValueNotifier<bool> notifier,
+    Future<T> Function() action,
+  ) async {
     notifier.value = true;
     try {
       return await action();
@@ -202,14 +199,15 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   Future<void> _submitPassword() async {
     if (!passwordForm.validate()) return;
-    final success =
-        await passwordForm.process(() => controller.withoutNotifying(
-              () => controller.doUpdatePassword(
-                currentPassword: passwordForm.get('current_password'),
-                password: passwordForm.get('password'),
-                passwordConfirmation: passwordForm.get('password_confirmation'),
-              ),
-            ));
+    final success = await passwordForm.process(
+      () => controller.withoutNotifying(
+        () => controller.doUpdatePassword(
+          currentPassword: passwordForm.get('current_password'),
+          password: passwordForm.get('password'),
+          passwordConfirmation: passwordForm.get('password_confirmation'),
+        ),
+      ),
+    );
     _rebuildIfValidationErrors(passwordForm);
     if (success) {
       passwordForm.set('current_password', '');
@@ -360,10 +358,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
       onConfirm: (password) async {
         final ok = await _trackLoading(
           _sessionActionLoading,
-          () => controller.doRevokeSession(
-            tokenId: tokenId,
-            password: password,
-          ),
+          () =>
+              controller.doRevokeSession(tokenId: tokenId, password: password),
         );
         if (!ok) {
           final error =
@@ -411,18 +407,36 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
 
   @override
   Widget build(BuildContext context) {
-    final headerSlot =
-        MagicStarter.view.buildSlot('profile.settings', 'header', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('profile.settings', 'footer', context);
-    final beforePhotoSlot = MagicStarter.view
-        .buildSlot('profile.settings', 'beforeSection:photo', context);
-    final afterInfoSlot = MagicStarter.view
-        .buildSlot('profile.settings', 'afterSection:info', context);
-    final beforePasswordSlot = MagicStarter.view
-        .buildSlot('profile.settings', 'beforeSection:password', context);
-    final afterSessionsSlot = MagicStarter.view
-        .buildSlot('profile.settings', 'afterSection:sessions', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'profile.settings',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'profile.settings',
+      'footer',
+      context,
+    );
+    final beforePhotoSlot = MagicStarter.view.buildSlot(
+      'profile.settings',
+      'beforeSection:photo',
+      context,
+    );
+    final afterInfoSlot = MagicStarter.view.buildSlot(
+      'profile.settings',
+      'afterSection:info',
+      context,
+    );
+    final beforePasswordSlot = MagicStarter.view.buildSlot(
+      'profile.settings',
+      'beforeSection:password',
+      context,
+    );
+    final afterSessionsSlot = MagicStarter.view.buildSlot(
+      'profile.settings',
+      'afterSection:sessions',
+      context,
+    );
 
     return MSPageScaffold(
       title: trans('profile.settings'),
@@ -439,10 +453,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             Gate.allows('starter.verify-email') &&
             !controller.isEmailVerified)
           _buildEmailVerificationSection(),
-        MagicForm(
-          formData: profileForm,
-          child: _buildProfileSection(),
-        ),
+        MagicForm(formData: profileForm, child: _buildProfileSection()),
         if (afterInfoSlot != null) afterInfoSlot,
         if (Gate.allows('starter.update-password')) ...[
           if (beforePasswordSlot != null) beforePasswordSlot,
@@ -547,10 +558,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   }
 
   Future<void> _handlePhotoRemove() async {
-    await _trackLoading(
-      _photoLoading,
-      () => controller.doDeleteProfilePhoto(),
-    );
+    await _trackLoading(_photoLoading, () => controller.doDeleteProfilePhoto());
   }
 
   // -- Profile Section -------------------------------------------------------
@@ -685,7 +693,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               validator: rules([Required()], field: 'password_confirmation'),
               suffix: WAnchor(
                 onTap: () => setState(
-                    () => _obscureConfirmation = !_obscureConfirmation),
+                  () => _obscureConfirmation = !_obscureConfirmation,
+                ),
                 child: WIcon(
                   _obscureConfirmation ? _iconVisible : _iconHidden,
                   className: 'text-fg-muted text-xl',
@@ -768,7 +777,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   ),
                   WText(
                     trans(
-                        'magic_starter.email_verification.unverified_description'),
+                      'magic_starter.email_verification.unverified_description',
+                    ),
                     className: 'text-sm text-yellow-700 dark:text-yellow-300',
                   ),
                 ],
@@ -783,7 +793,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
               className:
                   'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
               child: WText(
-                  trans('magic_starter.email_verification.resend_button')),
+                trans('magic_starter.email_verification.resend_button'),
+              ),
             ),
           ),
         ],
@@ -905,8 +916,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                         isLoading: isLoading,
                         className:
                             'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
-                        child:
-                            WText(trans('profile.two_factor_regenerate_codes')),
+                        child: WText(
+                          trans('profile.two_factor_regenerate_codes'),
+                        ),
                       ),
                     ),
                   ),
@@ -945,7 +957,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     );
   }
 
-// -- Newsletter Section ------------------------------------------------------
+  // -- Newsletter Section ------------------------------------------------------
 
   /// Builds the newsletter subscription toggle section.
   ///
@@ -1007,8 +1019,8 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                                     _newsletterLoading,
                                     () => newsletterController
                                         .updateNewsletterSubscription(
-                                      subscribe: newValue,
-                                    ),
+                                          subscribe: newValue,
+                                        ),
                                   );
                                 },
                               ),
@@ -1036,7 +1048,7 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
     );
   }
 
-// -- Sessions Section ------------------------------------------------------
+  // -- Sessions Section ------------------------------------------------------
 
   /// Builds the browser sessions management section.
   ///
@@ -1138,16 +1150,9 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   ),
               ],
             ),
-            if (ip.isNotEmpty)
-              WText(
-                ip,
-                className: 'text-xs text-fg-muted',
-              ),
+            if (ip.isNotEmpty) WText(ip, className: 'text-xs text-fg-muted'),
             if (locationText.isNotEmpty)
-              WText(
-                locationText,
-                className: 'text-xs text-fg-muted',
-              ),
+              WText(locationText, className: 'text-xs text-fg-muted'),
           ],
         ),
         if (!isCurrent)
@@ -1224,13 +1229,11 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             ),
             WFormInput(
               controller: deleteAccountForm['password'],
-              label:
-                  trans('magic_starter.profile.delete_account.password_label'),
-              type: InputType.password,
-              validator: rules(
-                [Required()],
-                field: 'password',
+              label: trans(
+                'magic_starter.profile.delete_account.password_label',
               ),
+              type: InputType.password,
+              validator: rules([Required()], field: 'password'),
               labelClassName: MagicStarter.formTheme.labelClassName,
               className: MagicStarter.formTheme.inputClassName,
             ),
@@ -1260,11 +1263,13 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Submit delete account form.
   Future<void> _submitDeleteAccount() async {
     if (!deleteAccountForm.validate()) return;
-    await deleteAccountForm.process(() => controller.withoutNotifying(
-          () => controller.doDeleteAccount(
-            password: deleteAccountForm.get('password'),
-          ),
-        ));
+    await deleteAccountForm.process(
+      () => controller.withoutNotifying(
+        () => controller.doDeleteAccount(
+          password: deleteAccountForm.get('password'),
+        ),
+      ),
+    );
     _rebuildIfValidationErrors(deleteAccountForm);
   }
 
@@ -1307,12 +1312,14 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
             WFormInput(
               controller: upgradeForm['password'],
               label: trans('attributes.password'),
-              type:
-                  _obscureUpgradePassword ? InputType.password : InputType.text,
+              type: _obscureUpgradePassword
+                  ? InputType.password
+                  : InputType.text,
               validator: rules([Required(), Min(8)], field: 'password'),
               suffix: WAnchor(
                 onTap: () => setState(
-                    () => _obscureUpgradePassword = !_obscureUpgradePassword),
+                  () => _obscureUpgradePassword = !_obscureUpgradePassword,
+                ),
                 child: WIcon(
                   _obscureUpgradePassword ? _iconVisible : _iconHidden,
                   className: 'text-fg-muted text-xl',
@@ -1329,8 +1336,10 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
                   : InputType.text,
               validator: rules([Required()], field: 'password_confirmation'),
               suffix: WAnchor(
-                onTap: () => setState(() =>
-                    _obscureUpgradeConfirmation = !_obscureUpgradeConfirmation),
+                onTap: () => setState(
+                  () => _obscureUpgradeConfirmation =
+                      !_obscureUpgradeConfirmation,
+                ),
                 child: WIcon(
                   _obscureUpgradeConfirmation ? _iconVisible : _iconHidden,
                   className: 'text-fg-muted text-xl',
@@ -1363,17 +1372,19 @@ class _MagicStarterProfileSettingsViewState extends MagicStatefulViewState<
   /// Submits the guest upgrade form — converts the guest to a full account.
   Future<void> _submitGuestUpgrade() async {
     if (!upgradeForm.validate()) return;
-    final success = await upgradeForm.process(() => controller.withoutNotifying(
-          () => controller.doUpdateProfile(
-            name: profileForm.get('name'),
-            email: upgradeForm.get('email'),
-            phone: profileForm.get('phone'),
-            timezone: profileForm.get('timezone'),
-            language: profileForm.get('language'),
-            password: upgradeForm.get('password'),
-            passwordConfirmation: upgradeForm.get('password_confirmation'),
-          ),
-        ));
+    final success = await upgradeForm.process(
+      () => controller.withoutNotifying(
+        () => controller.doUpdateProfile(
+          name: profileForm.get('name'),
+          email: upgradeForm.get('email'),
+          phone: profileForm.get('phone'),
+          timezone: profileForm.get('timezone'),
+          language: profileForm.get('language'),
+          password: upgradeForm.get('password'),
+          passwordConfirmation: upgradeForm.get('password_confirmation'),
+        ),
+      ),
+    );
     if (success) {
       Magic.reload();
       return;

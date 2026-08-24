@@ -9,10 +9,7 @@ void main() {
 
     group('fromMap', () {
       test('parses id and name correctly', () {
-        final team = MagicStarterTeam.fromMap({
-          'id': 1,
-          'name': 'Acme',
-        });
+        final team = MagicStarterTeam.fromMap({'id': 1, 'name': 'Acme'});
 
         expect(team.id, equals(1));
         expect(team.name, equals('Acme'));
@@ -40,10 +37,7 @@ void main() {
 
     group('isPersonalTeam', () {
       test('is false by default', () {
-        final team = MagicStarterTeam.fromMap({
-          'id': 1,
-          'name': 'Acme',
-        });
+        final team = MagicStarterTeam.fromMap({'id': 1, 'name': 'Acme'});
 
         expect(team.isPersonalTeam, isFalse);
       });
@@ -95,10 +89,7 @@ void main() {
 
     group('photoUrl', () {
       test('is null when profile_photo_url is missing', () {
-        final team = MagicStarterTeam.fromMap({
-          'id': 1,
-          'name': 'Acme',
-        });
+        final team = MagicStarterTeam.fromMap({'id': 1, 'name': 'Acme'});
 
         expect(team.photoUrl, isNull);
       });
@@ -110,10 +101,7 @@ void main() {
           'profile_photo_url': 'https://example.com/team.jpg',
         });
 
-        expect(
-          team.photoUrl,
-          equals('https://example.com/team.jpg'),
-        );
+        expect(team.photoUrl, equals('https://example.com/team.jpg'));
       });
     });
 

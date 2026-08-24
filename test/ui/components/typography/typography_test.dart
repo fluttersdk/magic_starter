@@ -80,11 +80,12 @@ void main() {
         TypographyVariant.h2,
         TypographyVariant.h3,
       ]) {
-        final cls = typographyRecipe(
-          variants: {'variant': v.name},
+        final cls = typographyRecipe(variants: {'variant': v.name});
+        expect(
+          cls,
+          contains('text-fg'),
+          reason: '${v.name} should carry text-fg',
         );
-        expect(cls, contains('text-fg'),
-            reason: '${v.name} should carry text-fg');
       }
     });
 
@@ -115,9 +116,7 @@ void main() {
   });
 
   testWidgets('Typography default variant is body', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSTypography('Hello')),
-    );
+    await tester.pumpWidget(wrap(const MSTypography('Hello')));
     final wText = tester.widget<WText>(find.byType(WText).first);
     expect(wText.className, contains('text-base'));
   });
@@ -135,13 +134,15 @@ void main() {
       wrap(const MSTypography('Caption', variant: TypographyVariant.caption)),
     );
     final wText = tester.widget<WText>(find.byType(WText).first);
-    final hasSmall = wText.className!.contains('text-sm') ||
+    final hasSmall =
+        wText.className!.contains('text-sm') ||
         wText.className!.contains('text-xs');
     expect(hasSmall, isTrue);
   });
 
-  testWidgets('Typography light+dark preview renders without error',
-      (tester) async {
+  testWidgets('Typography light+dark preview renders without error', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const TypographyPreview()));
     await tester.pump();
     expect(find.byType(TypographyPreview), findsOneWidget);
@@ -158,11 +159,10 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Typography appends caller className onto the recipe base',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSTypography('Hi', className: 'mt-10')),
-    );
+  testWidgets('Typography appends caller className onto the recipe base', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSTypography('Hi', className: 'mt-10')));
     final wText = tester.widget<WText>(find.byType(WText).first);
     expect(wText.className, contains('text-base'));
     expect(wText.className, contains('mt-10'));

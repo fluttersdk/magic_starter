@@ -86,10 +86,7 @@ void main() {
         MagicStarter.bootstrap(
           userFactory: (data) => _HostUser.fromMap(data),
           onLogout: () async {},
-          locales: const {
-            'en': 'English',
-            'tr': 'Türkçe',
-          },
+          locales: const {'en': 'English', 'tr': 'Türkçe'},
         );
 
         final List<SelectOption<String>> options =
@@ -162,10 +159,10 @@ void main() {
         expect(resolver.onSwitch, equals(onSwitch));
 
         expect(resolver.currentTeam()?.name, 'Acme Corp');
-        expect(
-          resolver.allTeams().map((t) => t.name).toList(),
-          ['Acme Corp', 'Beta Inc'],
-        );
+        expect(resolver.allTeams().map((t) => t.name).toList(), [
+          'Acme Corp',
+          'Beta Inc',
+        ]);
 
         await resolver.onSwitch(2);
 

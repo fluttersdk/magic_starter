@@ -18,8 +18,8 @@ import '../ui/magic_starter_view_registry.dart';
 ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
 /// });
 /// ```
-typedef MagicStarterNotificationTypeMapper
-    = ({IconData icon, String colorClass}) Function(String type);
+typedef MagicStarterNotificationTypeMapper =
+    ({IconData icon, String colorClass}) Function(String type);
 
 /// Static facade for Magic Starter.
 class MagicStarter {
@@ -140,7 +140,8 @@ class MagicStarter {
     //    three callbacks, so a partial set is always a typo. Reject it before
     //    any setter runs, so a rejected bootstrap leaves the manager untouched
     //    instead of half-configured.
-    final int teamCallbacks = (currentTeam != null ? 1 : 0) +
+    final int teamCallbacks =
+        (currentTeam != null ? 1 : 0) +
         (allTeams != null ? 1 : 0) +
         (onSwitch != null ? 1 : 0);
 
@@ -298,9 +299,7 @@ class MagicStarter {
 
   /// Register a custom sidebar footer builder. When set, rendered between the
   /// navigation and user menu in both the desktop sidebar and mobile drawer.
-  static void useSidebarFooter(
-    Widget Function(BuildContext context) builder,
-  ) {
+  static void useSidebarFooter(Widget Function(BuildContext context) builder) {
     manager.sidebarFooterBuilder = builder;
   }
 
@@ -342,7 +341,8 @@ class MagicStarter {
   /// });
   /// ```
   static void useNotificationTypeMapper(
-      MagicStarterNotificationTypeMapper mapper) {
+    MagicStarterNotificationTypeMapper mapper,
+  ) {
     manager.notificationTypeMapper = mapper;
   }
 
@@ -363,12 +363,7 @@ class MagicStarter {
   /// ```
   static void useLocaleOptions(Map<String, String> locales) {
     manager.localeOptions = locales.entries
-        .map(
-          (e) => SelectOption<String>(
-            value: e.key,
-            label: e.value,
-          ),
-        )
+        .map((e) => SelectOption<String>(value: e.key, label: e.value))
         .toList(growable: false);
   }
 

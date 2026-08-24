@@ -130,17 +130,15 @@ class _MagicStarterPasswordConfirmDialogState
   Widget build(BuildContext context) {
     final theme = MagicStarter.manager.modalTheme;
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight = (MediaQuery.sizeOf(context).height -
-            viewPadding.top -
-            viewPadding.bottom)
-        .clamp(0.0, double.infinity);
+    final safeHeight =
+        (MediaQuery.sizeOf(context).height -
+                viewPadding.top -
+                viewPadding.bottom)
+            .clamp(0.0, double.infinity);
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 24,
-      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: theme.maxWidth,
@@ -190,10 +188,7 @@ class _MagicStarterPasswordConfirmDialogState
               if (_errorMessage != null)
                 WDiv(
                   className: theme.bodyClassName,
-                  child: WText(
-                    _errorMessage!,
-                    className: theme.errorClassName,
-                  ),
+                  child: WText(_errorMessage!, className: theme.errorClassName),
                 ),
 
               // Footer

@@ -28,26 +28,21 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Card appends caller className onto the recipe base',
-      (tester) async {
+  testWidgets('Card appends caller className onto the recipe base', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      wrap(
-        const MSCard(
-          className: 'mt-10',
-          child: Text('body'),
-        ),
-      ),
+      wrap(const MSCard(className: 'mt-10', child: Text('body'))),
     );
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(wDiv.className, contains('w-full'));
     expect(wDiv.className, contains('mt-10'));
   });
 
-  testWidgets('Card without caller className keeps the recipe base',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSCard(child: Text('body'))),
-    );
+  testWidgets('Card without caller className keeps the recipe base', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSCard(child: Text('body'))));
     final wDiv = tester.widget<WDiv>(find.byType(WDiv).first);
     expect(wDiv.className, contains('w-full'));
   });

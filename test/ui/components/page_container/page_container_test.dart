@@ -86,12 +86,7 @@ void main() {
     testWidgets('renders a children list', (tester) async {
       await tester.pumpWidget(
         wrap(
-          const MSPageContainer(
-            children: [
-              Text('header'),
-              Text('section'),
-            ],
-          ),
+          const MSPageContainer(children: [Text('header'), Text('section')]),
         ),
       );
 

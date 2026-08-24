@@ -17,15 +17,8 @@ void main() {
       'id': 'session-id-1',
       'ip_address': '192.168.1.1',
       'user_agent': 'Mozilla/5.0',
-      'agent': {
-        'is_desktop': true,
-        'platform': 'Windows',
-        'browser': 'Chrome',
-      },
-      'location': {
-        'city': 'Istanbul',
-        'country': 'Turkey',
-      },
+      'agent': {'is_desktop': true, 'platform': 'Windows', 'browser': 'Chrome'},
+      'location': {'city': 'Istanbul', 'country': 'Turkey'},
       'is_current_device': true,
       'last_used_at': '2025-01-01T00:00:00Z',
       'created_at': '2025-01-01T00:00:00Z',
@@ -59,10 +52,7 @@ void main() {
     group('getSessions', () {
       test('returns session list on success', () async {
         final List<Map<String, dynamic>> sessions = [
-          {
-            ...mockSession,
-            'id': 'session-id-1',
-          },
+          {...mockSession, 'id': 'session-id-1'},
           {
             ...mockSession,
             'id': 'session-id-2',
@@ -77,15 +67,10 @@ void main() {
           },
         ];
 
-        mockDriver.mockResponse(
-          statusCode: 200,
-          data: {
-            'data': sessions,
-          },
-        );
+        mockDriver.mockResponse(statusCode: 200, data: {'data': sessions});
 
-        final List<Map<String, dynamic>>? result =
-            await controller.getSessions();
+        final List<Map<String, dynamic>>? result = await controller
+            .getSessions();
 
         expect(result, isNotNull);
         expect(result, hasLength(3));
@@ -99,13 +84,11 @@ void main() {
       test('returns empty list when API returns empty data', () async {
         mockDriver.mockResponse(
           statusCode: 200,
-          data: {
-            'data': <Map<String, dynamic>>[],
-          },
+          data: {'data': <Map<String, dynamic>>[]},
         );
 
-        final List<Map<String, dynamic>>? result =
-            await controller.getSessions();
+        final List<Map<String, dynamic>>? result = await controller
+            .getSessions();
 
         expect(result, isNotNull);
         expect(result, isEmpty);
@@ -115,13 +98,11 @@ void main() {
       test('returns null and sets error state on API error', () async {
         mockDriver.mockResponse(
           statusCode: 500,
-          data: {
-            'message': 'Server error',
-          },
+          data: {'message': 'Server error'},
         );
 
-        final List<Map<String, dynamic>>? result =
-            await controller.getSessions();
+        final List<Map<String, dynamic>>? result = await controller
+            .getSessions();
 
         expect(result, isNull);
         expect(controller.isError, isTrue);
@@ -132,9 +113,7 @@ void main() {
       test('revokes a single session and sends password payload', () async {
         mockDriver.mockResponse(
           statusCode: 200,
-          data: {
-            'message': 'Session revoked successfully.',
-          },
+          data: {'message': 'Session revoked successfully.'},
         );
 
         final bool result = await controller.doRevokeSession(
@@ -148,10 +127,7 @@ void main() {
         expect(mockDriver.lastUrl, equals('/sessions/session-id-1'));
         expect(
           mockDriver.lastData,
-          equals({
-            '_method': 'DELETE',
-            'password': 'my-secret-password',
-          }),
+          equals({'_method': 'DELETE', 'password': 'my-secret-password'}),
         );
       });
 
@@ -183,9 +159,7 @@ void main() {
           data: {
             'message': 'Invalid session token.',
             'errors': {
-              'token': [
-                'The selected session token is invalid.',
-              ],
+              'token': ['The selected session token is invalid.'],
             },
           },
         );
@@ -204,9 +178,7 @@ void main() {
       test('revokes all other sessions and sends password payload', () async {
         mockDriver.mockResponse(
           statusCode: 200,
-          data: {
-            'message': 'Other sessions revoked successfully.',
-          },
+          data: {'message': 'Other sessions revoked successfully.'},
         );
 
         final bool result = await controller.doRevokeOtherSessions(
@@ -219,10 +191,7 @@ void main() {
         expect(mockDriver.lastUrl, equals('/sessions/other'));
         expect(
           mockDriver.lastData,
-          equals({
-            '_method': 'DELETE',
-            'password': 'my-secret-password',
-          }),
+          equals({'_method': 'DELETE', 'password': 'my-secret-password'}),
         );
       });
 
@@ -232,9 +201,7 @@ void main() {
           data: {
             'message': 'The password is incorrect.',
             'errors': {
-              'password': [
-                'The provided password was incorrect.',
-              ],
+              'password': ['The provided password was incorrect.'],
             },
           },
         );
@@ -253,9 +220,7 @@ void main() {
           data: {
             'message': 'Password is required.',
             'errors': {
-              'password': [
-                'The password field is required.',
-              ],
+              'password': ['The password field is required.'],
             },
           },
         );
@@ -268,10 +233,7 @@ void main() {
         expect(mockDriver.lastUrl, equals('/sessions/other'));
         expect(
           mockDriver.lastData,
-          equals({
-            '_method': 'DELETE',
-            'password': '',
-          }),
+          equals({'_method': 'DELETE', 'password': ''}),
         );
       });
     });

@@ -18,23 +18,13 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
+  void mockResponse({required int statusCode, dynamic data}) {
     _queue.add(
-      MagicResponse(
-        data: data ?? <String, dynamic>{},
-        statusCode: statusCode,
-      ),
+      MagicResponse(data: data ?? <String, dynamic>{}, statusCode: statusCode),
     );
   }
 
-  MagicResponse _respond(
-    String method,
-    String url, {
-    dynamic data,
-  }) {
+  MagicResponse _respond(String method, String url, {dynamic data}) {
     lastMethod = method;
     lastUrl = url;
     lastData = data;
@@ -43,10 +33,7 @@ class MockNetworkDriver implements NetworkDriver {
       return _queue.removeAt(0);
     }
 
-    return MagicResponse(
-      data: <String, dynamic>{},
-      statusCode: 500,
-    );
+    return MagicResponse(data: <String, dynamic>{}, statusCode: 500);
   }
 
   @override
@@ -57,55 +44,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -113,16 +93,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -130,8 +108,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -215,10 +192,8 @@ class MockGuard implements Guard {
 void main() {
   Widget wrap(Widget widget) {
     return MaterialApp(
-      builder: (context, child) => WindTheme(
-        data: WindThemeData(),
-        child: child!,
-      ),
+      builder: (context, child) =>
+          WindTheme(data: WindThemeData(), child: child!),
       home: Scaffold(body: widget),
     );
   }
@@ -237,10 +212,7 @@ void main() {
     Config.set('logging', <String, dynamic>{
       'default': 'console',
       'channels': <String, dynamic>{
-        'console': <String, dynamic>{
-          'driver': 'console',
-          'level': 'debug',
-        },
+        'console': <String, dynamic>{'driver': 'console', 'level': 'debug'},
       },
     });
 
@@ -279,8 +251,9 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterTwoFactorView', () {
-    testWidgets('renders inside a SettingsScaffold with back to the hub',
-        (WidgetTester tester) async {
+    testWidgets('renders inside a SettingsScaffold with back to the hub', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterTwoFactorView()));
       await tester.pump();
 
@@ -293,45 +266,54 @@ void main() {
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
-    testWidgets('shows disabled state with the Enable button',
-        (WidgetTester tester) async {
+    testWidgets('shows disabled state with the Enable button', (
+      WidgetTester tester,
+    ) async {
       mockGuard.setUserWithTwoFactorDisabled();
 
       await tester.pumpWidget(wrap(const MagicStarterTwoFactorView()));
       await tester.pump();
 
       expect(
-        find.byWidgetPredicate((Widget w) =>
-            w is WButton &&
-            w.child is WText &&
-            (w.child as WText).data == trans('profile.two_factor_enable')),
+        find.byWidgetPredicate(
+          (Widget w) =>
+              w is WButton &&
+              w.child is WText &&
+              (w.child as WText).data == trans('profile.two_factor_enable'),
+        ),
         findsOneWidget,
       );
     });
 
-    testWidgets('shows enabled state with the Disable button',
-        (WidgetTester tester) async {
+    testWidgets('shows enabled state with the Disable button', (
+      WidgetTester tester,
+    ) async {
       mockGuard.setUserWithTwoFactorEnabled();
 
       await tester.pumpWidget(wrap(const MagicStarterTwoFactorView()));
       await tester.pump();
 
       expect(
-        find.byWidgetPredicate((Widget w) =>
-            w is WText && w.data == trans('profile.two_factor_enabled')),
+        find.byWidgetPredicate(
+          (Widget w) =>
+              w is WText && w.data == trans('profile.two_factor_enabled'),
+        ),
         findsOneWidget,
       );
       expect(
-        find.byWidgetPredicate((Widget w) =>
-            w is WButton &&
-            w.child is WText &&
-            (w.child as WText).data == trans('profile.two_factor_disable')),
+        find.byWidgetPredicate(
+          (Widget w) =>
+              w is WButton &&
+              w.child is WText &&
+              (w.child as WText).data == trans('profile.two_factor_disable'),
+        ),
         findsOneWidget,
       );
     });
 
-    testWidgets('Disable button opens the password-confirm dialog',
-        (WidgetTester tester) async {
+    testWidgets('Disable button opens the password-confirm dialog', (
+      WidgetTester tester,
+    ) async {
       mockGuard.setUserWithTwoFactorEnabled();
 
       tester.view.physicalSize = const Size(1200, 900);
@@ -342,10 +324,12 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterTwoFactorView()));
       await tester.pump();
 
-      final btn = find.byWidgetPredicate((Widget w) =>
-          w is WButton &&
-          w.child is WText &&
-          (w.child as WText).data == trans('profile.two_factor_disable'));
+      final btn = find.byWidgetPredicate(
+        (Widget w) =>
+            w is WButton &&
+            w.child is WText &&
+            (w.child as WText).data == trans('profile.two_factor_disable'),
+      );
       await tester.ensureVisible(btn);
       await tester.tap(btn);
       await tester.pumpAndSettle();
@@ -359,8 +343,9 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterPasswordView', () {
-    testWidgets('renders inside a SettingsScaffold with back to the hub',
-        (WidgetTester tester) async {
+    testWidgets('renders inside a SettingsScaffold with back to the hub', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterPasswordView()));
       await tester.pump();
 
@@ -372,8 +357,9 @@ void main() {
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
-    testWidgets('submitting the form calls PUT /user/password',
-        (WidgetTester tester) async {
+    testWidgets('submitting the form calls PUT /user/password', (
+      WidgetTester tester,
+    ) async {
       mockDriver.mockResponse(statusCode: 200, data: <String, dynamic>{});
 
       tester.view.physicalSize = const Size(1200, 1400);
@@ -390,10 +376,12 @@ void main() {
       await tester.enterText(inputs.at(1), 'new-secret-123');
       await tester.enterText(inputs.at(2), 'new-secret-123');
 
-      final submit = find.byWidgetPredicate((Widget w) =>
-          w is WButton &&
-          w.child is WText &&
-          (w.child as WText).data == trans('profile.update_password'));
+      final submit = find.byWidgetPredicate(
+        (Widget w) =>
+            w is WButton &&
+            w.child is WText &&
+            (w.child as WText).data == trans('profile.update_password'),
+      );
       await tester.ensureVisible(submit);
       await tester.tap(submit);
       await tester.pumpAndSettle();
@@ -409,11 +397,13 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterSessionsView', () {
-    testWidgets('renders inside a SettingsScaffold with back to the hub',
-        (WidgetTester tester) async {
-      mockDriver.mockResponse(statusCode: 200, data: <String, dynamic>{
-        'data': <dynamic>[],
-      });
+    testWidgets('renders inside a SettingsScaffold with back to the hub', (
+      WidgetTester tester,
+    ) async {
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: <String, dynamic>{'data': <dynamic>[]},
+      );
 
       await tester.pumpWidget(wrap(const MagicStarterSessionsView()));
       await tester.pump();
@@ -427,23 +417,27 @@ void main() {
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
-    testWidgets('loads sessions via GET /sessions on init',
-        (WidgetTester tester) async {
-      mockDriver.mockResponse(statusCode: 200, data: <String, dynamic>{
-        'data': <dynamic>[
-          <String, dynamic>{
-            'id': '99',
-            'is_current_device': false,
-            'agent': <String, dynamic>{
-              'is_desktop': true,
-              'platform': 'macOS',
-              'browser': 'Chrome',
+    testWidgets('loads sessions via GET /sessions on init', (
+      WidgetTester tester,
+    ) async {
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: <String, dynamic>{
+          'data': <dynamic>[
+            <String, dynamic>{
+              'id': '99',
+              'is_current_device': false,
+              'agent': <String, dynamic>{
+                'is_desktop': true,
+                'platform': 'macOS',
+                'browser': 'Chrome',
+              },
+              'ip_address': '10.0.0.1',
+              'location': <String, dynamic>{},
             },
-            'ip_address': '10.0.0.1',
-            'location': <String, dynamic>{},
-          },
-        ],
-      });
+          ],
+        },
+      );
 
       await tester.pumpWidget(wrap(const MagicStarterSessionsView()));
       await tester.pump();
@@ -457,30 +451,34 @@ void main() {
     });
 
     testWidgets(
-        'revoke-other-sessions button opens the password-confirm dialog',
-        (WidgetTester tester) async {
-      mockDriver.mockResponse(statusCode: 200, data: <String, dynamic>{
-        'data': <dynamic>[],
-      });
+      'revoke-other-sessions button opens the password-confirm dialog',
+      (WidgetTester tester) async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: <String, dynamic>{'data': <dynamic>[]},
+        );
 
-      tester.view.physicalSize = const Size(1200, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+        tester.view.physicalSize = const Size(1200, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(const MagicStarterSessionsView()));
-      await tester.pump();
-      await tester.pump();
+        await tester.pumpWidget(wrap(const MagicStarterSessionsView()));
+        await tester.pump();
+        await tester.pump();
 
-      final btn = find.byWidgetPredicate((Widget w) =>
-          w is WButton &&
-          w.child is WText &&
-          (w.child as WText).data == trans('profile.logout_other_sessions'));
-      await tester.ensureVisible(btn);
-      await tester.tap(btn);
-      await tester.pumpAndSettle();
+        final btn = find.byWidgetPredicate(
+          (Widget w) =>
+              w is WButton &&
+              w.child is WText &&
+              (w.child as WText).data == trans('profile.logout_other_sessions'),
+        );
+        await tester.ensureVisible(btn);
+        await tester.tap(btn);
+        await tester.pumpAndSettle();
 
-      expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
-    });
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+      },
+    );
   });
 }

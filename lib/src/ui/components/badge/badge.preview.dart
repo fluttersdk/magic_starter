@@ -22,10 +22,7 @@ class BadgePreview extends StatelessWidget {
             className: 'flex flex-row items-center gap-3',
             children: [
               MSBadge(tone.name, tone: tone),
-              WText(
-                tone.name,
-                className: 'text-sm text-fg-muted',
-              ),
+              WText(tone.name, className: 'text-sm text-fg-muted'),
             ],
           ),
       ],

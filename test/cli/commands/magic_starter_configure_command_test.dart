@@ -129,8 +129,9 @@ void main() {
 
       await _runConfigure(command, {'teams': true});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'teams': true"));
     });
 
@@ -139,8 +140,9 @@ void main() {
 
       await _runConfigure(command, {'teams': false});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'teams': false"));
     });
   });
@@ -154,8 +156,9 @@ void main() {
 
       await _runConfigure(command, {'social-login': true});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'social_login': true"));
     });
 
@@ -164,8 +167,9 @@ void main() {
 
       await _runConfigure(command, {'social-login': false});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'social_login': false"));
     });
   });
@@ -188,8 +192,9 @@ void main() {
         'email-verification': true,
       });
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'teams': true"));
       expect(content, contains("'newsletter': true"));
       expect(content, contains("'email_verification': true"));
@@ -215,8 +220,9 @@ void main() {
 
       await _runConfigure(command, {'teams': true});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
 
       // Updated feature.
       expect(content, contains("'teams': true"));
@@ -242,8 +248,9 @@ void main() {
       await _runConfigure(command, {'teams': true});
       await _runConfigure(command, {'teams': true});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       // Exactly one match — not doubled or corrupted.
       expect("'teams': true".allMatches(content).length, equals(1));
     });
@@ -254,8 +261,9 @@ void main() {
       await _runConfigure(command, {'social-login': false});
       await _runConfigure(command, {'social-login': true});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'social_login': true"));
     });
   });
@@ -268,8 +276,9 @@ void main() {
       _setupConfigFile(tempDir, twoFactor: false);
       await _runConfigure(command, {'two-factor': true});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'two_factor': true"));
     });
 
@@ -277,8 +286,9 @@ void main() {
       _setupConfigFile(tempDir, sessions: true);
       await _runConfigure(command, {'sessions': false});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'sessions': false"));
     });
 
@@ -286,8 +296,9 @@ void main() {
       _setupConfigFile(tempDir, phoneOtp: false);
       await _runConfigure(command, {'phone-otp': true});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'phone_otp': true"));
     });
 
@@ -295,8 +306,9 @@ void main() {
       _setupConfigFile(tempDir, notifications: true);
       await _runConfigure(command, {'notifications': false});
 
-      final content = File('${tempDir.path}/lib/config/magic_starter.dart')
-          .readAsStringSync();
+      final content = File(
+        '${tempDir.path}/lib/config/magic_starter.dart',
+      ).readAsStringSync();
       expect(content, contains("'notifications': false"));
     });
   });

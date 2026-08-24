@@ -65,10 +65,7 @@ void main() {
 
     group('profilePhotoUrl', () {
       test('returns null when not in map', () {
-        final user = MagicStarterAuthUser.fromMap({
-          'id': 1,
-          'name': 'Alice',
-        });
+        final user = MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Alice'});
 
         expect(user.profilePhotoUrl, isNull);
       });
@@ -79,10 +76,7 @@ void main() {
           'profile_photo_url': 'https://example.com/photo.jpg',
         });
 
-        expect(
-          user.profilePhotoUrl,
-          equals('https://example.com/photo.jpg'),
-        );
+        expect(user.profilePhotoUrl, equals('https://example.com/photo.jpg'));
       });
     });
 

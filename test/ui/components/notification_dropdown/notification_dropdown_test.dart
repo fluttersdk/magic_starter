@@ -57,9 +57,9 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets('renders bell icon', (tester) async {
-    await tester.pumpWidget(wrap(MSNotificationDropdown(
-      notificationStream: streamController.stream,
-    )));
+    await tester.pumpWidget(
+      wrap(MSNotificationDropdown(notificationStream: streamController.stream)),
+    );
     expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
 
     streamController.add([]);
@@ -70,9 +70,9 @@ void main() {
   });
 
   testWidgets('shows unread badge when unread count > 0', (tester) async {
-    await tester.pumpWidget(wrap(MSNotificationDropdown(
-      notificationStream: streamController.stream,
-    )));
+    await tester.pumpWidget(
+      wrap(MSNotificationDropdown(notificationStream: streamController.stream)),
+    );
 
     streamController.add([
       makeNotification(isRead: false),
@@ -86,9 +86,9 @@ void main() {
   });
 
   testWidgets('hides badge when all notifications are read', (tester) async {
-    await tester.pumpWidget(wrap(MSNotificationDropdown(
-      notificationStream: streamController.stream,
-    )));
+    await tester.pumpWidget(
+      wrap(MSNotificationDropdown(notificationStream: streamController.stream)),
+    );
 
     streamController.add([
       makeNotification(isRead: true),
@@ -103,9 +103,9 @@ void main() {
   });
 
   testWidgets('renders empty state in popover content', (tester) async {
-    await tester.pumpWidget(wrap(MSNotificationDropdown(
-      notificationStream: streamController.stream,
-    )));
+    await tester.pumpWidget(
+      wrap(MSNotificationDropdown(notificationStream: streamController.stream)),
+    );
 
     streamController.add([]);
     await tester.pump();
@@ -119,8 +119,9 @@ void main() {
     expect(find.byIcon(Icons.notifications_off_outlined), findsOneWidget);
   });
 
-  testWidgets('NotificationDropdown preview renders without error',
-      (tester) async {
+  testWidgets('NotificationDropdown preview renders without error', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const NotificationDropdownPreview()));
     await tester.pump();
     expect(find.byType(NotificationDropdownPreview), findsOneWidget);

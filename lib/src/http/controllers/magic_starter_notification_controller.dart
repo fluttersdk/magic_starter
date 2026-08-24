@@ -95,10 +95,8 @@ class MagicStarterNotificationController extends MagicController
   /// Normalize dynamic map payloads to `Map<String, dynamic>` recursively.
   Map<String, dynamic> _normalizeMap(Map<dynamic, dynamic> source) {
     return source.map(
-      (key, value) => MapEntry(
-        key.toString(),
-        value is Map ? _normalizeMap(value) : value,
-      ),
+      (key, value) =>
+          MapEntry(key.toString(), value is Map ? _normalizeMap(value) : value),
     );
   }
 
@@ -123,8 +121,9 @@ class MagicStarterNotificationController extends MagicController
       // 2. Apply optimistic update.
       final newMatrix = Map<String, dynamic>.from(matrixNotifier.value);
       if (newMatrix.containsKey(type)) {
-        final typeData =
-            Map<String, dynamic>.from(newMatrix[type] as Map<String, dynamic>);
+        final typeData = Map<String, dynamic>.from(
+          newMatrix[type] as Map<String, dynamic>,
+        );
         if (typeData.containsKey('channels')) {
           final channelsData = Map<String, dynamic>.from(
             typeData['channels'] as Map<String, dynamic>,
@@ -145,11 +144,7 @@ class MagicStarterNotificationController extends MagicController
       // 3. Send to backend.
       final response = await Http.put(
         '/notification-preferences',
-        data: {
-          'type': type,
-          'channel': channel,
-          'is_enabled': isEnabled,
-        },
+        data: {'type': type, 'channel': channel, 'is_enabled': isEnabled},
       );
 
       // 4. Revert on failure.

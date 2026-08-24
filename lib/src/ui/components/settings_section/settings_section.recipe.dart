@@ -38,7 +38,5 @@ String settingsSectionCaptionRecipe({String? className}) {
 /// A 1-logical-pixel horizontal rule using the subtle border token so it
 /// blends cleanly in both light and dark surfaces without a raw color.
 String settingsSectionDividerRecipe() {
-  return const WindRecipe(
-    base: 'w-full border-t border-color-border-subtle',
-  )();
+  return const WindRecipe(base: 'w-full border-t border-color-border-subtle')();
 }

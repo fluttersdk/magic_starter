@@ -103,9 +103,7 @@ class MSSettingsRow extends StatelessWidget {
 
   /// Resolves the root container className from the recipe.
   String _resolveContainerClassName() {
-    return settingsRowRecipe(
-      variants: {kSettingsRowToneAxis: tone.name},
-    );
+    return settingsRowRecipe(variants: {kSettingsRowToneAxis: tone.name});
   }
 
   @override
@@ -117,43 +115,29 @@ class MSSettingsRow extends StatelessWidget {
         // 1a. Optional leading icon tile.
         if (icon != null)
           WDiv(
-            className: 'grid place-items-center size-10 rounded-lg '
+            className:
+                'grid place-items-center size-10 rounded-lg '
                 'bg-surface-container-high text-fg-muted flex-shrink-0',
-            child: WIcon(
-              icon!,
-              className: 'text-fg-muted text-lg',
-            ),
+            child: WIcon(icon!, className: 'text-fg-muted text-lg'),
           ),
         // 1b. Title + optional subtitle column.
         WDiv(
           className: 'flex flex-col gap-0.5 flex-1 min-w-0',
           children: [
-            WText(
-              title,
-              className: _resolveTitleClassName(),
-            ),
+            WText(title, className: _resolveTitleClassName()),
             if (subtitle != null)
-              WText(
-                subtitle!,
-                className: 'text-sm text-fg-muted',
-              ),
+              WText(subtitle!, className: 'text-sm text-fg-muted'),
           ],
         ),
         // 1c. Optional trailing slot.
         if (trailing != null)
-          WDiv(
-            className: 'flex-shrink-0',
-            child: trailing!,
-          ),
+          WDiv(className: 'flex-shrink-0', child: trailing!),
       ],
     );
 
     // 2. Wrap in WAnchor only when the row is tappable.
     if (onTap != null) {
-      return WAnchor(
-        onTap: onTap,
-        child: rowContent,
-      );
+      return WAnchor(onTap: onTap, child: rowContent);
     }
 
     return rowContent;

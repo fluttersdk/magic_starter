@@ -16,14 +16,15 @@ class MagicStarterForgotPasswordView
       _MagicStarterForgotPasswordViewState();
 }
 
-class _MagicStarterForgotPasswordViewState extends MagicStatefulViewState<
-    MagicStarterAuthController, MagicStarterForgotPasswordView> {
+class _MagicStarterForgotPasswordViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterAuthController,
+          MagicStarterForgotPasswordView
+        > {
   static const _iconCheck = Icons.check_circle_outline;
 
-  late final form = MagicFormData(
-    {'email': ''},
-    controller: controller,
-  );
+  late final form = MagicFormData({'email': ''}, controller: controller);
 
   @override
   void onInit() {

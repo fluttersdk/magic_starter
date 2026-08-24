@@ -6,7 +6,8 @@ import 'package:magic/magic.dart';
 /// caller `className` is APPENDED after the base (parser last-wins resolves
 /// conflicts per family), so it refines the default rather than replacing it.
 const WindRecipe dropdownMenuPanelRecipe = WindRecipe(
-  base: 'min-w-40 bg-surface border border-color-border rounded-lg shadow-lg '
+  base:
+      'min-w-40 bg-surface border border-color-border rounded-lg shadow-lg '
       'py-1 overflow-hidden',
 );
 
@@ -15,7 +16,8 @@ const WindRecipe dropdownMenuPanelRecipe = WindRecipe(
 /// Applied to each enabled item's container. A per-item `className` appends
 /// after the base so callers refine an individual row without losing the base.
 const WindRecipe dropdownMenuItemRecipe = WindRecipe(
-  base: 'flex flex-row items-center gap-2 px-4 py-2 text-sm text-fg '
+  base:
+      'flex flex-row items-center gap-2 px-4 py-2 text-sm text-fg '
       'hover:bg-surface-container',
 );
 

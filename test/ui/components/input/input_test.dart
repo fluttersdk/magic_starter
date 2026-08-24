@@ -31,16 +31,12 @@ void main() {
 
   group('input recipe', () {
     test('default state emits bg-surface-container-high token', () {
-      final cls = inputRecipe(
-        variants: {'state': InputState.normal.name},
-      );
+      final cls = inputRecipe(variants: {'state': InputState.normal.name});
       expect(cls, contains('bg-surface-container-high'));
     });
 
     test('error state emits border-destructive or similar error token', () {
-      final cls = inputRecipe(
-        variants: {'state': InputState.error.name},
-      );
+      final cls = inputRecipe(variants: {'state': InputState.error.name});
       // Error state should apply error styling class
       expect(cls, contains('border'));
     });
@@ -56,18 +52,15 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets('Input renders a WInput or WFormInput widget', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSInput(placeholder: 'Enter text')),
-    );
+    await tester.pumpWidget(wrap(const MSInput(placeholder: 'Enter text')));
     // Input wraps WInput
     expect(find.byType(WInput), findsOneWidget);
   });
 
-  testWidgets('Input applies bg-surface-container-high in normal state',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSInput(placeholder: 'Enter text')),
-    );
+  testWidgets('Input applies bg-surface-container-high in normal state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSInput(placeholder: 'Enter text')));
     final widget = tester.widget<WInput>(find.byType(WInput));
     expect(widget.className, contains('bg-surface-container-high'));
   });
@@ -82,8 +75,9 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Input appends caller className onto the recipe base',
-      (tester) async {
+  testWidgets('Input appends caller className onto the recipe base', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(const MSInput(placeholder: 'x', className: 'mt-10')),
     );
@@ -97,29 +91,30 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets(
-      'Input(fullWidth: true) wraps the WInput in a SizedBox(width: infinity) '
-      'and keeps intent styling', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSInput(fullWidth: true, placeholder: 'Enter text')),
-    );
+    'Input(fullWidth: true) wraps the WInput in a SizedBox(width: infinity) '
+    'and keeps intent styling',
+    (tester) async {
+      await tester.pumpWidget(
+        wrap(const MSInput(fullWidth: true, placeholder: 'Enter text')),
+      );
 
-    final fullWidthWrapper = find.ancestor(
-      of: find.byType(WInput),
-      matching: find.byWidgetPredicate(
-        (w) => w is SizedBox && w.width == double.infinity,
-      ),
-    );
-    expect(fullWidthWrapper, findsOneWidget);
+      final fullWidthWrapper = find.ancestor(
+        of: find.byType(WInput),
+        matching: find.byWidgetPredicate(
+          (w) => w is SizedBox && w.width == double.infinity,
+        ),
+      );
+      expect(fullWidthWrapper, findsOneWidget);
 
-    final widget = tester.widget<WInput>(find.byType(WInput));
-    expect(widget.className, contains('bg-surface-container-high'));
-  });
+      final widget = tester.widget<WInput>(find.byType(WInput));
+      expect(widget.className, contains('bg-surface-container-high'));
+    },
+  );
 
-  testWidgets('Input fullWidth defaults to false (no SizedBox wrapper)',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSInput(placeholder: 'Hi')),
-    );
+  testWidgets('Input fullWidth defaults to false (no SizedBox wrapper)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSInput(placeholder: 'Hi')));
 
     final fullWidthWrapper = find.ancestor(
       of: find.byType(WInput),

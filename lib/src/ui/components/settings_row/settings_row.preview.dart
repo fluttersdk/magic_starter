@@ -44,10 +44,7 @@ class SettingsRowPreview extends StatelessWidget {
             MSSettingsRow(
               title: 'Notifications',
               icon: _kIconNotifications,
-              trailing: WText(
-                'On',
-                className: 'text-sm text-fg-muted',
-              ),
+              trailing: WText('On', className: 'text-sm text-fg-muted'),
               onTap: () {},
             ),
             WDiv(className: 'h-px bg-color-border-subtle mx-5'),

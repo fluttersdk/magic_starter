@@ -14,14 +14,8 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
@@ -39,55 +33,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -95,16 +82,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -112,8 +97,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 class MockGuard implements Guard {
@@ -163,10 +147,7 @@ class MockGuard implements Guard {
   @override
   Future<void> restore() async {
     if (mockToken != null) {
-      _user = MagicStarterAuthUser.fromMap({
-        'id': 1,
-        'name': 'Restored User',
-      });
+      _user = MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Restored User'});
     }
   }
 
@@ -289,18 +270,11 @@ void main() {
         statusCode: 200,
         data: {
           'token': 'otp-auth-token-123',
-          'user': {
-            'id': 1,
-            'name': 'Test User',
-            'email': 'test@example.com',
-          },
+          'user': {'id': 1, 'name': 'Test User', 'email': 'test@example.com'},
         },
       );
 
-      await controller.verifyOtp(
-        phone: '+905301234567',
-        code: '123456',
-      );
+      await controller.verifyOtp(phone: '+905301234567', code: '123456');
 
       expect(mockDriver.lastMethod, 'POST');
       expect(mockDriver.lastUrl, '/auth/otp/verify');
@@ -308,41 +282,37 @@ void main() {
         (mockDriver.lastData as Map<String, dynamic>)['phone'],
         '+905301234567',
       );
-      expect(
-        (mockDriver.lastData as Map<String, dynamic>)['code'],
-        '123456',
-      );
+      expect((mockDriver.lastData as Map<String, dynamic>)['code'], '123456');
       expect(mockGuard.lastLoginData?['token'], 'otp-auth-token-123');
       expect(controller.isError, isFalse);
     });
 
-    test('verifyOtp — invalid code: sets error state, stays on code step',
-        () async {
-      // Arrange — get to code_input step first.
-      mockDriver.mockResponse(statusCode: 200, data: {});
-      await controller.sendOtp(phone: '+905301234567');
+    test(
+      'verifyOtp — invalid code: sets error state, stays on code step',
+      () async {
+        // Arrange — get to code_input step first.
+        mockDriver.mockResponse(statusCode: 200, data: {});
+        await controller.sendOtp(phone: '+905301234567');
 
-      mockDriver.mockResponse(
-        statusCode: 422,
-        data: {
-          'message': 'The provided OTP code is invalid.',
-          'errors': {
-            'code': ['The provided OTP code is invalid.'],
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The provided OTP code is invalid.',
+            'errors': {
+              'code': ['The provided OTP code is invalid.'],
+            },
           },
-        },
-      );
+        );
 
-      await controller.verifyOtp(
-        phone: '+905301234567',
-        code: '000000',
-      );
+        await controller.verifyOtp(phone: '+905301234567', code: '000000');
 
-      expect(controller.step, OtpStep.codeInput);
-      expect(controller.isError, isTrue);
-      expect(controller.isLoading, isFalse);
-      // Auth.login must NOT have been called.
-      expect(mockGuard.check(), isFalse);
-    });
+        expect(controller.step, OtpStep.codeInput);
+        expect(controller.isError, isTrue);
+        expect(controller.isLoading, isFalse);
+        // Auth.login must NOT have been called.
+        expect(mockGuard.check(), isFalse);
+      },
+    );
 
     test('verifyOtp — expired code: sets error state', () async {
       // Arrange — get to code_input step first.
@@ -359,10 +329,7 @@ void main() {
         },
       );
 
-      await controller.verifyOtp(
-        phone: '+905301234567',
-        code: '111111',
-      );
+      await controller.verifyOtp(phone: '+905301234567', code: '111111');
 
       expect(controller.isError, isTrue);
       expect(controller.step, OtpStep.codeInput);
@@ -372,16 +339,18 @@ void main() {
     // resetToPhoneInput
     // -----------------------------------------------------------------------
 
-    test('resetToPhoneInput: returns to phoneInput step and clears error',
-        () async {
-      // Arrange — advance to code step.
-      mockDriver.mockResponse(statusCode: 200, data: {});
-      await controller.sendOtp(phone: '+905301234567');
-      expect(controller.step, OtpStep.codeInput);
+    test(
+      'resetToPhoneInput: returns to phoneInput step and clears error',
+      () async {
+        // Arrange — advance to code step.
+        mockDriver.mockResponse(statusCode: 200, data: {});
+        await controller.sendOtp(phone: '+905301234567');
+        expect(controller.step, OtpStep.codeInput);
 
-      controller.resetToPhoneInput();
+        controller.resetToPhoneInput();
 
-      expect(controller.step, OtpStep.phoneInput);
-    });
+        expect(controller.step, OtpStep.phoneInput);
+      },
+    );
   });
 }

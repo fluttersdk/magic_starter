@@ -32,7 +32,5 @@ const WindRecipe badgeRecipe = WindRecipe(
       'outline': 'border border-color-border text-fg',
     },
   },
-  defaultVariants: {
-    kBadgeToneAxis: 'neutral',
-  },
+  defaultVariants: {kBadgeToneAxis: 'neutral'},
 );

@@ -37,8 +37,11 @@ class MagicStarterNotificationPreferencesView
 }
 
 class _MagicStarterNotificationPreferencesViewState
-    extends MagicStatefulViewState<MagicStarterNotificationController,
-        MagicStarterNotificationPreferencesView> {
+    extends
+        MagicStatefulViewState<
+          MagicStarterNotificationController,
+          MagicStarterNotificationPreferencesView
+        > {
   static const _iconLocked = Icons.lock_outline;
   static const _channelIcons = <String, IconData>{
     'mail': Icons.mail_outline,
@@ -134,10 +137,7 @@ class _MagicStarterNotificationPreferencesViewState
     );
   }
 
-  Widget _buildNotificationType(
-    String typeKey,
-    Map<String, dynamic> typeData,
-  ) {
+  Widget _buildNotificationType(String typeKey, Map<String, dynamic> typeData) {
     final title = typeData['label']?.toString() ?? typeKey;
     final channels = typeData['channels'] as Map<String, dynamic>? ?? {};
     final channelKeys = channels.keys.toList();
@@ -193,13 +193,15 @@ class _MagicStarterNotificationPreferencesViewState
           className: 'flex-1 min-w-0 flex items-center gap-4',
           children: [
             WDiv(
-              className: '''
+              className:
+                  '''
                 w-10 h-10 rounded-full flex items-center justify-center
                 ${isEnabled && !isLocked ? 'bg-primary/10 dark:bg-primary/10' : 'bg-surface-container-high'}
               ''',
               child: WIcon(
                 isLocked ? _iconLocked : icon,
-                className: '''
+                className:
+                    '''
                   text-[18px]
                   ${isEnabled && !isLocked ? 'text-primary' : 'text-fg-muted'}
                 ''',
@@ -242,11 +244,7 @@ class _MagicStarterNotificationPreferencesViewState
           // for an E2E driver to resolve.
           semanticLabel: _channelLabel(channel),
           onChanged: (newValue) {
-            controller.updateTypePreference(
-              type,
-              channel,
-              newValue,
-            );
+            controller.updateTypePreference(type, channel, newValue);
           },
         ),
       ],

@@ -10,21 +10,11 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   int notificationGetCallCount = 0;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
-  MagicResponse _respond(
-    String method,
-    String url, {
-    dynamic data,
-  }) {
+  MagicResponse _respond(String method, String url, {dynamic data}) {
     lastMethod = method;
     lastUrl = url;
 
@@ -48,64 +38,56 @@ class MockNetworkDriver implements NetworkDriver {
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> get(
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -113,8 +95,7 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> upload(
@@ -122,8 +103,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 class MockGuard implements Guard {
@@ -146,10 +126,7 @@ class MockGuard implements Guard {
   dynamic id() => _user?.authIdentifier;
 
   @override
-  Future<void> login(
-    Map<String, dynamic> data,
-    Authenticatable user,
-  ) async {
+  Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
     _user = user;
     _stateNotifier.value++;
   }
@@ -185,59 +162,31 @@ void main() {
     MagicApp.reset();
     Magic.flush();
 
-    Magic.singleton(
-      'network',
-      () => MockNetworkDriver(),
-    );
+    Magic.singleton('network', () => MockNetworkDriver());
 
-    Magic.singleton(
-      'log',
-      () => LogManager(),
-    );
-    Config.set(
-      'logging',
-      {
-        'default': 'console',
-        'channels': {
-          'console': {
-            'driver': 'console',
-            'level': 'debug',
-          },
-        },
+    Magic.singleton('log', () => LogManager());
+    Config.set('logging', {
+      'default': 'console',
+      'channels': {
+        'console': {'driver': 'console', 'level': 'debug'},
       },
-    );
+    });
 
     final mockGuard = MockGuard();
     Magic.singleton('auth', () => AuthManager());
     Auth.manager.forgetGuards();
-    Auth.manager.extend(
-      'mock',
-      (_) => mockGuard,
-    );
+    Auth.manager.extend('mock', (_) => mockGuard);
     Config.set('auth.defaults.guard', 'mock');
-    Config.set(
-      'auth.guards',
-      {
-        'mock': {
-          'driver': 'mock',
-        },
-      },
-    );
+    Config.set('auth.guards', {
+      'mock': {'driver': 'mock'},
+    });
 
-    Magic.singleton(
-      'magic_starter',
-      () => MagicStarterManager(),
-    );
+    Magic.singleton('magic_starter', () => MagicStarterManager());
 
     MagicStarter.useNavigation(mainItems: const []);
 
     mockDriver = Magic.make<NetworkDriver>('network') as MockNetworkDriver;
-    mockDriver.mockResponse(
-      statusCode: 200,
-      data: {
-        'data': [],
-      },
-    );
+    mockDriver.mockResponse(statusCode: 200, data: {'data': []});
   });
 
   tearDown(() {
@@ -248,31 +197,23 @@ void main() {
     } catch (_) {}
   });
 
-  GoRouter createRouter({
-    required Widget child,
-  }) {
+  GoRouter createRouter({required Widget child}) {
     return GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => MagicStarterAppLayout(
-            child: child,
-          ),
+          builder: (context, state) => MagicStarterAppLayout(child: child),
         ),
       ],
     );
   }
 
-  Widget createApp({
-    required Widget child,
-  }) {
+  Widget createApp({required Widget child}) {
     final router = createRouter(child: child);
 
     return WindTheme(
       data: WindThemeData(),
-      child: MaterialApp.router(
-        routerConfig: router,
-      ),
+      child: MaterialApp.router(routerConfig: router),
     );
   }
 
@@ -282,11 +223,7 @@ void main() {
       (tester) async {
         Config.set('magic_starter.features.notifications', true);
 
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
+        await tester.pumpWidget(createApp(child: const SizedBox()));
         await tester.pumpAndSettle();
 
         expect(mockDriver.notificationGetCallCount, greaterThan(0));
@@ -294,17 +231,11 @@ void main() {
         mockDriver.resetTracking();
 
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Text('Disposed'),
-            ),
-          ),
+          const MaterialApp(home: Scaffold(body: Text('Disposed'))),
         );
         await tester.pumpAndSettle();
 
-        await tester.pump(
-          const Duration(seconds: 31),
-        );
+        await tester.pump(const Duration(seconds: 31));
         await tester.pumpAndSettle();
 
         expect(mockDriver.notificationGetCallCount, equals(0));
@@ -316,27 +247,17 @@ void main() {
       (tester) async {
         Config.set('magic_starter.features.notifications', false);
 
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
+        await tester.pumpWidget(createApp(child: const SizedBox()));
         await tester.pumpAndSettle();
 
         expect(mockDriver.notificationGetCallCount, equals(0));
 
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Text('Disposed'),
-            ),
-          ),
+          const MaterialApp(home: Scaffold(body: Text('Disposed'))),
         );
         await tester.pumpAndSettle();
 
-        await tester.pump(
-          const Duration(seconds: 31),
-        );
+        await tester.pump(const Duration(seconds: 31));
         await tester.pumpAndSettle();
 
         expect(mockDriver.notificationGetCallCount, equals(0));
@@ -345,74 +266,64 @@ void main() {
   });
 
   group('layout theme', () {
-    testWidgets(
-      'sidebar renders with custom sidebarWidth from LayoutTheme',
-      (tester) async {
-        // Desktop viewport to ensure sidebar renders.
-        tester.view.physicalSize = const Size(1280, 800);
-        tester.view.devicePixelRatio = 1.0;
+    testWidgets('sidebar renders with custom sidebarWidth from LayoutTheme', (
+      tester,
+    ) async {
+      // Desktop viewport to ensure sidebar renders.
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
 
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-        MagicStarter.useLayoutTheme(
-          const MagicStarterLayoutTheme(sidebarWidth: 300),
-        );
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(sidebarWidth: 300),
+      );
 
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
 
-        // The sidebar is wrapped in SizedBox(width: layoutTheme.sidebarWidth).
-        final sidebarBox =
-            tester.widgetList<SizedBox>(find.byType(SizedBox)).firstWhere(
-                  (box) => box.width == 300,
-                  orElse: () =>
-                      throw TestFailure('No SizedBox with width 300 found'),
-                );
-        expect(sidebarBox.width, equals(300));
-      },
-    );
+      // The sidebar is wrapped in SizedBox(width: layoutTheme.sidebarWidth).
+      final sidebarBox = tester
+          .widgetList<SizedBox>(find.byType(SizedBox))
+          .firstWhere(
+            (box) => box.width == 300,
+            orElse: () => throw TestFailure('No SizedBox with width 300 found'),
+          );
+      expect(sidebarBox.width, equals(300));
+    });
 
-    testWidgets(
-      'sidebar uses custom sidebarClassName from LayoutTheme',
-      (tester) async {
-        // Desktop viewport to ensure sidebar renders.
-        tester.view.physicalSize = const Size(1280, 800);
-        tester.view.devicePixelRatio = 1.0;
+    testWidgets('sidebar uses custom sidebarClassName from LayoutTheme', (
+      tester,
+    ) async {
+      // Desktop viewport to ensure sidebar renders.
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
 
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-        const customClass =
-            'h-full flex flex-col bg-zinc-900 border-r border-zinc-700';
-        MagicStarter.useLayoutTheme(
-          const MagicStarterLayoutTheme(sidebarClassName: customClass),
-        );
+      const customClass =
+          'h-full flex flex-col bg-zinc-900 border-r border-zinc-700';
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(sidebarClassName: customClass),
+      );
 
-        // Layout reads sidebarClassName at build time — no exception means it
-        // consumed the custom class name correctly.
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
-        await tester.pumpAndSettle();
+      // Layout reads sidebarClassName at build time — no exception means it
+      // consumed the custom class name correctly.
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
 
-        // Verify the custom class is stored on the manager after the call.
-        expect(
-          MagicStarter.manager.layoutTheme.sidebarClassName,
-          equals(customClass),
-        );
-      },
-    );
+      // Verify the custom class is stored on the manager after the call.
+      expect(
+        MagicStarter.manager.layoutTheme.sidebarClassName,
+        equals(customClass),
+      );
+    });
 
     testWidgets(
       'useNavigationTheme still affects nav item styling after layout theme change',
@@ -453,11 +364,7 @@ void main() {
           ],
         );
 
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
+        await tester.pumpWidget(createApp(child: const SizedBox()));
         await tester.pumpAndSettle();
 
         // Navigation theme values must survive the layout theme change.
@@ -477,126 +384,100 @@ void main() {
   });
 
   group('MagicStarterAppLayout mobile header brand', () {
-    testWidgets(
-      'mobile header renders brandBuilder when set',
-      (tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
+    testWidgets('mobile header renders brandBuilder when set', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
 
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-        const brandKey = Key('custom-brand-builder');
-        MagicStarter.useNavigationTheme(
-          MagicStarterNavigationTheme(
-            brandBuilder: (_) => const SizedBox(
-              key: brandKey,
-              width: 10,
-              height: 10,
-            ),
+      const brandKey = Key('custom-brand-builder');
+      MagicStarter.useNavigationTheme(
+        MagicStarterNavigationTheme(
+          brandBuilder: (_) =>
+              const SizedBox(key: brandKey, width: 10, height: 10),
+        ),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      // Scope to the header row: the ancestor of the menu icon is the mobile
+      // header. The drawer also uses brandBuilder, so a global finder cannot
+      // prove the header specifically renders it.
+      final headerFinder = find
+          .ancestor(of: find.byIcon(Icons.menu), matching: find.byType(WDiv))
+          .first;
+
+      expect(
+        find.descendant(of: headerFinder, matching: find.byKey(brandKey)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('mobile header falls back to WText when brandBuilder is null', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      // Scope to the header row: app.name can also appear in the drawer, so
+      // a global text finder cannot prove the header fallback specifically.
+      final headerFinder = find
+          .ancestor(of: find.byIcon(Icons.menu), matching: find.byType(WDiv))
+          .first;
+
+      expect(
+        find.descendant(
+          of: headerFinder,
+          matching: find.text(trans('app.name')),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('mobile bottom nav renders a registered bottomItem', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      // Below the lg breakpoint the shell renders the bottom tab bar, which
+      // builds one item per registered bottomItem (the semantic-token icon /
+      // label styling lives there). '/' is active, exercising the active
+      // branch too.
+      MagicStarter.useNavigation(
+        mainItems: const [],
+        bottomItems: const [
+          MagicStarterNavItem(
+            icon: Icons.dashboard_outlined,
+            activeIcon: Icons.dashboard,
+            labelKey: 'Overview',
+            path: '/',
           ),
-        );
+        ],
+      );
 
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
 
-        // Scope to the header row: the ancestor of the menu icon is the mobile
-        // header. The drawer also uses brandBuilder, so a global finder cannot
-        // prove the header specifically renders it.
-        final headerFinder = find
-            .ancestor(
-              of: find.byIcon(Icons.menu),
-              matching: find.byType(WDiv),
-            )
-            .first;
-
-        expect(
-          find.descendant(of: headerFinder, matching: find.byKey(brandKey)),
-          findsOneWidget,
-        );
-      },
-    );
-
-    testWidgets(
-      'mobile header falls back to WText when brandBuilder is null',
-      (tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
-
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        // Scope to the header row: app.name can also appear in the drawer, so
-        // a global text finder cannot prove the header fallback specifically.
-        final headerFinder = find
-            .ancestor(
-              of: find.byIcon(Icons.menu),
-              matching: find.byType(WDiv),
-            )
-            .first;
-
-        expect(
-          find.descendant(
-            of: headerFinder,
-            matching: find.text(trans('app.name')),
-          ),
-          findsOneWidget,
-        );
-      },
-    );
-
-    testWidgets(
-      'mobile bottom nav renders a registered bottomItem',
-      (tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
-
-        // Below the lg breakpoint the shell renders the bottom tab bar, which
-        // builds one item per registered bottomItem (the semantic-token icon /
-        // label styling lives there). '/' is active, exercising the active
-        // branch too.
-        MagicStarter.useNavigation(
-          mainItems: const [],
-          bottomItems: const [
-            MagicStarterNavItem(
-              icon: Icons.dashboard_outlined,
-              activeIcon: Icons.dashboard,
-              labelKey: 'Overview',
-              path: '/',
-            ),
-          ],
-        );
-
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('Overview'), findsOneWidget);
-      },
-    );
+      expect(find.text('Overview'), findsOneWidget);
+    });
   });
 
   group('MagicStarterAppLayout sidebar navigation scroll', () {
@@ -624,11 +505,7 @@ void main() {
           ],
         );
 
-        await tester.pumpWidget(
-          createApp(
-            child: const SizedBox(),
-          ),
-        );
+        await tester.pumpWidget(createApp(child: const SizedBox()));
         await tester.pumpAndSettle();
 
         // No overflow error means the navigation area scrolls correctly.

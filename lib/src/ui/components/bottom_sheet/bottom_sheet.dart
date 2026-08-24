@@ -78,7 +78,8 @@ class MSBottomSheet extends StatelessWidget {
 
     // 1. Constrain sheet height to 85% of screen minus safe area.
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    final maxHeight = (MediaQuery.sizeOf(context).height -
+    final maxHeight =
+        (MediaQuery.sizeOf(context).height -
             viewPadding.top -
             viewPadding.bottom) *
         0.85;
@@ -118,12 +119,7 @@ class MSBottomSheet extends StatelessWidget {
               child: ListView(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
-                children: [
-                  WDiv(
-                    className: theme.bodyClassName,
-                    child: body,
-                  ),
-                ],
+                children: [WDiv(className: theme.bodyClassName, child: body)],
               ),
             ),
             // 6. Sticky footer.

@@ -23,7 +23,10 @@ class SkeletonPreview extends StatelessWidget {
           children: [
             WText('block', className: 'text-xs text-fg-muted'),
             const MSSkeleton(
-                shape: SkeletonShape.block, width: 240, height: 80),
+              shape: SkeletonShape.block,
+              width: 240,
+              height: 80,
+            ),
           ],
         ),
 
@@ -44,7 +47,10 @@ class SkeletonPreview extends StatelessWidget {
           children: [
             WText('circle', className: 'text-xs text-fg-muted'),
             const MSSkeleton(
-                shape: SkeletonShape.circle, width: 48, height: 48),
+              shape: SkeletonShape.circle,
+              width: 48,
+              height: 48,
+            ),
           ],
         ),
       ],

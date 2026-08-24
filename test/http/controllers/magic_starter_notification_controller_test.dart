@@ -14,14 +14,8 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
@@ -39,55 +33,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -95,16 +82,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -112,8 +97,7 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPLOAD', url, data: data);
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -167,10 +151,7 @@ class MockGuard implements Guard {
   @override
   Future<void> restore() async {
     if (mockToken != null) {
-      _user = MagicStarterAuthUser.fromMap({
-        'id': 1,
-        'name': 'Restored User',
-      });
+      _user = MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Restored User'});
     }
   }
 
@@ -195,10 +176,7 @@ void main() {
       Config.set('logging', {
         'default': 'console',
         'channels': {
-          'console': {
-            'driver': 'console',
-            'level': 'debug',
-          },
+          'console': {'driver': 'console', 'level': 'debug'},
         },
       });
 
@@ -208,9 +186,7 @@ void main() {
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-        'mock': {
-          'driver': 'mock',
-        },
+        'mock': {'driver': 'mock'},
       });
 
       Magic.singleton('magic_starter', () => MagicStarterManager());
@@ -230,8 +206,10 @@ void main() {
     });
 
     test('preferences() returns a Widget (view registry resolves)', () {
-      MagicStarter.view
-          .register('notifications.preferences', () => const SizedBox());
+      MagicStarter.view.register(
+        'notifications.preferences',
+        () => const SizedBox(),
+      );
       final widget = controller.preferences();
       expect(widget, isA<Widget>());
     });
@@ -244,10 +222,7 @@ void main() {
             'monitor_down': {
               'label': 'Monitor Down',
               'channels': {
-                'mail': {
-                  'enabled': true,
-                  'locked': false,
-                },
+                'mail': {'enabled': true, 'locked': false},
               },
             },
           },
@@ -258,8 +233,9 @@ void main() {
 
       expect(controller.matrixNotifier.value['monitor_down'], isNotNull);
       expect(
-        controller.matrixNotifier.value['monitor_down']['channels']['mail']
-            ['enabled'],
+        controller
+            .matrixNotifier
+            .value['monitor_down']['channels']['mail']['enabled'],
         isTrue,
       );
     });
@@ -327,42 +303,39 @@ void main() {
       expect(controller.matrixNotifier.value.isEmpty, isTrue);
     });
 
-    test('updateTypePreference success — matrix updated optimistically',
-        () async {
-      controller.matrixNotifier.value = {
-        'monitor_down': {
-          'label': 'Monitor Down',
-          'channels': {
-            'mail': {
-              'enabled': true,
-              'locked': false,
+    test(
+      'updateTypePreference success — matrix updated optimistically',
+      () async {
+        controller.matrixNotifier.value = {
+          'monitor_down': {
+            'label': 'Monitor Down',
+            'channels': {
+              'mail': {'enabled': true, 'locked': false},
             },
           },
-        },
-      };
+        };
 
-      mockDriver.mockResponse(statusCode: 200);
+        mockDriver.mockResponse(statusCode: 200);
 
-      await controller.updateTypePreference('monitor_down', 'mail', false);
+        await controller.updateTypePreference('monitor_down', 'mail', false);
 
-      expect(
-        controller.matrixNotifier.value['monitor_down']['channels']['mail']
-            ['enabled'],
-        isFalse,
-      );
-      expect(mockDriver.lastMethod, equals('PUT'));
-      expect(mockDriver.lastUrl, equals('/notification-preferences'));
-    });
+        expect(
+          controller
+              .matrixNotifier
+              .value['monitor_down']['channels']['mail']['enabled'],
+          isFalse,
+        );
+        expect(mockDriver.lastMethod, equals('PUT'));
+        expect(mockDriver.lastUrl, equals('/notification-preferences'));
+      },
+    );
 
     test('updateTypePreference failure — reverts to original matrix', () async {
       final originalMatrix = {
         'monitor_down': {
           'label': 'Monitor Down',
           'channels': {
-            'mail': {
-              'enabled': true,
-              'locked': false,
-            },
+            'mail': {'enabled': true, 'locked': false},
           },
         },
       };
@@ -373,8 +346,9 @@ void main() {
       await controller.updateTypePreference('monitor_down', 'mail', false);
 
       expect(
-        controller.matrixNotifier.value['monitor_down']['channels']['mail']
-            ['enabled'],
+        controller
+            .matrixNotifier
+            .value['monitor_down']['channels']['mail']['enabled'],
         isTrue,
       );
     });

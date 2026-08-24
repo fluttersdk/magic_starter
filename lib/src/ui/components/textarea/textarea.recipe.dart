@@ -22,18 +22,19 @@ enum TextareaState {
 /// is the dedicated [MSTextarea.fullWidth] prop (a `SizedBox` wrapper), not a
 /// baked-in `w-full` token, so the default renders at content width.
 const WindRecipe textareaRecipe = WindRecipe(
-  base: 'rounded-lg border text-fg text-sm '
+  base:
+      'rounded-lg border text-fg text-sm '
       'focus:ring-2 '
       'disabled:opacity-50 disabled:cursor-not-allowed',
   variants: {
     kTextareaStateAxis: {
-      'normal': 'bg-surface-container-high border-color-border '
+      'normal':
+          'bg-surface-container-high border-color-border '
           'focus:border-color-border focus:ring-bg-primary',
-      'error': 'bg-surface-container-high border-bg-destructive '
+      'error':
+          'bg-surface-container-high border-bg-destructive '
           'focus:ring-bg-destructive',
     },
   },
-  defaultVariants: {
-    kTextareaStateAxis: 'normal',
-  },
+  defaultVariants: {kTextareaStateAxis: 'normal'},
 );

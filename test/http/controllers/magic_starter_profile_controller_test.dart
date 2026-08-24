@@ -20,14 +20,8 @@ class MockNetworkDriver implements NetworkDriver {
   Map<String, dynamic>? lastFiles;
   bool uploadCalled = false;
 
-  void mockResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    nextResponse = MagicResponse(
-      data: data ?? {},
-      statusCode: statusCode,
-    );
+  void mockResponse({required int statusCode, dynamic data}) {
+    nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   List<MagicResponse> responseQueue = [];
@@ -62,55 +56,48 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async =>
-      _respond('GET', url);
+  }) async => _respond('GET', url);
 
   @override
   Future<MagicResponse> post(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('POST', url, data: data);
+  }) async => _respond('POST', url, data: data);
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _respond('PUT', url, data: data);
+  }) async => _respond('PUT', url, data: data);
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DELETE', url);
+  }) async => _respond('DELETE', url);
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _respond('INDEX', resource);
+  }) async => _respond('INDEX', resource);
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('SHOW', '$resource/$id');
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('STORE', resource, data: data);
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
@@ -118,16 +105,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _respond('DESTROY', '$resource/$id');
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
   Future<MagicResponse> upload(
@@ -192,10 +177,7 @@ class MockGuard implements Guard {
   Future<void> restore() async {
     restoreCalled = true;
     if (mockToken != null) {
-      _user = MagicStarterAuthUser.fromMap({
-        'id': 1,
-        'name': 'Restored User',
-      });
+      _user = MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Restored User'});
     }
   }
 
@@ -238,9 +220,7 @@ void main() {
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-        'mock': {
-          'driver': 'mock',
-        },
+        'mock': {'driver': 'mock'},
       });
 
       // 4. Bind MagicStarterManager for MagicStarter facade.
@@ -429,12 +409,13 @@ void main() {
         expect(mockDriver.lastMethod, equals('PUT'));
         expect(mockDriver.lastUrl, equals('/user/password'));
         expect(
-            mockDriver.lastData,
-            equals({
-              'current_password': 'oldpass123',
-              'password': 'newpass456',
-              'password_confirmation': 'newpass456',
-            }));
+          mockDriver.lastData,
+          equals({
+            'current_password': 'oldpass123',
+            'password': 'newpass456',
+            'password_confirmation': 'newpass456',
+          }),
+        );
       });
 
       test('failure (422) — returns false and sets error state', () async {
@@ -501,9 +482,7 @@ void main() {
           },
         );
 
-        final result = await controller.doDeleteAccount(
-          password: 'wrongpass',
-        );
+        final result = await controller.doDeleteAccount(password: 'wrongpass');
 
         expect(result, isFalse);
         expect(controller.isSuccess, isFalse);
@@ -528,27 +507,28 @@ void main() {
       });
 
       test(
-          'success (200) — returns true, calls upload(), and calls Auth.restore()',
-          () async {
-        mockDriver.mockResponse(
-          statusCode: 200,
-          data: {'message': 'Photo updated'},
-        );
+        'success (200) — returns true, calls upload(), and calls Auth.restore()',
+        () async {
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {'message': 'Photo updated'},
+          );
 
-        final result = await controller.doUpdateProfilePhoto(file: testFile);
+          final result = await controller.doUpdateProfilePhoto(file: testFile);
 
-        expect(result, isTrue);
-        expect(controller.isSuccess, isTrue);
-        expect(controller.rxState, isTrue);
-        expect(mockGuard.restoreCalled, isTrue);
+          expect(result, isTrue);
+          expect(controller.isSuccess, isTrue);
+          expect(controller.rxState, isTrue);
+          expect(mockGuard.restoreCalled, isTrue);
 
-        // Verify upload() was called on the driver.
-        expect(mockDriver.uploadCalled, isTrue);
-        expect(mockDriver.lastMethod, equals('UPLOAD'));
-        expect(mockDriver.lastUrl, equals('/user/profile-photo'));
-        expect(mockDriver.lastFiles, isNotNull);
-        expect(mockDriver.lastFiles!['photo'], equals(testFile));
-      });
+          // Verify upload() was called on the driver.
+          expect(mockDriver.uploadCalled, isTrue);
+          expect(mockDriver.lastMethod, equals('UPLOAD'));
+          expect(mockDriver.lastUrl, equals('/user/profile-photo'));
+          expect(mockDriver.lastFiles, isNotNull);
+          expect(mockDriver.lastFiles!['photo'], equals(testFile));
+        },
+      );
 
       test('failure (422) — returns false', () async {
         mockDriver.mockResponse(
@@ -618,7 +598,7 @@ void main() {
                 'qr_url': 'otpauth://totp/app:user?secret=BASE32SECRET',
                 'qr_svg': '<svg>...</svg>',
                 'recovery_codes': ['code1', 'code2'],
-              }
+              },
             },
           );
 
@@ -657,7 +637,9 @@ void main() {
           expect(controller.isSuccess, isTrue);
           expect(mockDriver.lastMethod, equals('POST'));
           expect(
-              mockDriver.lastUrl, equals('/two-factor-authentication/confirm'));
+            mockDriver.lastUrl,
+            equals('/two-factor-authentication/confirm'),
+          );
           expect(mockDriver.lastData, equals({'code': '123456'}));
         });
 
@@ -668,9 +650,9 @@ void main() {
               'message': 'Invalid code',
               'errors': {
                 'code': [
-                  'The provided two factor authentication code was invalid.'
-                ]
-              }
+                  'The provided two factor authentication code was invalid.',
+                ],
+              },
             },
           );
 
@@ -690,8 +672,9 @@ void main() {
             ),
           ]);
 
-          final result =
-              await controller.doDisableTwoFactor(password: 'mysecretpass');
+          final result = await controller.doDisableTwoFactor(
+            password: 'mysecretpass',
+          );
 
           expect(result, isTrue);
           expect(controller.isSuccess, isTrue);
@@ -699,10 +682,7 @@ void main() {
           expect(mockDriver.lastUrl, equals('/two-factor-authentication'));
           expect(
             mockDriver.lastData,
-            equals({
-              '_method': 'DELETE',
-              'password': 'mysecretpass',
-            }),
+            equals({'_method': 'DELETE', 'password': 'mysecretpass'}),
           );
         });
 
@@ -713,26 +693,26 @@ void main() {
               data: {
                 'message': 'Invalid password',
                 'errors': {
-                  'password': ['The password is incorrect.']
-                }
+                  'password': ['The password is incorrect.'],
+                },
               },
             ),
           ]);
 
-          final result =
-              await controller.doDisableTwoFactor(password: 'wrongpass');
+          final result = await controller.doDisableTwoFactor(
+            password: 'wrongpass',
+          );
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);
         });
 
         test('failure (500 on disable) — returns false', () async {
-          mockDriver.mockQueue([
-            MagicResponse(statusCode: 500, data: {}),
-          ]);
+          mockDriver.mockQueue([MagicResponse(statusCode: 500, data: {})]);
 
-          final result =
-              await controller.doDisableTwoFactor(password: 'mysecretpass');
+          final result = await controller.doDisableTwoFactor(
+            password: 'mysecretpass',
+          );
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);
@@ -745,37 +725,31 @@ void main() {
             MagicResponse(
               statusCode: 200,
               data: {
-                'data': ['code1', 'code2', 'code3']
+                'data': ['code1', 'code2', 'code3'],
               },
             ),
           ]);
 
-          final result =
-              await controller.getRecoveryCodes(password: 'mysecretpass');
+          final result = await controller.getRecoveryCodes(
+            password: 'mysecretpass',
+          );
 
           expect(result, isNotNull);
           expect(result!.length, equals(3));
           expect(result.first, equals('code1'));
           expect(mockDriver.lastMethod, equals('POST'));
           expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes/show'));
-          expect(
-            mockDriver.lastData,
-            equals({
-              'password': 'mysecretpass',
-            }),
-          );
+          expect(mockDriver.lastData, equals({'password': 'mysecretpass'}));
         });
 
         test('failure (500) — returns null', () async {
           mockDriver.mockQueue([
-            MagicResponse(
-              statusCode: 500,
-              data: {'message': 'Server error'},
-            ),
+            MagicResponse(statusCode: 500, data: {'message': 'Server error'}),
           ]);
 
-          final result =
-              await controller.getRecoveryCodes(password: 'mysecretpass');
+          final result = await controller.getRecoveryCodes(
+            password: 'mysecretpass',
+          );
 
           expect(result, isNull);
         });
@@ -786,13 +760,14 @@ void main() {
             MagicResponse(
               statusCode: 200,
               data: {
-                'data': ['new1', 'new2', 'new3']
+                'data': ['new1', 'new2', 'new3'],
               },
             ),
           ]);
 
           final result = await controller.doRegenerateRecoveryCodes(
-              password: 'mysecretpass');
+            password: 'mysecretpass',
+          );
 
           expect(result, isNotNull);
           expect(result!.length, equals(3));
@@ -800,24 +775,17 @@ void main() {
           expect(controller.isSuccess, isTrue);
           expect(mockDriver.lastMethod, equals('POST'));
           expect(mockDriver.lastUrl, equals('/two-factor-recovery-codes'));
-          expect(
-            mockDriver.lastData,
-            equals({
-              'password': 'mysecretpass',
-            }),
-          );
+          expect(mockDriver.lastData, equals({'password': 'mysecretpass'}));
         });
 
         test('failure (500) — returns null', () async {
           mockDriver.mockQueue([
-            MagicResponse(
-              statusCode: 500,
-              data: {'message': 'Server error'},
-            ),
+            MagicResponse(statusCode: 500, data: {'message': 'Server error'}),
           ]);
 
           final result = await controller.doRegenerateRecoveryCodes(
-              password: 'mysecretpass');
+            password: 'mysecretpass',
+          );
 
           expect(result, isNull);
           expect(controller.isSuccess, isFalse);
@@ -834,41 +802,40 @@ void main() {
       });
 
       group('getSessions', () {
-        test('success (200) — returns list of sessions when feature enabled',
-            () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {
-              'data': [
-                {
-                  'id': 'tok-abc',
-                  'ip_address': '192.168.1.1',
-                  'agent': {
-                    'is_desktop': true,
-                    'platform': 'macOS',
-                    'browser': 'Chrome',
+        test(
+          'success (200) — returns list of sessions when feature enabled',
+          () async {
+            mockDriver.mockResponse(
+              statusCode: 200,
+              data: {
+                'data': [
+                  {
+                    'id': 'tok-abc',
+                    'ip_address': '192.168.1.1',
+                    'agent': {
+                      'is_desktop': true,
+                      'platform': 'macOS',
+                      'browser': 'Chrome',
+                    },
+                    'location': {'city': 'Istanbul', 'country': 'TR'},
+                    'is_current_device': true,
                   },
-                  'location': {
-                    'city': 'Istanbul',
-                    'country': 'TR',
-                  },
-                  'is_current_device': true,
-                }
-              ]
-            },
-          );
+                ],
+              },
+            );
 
-          final result = await controller.getSessions();
+            final result = await controller.getSessions();
 
-          expect(result, isNotNull);
-          expect(result!.length, equals(1));
-          expect(result.first['id'], equals('tok-abc'));
-          expect(result.first['agent'], isNotNull);
-          expect(result.first['location'], isNotNull);
-          expect(controller.isSuccess, isTrue);
-          expect(mockDriver.lastMethod, equals('GET'));
-          expect(mockDriver.lastUrl, equals('/sessions'));
-        });
+            expect(result, isNotNull);
+            expect(result!.length, equals(1));
+            expect(result.first['id'], equals('tok-abc'));
+            expect(result.first['agent'], isNotNull);
+            expect(result.first['location'], isNotNull);
+            expect(controller.isSuccess, isTrue);
+            expect(mockDriver.lastMethod, equals('GET'));
+            expect(mockDriver.lastUrl, equals('/sessions'));
+          },
+        );
 
         test('returns null when feature disabled', () async {
           Config.set('magic_starter.features.sessions', false);
@@ -893,22 +860,23 @@ void main() {
 
       group('doRevokeSession', () {
         test(
-            'success (200) — returns true and sends password to /sessions/{tokenId}',
-            () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {'message': 'Session revoked successfully.'},
-          );
+          'success (200) — returns true and sends password to /sessions/{tokenId}',
+          () async {
+            mockDriver.mockResponse(
+              statusCode: 200,
+              data: {'message': 'Session revoked successfully.'},
+            );
 
-          final result = await controller.doRevokeSession(
-            tokenId: 'tok-abc',
-            password: 'mysecretpass',
-          );
+            final result = await controller.doRevokeSession(
+              tokenId: 'tok-abc',
+              password: 'mysecretpass',
+            );
 
-          expect(result, isTrue);
-          expect(controller.isSuccess, isTrue);
-          expect(mockDriver.lastMethod, equals('POST'));
-        });
+            expect(result, isTrue);
+            expect(controller.isSuccess, isTrue);
+            expect(mockDriver.lastMethod, equals('POST'));
+          },
+        );
 
         test('failure (422) — returns false for wrong password', () async {
           mockDriver.mockResponse(
@@ -933,22 +901,24 @@ void main() {
 
       group('doRevokeOtherSessions', () {
         test(
-            'success (200) — returns true and sends password to /sessions/other',
-            () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {'message': 'Other sessions revoked successfully.'},
-          );
+          'success (200) — returns true and sends password to /sessions/other',
+          () async {
+            mockDriver.mockResponse(
+              statusCode: 200,
+              data: {'message': 'Other sessions revoked successfully.'},
+            );
 
-          final result =
-              await controller.doRevokeOtherSessions(password: 'mysecretpass');
+            final result = await controller.doRevokeOtherSessions(
+              password: 'mysecretpass',
+            );
 
-          expect(result, isTrue);
-          expect(controller.isSuccess, isTrue);
-          // expect(mockDriver.lastMethod, equals('DELETE'));
-          // expect(mockDriver.lastUrl, equals('/sessions/other'));
-          // expect(mockDriver.lastData, equals({'password': 'mysecretpass'}));
-        });
+            expect(result, isTrue);
+            expect(controller.isSuccess, isTrue);
+            // expect(mockDriver.lastMethod, equals('DELETE'));
+            // expect(mockDriver.lastUrl, equals('/sessions/other'));
+            // expect(mockDriver.lastData, equals({'password': 'mysecretpass'}));
+          },
+        );
 
         test('failure (422) — returns false', () async {
           mockDriver.mockResponse(
@@ -956,13 +926,14 @@ void main() {
             data: {
               'message': 'Invalid password',
               'errors': {
-                'password': ['The password is incorrect.']
-              }
+                'password': ['The password is incorrect.'],
+              },
             },
           );
 
-          final result =
-              await controller.doRevokeOtherSessions(password: 'wrongpass');
+          final result = await controller.doRevokeOtherSessions(
+            password: 'wrongpass',
+          );
 
           expect(result, isFalse);
           expect(controller.isSuccess, isFalse);
@@ -979,17 +950,21 @@ void main() {
       });
 
       group('sendEmailVerification', () {
-        test('success (202) — calls correct endpoint and sets success',
-            () async {
-          mockDriver.mockResponse(statusCode: 202, data: {});
+        test(
+          'success (202) — calls correct endpoint and sets success',
+          () async {
+            mockDriver.mockResponse(statusCode: 202, data: {});
 
-          await controller.sendEmailVerification();
+            await controller.sendEmailVerification();
 
-          expect(mockDriver.lastMethod, equals('POST'));
-          expect(
-              mockDriver.lastUrl, equals('/email/verification-notification'));
-          expect(controller.isSuccess, isTrue);
-        });
+            expect(mockDriver.lastMethod, equals('POST'));
+            expect(
+              mockDriver.lastUrl,
+              equals('/email/verification-notification'),
+            );
+            expect(controller.isSuccess, isTrue);
+          },
+        );
 
         test('error (500) — sets error state', () async {
           mockDriver.mockResponse(
@@ -1023,7 +998,9 @@ void main() {
 
           // Only one HTTP call should have been made.
           expect(
-              mockDriver.lastUrl, equals('/email/verification-notification'));
+            mockDriver.lastUrl,
+            equals('/email/verification-notification'),
+          );
         });
       });
 
@@ -1188,25 +1165,27 @@ void main() {
         expect(result, isTrue);
       });
 
-      test('direct calls still trigger notifications (backward compat)',
-          () async {
-        var notificationCount = 0;
-        controller.addListener(() => notificationCount++);
+      test(
+        'direct calls still trigger notifications (backward compat)',
+        () async {
+          var notificationCount = 0;
+          controller.addListener(() => notificationCount++);
 
-        mockDriver.mockResponse(
-          statusCode: 200,
-          data: {'message': 'Profile updated'},
-        );
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {'message': 'Profile updated'},
+          );
 
-        // Direct call WITHOUT withoutNotifying — should notify as before.
-        await controller.doUpdateProfile(
-          name: 'Alice',
-          email: 'alice@example.com',
-        );
+          // Direct call WITHOUT withoutNotifying — should notify as before.
+          await controller.doUpdateProfile(
+            name: 'Alice',
+            email: 'alice@example.com',
+          );
 
-        // At least 1 notification (setLoading + setSuccess = 2 minimum).
-        expect(notificationCount, greaterThanOrEqualTo(1));
-      });
+          // At least 1 notification (setLoading + setSuccess = 2 minimum).
+          expect(notificationCount, greaterThanOrEqualTo(1));
+        },
+      );
     });
   });
 }

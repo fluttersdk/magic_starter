@@ -23,7 +23,7 @@ String pageContainerRecipe({required String hostClassName, String? className}) {
     if (className != null) className,
   ].where((String segment) => segment.isNotEmpty);
 
-  return const WindRecipe(
-    base: 'w-full mx-auto',
-  )(className: geometry.join(' '));
+  return const WindRecipe(base: 'w-full mx-auto')(
+    className: geometry.join(' '),
+  );
 }

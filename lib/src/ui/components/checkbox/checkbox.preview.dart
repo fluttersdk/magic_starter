@@ -33,10 +33,7 @@ class CheckboxPreview extends StatelessWidget {
         WDiv(
           className: 'flex flex-col gap-3',
           children: [
-            WText(
-              'Disabled',
-              className: 'text-sm font-semibold text-fg-muted',
-            ),
+            WText('Disabled', className: 'text-sm font-semibold text-fg-muted'),
             WDiv(
               className: 'flex flex-row gap-4 items-center',
               children: [

@@ -78,16 +78,10 @@ class MagicStarterProfileController extends MagicController
           'password_confirmation': passwordConfirmation,
       };
 
-      final response = await Http.put(
-        '/user/profile',
-        data: data,
-      );
+      final response = await Http.put('/user/profile', data: data);
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('profile.update_failed'),
-        );
+        handleApiError(response, fallback: trans('profile.update_failed'));
         return false;
       }
 
@@ -98,7 +92,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doUpdateProfile] $e\n$stackTrace');
+        '[MagicStarterProfileController.doUpdateProfile] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -169,7 +164,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doUpdatePassword] $e\n$stackTrace');
+        '[MagicStarterProfileController.doUpdatePassword] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -190,10 +186,7 @@ class MagicStarterProfileController extends MagicController
         data: {'_method': 'DELETE', 'password': password},
       );
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('profile.delete_failed'),
-        );
+        handleApiError(response, fallback: trans('profile.delete_failed'));
         return false;
       }
 
@@ -203,7 +196,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doDeleteAccount] $e\n$stackTrace');
+        '[MagicStarterProfileController.doDeleteAccount] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -239,7 +233,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doUpdateProfilePhoto] $e\n$stackTrace');
+        '[MagicStarterProfileController.doUpdateProfilePhoto] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -255,9 +250,7 @@ class MagicStarterProfileController extends MagicController
     clearErrors();
 
     try {
-      final response = await Http.delete(
-        '/user/profile-photo',
-      );
+      final response = await Http.delete('/user/profile-photo');
 
       if (!response.successful) {
         handleApiError(
@@ -273,7 +266,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doDeleteProfilePhoto] $e\n$stackTrace');
+        '[MagicStarterProfileController.doDeleteProfilePhoto] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -287,8 +281,9 @@ class MagicStarterProfileController extends MagicController
   ///
   /// Returns a map containing [secret], [qr_url], [qr_svg], and [recovery_codes]
   /// on success, or null on failure.
-  Future<Map<String, dynamic>?> doEnableTwoFactor(
-      {required String password}) async {
+  Future<Map<String, dynamic>?> doEnableTwoFactor({
+    required String password,
+  }) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
     setLoading();
@@ -297,9 +292,7 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-authentication',
-        data: {
-          'password': password,
-        },
+        data: {'password': password},
       );
 
       if (!response.successful) {
@@ -318,7 +311,8 @@ class MagicStarterProfileController extends MagicController
       return data;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doEnableTwoFactor] $e\n$stackTrace');
+        '[MagicStarterProfileController.doEnableTwoFactor] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -351,7 +345,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doConfirmTwoFactor] $e\n$stackTrace');
+        '[MagicStarterProfileController.doConfirmTwoFactor] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -372,10 +367,7 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-authentication',
-        data: {
-          '_method': 'DELETE',
-          'password': password,
-        },
+        data: {'_method': 'DELETE', 'password': password},
       );
 
       if (!response.successful) {
@@ -390,7 +382,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doDisableTwoFactor] $e\n$stackTrace');
+        '[MagicStarterProfileController.doDisableTwoFactor] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return false;
     } finally {
@@ -411,9 +404,7 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-recovery-codes/show',
-        data: {
-          'password': password,
-        },
+        data: {'password': password},
       );
 
       if (!response.successful) {
@@ -429,7 +420,8 @@ class MagicStarterProfileController extends MagicController
       return data?.map((e) => e.toString()).toList();
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.getRecoveryCodes] $e\n$stackTrace');
+        '[MagicStarterProfileController.getRecoveryCodes] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -441,8 +433,9 @@ class MagicStarterProfileController extends MagicController
   ///
   /// Requires the current account [password] for sudo-mode confirmation.
   /// The password is sent directly to the endpoint (no separate confirm call).
-  Future<List<String>?> doRegenerateRecoveryCodes(
-      {required String password}) async {
+  Future<List<String>?> doRegenerateRecoveryCodes({
+    required String password,
+  }) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
     setLoading();
@@ -451,16 +444,15 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-recovery-codes',
-        data: {
-          'password': password,
-        },
+        data: {'password': password},
       );
 
       if (!response.successful) {
         handleApiError(
           response,
-          fallback:
-              trans('profile.two_factor_recovery_codes_regenerate_failed'),
+          fallback: trans(
+            'profile.two_factor_recovery_codes_regenerate_failed',
+          ),
         );
         return null;
       }
@@ -470,7 +462,8 @@ class MagicStarterProfileController extends MagicController
       return data?.map((e) => e.toString()).toList();
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doRegenerateRecoveryCodes] $e\n$stackTrace');
+        '[MagicStarterProfileController.doRegenerateRecoveryCodes] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
       return null;
     } finally {
@@ -540,7 +533,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doRevokeSession] $e\n$stackTrace');
+        '[MagicStarterProfileController.doRevokeSession] $e\n$stackTrace',
+      );
       setError(trans('profile.session_revoke_error'));
       return false;
     } finally {
@@ -574,7 +568,8 @@ class MagicStarterProfileController extends MagicController
       return true;
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.doRevokeOtherSessions] $e\n$stackTrace');
+        '[MagicStarterProfileController.doRevokeOtherSessions] $e\n$stackTrace',
+      );
       setError(trans('profile.other_sessions_revoke_error'));
       return false;
     } finally {
@@ -610,7 +605,8 @@ class MagicStarterProfileController extends MagicController
       Magic.toast(trans('magic_starter.email_verification.sent'));
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterProfileController.sendEmailVerification] $e\n$stackTrace');
+        '[MagicStarterProfileController.sendEmailVerification] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

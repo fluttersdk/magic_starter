@@ -29,11 +29,10 @@ void main() {
     );
   }
 
-  testWidgets('Card renders without throwing when magic_starter is unbound',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSCard(child: Text('body'))),
-    );
+  testWidgets('Card renders without throwing when magic_starter is unbound', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSCard(child: Text('body'))));
 
     expect(tester.takeException(), isNull);
     expect(find.text('body'), findsOneWidget);

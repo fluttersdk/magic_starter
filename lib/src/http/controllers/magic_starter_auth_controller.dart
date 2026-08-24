@@ -82,22 +82,12 @@ class MagicStarterAuthController extends MagicController
         'remember_me': rememberMe,
       };
 
-      _applyIdentityToPayload(
-        payload,
-        email: email,
-        phone: phone,
-      );
+      _applyIdentityToPayload(payload, email: email, phone: phone);
 
-      final response = await Http.post(
-        '/auth/login',
-        data: payload,
-      );
+      final response = await Http.post('/auth/login', data: payload);
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('auth.login_failed'),
-        );
+        handleApiError(response, fallback: trans('auth.login_failed'));
         return;
       }
 
@@ -106,7 +96,8 @@ class MagicStarterAuthController extends MagicController
       final nestedData = responseData?['data'] as Map<String, dynamic>?;
       if (responseData?['two_factor'] == true ||
           nestedData?['two_factor'] == true) {
-        final twoFactorToken = responseData?['two_factor_token'] as String? ??
+        final twoFactorToken =
+            responseData?['two_factor_token'] as String? ??
             nestedData?['two_factor_token'] as String?;
         navigateTo(
           MagicStarterConfig.twoFactorChallengeRoute(),
@@ -130,11 +121,13 @@ class MagicStarterAuthController extends MagicController
       navigateTo(MagicStarterConfig.homeRoute());
     } on TimeoutException catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterAuthController.doLogin] Timeout: $e\n$stackTrace');
+        '[MagicStarterAuthController.doLogin] Timeout: $e\n$stackTrace',
+      );
       setError(trans('errors.network_timeout'));
     } on SocketException catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterAuthController.doLogin] Network error: $e\n$stackTrace');
+        '[MagicStarterAuthController.doLogin] Network error: $e\n$stackTrace',
+      );
       setError(trans('errors.network_error'));
     } catch (e, stackTrace) {
       Log.error('[MagicStarterAuthController.doLogin] $e\n$stackTrace');
@@ -171,27 +164,17 @@ class MagicStarterAuthController extends MagicController
         'password_confirmation': passwordConfirmation,
       };
 
-      _applyIdentityToPayload(
-        payload,
-        email: email,
-        phone: phone,
-      );
+      _applyIdentityToPayload(payload, email: email, phone: phone);
 
       // 2. Include newsletter subscription flag when feature is active.
       if (MagicStarterConfig.hasNewsletterFeatures() && subscribeNewsletter) {
         payload['subscribe_newsletter'] = true;
       }
 
-      final response = await Http.post(
-        '/auth/register',
-        data: payload,
-      );
+      final response = await Http.post('/auth/register', data: payload);
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('auth.register_failed'),
-        );
+        handleApiError(response, fallback: trans('auth.register_failed'));
         return;
       }
 
@@ -232,17 +215,15 @@ class MagicStarterAuthController extends MagicController
       );
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('auth.reset_link_failed'),
-        );
+        handleApiError(response, fallback: trans('auth.reset_link_failed'));
         return;
       }
 
       setSuccess(true);
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterAuthController.doForgotPassword] $e\n$stackTrace');
+        '[MagicStarterAuthController.doForgotPassword] $e\n$stackTrace',
+      );
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;
@@ -273,10 +254,7 @@ class MagicStarterAuthController extends MagicController
       );
 
       if (!response.successful) {
-        handleApiError(
-          response,
-          fallback: trans('auth.password_reset_failed'),
-        );
+        handleApiError(response, fallback: trans('auth.password_reset_failed'));
         return;
       }
 
@@ -313,9 +291,7 @@ class MagicStarterAuthController extends MagicController
     clearErrors();
 
     try {
-      final payload = <String, dynamic>{
-        'two_factor_token': twoFactorToken,
-      };
+      final payload = <String, dynamic>{'two_factor_token': twoFactorToken};
       if (code != null) {
         payload['code'] = code;
       } else {
@@ -348,7 +324,8 @@ class MagicStarterAuthController extends MagicController
       navigateTo(MagicStarterConfig.homeRoute());
     } catch (e, stackTrace) {
       Log.error(
-          '[MagicStarterAuthController.doTwoFactorChallenge] $e\n$stackTrace');
+        '[MagicStarterAuthController.doTwoFactorChallenge] $e\n$stackTrace',
+      );
       setError(trans('auth.challenge_failed'));
     } finally {
       _isSubmitting = false;

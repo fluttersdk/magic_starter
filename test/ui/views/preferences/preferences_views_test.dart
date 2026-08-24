@@ -36,58 +36,75 @@ class MockNetworkDriver implements NetworkDriver {
   void addInterceptor(MagicNetworkInterceptor interceptor) {}
 
   @override
-  Future<MagicResponse> get(String url,
-          {Map<String, dynamic>? query, Map<String, String>? headers}) async =>
-      _respond('GET', url);
+  Future<MagicResponse> get(
+    String url, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async => _respond('GET', url);
 
   @override
-  Future<MagicResponse> post(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('POST', url, data: data);
+  Future<MagicResponse> post(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('POST', url, data: data);
 
   @override
-  Future<MagicResponse> put(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('PUT', url, data: data);
+  Future<MagicResponse> put(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('PUT', url, data: data);
 
   @override
-  Future<MagicResponse> delete(String url,
-          {Map<String, String>? headers}) async =>
-      _respond('DELETE', url);
+  Future<MagicResponse> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async => _respond('DELETE', url);
 
   @override
-  Future<MagicResponse> index(String resource,
-          {Map<String, dynamic>? filters,
-          Map<String, String>? headers}) async =>
-      _respond('INDEX', resource);
+  Future<MagicResponse> index(
+    String resource, {
+    Map<String, dynamic>? filters,
+    Map<String, String>? headers,
+  }) async => _respond('INDEX', resource);
 
   @override
-  Future<MagicResponse> show(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('SHOW', '$resource/$id');
+  Future<MagicResponse> show(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
-  Future<MagicResponse> store(String resource, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('STORE', resource, data: data);
+  Future<MagicResponse> store(
+    String resource,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
-          String resource, String id, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+    String resource,
+    String id,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
-  Future<MagicResponse> destroy(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('DESTROY', '$resource/$id');
+  Future<MagicResponse> destroy(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
-  Future<MagicResponse> upload(String url,
-          {required Map<String, dynamic> data,
-          required Map<String, dynamic> files,
-          Map<String, String>? headers}) async =>
-      _respond('UPLOAD', url, data: data);
+  Future<MagicResponse> upload(
+    String url, {
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> files,
+    Map<String, String>? headers,
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -166,9 +183,7 @@ void main() {
       data: themeData ?? WindThemeData(),
       builder: (context, controller) {
         onController?.call(controller);
-        return MaterialApp(
-          home: Scaffold(body: widget),
-        );
+        return MaterialApp(home: Scaffold(body: widget));
       },
     );
   }
@@ -192,9 +207,7 @@ void main() {
     Auth.manager.extend('mock', (_) => mockGuard);
     Config.set('auth.defaults.guard', 'mock');
     Config.set('auth.guards', {
-      'mock': {
-        'driver': 'mock',
-      },
+      'mock': {'driver': 'mock'},
     });
 
     mockGuard.setUser(
@@ -229,14 +242,16 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterAppearanceView', () {
-    testWidgets('renders inside a SettingsScaffold with a back to the hub',
-        (tester) async {
+    testWidgets('renders inside a SettingsScaffold with a back to the hub', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterAppearanceView()));
       await tester.pumpAndSettle();
 
       expect(find.byType(MSPageScaffold), findsOneWidget);
-      final scaffold =
-          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
+      );
       expect(scaffold.backLabel, isNotNull);
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
@@ -250,8 +265,9 @@ void main() {
       expect(rows.length, greaterThanOrEqualTo(3));
     });
 
-    testWidgets('selecting the Dark option switches the theme to dark',
-        (tester) async {
+    testWidgets('selecting the Dark option switches the theme to dark', (
+      tester,
+    ) async {
       WindThemeController? controller;
       await tester.pumpWidget(
         wrap(
@@ -278,8 +294,9 @@ void main() {
       expect(controller!.data.syncWithSystem, isFalse);
     });
 
-    testWidgets('selecting the Light option switches the theme to light',
-        (tester) async {
+    testWidgets('selecting the Light option switches the theme to light', (
+      tester,
+    ) async {
       WindThemeController? controller;
       await tester.pumpWidget(
         wrap(
@@ -311,8 +328,9 @@ void main() {
       expect(controller!.data.syncWithSystem, isFalse);
     });
 
-    testWidgets('selecting the System option re-enables system sync',
-        (tester) async {
+    testWidgets('selecting the System option re-enables system sync', (
+      tester,
+    ) async {
       WindThemeController? controller;
       await tester.pumpWidget(
         wrap(
@@ -346,14 +364,16 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterLanguageView', () {
-    testWidgets('renders inside a SettingsScaffold with a back to the hub',
-        (tester) async {
+    testWidgets('renders inside a SettingsScaffold with a back to the hub', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterLanguageView()));
       await tester.pumpAndSettle();
 
       expect(find.byType(MSPageScaffold), findsOneWidget);
-      final scaffold =
-          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
+      );
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -364,8 +384,9 @@ void main() {
       expect(find.byType(WFormSelect<String>), findsOneWidget);
     });
 
-    testWidgets('saving the language submits the locale to /user/profile',
-        (tester) async {
+    testWidgets('saving the language submits the locale to /user/profile', (
+      tester,
+    ) async {
       mockDriver.mockResponse(statusCode: 200, data: {'data': {}});
 
       await tester.pumpWidget(wrap(const MagicStarterLanguageView()));
@@ -388,14 +409,16 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterTimezoneView', () {
-    testWidgets('renders inside a SettingsScaffold with a back to the hub',
-        (tester) async {
+    testWidgets('renders inside a SettingsScaffold with a back to the hub', (
+      tester,
+    ) async {
       await tester.pumpWidget(wrap(const MagicStarterTimezoneView()));
       await tester.pumpAndSettle();
 
       expect(find.byType(MSPageScaffold), findsOneWidget);
-      final scaffold =
-          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
+      );
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -429,8 +452,9 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('MagicStarterNewsletterView', () {
-    testWidgets('renders inside a SettingsScaffold with a back to the hub',
-        (tester) async {
+    testWidgets('renders inside a SettingsScaffold with a back to the hub', (
+      tester,
+    ) async {
       mockDriver.mockResponse(
         statusCode: 200,
         data: {
@@ -442,8 +466,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MSPageScaffold), findsOneWidget);
-      final scaffold =
-          tester.widget<MSPageScaffold>(find.byType(MSPageScaffold));
+      final scaffold = tester.widget<MSPageScaffold>(
+        find.byType(MSPageScaffold),
+      );
       expect(scaffold.backFallback, MagicStarterConfig.settingsHubRoute());
     });
 
@@ -462,8 +487,9 @@ void main() {
       expect(find.byType(MSSwitch), findsOneWidget);
     });
 
-    testWidgets('toggling the switch updates the subscription via PUT',
-        (tester) async {
+    testWidgets('toggling the switch updates the subscription via PUT', (
+      tester,
+    ) async {
       mockDriver.mockResponse(
         statusCode: 200,
         data: {

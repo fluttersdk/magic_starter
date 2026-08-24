@@ -8,24 +8,13 @@ class MockNetworkDriver implements NetworkDriver {
   final List<MagicResponse> _responses = [];
   final List<String> requestedUrls = [];
 
-  void queueResponse({
-    required int statusCode,
-    dynamic data,
-  }) {
-    _responses.add(
-      MagicResponse(
-        data: data ?? {},
-        statusCode: statusCode,
-      ),
-    );
+  void queueResponse({required int statusCode, dynamic data}) {
+    _responses.add(MagicResponse(data: data ?? {}, statusCode: statusCode));
   }
 
   MagicResponse _nextResponse() {
     if (_responses.isEmpty) {
-      return MagicResponse(
-        data: {},
-        statusCode: 500,
-      );
+      return MagicResponse(data: {}, statusCode: 500);
     }
 
     return _responses.removeAt(0);
@@ -50,47 +39,41 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> put(
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> delete(
     String url, {
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> index(
     String resource, {
     Map<String, dynamic>? filters,
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> show(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> store(
     String resource,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> update(
@@ -98,16 +81,14 @@ class MockNetworkDriver implements NetworkDriver {
     String id,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> destroy(
     String resource,
     String id, {
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 
   @override
   Future<MagicResponse> upload(
@@ -115,17 +96,14 @@ class MockNetworkDriver implements NetworkDriver {
     required Map<String, dynamic> data,
     required Map<String, dynamic> files,
     Map<String, String>? headers,
-  }) async =>
-      _nextResponse();
+  }) async => _nextResponse();
 }
 
 Widget wrapWithTheme(Widget child) {
   return MaterialApp(
     home: WindTheme(
       data: WindThemeData(),
-      child: Scaffold(
-        body: child,
-      ),
+      child: Scaffold(body: child),
     ),
   );
 }
@@ -148,19 +126,11 @@ void main() {
     testWidgets('fetches timezone list with search and per_page parameters', (
       tester,
     ) async {
-      mockDriver.queueResponse(
-        statusCode: 200,
-        data: {
-          'data': [],
-        },
-      );
+      mockDriver.queueResponse(statusCode: 200, data: {'data': []});
 
       await tester.pumpWidget(
         wrapWithTheme(
-          MagicStarterTimezoneSelect(
-            value: null,
-            onChanged: (_) {},
-          ),
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
         ),
       );
       await tester.pumpAndSettle();
@@ -177,20 +147,14 @@ void main() {
         statusCode: 200,
         data: {
           'data': [
-            {
-              'identifier': 'Europe/Istanbul',
-              'label': 'Istanbul (GMT+3)',
-            },
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
           ],
         },
       );
 
       await tester.pumpWidget(
         wrapWithTheme(
-          MagicStarterTimezoneSelect(
-            value: null,
-            onChanged: (_) {},
-          ),
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
         ),
       );
       await tester.pumpAndSettle();
@@ -205,19 +169,11 @@ void main() {
     });
 
     testWidgets('handles empty timezone results gracefully', (tester) async {
-      mockDriver.queueResponse(
-        statusCode: 200,
-        data: {
-          'data': [],
-        },
-      );
+      mockDriver.queueResponse(statusCode: 200, data: {'data': []});
 
       await tester.pumpWidget(
         wrapWithTheme(
-          MagicStarterTimezoneSelect(
-            value: null,
-            onChanged: (_) {},
-          ),
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
         ),
       );
       await tester.pumpAndSettle();
@@ -235,28 +191,19 @@ void main() {
       'debounces search requests — only fires API after 300ms of inactivity',
       (tester) async {
         // 1. Queue enough responses for init + debounced search result.
-        mockDriver.queueResponse(
-          statusCode: 200,
-          data: {'data': []},
-        );
+        mockDriver.queueResponse(statusCode: 200, data: {'data': []});
         mockDriver.queueResponse(
           statusCode: 200,
           data: {
             'data': [
-              {
-                'identifier': 'Europe/Istanbul',
-                'label': 'Istanbul (GMT+3)',
-              },
+              {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
             ],
           },
         );
 
         await tester.pumpWidget(
           wrapWithTheme(
-            MagicStarterTimezoneSelect(
-              value: null,
-              onChanged: (_) {},
-            ),
+            MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
           ),
         );
         await tester.pumpAndSettle();

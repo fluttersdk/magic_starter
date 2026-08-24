@@ -20,17 +20,13 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
 
   testWidgets('EmptyState renders title', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSEmptyState(title: 'No items found')),
-    );
+    await tester.pumpWidget(wrap(const MSEmptyState(title: 'No items found')));
     expect(find.text('No items found'), findsOneWidget);
   });
 
@@ -48,12 +44,7 @@ void main() {
 
   testWidgets('EmptyState renders icon when provided', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSEmptyState(
-          title: 'No items',
-          icon: Icons.inbox_outlined,
-        ),
-      ),
+      wrap(const MSEmptyState(title: 'No items', icon: Icons.inbox_outlined)),
     );
     expect(find.byIcon(Icons.inbox_outlined), findsOneWidget);
   });
@@ -75,11 +66,10 @@ void main() {
     expect(find.byKey(actionKey), findsOneWidget);
   });
 
-  testWidgets('EmptyState does not render description when omitted',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSEmptyState(title: 'Nothing here')),
-    );
+  testWidgets('EmptyState does not render description when omitted', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSEmptyState(title: 'Nothing here')));
     // Only title WText present
     final texts = tester.widgetList<WText>(find.byType(WText)).toList();
     expect(texts.any((t) => t.data == 'Nothing here'), isTrue);

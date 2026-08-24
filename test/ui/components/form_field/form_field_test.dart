@@ -67,8 +67,9 @@ void main() {
     expect(find.text('Must be at least 8 characters'), findsOneWidget);
   });
 
-  testWidgets('MagicFormField does not render hint when omitted',
-      (tester) async {
+  testWidgets('MagicFormField does not render hint when omitted', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSFormField(
@@ -95,8 +96,9 @@ void main() {
     expect(find.text('Invalid email address'), findsOneWidget);
   });
 
-  testWidgets('MagicFormField error text uses destructive tone class',
-      (tester) async {
+  testWidgets('MagicFormField error text uses destructive tone class', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSFormField(
@@ -115,8 +117,9 @@ void main() {
     );
   });
 
-  testWidgets('MagicFormField does not render error when omitted',
-      (tester) async {
+  testWidgets('MagicFormField does not render error when omitted', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         MSFormField(
@@ -128,8 +131,9 @@ void main() {
     expect(find.text('Required'), findsNothing);
   });
 
-  testWidgets('MagicFormField renders without label when label is null',
-      (tester) async {
+  testWidgets('MagicFormField renders without label when label is null', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(MSFormField(child: const WDiv(className: 'h-10'))),
     );

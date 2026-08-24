@@ -46,12 +46,7 @@ void main() {
 
   testWidgets('ErrorState renders icon when provided', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MSErrorState(
-          title: 'Error',
-          icon: Icons.error_outline,
-        ),
-      ),
+      wrap(const MSErrorState(title: 'Error', icon: Icons.error_outline)),
     );
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
   });
@@ -73,11 +68,10 @@ void main() {
     expect(find.byKey(actionKey), findsOneWidget);
   });
 
-  testWidgets('ErrorState title renders an actually resolved error colour',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSErrorState(title: 'Failed')),
-    );
+  testWidgets('ErrorState title renders an actually resolved error colour', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSErrorState(title: 'Failed')));
 
     // Asserts the RENDERED colour, not the className. A substring check on
     // "red" or "destructive" cannot tell a resolvable token from one Wind
@@ -87,11 +81,16 @@ void main() {
     // any assertion on the class string.
     final Text title = tester.widget<Text>(
       find.descendant(
-          of: find.byType(MSErrorState), matching: find.text('Failed')),
+        of: find.byType(MSErrorState),
+        matching: find.text('Failed'),
+      ),
     );
 
-    expect(title.style?.color, isNotNull,
-        reason: 'the title colour token resolved to nothing');
+    expect(
+      title.style?.color,
+      isNotNull,
+      reason: 'the title colour token resolved to nothing',
+    );
     expect(title.style?.color, isNot(const Color(0xFF000000)));
   });
 

@@ -23,23 +23,24 @@ class MagicStarterRegisterView
       _MagicStarterRegisterViewState();
 }
 
-class _MagicStarterRegisterViewState extends MagicStatefulViewState<
-    MagicStarterAuthController, MagicStarterRegisterView> {
+class _MagicStarterRegisterViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterAuthController,
+          MagicStarterRegisterView
+        > {
   static const _iconVisible = Icons.visibility;
   static const _iconHidden = Icons.visibility_off;
 
   /// Both email and phone fields are always declared — the controller decides
   /// which one to include in the payload based on identity mode.
-  late final form = MagicFormData(
-    {
-      'name': '',
-      'email': '',
-      'phone': '',
-      'password': '',
-      'password_confirmation': '',
-    },
-    controller: controller,
-  );
+  late final form = MagicFormData({
+    'name': '',
+    'email': '',
+    'phone': '',
+    'password': '',
+    'password_confirmation': '',
+  }, controller: controller);
 
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
@@ -80,12 +81,21 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
   Widget _buildForm({String? errorMessage}) {
     final isLoading = controller.isLoading;
 
-    final headerSlot =
-        MagicStarter.view.buildSlot('auth.register', 'header', context);
-    final formFooterSlot =
-        MagicStarter.view.buildSlot('auth.register', 'formFooter', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('auth.register', 'footer', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'auth.register',
+      'header',
+      context,
+    );
+    final formFooterSlot = MagicStarter.view.buildSlot(
+      'auth.register',
+      'formFooter',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'auth.register',
+      'footer',
+      context,
+    );
 
     return MagicStarterAuthFormCard(
       title: trans('auth.register_title'),
@@ -144,7 +154,8 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
               validator: rules([Required()], field: 'password_confirmation'),
               suffix: WAnchor(
                 onTap: () => setState(
-                    () => _obscureConfirmation = !_obscureConfirmation),
+                  () => _obscureConfirmation = !_obscureConfirmation,
+                ),
                 child: WIcon(
                   _obscureConfirmation ? _iconVisible : _iconHidden,
                   className: 'text-fg-muted text-xl',
@@ -276,10 +287,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
       controller: form['phone'],
       placeholder: trans('fields.phone_placeholder'),
       type: InputType.text,
-      validator: rules(
-        required ? [Required()] : [],
-        field: 'phone',
-      ),
+      validator: rules(required ? [Required()] : [], field: 'phone'),
       className: MagicStarter.formTheme.inputClassName,
       placeholderClassName: MagicStarter.formTheme.placeholderClassName,
       labelClassName: MagicStarter.formTheme.labelClassName,
@@ -300,10 +308,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
     return WDiv(
       className: 'flex flex-row justify-center gap-1 wrap',
       children: [
-        WText(
-          trans('auth.agree_to_legal'),
-          className: 'text-xs text-fg-muted',
-        ),
+        WText(trans('auth.agree_to_legal'), className: 'text-xs text-fg-muted'),
         if (termsUrl != null)
           WAnchor(
             onTap: () => Launch.url(termsUrl),
@@ -314,10 +319,7 @@ class _MagicStarterRegisterViewState extends MagicStatefulViewState<
             ),
           ),
         if (termsUrl != null && privacyUrl != null)
-          WText(
-            trans('auth.legal_and'),
-            className: 'text-xs text-fg-muted',
-          ),
+          WText(trans('auth.legal_and'), className: 'text-xs text-fg-muted'),
         if (privacyUrl != null)
           WAnchor(
             onTap: () => Launch.url(privacyUrl),

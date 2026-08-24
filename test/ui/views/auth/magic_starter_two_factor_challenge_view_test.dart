@@ -8,9 +8,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -32,9 +30,7 @@ void main() {
         (ctx) => const Text('Custom Header'),
       );
 
-      await tester.pumpWidget(
-        wrap(const MagicStarterTwoFactorChallengeView()),
-      );
+      await tester.pumpWidget(wrap(const MagicStarterTwoFactorChallengeView()));
       await tester.pumpAndSettle();
 
       expect(find.text('Custom Header'), findsOneWidget);
@@ -47,9 +43,7 @@ void main() {
         (ctx) => const Text('Custom Footer'),
       );
 
-      await tester.pumpWidget(
-        wrap(const MagicStarterTwoFactorChallengeView()),
-      );
+      await tester.pumpWidget(wrap(const MagicStarterTwoFactorChallengeView()));
       await tester.pumpAndSettle();
 
       expect(find.text('Custom Footer'), findsOneWidget);

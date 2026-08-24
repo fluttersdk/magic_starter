@@ -13,9 +13,13 @@ topics:
   - flutter
   - admin-panel
 
+# Inherited from `magic`, not chosen here: magic 0.0.6 declares
+# `sdk: ">=3.11.0 <4.0.0"` and `flutter: ">=3.41.0"`, and a package cannot
+# resolve below its own dependency's floor. The older block this package
+# declared was already unsatisfiable for an adopter who took it at its word.
 environment:
-  sdk: ">=3.6.0 <4.0.0"
-  flutter: ">=3.27.0"
+  sdk: ">=3.11.0 <4.0.0"
+  flutter: ">=3.41.0"
 
 dependencies:
   flutter:
@@ -23,6 +27,7 @@ dependencies:
   magic: ^0.0.6
   fluttersdk_artisan: ^0.0.9
   magic_notifications: ^0.0.2
+  magic_payments: ^0.0.1
   args: ^2.7.0
   path: ^1.9.0
 

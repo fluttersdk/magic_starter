@@ -88,10 +88,7 @@ class MSButton extends StatelessWidget {
       isLoading: isLoading,
       disabled: disabled,
       className: buttonRecipe(
-        variants: {
-          kButtonIntentAxis: intent.name,
-          kButtonSizeAxis: size.name,
-        },
+        variants: {kButtonIntentAxis: intent.name, kButtonSizeAxis: size.name},
         className: className,
       ),
       semanticLabel: semanticLabel,

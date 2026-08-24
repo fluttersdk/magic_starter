@@ -27,7 +27,5 @@ const WindRecipe skeletonRecipe = WindRecipe(
       'circle': 'rounded-full',
     },
   },
-  defaultVariants: {
-    kSkeletonShapeAxis: 'block',
-  },
+  defaultVariants: {kSkeletonShapeAxis: 'block'},
 );

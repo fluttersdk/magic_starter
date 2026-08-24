@@ -28,58 +28,75 @@ class MockNetworkDriver implements NetworkDriver {
   void addInterceptor(MagicNetworkInterceptor interceptor) {}
 
   @override
-  Future<MagicResponse> get(String url,
-          {Map<String, dynamic>? query, Map<String, String>? headers}) async =>
-      _respond('GET', url);
+  Future<MagicResponse> get(
+    String url, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async => _respond('GET', url);
 
   @override
-  Future<MagicResponse> post(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('POST', url, data: data);
+  Future<MagicResponse> post(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('POST', url, data: data);
 
   @override
-  Future<MagicResponse> put(String url,
-          {dynamic data, Map<String, String>? headers}) async =>
-      _respond('PUT', url, data: data);
+  Future<MagicResponse> put(
+    String url, {
+    dynamic data,
+    Map<String, String>? headers,
+  }) async => _respond('PUT', url, data: data);
 
   @override
-  Future<MagicResponse> delete(String url,
-          {Map<String, String>? headers}) async =>
-      _respond('DELETE', url);
+  Future<MagicResponse> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async => _respond('DELETE', url);
 
   @override
-  Future<MagicResponse> index(String resource,
-          {Map<String, dynamic>? filters,
-          Map<String, String>? headers}) async =>
-      _respond('INDEX', resource);
+  Future<MagicResponse> index(
+    String resource, {
+    Map<String, dynamic>? filters,
+    Map<String, String>? headers,
+  }) async => _respond('INDEX', resource);
 
   @override
-  Future<MagicResponse> show(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('SHOW', '$resource/$id');
+  Future<MagicResponse> show(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('SHOW', '$resource/$id');
 
   @override
-  Future<MagicResponse> store(String resource, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('STORE', resource, data: data);
+  Future<MagicResponse> store(
+    String resource,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('STORE', resource, data: data);
 
   @override
   Future<MagicResponse> update(
-          String resource, String id, Map<String, dynamic> data,
-          {Map<String, String>? headers}) async =>
-      _respond('UPDATE', '$resource/$id', data: data);
+    String resource,
+    String id,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+  }) async => _respond('UPDATE', '$resource/$id', data: data);
 
   @override
-  Future<MagicResponse> destroy(String resource, String id,
-          {Map<String, String>? headers}) async =>
-      _respond('DESTROY', '$resource/$id');
+  Future<MagicResponse> destroy(
+    String resource,
+    String id, {
+    Map<String, String>? headers,
+  }) async => _respond('DESTROY', '$resource/$id');
 
   @override
-  Future<MagicResponse> upload(String url,
-          {required Map<String, dynamic> data,
-          required Map<String, dynamic> files,
-          Map<String, String>? headers}) async =>
-      _respond('UPLOAD', url, data: data);
+  Future<MagicResponse> upload(
+    String url, {
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> files,
+    Map<String, String>? headers,
+  }) async => _respond('UPLOAD', url, data: data);
 }
 
 // ---------------------------------------------------------------------------
@@ -150,9 +167,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -183,9 +198,7 @@ void main() {
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
       Config.set('auth.guards', {
-        'mock': {
-          'driver': 'mock',
-        },
+        'mock': {'driver': 'mock'},
       });
 
       // 4. Set authenticated user.
@@ -201,10 +214,7 @@ void main() {
       );
 
       // 5. Bind MagicStarterManager.
-      Magic.singleton(
-        'magic_starter',
-        () => MagicStarterManager(),
-      );
+      Magic.singleton('magic_starter', () => MagicStarterManager());
 
       // 6. Create and inject controller.
       Magic.put(MagicStarterProfileController());
@@ -231,41 +241,30 @@ void main() {
     // Merged profile section tests
     // -----------------------------------------------------------------------
 
-    testWidgets(
-      'merged profile section renders all fields in a single card',
-      (tester) async {
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+    testWidgets('merged profile section renders all fields in a single card', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
-        // The old separate "extended-profile-section" card must NOT exist.
-        expect(
-          find.byKey(const Key('extended-profile-section')),
-          findsNothing,
-        );
+      // The old separate "extended-profile-section" card must NOT exist.
+      expect(find.byKey(const Key('extended-profile-section')), findsNothing);
 
-        // All five fields should be present: name, email, phone (inputs)
-        // + timezone, language (selects).
-        expect(find.byType(WFormInput), findsWidgets);
-        expect(find.byType(WFormSelect<String>), findsOneWidget);
-        expect(find.byType(MagicStarterTimezoneSelect), findsOneWidget);
-      },
-    );
+      // All five fields should be present: name, email, phone (inputs)
+      // + timezone, language (selects).
+      expect(find.byType(WFormInput), findsWidgets);
+      expect(find.byType(WFormSelect<String>), findsOneWidget);
+      expect(find.byType(MagicStarterTimezoneSelect), findsOneWidget);
+    });
 
     testWidgets(
       'extended fields hidden when feature disabled but core fields remain',
       (tester) async {
         Config.set('magic_starter.features.extended_profile', false);
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
         // No separate extended section card.
-        expect(
-          find.byKey(const Key('extended-profile-section')),
-          findsNothing,
-        );
+        expect(find.byKey(const Key('extended-profile-section')), findsNothing);
 
         // Phone field should NOT be rendered.
         expect(find.text('profile.phone_label'), findsNothing);
@@ -294,9 +293,7 @@ void main() {
           },
         );
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
         // Scroll to and tap the profile save button.
         final saveButtons = find.widgetWithText(WButton, 'common.save');
@@ -308,10 +305,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // The backend validation error message should now be visible.
-        expect(
-          find.text('The name field is required.'),
-          findsOneWidget,
-        );
+        expect(find.text('The name field is required.'), findsOneWidget);
       },
     );
 
@@ -327,9 +321,7 @@ void main() {
           (ctx) => const Text('Custom Header'),
         );
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
         expect(find.text('Custom Header'), findsOneWidget);
       });
@@ -341,9 +333,7 @@ void main() {
           (ctx) => const Text('Custom Footer'),
         );
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
         expect(find.text('Custom Footer'), findsOneWidget);
       });
@@ -362,9 +352,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(
-          wrap(const MagicStarterProfileSettingsView()),
-        );
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
         expect(tester.takeException(), isNull);
       });

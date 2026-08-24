@@ -30,7 +30,8 @@ class MagicStarterConfigureCommand extends ArtisanCommand {
   };
 
   @override
-  String get signature => 'starter:configure '
+  String get signature =>
+      'starter:configure '
       '{--show : Display current feature configuration} '
       '{--teams : Enable or disable the teams feature} '
       '{--social-login : Enable or disable the social_login feature} '
@@ -59,8 +60,9 @@ class MagicStarterConfigureCommand extends ArtisanCommand {
   @override
   Future<int> handle(ArtisanContext ctx) async {
     // 1. Attempt to read config — bail early if missing.
-    final String? content =
-        MagicStarterConfigHelper.readConfigContent(projectRoot);
+    final String? content = MagicStarterConfigHelper.readConfigContent(
+      projectRoot,
+    );
     if (content == null) {
       ctx.output.error('Configuration file not found: $_configPath');
       ctx.output.info('Run installation first: artisan starter:install');
@@ -126,8 +128,9 @@ class MagicStarterConfigureCommand extends ArtisanCommand {
   /// Parses [content] via [MagicStarterConfigHelper.parseFeatures] and renders
   /// a simple two-column report into the output stream.
   void _showConfig(ArtisanContext ctx, String content) {
-    final Map<String, bool> features =
-        MagicStarterConfigHelper.parseFeatures(content);
+    final Map<String, bool> features = MagicStarterConfigHelper.parseFeatures(
+      content,
+    );
 
     ctx.output.info('Current Magic Starter Feature Configuration:');
     ctx.output.writeln('');

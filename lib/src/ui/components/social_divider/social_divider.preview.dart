@@ -13,9 +13,7 @@ class SocialDividerPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return WDiv(
       className: 'flex flex-col gap-6 p-6',
-      children: const [
-        MSSocialDivider(),
-      ],
+      children: const [MSSocialDivider()],
     );
   }
 }

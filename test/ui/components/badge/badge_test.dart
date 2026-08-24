@@ -32,51 +32,37 @@ void main() {
 
   group('badge recipe', () {
     test('neutral tone emits bg-surface-container-high token', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.neutral.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.neutral.name});
       expect(cls, contains('bg-surface-container-high'));
     });
 
     test('primary tone emits bg-primary token', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.primary.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.primary.name});
       expect(cls, contains('bg-primary'));
     });
 
     test('accent tone emits bg-accent token', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.accent.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.accent.name});
       expect(cls, contains('bg-accent'));
     });
 
     test('success tone emits bg-success token', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.success.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.success.name});
       expect(cls, contains('bg-success'));
     });
 
     test('warning tone emits bg-warning token', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.warning.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.warning.name});
       expect(cls, contains('bg-warning'));
     });
 
     test('destructive tone emits bg-destructive token', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.destructive.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.destructive.name});
       expect(cls, contains('bg-destructive'));
     });
 
     test('outline tone emits border token and no solid background', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.outline.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.outline.name});
       expect(cls, contains('border'));
       expect(cls, isNot(contains('bg-primary')));
       expect(cls, isNot(contains('bg-success')));
@@ -88,9 +74,7 @@ void main() {
     });
 
     test('emission order: base precedes variant classes', () {
-      final cls = badgeRecipe(
-        variants: {'tone': BadgeTone.primary.name},
-      );
+      final cls = badgeRecipe(variants: {'tone': BadgeTone.primary.name});
       final baseIdx = cls.indexOf('inline-flex');
       final variantIdx = cls.indexOf('bg-primary');
       expect(baseIdx, lessThan(variantIdx));
@@ -102,16 +86,12 @@ void main() {
   // ---------------------------------------------------------------------------
 
   testWidgets('Badge renders label text', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSBadge('Active')),
-    );
+    await tester.pumpWidget(wrap(const MSBadge('Active')));
     expect(find.text('Active'), findsOneWidget);
   });
 
   testWidgets('Badge default tone is neutral', (tester) async {
-    await tester.pumpWidget(
-      wrap(const MSBadge('Label')),
-    );
+    await tester.pumpWidget(wrap(const MSBadge('Label')));
     final wBadge = tester.widget<WBadge>(find.byType(WBadge));
     expect(wBadge.className, contains('bg-surface-container-high'));
   });
@@ -150,8 +130,9 @@ void main() {
   // Caller className append (WIND-1)
   // ---------------------------------------------------------------------------
 
-  testWidgets('Badge appends caller className onto the recipe base',
-      (tester) async {
+  testWidgets('Badge appends caller className onto the recipe base', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(const MSBadge('Label', tone: BadgeTone.primary, className: 'mt-10')),
     );

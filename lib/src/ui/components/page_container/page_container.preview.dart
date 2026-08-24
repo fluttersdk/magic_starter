@@ -19,9 +19,7 @@ class PageContainerPreview extends StatelessWidget {
       className: 'flex flex-col gap-8 bg-surface dark:bg-surface py-4',
       children: [
         // 1. Single child: the shape a host page uses.
-        const MSPageContainer(
-          child: _PreviewBlock(label: 'child'),
-        ),
+        const MSPageContainer(child: _PreviewBlock(label: 'child')),
 
         // 2. Children list: the shape a stacked page uses.
         const MSPageContainer(
@@ -50,11 +48,14 @@ class _PreviewBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WDiv(
-      className: 'w-full px-4 py-6 rounded-lg border border-color-border '
+      className:
+          'w-full px-4 py-6 rounded-lg border border-color-border '
           'dark:border-color-border bg-surface-container '
           'dark:bg-surface-container',
-      child:
-          WText(label, className: 'text-sm text-fg-muted dark:text-fg-muted'),
+      child: WText(
+        label,
+        className: 'text-sm text-fg-muted dark:text-fg-muted',
+      ),
     );
   }
 }

@@ -125,10 +125,7 @@ class MSTeamSelector extends StatelessWidget {
                   ),
                 ),
                 if (isActive)
-                  WIcon(
-                    Icons.check_circle,
-                    className: 'text-primary text-lg',
-                  ),
+                  WIcon(Icons.check_circle, className: 'text-primary text-lg'),
               ],
             ),
           );

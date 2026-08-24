@@ -18,17 +18,20 @@ class MagicStarterTeamSettingsView
       _MagicStarterTeamSettingsViewState();
 }
 
-class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
-    MagicStarterTeamController, MagicStarterTeamSettingsView> {
-  late final MagicFormData form = MagicFormData(
-    {'name': ''},
-    controller: controller,
-  );
+class _MagicStarterTeamSettingsViewState
+    extends
+        MagicStatefulViewState<
+          MagicStarterTeamController,
+          MagicStarterTeamSettingsView
+        > {
+  late final MagicFormData form = MagicFormData({
+    'name': '',
+  }, controller: controller);
 
-  late final MagicFormData inviteForm = MagicFormData(
-    {'email': '', 'role': 'member'},
-    controller: controller,
-  );
+  late final MagicFormData inviteForm = MagicFormData({
+    'email': '',
+    'role': 'member',
+  }, controller: controller);
 
   @override
   void onInit() {
@@ -76,12 +79,21 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
       );
     }
 
-    final headerSlot =
-        MagicStarter.view.buildSlot('teams.settings', 'header', context);
-    final footerSlot =
-        MagicStarter.view.buildSlot('teams.settings', 'footer', context);
-    final afterMembersSlot = MagicStarter.view
-        .buildSlot('teams.settings', 'afterSection:members', context);
+    final headerSlot = MagicStarter.view.buildSlot(
+      'teams.settings',
+      'header',
+      context,
+    );
+    final footerSlot = MagicStarter.view.buildSlot(
+      'teams.settings',
+      'footer',
+      context,
+    );
+    final afterMembersSlot = MagicStarter.view.buildSlot(
+      'teams.settings',
+      'afterSection:members',
+      context,
+    );
 
     return MSPageScaffold(
       title: trans('teams.settings'),
@@ -166,9 +178,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               noPadding: true,
               child: WDiv(
                 className: 'flex flex-col',
-                children: [
-                  ...members.map((member) => _buildMemberRow(member)),
-                ],
+                children: [...members.map((member) => _buildMemberRow(member))],
               ),
             );
           },
@@ -202,8 +212,9 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
               child: WDiv(
                 className: 'flex flex-col',
                 children: [
-                  ...invitations
-                      .map((invitation) => _buildInvitationRow(invitation)),
+                  ...invitations.map(
+                    (invitation) => _buildInvitationRow(invitation),
+                  ),
                 ],
               ),
             );
@@ -307,10 +318,7 @@ class _MagicStarterTeamSettingsViewState extends MagicStatefulViewState<
                       name,
                       className: 'text-sm font-medium text-fg truncate',
                     ),
-                    WText(
-                      email,
-                      className: 'text-xs text-fg-muted truncate',
-                    ),
+                    WText(email, className: 'text-xs text-fg-muted truncate'),
                   ],
                 ),
               ),

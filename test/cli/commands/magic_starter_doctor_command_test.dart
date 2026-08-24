@@ -315,21 +315,25 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('getMissingRequirements', () {
-    test('returns empty list when project is fully and correctly installed',
-        () {
-      _setupFullInstall(tempDir);
-      expect(command.getMissingRequirements(), isEmpty);
-    });
+    test(
+      'returns empty list when project is fully and correctly installed',
+      () {
+        _setupFullInstall(tempDir);
+        expect(command.getMissingRequirements(), isEmpty);
+      },
+    );
 
-    test('includes magic framework check when lib/config/app.dart is absent',
-        () {
-      _setupFullInstall(tempDir);
-      File('${tempDir.path}/lib/config/app.dart').deleteSync();
+    test(
+      'includes magic framework check when lib/config/app.dart is absent',
+      () {
+        _setupFullInstall(tempDir);
+        File('${tempDir.path}/lib/config/app.dart').deleteSync();
 
-      final missing = command.getMissingRequirements();
+        final missing = command.getMissingRequirements();
 
-      expect(missing.any((m) => m.toLowerCase().contains('magic')), isTrue);
-    });
+        expect(missing.any((m) => m.toLowerCase().contains('magic')), isTrue);
+      },
+    );
 
     test('includes starter config check when magic_starter.dart is absent', () {
       _setupFullInstall(tempDir);
@@ -340,18 +344,20 @@ void main() {
       expect(missing.any((m) => m.toLowerCase().contains('config')), isTrue);
     });
 
-    test('includes provider check when MagicStarterServiceProvider is absent',
-        () {
-      _setupFullInstall(tempDir);
-      _writeFile(tempDir, 'lib/config/app.dart', '// no provider');
+    test(
+      'includes provider check when MagicStarterServiceProvider is absent',
+      () {
+        _setupFullInstall(tempDir);
+        _writeFile(tempDir, 'lib/config/app.dart', '// no provider');
 
-      final missing = command.getMissingRequirements();
+        final missing = command.getMissingRequirements();
 
-      expect(
-        missing.any((m) => m.toLowerCase().contains('provider')),
-        isTrue,
-      );
-    });
+        expect(
+          missing.any((m) => m.toLowerCase().contains('provider')),
+          isTrue,
+        );
+      },
+    );
 
     test('includes config factory check when magicStarterConfig is absent', () {
       _setupFullInstall(tempDir);
@@ -359,10 +365,7 @@ void main() {
 
       final missing = command.getMissingRequirements();
 
-      expect(
-        missing.any((m) => m.toLowerCase().contains('factory')),
-        isTrue,
-      );
+      expect(missing.any((m) => m.toLowerCase().contains('factory')), isTrue);
     });
 
     test('includes middleware check when EnsureAuthenticated is absent', () {
@@ -428,13 +431,15 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('generateReport', () {
-    test('contains "OK" for every passing check in a fully installed project',
-        () {
-      _setupFullInstall(tempDir);
-      final report = command.generateReport();
+    test(
+      'contains "OK" for every passing check in a fully installed project',
+      () {
+        _setupFullInstall(tempDir);
+        final report = command.generateReport();
 
-      expect(report, contains('OK'));
-    });
+        expect(report, contains('OK'));
+      },
+    );
 
     test('contains "FAIL" for each failing check', () {
       // No files created — all checks fail.
@@ -444,22 +449,24 @@ void main() {
     });
 
     test(
-        'shows passing result for magic framework when lib/config/app.dart exists',
-        () {
-      _writeFile(tempDir, 'lib/config/app.dart', '// app');
-      final report = command.generateReport();
+      'shows passing result for magic framework when lib/config/app.dart exists',
+      () {
+        _writeFile(tempDir, 'lib/config/app.dart', '// app');
+        final report = command.generateReport();
 
-      expect(report, contains('Magic Framework'));
-    });
+        expect(report, contains('Magic Framework'));
+      },
+    );
 
     test(
-        'shows passing result for starter config when magic_starter.dart exists',
-        () {
-      _writeFile(tempDir, 'lib/config/magic_starter.dart', '// cfg');
-      final report = command.generateReport();
+      'shows passing result for starter config when magic_starter.dart exists',
+      () {
+        _writeFile(tempDir, 'lib/config/magic_starter.dart', '// cfg');
+        final report = command.generateReport();
 
-      expect(report, contains('Starter Config'));
-    });
+        expect(report, contains('Starter Config'));
+      },
+    );
 
     test('returns a formatted string with check labels', () {
       _setupFullInstall(tempDir);
@@ -509,47 +516,54 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('getPublishedViews', () {
-    test('returns empty list when published views directory does not exist',
-        () {
-      expect(command.getPublishedViews(tempDir.path), isEmpty);
-    });
+    test(
+      'returns empty list when published views directory does not exist',
+      () {
+        expect(command.getPublishedViews(tempDir.path), isEmpty);
+      },
+    );
 
-    test('returns empty list when directory exists but contains no dart files',
-        () {
-      Directory('${tempDir.path}/lib/resources/views/starter')
-          .createSync(recursive: true);
-      expect(command.getPublishedViews(tempDir.path), isEmpty);
-    });
+    test(
+      'returns empty list when directory exists but contains no dart files',
+      () {
+        Directory(
+          '${tempDir.path}/lib/resources/views/starter',
+        ).createSync(recursive: true);
+        expect(command.getPublishedViews(tempDir.path), isEmpty);
+      },
+    );
 
-    test('returns relative paths for dart files in published views directory',
-        () {
-      _writeFile(
-        tempDir,
-        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
-        '// login view',
-      );
-      _writeFile(
-        tempDir,
-        'lib/resources/views/starter/auth/magic_starter_register_view.dart',
-        '// register view',
-      );
-
-      final views = command.getPublishedViews(tempDir.path);
-
-      expect(views.length, equals(2));
-      expect(
-        views,
-        contains(
+    test(
+      'returns relative paths for dart files in published views directory',
+      () {
+        _writeFile(
+          tempDir,
           'lib/resources/views/starter/auth/magic_starter_login_view.dart',
-        ),
-      );
-      expect(
-        views,
-        contains(
+          '// login view',
+        );
+        _writeFile(
+          tempDir,
           'lib/resources/views/starter/auth/magic_starter_register_view.dart',
-        ),
-      );
-    });
+          '// register view',
+        );
+
+        final views = command.getPublishedViews(tempDir.path);
+
+        expect(views.length, equals(2));
+        expect(
+          views,
+          contains(
+            'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+          ),
+        );
+        expect(
+          views,
+          contains(
+            'lib/resources/views/starter/auth/magic_starter_register_view.dart',
+          ),
+        );
+      },
+    );
 
     test('ignores non-dart files in the published views directory', () {
       _writeFile(
@@ -596,41 +610,35 @@ void main() {
         'lib/resources/views/starter/auth/magic_starter_login_view.dart';
 
     test('returns true when app_service_provider.dart does not exist', () {
-      expect(
-        command.isPublishedViewWired(tempDir.path, viewPath),
-        isTrue,
-      );
+      expect(command.isPublishedViewWired(tempDir.path, viewPath), isTrue);
     });
 
     test(
-        'returns true when provider contains the view filename stem (registered)',
-        () {
-      _writeFile(
-        tempDir,
-        'lib/app/providers/app_service_provider.dart',
-        "import '../../resources/views/starter/auth/magic_starter_login_view.dart';\n"
-            "MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());\n",
-      );
+      'returns true when provider contains the view filename stem (registered)',
+      () {
+        _writeFile(
+          tempDir,
+          'lib/app/providers/app_service_provider.dart',
+          "import '../../resources/views/starter/auth/magic_starter_login_view.dart';\n"
+              "MagicStarter.view.register('auth.login', () => const MagicStarterLoginView());\n",
+        );
 
-      expect(
-        command.isPublishedViewWired(tempDir.path, viewPath),
-        isTrue,
-      );
-    });
+        expect(command.isPublishedViewWired(tempDir.path, viewPath), isTrue);
+      },
+    );
 
-    test('returns false when provider exists but does not reference the view',
-        () {
-      _writeFile(
-        tempDir,
-        'lib/app/providers/app_service_provider.dart',
-        '// empty provider — no registrations\n',
-      );
+    test(
+      'returns false when provider exists but does not reference the view',
+      () {
+        _writeFile(
+          tempDir,
+          'lib/app/providers/app_service_provider.dart',
+          '// empty provider — no registrations\n',
+        );
 
-      expect(
-        command.isPublishedViewWired(tempDir.path, viewPath),
-        isFalse,
-      );
-    });
+        expect(command.isPublishedViewWired(tempDir.path, viewPath), isFalse);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -638,27 +646,31 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('generateReport — published views', () {
-    test('report omits Published Views section when no views are published',
-        () {
-      _setupFullInstall(tempDir);
-      final report = command.generateReport();
+    test(
+      'report omits Published Views section when no views are published',
+      () {
+        _setupFullInstall(tempDir);
+        final report = command.generateReport();
 
-      expect(report, isNot(contains('Published Views')));
-    });
+        expect(report, isNot(contains('Published Views')));
+      },
+    );
 
-    test('report includes Published Views section when views are published',
-        () {
-      _setupFullInstall(tempDir);
-      _writeFile(
-        tempDir,
-        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
-        '// login view',
-      );
+    test(
+      'report includes Published Views section when views are published',
+      () {
+        _setupFullInstall(tempDir);
+        _writeFile(
+          tempDir,
+          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+          '// login view',
+        );
 
-      final report = command.generateReport();
+        final report = command.generateReport();
 
-      expect(report, contains('Published Views'));
-    });
+        expect(report, contains('Published Views'));
+      },
+    );
 
     test('report shows "OK" for a wired published view', () {
       _setupFullInstall(tempDir);
@@ -716,29 +728,30 @@ void main() {
     });
 
     test(
-        'unwired published views do not affect getMissingRequirements count (warnings only)',
-        () {
-      _setupFullInstall(tempDir);
-      _writeFile(
-        tempDir,
-        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
-        '// login view',
-      );
-      // AppServiceProvider exists but has no registration.
-      _writeFile(
-        tempDir,
-        'lib/app/providers/app_service_provider.dart',
-        "import 'package:magic_starter/magic_starter.dart';\n"
-            'void boot() {\n'
-            '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
-            '  MagicStarter.useNavigation(mainItems: []);\n'
-            '}\n',
-      );
+      'unwired published views do not affect getMissingRequirements count (warnings only)',
+      () {
+        _setupFullInstall(tempDir);
+        _writeFile(
+          tempDir,
+          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+          '// login view',
+        );
+        // AppServiceProvider exists but has no registration.
+        _writeFile(
+          tempDir,
+          'lib/app/providers/app_service_provider.dart',
+          "import 'package:magic_starter/magic_starter.dart';\n"
+              'void boot() {\n'
+              '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
+              '  MagicStarter.useNavigation(mainItems: []);\n'
+              '}\n',
+        );
 
-      // Missing requirements count must stay at 0 — published view warnings
-      // are informational and do not block the health check.
-      expect(command.getMissingRequirements(), isEmpty);
-    });
+        // Missing requirements count must stay at 0 — published view warnings
+        // are informational and do not block the health check.
+        expect(command.getMissingRequirements(), isEmpty);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -747,16 +760,17 @@ void main() {
 
   group('--verbose flag', () {
     test(
-        'verbose flag is registered on the parser without throwing ArgParserException',
-        () {
-      // Verify the ArgParser accepts --verbose without raising an exception.
-      // We parse args directly to avoid handle() calling exit().
-      final parser = ArgParser();
-      command.configure(parser);
+      'verbose flag is registered on the parser without throwing ArgParserException',
+      () {
+        // Verify the ArgParser accepts --verbose without raising an exception.
+        // We parse args directly to avoid handle() calling exit().
+        final parser = ArgParser();
+        command.configure(parser);
 
-      // Should not throw — flag is defined.
-      expect(() => parser.parse(['--verbose']), returnsNormally);
-    });
+        // Should not throw — flag is defined.
+        expect(() => parser.parse(['--verbose']), returnsNormally);
+      },
+    );
 
     test('unknown flag raises ArgParserException', () {
       // The signature DSL does not register a -v abbreviation; verify that

@@ -102,13 +102,16 @@ void main() {
   // Behavior gate: these assertions came from the pre-MS-prefix alias test.
   // ---------------------------------------------------------------------------
 
-  testWidgets('renders avatar with user initial when authenticated',
-      (tester) async {
-    mockGuard.setUser(MagicStarterAuthUser.fromMap({
-      'id': 1,
-      'name': 'John Doe',
-      'email': 'john@example.com',
-    }));
+  testWidgets('renders avatar with user initial when authenticated', (
+    tester,
+  ) async {
+    mockGuard.setUser(
+      MagicStarterAuthUser.fromMap({
+        'id': 1,
+        'name': 'John Doe',
+        'email': 'john@example.com',
+      }),
+    );
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
     expect(find.text('J'), findsOneWidget);
@@ -121,11 +124,13 @@ void main() {
   });
 
   testWidgets('tapping avatar opens dropdown with user info', (tester) async {
-    mockGuard.setUser(MagicStarterAuthUser.fromMap({
-      'id': 1,
-      'name': 'John Doe',
-      'email': 'john@example.com',
-    }));
+    mockGuard.setUser(
+      MagicStarterAuthUser.fromMap({
+        'id': 1,
+        'name': 'John Doe',
+        'email': 'john@example.com',
+      }),
+    );
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 
@@ -144,27 +149,30 @@ void main() {
   });
 
   testWidgets('accepts custom alignment parameter', (tester) async {
-    await tester.pumpWidget(wrap(
-      const MSUserProfileDropdown(alignment: PopoverAlignment.topRight),
-    ));
+    await tester.pumpWidget(
+      wrap(const MSUserProfileDropdown(alignment: PopoverAlignment.topRight)),
+    );
     await tester.pumpAndSettle();
     final popover = tester.widget<WPopover>(find.byType(WPopover));
     expect(popover.alignment, PopoverAlignment.topRight);
   });
 
   testWidgets('uses custom triggerBuilder when provided', (tester) async {
-    await tester.pumpWidget(wrap(
-      MSUserProfileDropdown(
-        triggerBuilder: (context, isOpen, isHovering) =>
-            const Text('Custom Trigger'),
+    await tester.pumpWidget(
+      wrap(
+        MSUserProfileDropdown(
+          triggerBuilder: (context, isOpen, isHovering) =>
+              const Text('Custom Trigger'),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(find.text('Custom Trigger'), findsOneWidget);
   });
 
-  testWidgets('UserProfileDropdown preview renders without error',
-      (tester) async {
+  testWidgets('UserProfileDropdown preview renders without error', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const UserProfileDropdownPreview()));
     await tester.pump();
     expect(find.byType(UserProfileDropdownPreview), findsOneWidget);
@@ -232,8 +240,9 @@ void main() {
     expect(logoutCalled, isTrue);
   });
 
-  testWidgets('menu items are scrollable when many items registered',
-      (tester) async {
+  testWidgets('menu items are scrollable when many items registered', (
+    tester,
+  ) async {
     MagicStarter.useNavigation(
       mainItems: [],
       profileMenuItems: [
@@ -257,8 +266,9 @@ void main() {
     }
   });
 
-  testWidgets('shows theme toggle in dropdown and toggles without closing',
-      (tester) async {
+  testWidgets('shows theme toggle in dropdown and toggles without closing', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 

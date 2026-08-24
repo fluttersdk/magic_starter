@@ -28,11 +28,7 @@ class SettingsSectionPreview extends StatelessWidget {
         ),
 
         // 2. No header, single child, no footer.
-        const MSSettingsSection(
-          children: [
-            _PreviewRow(label: 'Sign Out'),
-          ],
-        ),
+        const MSSettingsSection(children: [_PreviewRow(label: 'Sign Out')]),
 
         // 3. Header only, three rows.
         const MSSettingsSection(

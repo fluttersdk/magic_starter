@@ -91,8 +91,9 @@ void main() {
 
       final hub = routeFor(MagicStarterConfig.settingsHubRoute())!;
       final profile = routeFor(MagicStarterConfig.profileRoute())!;
-      final appearance =
-          routeFor(MagicStarterConfig.settingsAppearanceRoute())!;
+      final appearance = routeFor(
+        MagicStarterConfig.settingsAppearanceRoute(),
+      )!;
 
       // Each handler builds a Widget via the registry without throwing.
       expect(hub.buildWidget(const {}), isA<Widget>());
@@ -111,24 +112,29 @@ void main() {
   });
 
   group('feature gating', () {
-    test('security + preference sub-routes are absent when features are off',
-        () {
-      // All gated features default to false.
-      registerMagicStarterProfileRoutes();
+    test(
+      'security + preference sub-routes are absent when features are off',
+      () {
+        // All gated features default to false.
+        registerMagicStarterProfileRoutes();
 
-      expect(routeFor(MagicStarterConfig.settingsTwoFactorRoute()), isNull);
-      expect(routeFor(MagicStarterConfig.settingsSessionsRoute()), isNull);
-      expect(routeFor(MagicStarterConfig.settingsLanguageRoute()), isNull);
-      expect(routeFor(MagicStarterConfig.settingsTimezoneRoute()), isNull);
-      expect(routeFor(MagicStarterConfig.settingsNewsletterRoute()), isNull);
+        expect(routeFor(MagicStarterConfig.settingsTwoFactorRoute()), isNull);
+        expect(routeFor(MagicStarterConfig.settingsSessionsRoute()), isNull);
+        expect(routeFor(MagicStarterConfig.settingsLanguageRoute()), isNull);
+        expect(routeFor(MagicStarterConfig.settingsTimezoneRoute()), isNull);
+        expect(routeFor(MagicStarterConfig.settingsNewsletterRoute()), isNull);
 
-      // The hub, profile, appearance, and password are always present
-      // (password mirrors the hub row, which has no feature flag).
-      expect(routeFor(MagicStarterConfig.settingsHubRoute()), isNotNull);
-      expect(routeFor(MagicStarterConfig.profileRoute()), isNotNull);
-      expect(routeFor(MagicStarterConfig.settingsAppearanceRoute()), isNotNull);
-      expect(routeFor(MagicStarterConfig.settingsPasswordRoute()), isNotNull);
-    });
+        // The hub, profile, appearance, and password are always present
+        // (password mirrors the hub row, which has no feature flag).
+        expect(routeFor(MagicStarterConfig.settingsHubRoute()), isNotNull);
+        expect(routeFor(MagicStarterConfig.profileRoute()), isNotNull);
+        expect(
+          routeFor(MagicStarterConfig.settingsAppearanceRoute()),
+          isNotNull,
+        );
+        expect(routeFor(MagicStarterConfig.settingsPasswordRoute()), isNotNull);
+      },
+    );
 
     test('two-factor sub-route appears when two_factor is on', () {
       Config.set('magic_starter.features.two_factor', true);
@@ -170,37 +176,39 @@ void main() {
       expect(routeFor(MagicStarterConfig.settingsNewsletterRoute()), isNotNull);
     });
 
-    test('all sub-routes resolve registered views when every feature is on',
-        () {
-      enableAllSettingsFeatures();
-      // Rebuild the manager so the gated default views are registered.
-      Magic.flush();
-      Magic.singleton('magic_starter', () => MagicStarterManager());
-      MagicStarter.view;
+    test(
+      'all sub-routes resolve registered views when every feature is on',
+      () {
+        enableAllSettingsFeatures();
+        // Rebuild the manager so the gated default views are registered.
+        Magic.flush();
+        Magic.singleton('magic_starter', () => MagicStarterManager());
+        MagicStarter.view;
 
-      registerMagicStarterProfileRoutes();
+        registerMagicStarterProfileRoutes();
 
-      final paths = <String>[
-        MagicStarterConfig.settingsHubRoute(),
-        MagicStarterConfig.profileRoute(),
-        MagicStarterConfig.settingsAppearanceRoute(),
-        MagicStarterConfig.settingsLanguageRoute(),
-        MagicStarterConfig.settingsTimezoneRoute(),
-        MagicStarterConfig.settingsNewsletterRoute(),
-        MagicStarterConfig.settingsTwoFactorRoute(),
-        MagicStarterConfig.settingsPasswordRoute(),
-        MagicStarterConfig.settingsSessionsRoute(),
-      ];
+        final paths = <String>[
+          MagicStarterConfig.settingsHubRoute(),
+          MagicStarterConfig.profileRoute(),
+          MagicStarterConfig.settingsAppearanceRoute(),
+          MagicStarterConfig.settingsLanguageRoute(),
+          MagicStarterConfig.settingsTimezoneRoute(),
+          MagicStarterConfig.settingsNewsletterRoute(),
+          MagicStarterConfig.settingsTwoFactorRoute(),
+          MagicStarterConfig.settingsPasswordRoute(),
+          MagicStarterConfig.settingsSessionsRoute(),
+        ];
 
-      for (final path in paths) {
-        final route = routeFor(path);
-        expect(route, isNotNull, reason: 'route missing for $path');
-        expect(
-          route!.buildWidget(const {}),
-          isA<Widget>(),
-          reason: 'handler did not build a widget for $path',
-        );
-      }
-    });
+        for (final path in paths) {
+          final route = routeFor(path);
+          expect(route, isNotNull, reason: 'route missing for $path');
+          expect(
+            route!.buildWidget(const {}),
+            isA<Widget>(),
+            reason: 'handler did not build a widget for $path',
+          );
+        }
+      },
+    );
   });
 }

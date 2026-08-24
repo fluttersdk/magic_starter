@@ -29,8 +29,9 @@ void main() {
   // Behavior gate: these assertions came from the pre-MS-prefix alias test.
   // ---------------------------------------------------------------------------
 
-  testWidgets('SocialDivider renders divider with translated text',
-      (tester) async {
+  testWidgets('SocialDivider renders divider with translated text', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const MSSocialDivider()));
     // trans() returns the key when no translation is loaded
     expect(find.text('auth.or_continue_with'), findsOneWidget);

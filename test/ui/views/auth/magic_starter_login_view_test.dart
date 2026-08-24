@@ -8,9 +8,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
@@ -24,8 +22,9 @@ void main() {
       Magic.put(MagicStarterAuthController());
     });
 
-    testWidgets('shows email field in email-only mode (default)',
-        (tester) async {
+    testWidgets('shows email field in email-only mode (default)', (
+      tester,
+    ) async {
       Config.set('magic_starter.auth.email', true);
       Config.set('magic_starter.auth.phone', false);
 
@@ -33,10 +32,14 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
-          findsOneWidget);
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
-          findsNothing);
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.email')),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.phone')),
+        findsNothing,
+      );
     });
 
     testWidgets('shows phone field in phone-only mode', (tester) async {
@@ -47,10 +50,14 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
-          findsOneWidget);
-      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
-          findsNothing);
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.phone')),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.email')),
+        findsNothing,
+      );
     });
 
     testWidgets('shows segmented toggle in both mode', (tester) async {
@@ -66,8 +73,9 @@ void main() {
       expect(find.text(trans('attributes.phone')), findsWidgets);
     });
 
-    testWidgets('switching to phone tab shows phone field in both mode',
-        (tester) async {
+    testWidgets('switching to phone tab shows phone field in both mode', (
+      tester,
+    ) async {
       Config.set('magic_starter.auth.email', true);
       Config.set('magic_starter.auth.phone', true);
 
@@ -75,18 +83,24 @@ void main() {
       await tester.pumpAndSettle();
 
       // Initially shows email field.
-      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
-          findsOneWidget);
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.email')),
+        findsOneWidget,
+      );
 
       // Tap phone segment (WAnchor wrapping the label text).
       await tester.tap(find.text(trans('attributes.phone')).first);
       await tester.pumpAndSettle();
 
       // Now shows phone field.
-      expect(find.widgetWithText(WFormInput, trans('attributes.phone')),
-          findsOneWidget);
-      expect(find.widgetWithText(WFormInput, trans('attributes.email')),
-          findsNothing);
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.phone')),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(WFormInput, trans('attributes.email')),
+        findsNothing,
+      );
     });
   });
 
@@ -135,8 +149,9 @@ void main() {
       Magic.put(MagicStarterAuthController());
     });
 
-    testWidgets('renders without crash when custom FormTheme is set',
-        (tester) async {
+    testWidgets('renders without crash when custom FormTheme is set', (
+      tester,
+    ) async {
       MagicStarter.useFormTheme(
         const MagicStarterFormTheme(
           inputClassName: 'custom-input',

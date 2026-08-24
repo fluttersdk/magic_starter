@@ -54,7 +54,8 @@ const WindRecipe buttonRecipe = WindRecipe(
   // `className` APPENDS after this base (parser last-wins resolves conflicts
   // per family), so it refines the base rather than replacing it; full-width is
   // the dedicated `fullWidth` prop (a SizedBox wrapper), not a className token.
-  base: 'inline-flex items-center font-medium rounded-lg '
+  base:
+      'inline-flex items-center font-medium rounded-lg '
       'transition-colors disabled:opacity-50 disabled:cursor-not-allowed '
       'focus:outline-none focus:ring-2 focus:ring-offset-1',
   variants: {
@@ -63,9 +64,10 @@ const WindRecipe buttonRecipe = WindRecipe(
           'bg-primary text-on-primary hover:opacity-90 focus:ring-color-border',
       'secondary':
           'bg-surface-container-high text-fg border border-color-border '
-              'hover:bg-surface-container-high hover:opacity-80',
+          'hover:bg-surface-container-high hover:opacity-80',
       'ghost': 'bg-transparent text-fg hover:bg-surface-container-high',
-      'destructive': 'bg-destructive text-on-destructive hover:opacity-90 '
+      'destructive':
+          'bg-destructive text-on-destructive hover:opacity-90 '
           'focus:ring-bg-destructive',
     },
     kButtonSizeAxis: {
@@ -74,8 +76,5 @@ const WindRecipe buttonRecipe = WindRecipe(
       'lg': 'px-5 py-3 text-base',
     },
   },
-  defaultVariants: {
-    kButtonIntentAxis: 'primary',
-    kButtonSizeAxis: 'md',
-  },
+  defaultVariants: {kButtonIntentAxis: 'primary', kButtonSizeAxis: 'md'},
 );

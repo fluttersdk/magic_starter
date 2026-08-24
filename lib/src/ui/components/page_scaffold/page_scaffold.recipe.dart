@@ -14,9 +14,7 @@ import 'package:magic/magic.dart';
 ///
 /// Emission order: base (width + min-height + surface token).
 String pageScaffoldSurfaceRecipe() {
-  return const WindRecipe(
-    base: 'w-full min-h-full bg-surface',
-  )();
+  return const WindRecipe(base: 'w-full min-h-full bg-surface')();
 }
 
 /// Returns the className for the children area (the page sections column).
@@ -26,7 +24,5 @@ String pageScaffoldSurfaceRecipe() {
 ///
 /// Emission order: base (margin + flex + direction + gap).
 String pageScaffoldChildrenAreaRecipe() {
-  return const WindRecipe(
-    base: 'mt-6 flex flex-col gap-6',
-  )();
+  return const WindRecipe(base: 'mt-6 flex flex-col gap-6')();
 }

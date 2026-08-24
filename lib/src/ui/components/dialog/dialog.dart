@@ -77,18 +77,16 @@ class MSDialog extends StatelessWidget {
 
     // 1. Compute safe height, subtracting system insets.
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight = (MediaQuery.sizeOf(context).height -
-            viewPadding.top -
-            viewPadding.bottom)
-        .clamp(0.0, double.infinity);
+    final safeHeight =
+        (MediaQuery.sizeOf(context).height -
+                viewPadding.top -
+                viewPadding.bottom)
+            .clamp(0.0, double.infinity);
 
     // 2. Build Material dialog shell with Wind UI content inside.
     return m.Dialog(
       backgroundColor: m.Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 24,
-      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: theme.maxWidth,
@@ -106,10 +104,7 @@ class MSDialog extends StatelessWidget {
                   className: theme.headerClassName,
                   children: [
                     if (title != null)
-                      WText(
-                        title!,
-                        className: theme.titleClassName,
-                      ),
+                      WText(title!, className: theme.titleClassName),
                     if (description != null)
                       WText(
                         description!,
@@ -122,12 +117,7 @@ class MSDialog extends StatelessWidget {
                 child: ListView(
                   shrinkWrap: true,
                   padding: EdgeInsets.zero,
-                  children: [
-                    WDiv(
-                      className: theme.bodyClassName,
-                      child: body,
-                    ),
-                  ],
+                  children: [WDiv(className: theme.bodyClassName, child: body)],
                 ),
               ),
               // 5. Sticky footer: Builder gives footer access to dialog

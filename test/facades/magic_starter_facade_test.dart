@@ -109,10 +109,7 @@ void main() {
 
         MagicStarter.useNavigationTheme(customTheme);
 
-        expect(
-          MagicStarter.navigationTheme.brandBuilder,
-          equals(testBrand),
-        );
+        expect(MagicStarter.navigationTheme.brandBuilder, equals(testBrand));
       });
 
       test('MagicStarterNavigationTheme preserves all custom field values', () {
@@ -179,14 +176,8 @@ void main() {
           theme.containerClassName,
           'bg-white dark:bg-gray-800 rounded-2xl',
         );
-        expect(
-          theme.headerClassName,
-          'px-6 pt-6 pb-4',
-        );
-        expect(
-          theme.bodyClassName,
-          'px-6 pb-4',
-        );
+        expect(theme.headerClassName, 'px-6 pt-6 pb-4');
+        expect(theme.bodyClassName, 'px-6 pb-4');
         expect(
           theme.footerClassName,
           'px-6 py-4 bg-gray-50 dark:bg-gray-800/50',
@@ -215,10 +206,7 @@ void main() {
           theme.warningButtonClassName,
           'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium',
         );
-        expect(
-          theme.errorClassName,
-          'text-sm text-red-600 dark:text-red-400',
-        );
+        expect(theme.errorClassName, 'text-sm text-red-600 dark:text-red-400');
         expect(
           theme.inputClassName,
           'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
@@ -353,10 +341,7 @@ void main() {
         );
         const customCard = MagicStarterCardTheme(borderRadius: 'rounded-xl');
 
-        const unified = MagicStarterTheme(
-          form: customForm,
-          card: customCard,
-        );
+        const unified = MagicStarterTheme(form: customForm, card: customCard);
 
         MagicStarter.useTheme(unified);
 
@@ -438,14 +423,17 @@ void main() {
       });
 
       test(
-          'manager.reset() clears consumer overrides and re-registers defaults',
-          () {
-        // Consumer override is lost on reset — default is re-registered
-        MagicStarter.view
-            .registerModal('modal.confirm', () => const SizedBox());
-        MagicStarter.manager.reset();
-        expect(MagicStarter.view.hasModal('modal.confirm'), isTrue);
-      });
+        'manager.reset() clears consumer overrides and re-registers defaults',
+        () {
+          // Consumer override is lost on reset — default is re-registered
+          MagicStarter.view.registerModal(
+            'modal.confirm',
+            () => const SizedBox(),
+          );
+          MagicStarter.manager.reset();
+          expect(MagicStarter.view.hasModal('modal.confirm'), isTrue);
+        },
+      );
 
       test('manager.reset() re-registers default modals', () {
         MagicStarter.manager.reset();

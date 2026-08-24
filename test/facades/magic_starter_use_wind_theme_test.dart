@@ -116,7 +116,9 @@ void main() {
       );
       expect(
         hasToken(
-            MagicStarter.cardTheme.surfaceClassName, 'border-color-border'),
+          MagicStarter.cardTheme.surfaceClassName,
+          'border-color-border',
+        ),
         isTrue,
       );
       expect(

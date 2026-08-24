@@ -20,21 +20,14 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SingleChildScrollView(child: widget),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: widget)),
       ),
     );
   }
 
   testWidgets('Navbar renders brand when provided', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        MSNavbar(
-          brand: const Text('My App'),
-          children: const [],
-        ),
-      ),
+      wrap(MSNavbar(brand: const Text('My App'), children: const [])),
     );
     expect(find.text('My App'), findsOneWidget);
   });
@@ -42,13 +35,7 @@ void main() {
   testWidgets('Navbar renders children', (tester) async {
     const childKey = Key('navbar-child');
     await tester.pumpWidget(
-      wrap(
-        MSNavbar(
-          children: [
-            SizedBox(key: childKey, width: 10),
-          ],
-        ),
-      ),
+      wrap(MSNavbar(children: [SizedBox(key: childKey, width: 10)])),
     );
     expect(find.byKey(childKey), findsOneWidget);
   });
