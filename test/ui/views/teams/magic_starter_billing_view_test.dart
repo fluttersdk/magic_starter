@@ -437,30 +437,6 @@ class _ReadsBillingService implements BillingService {
 /// resolves EMPTY had no fixture pointing at it. A fixture that pins one value
 /// makes the other branch unreachable, and an unreachable branch is not covered
 /// by however many tests pass.
-/// A subscription the customer has CANCELLED, still granting until its period
-/// ends.
-///
-/// Everything except `renews` matches the renewing fixture on purpose: the plan
-/// is live, the rail is Stripe, the portal is reachable and the date is the same
-/// instant. That is what makes the one changed field the whole test. The rail
-/// really does report it this way, because an end-of-period cancellation leaves
-/// a customer entitled and the date attached to them stops being a renewal.
-class _CancelledBillingService extends _ReadsBillingService {
-  @override
-  Future<BillingEntitlement> currentEntitlement() async {
-    return BillingEntitlement.fromMap(<String, dynamic>{
-      'plan': entitlementPlan,
-      'plan_status': 'active',
-      'subscribed': true,
-      'renews': false,
-      'provider': 'stripe',
-      'manage_via': manageVia,
-      'manage_url': manageUrl,
-      'ai_analysis_trials_remaining': null,
-    });
-  }
-}
-
 class _UnbilledBillingService extends _ReadsBillingService {
   @override
   Future<BillingEntitlement> currentEntitlement() async {
@@ -486,6 +462,30 @@ class _UnbilledBillingService extends _ReadsBillingService {
   @override
   Future<PaymentMethod> getPaymentMethod() async =>
       const PaymentMethod(available: true);
+}
+
+/// A subscription the customer has CANCELLED, still granting until its period
+/// ends.
+///
+/// Everything except `renews` matches the renewing fixture on purpose: the plan
+/// is live, the rail is Stripe, the portal is reachable and the date is the same
+/// instant. That is what makes the one changed field the whole test. The rail
+/// really does report it this way, because an end-of-period cancellation leaves
+/// a customer entitled and the date attached to them stops being a renewal.
+class _CancelledBillingService extends _ReadsBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': 'active',
+      'subscribed': true,
+      'renews': false,
+      'provider': 'stripe',
+      'manage_via': manageVia,
+      'manage_url': manageUrl,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
 }
 
 /// A PAYING customer whose payment-method read soft-failed.

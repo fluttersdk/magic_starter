@@ -512,13 +512,16 @@ class MagicStarterBillingController extends MagicController
   }
 
   /// Reads the customer's current entitlement and republishes [currentPlanId],
-  /// [manageVia] and [manageUrl].
+  /// [manageVia], [manageUrl] and [renews].
   ///
-  /// [manageVia] and [manageUrl] are republished whether or not the payload
-  /// names a plan, because the rail is a separate fact from the tier: a customer
-  /// whose `plan` is absent can still be billed through a store, and gating the
-  /// rail behind a non-null plan would leave it unresolved for exactly the
-  /// customers whose management surface is hardest to guess.
+  /// [manageVia], [manageUrl] and [renews] are republished whether or not the
+  /// payload names a plan, because each is a separate fact from the tier: a
+  /// customer whose `plan` is absent can still be billed through a store, and
+  /// gating the rail behind a non-null plan would leave it unresolved for
+  /// exactly the customers whose management surface is hardest to guess.
+  /// [renews] rides on that same reasoning, and it is the field this read exists
+  /// to publish: a screen that cannot see it tells a customer who has already
+  /// cancelled that their plan renews.
   ///
   /// Deliberate degradation on failure: [currentPlanId] keeps whatever it held
   /// (for a first read, `null`) instead of throwing, and no plan id is ever
