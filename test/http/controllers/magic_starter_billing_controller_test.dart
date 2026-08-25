@@ -119,12 +119,14 @@ class _FakeBilling
   @override
   Future<BillingCheckoutSession> checkout({
     required String plan,
-    String? successUrl,
-    String? cancelUrl,
+    required BillingCycle cycle,
+    required String successUrl,
+    required String cancelUrl,
   }) => throw UnimplementedError();
 
   @override
-  Future<void> swap({required String plan}) => throw UnimplementedError();
+  Future<void> swap({required String plan, required BillingCycle cycle}) =>
+      throw UnimplementedError();
 
   @override
   Future<void> cancel() => throw UnimplementedError();
@@ -1130,12 +1132,14 @@ mixin _WebRailStubs implements WebBillingService {
   @override
   Future<BillingCheckoutSession> checkout({
     required String plan,
-    String? successUrl,
-    String? cancelUrl,
+    required BillingCycle cycle,
+    required String successUrl,
+    required String cancelUrl,
   }) => throw UnimplementedError();
 
   @override
-  Future<void> swap({required String plan}) => throw UnimplementedError();
+  Future<void> swap({required String plan, required BillingCycle cycle}) =>
+      throw UnimplementedError();
 
   @override
   Future<void> cancel() => throw UnimplementedError();

@@ -210,6 +210,7 @@ class MagicStarterBillingController extends MagicController
   ManageVia? _manageVia;
   String? _manageUrl;
   bool? _renews;
+  BillingCycle? _cycle;
   List<MagicStarterPlan> _plans = const <MagicStarterPlan>[];
   List<UsageStat> _usage = const <UsageStat>[];
   List<Invoice> _invoices = const <Invoice>[];
@@ -258,6 +259,18 @@ class MagicStarterBillingController extends MagicController
   /// window before the entitlement resolves. That window shows no date either,
   /// so the line is already saying it does not know.
   bool? get renews => _renews;
+
+  /// How often the customer is charged, or `null` when nothing has said.
+  ///
+  /// What they BOUGHT, resolved by the producer from the price their
+  /// subscription sits on. Not the cycle a catalogue toggle is displaying: the
+  /// two are easy to conflate and conflating them is how a screen came to tell
+  /// every paying customer they were billed annually.
+  ///
+  /// Null is a real answer and has to render as one. It covers a customer on no
+  /// rail, a price whose cycle the vendor's config never declared, and a STORE
+  /// subscription, whose product id the producer's Stripe catalogue cannot name.
+  BillingCycle? get cycle => _cycle;
 
   /// The plan catalogue, in the order the backend served it (cheapest first).
   ///
@@ -480,6 +493,7 @@ class MagicStarterBillingController extends MagicController
     _manageVia = null;
     _manageUrl = null;
     _renews = null;
+    _cycle = null;
     _plans = const <MagicStarterPlan>[];
     _usage = const <UsageStat>[];
     _invoices = const <Invoice>[];
@@ -533,6 +547,7 @@ class MagicStarterBillingController extends MagicController
       _manageVia = entitlement.manageVia;
       _manageUrl = entitlement.manageUrl;
       _renews = entitlement.renews;
+      _cycle = entitlement.cycle;
       if (plan != null) {
         _currentPlanId = plan;
         _entitlementLoaded = true;
