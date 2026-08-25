@@ -386,6 +386,7 @@ class _ReadsBillingService implements BillingService {
       'plan_status': 'active',
       'subscribed': true,
       'renews': true,
+      'cycle': 'annual',
       'provider': 'stripe',
       'manage_via': manageVia,
       'manage_url': manageUrl,
@@ -445,6 +446,7 @@ class _UnbilledBillingService extends _ReadsBillingService {
       'plan_status': 'none',
       'subscribed': false,
       'renews': null,
+      'cycle': null,
       'provider': 'none',
       'manage_via': 'none',
       'manage_url': null,
@@ -480,6 +482,7 @@ class _CancelledBillingService extends _ReadsBillingService {
       'plan_status': 'active',
       'subscribed': true,
       'renews': false,
+      'cycle': 'annual',
       'provider': 'stripe',
       'manage_via': manageVia,
       'manage_url': manageUrl,
@@ -584,6 +587,72 @@ class _RenamedCustomTierBillingService extends _RailBillingService {
   }
 }
 
+/// The same catalogue with `business` sold MONTHLY ONLY.
+///
+/// A priced tier with no annual price is a row this screen already expects
+/// elsewhere (`_priceLabel` renders the custom label for it, `_billingNote`
+/// guards on it), and it is what a vendor has the day they add a tier and have
+/// not created its annual price in Stripe yet. It is built by rewriting one
+/// field of the shipping catalogue rather than by hand, so every other field
+/// stays the one the producer sends and the test cannot pass because the row was
+/// simplified.
+class _MonthlyOnlyTierBillingService extends _RailBillingService {
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async {
+    return _planWireRows.map((Map<String, dynamic> row) {
+      if (row['id'] != 'business') return row;
+
+      return <String, dynamic>{...row, 'annual': null};
+    }).toList();
+  }
+}
+
+/// A paying customer whose CYCLE nothing reported.
+///
+/// The producer answers null for a store subscription and for a Stripe price the
+/// adopter mapped without declaring its cycle, so this is a real state and not a
+/// contrived one. Everything else about the subscription is present, which is
+/// what makes it a test of the sentence rather than of the loading path.
+class _CyclelessBillingService extends _RailBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': 'active',
+      'subscribed': true,
+      'renews': true,
+      'cycle': null,
+      'provider': 'stripe',
+      'manage_via': 'none',
+      'manage_url': null,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
+/// A customer billed MONTHLY, on the same web rail.
+///
+/// One field apart from [_RailBillingService], which is what makes the
+/// toggle-default test a real one: everything else about the two is identical,
+/// so the cycle the screen opens on is the only thing that can explain a
+/// different charge.
+class _MonthlyBillingService extends _RailBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': 'active',
+      'subscribed': true,
+      'renews': true,
+      'cycle': 'monthly',
+      'provider': 'stripe',
+      'manage_via': 'none',
+      'manage_url': null,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
 /// The reads PLUS the WEB rail, recording every purchase-affecting call so a
 /// test can assert an affordance was not merely hidden but never reachable.
 ///
@@ -609,16 +678,25 @@ class _RailBillingService extends _ReadsBillingService
   /// subtype) are reachable without a real rail.
   final BillingException? checkoutError;
 
+  /// Every cycle [checkout] was called with, so a test can assert the customer
+  /// is charged on the cycle whose figure they were shown.
+  final List<BillingCycle> checkoutCycles = <BillingCycle>[];
+
+  /// Every (plan, cycle) pair [swap] was called with.
+  final List<(String, BillingCycle)> swappedTo = <(String, BillingCycle)>[];
+
   /// How many times [openPortal] was called.
   int portalCalls = 0;
 
   @override
   Future<BillingCheckoutSession> checkout({
     required String plan,
+    required BillingCycle cycle,
     required String successUrl,
     required String cancelUrl,
   }) async {
     checkoutPlans.add(plan);
+    checkoutCycles.add(cycle);
     final BillingException? error = checkoutError;
     if (error != null) throw error;
 
@@ -629,7 +707,9 @@ class _RailBillingService extends _ReadsBillingService
   }
 
   @override
-  Future<void> swap({required String plan}) async {}
+  Future<void> swap({required String plan, required BillingCycle cycle}) async {
+    swappedTo.add((plan, cycle));
+  }
 
   @override
   Future<void> cancel() async {}
@@ -1246,7 +1326,95 @@ void main() {
       expect(tester.takeException(), isNull);
       // 'business' sits above the fixture's 'pro', so its CTA reads Upgrade.
       expect(billing.checkoutPlans, <String>['business']);
+      // AND the cycle whose figure the card was rendering. The fixture is on
+      // annual, so the toggle opens there and the charge follows the price the
+      // customer read. Before the cycle travelled, this call carried the plan
+      // alone and the producer picked whichever price it found: a customer
+      // taking the annual discount was billed the monthly rate.
+      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.annual]);
       // Flush the confirmation toast's auto-dismiss timer.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the cycle a purchase is made on follows the toggle, so the '
+        'charge matches the figure on the card', (tester) async {
+      // The other half, and the half that makes the assertion above mean
+      // something: an implementation hardcoding either member would pass one of
+      // these two and fail the other. The fixture bills annually, so pressing
+      // Monthly is a real divergence between what the customer holds and what
+      // they are choosing, which is exactly the case a screen must not get
+      // wrong.
+      final _RailBillingService billing = _RailBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a tier sold monthly only is bought monthly, even while the '
+        'toggle sits on annual', (tester) async {
+      // The screen-wide cycle knows nothing about the row it is applied to. With
+      // `business` priced monthly and not annually, the toggle still opens on
+      // annual (the fixture's subscription is annual), the card still carries a
+      // live Upgrade button, and the payload used to name a (business, annual)
+      // pair the producer has no price for. It is the same defect as charging
+      // the monthly rate under an annual heading, in the other direction: the
+      // customer is offered one thing and sold another, or nothing at all.
+      final _MonthlyOnlyTierBillingService billing =
+          _MonthlyOnlyTierBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      // The premise, asserted rather than assumed: the toggle really is on
+      // annual, so a monthly charge here can only come from the row.
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_annual')),
+        findsWidgets,
+      );
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.checkoutPlans, <String>['business']);
+      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the toggle opens on the cycle the customer is already billed '
+        'on, so a tap cannot move them off it by accident', (tester) async {
+      // Not cosmetic. With the toggle opening on a fixed segment, a customer on
+      // monthly whose screen opened on annual and who then tapped a plan card
+      // was moved to that tier ANNUALLY without ever choosing annual.
+      final _MonthlyBillingService billing = _MonthlyBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
     });
@@ -1664,6 +1832,59 @@ void main() {
       // replacement above ends in "nothing renews", so asserting on `renews`
       // alone matches the fix and fails on the very thing it is checking.
       expect(find.textContaining('· renews '), findsNothing);
+    });
+
+    testWidgets('the renewal line names the cycle the customer BOUGHT, not the '
+        'one the toggle is showing', (tester) async {
+      // The defect in its exact shape. The sentence used to pass
+      // `BillingCycle.annual` as a LITERAL, so every paying customer read
+      // "billed annually" whatever they were charged. Reading the toggle
+      // instead would only move the claim onto a control the customer can
+      // press, so the test presses it: this fixture is billed monthly, the
+      // toggle is moved to annual, and the sentence has to keep saying monthly
+      // because that is what is being charged.
+      await mount(tester, _MonthlyBillingService(), isOwner: true);
+
+      expect(
+        find.text(r'$34/mo billed monthly · renews Jun 1, 2026'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_annual')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(r'$34/mo billed monthly · renews Jun 1, 2026'),
+        findsOneWidget,
+        reason: 'the toggle changes catalogue figures, never the charge',
+      );
+    });
+
+    testWidgets('a cycle nothing reported is left unnamed rather than guessed', (
+      tester,
+    ) async {
+      // A store subscription and a price mapped without a declared cycle both
+      // reach the client as a null cycle. Naming either one is the claim this
+      // whole change exists to stop making, so the sentence drops the price and
+      // the cycle and keeps the date, which is the part that was reported.
+      await mount(tester, _CyclelessBillingService(), isOwner: true);
+
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.renewal_text_cycleless',
+            <String, dynamic>{'date': 'Jun 1, 2026'},
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      // Scoped to the renewal sentence's own separator, not to the word
+      // "billed": the plan CARDS legitimately carry "billed annually" as
+      // catalogue display copy for the column they are showing, and asserting
+      // on that would fail against correct behaviour.
+      expect(find.textContaining('· renews '), findsNothing);
+      expect(find.textContaining('/mo billed'), findsNothing);
     });
 
     testWidgets('a cancelled subscription is told when it ends, not that it '

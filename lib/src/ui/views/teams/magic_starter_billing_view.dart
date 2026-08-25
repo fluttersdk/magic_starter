@@ -16,16 +16,6 @@ import '../../components/segmented_control/index.dart';
 import '../../components/skeleton/index.dart';
 import '../../components/usage_meter/index.dart';
 
-/// The billing cycle a plan's price is shown for.
-enum MagicStarterBillingCycle {
-  /// The full monthly rate ([MagicStarterPlan.monthly]).
-  monthly,
-
-  /// The discounted effective-per-month rate when billed annually
-  /// ([MagicStarterPlan.annual]).
-  annual,
-}
-
 /// Publishes the catalogue row a plan card was built from, so the
 /// `plan_card_highlight` slot can render the fields this package never names.
 ///
@@ -199,12 +189,11 @@ class _MagicStarterBillingViewState
   /// The one slot a plan card carries. See [MagicStarterPlanCardScope].
   static const String _planHighlightSlot = 'plan_card_highlight';
 
-  /// The cycle-toggle options, in [MagicStarterBillingCycle] order.
-  static const List<MagicStarterBillingCycle> _cycles =
-      <MagicStarterBillingCycle>[
-        MagicStarterBillingCycle.monthly,
-        MagicStarterBillingCycle.annual,
-      ];
+  /// The cycle-toggle options, in [BillingCycle] order.
+  static const List<BillingCycle> _cycles = <BillingCycle>[
+    BillingCycle.monthly,
+    BillingCycle.annual,
+  ];
 
   /// The check glyph rendered before each plan feature.
   static const IconData _checkIcon = Icons.check;
@@ -247,13 +236,51 @@ class _MagicStarterBillingViewState
   /// [_startRequestedUpgrade]); a per-instance flag cannot dedupe across them.
   static String? _consumedUpgradeIntent;
 
-  /// The selected billing cycle, local display state only.
+  /// The cycle the CUSTOMER picked on the toggle, or null while they have not
+  /// touched it.
   ///
-  /// Opens on the annual segment so prices read the discounted column. It is
-  /// never encoded into a checkout payload: a catalogue row carries one price
-  /// per cycle for DISPLAY, and which price a rail charges belongs to the rail's
-  /// own product.
-  MagicStarterBillingCycle _cycle = MagicStarterBillingCycle.annual;
+  /// Separate from [_cycle] so the toggle can default to the cycle a customer is
+  /// already on without that default becoming indistinguishable from a choice.
+  BillingCycle? _cycleOverride;
+
+  /// The billing cycle every price on this screen is shown for, and the one a
+  /// purchase is made on.
+  ///
+  /// It is NOT display-only, and the comment here used to say it was: "never
+  /// encoded into a checkout payload: a catalogue row carries one price per
+  /// cycle for DISPLAY, and which price a rail charges belongs to the rail's own
+  /// product." That reasoning is what shipped a screen offering an annual
+  /// discount over a monthly charge. A tier is not a price, so the cycle travels
+  /// with the purchase.
+  ///
+  /// It opens on the cycle the customer is ALREADY billed on rather than on a
+  /// fixed segment, and that is not a nicety either. A customer on monthly whose
+  /// screen opened on annual, then tapping a plan card, would have been moved to
+  /// that tier ANNUALLY without ever choosing annual. Falling back to annual only
+  /// when no cycle is known keeps the discounted column in front of somebody who
+  /// is not paying yet.
+  BillingCycle get _cycle =>
+      _cycleOverride ?? controller.cycle ?? BillingCycle.annual;
+
+  /// The cycle [plan] is actually SOLD on, which is [_cycle] except where that
+  /// tier has no price for it.
+  ///
+  /// A catalogue row with a monthly price and no annual one is a state this
+  /// screen already expects (`_priceLabel` renders the custom label for it and
+  /// `_billingNote` guards on it), and [_cycle] is a screen-wide value that knows
+  /// nothing about the row it is being applied to. Left unqualified, such a tier
+  /// stayed purchasable while the toggle sat on Annual and handed the checkout a
+  /// (tier, annual) pair the producer has no price for: an unresolvable payload
+  /// on a live Upgrade button, and the same class of defect as charging the
+  /// monthly figure under an annual heading, since the customer is again offered
+  /// one thing and sold another.
+  ///
+  /// Deliberately per CARD rather than a refusal in [_selectPlan]. That row is
+  /// sellable, monthly, and refusing it would hide a tier the vendor is selling
+  /// because of a toggle position; naming its real cycle sells it at the figure
+  /// its card shows.
+  BillingCycle _cycleFor(MagicStarterPlan plan) =>
+      plan.annual == null ? BillingCycle.monthly : _cycle;
 
   /// Whether this mount has already acted on an upgrade deep link, so a second
   /// resolving read cannot reopen checkout.
@@ -510,17 +537,51 @@ class _MagicStarterBillingViewState
     // before the entitlement resolves reading exactly as it did. Nothing is
     // claimed in that window that is not already hedged: the date comes from a
     // separate read and renders as unknown until it lands.
-    final String key = controller.renews == false
-        ? 'magic_starter.billing.renewal_ends'
-        : 'magic_starter.billing.renewal_text';
+    //
+    // Held as ONE boolean rather than resolved twice: there are four keys below,
+    // two per cycle branch, and the rule that picks between them is this
+    // comparison. Written out at each branch it is the same rule in two places,
+    // and the first version of this code did exactly that, with the second copy
+    // returning before the first was ever read.
+    final bool ends = controller.renews == false;
 
-    return trans(key, <String, dynamic>{
-      'price': _priceLabel(current, MagicStarterBillingCycle.annual),
-      'cycle': trans('magic_starter.billing.renewal_cycle_annual'),
-      'date':
-          _formatDate(controller.paymentMethod?.renewalDate) ??
-          trans('common.unknown'),
-    });
+    // The cycle the customer BOUGHT, from the entitlement, never the toggle and
+    // never a literal. Both of those shipped: the cycle was hardcoded to annual
+    // here, so every paying customer read "billed annually" whatever they were
+    // charged, and reading `_cycle` instead would only move the lie onto a
+    // segmented control the customer can press.
+    //
+    // A null cycle takes the sentence WITHOUT one rather than a guessed word.
+    // The producer answers null for a store subscription and for a price whose
+    // cycle its config never declared, and naming either one is the claim this
+    // whole change exists to stop making.
+    final BillingCycle? cycle = controller.cycle;
+
+    if (cycle == null) {
+      return trans(
+        ends
+            ? 'magic_starter.billing.renewal_ends_cycleless'
+            : 'magic_starter.billing.renewal_text_cycleless',
+        <String, dynamic>{
+          'date':
+              _formatDate(controller.paymentMethod?.renewalDate) ??
+              trans('common.unknown'),
+        },
+      );
+    }
+
+    return trans(
+      ends
+          ? 'magic_starter.billing.renewal_ends'
+          : 'magic_starter.billing.renewal_text',
+      <String, dynamic>{
+        'price': _priceLabel(current, cycle),
+        'cycle': _cycleLabel(cycle),
+        'date':
+            _formatDate(controller.paymentMethod?.renewalDate) ??
+            trans('common.unknown'),
+      },
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -562,15 +623,18 @@ class _MagicStarterBillingViewState
               className: 'text-lg font-semibold text-fg',
             ),
             if (controller.storeRail == null)
-              MSSegmentedControl<MagicStarterBillingCycle>(
+              MSSegmentedControl<BillingCycle>(
                 size: SegmentedControlSize.sm,
                 options: <String>[
                   trans('magic_starter.billing.plans_monthly'),
                   trans('magic_starter.billing.plans_annual'),
                 ],
                 selectedIndex: _cycles.indexOf(_cycle),
+                // Into the OVERRIDE, not into `_cycle`, which is derived. A
+                // press is the customer's own choice and has to outrank the
+                // entitlement default for the rest of the visit.
                 onChanged: (int index) =>
-                    setState(() => _cycle = _cycles[index]),
+                    setState(() => _cycleOverride = _cycles[index]),
               ),
           ],
         ),
@@ -671,7 +735,7 @@ class _MagicStarterBillingViewState
                 className: 'flex flex-row items-baseline gap-1',
                 children: <Widget>[
                   WText(
-                    _priceLabel(plan, _cycle),
+                    _priceLabel(plan, _cycleFor(plan)),
                     className: 'text-3xl font-semibold tabular-nums text-fg',
                   ),
                   if (!isCustom)
@@ -1346,6 +1410,14 @@ class _MagicStarterBillingViewState
     try {
       await web.checkout(
         plan: plan.id,
+        // The cycle the card's price was rendered for, so the customer is
+        // charged the figure they were shown. It used to reach nothing, and the
+        // toast two lines below already claimed it, so a customer taking the
+        // annual discount was billed monthly and told otherwise.
+        //
+        // Per card rather than screen-wide: see [_cycleFor], and note the toast
+        // below has to read the same value or the two disagree again.
+        cycle: _cycleFor(plan),
         successUrl: successUrl,
         cancelUrl: cancelUrl,
       );
@@ -1358,7 +1430,7 @@ class _MagicStarterBillingViewState
         ),
         trans(
           'magic_starter.billing.toast_change_description',
-          <String, dynamic>{'cycle': _cycleLabel(_cycle)},
+          <String, dynamic>{'cycle': _cycleLabel(_cycleFor(plan))},
         ),
       );
     } on BillingException catch (error) {
@@ -1524,8 +1596,8 @@ class _MagicStarterBillingViewState
   /// The symbol follows [MagicStarterPlan.currency]'s own contract: `usd` renders
   /// as a symbol and anything else keeps its raw wire code, because a currency
   /// formatting table is not something this package owns.
-  String _priceLabel(MagicStarterPlan plan, MagicStarterBillingCycle cycle) {
-    final int? price = cycle == MagicStarterBillingCycle.annual
+  String _priceLabel(MagicStarterPlan plan, BillingCycle cycle) {
+    final int? price = cycle == BillingCycle.annual
         ? plan.annual
         : plan.monthly;
     if (price == null) {
@@ -1549,8 +1621,7 @@ class _MagicStarterBillingViewState
     // would describe a cadence nothing there sells, including on the free tier
     // whose price is not suppressed.
     if (controller.storeRail == null &&
-        _cycle == MagicStarterBillingCycle.annual &&
-        plan.annual != null) {
+        _cycleFor(plan) == BillingCycle.annual) {
       return trans('magic_starter.billing.plan_billing_annual');
     }
     if (plan.monthly == 0) {
@@ -1561,12 +1632,12 @@ class _MagicStarterBillingViewState
   }
 
   /// The renewal and description cycle word for [cycle].
-  String _cycleLabel(MagicStarterBillingCycle cycle) {
+  String _cycleLabel(BillingCycle cycle) {
     return switch (cycle) {
-      MagicStarterBillingCycle.monthly => trans(
+      BillingCycle.monthly => trans(
         'magic_starter.billing.renewal_cycle_monthly',
       ),
-      MagicStarterBillingCycle.annual => trans(
+      BillingCycle.annual => trans(
         'magic_starter.billing.renewal_cycle_annual',
       ),
     };

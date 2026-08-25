@@ -21,6 +21,16 @@ export 'src/http/controllers/magic_starter_otp_controller.dart';
 export 'src/http/controllers/magic_starter_guest_auth_controller.dart';
 export 'src/http/controllers/magic_starter_billing_controller.dart';
 
+/// `BillingCycle` is re-exported because `MagicStarterBillingController.cycle`
+/// is public and answers one, and nothing else in this barrel re-exports
+/// `magic_payments`. Without this line an adopter can read that getter and
+/// cannot NAME its type: they would have to add `magic_payments` to their own
+/// pubspec for a type this package's own API hands them, and that package is not
+/// on pub.dev yet. Deliberately the one member rather than the whole barrel: the
+/// entitlement contract belongs to `magic_payments` and an adopter using it
+/// depends on it directly.
+export 'package:magic_payments/magic_payments.dart' show BillingCycle;
+
 export 'src/http/controllers/magic_starter_newsletter_controller.dart';
 export 'src/routes/auth_routes.dart';
 export 'src/routes/profile_routes.dart';
