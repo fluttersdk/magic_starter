@@ -15,7 +15,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 | `flutter test --coverage` | Run all tests (107 files, ~1394 cases) with coverage |
 | `flutter test test/http/controllers/` | Run controller tests only |
 | `flutter test --name "pattern"` | Run tests matching pattern |
-| `flutter analyze --no-fatal-infos` | Static analysis (flutter_lints ^6.0) |
+| `flutter analyze` | Static analysis (flutter_lints ^6.0). Infos are fatal in CI, so a new lint is fixed rather than filed. |
 | `dart format .` | Format all code |
 | `dart fix --apply` | Auto-fix lint issues |
 
