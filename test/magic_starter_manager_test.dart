@@ -30,7 +30,7 @@ void main() {
       });
 
       test('reset() clears socialLoginBuilder', () {
-        manager.socialLoginBuilder = (_, __) => const SizedBox();
+        manager.socialLoginBuilder = (_, _) => const SizedBox();
 
         manager.reset();
 

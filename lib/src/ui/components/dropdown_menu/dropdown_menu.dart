@@ -89,7 +89,7 @@ class MSDropdownMenu extends StatelessWidget {
       alignment: alignment,
       className: panelClassName,
       enableTriggerOnTap: true,
-      triggerBuilder: (_, __, ___) => child,
+      triggerBuilder: (_, _, _) => child,
       contentBuilder: (_, close) => _buildItems(close),
     );
   }

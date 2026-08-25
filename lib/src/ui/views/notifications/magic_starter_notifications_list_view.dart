@@ -125,9 +125,9 @@ class _MagicStarterNotificationsListViewState
       subtitle: trans('notifications.list_subtitle'),
       actions: _buildHeaderActions(hasUnread: hasUnread),
       children: [
-        if (headerSlot != null) headerSlot,
+        ?headerSlot,
         _buildBody(context, notifications, totalPages),
-        if (footerSlot != null) footerSlot,
+        ?footerSlot,
       ],
     );
   }

@@ -158,7 +158,7 @@ class MSPageHeader extends StatelessWidget {
               ? 'flex flex-row items-center gap-3 flex-1 min-w-0'
               : 'flex flex-row items-center gap-3 sm:flex-1 min-w-0',
           children: [
-            if (effectiveLeading != null) effectiveLeading,
+            ?effectiveLeading,
             // The title column shrinks for truncation (flex-initial =
             // FlexFit.loose) but does NOT grow, so a `titleSuffix` sits right
             // after the title instead of being pushed to the row's far edge.

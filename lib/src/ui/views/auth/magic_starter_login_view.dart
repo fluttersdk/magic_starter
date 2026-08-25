@@ -103,7 +103,7 @@ class _MagicStarterLoginViewState
         child: WDiv(
           className: 'flex flex-col items-stretch',
           children: [
-            if (headerSlot != null) headerSlot,
+            ?headerSlot,
             _buildIdentityField(),
             const WSpacer(className: 'h-4'),
             WFormInput(
@@ -165,7 +165,7 @@ class _MagicStarterLoginViewState
                 ),
               ),
             ],
-            if (formFooterSlot != null) formFooterSlot,
+            ?formFooterSlot,
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
                 MagicStarter.hasSocialLogin) ...[
               const MSSocialDivider(),
@@ -192,7 +192,7 @@ class _MagicStarterLoginViewState
                 ),
               ),
             ],
-            if (footerSlot != null) footerSlot,
+            ?footerSlot,
           ],
         ),
       ),

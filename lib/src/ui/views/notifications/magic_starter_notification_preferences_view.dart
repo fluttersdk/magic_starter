@@ -81,11 +81,7 @@ class _MagicStarterNotificationPreferencesViewState
       subtitle: trans('notifications.preferences_description'),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
-      children: [
-        if (headerSlot != null) headerSlot,
-        _buildMatrixSettings(),
-        if (footerSlot != null) footerSlot,
-      ],
+      children: [?headerSlot, _buildMatrixSettings(), ?footerSlot],
     );
   }
 

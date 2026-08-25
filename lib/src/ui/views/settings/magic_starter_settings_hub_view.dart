@@ -198,7 +198,7 @@ class _MagicStarterSettingsHubViewState
     return MSPageScaffold(
       title: trans('magic_starter.nav.settings'),
       children: [
-        if (headerSlot != null) headerSlot,
+        ?headerSlot,
         if (accountRows.isNotEmpty)
           MSSettingsSection(
             header: trans('magic_starter.settings.account_section'),
@@ -214,7 +214,7 @@ class _MagicStarterSettingsHubViewState
             header: trans('magic_starter.settings.preferences_section'),
             children: preferencesRows,
           ),
-        if (footerSlot != null) footerSlot,
+        ?footerSlot,
       ],
     );
   }

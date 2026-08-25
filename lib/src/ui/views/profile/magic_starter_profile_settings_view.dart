@@ -442,10 +442,10 @@ class _MagicStarterProfileSettingsViewState
       title: trans('profile.settings'),
       subtitle: trans('profile.settings_subtitle'),
       children: [
-        if (headerSlot != null) headerSlot,
+        ?headerSlot,
         if (MagicStarterConfig.hasProfilePhotoFeatures() &&
             Gate.allows('starter.update-profile-photo')) ...[
-          if (beforePhotoSlot != null) beforePhotoSlot,
+          ?beforePhotoSlot,
           _buildProfilePhotoSection(),
         ],
         // Email verification banner right after photo when unverified.
@@ -454,9 +454,9 @@ class _MagicStarterProfileSettingsViewState
             !controller.isEmailVerified)
           _buildEmailVerificationSection(),
         MagicForm(formData: profileForm, child: _buildProfileSection()),
-        if (afterInfoSlot != null) afterInfoSlot,
+        ?afterInfoSlot,
         if (Gate.allows('starter.update-password')) ...[
-          if (beforePasswordSlot != null) beforePasswordSlot,
+          ?beforePasswordSlot,
           _buildPasswordSection(),
         ],
         // Verified badge shown inline (not at top).
@@ -473,10 +473,10 @@ class _MagicStarterProfileSettingsViewState
         if (Gate.denies('starter.delete-account')) _buildGuestUpgradeSection(),
         if (MagicStarterConfig.hasSessionsFeatures()) ...[
           _buildSessionsSection(),
-          if (afterSessionsSlot != null) afterSessionsSlot,
+          ?afterSessionsSlot,
         ],
         _buildDeleteAccountSection(),
-        if (footerSlot != null) footerSlot,
+        ?footerSlot,
       ],
     );
   }

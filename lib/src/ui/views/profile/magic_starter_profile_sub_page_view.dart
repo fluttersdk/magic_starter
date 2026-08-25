@@ -152,7 +152,7 @@ class _MagicStarterProfileSubPageViewState
       backLabel: trans('magic_starter.nav.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
-        if (headerSlot != null) headerSlot,
+        ?headerSlot,
 
         // 1. Profile photo.
         if (MagicStarterConfig.hasProfilePhotoFeatures() &&
@@ -172,7 +172,7 @@ class _MagicStarterProfileSubPageViewState
         //    not here, to keep the Profile form clean.
         if (isGuest) _buildGuestUpgradeSection(),
 
-        if (footerSlot != null) footerSlot,
+        ?footerSlot,
       ],
     );
   }

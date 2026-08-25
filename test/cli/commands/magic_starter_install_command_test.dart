@@ -53,7 +53,7 @@ Future<int> runInstall(
     'dry-run': false,
     'non-interactive': nonInteractive,
     'no-bootstrap': false,
-    if (features != null) 'features': features,
+    'features': ?features,
   };
   final ctx = ArtisanContext.bare(MapInput(options), BufferedOutput());
   return command.handle(ctx);

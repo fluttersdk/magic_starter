@@ -20,7 +20,7 @@ import 'package:magic/magic.dart';
 String pageContainerRecipe({required String hostClassName, String? className}) {
   final Iterable<String> geometry = <String>[
     hostClassName,
-    if (className != null) className,
+    ?className,
   ].where((String segment) => segment.isNotEmpty);
 
   return const WindRecipe(base: 'w-full mx-auto')(

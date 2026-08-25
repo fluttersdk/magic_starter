@@ -99,11 +99,11 @@ class _MagicStarterTeamSettingsViewState
       title: trans('teams.settings'),
       subtitle: trans('teams.settings_subtitle'),
       children: [
-        if (headerSlot != null) headerSlot,
+        ?headerSlot,
         _buildGeneralSection(),
         _buildMembersSection(),
-        if (afterMembersSlot != null) afterMembersSlot,
-        if (footerSlot != null) footerSlot,
+        ?afterMembersSlot,
+        ?footerSlot,
       ],
     );
   }
