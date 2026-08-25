@@ -4,7 +4,7 @@
 
 Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & Notifications — 13 opt-in features, every screen overridable via Wind UI.
 
-**Version:** 0.0.1-alpha.20 · **Dart:** >=3.11.0 · **Flutter:** >=3.41.0
+**Version:** 0.0.1-alpha.21 · **Dart:** >=3.11.0 · **Flutter:** >=3.41.0
 
 ## Commands
 

@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.21] - 2026-08-25
+
 ### Added
 
 - **`magic_payments` is a dependency now, because the starter's billing surface reads its entitlement state from there rather than defining a second one beside it.** Billing is the last page of the account surface (profile, teams, sessions, notifications) that every host app still had to build for itself, and the entitlement contract it renders belongs to `magic_payments`. The dependency is that contract, not a convenience. **It is a hosted dependency on a package that is not on pub.dev yet:** `magic_payments 0.0.1` publishes as its own decision, and until it does, a resolution with no local overrides fails with `could not find package magic_payments`. So this release cannot go to pub.dev before that one does, and CI now says so out loud instead of hiding it. The workflow was a bare `flutter pub get`, which meant CI resolved the published siblings while every developer resolved working trees through a gitignored `pubspec_overrides.yaml`, and an unreleased sibling API was invisible to both. It is two jobs now: `siblings` clones the six fluttersdk repositories, writes the override file CI never inherits, and runs the full gate (analyze, format, test); `published` resolves pub.dev with no overrides and analyzes against whatever is actually released, which is the graph an adopter gets. The second job is red on the missing publish and is named for that reason, non-blocking only until `magic_payments` is up.
