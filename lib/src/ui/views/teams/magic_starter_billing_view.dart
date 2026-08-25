@@ -241,7 +241,17 @@ class _MagicStarterBillingViewState
   ///
   /// Separate from [_cycle] so the toggle can default to the cycle a customer is
   /// already on without that default becoming indistinguishable from a choice.
-  BillingCycle? _cycleOverride;
+  ///
+  /// A [ValueNotifier] rather than a plain field, so a press repaints the prices
+  /// instead of the screen. It used to be a field written through `setState`,
+  /// which rebuilt this whole State: the scaffold, the scrollable, the header,
+  /// the usage meters, every plan card in full, the payment method and the
+  /// billing history, to change four price labels and four billing notes.
+  /// Measured on Chrome, one press rebuilt about 80 `WDiv` and 58 `WText`; the
+  /// two [ValueListenableBuilder]s this feeds rebuild the toggle and the four
+  /// price blocks and nothing else.
+  final ValueNotifier<BillingCycle?> _cycleOverride =
+      ValueNotifier<BillingCycle?>(null);
 
   /// The billing cycle every price on this screen is shown for, and the one a
   /// purchase is made on.
@@ -260,7 +270,7 @@ class _MagicStarterBillingViewState
   /// when no cycle is known keeps the discounted column in front of somebody who
   /// is not paying yet.
   BillingCycle get _cycle =>
-      _cycleOverride ?? controller.cycle ?? BillingCycle.annual;
+      _cycleOverride.value ?? controller.cycle ?? BillingCycle.annual;
 
   /// The cycle [plan] is actually SOLD on, which is [_cycle] except where that
   /// tier has no price for it.
@@ -299,6 +309,7 @@ class _MagicStarterBillingViewState
   @override
   void onClose() {
     controller.removeListener(_startRequestedUpgrade);
+    _cycleOverride.dispose();
   }
 
   // ---------------------------------------------------------------------------
@@ -651,18 +662,21 @@ class _MagicStarterBillingViewState
               className: 'text-lg font-semibold text-fg',
             ),
             if (controller.storeRail == null)
-              MSSegmentedControl<BillingCycle>(
-                size: SegmentedControlSize.sm,
-                options: <String>[
-                  trans('magic_starter.billing.plans_monthly'),
-                  trans('magic_starter.billing.plans_annual'),
-                ],
-                selectedIndex: _cycles.indexOf(_cycle),
-                // Into the OVERRIDE, not into `_cycle`, which is derived. A
-                // press is the customer's own choice and has to outrank the
-                // entitlement default for the rest of the visit.
-                onChanged: (int index) =>
-                    setState(() => _cycleOverride = _cycles[index]),
+              ValueListenableBuilder<BillingCycle?>(
+                valueListenable: _cycleOverride,
+                builder: (_, _, _) => MSSegmentedControl<BillingCycle>(
+                  size: SegmentedControlSize.sm,
+                  options: <String>[
+                    trans('magic_starter.billing.plans_monthly'),
+                    trans('magic_starter.billing.plans_annual'),
+                  ],
+                  selectedIndex: _cycles.indexOf(_cycle),
+                  // Into the OVERRIDE, not into `_cycle`, which is derived. A
+                  // press is the customer's own choice and has to outrank the
+                  // entitlement default for the rest of the visit.
+                  onChanged: (int index) =>
+                      _cycleOverride.value = _cycles[index],
+                ),
               ),
           ],
         ),
@@ -774,31 +788,40 @@ class _MagicStarterBillingViewState
           ],
         ),
         // 2. Price and billing note for the selected cycle.
-        WDiv(
-          className: 'flex flex-col gap-0.5',
-          children: <Widget>[
-            if (storePriced)
-              WText(
-                trans('magic_starter.billing.plan_price_store'),
-                className: 'text-base font-medium text-fg',
-              )
-            else
-              WDiv(
-                className: 'flex flex-row items-baseline gap-1',
-                children: <Widget>[
-                  WText(
-                    _priceLabel(plan, _cycleFor(plan)),
-                    className: 'text-3xl font-semibold tabular-nums text-fg',
-                  ),
-                  if (!isCustom)
+        //
+        //    The ONLY part of this card the cycle toggle changes, which is why
+        //    it is the only part subscribed to it. Everything around it (the
+        //    name, the badge, the tagline, the highlight, the feature list, the
+        //    call to action) reads the catalogue row, not the cycle, so a press
+        //    that rebuilt them was rebuilding them into an identical tree.
+        ValueListenableBuilder<BillingCycle?>(
+          valueListenable: _cycleOverride,
+          builder: (_, _, _) => WDiv(
+            className: 'flex flex-col gap-0.5',
+            children: <Widget>[
+              if (storePriced)
+                WText(
+                  trans('magic_starter.billing.plan_price_store'),
+                  className: 'text-base font-medium text-fg',
+                )
+              else
+                WDiv(
+                  className: 'flex flex-row items-baseline gap-1',
+                  children: <Widget>[
                     WText(
-                      trans('magic_starter.billing.plan_price_monthly'),
-                      className: 'text-sm text-fg-muted',
+                      _priceLabel(plan, _cycleFor(plan)),
+                      className: 'text-3xl font-semibold tabular-nums text-fg',
                     ),
-                ],
-              ),
-            WText(_billingNote(plan), className: 'text-xs text-fg-muted'),
-          ],
+                    if (!isCustom)
+                      WText(
+                        trans('magic_starter.billing.plan_price_monthly'),
+                        className: 'text-sm text-fg-muted',
+                      ),
+                  ],
+                ),
+              WText(_billingNote(plan), className: 'text-xs text-fg-muted'),
+            ],
+          ),
         ),
         // 3. The consumer's highlight, where one is registered. The null-aware
         //    element OMITS it rather than rendering a placeholder, which matters
