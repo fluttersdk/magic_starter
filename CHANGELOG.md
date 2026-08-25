@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 
 - **`MagicStarterBillingCycle` is gone; use `BillingCycle` from `magic_payments`.** Two enums for one concept is how the display copy and the charge drifted apart in the first place, so the wire type is now the only one. Same two members, same names, so the change at a call site is the import, and this barrel re-exports `BillingCycle` so that import is `package:magic_starter/magic_starter.dart` rather than a new dependency on an unpublished package. It had no callers outside this package's own billing view.
 
+### Changed
+
+- **Analyzer infos are fatal in CI now, and 44 of them were cleared first.** `flutter analyze --no-fatal-infos` is why 20 files could carry `use_null_aware_elements` and `unnecessary_underscores` findings with nothing going red. The findings are gone (applied by `dart fix`, so `if (x != null) x!` inside a collection literal is `?x` and `(_, __, ___)` is `(_, _, _)`, both well inside the `sdk: >=3.11.0` floor and neither changing behaviour, with the suite at the same 1394 on both sides), and the flag is gone with them from all three CI call sites plus the local post-edit hook and the release checklist, so a contributor cannot pass one gate and fail another. **The cost is worth knowing before you hit it:** a Dart SDK upgrade that ships a new lint now turns CI red with no code change. That is the trade, and the alternative is the debt this entry is clearing. (`.github/workflows/{ci,publish}.yml`, `.claude/settings.json`, `.claude/commands/release.md`, `CLAUDE.md`, 20 files under `lib/` and `test/`)
+
 ### Fixed
 
 - **The "Recommended" badge was drawn on top of the plan name.** It sat `absolute -top-2.5 left-5` inside a `relative` card, which is the CSS idiom for a badge straddling a border and did not survive the port: it landed over the heading, so "Recommended" and "Pro" were rendered on top of each other. It is IN FLOW now, on the name's row, `flex-1` on the name and `shrink-0` on the badge. It cannot collide at any width and needs no negative offset to sit where it belongs.

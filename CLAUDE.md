@@ -139,4 +139,4 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 
 ## CI
 
-- `ci.yml`: push/PR → `flutter pub get` → `flutter analyze --no-fatal-infos` → `dart format --set-exit-if-changed` → `flutter test --coverage` → codecov upload
+- `ci.yml`: push/PR → `flutter pub get` → `flutter analyze` → `dart format --set-exit-if-changed` → `flutter test --coverage` → codecov upload

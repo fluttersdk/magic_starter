@@ -69,7 +69,7 @@ Check these files for any content that needs updating:
 Run all checks locally. ALL must pass before proceeding:
 
 1. `dart format --set-exit-if-changed .` — must be clean
-2. `dart analyze --no-fatal-infos` — must be zero issues
+2. `dart analyze` — must be zero issues (infos included; CI treats them as fatal)
 3. `flutter test` — must all pass
 4. `dart pub publish --dry-run` — must be zero warnings
 5. Review all changed files with `git diff`

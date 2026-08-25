@@ -33,10 +33,13 @@ dependencies:
   # branch and have never shipped in a version anybody can install.
   #
   # The constraint is not what holds this back. `^0.0.1` is `>=0.0.1 <0.1.0`:
-  # pub_semver raises the first NON-ZERO component for the upper bound
-  # (`Version.nextBreaking`), so a caret on a `0.0.x` tracks the whole `0.0.x`
-  # line rather than pinning one patch, and this already admits whichever
-  # release eventually carries both. What is left is a RELEASE ORDER:
+  # pub_semver's `Version.nextBreaking` raises the MINOR whenever the major is
+  # zero, whatever the minor itself is (`version.dart:243`), so a caret on any
+  # `0.0.x` tracks the whole `0.0.x` line rather than pinning one patch, and
+  # this already admits whichever release eventually carries both. Do not
+  # restate this as "the first non-zero component": for `0.0.1` that is the
+  # patch, which yields `<0.0.2` and is the wrong bound this comment exists to
+  # correct. What is left is a RELEASE ORDER:
   # magic_payments must be on pub.dev, carrying both, before this package can
   # publish at all. CI says so out loud in the `Published graph` job instead of
   # resolving green against a graph no adopter can install.
