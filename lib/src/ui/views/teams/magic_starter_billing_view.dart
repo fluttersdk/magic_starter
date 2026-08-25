@@ -363,8 +363,12 @@ class _MagicStarterBillingViewState
   /// name: the defect that replaces showed a grandfathered customer another
   /// tier's name, price and features as their own.
   ///
-  /// The usage grid depends on neither (usage is not plan-scoped) and renders as
-  /// soon as the usage read itself resolves.
+  /// The dunning notice and the usage grid are SIBLINGS of that three-way
+  /// branch rather than children of any arm, because neither depends on the
+  /// catalogue: usage is not plan-scoped, and a failed payment is a fact about
+  /// the subscription whatever the catalogue can say about the tier. The notice
+  /// began inside the resolved arm and so missed the grandfathered customer
+  /// above, who is exactly the one a retired tier makes hardest to reason about.
   Widget _buildCurrentPlanCard() {
     final String? planId = controller.currentPlanId;
     final bool resolving = controller.plans.isEmpty || planId == null;
@@ -406,6 +410,30 @@ class _MagicStarterBillingViewState
                   className: 'text-sm text-fg-muted',
                 ),
               ],
+            ),
+          // The dunning line, and it is the only thing on this card that
+          // contradicts the rest of it.
+          //
+          // A failed payment does NOT take the tier away: both dunning statuses
+          // still grant while the rail retries, deliberately, so every other
+          // word here keeps saying the customer is on Pro and renews next
+          // month. Without this the page a customer opens after their card
+          // bounced is indistinguishable from a healthy one, and the first they
+          // hear of it is losing access when the retries run out. Measured on a
+          // live Stripe test clock: a failed renewal left `past_due` on the wire
+          // and the screen read "renews Nov 24, 2026".
+          //
+          // A SIBLING of the three-way branch above, not a child of one of its
+          // arms. It first sat inside the resolved-tier arm, which left the
+          // grandfathered customer (a held tier the catalogue no longer serves,
+          // the `current == null` arm) on exactly the silent healthy page this
+          // exists to fix. The status is a separate read from the catalogue and
+          // does not depend on it: `isDunning` is only true once the entitlement
+          // says so, so the skeleton arm cannot render it early either.
+          if (controller.planStatus.isDunning)
+            WText(
+              trans('magic_starter.billing.payment_failed_notice'),
+              className: 'text-sm text-destructive',
             ),
           WDiv(
             className: 'grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2',
@@ -699,25 +727,49 @@ class _MagicStarterBillingViewState
     final Widget? highlight = _buildPlanHighlight(plan);
 
     return WDiv(
+      // No `relative` on either arm: it was here for the `absolute -top-2.5
+      // left-5` badge that now sits in flow, and nothing else in this subtree
+      // is absolutely positioned, so it was a positioning context with nothing
+      // to position.
       className: plan.recommended
-          ? 'relative flex flex-col gap-4 rounded-lg border '
+          ? 'flex flex-col gap-4 rounded-lg border '
                 'border-primary bg-surface p-5'
-          : 'relative flex flex-col gap-4 rounded-lg border '
+          : 'flex flex-col gap-4 rounded-lg border '
                 'border-color-border bg-surface p-5',
       children: <Widget>[
-        if (plan.recommended)
-          WDiv(
-            className: 'absolute -top-2.5 left-5',
-            child: MSBadge(
-              trans('magic_starter.billing.plan_recommended_badge'),
-              tone: BadgeTone.primary,
-            ),
-          ),
-        // 1. Name and tagline.
+        // 1. Name, the badge beside it, and the tagline.
+        //
+        //    The badge sits IN FLOW on the name's row rather than absolutely
+        //    positioned over the card's top border. That pattern is a CSS
+        //    idiom and it did not survive the port: the badge landed on top of
+        //    the plan name, so "Recommended" and "Pro" were drawn over each
+        //    other. In flow it cannot collide at any width, and it needs no
+        //    negative offset to sit where it belongs.
+        //
+        //    `flex-1` on the name and `shrink-0` on the badge is the whole
+        //    responsive story: a long plan name gives way, the badge never
+        //    wraps or clips, and at mobile width the row still fits because the
+        //    badge is two words at most.
         WDiv(
           className: 'flex flex-col gap-0.5',
           children: <Widget>[
-            WText(plan.name, className: 'text-base font-semibold text-fg'),
+            WDiv(
+              className: 'flex flex-row items-center gap-2',
+              children: <Widget>[
+                WText(
+                  plan.name,
+                  className: 'flex-1 text-base font-semibold text-fg',
+                ),
+                if (plan.recommended)
+                  WDiv(
+                    className: 'shrink-0',
+                    child: MSBadge(
+                      trans('magic_starter.billing.plan_recommended_badge'),
+                      tone: BadgeTone.primary,
+                    ),
+                  ),
+              ],
+            ),
             WText(plan.tagline, className: 'text-xs text-fg-muted'),
           ],
         ),
@@ -767,24 +819,38 @@ class _MagicStarterBillingViewState
               ),
           ],
         ),
-        // 5. The call to action, stretched by the button's own `fullWidth`
-        //    rather than by a flex row. The active tier's is disabled.
+        // 5. The bottom slot, stretched by the button's own `fullWidth` rather
+        //    than by a flex row.
         //
-        //    Rendered for three different reasons, and only one of them is a
-        //    purchase: the active tier's disabled "Current plan" label (a
-        //    read-out, and the only marker of which card is theirs once the grid
-        //    stops offering to buy), a custom tier's sales handoff (driven by
-        //    the GRID rather than by the entitlement, so it survives both
-        //    gates), and an actual purchase, which needs a rail and the
-        //    membership to allow it.
-        if (isCurrent || isCustom || _canPurchase)
+        //    THE CURRENT TIER GETS NO BUTTON, it gets a MARKER: a bordered row
+        //    with a check, in the card's own accent. It used to get a disabled
+        //    button, and a disabled button beside live ones is a fourth grey
+        //    rectangle, so nothing on the grid said which was pressable, which
+        //    was the customer's own plan, or where to look. A marker is not a
+        //    control, so it stops pretending to be one.
+        //
+        //    The button below therefore renders for two reasons, both of them
+        //    live: a custom tier's sales handoff (driven by the GRID rather
+        //    than by the entitlement, so it survives both gates and spends
+        //    nothing), and an actual purchase, which needs a rail and the
+        //    membership to allow it. Which of the four emphases it takes is
+        //    [_ctaIntent]'s decision, not this slot's.
+        if (isCurrent)
+          WDiv(
+            className:
+                'flex flex-row items-center justify-center gap-2 '
+                'rounded-md border border-primary bg-primary-container '
+                'px-4 py-2.5',
+            children: <Widget>[
+              WIcon(_checkIcon, className: 'text-[16px] text-primary'),
+              WText(_ctaLabel(plan), className: 'text-sm font-medium text-fg'),
+            ],
+          )
+        else if (isCustom || _canPurchase)
           MSButton(
-            intent: (isCurrent || !plan.recommended)
-                ? ButtonIntent.secondary
-                : ButtonIntent.primary,
-            disabled: isCurrent,
+            intent: _ctaIntent(plan),
             fullWidth: true,
-            onPressed: isCurrent ? null : () => _selectPlan(plan),
+            onPressed: () => _selectPlan(plan),
             child: WText(_ctaLabel(plan)),
           ),
       ],
@@ -1557,6 +1623,71 @@ class _MagicStarterBillingViewState
     return direction > 0
         ? trans('magic_starter.billing.plan_button_upgrade')
         : trans('magic_starter.billing.plan_button_downgrade');
+  }
+
+  /// The emphasis [plan]'s call to action carries.
+  ///
+  /// There is exactly ONE filled button on this grid, and picking it is the
+  /// whole job. It used to be `recommended && !isCurrent`, which meant that a
+  /// customer already ON the recommended tier saw no filled button anywhere:
+  /// four identical grey rectangles, no focal point, and no way to tell the
+  /// disabled one from the live ones.
+  ///
+  /// The filled one is the cheapest tier ABOVE what the customer holds, because
+  /// that is the move a grid should make easy, and there is none at all until
+  /// the entitlement says what they hold.
+  ///
+  /// TWO treatments, not three. A downgrade was `ghost` for one revision, on the
+  /// reasoning that a grid should not invite it, and `ghost` in this package is
+  /// `bg-transparent` with no border: in a card footer it rendered as bare text
+  /// with no affordance at all, indistinguishable from the feature list above
+  /// it. "Quieter" turned into "not a button". A downgrade is a real action a
+  /// customer is entitled to take, so it looks like one; the single filled
+  /// button is what carries the hierarchy, and it carries it on its own.
+  ButtonIntent _ctaIntent(MagicStarterPlan plan) {
+    return plan.id == _featuredUpgradeId
+        ? ButtonIntent.primary
+        : ButtonIntent.secondary;
+  }
+
+  /// The plan id that carries the grid's one filled button, or `null` when
+  /// nothing should.
+  ///
+  /// Null is a real answer and not a gap: a customer on the top tier has nothing
+  /// above them, and inventing a filled button for a sideways move would point
+  /// at something that is not an upgrade.
+  ///
+  /// It is also the answer while the entitlement is UNRESOLVED, and that is the
+  /// correction of a premise this getter shipped with. It fell back to the
+  /// vendor's `recommended` flag there, on the reasoning that an unresolved
+  /// current plan is "a visitor with nothing to compare against". No such state
+  /// exists: [MagicStarterBillingController.currentPlanId] is null before
+  /// `loadEntitlement` resolves and permanently after a failed read, and a
+  /// customer on the free tier resolves to `free` like any other. So the branch
+  /// ran while the grid was still loading (plans and entitlement load in
+  /// parallel, so the cards can paint first) or after the read had failed for
+  /// good, and in both [_ctaLabel] returns the deliberately neutral
+  /// `plan_button_unresolved` for the very card the fill was pointing at. The
+  /// label refuses to claim a direction there on purpose; a filled button makes
+  /// the same claim in colour, and after a failed read it never goes away.
+  String? get _featuredUpgradeId {
+    final List<MagicStarterPlan> plans = controller.plans;
+
+    if (controller.currentPlanId == null) return null;
+
+    // The cheapest tier above the held one, in catalogue order, that this build
+    // can actually sell. A custom tier is skipped: its call to action is a
+    // sales handoff, not a purchase, so filling it would promise a checkout
+    // that does not exist.
+    for (final MagicStarterPlan plan in plans) {
+      final int? direction = _direction(plan);
+
+      if (direction != null && direction > 0 && plan.monthly != null) {
+        return _canPurchase ? plan.id : null;
+      }
+    }
+
+    return null;
   }
 
   /// The tier distance of [plan] from the current plan: positive when [plan] is

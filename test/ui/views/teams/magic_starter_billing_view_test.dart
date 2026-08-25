@@ -587,6 +587,28 @@ class _RenamedCustomTierBillingService extends _RailBillingService {
   }
 }
 
+/// A customer whose renewal payment FAILED, still granted while the rail retries.
+///
+/// Every other field says healthy on purpose, because that is the real state:
+/// `subscribed` is true, the tier is live and the period runs on. That is what
+/// made the missing warning invisible.
+class _DunningBillingService extends _RailBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': 'past_due',
+      'subscribed': true,
+      'renews': true,
+      'cycle': 'annual',
+      'provider': 'stripe',
+      'manage_via': 'none',
+      'manage_url': null,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
 /// The same catalogue with `business` sold MONTHLY ONLY.
 ///
 /// A priced tier with no annual price is a row this screen already expects
@@ -738,6 +760,66 @@ class _RailBillingService extends _ReadsBillingService
 class _HeldRetiredTierBillingService extends _RailBillingService {
   @override
   String get entitlementPlan => 'legacy_grandfathered';
+}
+
+/// The grandfathered customer, whose card has ALSO bounced.
+///
+/// The two states are independent and both are ordinary: a tier the backend
+/// retired says nothing about whether the last invoice settled. The card takes
+/// a different arm for this customer (the catalogue cannot name their tier), and
+/// the notice used to live inside the OTHER arm, so the one customer the
+/// surrounding docblock already calls out as real was the one who never saw it.
+class _HeldRetiredDunningBillingService extends _HeldRetiredTierBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': 'past_due',
+      'subscribed': true,
+      'renews': true,
+      'cycle': 'annual',
+      'provider': 'stripe',
+      'manage_via': 'none',
+      'manage_url': null,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
+/// The WEB rail with an entitlement read that never answers.
+///
+/// A read that throws is the permanent form of the same state a slow one holds
+/// briefly, and the two loads run in parallel, so the grid can paint before the
+/// entitlement lands either way. `currentPlanId` stays null in both, which is
+/// the state the emphasis rule used to read as "a visitor with nothing to
+/// compare against" and fill a card for.
+class _UnresolvedEntitlementRailBillingService extends _RailBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    throw const BillingException('Failed to load the billing entitlement.');
+  }
+}
+
+/// A customer in GRACE: the rail has stopped retrying and the tier runs out.
+///
+/// One field apart from [_DunningBillingService], which is the point. The notice
+/// follows `PlanStatus.isDunning` rather than one wire word, and a fixture that
+/// pins only `past_due` cannot tell the two implementations apart.
+class _GraceBillingService extends _RailBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': 'grace',
+      'subscribed': true,
+      'renews': true,
+      'cycle': 'annual',
+      'provider': 'stripe',
+      'manage_via': 'none',
+      'manage_url': null,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
 }
 
 /// The reads PLUS the STORE rail, recording every call the store rail can
@@ -1814,6 +1896,100 @@ void main() {
     });
   });
 
+  group('the grid has exactly one focal point', () {
+    testWidgets('the held tier renders no button at all, and the cheapest tier '
+        'above it is the only filled one', (tester) async {
+      // The state that broke it. The fixture holds `pro`, which is also the
+      // RECOMMENDED tier, and the old rule filled a button only when a tier was
+      // recommended AND not current. So on this exact screen nothing was filled:
+      // four grey rectangles, and the disabled one indistinguishable from the
+      // three live ones.
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+
+      final Iterable<MSButton> buttons = tester.widgetList<MSButton>(
+        find.byType(MSButton),
+      );
+
+      // A marker, not a control: the held tier's label is on screen and it is
+      // not a button, so nothing on this card can look pressable.
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+      expect(
+        buttons.where((MSButton b) => b.disabled),
+        isEmpty,
+        reason: 'a disabled button beside live ones is what this replaced',
+      );
+
+      // The GRID's buttons, not the view's. The emphasis rule governs the plan
+      // cards, and the rest of this screen has buttons of its own with
+      // different contracts: the payment card's "Update card" is `secondary`,
+      // `size: sm` and not full-width, and an invoice receipt is `ghost`. This
+      // fixture happens to render neither (`manage_via` is `none`, so the
+      // portal affordances are gone), so a view-wide loop passes today and
+      // fails the moment an unrelated fixture field changes. Collected by CTA
+      // label, which is what makes a button one of the grid's.
+      final List<MSButton> gridButtons = <MSButton>[
+        for (final String label in <String>[
+          trans('magic_starter.billing.plan_button_upgrade'),
+          trans('magic_starter.billing.plan_button_downgrade'),
+          trans('magic_starter.billing.plan_button_contact'),
+          trans('magic_starter.billing.plan_button_unranked'),
+          trans('magic_starter.billing.plan_button_unresolved'),
+        ])
+          ...tester.widgetList<MSButton>(
+            find.ancestor(
+              of: find.text(label),
+              matching: find.byType(MSButton),
+            ),
+          ),
+      ];
+
+      // The premise: every button the grid rendered was collected, so the
+      // assertions below cover the grid rather than a subset of it.
+      expect(gridButtons, hasLength(3));
+
+      // Exactly one filled button, and it is the upgrade. Counted rather than
+      // located, because "at least one primary" is satisfied by every card
+      // being primary, which is the same failure wearing the other colour.
+      final List<MSButton> primary = gridButtons
+          .where((MSButton b) => b.intent == ButtonIntent.primary)
+          .toList();
+
+      expect(primary, hasLength(1));
+      expect(
+        find.descendant(
+          of: find.byWidget(primary.single),
+          matching: find.text(
+            trans('magic_starter.billing.plan_button_upgrade'),
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      // Everything else that is actionable is a real button, downgrade
+      // included. It was `ghost` for one revision, and `ghost` here is
+      // `bg-transparent` with no border: in a card footer it rendered as bare
+      // text indistinguishable from the feature list above it. No card may end
+      // in something that is an action and does not look like one.
+      for (final MSButton button in gridButtons) {
+        expect(
+          button.intent,
+          anyOf(ButtonIntent.primary, ButtonIntent.secondary),
+          reason: 'a card footer needs a visible affordance',
+        );
+
+        // And every stretched button centres its label. `SizedBox(width:
+        // infinity)` widens the box and leaves the text at the left edge, which
+        // put "Upgrade" and "Contact sales" in the corner of a centred card.
+        expect(button.fullWidth, isTrue);
+      }
+    });
+  });
+
   group('a tier with no rail behind it says so', () {
     testWidgets('the renewal line does not promise a renewal it cannot have', (
       tester,
@@ -1857,6 +2033,121 @@ void main() {
         find.text(r'$34/mo billed monthly · renews Jun 1, 2026'),
         findsOneWidget,
         reason: 'the toggle changes catalogue figures, never the charge',
+      );
+    });
+
+    testWidgets('no card is filled while the entitlement is unresolved, so the '
+        'colour claims no more than the label does', (tester) async {
+      // `currentPlanId` is null before the entitlement resolves and permanently
+      // after a failed read; there is no unsubscribed-visitor state, since a
+      // free customer resolves to `free`. The emphasis rule used to fall back
+      // to the vendor's `recommended` flag here, which filled a card on the one
+      // screen where `_ctaLabel` deliberately answers the neutral
+      // `plan_button_unresolved`: the label refuses to claim a direction and
+      // the fill made the same claim in colour, permanently after a failed
+      // read.
+      await mount(
+        tester,
+        _UnresolvedEntitlementRailBillingService(),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      // The premise: this really is the unresolved state, so the absent fill
+      // below can only come from that.
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_unresolved')),
+        findsWidgets,
+      );
+      expect(
+        tester
+            .widgetList<MSButton>(find.byType(MSButton))
+            .where((MSButton b) => b.intent == ButtonIntent.primary),
+        isEmpty,
+      );
+    });
+
+    testWidgets('a failed payment is said out loud, on a card that otherwise '
+        'reads healthy', (tester) async {
+      // The pair is the test, and the healthy limb is what makes it one: both
+      // dunning statuses GRANT, so every other word on this card is the same in
+      // both cases and only the notice separates them. A screen reading
+      // `subscribed` alone showed a customer whose card had bounced exactly what
+      // it showed a paying one.
+      await mount(tester, _DunningBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      // The catalogue really carries this key, asserted before it is used as a
+      // finder. `trans()` answers the raw key when the catalogue has none, and
+      // that is also what the widget would then render, so a `find.text(trans(
+      // key))` pair stays green through the one failure this file's from-disk
+      // catalogue exists to catch: a raw i18n key on a customer's screen.
+      expect(
+        trans('magic_starter.billing.payment_failed_notice'),
+        isNot('magic_starter.billing.payment_failed_notice'),
+      );
+      expect(
+        find.text(trans('magic_starter.billing.payment_failed_notice')),
+        findsOneWidget,
+      );
+
+      // Still entitled while the rail retries, so the plan is not withdrawn.
+      expect(
+        find.text(trans('magic_starter.billing.plan_current_badge')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('grace warns too, so the notice follows the dunning rule '
+        'rather than one wire word', (tester) async {
+      // `past_due` is the rail still retrying and `grace` is the rail having
+      // stopped; both grant, both are dunning, and an implementation matching
+      // the first word alone passes the case above and silently drops the
+      // customer who is closest to losing access.
+      await mount(tester, _GraceBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.payment_failed_notice')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a grandfathered customer whose card bounced is warned as '
+        'well, on the arm that cannot name their tier', (tester) async {
+      // The notice first sat inside the resolved-tier arm of the card's
+      // three-way branch, so this customer took the held-tier arm and saw the
+      // same silent healthy page the whole notice exists to fix. Two ordinary
+      // states that have nothing to do with each other: the backend retiring a
+      // tier says nothing about whether the last invoice settled.
+      await mount(tester, _HeldRetiredDunningBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      // The premise: this really is the held-tier arm, so the notice below can
+      // only come from outside it.
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.plan_unavailable_text',
+            <String, dynamic>{'id': 'legacy_grandfathered'},
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.payment_failed_notice')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('and an active subscription says nothing of the kind, so the '
+        'notice is a signal rather than decoration', (tester) async {
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.payment_failed_notice')),
+        findsNothing,
       );
     });
 
