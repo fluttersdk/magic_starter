@@ -58,7 +58,7 @@ class MSErrorState extends StatelessWidget {
         if (description != null)
           WText(description!, className: errorStateDescriptionClassName()),
         // 4. Optional action slot.
-        if (action != null) action!,
+        ?action,
       ],
     );
   }

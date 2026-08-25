@@ -74,7 +74,7 @@ jobs:
 
       - name: Analyze code
         working-directory: magic_starter
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze
 
       - name: Check formatting
         working-directory: magic_starter
@@ -126,4 +126,4 @@ jobs:
       # package's own source compiles against the sibling versions that are
       # actually released, which is where an unreleased API surfaces.
       - name: Analyze against the published siblings
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze

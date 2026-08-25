@@ -91,7 +91,7 @@ class _MagicStarterTwoFactorChallengeViewState
       child: WDiv(
         className: 'flex flex-col gap-6',
         children: [
-          if (headerSlot != null) headerSlot,
+          ?headerSlot,
           // MSInput
           WFormInput(
             controller: _codeController,
@@ -128,7 +128,7 @@ class _MagicStarterTwoFactorChallengeViewState
               ),
             ],
           ),
-          if (footerSlot != null) footerSlot,
+          ?footerSlot,
         ],
       ),
     );

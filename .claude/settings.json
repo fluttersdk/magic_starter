@@ -11,7 +11,7 @@
           },
           {
             "type": "command",
-            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | grep '.dart$' && dart analyze --no-fatal-infos || true",
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | grep '.dart$' && dart analyze || true",
             "timeout": 15000
           }
         ]

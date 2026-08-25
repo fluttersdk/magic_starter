@@ -27,15 +27,22 @@ dependencies:
   magic: ^0.0.6
   fluttersdk_artisan: ^0.0.9
   magic_notifications: ^0.0.2
-  # Unpublished, so this constraint cannot be bumped to name what the billing
-  # screen needs: `BillingCycle` and `PlanStatus.isDunning` both arrived after
-  # the pubspec said `^0.0.1`, and there is no released version between them to
-  # point at. `^0.0.1` is `>=0.0.1 <0.0.2`, and the 0.0.1 that eventually
-  # publishes carries both, because it publishes from a default branch that has
-  # them. What that leaves is a RELEASE ORDER rather than a constraint:
-  # magic_payments 0.0.1 must be on pub.dev, carrying both, before this package
-  # can publish at all. CI says so out loud in the `Published graph` job instead
-  # of resolving green against a graph no adopter can install.
+  # Unpublished: magic_payments has no release on pub.dev at all, so a
+  # resolution with no local overrides fails outright. `BillingCycle` and
+  # `PlanStatus.isDunning`, which the billing screen needs, sit on its default
+  # branch and have never shipped in a version anybody can install.
+  #
+  # The constraint is not what holds this back. `^0.0.1` is `>=0.0.1 <0.1.0`:
+  # pub_semver's `Version.nextBreaking` raises the MINOR whenever the major is
+  # zero, whatever the minor itself is (`version.dart:243`), so a caret on any
+  # `0.0.x` tracks the whole `0.0.x` line rather than pinning one patch, and
+  # this already admits whichever release eventually carries both. Do not
+  # restate this as "the first non-zero component": for `0.0.1` that is the
+  # patch, which yields `<0.0.2` and is the wrong bound this comment exists to
+  # correct. What is left is a RELEASE ORDER:
+  # magic_payments must be on pub.dev, carrying both, before this package can
+  # publish at all. CI says so out loud in the `Published graph` job instead of
+  # resolving green against a graph no adopter can install.
   magic_payments: ^0.0.1
   args: ^2.7.0
   path: ^1.9.0

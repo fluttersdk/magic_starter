@@ -31,7 +31,7 @@ void main() {
       });
 
       test('hasSocialLogin returns true after useSocialLogin()', () {
-        MagicStarter.useSocialLogin((_, __) => const SizedBox());
+        MagicStarter.useSocialLogin((_, _) => const SizedBox());
 
         expect(MagicStarter.hasSocialLogin, isTrue);
       });

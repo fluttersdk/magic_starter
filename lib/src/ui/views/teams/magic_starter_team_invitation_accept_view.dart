@@ -67,7 +67,7 @@ class _MagicStarterTeamInvitationAcceptViewState
       child: WDiv(
         className: 'flex flex-col items-center gap-6',
         children: [
-          if (headerSlot != null) headerSlot,
+          ?headerSlot,
           WDiv(
             className:
                 'w-16 h-16 rounded-full bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
@@ -85,7 +85,7 @@ class _MagicStarterTeamInvitationAcceptViewState
               className: 'text-center',
             ),
           ),
-          if (footerSlot != null) footerSlot,
+          ?footerSlot,
         ],
       ),
     );
@@ -98,7 +98,7 @@ class _MagicStarterTeamInvitationAcceptViewState
       child: WDiv(
         className: 'flex flex-col items-center gap-4',
         children: [
-          if (headerSlot != null) headerSlot,
+          ?headerSlot,
           WDiv(
             className:
                 'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
@@ -119,7 +119,7 @@ class _MagicStarterTeamInvitationAcceptViewState
               className: 'text-sm font-semibold text-primary',
             ),
           ),
-          if (footerSlot != null) footerSlot,
+          ?footerSlot,
         ],
       ),
     );
@@ -133,7 +133,7 @@ class _MagicStarterTeamInvitationAcceptViewState
       child: WDiv(
         className: 'flex flex-col items-center gap-4',
         children: [
-          if (headerSlot != null) headerSlot,
+          ?headerSlot,
           WDiv(
             className:
                 'w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center',
@@ -150,7 +150,7 @@ class _MagicStarterTeamInvitationAcceptViewState
               className: 'text-sm font-semibold text-primary',
             ),
           ),
-          if (footerSlot != null) footerSlot,
+          ?footerSlot,
         ],
       ),
     );

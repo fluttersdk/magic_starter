@@ -106,7 +106,7 @@ class _MagicStarterRegisterViewState
         child: WDiv(
           className: 'flex flex-col items-stretch',
           children: [
-            if (headerSlot != null) headerSlot,
+            ?headerSlot,
 
             // Name
             WFormInput(
@@ -200,7 +200,7 @@ class _MagicStarterRegisterViewState
               ),
             ),
 
-            if (formFooterSlot != null) formFooterSlot,
+            ?formFooterSlot,
 
             // Social login slot
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
@@ -228,7 +228,7 @@ class _MagicStarterRegisterViewState
                 ],
               ),
             ),
-            if (footerSlot != null) footerSlot,
+            ?footerSlot,
           ],
         ),
       ),

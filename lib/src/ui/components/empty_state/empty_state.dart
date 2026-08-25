@@ -55,7 +55,7 @@ class MSEmptyState extends StatelessWidget {
         if (description != null)
           WText(description!, className: emptyStateDescriptionClassName()),
         // 4. Optional action slot.
-        if (action != null) action!,
+        ?action,
       ],
     );
   }

@@ -60,11 +60,7 @@ class _MagicStarterTeamCreateViewState
       subtitle: trans('teams.create_team_subtitle'),
       backLabel: trans('teams.settings'),
       backFallback: MagicStarterConfig.teamSettingsRoute(),
-      children: [
-        if (headerSlot != null) headerSlot,
-        _buildForm(),
-        if (footerSlot != null) footerSlot,
-      ],
+      children: [?headerSlot, _buildForm(), ?footerSlot],
     );
   }
 
