@@ -464,6 +464,30 @@ class _UnbilledBillingService extends _ReadsBillingService {
       const PaymentMethod(available: true);
 }
 
+/// A subscription the customer has CANCELLED, still granting until its period
+/// ends.
+///
+/// Everything except `renews` matches the renewing fixture on purpose: the plan
+/// is live, the rail is Stripe, the portal is reachable and the date is the same
+/// instant. That is what makes the one changed field the whole test. The rail
+/// really does report it this way, because an end-of-period cancellation leaves
+/// a customer entitled and the date attached to them stops being a renewal.
+class _CancelledBillingService extends _ReadsBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': 'active',
+      'subscribed': true,
+      'renews': false,
+      'provider': 'stripe',
+      'manage_via': manageVia,
+      'manage_url': manageUrl,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
 /// A PAYING customer whose payment-method read soft-failed.
 ///
 /// `manage_via` is `portal`, which the server sends exactly when a billing
@@ -1639,6 +1663,26 @@ void main() {
       // The live sentence's own separator, not the bare word: the honest
       // replacement above ends in "nothing renews", so asserting on `renews`
       // alone matches the fix and fails on the very thing it is checking.
+      expect(find.textContaining('· renews '), findsNothing);
+    });
+
+    testWidgets('a cancelled subscription is told when it ends, not that it '
+        'renews', (tester) async {
+      await mount(tester, _CancelledBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+
+      // The same date the renewing case shows, under the other verb. Asserting
+      // the whole sentence rather than the verb alone: the price and the date
+      // have to survive the branch, and an arm that dropped either would still
+      // pass a check for the word "ends".
+      expect(
+        find.text(r'$29/mo billed annually · ends Jun 1, 2026'),
+        findsOneWidget,
+      );
+
+      // The defect: this read "renews Jun 1, 2026" to the one customer who had
+      // just cancelled and was checking that it took.
       expect(find.textContaining('· renews '), findsNothing);
     });
 

@@ -137,6 +137,7 @@
       "plans_monthly": "Monthly",
       "renewal_cycle_annual": "annually",
       "renewal_cycle_monthly": "monthly",
+      "renewal_ends": ":price/mo billed :cycle · ends :date",
       "renewal_free": "Free forever · no card required",
       "renewal_store": "Billed through the store that sold this plan.",
       "renewal_text": ":price/mo billed :cycle · renews :date",
