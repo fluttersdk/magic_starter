@@ -4,7 +4,7 @@
 
 Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & Notifications — 13 opt-in features, every screen overridable via Wind UI.
 
-**Version:** 0.0.1-alpha.14 · **Dart:** >=3.6.0 · **Flutter:** >=3.27.0
+**Version:** 0.0.1-alpha.20 · **Dart:** >=3.11.0 · **Flutter:** >=3.41.0
 
 ## Commands
 
@@ -12,7 +12,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 
 | Command | Description |
 |---------|-------------|
-| `flutter test --coverage` | Run all tests (~62 files, ~996 cases) with coverage |
+| `flutter test --coverage` | Run all tests (107 files, ~1394 cases) with coverage |
 | `flutter test test/http/controllers/` | Run controller tests only |
 | `flutter test --name "pattern"` | Run tests matching pattern |
 | `flutter analyze --no-fatal-infos` | Static analysis (flutter_lints ^6.0) |
@@ -35,7 +35,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 
 ```
 lib/
-├── magic_starter.dart              # Barrel export — 47 exports
+├── magic_starter.dart              # Barrel export — 91 exports
 ├── config/
 │   └── magic_starter.dart          # Configuration template stub
 └── src/
