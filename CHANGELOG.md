@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Improvements
+
+- **A press on the billing cycle toggle repaints the prices instead of the screen.** The toggle wrote its override through `setState` on the view's `State`, so one press rebuilt everything that `State` builds: the page scaffold, the scrollable, the header, the usage meters, all four plan cards in full, the payment method and the billing history. The only thing on the screen a press changes is four price labels, four billing notes and the toggle's own selected segment. The override is a `ValueNotifier` now, and the two regions that read it are the only ones subscribed to it. Measured on Chrome against a running app, one press: `WDiv` rebuilt 79 to 11, `WText` rebuilt 58 to 13, wind class-cache lookups 156 to 22 with zero misses on both sides. Three post-change runs returned those counts identically. Frame build time moved with them, but a debug build with timeline instrumentation is not a source for a millisecond figure, so the counts are the result here. `_cycle` stays derived and the press still writes the OVERRIDE, so the entitlement default keeps its meaning; the notifier is disposed in `onClose` beside the controller listener. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)
+
 ## [0.0.1-alpha.21] - 2026-08-25
 
 ### Added

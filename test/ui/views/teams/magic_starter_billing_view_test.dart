@@ -1446,6 +1446,40 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('pressing the toggle repaints the price and the billing note', (
+      tester,
+    ) async {
+      // Every other toggle test reads state that a press updates whether or not
+      // anything repaints: `checkoutCycles` is filled from `_cycleOverride` at
+      // press time and never touches the plan cards. So an implementation where
+      // the price region never rebuilt would pass all of them, which is exactly
+      // the failure the scoped-rebuild change could introduce. This asserts the
+      // rendered figure and the rendered note, which nothing else does.
+      final _RailBillingService billing = _RailBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      expect(find.text(r'$29'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_annual')),
+        findsWidgets,
+      );
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      expect(
+        find.text(r'$34'),
+        findsOneWidget,
+        reason: 'the monthly figure has to reach the screen, not just checkout',
+      );
+      expect(find.text(r'$29'), findsNothing);
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_monthly')),
+        findsWidgets,
+      );
+    });
+
     testWidgets('a tier sold monthly only is bought monthly, even while the '
         'toggle sits on annual', (tester) async {
       // The screen-wide cycle knows nothing about the row it is applied to. With
