@@ -49,13 +49,27 @@ class MSButton extends StatelessWidget {
   /// Whether the button is disabled.
   final bool disabled;
 
-  /// Whether the button fills the width of its parent.
+  /// Whether the button fills the width of its parent, with its label centred.
   ///
-  /// Material widgets ignore cross-axis stretch inside a `Column`
-  /// (flutter/flutter#19399), so this is not a recipe/className concern:
-  /// it wraps the rendered [WButton] in a `SizedBox(width: double.infinity)`
-  /// at the widget layer. Orthogonal to [size] (a layout concern, not the
-  /// padding/font scale). Defaults to `false` (content-width).
+  /// Two things at two layers, and it needs both. Material widgets ignore
+  /// cross-axis stretch inside a `Column` (flutter/flutter#19399), so the
+  /// stretch is a `SizedBox(width: double.infinity)` around the rendered
+  /// [WButton] rather than a recipe class. That widens the box and leaves the
+  /// label where it started, so the `justify-center` token goes on the
+  /// className as well; [build] carries the reasoning.
+  ///
+  /// **A stretched button also fills a BOUNDED height.** Wind maps
+  /// `justify-center` to `MainAxisAlignment.center`, which `WButton` turns into
+  /// its `Container`'s `alignment`
+  /// (`wind/lib/src/widgets/w_button.dart:174-178`), and a `Container` with a
+  /// non-null alignment expands to its constraints on both axes rather than
+  /// one. Under an unbounded height (a `flex flex-col` card, this package's only
+  /// full-width site) nothing changes; under a fixed-height footer or a
+  /// stretched row the button now fills the height where it used to
+  /// shrink-wrap. That is what "full width" usually wants in those parents, and
+  /// it is pinned by a test rather than left to be discovered. Orthogonal to
+  /// [size] (a layout concern, not the padding/font scale). Defaults to `false`
+  /// (content-width).
   final bool fullWidth;
 
   /// Optional caller className appended after the recipe output.
@@ -89,7 +103,23 @@ class MSButton extends StatelessWidget {
       disabled: disabled,
       className: buttonRecipe(
         variants: {kButtonIntentAxis: intent.name, kButtonSizeAxis: size.name},
-        className: className,
+        // `justify-center` ONLY when stretched, which is the one case the
+        // recipe's base deliberately cannot cover. Its comment explains why the
+        // base omits it: in Wind that token maps to the Container's alignment
+        // and forces the button to fill its constraints, which would make every
+        // default button full-width. A shrink-wrapped button needs no centering
+        // because the padding box already centres its single child.
+        //
+        // A STRETCHED one does. `SizedBox(width: infinity)` widens the box and
+        // leaves the label where it started, so every full-width button in this
+        // package rendered its text hard against the left edge: "Upgrade" and
+        // "Contact sales" sat in the corner of a centred card while a
+        // hand-built marker beside them was centred, and the row read as
+        // broken. Here the expansion is exactly what is wanted, so the token
+        // composes with the intent instead of fighting it.
+        className: fullWidth
+            ? 'justify-center ${className ?? ''}'.trim()
+            : className,
       ),
       semanticLabel: semanticLabel,
       child: child,

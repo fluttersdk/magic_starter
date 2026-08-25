@@ -113,6 +113,7 @@
       "manage_store_no_url": "Open the Subscriptions section of your store account to change or cancel it.",
       "owner_only_notice": "Only the team owner can change the plan.",
       "payment_expires": "Expires :date",
+      "payment_failed_notice": "Your last payment failed. Update your card to keep this plan.",
       "payment_header": "Payment method",
       "payment_none": "No card on file",
       "payment_update_button": "Update",

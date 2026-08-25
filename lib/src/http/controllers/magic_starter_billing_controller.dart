@@ -211,6 +211,7 @@ class MagicStarterBillingController extends MagicController
   String? _manageUrl;
   bool? _renews;
   BillingCycle? _cycle;
+  PlanStatus _planStatus = PlanStatus.none;
   List<MagicStarterPlan> _plans = const <MagicStarterPlan>[];
   List<UsageStat> _usage = const <UsageStat>[];
   List<Invoice> _invoices = const <Invoice>[];
@@ -271,6 +272,19 @@ class MagicStarterBillingController extends MagicController
   /// rail, a price whose cycle the vendor's config never declared, and a STORE
   /// subscription, whose product id the producer's Stripe catalogue cannot name.
   BillingCycle? get cycle => _cycle;
+
+  /// Where the paid plan stands in its lifecycle, or [PlanStatus.none] before
+  /// any entitlement read has answered.
+  ///
+  /// Published for ONE question the other fields cannot answer: whether a
+  /// payment has failed. Both dunning statuses still grant, so `subscribed` is
+  /// true and the renewal line reads normally for a customer whose card just
+  /// bounced. Nothing on the screen contradicted that until this arrived.
+  ///
+  /// Not a gate. Whether a status entitles is the producer's answer and comes
+  /// through `subscribed`; a second definition here could disagree with the one
+  /// that actually decides access.
+  PlanStatus get planStatus => _planStatus;
 
   /// The plan catalogue, in the order the backend served it (cheapest first).
   ///
@@ -494,6 +508,7 @@ class MagicStarterBillingController extends MagicController
     _manageUrl = null;
     _renews = null;
     _cycle = null;
+    _planStatus = PlanStatus.none;
     _plans = const <MagicStarterPlan>[];
     _usage = const <UsageStat>[];
     _invoices = const <Invoice>[];
@@ -548,6 +563,7 @@ class MagicStarterBillingController extends MagicController
       _manageUrl = entitlement.manageUrl;
       _renews = entitlement.renews;
       _cycle = entitlement.cycle;
+      _planStatus = entitlement.planStatus;
       if (plan != null) {
         _currentPlanId = plan;
         _entitlementLoaded = true;
