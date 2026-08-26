@@ -195,6 +195,19 @@ class _MagicStarterBillingViewState
     BillingCycle.annual,
   ];
 
+  /// Row count at which the billing history switches to a bounded lazy list.
+  ///
+  /// Below it the card renders every invoice and keeps its own height. A fixed
+  /// body around three rows would be mostly empty space, and the cost the lazy
+  /// path avoids does not exist yet.
+  static const int _invoiceLazyThreshold = 8;
+
+  /// Height of that bounded body, in logical pixels.
+  ///
+  /// Roughly eight rows at this row's padding: enough that the list reads as a
+  /// list, short enough that the page around it stays reachable.
+  static const int _invoiceBodyHeight = 420;
+
   /// The check glyph rendered before each plan feature.
   static const IconData _checkIcon = Icons.check;
 
@@ -1300,19 +1313,49 @@ class _MagicStarterBillingViewState
   // ---------------------------------------------------------------------------
 
   /// Builds the billing-history card: one row per invoice, full bleed.
+  ///
+  /// Paged, and lazily rendered once there is more than a card's worth. The
+  /// producer has always paged this endpoint; the client used to read
+  /// `page.invoices` and drop `page.nextCursor`, so a customer with more than
+  /// one page could never see past the first. Reaching the end of the list now
+  /// asks for the next one.
+  ///
+  /// Below [_invoiceLazyThreshold] rows the card renders them eagerly and keeps
+  /// its own height, because a fixed 420px body around three invoices is worse
+  /// than the problem: a `ListView` needs a bound, and a bound is only worth
+  /// paying for once the list is long enough to scroll.
   Widget _buildInvoicesSection() {
+    final MagicPaginator<Invoice>? pages = controller.invoicePages;
     final List<Invoice> invoices = controller.invoices;
+    final bool lazy = pages != null && invoices.length >= _invoiceLazyThreshold;
 
     return MSCard(
       title: trans('magic_starter.billing.invoices_header'),
       noPadding: true,
-      child: WDiv(
-        className: 'flex flex-col',
-        children: <Widget>[
-          for (final (int index, Invoice invoice) in invoices.indexed)
-            _buildInvoiceRow(invoice, isLast: index == invoices.length - 1),
-        ],
-      ),
+      child: lazy
+          ? WDiv(
+              className: 'h-[${_invoiceBodyHeight}px]',
+              child: MagicPaginatedListView<Invoice>(
+                paginator: pages,
+                itemBuilder: (_, Invoice invoice, int index) =>
+                    _buildInvoiceRow(
+                      invoice,
+                      // Never the last row while more can arrive: the divider
+                      // is what tells the reader the list continues.
+                      isLast: !pages.hasMore && index == invoices.length - 1,
+                    ),
+              ),
+            )
+          : WDiv(
+              className: 'flex flex-col',
+              children: <Widget>[
+                for (final (int index, Invoice invoice) in invoices.indexed)
+                  _buildInvoiceRow(
+                    invoice,
+                    isLast: index == invoices.length - 1,
+                  ),
+              ],
+            ),
     );
   }
 
