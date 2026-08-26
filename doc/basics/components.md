@@ -148,6 +148,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 | `MSTooltip` | | Hover/long-press hint bubble |
 | `MSEmptyState` | | Illustrated empty-list placeholder |
 | `MSErrorState` | | Full-screen or inline error with retry |
+| `MSDataTable` | `MSDataColumn`, `dataTable*ClassName` | Header plus rows, with the columns passed in. Two modes: the default renders `rows` eagerly (right for a short, complete list); `MSDataTable.paginated` hands the body to magic's `MagicPaginatedListView` inside a bounded box, so a long collection costs the viewport rather than the result and reaching the tail asks the paginator for its next page. The header stays outside the scrolling body. `bodyHeight` is what bounds it, since a `ListView` needs a bound and `shrinkWrap: true` would build every row anyway. Column labels and `loadingLabel` are ALREADY TRANSLATED strings, not keys: half the callers render a label that is not a key at all (a currency code, a region name) |
 
 <a name="selection-and-navigation"></a>
 ### Selection and Navigation

@@ -90,6 +90,7 @@ export 'src/ui/components/tooltip/index.dart';
 export 'src/ui/components/dropdown_menu/index.dart';
 export 'src/ui/components/form_field/index.dart';
 export 'src/ui/components/navbar/index.dart';
+export 'src/ui/components/data_table/index.dart';
 export 'src/ui/components/empty_state/index.dart';
 export 'src/ui/components/error_state/index.dart';
 export 'src/ui/components/settings_section/index.dart';
