@@ -217,6 +217,46 @@ void main() {
     expect(find.text('no invoices'), findsOneWidget);
   });
 
+  testWidgets('an empty table does not reserve the whole body height', (
+    tester,
+  ) async {
+    // Forwarding the empty state into the list view put it INSIDE the
+    // `h-[bodyHeight]px` box, so an empty billing history was a header plus 420px
+    // of mostly blank space around one sentence. The box is for rows; with no
+    // rows there is nothing to bound.
+    Http.fake(
+      (_) => Http.response(<String, dynamic>{'data': <dynamic>[]}, 200),
+    );
+    final MagicPaginator<_Row> paginator = MagicPaginator<_Row>(
+      url: 'invoices',
+      fromMap: _Row.fromMap,
+    );
+    await paginator.loadFirst();
+
+    await tester.pumpWidget(
+      wrap(
+        MSDataTable<_Row>.paginated(
+          columns: columns(),
+          paginator: paginator,
+          emptyState: const SizedBox(height: 24, child: Text('no invoices')),
+        ),
+        scrollable: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final double height = tester.getSize(find.byType(MSDataTable<_Row>)).height;
+
+    expect(find.text('no invoices'), findsOneWidget);
+    expect(
+      height,
+      lessThan(200),
+      reason:
+          'the default bodyHeight is 420, and an empty table must not '
+          'reserve it',
+    );
+  });
+
   testWidgets('alignEnd is honoured on a flexing column too', (tester) async {
     // It used to be applied only on the fixed track, so `alignEnd: true` with no
     // width rendered left-aligned with no error and no hint.

@@ -78,7 +78,7 @@ class MSDataColumn<E> {
 /// )
 /// ```
 @immutable
-class MSDataTable<E> extends StatelessWidget {
+class MSDataTable<E> extends StatefulWidget {
   /// Creates a table that renders [rows] eagerly.
   const MSDataTable({super.key, required this.columns, required this.rows})
     : paginator = null,
@@ -112,7 +112,11 @@ class MSDataTable<E> extends StatelessWidget {
   /// all of them and saves nothing.
   final double bodyHeight;
 
-  /// Rendered instead of the table once a first page has arrived empty.
+  /// Rendered in place of the ROWS once a first page has arrived empty.
+  ///
+  /// The header stays: the columns are context for what would have been there,
+  /// and the row box is dropped, so an empty table is its own height rather than
+  /// [bodyHeight] of mostly blank space.
   final Widget? emptyState;
 
   /// Label for the tail row shown while the next page is in flight.
@@ -122,8 +126,50 @@ class MSDataTable<E> extends StatelessWidget {
   final String? loadingLabel;
 
   @override
+  State<MSDataTable<E>> createState() => _MSDataTableState<E>();
+}
+
+/// Listens to the paginator, which is what lets the empty state work in both
+/// orderings and lets it render WITHOUT the row box.
+///
+/// A stateless version read `paginator.isEmpty` once at build time, so an empty
+/// state only appeared when the caller had already awaited the first page.
+/// Forwarding the state into the lazy list fixed that ordering but put it inside
+/// the `h-[bodyHeight]px` box, so an empty history reserved 420px around one
+/// sentence. Listening answers both: the box is for rows, and with no rows there
+/// is nothing to bound.
+class _MSDataTableState<E> extends State<MSDataTable<E>> {
+  @override
+  void initState() {
+    super.initState();
+    widget.paginator?.addListener(_onPaginatorChanged);
+  }
+
+  @override
+  void didUpdateWidget(MSDataTable<E> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.paginator, widget.paginator)) {
+      oldWidget.paginator?.removeListener(_onPaginatorChanged);
+      widget.paginator?.addListener(_onPaginatorChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.paginator?.removeListener(_onPaginatorChanged);
+    super.dispose();
+  }
+
+  void _onPaginatorChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final MagicPaginator<E>? paginator = this.paginator;
+    final MagicPaginator<E>? paginator = widget.paginator;
+    final Widget? emptyState = widget.emptyState;
+    final bool isEmpty =
+        paginator != null && paginator.isEmpty && emptyState != null;
 
     return WDiv(
       className: dataTableScrollClassName(),
@@ -132,26 +178,22 @@ class MSDataTable<E> extends StatelessWidget {
         children: [
           _buildHeader(),
           if (paginator == null)
-            for (final E row in rows) _buildRow(row)
+            for (final E row in widget.rows) _buildRow(row)
+          else if (isEmpty)
+            // No row box: it exists to bound a list, and there is no list.
+            emptyState
           else
             WDiv(
-              className: dataTableBodyClassName(bodyHeight.toInt()),
-              // `emptyState` is forwarded rather than checked here, because this
-              // widget is stateless and does not listen: reading
-              // `paginator.isEmpty` at build time only worked when the caller
-              // had already awaited the first page, and the ordinary order
-              // (build the view, let the controller load) left a bare header
-              // forever. The list view listens, so the state belongs to it.
+              className: dataTableBodyClassName(widget.bodyHeight.toInt()),
               child: MagicPaginatedListView<E>(
                 paginator: paginator,
                 itemBuilder: (_, E row, _) => _buildRow(row),
-                emptyState: emptyState,
-                loadingFooter: loadingLabel == null
+                loadingFooter: widget.loadingLabel == null
                     ? null
                     : WDiv(
                         className: dataTableLoadingFooterClassName(),
                         child: WText(
-                          loadingLabel!,
+                          widget.loadingLabel!,
                           className: dataTableLoadingLabelClassName(),
                         ),
                       ),
@@ -170,7 +212,7 @@ class MSDataTable<E> extends StatelessWidget {
     return WDiv(
       className: dataTableHeaderClassName(),
       children: [
-        for (final MSDataColumn<E> column in columns)
+        for (final MSDataColumn<E> column in widget.columns)
           _track(
             column,
             WText(column.label, className: dataTableHeaderCellClassName()),
@@ -183,7 +225,7 @@ class MSDataTable<E> extends StatelessWidget {
     return WDiv(
       className: dataTableRowClassName(),
       children: [
-        for (final MSDataColumn<E> column in columns)
+        for (final MSDataColumn<E> column in widget.columns)
           _track(
             column,
             WDiv(className: dataTableCellClassName(), child: column.cell(row)),
