@@ -336,7 +336,12 @@ void main() {
           find.byType(MagicPaginatedListView<_Row>),
         );
 
-    expect(list.loadingFooter, isNotNull);
+    // Not just `isNotNull`: a footer rendering a hardcoded label would pass
+    // that identically, so the caller's own string is what gets asserted.
+    final WDiv footer = list.loadingFooter! as WDiv;
+    final WText label = footer.child! as WText;
+
+    expect(label.data, equals('Loading more'));
   });
 
   testWidgets('a loading label renders only while a page is in flight', (
