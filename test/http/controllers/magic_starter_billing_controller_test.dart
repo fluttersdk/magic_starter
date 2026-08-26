@@ -32,6 +32,14 @@ class _FakeBilling
   bool failInvoices = false;
   bool failPaymentMethod = false;
 
+  /// Raises an `Error` rather than an `Exception` out of `getInvoices`.
+  ///
+  /// Its own flag because [failInvoices] cannot reach this path: it throws a
+  /// `BillingException`, and `MagicPaginator` catches `on Exception` and parks
+  /// it on `error`. Only an `Error` gets past the paginator to the caller, which
+  /// is the shape a consumer's own bad cast takes.
+  bool throwInvoicesError = false;
+
   /// Held open to park every read before it resolves.
   Completer<void>? gate;
 
@@ -86,6 +94,7 @@ class _FakeBilling
   Future<BillingInvoicesPage> getInvoices({String? cursor}) async {
     await _enter(_invoicesRead);
     if (failInvoices) throw const BillingException('invoices read failed');
+    if (throwInvoicesError) throw StateError('invoices read blew up');
 
     return BillingInvoicesPage.fromMap(<String, dynamic>{
       'data': <Map<String, dynamic>>[
@@ -352,6 +361,27 @@ void main() {
       );
 
       await expectLater(controller.load(), completes);
+      controller.dispose();
+    });
+
+    test('an Error out of the invoices read does not escape either', () async {
+      // The test above cannot see this: it throws a `BillingException`, and the
+      // paginator catches `on Exception` and parks it on `error`, so the read
+      // returns normally whether or not this controller guards it. An `Error`
+      // is what the paginator deliberately lets through, `BillingService` is
+      // the consumer's own class, and `onInit` calls `load()` unawaited, so a
+      // bad cast in a consumer's implementation would land as an unhandled
+      // zone error rather than as this screen's documented degradation.
+      billing.throwInvoicesError = true;
+      final MagicStarterBillingController controller = build(
+        storeFundedTeamReader: () async => 'Other Team',
+      );
+
+      await expectLater(controller.load(), completes);
+
+      expect(controller.invoices, isEmpty);
+      // The point of degrading: the other five reads still answered.
+      expectPopulated(controller, except: _invoicesRead);
       controller.dispose();
     });
   });

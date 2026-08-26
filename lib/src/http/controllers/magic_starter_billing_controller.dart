@@ -636,14 +636,29 @@ class MagicStarterBillingController extends MagicController
   ///
   /// Deliberate degradation on failure: [invoices] stays empty, so the history
   /// card renders no rows instead of crashing.
+  ///
+  /// Two failure paths, one report. The paginator parks an `Exception` on
+  /// [MagicPaginator.error] and returns normally, but it catches `on Exception`
+  /// and deliberately lets an `Error` through. [BillingService] is the
+  /// consumer's own class, so a bad cast in its `getInvoices` raises a
+  /// `TypeError` that would escape this read, fail the `Future.wait` in [load],
+  /// and reach `onInit`'s unawaited call as an unhandled zone error. The other
+  /// five reads degrade rather than throw, and [load] documents that none of
+  /// them throws; this one has to hold up its end.
   Future<void> loadInvoices() async {
     final MagicPaginator<Invoice> pages = _invoicePages ?? _buildInvoicePages();
     _invoicePages = pages;
 
-    await pages.refresh();
+    Object? failure;
+    try {
+      await pages.refresh();
+      failure = pages.error;
+    } catch (error) {
+      failure = error;
+    }
 
-    if (pages.error != null) {
-      _reportDegradation('getInvoices', pages.error!);
+    if (failure != null) {
+      _reportDegradation('getInvoices', failure);
     }
     refreshUI();
   }

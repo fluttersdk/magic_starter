@@ -682,50 +682,6 @@ class _MonthlyBillingService extends _RailBillingService {
 /// read contract, and the screen renders no purchase or portal affordance at
 /// all when that rail is absent, so a read-only fake would have made every "the
 /// affordance is gone" assertion below pass for the wrong reason.
-/// A rail whose invoice endpoint actually PAGES, so the cursor the client sends
-/// can be observed rather than assumed.
-///
-/// The default fixture returns one page with a null cursor, which is exactly the
-/// shape under which dropping `nextCursor` looked fine for as long as it did.
-class _PagedInvoiceBillingService extends _RailBillingService {
-  /// Every cursor the client sent, in order. `null` is a first page.
-  final List<String?> cursorsSeen = <String?>[];
-
-  @override
-  Future<BillingInvoicesPage> getInvoices({String? cursor}) async {
-    cursorsSeen.add(cursor);
-
-    if (cursor == null) {
-      return BillingInvoicesPage(
-        invoices: <Invoice>[
-          for (int i = 0; i < 10; i++)
-            Invoice(
-              id: 'first-$i',
-              number: 'INV-$i',
-              date: DateTime.utc(2026, 8, 20).subtract(Duration(days: i)),
-              amount: r'$29.00',
-              status: InvoiceStatus.paid,
-            ),
-        ],
-        nextCursor: 'page-2',
-      );
-    }
-
-    return BillingInvoicesPage(
-      invoices: <Invoice>[
-        Invoice(
-          id: 'older-1',
-          number: 'INV-OLD',
-          date: DateTime.utc(2026, 1, 1),
-          amount: r'$29.00',
-          status: InvoiceStatus.paid,
-        ),
-      ],
-      nextCursor: null,
-    );
-  }
-}
-
 class _RailBillingService extends _ReadsBillingService
     implements WebBillingService {
   _RailBillingService({
@@ -785,6 +741,96 @@ class _RailBillingService extends _ReadsBillingService
     portalCalls++;
 
     return 'https://portal.example.test/session/test';
+  }
+}
+
+/// A rail whose invoice endpoint actually PAGES, so the cursor the client sends
+/// can be observed rather than assumed.
+///
+/// The default fixture returns one page with a null cursor, which is exactly the
+/// shape under which dropping `nextCursor` looked fine for as long as it did.
+class _PagedInvoiceBillingService extends _RailBillingService {
+  /// Every cursor the client sent, in order. `null` is a first page.
+  final List<String?> cursorsSeen = <String?>[];
+
+  @override
+  Future<BillingInvoicesPage> getInvoices({String? cursor}) async {
+    cursorsSeen.add(cursor);
+
+    if (cursor == null) {
+      return BillingInvoicesPage(
+        invoices: <Invoice>[
+          for (int i = 0; i < 10; i++)
+            Invoice(
+              id: 'first-$i',
+              number: 'INV-$i',
+              date: DateTime.utc(2026, 8, 20).subtract(Duration(days: i)),
+              amount: r'$29.00',
+              status: InvoiceStatus.paid,
+            ),
+        ],
+        nextCursor: 'page-2',
+      );
+    }
+
+    return BillingInvoicesPage(
+      invoices: <Invoice>[
+        Invoice(
+          id: 'older-1',
+          number: 'INV-OLD',
+          date: DateTime.utc(2026, 1, 1),
+          amount: r'$29.00',
+          status: InvoiceStatus.paid,
+        ),
+      ],
+      nextCursor: null,
+    );
+  }
+}
+
+/// A producer that pages at THREE rows: a first page shorter than the card's
+/// lazy threshold that still carries a cursor.
+///
+/// The shape the threshold got wrong. A row count is not what decides whether
+/// more exists, and only the lazy branch mounts the widget whose viewport fill
+/// asks for page two, so an eager render of this producer's first page strands
+/// every page after it however many pages there are.
+class _ShortPagedInvoiceBillingService extends _RailBillingService {
+  /// Every cursor the client sent, in order. `null` is a first page.
+  final List<String?> cursorsSeen = <String?>[];
+
+  @override
+  Future<BillingInvoicesPage> getInvoices({String? cursor}) async {
+    cursorsSeen.add(cursor);
+
+    if (cursor == null) {
+      return BillingInvoicesPage(
+        invoices: <Invoice>[
+          for (int i = 0; i < 3; i++)
+            Invoice(
+              id: 'short-$i',
+              number: 'INV-S$i',
+              date: DateTime.utc(2026, 8, 20).subtract(Duration(days: i)),
+              amount: r'$29.00',
+              status: InvoiceStatus.paid,
+            ),
+        ],
+        nextCursor: 'page-2',
+      );
+    }
+
+    return BillingInvoicesPage(
+      invoices: <Invoice>[
+        Invoice(
+          id: 'short-older',
+          number: 'INV-SOLD',
+          date: DateTime.utc(2026, 1, 1),
+          amount: r'$29.00',
+          status: InvoiceStatus.paid,
+        ),
+      ],
+      nextCursor: null,
+    );
   }
 }
 
@@ -2874,6 +2920,37 @@ void main() {
       await mount(tester, _RailBillingService(), isOwner: true);
 
       expect(find.byType(MagicPaginatedListView<Invoice>), findsNothing);
+    });
+
+    testWidgets('a short first page that carries a cursor is lazy anyway', (
+      tester,
+    ) async {
+      // The threshold's own defect. Three rows is under it, but the producer
+      // pages at three and said so, and the eager branch mounts nothing that
+      // can ask for page two: the fix for the dropped cursor, undone for every
+      // producer whose page is shorter than this card's threshold.
+      final _ShortPagedInvoiceBillingService billing =
+          _ShortPagedInvoiceBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      expect(
+        find.byType(MagicPaginatedListView<Invoice>),
+        findsOneWidget,
+        reason: 'a cursor outranks the row count in deciding to page',
+      );
+      expect(
+        billing.cursorsSeen,
+        <String?>[null, 'page-2'],
+        reason:
+            'nobody called loadMore here: the bounded list saw a viewport it '
+            'could not fill and asked for the next page itself',
+      );
+      expect(
+        Magic.find<MagicStarterBillingController>().invoices.length,
+        4,
+        reason: 'the second page is appended rather than stranded',
+      );
     });
   });
 

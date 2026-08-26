@@ -1324,10 +1324,19 @@ class _MagicStarterBillingViewState
   /// its own height, because a fixed 420px body around three invoices is worse
   /// than the problem: a `ListView` needs a bound, and a bound is only worth
   /// paying for once the list is long enough to scroll.
+  ///
+  /// A short first page that carries a cursor is lazy anyway, whatever the row
+  /// count. `MagicPaginatedListView` is the only thing here that ever calls
+  /// `loadMore`, through its post-frame viewport fill, so a producer paging at
+  /// fewer than [_invoiceLazyThreshold] rows would otherwise render page one
+  /// eagerly and strand every page after it: the defect this section was
+  /// rewritten to fix, reintroduced by the threshold that shortens it.
   Widget _buildInvoicesSection() {
     final MagicPaginator<Invoice>? pages = controller.invoicePages;
     final List<Invoice> invoices = controller.invoices;
-    final bool lazy = pages != null && invoices.length >= _invoiceLazyThreshold;
+    final bool lazy =
+        pages != null &&
+        (invoices.length >= _invoiceLazyThreshold || pages.hasMore);
 
     return MSCard(
       title: trans('magic_starter.billing.invoices_header'),
