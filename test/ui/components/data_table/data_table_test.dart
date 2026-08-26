@@ -305,12 +305,16 @@ void main() {
     tester,
   ) async {
     // Scoped to the WIRING on purpose. Whether that footer appears while a page
-    // is in flight is `MagicPaginatedListView`'s behaviour and is asserted in
-    // magic's own suite, where holding a request open is possible; here the
-    // question is only whether `loadingLabel` gets there. Proving it end to end
-    // in this repo needed `MagicPaginator.fetcher`, and depending on an unmerged
-    // magic API from a TEST turned this package's own gate red for a reason that
-    // had nothing to do with the component.
+    // is in flight is `MagicPaginatedListView`'s behaviour, so it belongs to
+    // magic; the assertion for it rides along with fluttersdk/magic#134, which
+    // is where holding a request open became possible. It is NOT in magic's
+    // default branch today, so until that merges the positive path is covered
+    // nowhere and this comment is a pointer rather than a claim.
+    //
+    // Proving it end to end here needed `MagicPaginator.fetcher`, and depending
+    // on an unmerged magic API from a TEST took this package's whole test file
+    // down (a Dart compile error is per-library), for a reason that had nothing
+    // to do with the component.
     Http.fake((_) => Http.response(_page(3, next: 'page-2'), 200));
     final MagicPaginator<_Row> paginator = MagicPaginator<_Row>(
       url: 'invoices',
