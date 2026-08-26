@@ -214,7 +214,7 @@ class MagicStarterBillingController extends MagicController
   PlanStatus _planStatus = PlanStatus.none;
   List<MagicStarterPlan> _plans = const <MagicStarterPlan>[];
   List<UsageStat> _usage = const <UsageStat>[];
-  List<Invoice> _invoices = const <Invoice>[];
+  MagicPaginator<Invoice>? _invoicePages;
   PaymentMethod? _paymentMethod;
   bool _pmLoading = true;
   bool _pmError = false;
@@ -305,7 +305,25 @@ class MagicStarterBillingController extends MagicController
 
   /// The customer's billing history, most recent first. Empty until
   /// [loadInvoices] resolves; stays empty on a failed read.
-  List<Invoice> get invoices => _invoices;
+  ///
+  /// The pages fetched so far, not the whole history: see [invoicePages].
+  List<Invoice> get invoices => _invoicePages?.items ?? const <Invoice>[];
+
+  /// The paginator behind [invoices], or null before the first load.
+  ///
+  /// Exposed so a view can render the history lazily and ask for older invoices
+  /// as the reader scrolls. It exists because the producer has always paged this
+  /// endpoint and this client used to throw the cursor away: `getInvoices()`
+  /// returns a `BillingInvoicesPage` carrying `nextCursor`, and reading only
+  /// `page.invoices` meant a customer with more than one page could never see
+  /// past the first.
+  ///
+  /// A FETCHER paginator, not a url one, because the invoices arrive through
+  /// [BillingService] rather than from an endpoint this class should know about:
+  /// a store build's implementation throws rather than answering, and a test
+  /// installs a fake. Pointing a url paginator at `/billing/invoices` would walk
+  /// around both.
+  MagicPaginator<Invoice>? get invoicePages => _invoicePages;
 
   /// The card on file and the next renewal date, or `null` until
   /// [loadPaymentMethod] resolves.
@@ -511,7 +529,8 @@ class MagicStarterBillingController extends MagicController
     _planStatus = PlanStatus.none;
     _plans = const <MagicStarterPlan>[];
     _usage = const <UsageStat>[];
-    _invoices = const <Invoice>[];
+    _invoicePages?.dispose();
+    _invoicePages = null;
     _paymentMethod = null;
     _pmLoading = true;
     _pmError = false;
@@ -617,14 +636,52 @@ class MagicStarterBillingController extends MagicController
   ///
   /// Deliberate degradation on failure: [invoices] stays empty, so the history
   /// card renders no rows instead of crashing.
+  ///
+  /// Two failure paths, one report. The paginator parks an `Exception` on
+  /// [MagicPaginator.error] and returns normally, but it catches `on Exception`
+  /// and deliberately lets an `Error` through. [BillingService] is the
+  /// consumer's own class, so a bad cast in its `getInvoices` raises a
+  /// `TypeError` that would escape this read, fail the `Future.wait` in [load],
+  /// and reach `onInit`'s unawaited call as an unhandled zone error. The other
+  /// five reads degrade rather than throw, and [load] documents that none of
+  /// them throws; this one has to hold up its end.
   Future<void> loadInvoices() async {
+    final MagicPaginator<Invoice> pages = _invoicePages ?? _buildInvoicePages();
+    _invoicePages = pages;
+
+    Object? failure;
     try {
-      final BillingInvoicesPage page = await billing.getInvoices();
-      _invoices = page.invoices;
-      refreshUI();
+      await pages.refresh();
+      failure = pages.error;
     } catch (error) {
-      _reportDegradation('getInvoices', error);
+      failure = error;
     }
+
+    if (failure != null) {
+      _reportDegradation('getInvoices', failure);
+    }
+    refreshUI();
+  }
+
+  /// Builds the invoice paginator over [BillingService.getInvoices].
+  ///
+  /// `isFirst` is what the fetcher branches on rather than the cursor being
+  /// null, because a refresh has to start over: the producer's first page is
+  /// addressed by passing no cursor at all, so a reset and a continuation would
+  /// otherwise be indistinguishable.
+  MagicPaginator<Invoice> _buildInvoicePages() {
+    return MagicPaginator<Invoice>.fetcher(
+      fetch: (MagicPageRequest request) async {
+        final BillingInvoicesPage page = await billing.getInvoices(
+          cursor: request.isFirst ? null : request.cursor,
+        );
+
+        return MagicPage<Invoice>(
+          items: page.invoices,
+          nextCursor: page.nextCursor,
+        );
+      },
+    );
   }
 
   /// Reads the card on file and republishes [paymentMethod].

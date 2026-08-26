@@ -744,6 +744,96 @@ class _RailBillingService extends _ReadsBillingService
   }
 }
 
+/// A rail whose invoice endpoint actually PAGES, so the cursor the client sends
+/// can be observed rather than assumed.
+///
+/// The default fixture returns one page with a null cursor, which is exactly the
+/// shape under which dropping `nextCursor` looked fine for as long as it did.
+class _PagedInvoiceBillingService extends _RailBillingService {
+  /// Every cursor the client sent, in order. `null` is a first page.
+  final List<String?> cursorsSeen = <String?>[];
+
+  @override
+  Future<BillingInvoicesPage> getInvoices({String? cursor}) async {
+    cursorsSeen.add(cursor);
+
+    if (cursor == null) {
+      return BillingInvoicesPage(
+        invoices: <Invoice>[
+          for (int i = 0; i < 10; i++)
+            Invoice(
+              id: 'first-$i',
+              number: 'INV-$i',
+              date: DateTime.utc(2026, 8, 20).subtract(Duration(days: i)),
+              amount: r'$29.00',
+              status: InvoiceStatus.paid,
+            ),
+        ],
+        nextCursor: 'page-2',
+      );
+    }
+
+    return BillingInvoicesPage(
+      invoices: <Invoice>[
+        Invoice(
+          id: 'older-1',
+          number: 'INV-OLD',
+          date: DateTime.utc(2026, 1, 1),
+          amount: r'$29.00',
+          status: InvoiceStatus.paid,
+        ),
+      ],
+      nextCursor: null,
+    );
+  }
+}
+
+/// A producer that pages at THREE rows: a first page shorter than the card's
+/// lazy threshold that still carries a cursor.
+///
+/// The shape the threshold got wrong. A row count is not what decides whether
+/// more exists, and only the lazy branch mounts the widget whose viewport fill
+/// asks for page two, so an eager render of this producer's first page strands
+/// every page after it however many pages there are.
+class _ShortPagedInvoiceBillingService extends _RailBillingService {
+  /// Every cursor the client sent, in order. `null` is a first page.
+  final List<String?> cursorsSeen = <String?>[];
+
+  @override
+  Future<BillingInvoicesPage> getInvoices({String? cursor}) async {
+    cursorsSeen.add(cursor);
+
+    if (cursor == null) {
+      return BillingInvoicesPage(
+        invoices: <Invoice>[
+          for (int i = 0; i < 3; i++)
+            Invoice(
+              id: 'short-$i',
+              number: 'INV-S$i',
+              date: DateTime.utc(2026, 8, 20).subtract(Duration(days: i)),
+              amount: r'$29.00',
+              status: InvoiceStatus.paid,
+            ),
+        ],
+        nextCursor: 'page-2',
+      );
+    }
+
+    return BillingInvoicesPage(
+      invoices: <Invoice>[
+        Invoice(
+          id: 'short-older',
+          number: 'INV-SOLD',
+          date: DateTime.utc(2026, 1, 1),
+          amount: r'$29.00',
+          status: InvoiceStatus.paid,
+        ),
+      ],
+      nextCursor: null,
+    );
+  }
+}
+
 /// A team grandfathered on a tier the current catalogue no longer serves.
 ///
 /// [_ReadsBillingService.entitlementPlan] is fixed to `'pro'`, a real catalogue
@@ -2750,6 +2840,116 @@ void main() {
       expect(
         find.text(trans('magic_starter.billing.invoice_receipt_button')),
         findsOneWidget,
+      );
+    });
+  });
+
+  group('the billing history is paged', () {
+    testWidgets('the client sends the cursor the producer handed back', (
+      tester,
+    ) async {
+      // The defect. `getInvoices` has always accepted a cursor and
+      // `BillingInvoicesPage` has always carried `nextCursor`; the controller
+      // read `page.invoices` and threw the rest away, so a customer with more
+      // than one page of invoices could never see past the first.
+      final _PagedInvoiceBillingService billing = _PagedInvoiceBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      final MagicStarterBillingController controller =
+          Magic.find<MagicStarterBillingController>();
+      expect(controller.invoices.length, 10);
+      expect(billing.cursorsSeen, <String?>[null]);
+
+      await controller.invoicePages!.loadMore();
+      await tester.pumpAndSettle();
+
+      expect(
+        billing.cursorsSeen,
+        <String?>[null, 'page-2'],
+        reason: 'the second request carries the token the first page reported',
+      );
+      expect(
+        controller.invoices.length,
+        11,
+        reason: 'the older invoice is appended, not swapped in',
+      );
+    });
+
+    testWidgets('loadInvoices starts over instead of continuing', (
+      tester,
+    ) async {
+      // A refresh has to send NO cursor. The producer addresses its first page
+      // by absence, so a reset that reused the stored token would fetch page two
+      // and render it as the whole history.
+      final _PagedInvoiceBillingService billing = _PagedInvoiceBillingService();
+
+      await mount(tester, billing, isOwner: true);
+      final MagicStarterBillingController controller =
+          Magic.find<MagicStarterBillingController>();
+      await controller.invoicePages!.loadMore();
+      await tester.pumpAndSettle();
+      expect(controller.invoices.length, 11);
+
+      await controller.loadInvoices();
+      await tester.pumpAndSettle();
+
+      expect(
+        billing.cursorsSeen.last,
+        isNull,
+        reason: 'a reload is a first page, addressed by sending no cursor',
+      );
+      expect(controller.invoices.length, 10);
+    });
+
+    testWidgets('a long history renders lazily', (tester) async {
+      // The threshold exists so a handful of invoices do not sit inside a fixed
+      // 420px body. Ten are past it, so this one gets the bounded list.
+      await mount(tester, _PagedInvoiceBillingService(), isOwner: true);
+
+      expect(find.byType(MagicPaginatedListView<Invoice>), findsOneWidget);
+    });
+
+    testWidgets('a short history keeps the card its own height', (
+      tester,
+    ) async {
+      // Deliberately its own test rather than a second `mount` in the one above:
+      // the controller is registered by TYPE, so a second mount inside one test
+      // inherits the first's paginator and its rows, and the assertion would be
+      // reading the previous fixture.
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(find.byType(MagicPaginatedListView<Invoice>), findsNothing);
+    });
+
+    testWidgets('a short first page that carries a cursor is lazy anyway', (
+      tester,
+    ) async {
+      // The threshold's own defect. Three rows is under it, but the producer
+      // pages at three and said so, and the eager branch mounts nothing that
+      // can ask for page two: the fix for the dropped cursor, undone for every
+      // producer whose page is shorter than this card's threshold.
+      final _ShortPagedInvoiceBillingService billing =
+          _ShortPagedInvoiceBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      expect(
+        find.byType(MagicPaginatedListView<Invoice>),
+        findsOneWidget,
+        reason: 'a cursor outranks the row count in deciding to page',
+      );
+      expect(
+        billing.cursorsSeen,
+        <String?>[null, 'page-2'],
+        reason:
+            'nobody called loadMore here: the bounded list saw a viewport it '
+            'could not fill and asked for the next page itself',
+      );
+      expect(
+        Magic.find<MagicStarterBillingController>().invoices.length,
+        4,
+        reason: 'the second page is appended rather than stranded',
       );
     });
   });
