@@ -22,20 +22,29 @@ String dataTableHeaderClassName() =>
 String dataTableRowClassName() =>
     'flex flex-row items-center border-b border-color-border';
 
-/// Header cell className, for a column that flexes.
+/// Header cell className.
+///
+/// Carries no track: the track is the wrapper's job (see
+/// [dataTableTrackClassName]), so alignment can be applied to a flexing column
+/// as well as to a fixed one. It used to live here as a `flex-1`, which is why
+/// `alignEnd` was silently ignored on every flexing column.
 String dataTableHeaderCellClassName() =>
-    'flex-1 py-2 pr-3 text-xs font-medium uppercase tracking-wide '
-    'text-fg-muted';
-
-/// Header cell className, for a column on a fixed track.
-String dataTableHeaderCellFixedClassName() =>
     'py-2 pr-3 text-xs font-medium uppercase tracking-wide text-fg-muted';
 
-/// Body cell className, for a column that flexes.
-String dataTableCellClassName() => 'flex-1 py-3 pr-3 text-sm text-fg';
+/// Body cell className. Carries no track, for the reason above.
+String dataTableCellClassName() => 'py-3 pr-3 text-sm text-fg';
 
-/// Body cell className, for a column on a fixed track.
-String dataTableCellFixedClassName() => 'py-3 pr-3 text-sm text-fg';
+/// The className that puts a cell on its column's track.
+///
+/// [width] null means the column shares the remaining space (`flex-1`); a value
+/// pins it to a track that does not resize with its content, which is what a
+/// numeric column needs to line up down the page. [alignEnd] pushes the cell to
+/// the end of whichever track it is on.
+String dataTableTrackClassName(int? width, {required bool alignEnd}) {
+  final String track = width == null ? 'flex-1' : 'w-[${width}px] shrink-0';
+
+  return alignEnd ? '$track flex flex-row justify-end' : track;
+}
 
 /// Wrapper for the scrolling body in the paginated mode.
 ///

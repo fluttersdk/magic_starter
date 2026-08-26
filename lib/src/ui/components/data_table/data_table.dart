@@ -125,10 +125,6 @@ class MSDataTable<E> extends StatelessWidget {
   Widget build(BuildContext context) {
     final MagicPaginator<E>? paginator = this.paginator;
 
-    if (paginator != null && paginator.isEmpty && emptyState != null) {
-      return emptyState!;
-    }
-
     return WDiv(
       className: dataTableScrollClassName(),
       child: WDiv(
@@ -140,9 +136,16 @@ class MSDataTable<E> extends StatelessWidget {
           else
             WDiv(
               className: dataTableBodyClassName(bodyHeight.toInt()),
+              // `emptyState` is forwarded rather than checked here, because this
+              // widget is stateless and does not listen: reading
+              // `paginator.isEmpty` at build time only worked when the caller
+              // had already awaited the first page, and the ordinary order
+              // (build the view, let the controller load) left a bare header
+              // forever. The list view listens, so the state belongs to it.
               child: MagicPaginatedListView<E>(
                 paginator: paginator,
                 itemBuilder: (_, E row, _) => _buildRow(row),
+                emptyState: emptyState,
                 loadingFooter: loadingLabel == null
                     ? null
                     : WDiv(
@@ -170,12 +173,7 @@ class MSDataTable<E> extends StatelessWidget {
         for (final MSDataColumn<E> column in columns)
           _track(
             column,
-            WText(
-              column.label,
-              className: column.width == null
-                  ? dataTableHeaderCellClassName()
-                  : dataTableHeaderCellFixedClassName(),
-            ),
+            WText(column.label, className: dataTableHeaderCellClassName()),
           ),
       ],
     );
@@ -188,12 +186,7 @@ class MSDataTable<E> extends StatelessWidget {
         for (final MSDataColumn<E> column in columns)
           _track(
             column,
-            WDiv(
-              className: column.width == null
-                  ? dataTableCellClassName()
-                  : dataTableCellFixedClassName(),
-              child: column.cell(row),
-            ),
+            WDiv(className: dataTableCellClassName(), child: column.cell(row)),
           ),
       ],
     );
@@ -201,17 +194,16 @@ class MSDataTable<E> extends StatelessWidget {
 
   /// Puts [child] on [column]'s track.
   ///
-  /// A flexing column is already `flex-1` through its own className, so it needs
-  /// no wrapper; a fixed one gets a `w-*` box that does not resize with its
-  /// content, which is the whole reason a numeric column asks for one.
+  /// Always wraps, for both the flexing and the fixed case. The track used to
+  /// live on the cell's own className as a `flex-1`, which meant a flexing
+  /// column had no wrapper to align inside and `alignEnd` was a silent no-op on
+  /// it: the cell rendered at the start of its track with no error and no hint.
   Widget _track(MSDataColumn<E> column, Widget child) {
-    final double? width = column.width;
-    if (width == null) return child;
-
     return WDiv(
-      className: column.alignEnd
-          ? 'w-[${width.toInt()}px] shrink-0 flex flex-row justify-end'
-          : 'w-[${width.toInt()}px] shrink-0',
+      className: dataTableTrackClassName(
+        column.width?.toInt(),
+        alignEnd: column.alignEnd,
+      ),
       child: child,
     );
   }

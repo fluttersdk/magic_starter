@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -179,9 +181,139 @@ void main() {
     expect(find.text('no invoices'), findsOneWidget);
     expect(
       find.text('ID'),
-      findsNothing,
-      reason: 'an empty state replaces the table, header included',
+      findsOneWidget,
+      reason: 'the empty state replaces the ROWS; the header is still context',
     );
+  });
+
+  testWidgets('the empty state arrives even when the page lands after the '
+      'first frame', (tester) async {
+    // The ordinary consumer order: build the view, then let the controller load.
+    // Reading `isEmpty` once at build time made the empty state depend on the
+    // paginator having already resolved, so this order left a bare header
+    // forever. The inner list view listens, so the state belongs to it.
+    Http.fake(
+      (_) => Http.response(<String, dynamic>{'data': <dynamic>[]}, 200),
+    );
+    final MagicPaginator<_Row> paginator = MagicPaginator<_Row>(
+      url: 'invoices',
+      fromMap: _Row.fromMap,
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        MSDataTable<_Row>.paginated(
+          columns: columns(),
+          paginator: paginator,
+          bodyHeight: 300,
+          emptyState: const Text('no invoices'),
+        ),
+        scrollable: false,
+      ),
+    );
+    expect(find.text('no invoices'), findsNothing);
+
+    await paginator.loadFirst();
+    await tester.pumpAndSettle();
+
+    expect(find.text('no invoices'), findsOneWidget);
+  });
+
+  testWidgets('alignEnd is honoured on a flexing column too', (tester) async {
+    // It used to be applied only on the fixed track, so `alignEnd: true` with no
+    // width rendered left-aligned with no error and no hint.
+    //
+    // Measured with a FIXED-SIZE cell on purpose. A `Text` fills its track, so
+    // its box sits at the same coordinates either way and alignment only moves
+    // the glyphs inside it: probing the text's own edges reports 400..788 for a
+    // left-aligned cell and passes an "is it on the right" assertion that means
+    // nothing. A 40px box has to actually move.
+    await tester.pumpWidget(
+      wrap(
+        MSDataTable<_Row>(
+          rows: const <_Row>[_Row(1, 'R')],
+          columns: <MSDataColumn<_Row>>[
+            MSDataColumn<_Row>(
+              label: 'Left',
+              cell: (_Row row) => Text('row ${row.id}'),
+            ),
+            MSDataColumn<_Row>(
+              label: 'Right',
+              alignEnd: true,
+              cell: (_Row row) =>
+                  SizedBox(width: 40, height: 20, child: Text(row.total)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final Finder cell = find.byType(SizedBox).last;
+    final double left = tester.getTopLeft(cell).dx;
+    final double tableRight = tester
+        .getTopRight(find.byType(MSDataTable<_Row>))
+        .dx;
+
+    expect(
+      left,
+      greaterThan(tableRight * 0.75),
+      reason:
+          'a 40px cell on a right-aligned track sits at the far end of it, '
+          'not at its start',
+    );
+  });
+
+  testWidgets('the loading label renders while a page IS in flight', (
+    tester,
+  ) async {
+    // The negative case was covered and the positive one was not, so a footer
+    // that never rendered would have passed.
+    //
+    // A fetcher paginator, because the in-flight window has to be HELD open to
+    // be observed. Two earlier attempts could not: returning a Future from the
+    // `Http.fake` handler silently registered no stub at all (the handler's type
+    // returns a `MagicResponse`), and calling `loadMore()` without awaiting it
+    // does not help either, since `tester.pump()` drains pending microtasks
+    // before it builds, so the faked response has already landed by the time the
+    // frame renders (measured: loading true at the call, false after the pump).
+    final Completer<void> secondPage = Completer<void>();
+    int calls = 0;
+    final MagicPaginator<_Row> paginator = MagicPaginator<_Row>.fetcher(
+      fetch: (MagicPageRequest request) async {
+        calls++;
+        if (calls > 1) await secondPage.future;
+
+        return MagicPage<_Row>(
+          items: <_Row>[for (int i = 0; i < 3; i++) _Row(i, '\$$i')],
+          nextCursor: 'page-2',
+        );
+      },
+    );
+    await paginator.loadFirst();
+
+    await tester.pumpWidget(
+      wrap(
+        MSDataTable<_Row>.paginated(
+          columns: columns(),
+          paginator: paginator,
+          bodyHeight: 300,
+          loadingLabel: 'Loading more',
+        ),
+        scrollable: false,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.text('Loading more'),
+      findsOneWidget,
+      reason: 'the viewport is not full, so page two is genuinely in flight',
+    );
+
+    secondPage.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Loading more'), findsNothing);
   });
 
   testWidgets('a loading label renders only while a page is in flight', (
