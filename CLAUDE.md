@@ -50,7 +50,7 @@ lib/
     ├── ui/
     │   ├── layouts/               # AppLayout (authenticated), GuestLayout (auth pages)
     │   ├── views/                 # auth/, profile/, teams/, notifications/
-    │   ├── components/            # 30 MS-prefixed design-system components (4-file atomic folders)
+    │   ├── components/            # 39 MS-prefixed design-system components (4-file atomic folders)
     │   └── widgets/               # 7 behaviour-carrying widgets (2 of them aliases of a component)
     └── cli/                        # Install command + provider (no bin/ — surfaces via host app's artisan)
         ├── starter_artisan_provider.dart  # 5 commands (install, configure, doctor, publish, uninstall) + read-only mcpTool (starter_doctor)
