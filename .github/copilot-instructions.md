@@ -1,6 +1,6 @@
 # Magic Starter Plugin
 
-Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & Notifications — 13 opt-in features, every screen overridable via Wind UI.
+Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & Notifications — 14 opt-in features, every screen overridable via Wind UI.
 
 **Dart:** >=3.6.0 · **Flutter:** >=3.27.0 · **Pure Dart** — no native platform code.
 
@@ -13,7 +13,7 @@ lib/
 ├── magic_starter.dart              # Barrel export — 46 exports
 └── src/
     ├── magic_starter_manager.dart  # Singleton registry
-    ├── configuration/              # 13 feature toggles (all default false, opt-in)
+    ├── configuration/              # 14 feature toggles (all default false, opt-in)
     ├── providers/                  # IoC registration, 9 Gate abilities, boot logic
     ├── facades/                    # Static API: MagicStarter.useUserModel(), .view.make()
     ├── http/controllers/           # 7 controllers + NavigatesRoutes mixin

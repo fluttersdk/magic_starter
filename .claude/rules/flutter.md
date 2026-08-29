@@ -25,5 +25,5 @@ paths:
 - Trailing commas on ALL multi-line argument lists, collections, and parameters
 - Doc comments (`///`) on public APIs; inline comments (`//`) explain WHY, not WHAT
 - Concerns directory: shared mixins live in `concerns/` subdirectory (e.g., `NavigatesRoutes` in `controllers/concerns/`)
-- Feature toggles: 13 opt-in flags via `MagicStarterConfig.has<Feature>Features()` — all default false
+- Feature toggles: 14 opt-in flags via `MagicStarterConfig.has<Feature>Features()` — all default false
 - Gate abilities: 9 auto-registered `starter.*` abilities for section visibility (profile, teams, etc.)
