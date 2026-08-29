@@ -1,30 +1,34 @@
 ---
-path: "lib/src/ui/widgets/**/*.dart"
+paths:
+  - "lib/src/ui/widgets/**/*.dart"
 ---
 
-# UI Widgets
+# Starter Widgets
 
-- Class hierarchy: `extends StatefulWidget` or `extends StatelessWidget` — NOT MagicStatefulView
-- Dialog factory: `static Future<T?> show(BuildContext context, ...)` with `showDialog()` or `showModalBottomSheet()`
-- Password confirm dialog: inline error handling via `setState()` — never auto-close on error
-- Card widget: `noPadding` option for full-bleed list content inside card body; `variant` enum (`CardVariant.surface` default, `CardVariant.inset`, `CardVariant.elevated`) controls background/border/shadow; title in `noPadding` mode gets `px-6 pt-6 pb-3` so it aligns with row content
-- Auth form card: wraps `WDiv` + `WText` title + child, reusable across login/register/forgot/reset
-- Team selector: dropdown built from `MagicStarter.manager.teamResolver` callbacks
-- Notification dropdown: `StreamBuilder<List<DatabaseNotification>>` for real-time unread badge
-- Timezone select: debounced async API search via `Http.get('/timezones')` — NOT local data
-- Two-factor modal: multi-step wizard (enable → QR code → OTP confirm → recovery codes)
-- Social divider: `WDiv` + `WText('or')` centered — used between form and social login buttons
-- Page header: `WDiv` with `flex-col sm:flex-row` responsive layout, `border-b` separator, required `title`, optional `subtitle` (`String?`), optional `leading` widget (e.g. back button), optional `actions` (`List<Widget>?`) — rendered in a trailing `flex flex-row gap-2` row only when non-empty
-- Page header inline mode: `inlineActions` is `bool?` and falls back to `MagicStarterPageHeaderTheme.inlineActions`. It does TWO things and both are required together: it swaps `containerClassName` for `containerInlineClassName`, and it gives the title row `flex-1 min-w-0` instead of `sm:flex-1`. An app that themes the container into a row at every width and does not set the flag leaves the title row without `flex-1` below `sm`; the title column is `flex-initial` (a loose fit), so the text takes its intrinsic width and overflows. `MSPageScaffold` does not expose the argument, which is why the theme field exists
-- User profile dropdown: `PopupMenuButton` with avatar, name, role — navigates to profile/logout
-- User profile dropdown avatar: uses `MagicStarter.navigationTheme.dropdownAvatarClassName` for the trigger avatar background — override via `MagicStarter.useNavigationTheme()`
-- Confirm dialog: `MagicStarterConfirmDialog` with `static Future<bool> show(BuildContext context, {required String title, String? description, String? confirmLabel, String? cancelLabel, ConfirmDialogVariant variant, Future<void> Function()? onConfirm})`; variant enum `ConfirmDialogVariant.primary` (default), `.danger`, `.warning` — controls confirm button styling
-- Password confirm dialog: `MagicStarterPasswordConfirmDialog` also supports `ConfirmDialogVariant` (`primary` default, `danger`, `warning`) — same `_resolveConfirmClassName()` pattern as `ConfirmDialog`; pass `variant:` to both constructor and `show()`
-- Confirm dialog variant usage: `ConfirmDialogVariant.danger` for destructive actions (delete team, revoke session), `.warning` for caution (leave team), `.primary` for neutral confirmations
-- Variant button resolution: both `ConfirmDialog` and `PasswordConfirmDialog` resolve confirm button className via `_resolveConfirmClassName()` → `primary` = `theme.primaryButtonClassName`, `danger` = `theme.dangerButtonClassName`, `warning` = `theme.warningButtonClassName`
-- Modal theme consumption: all dialogs (ConfirmDialog, PasswordConfirmDialog, TwoFactorModal) read tokens from `MagicStarter.manager.modalTheme` at build time — never hardcode dialog classNames; use theme fields (titleClassName, primaryButtonClassName, dangerButtonClassName, etc.)
-- Dialog shell: `MagicStarterDialogShell` — exported from barrel; sticky header/footer with scrollable body (`ListView(shrinkWrap: true)`); uses Material `Dialog` shell + Wind UI content; accepts `footerBuilder: Widget Function(BuildContext dialogContext)?` so callers can safely call `Navigator.pop(dialogContext)` with the dialog's own context
-- Dialog button layout: all dialog footers use compact right-aligned buttons with `justify-end gap-2 wrap` — never `flex-1` full-width buttons; `wrap` is required alongside `justify-end` to prevent overflow in constrained containers (Wind renders as `Wrap(alignment: WrapAlignment.end)`)
-- Dialog safe area: all dialogs compute `safeHeight` via `MediaQuery.viewPaddingOf(context)` — subtract top/bottom insets from screen height, then apply `* 0.85` for maxHeight; vertical `insetPadding: 24` prevents edge-to-edge on mobile
-- Wind UI exclusively — no Material widgets except `Icons.*` for icon references and `Dialog` shell in `MagicStarterDialogShell`
-- Dark mode: always pair light/dark classes: `bg-white dark:bg-gray-800`
+The widgets under `lib/src/ui/widgets/` that carry starter BEHAVIOUR rather than a visual contract: an API call, a multi-step wizard, a layout signal. A component whose only job is styling belongs in `lib/src/ui/components/` instead (see `components.md`), and that is where the whole `MS`-prefixed design system lives.
+
+Two files here are thin aliases kept for existing callers: `MagicStarterConfirmDialog extends MSConfirmDialog` and `MagicStarterDialogShell extends MSDialog`. They add nothing. New code writes the `MS` name; changes to their behaviour belong in the component, not here.
+
+## Shape
+
+- Class hierarchy: `extends StatefulWidget` or `extends StatelessWidget`, NEVER `MagicStatefulView`.
+- Dialog factory: `static Future<T?> show(BuildContext context, ...)` wrapping `showDialog()` or `showModalBottomSheet()`.
+- Wind UI exclusively. No Material widgets, except `Icons.*` for icon data and the Material `Dialog` shell reached through `MSDialog`.
+- Dark mode: every colour token needs its `dark:` pair in the same className.
+- Never hardcode a dialog className. All modals read `MagicStarter.manager.modalTheme` at build time (`titleClassName`, `primaryButtonClassName`, `dangerButtonClassName`, ...).
+- `Icons.*` in a `build()` goes to a `static const _iconName = Icons.xxx` field, or Flutter web cannot tree-shake it.
+
+## The widgets themselves
+
+- **`MagicStarterTwoFactorModal`**: multi-step wizard, enable then QR code then OTP confirm then recovery codes. Each step owns its own local state; the modal never auto-advances on an error.
+- **`MagicStarterPasswordConfirmDialog`**: inline error handling through `setState()`, and it NEVER auto-closes on error. Supports `ConfirmDialogVariant` (`primary` default, `danger`, `warning`) through the same `_resolveConfirmClassName()` pattern as `MSConfirmDialog`; pass `variant:` to both the constructor and `show()`.
+- **`MagicStarterTimezoneSelect`**: debounced async search through `Http.get('/timezones')`. Never a local timezone list.
+- **`MagicStarterAuthFormCard`**: `WDiv` + `WText` title + child, reused across login, register, forgot and reset.
+- **`MagicStarterHideBottomNav`**: an `InheritedWidget` that signals `MagicStarterAppLayout` to suppress the mobile bottom nav for a fullscreen route. Wrap the route group, do not poke the layout.
+
+## Dialog layout rules
+
+These hold for every dialog reached from here, alias or not:
+
+- Footers use compact right-aligned buttons with `justify-end gap-2 wrap`, never `flex-1` full-width. `wrap` is required alongside `justify-end`: Wind renders it as `Wrap(alignment: WrapAlignment.end)` and a constrained container overflows without it.
+- `safeHeight` comes from `MediaQuery.viewPaddingOf(context)`: subtract the top and bottom insets from screen height, then apply `* 0.85` for `maxHeight`. Vertical `insetPadding: 24` keeps a phone off the edges.

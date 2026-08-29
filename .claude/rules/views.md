@@ -1,5 +1,6 @@
 ---
-path: "lib/src/ui/views/**/*.dart"
+paths:
+  - "lib/src/ui/views/**/*.dart"
 ---
 
 # UI Views

@@ -52,7 +52,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :bell: | **Notifications** | Real-time polling, mark read/unread, preference matrix |
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
-| :package: | **Design-System Components** | 30 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, MSDataTable, and more) plus `MagicStarterTokens` semantic alias layer |
+| :package: | **Design-System Components** | 39 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, MSDataTable, and more) plus `MagicStarterTokens` semantic alias layer |
 | :gear: | **13 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
@@ -227,8 +227,11 @@ WindApp(
 | Form controls | `MSButton`, `MSInput`, `MSTextarea`, `MSCheckbox`, `MSSwitch`, `MSRadio`, `MSSelect`, `MSCombobox` |
 | Display | `MSBadge`, `MSTypography`, `MSSkeleton`, `MSToast`, `MSTooltip`, `MSEmptyState`, `MSErrorState`, `MSDataTable` |
 | Selection / navigation | `MSSegmentedControl`, `MSTabs`, `MSAccordion`, `MSNavbar`, `MSDropdownMenu` |
-| Overlay | `MSDialog`, `MSBottomSheet` |
+| Overlay | `MSDialog`, `MSBottomSheet`, `MSConfirmDialog` |
 | Composition | `MSFormField`, `MSCard`, `MSPageHeader`, `MSSocialDivider` |
+| Page geometry | `MSPageContainer`, `MSPageScaffold` |
+| Settings surface | `MSSettingsSection`, `MSSettingsRow`, `MSSettingsNavRow` |
+| Billing surface | `MSUsageMeter`, `MSUpgradeDialog`, `MSUpgradeNudge` |
 | App chrome | `MSNotificationDropdown`, `MSUserProfileDropdown`, `MSTeamSelector` |
 
 `MSDataTable` has two constructors, and the choice is about the collection rather than the styling. The default renders every row you pass, which is right for a short and complete list. `MSDataTable.paginated` hands the body to magic's `MagicPaginatedListView` inside a bounded box, so a long collection costs the viewport instead of the whole result and reaching the tail asks the paginator for its next page. The header stays outside the scrolling body either way.

@@ -50,7 +50,8 @@ lib/
     ├── ui/
     │   ├── layouts/               # AppLayout (authenticated), GuestLayout (auth pages)
     │   ├── views/                 # auth/, profile/, teams/, notifications/
-    │   └── widgets/               # 13 reusable Wind UI components
+    │   ├── components/            # 39 MS-prefixed design-system components (4-file atomic folders)
+    │   └── widgets/               # 7 behaviour-carrying widgets (2 of them aliases of a component)
     └── cli/                        # Install command + provider (no bin/ — surfaces via host app's artisan)
         ├── starter_artisan_provider.dart  # 5 commands (install, configure, doctor, publish, uninstall) + read-only mcpTool (starter_doctor)
         ├── commands/
@@ -134,8 +135,10 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 
 ## Skills & Extensions
 
-- `fluttersdk:magic-framework` — Magic Framework patterns: facades, service providers, IoC, Eloquent ORM, controllers, routing. Use for ANY code touching Magic APIs.
-- `fluttersdk:magic-starter-widgets` — Reusable standalone widgets exported from `package:magic_starter/magic_starter.dart`: `MSCard` (with `CardVariant` enum: surface/inset/elevated), `MSPageHeader` (title, subtitle, leading, actions, titleSuffix, inlineActions), `MagicStarterConfirmDialog` (with `ConfirmDialogVariant` enum: primary/danger/warning), `MagicStarterPasswordConfirmDialog`, `MagicStarterTwoFactorModal`, `MagicStarterDialogShell` (sticky header/footer + scrollable body shell; accepts `footerBuilder: Widget Function(BuildContext dialogContext)?` so callers can `Navigator.pop(dialogContext)` safely), `MagicStarterHideBottomNav` (wrap route group to suppress mobile bottom nav bar). All accept plain callbacks — no internal controller coupling required. All modals read `MagicStarterModalTheme` tokens at build time.
+- `magic-framework` — Magic Framework patterns: facades, service providers, IoC, Eloquent ORM, controllers, routing. Use for ANY code touching Magic APIs. Its `references/plugin-starter.md` is this package's own agent-facing reference (facade API, view registry keys, component index); it lives in the `magic` repo, so a change to this package's public surface belongs there too.
+- `wind-ui` — the className syntax, the W-widgets and the theme every screen here is built on.
+
+There is no magic-starter-specific skill. The per-directory conventions live in `.claude/rules/`: `components.md` for the `MS`-prefixed design system, `widgets.md` for the behaviour-carrying widgets, plus `views.md`, `layouts.md`, `controllers.md`, `routes.md`, `cli.md` and `tests.md`.
 
 ## CI
 

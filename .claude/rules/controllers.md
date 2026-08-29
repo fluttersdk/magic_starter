@@ -1,5 +1,6 @@
 ---
-path: "lib/src/http/controllers/**/*.dart"
+paths:
+  - "lib/src/http/controllers/**/*.dart"
 ---
 
 # HTTP Controllers

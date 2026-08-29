@@ -1,5 +1,6 @@
 ---
-path: "test/**/*_test.dart"
+paths:
+  - "test/**/*_test.dart"
 ---
 
 # Testing Conventions
