@@ -4,6 +4,7 @@
 - [The Config File](#config-file)
 - [Feature Toggles](#feature-toggles)
 - [Route Customization](#route-customization)
+- [Billing](#billing)
 - [Auth Identity Modes](#auth-identity-modes)
 - [Locale & Timezone Defaults](#locale-timezone-defaults)
 - [Accessing Values](#accessing-values)
@@ -41,6 +42,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'email_verification': false,
       'guest_auth': false,
       'timezones': false,
+      'billing': false,
     },
     'auth': {
       'email': true,
@@ -61,6 +63,10 @@ Map<String, dynamic> get magicStarterConfig => {
       'teams_prefix': '/teams',
       'profile_prefix': '/settings',
       'notifications_prefix': '/notifications',
+      'billing': '/teams/billing',
+    },
+    'billing': {
+      'web_origin': null,
     },
     'legal': {
       'terms_url': null,
@@ -157,6 +163,38 @@ MagicStarterConfig.twoFactorChallengeRoute();   // '/auth/two-factor-challenge'
 
 > [!NOTE]
 > Changing a prefix automatically updates all computed routes that depend on it. For example, setting `profile_prefix` to `'/account'` changes `profileRoute()` to `'/account/profile'` and `notificationPreferencesRoute()` to `'/account/notifications'`.
+
+<a name="billing"></a>
+## Billing
+
+The `billing` feature gates the `teams.billing` view, which sells subscriptions through
+[`magic_payments`](https://pub.dev/packages/magic_payments). It is off by default and it is gated on
+its OWN toggle rather than on `teams`: a subscription is bought by whoever holds the account, so an
+app with no team features can still sell one.
+
+```dart
+'features': {
+  'billing': true,
+},
+'routes': {
+  'billing': '/teams/billing',
+},
+'billing': {
+  'web_origin': 'https://app.example.com',
+},
+```
+
+> [!WARNING]
+> `billing.web_origin` is REQUIRED once billing is on, and it carries no default on purpose. The
+> billing view builds Stripe's `successUrl`, `cancelUrl` and the portal `returnUrl` by concatenating
+> this origin with a path, and Stripe rejects a relative url. Leave it unset and checkout fails at
+> Stripe, where the resulting `BillingException` is logged rather than shown, so the customer sees a
+> button that does nothing. `dart run <app>:artisan starter:doctor` reports the missing key.
+
+The origin is the host app's own web origin, with no trailing slash. It is only read on the web rail;
+a store purchase on iOS or Android never touches it.
+
+---
 
 <a name="auth-identity-modes"></a>
 ## Auth Identity Modes

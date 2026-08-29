@@ -112,6 +112,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'social_login': true,
       'notifications': true,
       'timezones': false,
+      'billing': false,
     },
     'auth': {
       'email': true,
@@ -139,7 +140,7 @@ All values are read at runtime via `ConfigRepository` — no hardcoded strings s
 
 ## Feature Toggles
 
-All 13 features default to `false` (opt-in). Enable only what your app needs:
+All 14 features default to `false` (opt-in). Enable only what your app needs:
 
 | Toggle | Description |
 |--------|-------------|
@@ -156,6 +157,7 @@ All 13 features default to `false` (opt-in). Enable only what your app needs:
 | `social_login` | Social login buttons (Google, Apple, etc.) |
 | `notifications` | Real-time notification polling, read/unread, preference matrix |
 | `timezones` | Timezone selection via async API search |
+| `billing` | Subscription and billing screen over `magic_payments`. Also needs `billing.web_origin`, an absolute url Stripe can return to |
 
 ---
 
