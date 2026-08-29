@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.23] - 2026-08-29
+
 ### Fixed
 
 - **The `billing` toggle existed in code and in no template, so an adopter could
