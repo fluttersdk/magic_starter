@@ -314,6 +314,84 @@ void main() {
   // getMissingRequirements
   // -------------------------------------------------------------------------
 
+  group('checkBillingWebOrigin', () {
+    // The failure this check exists to catch is silent. The billing view builds
+    // Stripe's successUrl, cancelUrl and the portal returnUrl by concatenating
+    // this origin with a path, and Stripe requires absolute urls; a missing
+    // origin produces a relative one, session creation fails at Stripe, and the
+    // resulting BillingException is logged rather than shown to the customer.
+    // An adopter who enabled billing and forgot the key is never told why
+    // checkout does nothing.
+
+    test('passes when the billing feature is off, origin or not', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/config/magic_starter.dart',
+        "Map<String, dynamic> get magicStarterConfig => {\n"
+            "  'magic_starter': {\n"
+            "    'features': {'billing': false},\n"
+            '  },\n'
+            '};\n',
+      );
+
+      expect(command.checkBillingWebOrigin(tempDir.path), isTrue);
+    });
+
+    test('fails when billing is on and no web origin is configured', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/config/magic_starter.dart',
+        "Map<String, dynamic> get magicStarterConfig => {\n"
+            "  'magic_starter': {\n"
+            "    'features': {'billing': true},\n"
+            '  },\n'
+            '};\n',
+      );
+
+      expect(command.checkBillingWebOrigin(tempDir.path), isFalse);
+    });
+
+    test('fails when billing is on and the web origin is an empty string', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/config/magic_starter.dart',
+        "Map<String, dynamic> get magicStarterConfig => {\n"
+            "  'magic_starter': {\n"
+            "    'features': {'billing': true},\n"
+            "    'billing': {'web_origin': ''},\n"
+            '  },\n'
+            '};\n',
+      );
+
+      expect(command.checkBillingWebOrigin(tempDir.path), isFalse);
+    });
+
+    test('passes when billing is on and a web origin is configured', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/config/magic_starter.dart',
+        "Map<String, dynamic> get magicStarterConfig => {\n"
+            "  'magic_starter': {\n"
+            "    'features': {'billing': true},\n"
+            "    'billing': {'web_origin': 'https://app.example.com'},\n"
+            '  },\n'
+            '};\n',
+      );
+
+      expect(command.checkBillingWebOrigin(tempDir.path), isTrue);
+    });
+
+    test('passes when the config file is absent', () {
+      // A missing config is already reported by checkConfigExists; reporting it
+      // twice would tell an adopter to fix billing when the install never ran.
+      expect(command.checkBillingWebOrigin(tempDir.path), isTrue);
+    });
+  });
+
   group('getMissingRequirements', () {
     test(
       'returns empty list when project is fully and correctly installed',
@@ -322,6 +400,27 @@ void main() {
         expect(command.getMissingRequirements(), isEmpty);
       },
     );
+
+    test('includes the billing origin when billing is on without one', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/config/magic_starter.dart',
+        "Map<String, dynamic> get magicStarterConfig => {\n"
+            "  'magic_starter': {\n"
+            "    'features': {'billing': true},\n"
+            '  },\n'
+            '};\n',
+      );
+
+      final missing = command.getMissingRequirements();
+
+      expect(
+        missing.any((m) => m.contains('web_origin')),
+        isTrue,
+        reason: 'the message has to name the key an adopter must add',
+      );
+    });
 
     test(
       'includes magic framework check when lib/config/app.dart is absent',
