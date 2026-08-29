@@ -41,20 +41,22 @@ void registerMagicStarterProfileRoutes() {
       MagicRoute.page(
         MagicStarterConfig.settingsHubRoute(),
         () => _profileSettingsView('settings.hub'),
-      ).transition(RouteTransition.none);
+      ).title('magic_starter.titles.settings').transition(RouteTransition.none);
 
       // Profile sub-page — always available.
       MagicRoute.page(
         MagicStarterConfig.profileRoute(),
         () => _profileSettingsView('profile.profile'),
-      ).transition(RouteTransition.none);
+      ).title('magic_starter.titles.profile').transition(RouteTransition.none);
 
       // Appearance (theme) sub-page — always available (mirrors the hub row,
       // which renders Appearance unconditionally).
       MagicRoute.page(
-        MagicStarterConfig.settingsAppearanceRoute(),
-        () => _profileSettingsView('settings.appearance'),
-      ).transition(RouteTransition.none);
+            MagicStarterConfig.settingsAppearanceRoute(),
+            () => _profileSettingsView('settings.appearance'),
+          )
+          .title('magic_starter.titles.appearance')
+          .transition(RouteTransition.none);
 
       // Password sub-page — always available. The hub gates the Password row
       // by the `starter.update-password` Gate only (no feature flag), so the
@@ -62,46 +64,56 @@ void registerMagicStarterProfileRoutes() {
       MagicRoute.page(
         MagicStarterConfig.settingsPasswordRoute(),
         () => _profileSettingsView('settings.security.password'),
-      ).transition(RouteTransition.none);
+      ).title('magic_starter.titles.password').transition(RouteTransition.none);
 
       // Language sub-page — extended profile / locale selection.
       if (MagicStarterConfig.hasExtendedProfileFeatures()) {
         MagicRoute.page(
-          MagicStarterConfig.settingsLanguageRoute(),
-          () => _profileSettingsView('settings.language'),
-        ).transition(RouteTransition.none);
+              MagicStarterConfig.settingsLanguageRoute(),
+              () => _profileSettingsView('settings.language'),
+            )
+            .title('magic_starter.titles.language')
+            .transition(RouteTransition.none);
       }
 
       // Timezone sub-page.
       if (MagicStarterConfig.hasTimezoneFeatures()) {
         MagicRoute.page(
-          MagicStarterConfig.settingsTimezoneRoute(),
-          () => _profileSettingsView('settings.timezone'),
-        ).transition(RouteTransition.none);
+              MagicStarterConfig.settingsTimezoneRoute(),
+              () => _profileSettingsView('settings.timezone'),
+            )
+            .title('magic_starter.titles.timezone')
+            .transition(RouteTransition.none);
       }
 
       // Newsletter sub-page.
       if (MagicStarterConfig.hasNewsletterFeatures()) {
         MagicRoute.page(
-          MagicStarterConfig.settingsNewsletterRoute(),
-          () => _newsletterSettingsView(),
-        ).transition(RouteTransition.none);
+              MagicStarterConfig.settingsNewsletterRoute(),
+              () => _newsletterSettingsView(),
+            )
+            .title('magic_starter.titles.newsletter')
+            .transition(RouteTransition.none);
       }
 
       // Security — Two-Factor sub-page.
       if (MagicStarterConfig.hasTwoFactorFeatures()) {
         MagicRoute.page(
-          MagicStarterConfig.settingsTwoFactorRoute(),
-          () => _profileSettingsView('settings.security.two_factor'),
-        ).transition(RouteTransition.none);
+              MagicStarterConfig.settingsTwoFactorRoute(),
+              () => _profileSettingsView('settings.security.two_factor'),
+            )
+            .title('magic_starter.titles.two_factor')
+            .transition(RouteTransition.none);
       }
 
       // Security — Active Sessions sub-page.
       if (MagicStarterConfig.hasSessionsFeatures()) {
         MagicRoute.page(
-          MagicStarterConfig.settingsSessionsRoute(),
-          () => _profileSettingsView('settings.security.sessions'),
-        ).transition(RouteTransition.none);
+              MagicStarterConfig.settingsSessionsRoute(),
+              () => _profileSettingsView('settings.security.sessions'),
+            )
+            .title('magic_starter.titles.sessions')
+            .transition(RouteTransition.none);
       }
     },
   );

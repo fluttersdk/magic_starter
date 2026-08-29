@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Every route this package registers now carries a page title.** All 20 had
+  none, so `TitleManager` fell back to the application title and a browser tab
+  read the bare app name on the login screen, the register screen, the whole
+  Settings hub, profile, teams and notification preferences alike. Measured on a
+  consumer on 2026-08-29: its own 21 routes resolved their titles correctly in
+  both languages while all 20 of this package's read `Uptizm`. Nothing failed
+  anywhere; a missing title is a silent fallback by design, and no test asked.
+
+### Added
+
+- **`magic_starter.titles.*` in the install stub, 20 keys.** A title is a
+  translation key and the catalogue is the CONSUMER's, exactly like every other
+  key this package references. A fresh `starter:install` picks them up.
+  `test/routes/route_titles_test.dart` sweeps every registered route and fails
+  on a route with no title, a title whose key the stub does not ship, and a stub
+  key no route uses.
+
+**Upgrading an existing app:** merge the `magic_starter.titles` block from
+`assets/stubs/install/en.stub` into your own catalogue, and add your other
+locales. Until you do, `trans()` returns the key itself and a tab reads
+`magic_starter.titles.login`, which is worse than the bare app name it replaced.
+This is the only manual step.
+
 ## [0.0.1-alpha.23] - 2026-08-29
 
 ### Fixed

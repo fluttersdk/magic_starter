@@ -17,19 +17,25 @@ void registerMagicStarterTeamRoutes() {
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(
-        '${MagicStarterConfig.teamsPrefix()}/create',
-        MagicStarterTeamController.instance.create,
-      ).transition(RouteTransition.none);
+            '${MagicStarterConfig.teamsPrefix()}/create',
+            MagicStarterTeamController.instance.create,
+          )
+          .title('magic_starter.titles.team_create')
+          .transition(RouteTransition.none);
 
       MagicRoute.page(
-        '${MagicStarterConfig.teamsPrefix()}/settings',
-        MagicStarterTeamController.instance.edit,
-      ).transition(RouteTransition.none);
+            '${MagicStarterConfig.teamsPrefix()}/settings',
+            MagicStarterTeamController.instance.edit,
+          )
+          .title('magic_starter.titles.team_settings')
+          .transition(RouteTransition.none);
 
       MagicRoute.page(
-        '/invitations/:token/accept',
-        MagicStarterTeamController.instance.acceptInvitation,
-      ).transition(RouteTransition.none);
+            '/invitations/:token/accept',
+            MagicStarterTeamController.instance.acceptInvitation,
+          )
+          .title('magic_starter.titles.team_invitation')
+          .transition(RouteTransition.none);
     },
   );
 }

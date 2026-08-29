@@ -240,6 +240,28 @@
     },
     "timezone": {
       "subtitle": "Set the timezone used for displaying dates and times."
+    },
+    "titles": {
+      "appearance": "Appearance",
+      "forgot_password": "Forgot Password",
+      "language": "Language",
+      "login": "Sign In",
+      "newsletter": "Newsletter",
+      "notification_preferences": "Notification Preferences",
+      "notifications": "Notifications",
+      "otp": "Verification Code",
+      "password": "Password",
+      "profile": "Profile",
+      "register": "Create Account",
+      "reset_password": "Reset Password",
+      "sessions": "Active Sessions",
+      "settings": "Settings",
+      "team_create": "Create Team",
+      "team_invitation": "Team Invitation",
+      "team_settings": "Team Settings",
+      "timezone": "Timezone",
+      "two_factor": "Two-Factor Authentication",
+      "two_factor_challenge": "Two-Factor Challenge"
     }
   },
   "nav": {
