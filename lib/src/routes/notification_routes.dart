@@ -17,13 +17,17 @@ void registerMagicStarterNotificationRoutes() {
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(
-        MagicStarterConfig.notificationsRoute(),
-        MagicStarterNotificationController.instance.index,
-      ).transition(RouteTransition.none);
+            MagicStarterConfig.notificationsRoute(),
+            MagicStarterNotificationController.instance.index,
+          )
+          .title('magic_starter.titles.notifications')
+          .transition(RouteTransition.none);
       MagicRoute.page(
-        MagicStarterConfig.notificationPreferencesRoute(),
-        MagicStarterNotificationController.instance.preferences,
-      ).transition(RouteTransition.none);
+            MagicStarterConfig.notificationPreferencesRoute(),
+            MagicStarterNotificationController.instance.preferences,
+          )
+          .title('magic_starter.titles.notification_preferences')
+          .transition(RouteTransition.none);
     },
   );
 }
