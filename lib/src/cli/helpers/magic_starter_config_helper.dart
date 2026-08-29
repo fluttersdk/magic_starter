@@ -7,8 +7,17 @@ import 'dart:io';
 /// `lib/config/magic_starter.dart` configuration file. All methods are
 /// static and do not require instantiation.
 abstract class MagicStarterConfigHelper {
-  /// List of all feature toggle keys in magic_starter config.
-  static const featureKeys = [
+  /// Every feature toggle key `MagicStarterConfig` reads.
+  ///
+  /// The one list. `MagicStarterInstallCommand.dynamicFeatureKeys` points at it
+  /// rather than repeating it, because the two used to be separate and had
+  /// drifted in opposite directions: this one was missing `timezones`, so
+  /// `starter:configure --show` never listed it, and that one was missing
+  /// `billing`, so it could not be enabled at install time.
+  ///
+  /// `test/configuration/config_template_parity_test.dart` pins the list against
+  /// the keys the config actually reads, and against both config templates.
+  static const List<String> featureKeys = [
     'teams',
     'registration',
     'extended_profile',
@@ -21,6 +30,8 @@ abstract class MagicStarterConfigHelper {
     'notifications',
     'email_verification',
     'guest_auth',
+    'timezones',
+    'billing',
   ];
 
   /// Parses feature toggles from config content.

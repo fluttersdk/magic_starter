@@ -19,6 +19,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'email_verification': {{ feature_email_verification }},
       'guest_auth': {{ feature_guest_auth }},
       'timezones': {{ feature_timezones }},
+      'billing': {{ feature_billing }},
     },
     'auth': {
       'email': true,
@@ -39,6 +40,13 @@ Map<String, dynamic> get magicStarterConfig => {
       'teams_prefix': '/teams',
       'profile_prefix': '/settings',
       'notifications_prefix': '/notifications',
+      'billing': '/teams/billing',
+    },
+    // Required when the billing feature is on: Stripe rejects a relative
+    // successUrl, cancelUrl or portal returnUrl, and the failure is only
+    // logged. `starter:doctor` reports it.
+    'billing': {
+      'web_origin': null,
     },
     'legal': {
       'terms_url': null,
