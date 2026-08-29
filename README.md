@@ -52,7 +52,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :bell: | **Notifications** | Real-time polling, mark read/unread, preference matrix |
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
-| :package: | **Design-System Components** | 29 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, and more) plus `MagicStarterTokens` semantic alias layer |
+| :package: | **Design-System Components** | 30 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, MSDataTable, and more) plus `MagicStarterTokens` semantic alias layer |
 | :gear: | **13 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
@@ -65,7 +65,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.1-alpha.21
+  magic_starter: ^0.0.1-alpha.22
 ```
 
 ### 2. Install configuration
@@ -225,11 +225,13 @@ WindApp(
 | Family | Components |
 |--------|-----------|
 | Form controls | `MSButton`, `MSInput`, `MSTextarea`, `MSCheckbox`, `MSSwitch`, `MSRadio`, `MSSelect`, `MSCombobox` |
-| Display | `MSBadge`, `MSTypography`, `MSSkeleton`, `MSToast`, `MSTooltip`, `MSEmptyState`, `MSErrorState` |
+| Display | `MSBadge`, `MSTypography`, `MSSkeleton`, `MSToast`, `MSTooltip`, `MSEmptyState`, `MSErrorState`, `MSDataTable` |
 | Selection / navigation | `MSSegmentedControl`, `MSTabs`, `MSAccordion`, `MSNavbar`, `MSDropdownMenu` |
 | Overlay | `MSDialog`, `MSBottomSheet` |
 | Composition | `MSFormField`, `MSCard`, `MSPageHeader`, `MSSocialDivider` |
 | App chrome | `MSNotificationDropdown`, `MSUserProfileDropdown`, `MSTeamSelector` |
+
+`MSDataTable` has two constructors, and the choice is about the collection rather than the styling. The default renders every row you pass, which is right for a short and complete list. `MSDataTable.paginated` hands the body to magic's `MagicPaginatedListView` inside a bounded box, so a long collection costs the viewport instead of the whole result and reaching the tail asks the paginator for its next page. The header stays outside the scrolling body either way.
 
 All components accept Wind `className` strings and resolve colors through the semantic alias layer when configured. `MSButton`, `MSInput`, and `MSTextarea` also accept a `bool fullWidth = false` prop; setting it to `true` fills the parent width (wraps the rendered widget in a `SizedBox(width: double.infinity)` rather than a `className` token, since Material widgets ignore cross-axis stretch — see [flutter/flutter#19399](https://github.com/flutter/flutter/issues/19399)).
 
