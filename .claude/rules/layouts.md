@@ -1,5 +1,6 @@
 ---
-path: "lib/src/ui/layouts/**/*.dart"
+paths:
+  - "lib/src/ui/layouts/**/*.dart"
 ---
 
 # UI Layouts

@@ -1,5 +1,6 @@
 ---
-path: "lib/src/routes/**/*.dart"
+paths:
+  - "lib/src/routes/**/*.dart"
 ---
 
 # Route Registration
