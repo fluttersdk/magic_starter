@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The `billing` toggle existed in code and in no template, so an adopter could
+  not find it.** `MagicStarterConfig.hasBillingFeatures()` reads
+  `magic_starter.features.billing` and gates the whole `teams.billing` view, but
+  neither `lib/config/magic_starter.dart` nor the install stub mentioned the key,
+  and `MagicStarterInstallCommand.dynamicFeatureKeys` did not carry it either, so
+  `starter:install --features=billing` did nothing. Both templates now ship it,
+  along with `routes.billing` and the `billing.web_origin` key the billing view
+  needs.
+- **`starter:configure` could not see two toggles.**
+  `MagicStarterConfigHelper.featureKeys` was a second list of the same thing as
+  `dynamicFeatureKeys`, and the two had drifted in opposite directions: this one
+  was missing `timezones`, that one was missing `billing`. There is one list now,
+  in the helper, and the install command points at it.
+
+### Added
+
+- **`starter:doctor` reports a billing install with no `web_origin`.** The
+  billing view builds Stripe's `successUrl`, `cancelUrl` and the portal
+  `returnUrl` by concatenating that origin with a path, and Stripe rejects a
+  relative url. The resulting `BillingException` is logged rather than shown, so
+  an adopter who enabled billing and skipped the key saw a checkout button that
+  did nothing and no reason why. The check is silent when billing is off and when
+  the config file is absent, since a missing config is already reported once.
+- **`test/configuration/config_template_parity_test.dart`**, which pins every
+  feature key `MagicStarterConfig` reads against both config templates and both
+  CLI lists, in both directions. This is the test that was missing: five places
+  had to agree about the feature set and nothing checked that they did.
+
+### Documentation
+
+- The README feature table and the configuration guide carry `billing`, its route
+  and its origin key. The guide gains a Billing section that says why
+  `web_origin` has no default.
+
 ## [0.0.1-alpha.22] - 2026-08-29
 
 ### Added

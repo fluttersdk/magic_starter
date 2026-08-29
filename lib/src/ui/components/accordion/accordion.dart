@@ -41,7 +41,7 @@ class MSAccordionItem {
 ///     ),
 ///     MSAccordionItem(
 ///       title: 'What features are included?',
-///       body: WText('13 opt-in features including auth, teams, and notifications.'),
+///       body: WText('14 opt-in features including auth, teams, and notifications.'),
 ///     ),
 ///   ],
 /// )

@@ -175,6 +175,40 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
     return FileHelper.fileExists('$root/assets/lang/en.json');
   }
 
+  /// Check that an app with billing enabled configured
+  /// `magic_starter.billing.web_origin`.
+  ///
+  /// The failure this catches is silent, which is why it earns a check of its
+  /// own. The billing view builds Stripe's `successUrl`, `cancelUrl` and the
+  /// portal `returnUrl` by concatenating that origin with a path, and Stripe
+  /// requires absolute urls. A missing origin produces a relative one, session
+  /// creation fails at Stripe, and the resulting `BillingException` is logged
+  /// rather than surfaced, so an adopter who enabled billing and forgot the key
+  /// sees a checkout button that does nothing and no reason why.
+  ///
+  /// Returns `true` when the config file is absent (a missing config is already
+  /// reported by [checkConfigExists], and reporting it twice would send an
+  /// adopter to fix billing when the install never ran) and when the billing
+  /// feature is off. Otherwise it requires a non-empty `web_origin`.
+  bool checkBillingWebOrigin(String root) {
+    final String configPath = '$root/lib/config/magic_starter.dart';
+
+    if (!FileHelper.fileExists(configPath)) {
+      return true;
+    }
+
+    final String content = File(configPath).readAsStringSync();
+    final bool billingEnabled = RegExp(
+      r"'billing'\s*:\s*true",
+    ).hasMatch(content);
+
+    if (!billingEnabled) {
+      return true;
+    }
+
+    return RegExp(r"""'web_origin'\s*:\s*['"][^'"]+['"]""").hasMatch(content);
+  }
+
   /// Scan `lib/resources/views/starter/` for published view `.dart` files.
   ///
   /// Returns a list of relative file paths (relative to [root]) for every
@@ -274,6 +308,14 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       missing.add('Translation file not found (assets/lang/en.json)');
     }
 
+    if (!checkBillingWebOrigin(root)) {
+      missing.add(
+        'Billing is enabled but magic_starter.billing.web_origin is not set. '
+        'Stripe checkout and the billing portal need an absolute url; without '
+        'it the session fails at Stripe and the error is only logged.',
+      );
+    }
+
     return missing;
   }
 
@@ -354,7 +396,21 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       buffer.writeln('    Path: assets/lang/en.json');
     }
 
-    // 9. Published views section.
+    // 9. Billing origin, reported only when billing is on: an app that does not
+    //    sell anything has no reason to read a line about Stripe.
+    final bool billingOrigin = checkBillingWebOrigin(root);
+    if (!billingOrigin) {
+      buffer.writeln('Billing web origin: FAIL');
+      if (verbose) {
+        buffer.writeln('    Key: magic_starter.billing.web_origin');
+        buffer.writeln(
+          '    Needed: an absolute url, since Stripe rejects a relative '
+          'successUrl / cancelUrl / returnUrl',
+        );
+      }
+    }
+
+    // 10. Published views section.
     final List<String> publishedViews = getPublishedViews(root);
     if (publishedViews.isNotEmpty) {
       buffer.writeln();
@@ -372,7 +428,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
 
     buffer.writeln();
 
-    // 10. Summary section.
+    // 11. Summary section.
     final List<String> missing = getMissingRequirements();
     if (missing.isEmpty) {
       buffer.writeln('All requirements met!');

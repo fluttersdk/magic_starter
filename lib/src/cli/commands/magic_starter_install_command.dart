@@ -5,6 +5,8 @@ import 'dart:isolate';
 import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:path/path.dart' as p;
 
+import '../helpers/magic_starter_config_helper.dart';
+
 /// Installs and configures Magic Starter inside a host Magic application.
 ///
 /// ## Layered architecture (hybrid manifest + fluent override)
@@ -48,21 +50,12 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
   MagicStarterInstallCommand();
 
   /// Dynamic feature keys that can be toggled by user input.
-  static const List<String> dynamicFeatureKeys = [
-    'teams',
-    'registration',
-    'extended_profile',
-    'profile_photos',
-    'social_login',
-    'two_factor',
-    'sessions',
-    'phone_otp',
-    'newsletter',
-    'notifications',
-    'email_verification',
-    'guest_auth',
-    'timezones',
-  ];
+  ///
+  /// Points at [MagicStarterConfigHelper.featureKeys] rather than repeating it.
+  /// The two were separate lists of the same thing and had drifted by a key
+  /// each, in opposite directions.
+  static const List<String> dynamicFeatureKeys =
+      MagicStarterConfigHelper.featureKeys;
 
   @override
   String get signature =>

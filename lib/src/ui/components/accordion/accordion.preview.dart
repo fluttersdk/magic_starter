@@ -27,7 +27,7 @@ class AccordionPreview extends StatelessWidget {
               title: 'What is Magic Starter?',
               body: WText(
                 'A Flutter starter kit built on the Magic framework, '
-                'providing 13 opt-in features out of the box.',
+                'providing 14 opt-in features out of the box.',
               ),
             ),
             MSAccordionItem(

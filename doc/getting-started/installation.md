@@ -13,7 +13,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-`magic_starter` is a starter kit for the Magic Framework that provides auth screens, profile management, team support, notifications, and more — all behind 13 opt-in feature toggles. It follows the same ServiceProvider + config pattern used throughout the framework, so it wires up in exactly the same way as every other Magic plugin.
+`magic_starter` is a starter kit for the Magic Framework that provides auth screens, profile management, team support, notifications, and more — all behind 14 opt-in feature toggles. It follows the same ServiceProvider + config pattern used throughout the framework, so it wires up in exactly the same way as every other Magic plugin.
 
 Under the hood the package provides 7 controllers, overridable views via a string-keyed view registry, 9 Gate abilities for section visibility, and Wind UI-based layouts. Every feature defaults to `false` — you enable only what your app needs.
 
@@ -59,7 +59,7 @@ The command performs the following steps:
 
 1. **Validates** that `lib/config/app.dart` exists (Magic must be installed first).
 2. **Prompts** for which features to enable (interactive mode).
-3. **Creates** `lib/config/magic_starter.dart` with all 13 feature toggles set to your selections.
+3. **Creates** `lib/config/magic_starter.dart` with all 14 feature toggles set to your selections.
 4. **Injects** `MagicStarterServiceProvider` into the `providers` list in `lib/config/app.dart`.
 5. **Injects** `() => magicStarterConfig` into the `configFactories` list in `lib/main.dart`.
 6. **Creates** middleware files (`EnsureAuthenticated`, `RedirectIfAuthenticated`).

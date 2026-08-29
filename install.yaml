@@ -9,7 +9,7 @@
 #
 #   - The DYNAMIC layer lives in MagicStarterInstallCommand's fluent override
 #     (_applyFluentOverride). It is manifest-inexpressible because it is
-#     feature-gated: the 13 opt-in feature toggles drive which config flags,
+#     feature-gated: the 14 opt-in feature toggles drive which config flags,
 #     route registrations, models, and AppServiceProvider boot blocks are
 #     scaffolded. Manifest `prompts:` run unconditionally during prepare(),
 #     so feature-gated selection stays in code (--non-interactive / --features

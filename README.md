@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Pre-built Auth, Profile, Teams & Notifications for the Magic Framework.</strong><br/>
-  13 opt-in features — every screen overridable.
+  14 opt-in features — every screen overridable.
 </p>
 
 <p align="center">
@@ -35,7 +35,7 @@
 
 Stop rebuilding authentication, profile management, and team features from scratch in every project. The same screens, the same API calls, the same state management — over and over.
 
-**Magic Starter** gives you production-ready screens for auth, profile, teams, and notifications out of the box. Everything is config-driven with 13 opt-in feature toggles. Every view is overridable via the view registry — swap any screen or layout from your host app without touching the package.
+**Magic Starter** gives you production-ready screens for auth, profile, teams, and notifications out of the box. Everything is config-driven with 14 opt-in feature toggles. Every view is overridable via the view registry — swap any screen or layout from your host app without touching the package.
 
 > **Config-driven starter kit.** Enable only what you need. Override any screen. Ship faster.
 
@@ -53,7 +53,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
 | :package: | **Design-System Components** | 39 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, MSDataTable, and more) plus `MagicStarterTokens` semantic alias layer |
-| :gear: | **13 Feature Toggles** | All opt-in, configure only what you need |
+| :gear: | **14 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
 
@@ -112,6 +112,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'social_login': true,
       'notifications': true,
       'timezones': false,
+      'billing': false,
     },
     'auth': {
       'email': true,
@@ -139,7 +140,7 @@ All values are read at runtime via `ConfigRepository` — no hardcoded strings s
 
 ## Feature Toggles
 
-All 13 features default to `false` (opt-in). Enable only what your app needs:
+All 14 features default to `false` (opt-in). Enable only what your app needs:
 
 | Toggle | Description |
 |--------|-------------|
@@ -156,6 +157,7 @@ All 13 features default to `false` (opt-in). Enable only what your app needs:
 | `social_login` | Social login buttons (Google, Apple, etc.) |
 | `notifications` | Real-time notification polling, read/unread, preference matrix |
 | `timezones` | Timezone selection via async API search |
+| `billing` | Subscription and billing screen over `magic_payments`. Also needs `billing.web_origin`, an absolute url Stripe can return to |
 
 ---
 
@@ -567,7 +569,7 @@ App launch → MagicStarterServiceProvider.boot()
 |---------|---------------|
 | Singleton Manager | `MagicStarterManager` — central customization registry |
 | View Registry | `MagicStarterViewRegistry` — string-keyed view builders, host app overrides |
-| Feature Toggles | `MagicStarterConfig` — 13 opt-in flags via `ConfigRepository` |
+| Feature Toggles | `MagicStarterConfig` — 14 opt-in flags via `ConfigRepository` |
 | Service Provider | Two-phase bootstrap: `register()` (sync) → `boot()` (async) |
 | IoC Container | All bindings via `Magic.singleton()` / `Magic.findOrPut()` |
 
