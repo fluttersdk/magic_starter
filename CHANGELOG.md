@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.24] - 2026-08-30
+
 ### Fixed
 
 - **Every route this package registers now carries a page title.** All 20 had
