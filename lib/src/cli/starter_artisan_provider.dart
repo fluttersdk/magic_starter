@@ -13,7 +13,7 @@ import 'commands/magic_starter_uninstall_command.dart';
 /// both and fails when they disagree, so a banner cannot drift behind a release
 /// the way the two hand-written `'0.0.1'` literals did: they were written before
 /// the first alpha and were still claiming 0.0.1 twenty-four releases later.
-const String magicStarterVersion = '0.0.1-alpha.24';
+const String magicStarterVersion = '0.0.1-alpha.25';
 
 /// Magic Starter's contribution to the host application's artisan registry.
 ///
