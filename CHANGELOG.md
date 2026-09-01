@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.25] - 2026-09-02
+
 ### Fixed
 - **The host page geometry now actually reaches the two notification screens.** `_mountNotificationViews()` gated on `Notify.view.has(key)`, and reading `Notify.view` is what seeds `magic_notifications`' own two screens into the registry, so the key was always present and this mount ALWAYS skipped: the `MSPageContainer` and the 1280 width cap it exists to apply never reached either screen in a real app. Three tests covered that wrap and all three passed, because their `setUp` called `Notify.view.clear()` and left the registry empty, which is not the state an app boots with. The gate is now `hasOverride(key)`, which is true only when somebody CHOSE a screen rather than when the package seeded its default, and the tests reset with `Notify.forgetView()` so they run against a registry carrying those defaults. Reverting the gate to `has` now turns three tests red.
 
