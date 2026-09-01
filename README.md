@@ -513,7 +513,17 @@ MagicStarter.view.registerLayout('layout.guest', (child) {
 });
 ```
 
-All overridable keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.two_factor_challenge`, `auth.otp_verify`, `profile.settings`, `teams.create`, `teams.settings`, `teams.invitation_accept`, `notifications.list`, `notifications.preferences`, `layout.app`, `layout.guest`.
+All overridable `MagicStarter.view` keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.two_factor_challenge`, `auth.otp_verify`, `profile.settings`, `teams.create`, `teams.settings`, `teams.invitation_accept`, `layout.app`, `layout.guest`.
+
+The two notification screens moved to `magic_notifications`, which owns the data path they render, so they are overridden through **`Notify.view`** rather than through `MagicStarter.view`. The keys are unchanged (`notifications.list`, `notifications.preferences`) and this package still owns the routes and the shell they mount into:
+
+```dart
+Notify.view.register('notifications.list', () {
+  return const MyBrandedNotificationsView();
+});
+```
+
+The order does not matter: this package registers its own defaults only when the key is absent, so a host registration lands whether it runs before or after the routes are mapped.
 
 ### Level 5: Publish and Own
 

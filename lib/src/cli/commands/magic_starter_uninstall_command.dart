@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fluttersdk_artisan/artisan.dart';
+import '../starter_artisan_provider.dart';
 
 /// CLI command that removes Magic Starter from a host project.
 ///
@@ -36,7 +37,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
 
   @override
   Future<int> handle(ArtisanContext ctx) async {
-    ctx.output.info(ConsoleStyle.banner('Magic Starter', '0.0.1'));
+    ctx.output.info(ConsoleStyle.banner('Magic Starter', magicStarterVersion));
 
     final bool force = (ctx.input.option('force') as bool?) ?? false;
 

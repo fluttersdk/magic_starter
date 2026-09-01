@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:magic_starter/src/cli/starter_artisan_provider.dart';
 import 'package:test/test.dart';
 
@@ -49,6 +51,25 @@ void main() {
         expect(tool.inputSchema, isA<Map<String, dynamic>>());
         expect(tool.inputSchema['type'], equals('object'));
       });
+    });
+  });
+
+  group('magicStarterVersion', () {
+    test('matches the version pubspec.yaml declares', () {
+      // The two `starter:*` banners used to carry a hand-written '0.0.1' and
+      // were still printing it twenty-four alpha releases later. A literal
+      // nothing compares against drifts silently, so the constant they now read
+      // is pinned to the one place a release actually changes.
+      final pubspec = File(
+        '${Directory.current.path}/pubspec.yaml',
+      ).readAsStringSync();
+      final declared = RegExp(
+        r'^version:\s*(\S+)',
+        multiLine: true,
+      ).firstMatch(pubspec);
+
+      expect(declared, isNotNull, reason: 'pubspec.yaml declares a version');
+      expect(magicStarterVersion, declared!.group(1));
     });
   });
 }

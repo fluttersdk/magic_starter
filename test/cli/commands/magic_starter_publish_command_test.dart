@@ -27,10 +27,11 @@ Future<int> _runPublish(
   MagicStarterPublishCommand command, {
   String tag = 'all',
   bool force = false,
+  BufferedOutput? output,
 }) {
   final ctx = ArtisanContext.bare(
     MapInput(<String, dynamic>{'tag': tag, 'force': force}),
-    BufferedOutput(),
+    output ?? BufferedOutput(),
   );
   return command.handle(ctx);
 }
@@ -421,9 +422,18 @@ void main() {
       // The two notification screens moved to magic_notifications, so this
       // package has no source file to copy. The scope has to report as unknown
       // rather than warn about a missing file it still promises.
-      await _runPublish(command, tag: 'views:notifications');
+      //
+      // The reported text is asserted, not just the absence of the directory:
+      // publishing nothing at all, or warning about a missing file, would both
+      // leave `lib/resources` uncreated too, so the directory check alone
+      // cannot tell the three apart. An adopter who typed a scope this package
+      // used to have needs to be told it is gone, not that a file is missing.
+      final output = BufferedOutput();
+      await _runPublish(command, tag: 'views:notifications', output: output);
 
       expect(Directory('${tempDir.path}/lib/resources').existsSync(), isFalse);
+      expect(output.content, contains('Unknown view scope: notifications'));
+      expect(output.content, contains('No files were published.'));
     });
 
     test('--tag=views:unknown reports error for unknown view scope', () async {

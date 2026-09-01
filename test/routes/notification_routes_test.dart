@@ -219,5 +219,36 @@ void main() {
       expect(find.text('host screen'), findsOneWidget);
       expect(find.byType(NotificationPreferencesView), findsNothing);
     });
+
+    testWidgets('a host registration made before the routes wins too', (
+      tester,
+    ) async {
+      fakeNotificationEndpoints();
+
+      // The order the installer actually produces for an adopter who follows
+      // the scaffold: the route mount is injected into
+      // `route_service_provider.dart` while the scaffold points `Notify.view`
+      // work at `AppServiceProvider`, so which boot runs first belongs to the
+      // host's provider order and neither file can see it. Registering
+      // unconditionally here meant that adopter lost their screen with no
+      // error, which is the opposite of what every other default in this
+      // package does (`MagicStarterManager._registerDefault`).
+      Notify.view.register(
+        'notifications.preferences',
+        () => const Text('host screen'),
+      );
+
+      registerMagicStarterNotificationRoutes();
+
+      final route = routeFor(
+        MagicStarterConfig.notificationPreferencesRoute(),
+      )!;
+
+      await tester.pumpWidget(wrap(route.buildWidget(const {})));
+      await tester.pump();
+
+      expect(find.text('host screen'), findsOneWidget);
+      expect(find.byType(NotificationPreferencesView), findsNothing);
+    });
   });
 }

@@ -55,14 +55,25 @@ void registerMagicStarterNotificationRoutes() {
 /// the preferences screen takes it as a parameter rather than naming a
 /// settings hub it cannot know about.
 ///
-/// A registration a host makes AFTER `registerMagicStarterNotificationRoutes()`
-/// replaces either entry, which is how an app swaps a whole screen.
+/// A host registration wins whichever side of
+/// `registerMagicStarterNotificationRoutes()` it lands on. Registering after it
+/// replaces the entry; registering before it is left alone, because these are
+/// registered only when the key is absent.
+///
+/// Register-if-absent rather than unconditional, matching
+/// `MagicStarterManager._registerDefault`, which is how every other default in
+/// this package is installed. The two calls sit in different files by design:
+/// the installer injects the route mount into `route_service_provider.dart`
+/// while the scaffold tells adopters to do their `Notify.view` work in
+/// `AppServiceProvider`, so which boot runs first is a property of the host's
+/// provider order rather than of anything either file can see. Unconditional,
+/// an adopter who followed that guidance lost their screen with no error.
 void _mountNotificationViews() {
-  Notify.view.register(
+  _mountIfAbsent(
     'notifications.list',
     () => _inHostPageGeometry(const NotificationsListView()),
   );
-  Notify.view.register(
+  _mountIfAbsent(
     'notifications.preferences',
     () => _inHostPageGeometry(
       NotificationPreferencesView(
@@ -70,6 +81,13 @@ void _mountNotificationViews() {
       ),
     ),
   );
+}
+
+/// Registers [builder] under [key] unless the host has already claimed it.
+void _mountIfAbsent(String key, Widget Function() builder) {
+  if (Notify.view.has(key)) return;
+
+  Notify.view.register(key, builder);
 }
 
 /// Wraps [view] in the host's shared page geometry.

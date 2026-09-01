@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A host that registers a notification view BEFORE the routes are mapped no
+  longer loses it.** `_mountNotificationViews()` called `Notify.view.register`
+  unconditionally, while every other default in this package is installed
+  register-if-absent (`MagicStarterManager._registerDefault` checks
+  `has(key)` first) precisely so provider order does not matter. The two calls
+  land in different files by design: the installer injects the route mount into
+  `route_service_provider.dart`, and the scaffold tells adopters to do their
+  `Notify.view` work in `AppServiceProvider`, so which boot runs first is a
+  property of the host's provider order that neither file can see. An adopter
+  following that guidance had their screen silently discarded. Both orders now
+  win, and each has its own test.
+- **The two `starter:*` command banners printed `v0.0.1`.** Twenty-four alpha
+  releases in, `publish` and `uninstall` were still announcing the version they
+  were written against, because each carried a hand-written literal that nothing
+  compared with anything. They read `magicStarterVersion` now, which
+  `starter_artisan_provider_test.dart` pins to `pubspec.yaml`, the same guard
+  `magic_notifications` already uses for its seven.
+
 ### Breaking
 
 - **The whole notification UI moved to `magic_notifications`, and this package

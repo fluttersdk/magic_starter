@@ -4,6 +4,7 @@ import 'package:fluttersdk_artisan/artisan.dart';
 import 'package:path/path.dart' as p;
 
 import '../helpers/magic_starter_config_helper.dart';
+import '../starter_artisan_provider.dart';
 
 /// Publish Magic Starter files into the host application for customization.
 ///
@@ -77,7 +78,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
   @override
   Future<int> handle(ArtisanContext ctx) async {
-    ctx.output.info(ConsoleStyle.banner('Magic Starter', '0.0.1'));
+    ctx.output.info(ConsoleStyle.banner('Magic Starter', magicStarterVersion));
 
     final projectRoot = getProjectRoot();
     final pluginSourceDir = getPluginSourceDir();

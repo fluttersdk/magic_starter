@@ -6,6 +6,15 @@ import 'commands/magic_starter_install_command.dart';
 import 'commands/magic_starter_publish_command.dart';
 import 'commands/magic_starter_uninstall_command.dart';
 
+/// Version the `starter:*` command banners print.
+///
+/// Mirrors the `version` field of this package's `pubspec.yaml`, which stays the
+/// release's single source of truth. `starter_artisan_provider_test.dart` reads
+/// both and fails when they disagree, so a banner cannot drift behind a release
+/// the way the two hand-written `'0.0.1'` literals did: they were written before
+/// the first alpha and were still claiming 0.0.1 twenty-four releases later.
+const String magicStarterVersion = '0.0.1-alpha.24';
+
 /// Magic Starter's contribution to the host application's artisan registry.
 ///
 /// Host apps register this provider in their `appConfig['artisan']['providers']`
