@@ -84,8 +84,20 @@ void _mountNotificationViews() {
 }
 
 /// Registers [builder] under [key] unless the host has already claimed it.
+///
+/// `hasOverride`, not `has`. Reading `Notify.view` is what seeds
+/// `magic_notifications`' own two screens into the registry, so `has(key)` is
+/// true from the first read and gating on it would make this function skip
+/// EVERY time: the host page geometry it exists to apply, the `MSPageContainer`
+/// and the width cap, would never reach either screen in a real app. Both
+/// ordering tests pass against `has` only because their `setUp` calls
+/// `Notify.view.clear()`, so they run against an empty registry rather than
+/// against the one an app boots with.
+///
+/// `hasOverride` asks the question that actually has an answer: has anybody
+/// CHOSEN a screen here, as opposed to the package having seeded its default.
 void _mountIfAbsent(String key, Widget Function() builder) {
-  if (Notify.view.has(key)) return;
+  if (Notify.view.hasOverride(key)) return;
 
   Notify.view.register(key, builder);
 }

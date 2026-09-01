@@ -47,7 +47,14 @@ void main() {
 
     // The registry is a static singleton on the facade, so a registration from
     // a previous case would otherwise certify a mount this case never made.
-    Notify.view.clear();
+    //
+    // `forgetView()` rather than `clear()`: clearing empties the registry and
+    // leaves it empty, which is NOT the state an app boots with. The package
+    // seeds its own two screens on the first read of `Notify.view`, so a suite
+    // running against a cleared registry cannot see a mount decision that turns
+    // on those defaults being present, and that is precisely the decision
+    // `_mountIfAbsent` makes.
+    Notify.forgetView();
 
     Config.set('magic_starter.features.notifications', true);
     setUpMagicStarterForTests();
