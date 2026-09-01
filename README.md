@@ -523,7 +523,7 @@ Notify.view.register('notifications.list', () {
 });
 ```
 
-The order does not matter: this package registers its own defaults only when the key is absent, so a host registration lands whether it runs before or after the routes are mapped.
+The order does not matter: this package installs its own wrapped screens only when nobody has chosen one for that key, so a host registration lands whether it runs before or after the routes are mapped. Note the wording, because it is load-bearing: the key is never *absent*, since reading `Notify.view` seeds `magic_notifications`' own defaults into it. The question is `hasOverride`, not `has`.
 
 ### Level 5: Publish and Own
 

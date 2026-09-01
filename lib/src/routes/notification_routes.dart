@@ -58,7 +58,11 @@ void registerMagicStarterNotificationRoutes() {
 /// A host registration wins whichever side of
 /// `registerMagicStarterNotificationRoutes()` it lands on. Registering after it
 /// replaces the entry; registering before it is left alone, because these are
-/// registered only when the key is absent.
+/// registered only when nobody has CHOSEN a screen for the key.
+///
+/// Not "when the key is absent": the key is never absent, because reading
+/// `Notify.view` seeds `magic_notifications`' own two defaults into it. That
+/// distinction is the whole of `_mountIfAbsent` below.
 ///
 /// Register-if-absent rather than unconditional, matching
 /// `MagicStarterManager._registerDefault`, which is how every other default in

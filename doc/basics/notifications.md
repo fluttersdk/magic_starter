@@ -12,7 +12,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-The notification UI moved to the `magic_notifications` package. This package no longer ships the list view, the preferences view, the controller behind them, or the bell dropdown; `magic_notifications` >= 0.0.4 does, under `NotificationsListView`, `NotificationPreferencesView`, `NotificationPreferencesController` and `NotificationDropdown`.
+The notification UI moved to the `magic_notifications` package. This package no longer ships the list view, the preferences view, the controller behind them, or the bell dropdown; `magic_notifications` >= 0.1.0 does, under `NotificationsListView`, `NotificationPreferencesView`, `NotificationPreferencesController` and `NotificationDropdown`.
 
 What stays here is what a published notifications package cannot know on its own: `registerMagicStarterNotificationRoutes()` owns the two paths (`/notifications` and `/settings/notifications`), mounts them inside the authenticated `layout.app` shell, and wraps `magic_notifications`'s screens in this package's own page geometry (`MSPageContainer`) so they read like every other page in the app rather than spreading full-bleed. `MagicStarterAppLayout` owns the polling lifecycle and renders the bell.
 
@@ -171,7 +171,9 @@ Notify.view.register(
 );
 ```
 
-**The order does not matter.** `registerMagicStarterNotificationRoutes()` installs its own screens only when the key is absent, matching how every other default in this package is registered (`MagicStarterManager._registerDefault`), so a host registration wins whether it runs before or after the routes are mapped. That is worth saying explicitly here, because the two calls land in different files: the installer injects the route mount into `route_service_provider.dart` while the scaffold points `Notify.view` work at `AppServiceProvider`, and which of those boots first is a property of the host's provider list rather than of anything this package can see.
+**The order does not matter.** `registerMagicStarterNotificationRoutes()` installs its own wrapped screens only when nobody has chosen one for that key (`Notify.view.hasOverride`), so a host registration wins whether it runs before or after the routes are mapped.
+
+The wording matters here: the key is never *absent*. Reading `Notify.view` is what seeds `magic_notifications`' own two defaults into the registry, so `has(key)` is true before anybody has decided anything, and gating on it would make this package skip every time and never apply the page geometry below. That is worth saying explicitly here, because the two calls land in different files: the installer injects the route mount into `route_service_provider.dart` while the scaffold points `Notify.view` work at `AppServiceProvider`, and which of those boots first is a property of the host's provider list rather than of anything this package can see.
 
 The registry's shape is identical to `MagicStarter.view`'s (`register` / `has` / `make` / `slot` / `buildSlot` / `clear`), so an app that already knew one knows the other.
 
