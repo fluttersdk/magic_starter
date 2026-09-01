@@ -162,7 +162,7 @@ Both the list view and the dropdown read `Notify.view.buildTypeIcon(type, contex
 <a name="overriding-a-screen"></a>
 ## Overriding a Screen
 
-An app that wants to swap either screen no longer registers on `MagicStarter.view`; it registers on `Notify.view`, after `registerMagicStarterNotificationRoutes()` has run so the override wins:
+An app that wants to swap either screen no longer registers on `MagicStarter.view`; it registers on `Notify.view`:
 
 ```dart
 Notify.view.register(
@@ -170,6 +170,8 @@ Notify.view.register(
   () => const MyCustomNotificationsListView(),
 );
 ```
+
+**The order does not matter.** `registerMagicStarterNotificationRoutes()` installs its own screens only when the key is absent, matching how every other default in this package is registered (`MagicStarterManager._registerDefault`), so a host registration wins whether it runs before or after the routes are mapped. That is worth saying explicitly here, because the two calls land in different files: the installer injects the route mount into `route_service_provider.dart` while the scaffold points `Notify.view` work at `AppServiceProvider`, and which of those boots first is a property of the host's provider list rather than of anything this package can see.
 
 The registry's shape is identical to `MagicStarter.view`'s (`register` / `has` / `make` / `slot` / `buildSlot` / `clear`), so an app that already knew one knows the other.
 
