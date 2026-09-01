@@ -34,7 +34,7 @@ All notable changes to this project will be documented in this file.
   `MagicStarterNotificationPreferencesView` and `MSNotificationDropdown` (the
   `src/ui/components/notification_dropdown/index.dart` export). The seven source
   files behind them are deleted. The replacements ship in
-  `magic_notifications` >= 0.0.4 under the names
+  `magic_notifications` >= 0.1.0 under the names
   `NotificationPreferencesController`, `NotificationsListView`,
   `NotificationPreferencesView` and `NotificationDropdown`, all reachable from
   `package:magic_notifications/magic_notifications.dart`, and the dropdown's

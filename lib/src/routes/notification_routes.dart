@@ -58,11 +58,9 @@ void registerMagicStarterNotificationRoutes() {
 /// A host registration wins whichever side of
 /// `registerMagicStarterNotificationRoutes()` it lands on. Registering after it
 /// replaces the entry; registering before it is left alone, because these are
-/// registered only when nobody has CHOSEN a screen for the key.
-///
-/// Not "when the key is absent": the key is never absent, because reading
-/// `Notify.view` seeds `magic_notifications`' own two defaults into it. That
-/// distinction is the whole of `_mountIfAbsent` below.
+/// registered only when nobody has CHOSEN a screen for the key, which is not
+/// the same as the key being absent: reading `Notify.view` seeds
+/// `magic_notifications`' own two defaults into it, so the key never is.
 ///
 /// Register-if-absent rather than unconditional, matching
 /// `MagicStarterManager._registerDefault`, which is how every other default in
@@ -73,11 +71,11 @@ void registerMagicStarterNotificationRoutes() {
 /// provider order rather than of anything either file can see. Unconditional,
 /// an adopter who followed that guidance lost their screen with no error.
 void _mountNotificationViews() {
-  _mountIfAbsent(
+  _mountUnlessOverridden(
     'notifications.list',
     () => _inHostPageGeometry(const NotificationsListView()),
   );
-  _mountIfAbsent(
+  _mountUnlessOverridden(
     'notifications.preferences',
     () => _inHostPageGeometry(
       NotificationPreferencesView(
@@ -87,7 +85,8 @@ void _mountNotificationViews() {
   );
 }
 
-/// Registers [builder] under [key] unless the host has already claimed it.
+/// Registers [builder] under [key] unless somebody has already chosen a screen
+/// for it.
 ///
 /// `hasOverride`, not `has`. Reading `Notify.view` is what seeds
 /// `magic_notifications`' own two screens into the registry, so `has(key)` is
@@ -100,7 +99,7 @@ void _mountNotificationViews() {
 ///
 /// `hasOverride` asks the question that actually has an answer: has anybody
 /// CHOSEN a screen here, as opposed to the package having seeded its default.
-void _mountIfAbsent(String key, Widget Function() builder) {
+void _mountUnlessOverridden(String key, Widget Function() builder) {
   if (Notify.view.hasOverride(key)) return;
 
   Notify.view.register(key, builder);
