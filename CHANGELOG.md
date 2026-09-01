@@ -64,11 +64,19 @@ All notable changes to this project will be documented in this file.
 - **`starter:publish --tag=views:notifications` is gone.** This command copies
   files this package ships, and it no longer ships those two. Customize them
   through `Notify.view` instead of by publishing a copy.
-- **`magic_notifications` is now required at `^0.0.4`.** This is a floor for an
-  API, not an upper-bound fix: `^0.0.2` already admitted 0.0.4 (a caret on a
-  `0.0.x` resolves `>=0.0.2 <0.1.0`, because pub_semver raises the MINOR when
-  the major is zero), and that is the problem, since it equally admits a 0.0.3
-  with no `Notify.view` at all for this package's own routes to resolve against.
+- **`magic_notifications` is now required at `^0.1.0`.** This is a floor for an
+  API, not an upper-bound fix. The old `^0.0.2` was not merely too low, it could
+  not express the requirement at all: a caret on a `0.0.x` resolves
+  `>=0.0.2 <0.1.0`, because pub_semver raises the MINOR whenever the major is
+  zero, so it admitted 0.0.3, which has no `Notify.view` for this package's own
+  routes to resolve against, and excluded 0.1.0, which is the release that has
+  it. `^0.1.0` is `>=0.1.0 <0.2.0` by the same rule and admits nothing below the
+  release carrying the API.
+
+  Three symbols make the floor exact rather than approximate: `Notify.view` for
+  the routes, and `hasOverride` plus `forgetView`, which arrived in 0.1.0 and
+  are what keep this package's page geometry from being skipped by its own
+  register-if-absent mount.
 
 ### Changed
 
