@@ -617,12 +617,24 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
 '''
         : '';
 
+    // What a notification type LOOKS like is answered by magic_notifications
+    // now, through its own view registry, so the scaffold emits guidance rather
+    // than a call: the generated provider does not import that package, and an
+    // emitted `Notify.view.slot(...)` would not compile until the adopter added
+    // the import by hand.
     final String notificationsBlock = (features['notifications'] ?? false)
         ? '''
-    // 5. Register notification type mapper callback.
-    MagicStarter.useNotificationTypeMapper((type) {
-      return (icon: Icons.info_outline, colorClass: 'text-blue-500');
-    });
+    // 5. Say what your notification types look like. Add
+    //    `import 'package:magic_notifications/magic_notifications.dart';`
+    //    above, then register one leading icon per type you send:
+    //
+    //    Notify.view.slot(
+    //      NotificationViewRegistry.typeIconSlotView,
+    //      'order_shipped',
+    //      (context) => WIcon(Icons.local_shipping, className: 'text-lg text-green-500'),
+    //    );
+    //
+    //    The slot named 'default' answers for every type you did not name.
 '''
         : '';
 

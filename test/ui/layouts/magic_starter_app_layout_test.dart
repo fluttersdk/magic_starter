@@ -514,4 +514,50 @@ void main() {
       },
     );
   });
+
+  group('MagicStarterAppLayout notification bell', () {
+    // The bell is mounted twice, in the desktop sidebar's user menu and in the
+    // mobile header, so both widths are driven: deleting the component without
+    // remounting it breaks the shell on every screen size at once.
+    testWidgets('mounts the package dropdown in the mobile header', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.notifications', true);
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotificationDropdown), findsOneWidget);
+    });
+
+    testWidgets('mounts the package dropdown in the desktop sidebar', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      Config.set('magic_starter.features.notifications', true);
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotificationDropdown), findsOneWidget);
+    });
+
+    testWidgets('renders no bell at all when the feature is disabled', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.notifications', false);
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotificationDropdown), findsNothing);
+    });
+  });
 }

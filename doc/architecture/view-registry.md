@@ -145,12 +145,8 @@ These are registered by `MagicStarterManager.registerDefaultViews()` at construc
 | `teams.settings` | `MagicStarterTeamSettingsView` |
 | `teams.invitation_accept` | `MagicStarterTeamInvitationAcceptView` |
 
-**Notification views** (require `hasNotificationFeatures()`):
-
-| Key | View |
-|-----|------|
-| `notifications.list` | `MagicStarterNotificationsListView` |
-| `notifications.preferences` | `MagicStarterNotificationPreferencesView` |
+> [!NOTE]
+> `notifications.list` and `notifications.preferences` are not registered here. Both screens belong to `magic_notifications` and live on its own `Notify.view` registry, the same shape as this one (`register` / `has` / `make` / `slot` / `buildSlot` / `clear`). `registerMagicStarterNotificationRoutes()` re-registers them there wrapped in this package's page geometry; see [Notifications](../basics/notifications.md).
 
 <a name="default-layout-keys"></a>
 ## Default Layout Keys

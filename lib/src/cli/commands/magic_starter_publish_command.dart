@@ -38,10 +38,9 @@ class MagicStarterPublishCommand extends ArtisanCommand {
     'teams.settings': 'ui/views/teams/magic_starter_team_settings_view.dart',
     'teams.invitation_accept':
         'ui/views/teams/magic_starter_team_invitation_accept_view.dart',
-    'notifications.list':
-        'ui/views/notifications/magic_starter_notifications_list_view.dart',
-    'notifications.preferences':
-        'ui/views/notifications/magic_starter_notification_preferences_view.dart',
+    // No `notifications.*` entries: those two screens belong to
+    // magic_notifications now, and this command can only publish files this
+    // package ships. An adopter customizes them through `Notify.view` instead.
   };
 
   /// Maps layout registry keys to their relative source paths within the plugin.

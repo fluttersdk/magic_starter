@@ -16,7 +16,6 @@ export 'src/models/magic_starter_auth_user.dart';
 export 'src/models/magic_starter_plan.dart';
 export 'src/http/controllers/magic_starter_profile_controller.dart';
 export 'src/http/controllers/magic_starter_team_controller.dart';
-export 'src/http/controllers/magic_starter_notification_controller.dart';
 export 'src/http/controllers/magic_starter_otp_controller.dart';
 export 'src/http/controllers/magic_starter_guest_auth_controller.dart';
 export 'src/http/controllers/magic_starter_billing_controller.dart';
@@ -46,8 +45,6 @@ export 'src/ui/views/profile/magic_starter_profile_settings_view.dart';
 export 'src/ui/views/teams/magic_starter_billing_view.dart';
 export 'src/ui/views/teams/magic_starter_team_create_view.dart';
 export 'src/ui/views/teams/magic_starter_team_settings_view.dart';
-export 'src/ui/views/notifications/magic_starter_notification_preferences_view.dart';
-export 'src/ui/views/notifications/magic_starter_notifications_list_view.dart';
 export 'src/ui/layouts/magic_starter_app_layout.dart';
 export 'src/ui/layouts/magic_starter_guest_layout.dart';
 export 'src/ui/widgets/magic_starter_auth_form_card.dart';
@@ -55,7 +52,6 @@ export 'src/ui/components/team_selector/index.dart';
 export 'src/ui/components/card/index.dart';
 export 'src/ui/components/user_profile_dropdown/index.dart';
 export 'src/ui/components/social_divider/index.dart';
-export 'src/ui/components/notification_dropdown/index.dart';
 export 'src/ui/widgets/magic_starter_password_confirm_dialog.dart';
 export 'src/ui/widgets/magic_starter_confirm_dialog.dart';
 export 'src/ui/widgets/magic_starter_two_factor_modal.dart';
@@ -66,7 +62,7 @@ export 'src/ui/widgets/magic_starter_hide_bottom_nav.dart';
 export 'src/ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 
 // Design-system components (Wave 4 atomic-component library).
-// Migrated components (card, page_header, social_divider, notification_dropdown,
+// Migrated components (card, page_header, social_divider,
 // user_profile_dropdown, team_selector, confirm_dialog) are already reachable
 // through their existing alias exports above and are intentionally excluded here.
 export 'src/ui/components/button/index.dart';

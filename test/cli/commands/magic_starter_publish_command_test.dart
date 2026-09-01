@@ -417,30 +417,13 @@ void main() {
       );
     });
 
-    test('--tag=views:notifications publishes notification module views', () async {
-      createPluginFile(
-        'lib/src/ui/views/notifications/magic_starter_notifications_list_view.dart',
-        'class NotificationsListView {}',
-      );
-      createPluginFile(
-        'lib/src/ui/views/notifications/magic_starter_notification_preferences_view.dart',
-        'class NotificationPreferencesView {}',
-      );
-
+    test('--tag=views:notifications is no longer a publishable scope', () async {
+      // The two notification screens moved to magic_notifications, so this
+      // package has no source file to copy. The scope has to report as unknown
+      // rather than warn about a missing file it still promises.
       await _runPublish(command, tag: 'views:notifications');
 
-      expect(
-        hostFileExists(
-          'lib/resources/views/starter/notifications/magic_starter_notifications_list_view.dart',
-        ),
-        isTrue,
-      );
-      expect(
-        hostFileExists(
-          'lib/resources/views/starter/notifications/magic_starter_notification_preferences_view.dart',
-        ),
-        isTrue,
-      );
+      expect(Directory('${tempDir.path}/lib/resources').existsSync(), isFalse);
     });
 
     test('--tag=views:unknown reports error for unknown view scope', () async {

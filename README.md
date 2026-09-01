@@ -234,7 +234,7 @@ WindApp(
 | Page geometry | `MSPageContainer`, `MSPageScaffold` |
 | Settings surface | `MSSettingsSection`, `MSSettingsRow`, `MSSettingsNavRow` |
 | Billing surface | `MSUsageMeter`, `MSUpgradeDialog`, `MSUpgradeNudge` |
-| App chrome | `MSNotificationDropdown`, `MSUserProfileDropdown`, `MSTeamSelector` |
+| App chrome | `MSUserProfileDropdown`, `MSTeamSelector` |
 
 `MSDataTable` has two constructors, and the choice is about the collection rather than the styling. The default renders every row you pass, which is right for a short and complete list. `MSDataTable.paginated` hands the body to magic's `MagicPaginatedListView` inside a bounded box, so a long collection costs the viewport instead of the whole result and reaching the tail asks the paginator for its next page. The header stays outside the scrolling body either way.
 
@@ -263,7 +263,7 @@ collision:
 | `Combobox` | `MSCombobox` | `Card` | `MSCard` |
 | `SegmentedControl` | `MSSegmentedControl` | `PageHeader` | `MSPageHeader` |
 | `Tabs` | `MSTabs` | `SocialDivider` | `MSSocialDivider` |
-| `Accordion` | `MSAccordion` | `NotificationDropdown` | `MSNotificationDropdown` |
+| `Accordion` | `MSAccordion` | `NotificationDropdown` | removed; see [Notifications](doc/basics/notifications.md) |
 | `AccordionItem` | `MSAccordionItem` | `UserProfileDropdown` | `MSUserProfileDropdown` |
 | `Dialog` | `MSDialog` | `TeamSelector` | `MSTeamSelector` |
 | `BottomSheet` | `MSBottomSheet` | `ConfirmDialog` | `MSConfirmDialog` |
@@ -271,7 +271,7 @@ collision:
 
 The per-axis enums (`ButtonIntent`, `InputState`, ...) are unchanged.
 
-Two later changes go beyond that table. The six alias widgets are gone: use `MSCard`, `MSPageHeader`, `MSSocialDivider`, `MSNotificationDropdown`, `MSTeamSelector` and `MSUserProfileDropdown` directly. The remaining `MagicStarter*` widgets (`MagicStarterConfirmDialog`, `MagicStarterDialogShell`, `MagicStarterTimezoneSelect`, ...) keep their names. And the settings scaffold became the page scaffold, which renamed its recipes:
+Two later changes go beyond that table. The six alias widgets are gone: use `MSCard`, `MSPageHeader`, `MSSocialDivider`, `MSTeamSelector` and `MSUserProfileDropdown` directly (the sixth, `MSNotificationDropdown`, is gone too, but for a different reason: see below). The remaining `MagicStarter*` widgets (`MagicStarterConfirmDialog`, `MagicStarterDialogShell`, `MagicStarterTimezoneSelect`, ...) keep their names. And the settings scaffold became the page scaffold, which renamed its recipes:
 
 | Before | After |
 |--------|-------|
@@ -375,10 +375,9 @@ final success = await MagicStarterTwoFactorModal.show(
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
 | `MSTeamSelector` | Current-team switcher dropdown with create/settings links |
 | `MSUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
-| `MSNotificationDropdown` | Bell-icon dropdown with live unread badge and mark-as-read |
 | `MSSocialDivider` | "Or continue with" divider for auth forms |
 
-All widgets are exported from `package:magic_starter/magic_starter.dart`.
+All widgets are exported from `package:magic_starter/magic_starter.dart`. The bell-icon dropdown moved out of this list: it now ships as `NotificationDropdown` from `magic_notifications`, see [Notifications](doc/basics/notifications.md).
 
 ---
 

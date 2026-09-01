@@ -16,7 +16,9 @@
 
 Controllers in magic_starter are the single source of truth for business logic and async state. Every page-level view delegates all API calls, state transitions, and navigation to its paired controller. Views contain zero business logic — they render state and forward user input.
 
-The plugin ships seven controllers covering auth, profile, teams, notifications, OTP, guest auth, and newsletter flows. All seven share the same structural core: lazy singleton via `Magic.findOrPut` and `MagicController + MagicStateMixin` for state. Controllers that handle page navigation also mix in `NavigatesRoutes` (auth, guest auth, profile), while others (notification, team, newsletter) manage state without navigation concerns. Consumer apps building custom features on top of magic_starter should follow the same conventions for consistency.
+The plugin ships six controllers covering auth, profile, teams, OTP, guest auth, and newsletter flows. All six share the same structural core: lazy singleton via `Magic.findOrPut` and `MagicController + MagicStateMixin` for state. Controllers that handle page navigation also mix in `NavigatesRoutes` (auth, guest auth, profile), while others (team, newsletter) manage state without navigation concerns. Consumer apps building custom features on top of magic_starter should follow the same conventions for consistency.
+
+Notification preferences state moved with the rest of the notification UI: `NotificationPreferencesController` now lives in `magic_notifications` and follows the same lazy-singleton shape.
 
 <a name="lazy-singleton-pattern"></a>
 ## Lazy Singleton Pattern
@@ -40,7 +42,6 @@ The same pattern across all seven controllers:
 | `MagicStarterAuthController.instance` | `Magic.findOrPut(MagicStarterAuthController.new)` |
 | `MagicStarterProfileController.instance` | `Magic.findOrPut(MagicStarterProfileController.new)` |
 | `MagicStarterTeamController.instance` | `Magic.findOrPut(MagicStarterTeamController.new)` |
-| `MagicStarterNotificationController.instance` | `Magic.findOrPut(MagicStarterNotificationController.new)` |
 | `MagicStarterOtpController.instance` | `Magic.findOrPut(MagicStarterOtpController.new)` |
 | `MagicStarterGuestAuthController.instance` | `Magic.findOrPut(MagicStarterGuestAuthController.new)` |
 | `MagicStarterNewsletterController.instance` | `Magic.findOrPut(MagicStarterNewsletterController.new)` |
@@ -259,7 +260,7 @@ Consumer apps have two options for wiring a controller to a view.
 
 ### Option A — MagicStatefulView (auto-listens)
 
-Extend `MagicStatefulView<T>` to get the controller resolved and subscribed automatically. This matches the pattern used by most plugin views and is the recommended choice; `MagicStarterNotificationsListView` is the current exception — it is implemented as a plain `StatefulWidget` that manages state locally.
+Extend `MagicStatefulView<T>` to get the controller resolved and subscribed automatically. This matches the pattern used by most plugin views and is the recommended choice; `magic_notifications`'s `NotificationsListView` is the current exception — it is implemented as a plain `StatefulWidget` that manages state locally.
 
 ```dart
 class ProjectListView extends MagicStatefulView<ProjectController> {
@@ -322,13 +323,13 @@ class _ProjectListViewState extends State<ProjectListView> {
 
 `MagicStateMixin` calls `notifyListeners()` on every state transition, which rebuilds the entire view tree listening to the controller. For complex views with multiple independent loading sections, this full-page rebuild can cause UI flicker.
 
-The solution is `ValueNotifier<T>` fields — one per independently-loading section. The notification controller demonstrates this with a preference matrix:
+The solution is `ValueNotifier<T>` fields — one per independently-loading section. `magic_notifications`'s `NotificationPreferencesController` demonstrates this with a preference matrix; it lives in that package now, but the pattern it demonstrates is this package's own:
 
 ```dart
-class MagicStarterNotificationController extends MagicController
+class NotificationPreferencesController extends MagicController
     with MagicStateMixin<bool> {
-  static MagicStarterNotificationController get instance =>
-      Magic.findOrPut(MagicStarterNotificationController.new);
+  static NotificationPreferencesController get instance =>
+      Magic.findOrPut(NotificationPreferencesController.new);
 
   /// Preference matrix updated independently of the page-level state machine.
   final matrixNotifier = ValueNotifier<Map<String, dynamic>>({});
@@ -338,13 +339,13 @@ class MagicStarterNotificationController extends MagicController
     try {
       final response = await Http.get('/notification-preferences');
       if (!response.successful) {
-        setError(trans('magic_starter.notifications.fetch_error'));
+        setError(trans('notifications.fetch_error'));
         return;
       }
       matrixNotifier.value = _normalizeMap(response.data['data'] as Map);
       setSuccess(true);
     } catch (e, stackTrace) {
-      Log.error('[MagicStarterNotificationController.fetchPreferences] $e\n$stackTrace');
+      Log.error('[NotificationPreferencesController.fetchPreferences] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     }
   }

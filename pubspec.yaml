@@ -26,7 +26,15 @@ dependencies:
     sdk: flutter
   magic: ^0.0.6
   fluttersdk_artisan: ^0.0.9
-  magic_notifications: ^0.0.2
+  # ^0.0.4 is a FLOOR for an API, not an upper-bound fix. The notification
+  # screens, the bell dropdown and the preferences controller live in that
+  # package now and are resolved through `Notify.view`, which arrives in 0.0.4.
+  # `^0.0.2` would already admit 0.0.4 (a caret on a `0.0.x` is
+  # `>=0.0.2 <0.1.0`, because pub_semver raises the MINOR when the major is
+  # zero), and that is exactly the problem: it equally admits 0.0.3, which has
+  # no `Notify.view` at all, so a solver could hand this package a version its
+  # own routes cannot compile against.
+  magic_notifications: ^0.0.4
   # Unpublished: magic_payments has no release on pub.dev at all, so a
   # resolution with no local overrides fails outright. `BillingCycle` and
   # `PlanStatus.isDunning`, which the billing screen needs, sit on its default
