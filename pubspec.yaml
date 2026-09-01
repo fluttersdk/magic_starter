@@ -32,14 +32,10 @@ dependencies:
   # resolve them through that registry. Nothing on pub.dev carries it yet
   # (latest is 0.0.3); the release that first does is 0.1.0.
   #
-  # The floor that has to end up on the line below is therefore `^0.1.0`, and it
-  # is deliberately not written yet: naming a version pub.dev does not have
-  # would leave this package unresolvable for every adopter. It moves in the
-  # release commit, beside the version bump, once magic_notifications 0.1.0 is
-  # live. Until then the value below names 0.0.4, which was never published, and
-  # that is the only thing about this line that is a placeholder rather than a
-  # decision. `^0.0.4` does not admit 0.1.0 either (see the caret rule below),
-  # so the move is required, not cosmetic.
+  # 0.1.0 is live on pub.dev, so the floor names it. It was `^0.0.4` on this
+  # branch until then, a version that was never published, deliberately held
+  # there because naming a version pub.dev does not have would have left this
+  # package unresolvable for every adopter.
   #
   # Why a floor is needed at all rather than leaving the caret to it: a caret on
   # a `0.0.x` is `>=0.0.x <0.1.0`, because pub_semver raises the MINOR whenever
@@ -47,7 +43,7 @@ dependencies:
   # `Notify.view` at all, and a solver could hand this package a version its own
   # routes cannot compile against. `^0.1.0` is `>=0.1.0 <0.2.0` by that same
   # rule and admits nothing below the release that carries the API.
-  magic_notifications: ^0.0.4
+  magic_notifications: ^0.1.0
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
@@ -62,12 +58,11 @@ dependencies:
   # component": for `0.0.1` that is the patch, which yields `<0.0.2` and is the
   # wrong bound this paragraph exists to correct.
   #
-  # So the release order this line used to block on is closed. What is left is
-  # the same order one dependency up: magic_notifications has to be on pub.dev
-  # carrying `Notify.view` before this package can publish. The `Published
-  # graph` CI job is the thing that says so out loud, by resolving the graph a
-  # third party actually gets rather than the local path overrides; it reports
-  # without blocking.
+  # So the release order this line used to block on is closed, and so is the one
+  # a dependency up: magic_notifications 0.1.0 is published and carries
+  # `Notify.view`, `hasOverride` and `forgetView`. The `Published graph` CI job
+  # is what says so out loud, by resolving the graph a third party actually gets
+  # rather than the local path overrides.
   magic_payments: ^0.0.1
   args: ^2.7.0
   path: ^1.9.0
