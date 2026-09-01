@@ -5,20 +5,18 @@
 - [Notification List](#notification-list)
 - [Notification Preferences](#notification-preferences)
 - [Notification Dropdown](#notification-dropdown)
-- [Notification Type Mapper](#notification-type-mapper)
-- [Controller](#controller)
-    - [Fetching Preferences](#fetching-preferences)
-    - [Updating Preferences](#updating-preferences)
-    - [Key Normalization](#key-normalization)
-    - [ValueNotifier Pattern](#valuenotifier-pattern)
+- [Notification Type Icons](#notification-type-icons)
+- [Overriding a Screen](#overriding-a-screen)
 - [Feature Gate](#feature-gate)
 
 <a name="introduction"></a>
 ## Introduction
 
-Magic Starter ships a complete notification subsystem built on top of the `magic_notifications` package. It provides three UI surfaces — a full-page notification list, a notification preferences matrix, and a header dropdown with a live unread badge — all wired together through `MagicStarterNotificationController` and the `Notify` facade.
+The notification UI moved to the `magic_notifications` package. This package no longer ships the list view, the preferences view, the controller behind them, or the bell dropdown; `magic_notifications` >= 0.1.0 does, under `NotificationsListView`, `NotificationPreferencesView`, `NotificationPreferencesController` and `NotificationDropdown`.
 
-The entire notification feature is opt-in. It activates only when `magic_starter.features.notifications` is set to `true` in your configuration. When enabled, the `AppLayout` automatically starts polling for new notifications and renders the bell icon in the header.
+What stays here is what a published notifications package cannot know on its own: `registerMagicStarterNotificationRoutes()` owns the two paths (`/notifications` and `/settings/notifications`), mounts them inside the authenticated `layout.app` shell, and wraps `magic_notifications`'s screens in this package's own page geometry (`MSPageContainer`) so they read like every other page in the app rather than spreading full-bleed. `MagicStarterAppLayout` owns the polling lifecycle and renders the bell.
+
+The entire feature is still opt-in behind `magic_starter.features.notifications`. When enabled, the layout starts polling and renders the bell; the routes resolve through `Notify.view`, not `MagicStarter.view`.
 
 <a name="real-time-polling"></a>
 ## Real-Time Polling
@@ -52,47 +50,33 @@ void dispose() {
 <a name="notification-list"></a>
 ## Notification List
 
-`MagicStarterNotificationsListView` is a full-page view that displays all notifications with server-side pagination. It supports mark-as-read, mark-all-as-read, delete, and navigation to the notification's action URL.
+`NotificationsListView` (from `magic_notifications`) is a full-page view that displays all notifications with server-side pagination. It supports mark-as-read, mark-all-as-read, delete, and navigation to the notification's action URL.
+
+`registerMagicStarterNotificationRoutes()` mounts it under the key `'notifications.list'` on `Notify.view`, wrapped in this package's page container, and renders it at `MagicStarterConfig.notificationsRoute()`:
 
 ```dart
-MagicStarterNotificationsListView(
-  onMarkAsRead: (id) => Notify.markAsRead(id),
-  onMarkAllAsRead: () => Notify.markAllAsRead(),
-  onDelete: (id) => Notify.delete(id),
-  onNavigate: (path) => MagicRoute.to(path),
-  perPage: 15,
-)
+MagicRoute.page(
+  MagicStarterConfig.notificationsRoute(),
+  () => Notify.view.make('notifications.list'),
+).title('magic_starter.titles.notifications');
 ```
 
-The view is registered in the view registry under the key `'notifications.list'` and rendered by the controller's `index()` method:
-
-```dart
-Widget index() => MagicStarter.view.make('notifications.list');
-```
-
-Each notification item resolves its icon and color through the notification type mapper (see [Notification Type Mapper](#notification-type-mapper)). When a notification is tapped, it is marked as read and the user is navigated to the notification's `actionUrl`. If no action URL exists, the current page reloads.
-
-> [!TIP]
-> Override the default list view by registering your own builder under `'notifications.list'` in the view registry before the service provider boots.
+Each notification item resolves its icon through the notification type icon slot (see [Notification Type Icons](#notification-type-icons)). When a notification is tapped, it is marked as read and the user is navigated to the notification's `actionUrl`.
 
 <a name="notification-preferences"></a>
 ## Notification Preferences
 
-`MagicStarterNotificationPreferencesView` displays a type-by-channel preference matrix fetched from the backend. Each notification type (e.g., "Monitor Down") shows its available channels (email, in-app, push) as toggle switches.
+`NotificationPreferencesView` (from `magic_notifications`) displays a type-by-channel preference matrix fetched from the backend. Each notification type (e.g., "Monitor Down") shows its available channels (email, in-app, push) as toggle switches.
+
+`registerMagicStarterNotificationRoutes()` mounts it under `'notifications.preferences'`, passing the one thing the notifications package cannot know: where "back" goes in this app.
 
 ```dart
-const MagicStarterNotificationPreferencesView()
-```
-
-The view extends `MagicStatefulView<MagicStarterNotificationController>` and calls `controller.fetchPreferences()` in `onInit()`. The preference matrix is rendered reactively via `ValueListenableBuilder`:
-
-```dart
-ValueListenableBuilder<Map<String, dynamic>>(
-  valueListenable: controller.matrixNotifier,
-  builder: (context, matrix, _) {
-    // Render type cards with channel toggles
-  },
-)
+Notify.view.register(
+  'notifications.preferences',
+  () => NotificationPreferencesView(
+    backRoute: MagicStarterConfig.settingsHubRoute(),
+  ),
+);
 ```
 
 The matrix structure returned by the API:
@@ -113,15 +97,15 @@ The matrix structure returned by the API:
 Locked channels display a lock icon and their toggle is disabled — the backend enforces that certain channels cannot be turned off.
 
 > [!NOTE]
-> Preference updates use optimistic UI. The toggle flips immediately in the local `matrixNotifier` and a `PUT /notification-preferences` request is sent. On failure, the matrix reverts to its pre-update snapshot.
+> Preference updates use optimistic UI. The toggle flips immediately and a `PUT /notification-preferences` request is sent. On failure, the matrix reverts to its pre-update snapshot. This state lives in `magic_notifications`'s own `NotificationPreferencesController` now; this package no longer carries one.
 
 <a name="notification-dropdown"></a>
 ## Notification Dropdown
 
-`MSNotificationDropdown` is a standalone widget (not a view) that renders a bell icon with a live unread badge. It uses `StreamBuilder<List<DatabaseNotification>>` to reactively display the current notification count:
+`NotificationDropdown` (from `magic_notifications`, no longer `MSNotificationDropdown`) is a standalone widget, not a view, that renders a bell icon with a live unread badge. It uses `StreamBuilder<List<DatabaseNotification>>` to reactively display the current notification count. `MagicStarterAppLayout` mounts it with the same five callbacks it always passed:
 
 ```dart
-MSNotificationDropdown(
+NotificationDropdown(
   notificationStream: Notify.notifications(),
   onMarkAsRead: (id) => Notify.markAsRead(id),
   onMarkAllAsRead: () => Notify.markAllAsRead(),
@@ -148,104 +132,50 @@ When a notification is tapped, it is marked as read and the `onNotificationTap` 
 > [!TIP]
 > The dropdown uses `WPopover` for overlay positioning. It aligns to `PopoverAlignment.bottomRight` by default and constrains its height to 400 logical pixels.
 
-<a name="notification-type-mapper"></a>
-## Notification Type Mapper
+<a name="notification-type-icons"></a>
+## Notification Type Icons
 
-Register a custom mapper to control the icon and color for each notification type across all notification views (list, dropdown, preferences):
-
-```dart
-MagicStarter.useNotificationTypeMapper((type) => switch (type) {
-  'monitor_down'     => (icon: Icons.error_outline,        colorClass: 'text-red-500'),
-  'monitor_up'       => (icon: Icons.check_circle_outline, colorClass: 'text-green-500'),
-  'monitor_degraded' => (icon: Icons.warning_outlined,     colorClass: 'text-yellow-500'),
-  'payment_failed'   => (icon: Icons.credit_card_off,      colorClass: 'text-red-500'),
-  _                  => (icon: Icons.info_outline,          colorClass: 'text-blue-500'),
-});
-```
-
-The mapper is a typedef:
+`MagicStarter.useNotificationTypeMapper(...)` and the `MagicStarterNotificationTypeMapper` typedef are gone. Saying what a notification type looks like is `magic_notifications`'s own slot now, and it answers the same question for the list screen and the bell at once:
 
 ```dart
-typedef MagicStarterNotificationTypeMapper =
-    ({IconData icon, String colorClass}) Function(String type);
-```
+import 'package:magic_notifications/magic_notifications.dart';
 
-When no mapper is registered, views fall back to built-in defaults that handle `monitor_down`, `monitor_up`, and `monitor_degraded` types.
-
-> [!NOTE]
-> The `colorClass` value is a Wind UI color class string (e.g., `'text-red-500'`), not a Flutter `Color`. It is applied directly to the `WIcon` widget's `className`.
-
-<a name="controller"></a>
-## Controller
-
-`MagicStarterNotificationController` manages notification preferences state. It follows the standard singleton pattern:
-
-```dart
-static MagicStarterNotificationController get instance =>
-    Magic.findOrPut(MagicStarterNotificationController.new);
-```
-
-The controller extends `MagicController` with `MagicStateMixin<bool>` and `ValidatesRequests`.
-
-<a name="fetching-preferences"></a>
-### Fetching Preferences
-
-```dart
-await controller.fetchPreferences();
-```
-
-Sends `GET /notification-preferences` and normalizes the response into `matrixNotifier`. Guards against double-submit with `_isSubmitting`.
-
-<a name="updating-preferences"></a>
-### Updating Preferences
-
-```dart
-await controller.updateTypePreference(
-  'monitor_down', // type key
-  'mail',         // channel key
-  false,          // new enabled state
+Notify.view.slot(
+  NotificationViewRegistry.typeIconSlotView,
+  'monitor_down',
+  (context) => WIcon(Icons.error_outline, className: 'text-lg text-red-500'),
 );
 ```
 
-Sends `PUT /notification-preferences` with `{ type, channel, is_enabled }`. Uses optimistic UI with snapshot rollback on failure. Guards against concurrent saves with `_isSaving`.
-
-<a name="key-normalization"></a>
-### Key Normalization
-
-The backend may return map keys with mixed casing or non-string types. The controller's `_normalizeMap()` method recursively converts all keys to `String`:
+Register the slot name `'default'` to answer for every type you did not name individually:
 
 ```dart
-Map<String, dynamic> _normalizeMap(Map<dynamic, dynamic> source) {
-  return source.map(
-    (key, value) => MapEntry(
-      key.toString(),
-      value is Map ? _normalizeMap(value) : value,
-    ),
-  );
-}
+Notify.view.slot(
+  NotificationViewRegistry.typeIconSlotView,
+  'default',
+  (context) => WIcon(Icons.info_outline, className: 'text-lg text-blue-500'),
+);
 ```
 
-> [!NOTE]
-> This normalization is critical. Without it, Dart's type system will throw when you try to access map entries with string keys on a `Map<dynamic, dynamic>` payload.
+Both the list view and the dropdown read `Notify.view.buildTypeIcon(type, context)`, which checks the type's own slot first and falls back to `'default'`, so one registration call answers for both surfaces.
 
-<a name="valuenotifier-pattern"></a>
-### ValueNotifier Pattern
+<a name="overriding-a-screen"></a>
+## Overriding a Screen
 
-The controller exposes `matrixNotifier` as a `ValueNotifier<Map<String, dynamic>>` for fine-grained reactive updates that bypass `MagicStateMixin`'s `notifyListeners()`:
+An app that wants to swap either screen no longer registers on `MagicStarter.view`; it registers on `Notify.view`:
 
 ```dart
-final matrixNotifier = ValueNotifier<Map<String, dynamic>>({});
+Notify.view.register(
+  'notifications.list',
+  () => const MyCustomNotificationsListView(),
+);
 ```
 
-Views subscribe to it with `ValueListenableBuilder` to rebuild only the preference matrix when a toggle changes, without triggering a full page rebuild. The notifier must be disposed in the controller's `dispose()` method:
+**The order does not matter.** `registerMagicStarterNotificationRoutes()` installs its own wrapped screens only when nobody has chosen one for that key (`Notify.view.hasOverride`), so a host registration wins whether it runs before or after the routes are mapped.
 
-```dart
-@override
-void dispose() {
-  matrixNotifier.dispose();
-  super.dispose();
-}
-```
+The wording matters here: the key is never *absent*. Reading `Notify.view` is what seeds `magic_notifications`' own two defaults into the registry, so `has(key)` is true before anybody has decided anything, and gating on it would make this package skip every time and never apply the page geometry below. That is worth saying explicitly here, because the two calls land in different files: the installer injects the route mount into `route_service_provider.dart` while the scaffold points `Notify.view` work at `AppServiceProvider`, and which of those boots first is a property of the host's provider list rather than of anything this package can see.
+
+The registry's shape is identical to `MagicStarter.view`'s (`register` / `has` / `make` / `slot` / `buildSlot` / `clear`), so an app that already knew one knows the other.
 
 <a name="feature-gate"></a>
 ## Feature Gate

@@ -8,19 +8,6 @@ import '../models/magic_starter_team.dart';
 import '../models/magic_starter_nav_item.dart';
 import '../ui/magic_starter_view_registry.dart';
 
-/// Maps a notification type string to an icon and color class.
-///
-/// ### Example Usage
-/// ```dart
-/// MagicStarter.useNotificationTypeMapper((type) => switch (type) {
-///   'monitor_down' => (icon: Icons.error_outline, colorClass: 'text-red-500'),
-///   'monitor_up' => (icon: Icons.check_circle_outline, colorClass: 'text-green-500'),
-///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
-/// });
-/// ```
-typedef MagicStarterNotificationTypeMapper =
-    ({IconData icon, String colorClass}) Function(String type);
-
 /// Static facade for Magic Starter.
 class MagicStarter {
   MagicStarter._();
@@ -326,29 +313,6 @@ class MagicStarter {
   /// Get the social login builder, or null if not registered.
   static SocialLoginBuilder? get socialLoginBuilder =>
       manager.socialLoginBuilder;
-
-  /// Register a custom notification type-to-icon/color mapper.
-  ///
-  /// When set, notification views use this mapper to resolve the icon and
-  /// color class for each notification type (e.g. `monitor_down`, `monitor_up`).
-  /// If not set, views fall back to built-in defaults.
-  ///
-  /// ### Example Usage
-  /// ```dart
-  /// MagicStarter.useNotificationTypeMapper((type) => switch (type) {
-  ///   'monitor_down' => (icon: Icons.error_outline, colorClass: 'text-red-500'),
-  ///   _ => (icon: Icons.info_outline, colorClass: 'text-blue-500'),
-  /// });
-  /// ```
-  static void useNotificationTypeMapper(
-    MagicStarterNotificationTypeMapper mapper,
-  ) {
-    manager.notificationTypeMapper = mapper;
-  }
-
-  /// The registered notification type mapper, or `null` if not configured.
-  static MagicStarterNotificationTypeMapper? get notificationTypeMapper =>
-      manager.notificationTypeMapper;
 
   /// Locale options for language selection.
   static List<SelectOption<String>> get localeOptions => manager.localeOptions;

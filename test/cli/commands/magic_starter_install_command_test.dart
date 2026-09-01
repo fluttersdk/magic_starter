@@ -582,7 +582,7 @@ void main() {
       expect(content, contains('MagicStarter.useNavigation('));
     });
 
-    test('notifications block uses correct type mapper signature', () async {
+    test('notifications block points at the package icon slot', () async {
       setupMagicProjectFiles(tempDir);
 
       await runInstall(command, force: true, features: 'notifications');
@@ -591,11 +591,12 @@ void main() {
         '${tempDir.path}/lib/app/providers/app_service_provider.dart',
       ).readAsStringSync();
 
-      expect(content, contains('useNotificationTypeMapper((type)'));
-      expect(
-        content,
-        isNot(contains('useNotificationTypeMapper((notification)')),
-      );
+      // The type mapper is gone from this package: the notification screens
+      // live in magic_notifications and read their leading icons from its view
+      // registry. A scaffold still emitting the old call would generate a
+      // provider that does not compile.
+      expect(content, contains('NotificationViewRegistry.typeIconSlotView'));
+      expect(content, isNot(contains('useNotificationTypeMapper(')));
     });
 
     test(

@@ -234,7 +234,7 @@ WindApp(
 | Page geometry | `MSPageContainer`, `MSPageScaffold` |
 | Settings surface | `MSSettingsSection`, `MSSettingsRow`, `MSSettingsNavRow` |
 | Billing surface | `MSUsageMeter`, `MSUpgradeDialog`, `MSUpgradeNudge` |
-| App chrome | `MSNotificationDropdown`, `MSUserProfileDropdown`, `MSTeamSelector` |
+| App chrome | `MSUserProfileDropdown`, `MSTeamSelector` |
 
 `MSDataTable` has two constructors, and the choice is about the collection rather than the styling. The default renders every row you pass, which is right for a short and complete list. `MSDataTable.paginated` hands the body to magic's `MagicPaginatedListView` inside a bounded box, so a long collection costs the viewport instead of the whole result and reaching the tail asks the paginator for its next page. The header stays outside the scrolling body either way.
 
@@ -263,7 +263,7 @@ collision:
 | `Combobox` | `MSCombobox` | `Card` | `MSCard` |
 | `SegmentedControl` | `MSSegmentedControl` | `PageHeader` | `MSPageHeader` |
 | `Tabs` | `MSTabs` | `SocialDivider` | `MSSocialDivider` |
-| `Accordion` | `MSAccordion` | `NotificationDropdown` | `MSNotificationDropdown` |
+| `Accordion` | `MSAccordion` | `NotificationDropdown` | removed; see [Notifications](doc/basics/notifications.md) |
 | `AccordionItem` | `MSAccordionItem` | `UserProfileDropdown` | `MSUserProfileDropdown` |
 | `Dialog` | `MSDialog` | `TeamSelector` | `MSTeamSelector` |
 | `BottomSheet` | `MSBottomSheet` | `ConfirmDialog` | `MSConfirmDialog` |
@@ -271,7 +271,7 @@ collision:
 
 The per-axis enums (`ButtonIntent`, `InputState`, ...) are unchanged.
 
-Two later changes go beyond that table. The six alias widgets are gone: use `MSCard`, `MSPageHeader`, `MSSocialDivider`, `MSNotificationDropdown`, `MSTeamSelector` and `MSUserProfileDropdown` directly. The remaining `MagicStarter*` widgets (`MagicStarterConfirmDialog`, `MagicStarterDialogShell`, `MagicStarterTimezoneSelect`, ...) keep their names. And the settings scaffold became the page scaffold, which renamed its recipes:
+Two later changes go beyond that table. The six alias widgets are gone: use `MSCard`, `MSPageHeader`, `MSSocialDivider`, `MSTeamSelector` and `MSUserProfileDropdown` directly (the sixth, `MSNotificationDropdown`, is gone too, but for a different reason: see below). The remaining `MagicStarter*` widgets (`MagicStarterConfirmDialog`, `MagicStarterDialogShell`, `MagicStarterTimezoneSelect`, ...) keep their names. And the settings scaffold became the page scaffold, which renamed its recipes:
 
 | Before | After |
 |--------|-------|
@@ -375,10 +375,9 @@ final success = await MagicStarterTwoFactorModal.show(
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
 | `MSTeamSelector` | Current-team switcher dropdown with create/settings links |
 | `MSUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
-| `MSNotificationDropdown` | Bell-icon dropdown with live unread badge and mark-as-read |
 | `MSSocialDivider` | "Or continue with" divider for auth forms |
 
-All widgets are exported from `package:magic_starter/magic_starter.dart`.
+All widgets are exported from `package:magic_starter/magic_starter.dart`. The bell-icon dropdown moved out of this list: it now ships as `NotificationDropdown` from `magic_notifications`, see [Notifications](doc/basics/notifications.md).
 
 ---
 
@@ -514,7 +513,17 @@ MagicStarter.view.registerLayout('layout.guest', (child) {
 });
 ```
 
-All overridable keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.two_factor_challenge`, `auth.otp_verify`, `profile.settings`, `teams.create`, `teams.settings`, `teams.invitation_accept`, `notifications.list`, `notifications.preferences`, `layout.app`, `layout.guest`.
+All overridable `MagicStarter.view` keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.two_factor_challenge`, `auth.otp_verify`, `profile.settings`, `teams.create`, `teams.settings`, `teams.invitation_accept`, `layout.app`, `layout.guest`.
+
+The two notification screens moved to `magic_notifications`, which owns the data path they render, so they are overridden through **`Notify.view`** rather than through `MagicStarter.view`. The keys are unchanged (`notifications.list`, `notifications.preferences`) and this package still owns the routes and the shell they mount into:
+
+```dart
+Notify.view.register('notifications.list', () {
+  return const MyBrandedNotificationsView();
+});
+```
+
+The order does not matter: this package installs its own wrapped screens only when nobody has chosen one for that key, so a host registration lands whether it runs before or after the routes are mapped. Note the wording, because it is load-bearing: the key is never *absent*, since reading `Notify.view` seeds `magic_notifications`' own defaults into it. The question is `hasOverride`, not `has`.
 
 ### Level 5: Publish and Own
 

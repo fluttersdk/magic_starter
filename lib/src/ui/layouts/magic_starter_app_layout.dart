@@ -6,7 +6,6 @@ import 'package:magic_notifications/magic_notifications.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
-import '../components/notification_dropdown/notification_dropdown.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
@@ -594,7 +593,9 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       return const SizedBox.shrink();
     }
 
-    return MSNotificationDropdown(
+    // The widget belongs to `magic_notifications` now; its five callbacks are
+    // the same ones this shell has always passed.
+    return NotificationDropdown(
       notificationStream: Notify.notifications(),
       onMarkAsRead: (id) => Notify.markAsRead(id),
       onMarkAllAsRead: () => Notify.markAllAsRead(),

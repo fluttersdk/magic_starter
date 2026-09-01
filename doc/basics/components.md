@@ -178,11 +178,13 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 | `MSCard` | Surface/inset/elevated variants |
 | `MSPageHeader` | Full-width responsive header (title, subtitle, leading, actions). Stacked below `sm`, a row above it; `inlineActions` (or `MagicStarterPageHeaderTheme.inlineActions`) makes it a row at every width AND lets a long title shrink instead of overflowing |
 | `MSSocialDivider` | "Or continue with" separator for auth forms |
-| `MSNotificationDropdown` | Bell-icon dropdown with a live unread badge, backed by a notification stream |
 | `MSUserProfileDropdown` | Avatar menu with profile links, theme toggle and logout |
 | `MSTeamSelector` | Current-team switcher; requires a registered team resolver |
 | `MSPageContainer` | Shared page geometry: width cap, edge margins, vertical rhythm, horizontal safe area. Reads `MagicStarter.manager.pageContainerClassName` |
 | `MSPageScaffold` | Full page treatment: page surface + own scroll + `MSPageContainer` + `MSPageHeader` + `gap-6` sections column |
+
+> [!NOTE]
+> The bell-icon dropdown is not in this table. It moved to `magic_notifications` as `NotificationDropdown`; see [Notifications](notifications.md).
 
 <a name="import-collisions"></a>
 ## Import Collisions

@@ -19,8 +19,6 @@ import 'ui/views/auth/magic_starter_register_view.dart';
 import 'ui/views/auth/magic_starter_reset_password_view.dart';
 import 'ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 import 'ui/views/auth/magic_starter_otp_verify_view.dart';
-import 'ui/views/notifications/magic_starter_notification_preferences_view.dart';
-import 'ui/views/notifications/magic_starter_notifications_list_view.dart';
 import 'ui/views/profile/magic_starter_profile_sub_page_view.dart';
 import 'ui/views/settings/magic_starter_settings_hub_view.dart';
 import 'ui/views/settings/preferences/magic_starter_appearance_view.dart';
@@ -117,10 +115,6 @@ class MagicStarterManager {
 
   /// Social login builder. When set, renders custom social login buttons.
   SocialLoginBuilder? socialLoginBuilder;
-
-  /// Custom notification type-to-icon/color mapper.
-  /// When null, notification views use built-in defaults.
-  MagicStarterNotificationTypeMapper? notificationTypeMapper;
 
   /// Navigation theme configuration. Holds color/className overrides for the
   /// app layout navigation elements (active item, brand, bottom nav, avatar).
@@ -373,17 +367,13 @@ class MagicStarterManager {
       _registerDefault('teams.billing', () => const MagicStarterBillingView());
     }
 
-    // Notifications — conditional on feature flag.
-    if (MagicStarterConfig.hasNotificationFeatures()) {
-      _registerDefault(
-        'notifications.list',
-        () => const MagicStarterNotificationsListView(),
-      );
-      _registerDefault(
-        'notifications.preferences',
-        () => const MagicStarterNotificationPreferencesView(),
-      );
-    }
+    // Notification screens are NOT registered here. They belong to
+    // `magic_notifications`, which registers them on its own `Notify.view`
+    // under the same two keys; `registerMagicStarterNotificationRoutes()`
+    // re-registers them there wrapped in this package's page geometry. A
+    // second copy of the keys on this registry would be a second answer
+    // nothing reads.
+
     // Layouts
     _registerDefaultLayout(
       'layout.guest',
@@ -456,7 +446,6 @@ class MagicStarterManager {
     headerBuilder = null;
     sidebarFooterBuilder = null;
     socialLoginBuilder = null;
-    notificationTypeMapper = null;
     navigationTheme = const MagicStarterNavigationTheme();
     modalTheme = const MagicStarterModalTheme();
     formTheme = const MagicStarterFormTheme();

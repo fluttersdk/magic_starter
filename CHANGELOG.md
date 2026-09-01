@@ -4,6 +4,101 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The host page geometry now actually reaches the two notification screens.** `_mountNotificationViews()` gated on `Notify.view.has(key)`, and reading `Notify.view` is what seeds `magic_notifications`' own two screens into the registry, so the key was always present and this mount ALWAYS skipped: the `MSPageContainer` and the 1280 width cap it exists to apply never reached either screen in a real app. Three tests covered that wrap and all three passed, because their `setUp` called `Notify.view.clear()` and left the registry empty, which is not the state an app boots with. The gate is now `hasOverride(key)`, which is true only when somebody CHOSE a screen rather than when the package seeded its default, and the tests reset with `Notify.forgetView()` so they run against a registry carrying those defaults. Reverting the gate to `has` now turns three tests red.
+
+- **A host that registers a notification view BEFORE the routes are mapped no
+  longer loses it.** `_mountNotificationViews()` called `Notify.view.register`
+  unconditionally, while every other default in this package is installed
+  register-if-absent (`MagicStarterManager._registerDefault` checks
+  `has(key)` first) precisely so provider order does not matter. The two calls
+  land in different files by design: the installer injects the route mount into
+  `route_service_provider.dart`, and the scaffold tells adopters to do their
+  `Notify.view` work in `AppServiceProvider`, so which boot runs first is a
+  property of the host's provider order that neither file can see. An adopter
+  following that guidance had their screen silently discarded. Both orders now
+  win, and each has its own test.
+- **The two `starter:*` command banners printed `v0.0.1`.** Twenty-four alpha
+  releases in, `publish` and `uninstall` were still announcing the version they
+  were written against, because each carried a hand-written literal that nothing
+  compared with anything. They read `magicStarterVersion` now, which
+  `starter_artisan_provider_test.dart` pins to `pubspec.yaml`, the same guard
+  `magic_notifications` already uses for its seven.
+
+### Breaking
+
+- **The whole notification UI moved to `magic_notifications`, and this package
+  re-exports none of it.** Four barrel exports are gone with no shim and no
+  deprecated alias: `MagicStarterNotificationController`,
+  `MagicStarterNotificationsListView`,
+  `MagicStarterNotificationPreferencesView` and `MSNotificationDropdown` (the
+  `src/ui/components/notification_dropdown/index.dart` export). The seven source
+  files behind them are deleted. The replacements ship in
+  `magic_notifications` >= 0.1.0 under the names
+  `NotificationPreferencesController`, `NotificationsListView`,
+  `NotificationPreferencesView` and `NotificationDropdown`, all reachable from
+  `package:magic_notifications/magic_notifications.dart`, and the dropdown's
+  five constructor parameters (`notificationStream`, `onMarkAsRead`,
+  `onMarkAllAsRead`, `onNotificationTap`, `onViewAll`) are unchanged, so
+  remounting a bell is an import plus a rename. Two packages shipping the same
+  screen is what made this a move rather than a copy: the notification package
+  advertised a widget it did not ship, this package shipped one, and consumers
+  had written a third.
+- **`MagicStarter.useNotificationTypeMapper(...)`,
+  `MagicStarter.notificationTypeMapper`,
+  `MagicStarterManager.notificationTypeMapper` and the
+  `MagicStarterNotificationTypeMapper` typedef are removed.** Saying what a
+  notification type looks like is now the notification package's own slot, and
+  it answers the same question for the list screen and the bell at once:
+  `Notify.view.slot(NotificationViewRegistry.typeIconSlotView, 'monitor_down',
+  (context) => WIcon(Icons.error_outline, className: 'text-lg text-red-500'))`.
+  Register `'default'` as the slot name to answer for every remaining type. The
+  manager's `reset()` no longer clears the field, because there is no field.
+- **`MagicStarter.view` no longer registers `notifications.list` or
+  `notifications.preferences`.** The two keys live on `Notify.view`, whose API
+  is identical (`register` / `has` / `make` / `slot` / `buildSlot` / `clear`),
+  so an app that overrode a notification screen moves the same call from one
+  registry to the other. A registration made after
+  `registerMagicStarterNotificationRoutes()` still wins, which is where a host
+  swap belongs.
+- **`starter:publish --tag=views:notifications` is gone.** This command copies
+  files this package ships, and it no longer ships those two. Customize them
+  through `Notify.view` instead of by publishing a copy.
+- **`magic_notifications` is now required at `^0.1.0`.** This is a floor for an
+  API, not an upper-bound fix. The old `^0.0.2` was not merely too low, it could
+  not express the requirement at all: a caret on a `0.0.x` resolves
+  `>=0.0.2 <0.1.0`, because pub_semver raises the MINOR whenever the major is
+  zero, so it admitted 0.0.3, which has no `Notify.view` for this package's own
+  routes to resolve against, and excluded 0.1.0, which is the release that has
+  it. `^0.1.0` is `>=0.1.0 <0.2.0` by the same rule and admits nothing below the
+  release carrying the API.
+
+  Three symbols make the floor exact rather than approximate: `Notify.view` for
+  the routes, and `hasOverride` plus `forgetView`, which arrived in 0.1.0 and
+  are what keep this package's page geometry from being skipped by its own
+  register-if-absent mount.
+
+### Changed
+
+- **Route registration stays here, and it is the mount point for the host's
+  page geometry.** `registerMagicStarterNotificationRoutes()` is unchanged in
+  name, in path (`/notifications` and `/settings/notifications`) and in shell
+  (`layout.app`); only what the routes build changed, to
+  `Notify.view.make('notifications.list')` and
+  `Notify.view.make('notifications.preferences')`. It also re-registers both
+  screens wrapped in `MSPageContainer` under the shared page surface, because
+  the width cap and the edge margins come from
+  `MagicStarterManager.pageContainerClassName` and a published notifications
+  package cannot resolve that; without the wrap the two pages would spread the
+  full shell width while every neighbouring page stayed capped. The preferences
+  screen's back control is supplied the same way: it takes `backRoute` as a
+  parameter now, and this package passes `MagicStarterConfig.settingsHubRoute()`
+  so the affordance behaves exactly as before.
+- **`starter:install` no longer scaffolds a type-mapper call.** With the
+  notifications feature enabled the generated `AppServiceProvider` now carries a
+  commented example of the notification package's icon slot, including the
+  import it needs, rather than a call to an API this release removes.
+
 ## [0.0.1-alpha.24] - 2026-08-30
 
 ### Fixed

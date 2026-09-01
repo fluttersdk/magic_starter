@@ -11,7 +11,6 @@
 - [Sidebar Footer Builder](#sidebar-footer-builder)
 - [Header Builder](#header-builder)
 - [Logout Callback](#logout-callback)
-- [Notification Type Mapper](#notification-type-mapper)
 - [Unified Theme](#unified-theme)
 - [Form Theme](#form-theme)
 - [Auth Theme](#auth-theme)
@@ -27,7 +26,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-`MagicStarterManager` is the central singleton that holds all customization registrations for the magic_starter plugin. It acts as a configuration hub where host apps register custom user models, team resolvers, navigation items, header builders, logout callbacks, notification type mappers, and view overrides.
+`MagicStarterManager` is the central singleton that holds all customization registrations for the magic_starter plugin. It acts as a configuration hub where host apps register custom user models, team resolvers, navigation items, header builders, logout callbacks, and view overrides. Saying what a notification type looks like is not one of its seams anymore; that lives on `magic_notifications`'s own `NotificationViewRegistry` now (see [Notifications](../basics/notifications.md)).
 
 The manager lives at `lib/src/magic_starter_manager.dart` and is instantiated once by `MagicStarterServiceProvider` during the register phase.
 
@@ -305,30 +304,6 @@ MagicStarter.useLogout(() async {
 
 When set, the app layout's logout button calls this callback instead of `MagicStarterAuthController.instance.logout()`. This is useful for apps that need to unregister push tokens, sign out of social providers, or perform other cleanup before navigating to the login screen.
 
-<a name="notification-type-mapper"></a>
-## Notification Type Mapper
-
-Map notification type strings to icons and color classes for the notification list UI:
-
-```dart
-MagicStarter.useNotificationTypeMapper((type) => switch (type) {
-  'monitor_down' => (
-    icon: Icons.error_outline,
-    colorClass: 'text-red-500',
-  ),
-  'monitor_up' => (
-    icon: Icons.check_circle_outline,
-    colorClass: 'text-green-500',
-  ),
-  _ => (
-    icon: Icons.info_outline,
-    colorClass: 'text-blue-500',
-  ),
-});
-```
-
-The mapper returns a record `({IconData icon, String colorClass})`. When not configured, notification views fall back to built-in defaults.
-
 <a name="unified-theme"></a>
 ## Unified Theme
 
@@ -549,8 +524,8 @@ The following default views are registered:
 | `teams.create` | `MagicStarterTeamCreateView` | `hasTeamFeatures()` |
 | `teams.settings` | `MagicStarterTeamSettingsView` | `hasTeamFeatures()` |
 | `teams.invitation_accept` | `MagicStarterTeamInvitationAcceptView` | `hasTeamFeatures()` |
-| `notifications.list` | `MagicStarterNotificationsListView` | `hasNotificationFeatures()` |
-| `notifications.preferences` | `MagicStarterNotificationPreferencesView` | `hasNotificationFeatures()` |
+
+`notifications.list` and `notifications.preferences` are NOT among them: `registerDefaultViews()` no longer registers them, because there is no field left to guard with `hasNotificationFeatures()`. Those two keys live on `magic_notifications`'s own `Notify.view`, which `registerMagicStarterNotificationRoutes()` re-registers wrapped in this package's page geometry; see [Notifications](../basics/notifications.md).
 
 Default layouts:
 
@@ -582,7 +557,6 @@ Default layouts:
 | `MagicStarter.useHeader(builder)` | `manager.headerBuilder = builder` |
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |
 | `MagicStarter.useSocialLogin(builder)` | `manager.socialLoginBuilder = builder` |
-| `MagicStarter.useNotificationTypeMapper(mapper)` | `manager.notificationTypeMapper = mapper` |
 | `MagicStarter.useLocaleOptions(locales)` | `manager.localeOptions = options` |
 | `MagicStarter.useGuestAuthEntry(builder)` | `manager.guestAuthEntryBuilder = builder` |
 | `MagicStarter.useNewsletterLabel(label)` | `manager.newsletterLabel = label` |

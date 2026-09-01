@@ -34,7 +34,6 @@ import 'src/ui/components/error_state/error_state.preview.dart';
 import 'src/ui/components/form_field/form_field.preview.dart';
 import 'src/ui/components/input/input.preview.dart';
 import 'src/ui/components/navbar/navbar.preview.dart';
-import 'src/ui/components/notification_dropdown/notification_dropdown.preview.dart';
 import 'src/ui/components/page_header/page_header.preview.dart';
 import 'src/ui/components/radio/radio.preview.dart';
 import 'src/ui/components/segmented_control/segmented_control.preview.dart';
@@ -115,11 +114,6 @@ List<StarterComponentPreview> starterComponentPreviews() {
     ),
     (label: 'Input', slug: 'input', builder: (_) => const InputPreview()),
     (label: 'Navbar', slug: 'navbar', builder: (_) => const NavbarPreview()),
-    (
-      label: 'Notification Dropdown',
-      slug: 'notification_dropdown',
-      builder: (_) => const NotificationDropdownPreview(),
-    ),
     (
       label: 'Page Header',
       slug: 'page_header',

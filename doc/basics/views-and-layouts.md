@@ -61,7 +61,7 @@ class _MagicStarterLoginViewState extends MagicStatefulViewState<
 The `MagicStatefulViewState` base class provides access to the controller singleton via `controller` and lifecycle hooks via `onInit()` and `onClose()`.
 
 > [!NOTE]
-> Views are NOT widgets like `MSNotificationDropdown` — those extend `StatelessWidget` or `StatefulWidget` directly. Only full-page views that need a controller binding use `MagicStatefulView`.
+> Views are NOT widgets like `MSUserProfileDropdown` — those extend `StatelessWidget` or `StatefulWidget` directly. Only full-page views that need a controller binding use `MagicStatefulView`.
 
 <a name="view-lifecycle"></a>
 ## View Lifecycle
@@ -419,11 +419,12 @@ Built-in view keys:
 | `teams.create` | Team creation page |
 | `teams.settings` | Team settings page |
 | `teams.invitation_accept` | Team invitation acceptance page |
-| `notifications.list` | Notification list page |
-| `notifications.preferences` | Notification preferences page |
 
 > [!NOTE]
 > `MagicStarter.view.make(key)` throws `StateError` when the key is not registered. Always ensure views are registered before routes reference them.
+
+> [!NOTE]
+> `notifications.list` and `notifications.preferences` are NOT registered on `MagicStarter.view`. Those two screens belong to `magic_notifications` and are registered on its own `Notify.view` (same shape: `register` / `has` / `make` / `slot` / `buildSlot` / `clear`); see [Notifications](notifications.md).
 
 <a name="layout-registry"></a>
 ## Layout Registry
@@ -729,6 +730,8 @@ The modal can also be used for standalone re-authentication (e.g. before a sensi
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones?search=...`. Debounces search at 300 ms and always includes the pre-selected value in options. |
 | `MSTeamSelector` | Current-team switcher dropdown. Requires `MagicStarter.teamResolver` to be registered. `compact` mode hides the team name label. |
 | `MSUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, theme toggle, and logout. Supports a custom `triggerBuilder`. |
-| `MSNotificationDropdown` | Bell-icon dropdown backed by a `Stream<List<DatabaseNotification>>`. Displays live unread badge, color-coded icons, and mark-as-read callbacks. |
 | `MSSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |
 | `MagicStarterHideBottomNav` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar. Wrap a route layout with this widget and check `MagicStarterHideBottomNav.of(context)` in the layout's build method. |
+
+> [!NOTE]
+> The bell-icon dropdown is not in this table. It moved to `magic_notifications` as `NotificationDropdown`; see [Notifications](notifications.md).

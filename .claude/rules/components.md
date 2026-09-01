@@ -42,7 +42,7 @@ lib/src/ui/components/<name>/
 - **`MSDialog`**: sticky header and footer with a scrollable body (`ListView(shrinkWrap: true)`), Material `Dialog` shell around Wind content. `footerBuilder: Widget Function(BuildContext dialogContext)?` exists so a caller can `Navigator.pop(dialogContext)` with the dialog's own context.
 - **Dialog footers**: compact right-aligned buttons with `justify-end gap-2 wrap`, never `flex-1` full-width. `wrap` is required alongside `justify-end`, since Wind renders it as `Wrap(alignment: WrapAlignment.end)` and a constrained container overflows without it.
 - **Dialog safe area**: compute `safeHeight` from `MediaQuery.viewPaddingOf(context)`, subtract the top and bottom insets from screen height, then apply `* 0.85` for `maxHeight`. Vertical `insetPadding: 24` keeps a phone off the edges.
-- **`MSTeamSelector`**: built from `MagicStarter.manager.teamResolver` callbacks. **`MSNotificationDropdown`**: `StreamBuilder<List<DatabaseNotification>>` for the live unread badge. **`MSUserProfileDropdown`**: reads `MagicStarter.navigationTheme.dropdownAvatarClassName` for the trigger avatar.
+- **`MSTeamSelector`**: built from `MagicStarter.manager.teamResolver` callbacks. **`MSUserProfileDropdown`**: reads `MagicStarter.navigationTheme.dropdownAvatarClassName` for the trigger avatar. The bell dropdown (`StreamBuilder<List<DatabaseNotification>>` for the live unread badge) is not one of this package's components anymore: it is `NotificationDropdown` in `magic_notifications`, mounted by `MagicStarterAppLayout._buildNotificationBell()`.
 - **`MSSocialDivider`**: `WDiv` + centred `WText('or')`, used between a form and the social login buttons.
 
 ## Sizing and tree-shaking
