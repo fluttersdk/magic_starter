@@ -260,7 +260,7 @@ Consumer apps have two options for wiring a controller to a view.
 
 ### Option A — MagicStatefulView (auto-listens)
 
-Extend `MagicStatefulView<T>` to get the controller resolved and subscribed automatically. This matches the pattern used by most plugin views and is the recommended choice; `magic_notifications`'s `NotificationsListView` is the current exception — it is implemented as a plain `StatefulWidget` that manages state locally.
+Extend `MagicStatefulView<T>` to get the controller resolved and subscribed automatically. This matches the pattern used by every plugin view and is the recommended choice. `magic_notifications`'s `NotificationsListView` used to be the one exception, implemented as a plain `StatefulWidget` managing state locally; it now runs on `NotificationsListController` like the rest, so there is no longer a shipped counter-example for a new view to copy.
 
 ```dart
 class ProjectListView extends MagicStatefulView<ProjectController> {
