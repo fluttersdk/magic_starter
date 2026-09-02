@@ -244,8 +244,49 @@ void main() {
         find.byType(NotificationsListView),
       );
 
-      await view.onDelete!('n-1');
+      final bool deleted = await view.onDelete!('n-1');
 
+      network.assertNotSent(
+        (MagicRequest request) => request.url.contains('/notifications/n-1'),
+      );
+      // And it has to SAY nothing happened: the list reloads on a `true`, so
+      // answering true here would spend a request re-reading a page that never
+      // changed.
+      expect(deleted, isFalse);
+    });
+
+    testWidgets('a declined delete answers false and sends nothing', (
+      tester,
+    ) async {
+      // The case the bool exists for. Before `onDelete` could answer, the row
+      // reloaded after every tap, so saying no to this dialog cost a full
+      // GET /notifications for a list that had not changed.
+      final FakeNetworkDriver network = Http.fake((request) {
+        return MagicResponse(
+          data: const <String, dynamic>{'data': <String, dynamic>{}},
+          statusCode: 200,
+        );
+      });
+      registerMagicStarterNotificationRoutes();
+
+      final route = routeFor(MagicStarterConfig.notificationsRoute())!;
+
+      await tester.pumpWidget(wrapWithNavigator(route.buildWidget(const {})));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final NotificationsListView view = tester.widget<NotificationsListView>(
+        find.byType(NotificationsListView),
+      );
+
+      final Future<bool> pending = view.onDelete!('n-1');
+      await tester.pumpAndSettle();
+
+      // The raw key: this suite loads no catalogue.
+      await tester.tap(find.text('common.cancel'));
+      await tester.pumpAndSettle();
+
+      expect(await pending, isFalse);
       network.assertNotSent(
         (MagicRequest request) => request.url.contains('/notifications/n-1'),
       );
@@ -275,7 +316,7 @@ void main() {
       // Not awaited yet: the future does not complete until the dialog is
       // answered, so awaiting here would deadlock the test against its own
       // unpumped frame.
-      final Future<void> pending = view.onDelete!('n-1');
+      final Future<bool> pending = view.onDelete!('n-1');
       await tester.pumpAndSettle();
 
       // The raw key, because this suite loads no catalogue and `Translator.get`
@@ -283,7 +324,10 @@ void main() {
       // `magic_starter_confirm_dialog_test.dart`, which taps `common.confirm`.
       await tester.tap(find.text('common.delete'));
       await tester.pumpAndSettle();
-      await pending;
+
+      // `true` is what makes the list reload, which a real delete needs: a row
+      // leaving page one pulls one up from page two.
+      expect(await pending, isTrue);
 
       network.assertSent(
         (MagicRequest request) => request.url.contains('/notifications/n-1'),
