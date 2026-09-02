@@ -43,7 +43,7 @@ dependencies:
   # `Notify.view` at all, and a solver could hand this package a version its own
   # routes cannot compile against. `^0.1.0` is `>=0.1.0 <0.2.0` by that same
   # rule and admits nothing below the release that carries the API.
-  magic_notifications: ^0.1.0
+  magic_notifications: ^0.2.0
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two

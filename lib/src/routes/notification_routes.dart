@@ -123,18 +123,21 @@ void _mountNotificationViews() {
 /// mounted, so nobody could have been asked, and a destructive action whose
 /// question could not be put has not been answered yes.
 ///
-/// The delete itself is left unguarded on purpose, and what that means depends
-/// on the resolved dependency. On `magic_notifications` 0.1.0 it cannot throw:
-/// `deleteNotification` logs a failed request, rolls the row back and completes
-/// normally, so a failure is silent and nothing here can change that.
-/// fluttersdk/magic_notifications#21 makes it rethrow and has the list row
-/// catch it and say so. Either way this call site is correct by not catching:
-/// today there is nothing to catch, and once there is, swallowing it here would
-/// put the silence back one layer up.
-Future<void> _confirmThenDelete(String id) async {
+/// The delete itself is left unguarded on purpose: `deleteNotification`
+/// rethrows a failed request, and the list row catches it and says so. Catching
+/// it here instead would put the silence back one layer up.
+///
+/// The `bool` this returns is what stops a declined confirmation costing a
+/// network round trip. `NotificationsListView` reloads the page after a real
+/// delete, because a row leaving page one pulls one up from page two and only
+/// the server knows which; before the callback could answer, it had to reload
+/// after EVERY tap, so saying no to this dialog spent a full
+/// `GET /notifications` on a list that had not changed. A refusal for either
+/// reason, no navigator or a declined dialog, is a `false`.
+Future<bool> _confirmThenDelete(String id) async {
   final BuildContext? context =
       MagicRouter.instance.navigatorKey.currentContext;
-  if (context == null) return;
+  if (context == null) return false;
 
   final bool confirmed = await MSConfirmDialog.show(
     context,
@@ -145,9 +148,11 @@ Future<void> _confirmThenDelete(String id) async {
     variant: ConfirmDialogVariant.danger,
   );
 
-  if (!confirmed) return;
+  if (!confirmed) return false;
 
   await Notify.deleteNotification(id);
+
+  return true;
 }
 
 /// Registers [builder] under [key] unless somebody has already chosen a screen
