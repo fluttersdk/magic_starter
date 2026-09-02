@@ -4,6 +4,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
+import '../ui/components/confirm_dialog/confirm_dialog.dart';
 import '../ui/components/page_container/page_container.dart';
 import '../ui/components/page_scaffold/page_scaffold.recipe.dart';
 
@@ -105,21 +106,43 @@ void _mountNotificationViews() {
 /// around, and it puts the confirmation in the same package as every other
 /// destructive confirmation a starter app shows.
 ///
-/// `Magic.confirm` rather than [MSConfirmDialog] even though this package owns
-/// that component: the registry hands a builder no [BuildContext] and neither
-/// does `onDelete`, so there is nothing to show a dialog against. The magic
-/// facade resolves its own overlay, which is why it is the one confirmation API
-/// reachable from here at all.
+/// [MSConfirmDialog] rather than `Magic.confirm`, and the context comes from
+/// the router's navigator key. Neither the view registry nor `onDelete` hands
+/// this function a [BuildContext], but one is reachable without either:
+/// `MagicRouter.instance.navigatorKey.currentContext` is exactly where
+/// `MagicFeedback` gets its own. That matters because the two dialogs are not
+/// interchangeable here. `MSConfirmDialog` reads
+/// `MagicStarter.manager.modalTheme`, so it follows the host's modal styling
+/// and its dark mode; `Magic.confirm` styles from `view.confirm.*` with
+/// hardcoded light-mode fallbacks (`bg-white`, `bg-red-500`) and no host in
+/// this package registers a confirm builder to replace them. Using the magic
+/// facade would have shipped the one destructive dialog in the app that
+/// ignores the theme every other one obeys.
 ///
-/// A refusal returns without touching the server, and `deleteNotification`'s
-/// own throw is left to propagate: the list row catches it and says so.
+/// A null context refuses rather than deleting. It means no navigator is
+/// mounted, so nobody could have been asked, and a destructive action whose
+/// question could not be put has not been answered yes.
+///
+/// The delete itself is left unguarded on purpose, and what that means depends
+/// on the resolved dependency. On `magic_notifications` 0.1.0 it cannot throw:
+/// `deleteNotification` logs a failed request, rolls the row back and completes
+/// normally, so a failure is silent and nothing here can change that.
+/// fluttersdk/magic_notifications#21 makes it rethrow and has the list row
+/// catch it and say so. Either way this call site is correct by not catching:
+/// today there is nothing to catch, and once there is, swallowing it here would
+/// put the silence back one layer up.
 Future<void> _confirmThenDelete(String id) async {
-  final bool confirmed = await Magic.confirm(
+  final BuildContext? context =
+      MagicRouter.instance.navigatorKey.currentContext;
+  if (context == null) return;
+
+  final bool confirmed = await MSConfirmDialog.show(
+    context,
     title: trans('notifications.delete_confirm_title'),
-    message: trans('notifications.delete_confirm_message'),
-    confirmText: trans('common.delete'),
-    cancelText: trans('common.cancel'),
-    isDangerous: true,
+    description: trans('notifications.delete_confirm_message'),
+    confirmLabel: trans('common.delete'),
+    cancelLabel: trans('common.cancel'),
+    variant: ConfirmDialogVariant.danger,
   );
 
   if (!confirmed) return;
