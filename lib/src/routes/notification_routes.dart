@@ -73,7 +73,16 @@ void registerMagicStarterNotificationRoutes() {
 void _mountNotificationViews() {
   _mountUnlessOverridden(
     'notifications.list',
-    () => _inHostPageGeometry(const NotificationsListView()),
+    // `onDelete` is what makes the row's delete affordance render at all
+    // (`NotificationsListView` draws it only when the callback is non-null), and
+    // this registration is the one a magic_starter app actually gets: it
+    // replaces the package's own default in order to apply the host page
+    // geometry, so a null here is the whole ecosystem's answer. Left unpassed,
+    // `Notify.deleteNotification` and the backend route behind it had no
+    // surface anywhere: a working endpoint nothing could call.
+    () => _inHostPageGeometry(
+      NotificationsListView(onDelete: Notify.deleteNotification),
+    ),
   );
   _mountUnlessOverridden(
     'notifications.preferences',

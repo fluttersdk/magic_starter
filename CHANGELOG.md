@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The notification list can delete a notification again, which it never could.** `_mountNotificationViews()` built `const NotificationsListView()`, and that view renders its per-row delete control only when `onDelete` is non-null, so the affordance never appeared. Because this registration REPLACES the package's own default in order to apply the host page geometry, its null was the whole ecosystem's answer: `Notify.deleteNotification` and the `DELETE /notifications/{id}` route behind it were working code with no surface anywhere. The mount now passes `onDelete: Notify.deleteNotification`, and a test asserts the mounted view carries it, which turns red if the parameter is dropped again. The nullable parameter itself is unchanged and still lets a host opt out by registering its own screen.
+
 ## [0.0.1-alpha.25] - 2026-09-02
 
 ### Fixed

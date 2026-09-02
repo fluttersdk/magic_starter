@@ -171,6 +171,29 @@ void main() {
       expect(find.byType(MSPageContainer), findsOneWidget);
     });
 
+    testWidgets('the list route wires the delete affordance', (tester) async {
+      // The row renders its delete control only when `onDelete` is non-null,
+      // and this registration replaces the package's own default, so a null
+      // here leaves `Notify.deleteNotification` and the backend route behind it
+      // with no surface anywhere in the ecosystem. Asserted on the parameter
+      // rather than by hunting the control, because the control lives in
+      // `magic_notifications` and its markup is that package's to change.
+      fakeNotificationEndpoints();
+      registerMagicStarterNotificationRoutes();
+
+      final route = routeFor(MagicStarterConfig.notificationsRoute())!;
+
+      await tester.pumpWidget(wrap(route.buildWidget(const {})));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final NotificationsListView view = tester.widget<NotificationsListView>(
+        find.byType(NotificationsListView),
+      );
+
+      expect(view.onDelete, isNotNull);
+    });
+
     testWidgets('the preferences page is capped at the host page width', (
       tester,
     ) async {
