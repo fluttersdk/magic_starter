@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **A delete asks first.** The notification list's delete is destructive, irreversible and one tap away in a scrollable list, so the mount now routes it through `Magic.confirm` and only calls `Notify.deleteNotification` once somebody says yes. Asked here rather than in `magic_notifications`, which removed its own dialog widget in 0.1.0 precisely so a published package stops imposing one adopter's tone and layout; this keeps the confirmation in the same package as every other destructive confirmation a starter app shows. `Magic.confirm` rather than `MSConfirmDialog` because the view registry hands a builder no `BuildContext` and neither does `onDelete`. **Hosts must add `notifications.delete_confirm_title` and `notifications.delete_confirm_message`**; the buttons reuse the existing `common.delete` and `common.cancel`.
+
 ### Fixed
 - **The notification list can delete a notification again, which it never could.** `_mountNotificationViews()` built `const NotificationsListView()`, and that view renders its per-row delete control only when `onDelete` is non-null, so the affordance never appeared. Because this registration REPLACES the package's own default in order to apply the host page geometry, its null was the whole ecosystem's answer: `Notify.deleteNotification` and the `DELETE /notifications/{id}` route behind it were working code with no surface anywhere. The mount now passes `onDelete: Notify.deleteNotification`, and a test asserts the mounted view carries it, which turns red if the parameter is dropped again. The nullable parameter itself is unchanged and still lets a host opt out by registering its own screen.
 

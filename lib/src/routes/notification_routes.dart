@@ -81,7 +81,7 @@ void _mountNotificationViews() {
     // `Notify.deleteNotification` and the backend route behind it had no
     // surface anywhere: a working endpoint nothing could call.
     () => _inHostPageGeometry(
-      NotificationsListView(onDelete: Notify.deleteNotification),
+      NotificationsListView(onDelete: _confirmThenDelete),
     ),
   );
   _mountUnlessOverridden(
@@ -92,6 +92,39 @@ void _mountNotificationViews() {
       ),
     ),
   );
+}
+
+/// Asks before deleting, then deletes.
+///
+/// A delete is destructive, irreversible and one tap away in a list of rows a
+/// thumb scrolls past, which is the combination a confirmation exists for. The
+/// package's list cannot ask on its own: it takes `onDelete` as a plain
+/// callback, and `magic_notifications` removed its own dialog widget in 0.1.0
+/// precisely so a published package stops imposing one adopter's tone and
+/// layout on everybody. Asking here is that decision honoured, not worked
+/// around, and it puts the confirmation in the same package as every other
+/// destructive confirmation a starter app shows.
+///
+/// `Magic.confirm` rather than [MSConfirmDialog] even though this package owns
+/// that component: the registry hands a builder no [BuildContext] and neither
+/// does `onDelete`, so there is nothing to show a dialog against. The magic
+/// facade resolves its own overlay, which is why it is the one confirmation API
+/// reachable from here at all.
+///
+/// A refusal returns without touching the server, and `deleteNotification`'s
+/// own throw is left to propagate: the list row catches it and says so.
+Future<void> _confirmThenDelete(String id) async {
+  final bool confirmed = await Magic.confirm(
+    title: trans('notifications.delete_confirm_title'),
+    message: trans('notifications.delete_confirm_message'),
+    confirmText: trans('common.delete'),
+    cancelText: trans('common.cancel'),
+    isDangerous: true,
+  );
+
+  if (!confirmed) return;
+
+  await Notify.deleteNotification(id);
 }
 
 /// Registers [builder] under [key] unless somebody has already chosen a screen

@@ -194,6 +194,38 @@ void main() {
       expect(view.onDelete, isNotNull);
     });
 
+    testWidgets('a delete asks before it reaches the server', (tester) async {
+      // A destructive, irreversible action one tap away in a scrollable list
+      // gets a confirmation. `Magic.confirm` answers false while no feedback
+      // overlay is mounted (`MagicFeedback.confirm`'s `_isMounted` guard), so
+      // this test drives the REFUSAL path, and the refusal has to reach the
+      // server as nothing at all. Wire the callback straight to
+      // `Notify.deleteNotification` again and the DELETE fires here instead.
+      final FakeNetworkDriver network = Http.fake((request) {
+        return MagicResponse(
+          data: const <String, dynamic>{'data': <String, dynamic>{}},
+          statusCode: 200,
+        );
+      });
+      registerMagicStarterNotificationRoutes();
+
+      final route = routeFor(MagicStarterConfig.notificationsRoute())!;
+
+      await tester.pumpWidget(wrap(route.buildWidget(const {})));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final NotificationsListView view = tester.widget<NotificationsListView>(
+        find.byType(NotificationsListView),
+      );
+
+      await view.onDelete!('n-1');
+
+      network.assertNotSent(
+        (MagicRequest request) => request.url.contains('/notifications/n-1'),
+      );
+    });
+
     testWidgets('the preferences page is capped at the host page width', (
       tester,
     ) async {
