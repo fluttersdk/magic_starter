@@ -76,6 +76,29 @@ void main() {
     );
   }
 
+  /// [wrap], plus the router's navigator key, with the theme ABOVE the app.
+  ///
+  /// `_confirmThenDelete` shows its dialog against
+  /// `MagicRouter.instance.navigatorKey.currentContext`, which is null under
+  /// plain [wrap]. That null is a real branch (it refuses), so the two paths
+  /// need two different harnesses: [wrap] for the refusal, this for the ask.
+  ///
+  /// [WindTheme] wraps [MaterialApp] here rather than sitting inside `home`,
+  /// which is the order `magic_starter_confirm_dialog_test.dart` uses and the
+  /// order `MagicApplication` itself builds (`magic_app_widget.dart`, WindTheme
+  /// around the MaterialApp). A dialog is pushed onto the NAVIGATOR, so its
+  /// subtree is a sibling of `home` and not a descendant: with the theme inside
+  /// `home`, the dialog's own `WDiv` asserts "No WindTheme found in context".
+  Widget wrapWithNavigator(Widget child) {
+    return WindTheme(
+      data: WindThemeData(),
+      child: MaterialApp(
+        navigatorKey: MagicRouter.instance.navigatorKey,
+        home: Scaffold(body: child),
+      ),
+    );
+  }
+
   /// Fakes both endpoints the two screens hit on mount.
   void fakeNotificationEndpoints() {
     Http.fake((request) {
@@ -169,6 +192,102 @@ void main() {
 
       expect(find.byType(NotificationsListView), findsOneWidget);
       expect(find.byType(MSPageContainer), findsOneWidget);
+    });
+
+    testWidgets('the list route wires the delete affordance', (tester) async {
+      // The row renders its delete control only when `onDelete` is non-null,
+      // and this registration replaces the package's own default, so a null
+      // here leaves `Notify.deleteNotification` and the backend route behind it
+      // with no surface anywhere in the ecosystem. Asserted on the parameter
+      // rather than by hunting the control, because the control lives in
+      // `magic_notifications` and its markup is that package's to change.
+      fakeNotificationEndpoints();
+      registerMagicStarterNotificationRoutes();
+
+      final route = routeFor(MagicStarterConfig.notificationsRoute())!;
+
+      await tester.pumpWidget(wrap(route.buildWidget(const {})));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final NotificationsListView view = tester.widget<NotificationsListView>(
+        find.byType(NotificationsListView),
+      );
+
+      expect(view.onDelete, isNotNull);
+    });
+
+    testWidgets('a delete nobody could be asked about does not happen', (
+      tester,
+    ) async {
+      // The null-context branch. `wrap` builds no navigator key, so
+      // `MagicRouter.instance.navigatorKey.currentContext` is null and there is
+      // nowhere to put the question. A destructive action whose question could
+      // not be asked has not been answered yes, so nothing may reach the
+      // server. Wire the callback straight to `Notify.deleteNotification`
+      // again and the DELETE fires here instead.
+      final FakeNetworkDriver network = Http.fake((request) {
+        return MagicResponse(
+          data: const <String, dynamic>{'data': <String, dynamic>{}},
+          statusCode: 200,
+        );
+      });
+      registerMagicStarterNotificationRoutes();
+
+      final route = routeFor(MagicStarterConfig.notificationsRoute())!;
+
+      await tester.pumpWidget(wrap(route.buildWidget(const {})));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final NotificationsListView view = tester.widget<NotificationsListView>(
+        find.byType(NotificationsListView),
+      );
+
+      await view.onDelete!('n-1');
+
+      network.assertNotSent(
+        (MagicRequest request) => request.url.contains('/notifications/n-1'),
+      );
+    });
+
+    testWidgets('a confirmed delete reaches the server', (tester) async {
+      // The other half, and the one the refusal case cannot prove: a callback
+      // that returned without calling anything would satisfy that test too.
+      final FakeNetworkDriver network = Http.fake((request) {
+        return MagicResponse(
+          data: const <String, dynamic>{'data': <String, dynamic>{}},
+          statusCode: 200,
+        );
+      });
+      registerMagicStarterNotificationRoutes();
+
+      final route = routeFor(MagicStarterConfig.notificationsRoute())!;
+
+      await tester.pumpWidget(wrapWithNavigator(route.buildWidget(const {})));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final NotificationsListView view = tester.widget<NotificationsListView>(
+        find.byType(NotificationsListView),
+      );
+
+      // Not awaited yet: the future does not complete until the dialog is
+      // answered, so awaiting here would deadlock the test against its own
+      // unpumped frame.
+      final Future<void> pending = view.onDelete!('n-1');
+      await tester.pumpAndSettle();
+
+      // The raw key, because this suite loads no catalogue and `Translator.get`
+      // answers the key it cannot find. Same idiom as
+      // `magic_starter_confirm_dialog_test.dart`, which taps `common.confirm`.
+      await tester.tap(find.text('common.delete'));
+      await tester.pumpAndSettle();
+      await pending;
+
+      network.assertSent(
+        (MagicRequest request) => request.url.contains('/notifications/n-1'),
+      );
     });
 
     testWidgets('the preferences page is capped at the host page width', (

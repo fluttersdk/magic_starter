@@ -62,6 +62,7 @@
   "common": {
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "delete": "Delete",
     "done": "Done",
     "error_occurred": "An unexpected error occurred. Please try again.",
     "go_to_dashboard": "Go to Dashboard",
@@ -271,6 +272,8 @@
     "system": "System"
   },
   "notifications": {
+    "delete_confirm_message": "This notification will be permanently removed.",
+    "delete_confirm_title": "Delete notification?",
     "empty": "No notifications",
     "list_subtitle": "View and manage your notifications",
     "load_failed": "Failed to load notifications",

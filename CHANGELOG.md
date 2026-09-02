@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **A delete asks first.** The notification list's delete is destructive, irreversible and one tap away in a scrollable list, so the mount now shows this package's own `MSConfirmDialog` and only calls `Notify.deleteNotification` once somebody says yes. Asked here rather than in `magic_notifications`, which removed its own dialog widget in 0.1.0 precisely so a published package stops imposing one adopter's tone and layout; this keeps the confirmation in the same package as every other destructive confirmation a starter app shows, and looking like them is the point: `MSConfirmDialog` reads `MagicStarter.manager.modalTheme`, while `Magic.confirm` styles from `view.confirm.*` with light-mode fallbacks and would have shipped the one destructive dialog in the app that ignores the host's dark mode. The dialog is shown against `MagicRouter.instance.navigatorKey.currentContext`, since neither the view registry nor `onDelete` provides a `BuildContext`; a null context refuses rather than deleting, because nobody could have been asked. Copy comes from `notifications.delete_confirm_title`, `notifications.delete_confirm_message`, `common.delete` and `common.cancel`, and all four now ship in `assets/stubs/install/en.stub`.
+
+- **`common.delete`, `notifications.delete_confirm_title` and `notifications.delete_confirm_message` in the install stub.** The stub is the catalogue `starter:install` scaffolds into every consumer project, and `Translator.get` answers a missing key with the key itself, so without these a freshly installed app would open a dialog titled `notifications.delete_confirm_title` with a confirm button reading `common.delete`. An app with a hand-written catalogue still needs them added.
+
+### Fixed
+- **The notification list can delete a notification again, which it never could.** `_mountNotificationViews()` built `const NotificationsListView()`, and that view renders its per-row delete control only when `onDelete` is non-null, so the affordance never appeared. Because this registration REPLACES the package's own default in order to apply the host page geometry, its null was the whole ecosystem's answer: `Notify.deleteNotification` and the `DELETE /notifications/{id}` route behind it were working code with no surface anywhere. The mount now passes `onDelete: Notify.deleteNotification`, and a test asserts the mounted view carries it, which turns red if the parameter is dropped again. The nullable parameter itself is unchanged and still lets a host opt out by registering its own screen.
+
 ## [0.0.1-alpha.25] - 2026-09-02
 
 ### Fixed

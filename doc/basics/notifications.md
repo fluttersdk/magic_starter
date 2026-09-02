@@ -61,6 +61,31 @@ MagicRoute.page(
 ).title('magic_starter.titles.notifications');
 ```
 
+### Deleting a notification
+
+The mount supplies the view's `onDelete`, which is what makes the per-row delete
+control render at all: `NotificationsListView` draws it only when that callback
+is non-null. It does not hand the callback straight to
+`Notify.deleteNotification`. A delete is destructive, irreversible and one tap
+away in a scrollable list, so the mount asks first, through this package's own
+`MSConfirmDialog`:
+
+- The dialog is shown against `MagicRouter.instance.navigatorKey.currentContext`,
+  because neither the view registry nor `onDelete` provides a `BuildContext`.
+  A null context refuses rather than deleting: nobody could have been asked.
+- `MSConfirmDialog` rather than `Magic.confirm` so the dialog follows
+  `MagicStarter.manager.modalTheme` and the host's dark mode. `Magic.confirm`
+  styles from `view.confirm.*` with light-mode fallbacks.
+- Copy comes from `notifications.delete_confirm_title`,
+  `notifications.delete_confirm_message`, `common.delete` and `common.cancel`.
+  All four ship in `assets/stubs/install/en.stub`, so an app scaffolded by
+  `starter:install` has them; an app with a hand-written catalogue needs them
+  added, or the dialog renders the raw keys.
+
+To take the confirmation out, or to change what it asks, register your own
+screen for `'notifications.list'` before the routes are mapped and pass whatever
+`onDelete` you want. That registration wins, as described above.
+
 Each notification item resolves its icon through the notification type icon slot (see [Notification Type Icons](#notification-type-icons)). When a notification is tapped, it is marked as read and the user is navigated to the notification's `actionUrl`.
 
 <a name="notification-preferences"></a>
