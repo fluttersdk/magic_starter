@@ -1,6 +1,6 @@
 name: magic_starter
 description: Starter kit for Magic Framework. Auth, Profile, Teams, Notifications — 14 opt-in features with overridable views.
-version: 0.0.1-alpha.25
+version: 0.0.1-alpha.26
 homepage: https://magic.fluttersdk.com/starter
 documentation: https://magic.fluttersdk.com/packages/starter/getting-started/installation
 repository: https://github.com/fluttersdk/magic_starter
@@ -32,17 +32,25 @@ dependencies:
   # resolve them through that registry. Nothing on pub.dev carries it yet
   # (latest is 0.0.3); the release that first does is 0.1.0.
   #
-  # 0.1.0 is live on pub.dev, so the floor names it. It was `^0.0.4` on this
-  # branch until then, a version that was never published, deliberately held
-  # there because naming a version pub.dev does not have would have left this
-  # package unresolvable for every adopter.
+  # 0.2.0 is live on pub.dev, so the floor names it. The floor has moved twice
+  # for the same reason each time: name a version pub.dev does not have and
+  # this package is unresolvable for every adopter, so it only ever names a
+  # release that exists.
+  #
+  # It is at 0.2.0 rather than 0.1.0 because `NotificationsListView.onDelete`
+  # became `Future<bool>` there, and `_confirmThenDelete` in
+  # `lib/src/routes/notification_routes.dart` returns one. Against 0.1.0 the
+  # library still compiles, since `Future<bool>` satisfies a `Future<void>`
+  # parameter, but the routes test does not: it reads `onDelete`'s return type.
+  # So the floor is what keeps the package and its own suite resolvable
+  # together.
   #
   # Why a floor is needed at all rather than leaving the caret to it: a caret on
   # a `0.0.x` is `>=0.0.x <0.1.0`, because pub_semver raises the MINOR whenever
   # the major is zero, so `^0.0.2` equally admits 0.0.3, which has no
   # `Notify.view` at all, and a solver could hand this package a version its own
-  # routes cannot compile against. `^0.1.0` is `>=0.1.0 <0.2.0` by that same
-  # rule and admits nothing below the release that carries the API.
+  # routes cannot compile against. `^0.2.0` is `>=0.2.0 <0.3.0` by that same
+  # rule and admits nothing below the release that carries the signature.
   magic_notifications: ^0.2.0
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This

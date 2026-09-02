@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1-alpha.26] - 2026-09-03
+
 ### Changed
 - **Requires `magic_notifications ^0.2.0`, and the delete confirmation now answers whether it went ahead.** `NotificationsListView.onDelete` changed to `Future<bool>` in that release, so `_confirmThenDelete` returns `false` when it refuses (no navigator to ask in, or somebody said no) and `true` after a delete the server accepted. That answer is the whole reason the signature changed: the list reloads its page after a real delete, because a row leaving page one pulls one up from page two and only the server knows which, and with nothing to read it had to reload after EVERY tap. So this dialog, the one this package added in the same Unreleased block, was costing a full `GET /notifications` every time somebody declined it. Nothing about the dialog itself changes.
 
