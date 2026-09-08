@@ -26,6 +26,7 @@ void main() {
   setUp(() {
     MagicApp.reset();
     Magic.flush();
+    MagicRouter.reset();
   });
 
   tearDown(() {
@@ -56,6 +57,41 @@ void main() {
 
       expect(middleware.redirectTarget('/'), isNull);
       expect(middleware.redirectTarget('/monitors'), isNull);
+    });
+
+    test('records the requested location as the intended URL before bouncing '
+        'to login', () {
+      Auth.fake();
+      final middleware = EnsureAuthenticated();
+
+      middleware.redirectTarget('/incidents/123');
+
+      expect(MagicRouter.instance.hasIntendedUrl, isTrue);
+      expect(MagicRouter.instance.pullIntendedUrl(), '/incidents/123');
+    });
+
+    test(
+      'records nothing when the bounce target is itself a guest-only auth '
+      'route, so a bounced visitor is never sent back to one they cannot use',
+      () {
+        Auth.fake();
+        final middleware = EnsureAuthenticated();
+
+        middleware.redirectTarget('/auth/register');
+        expect(MagicRouter.instance.hasIntendedUrl, isFalse);
+
+        middleware.redirectTarget('/auth/forgot-password');
+        expect(MagicRouter.instance.hasIntendedUrl, isFalse);
+      },
+    );
+
+    test('records nothing for an authenticated navigation', () {
+      Auth.fake(user: _fakeUser());
+      final middleware = EnsureAuthenticated();
+
+      middleware.redirectTarget('/monitors');
+
+      expect(MagicRouter.instance.hasIntendedUrl, isFalse);
     });
   });
 }

@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **A deep link that lands on a signed-out device now survives the login bounce.** `EnsureAuthenticated.redirectTarget` records the requested location via `MagicRouter.setIntendedUrl` before bouncing an unauthenticated visitor to login, and a new `NavigatesRoutes.navigateHome` reads it back with `pullIntendedUrl` once they authenticate, falling back to `MagicStarterConfig.homeRoute()` when no intent was stored or the stored value is not an in-app path. Nothing is recorded for the login route itself or for any other guest-only auth route (register, forgot-password, reset-password, two-factor-challenge, otp), since a bounced visitor cannot use one of those as a destination either. All five post-auth navigations (login, register auto-login, two-factor challenge, OTP verification, guest login) now call `navigateHome()` instead of navigating straight to the home route. Known limit: `redirectTarget` only ever sees `state.matchedLocation`, which carries no query string, so a recorded intent loses any `?token=...` the original link carried.
+
 ## [0.0.1-alpha.26] - 2026-09-03
 
 ### Changed

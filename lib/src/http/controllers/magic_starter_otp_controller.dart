@@ -135,7 +135,7 @@ class MagicStarterOtpController extends MagicController
 
       // 3. Navigate home on successful authentication.
       setSuccess(data);
-      navigateTo(MagicStarterConfig.homeRoute());
+      navigateHome();
     } catch (e, stackTrace) {
       Log.error('[MagicStarterOtpController.verifyOtp] $e\n$stackTrace');
       setError(trans('errors.unexpected'));

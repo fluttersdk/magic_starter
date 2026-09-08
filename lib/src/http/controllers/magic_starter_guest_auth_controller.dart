@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:magic/magic.dart';
 
 import 'concerns/navigates_routes.dart';
-import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../models/magic_starter_auth_user.dart';
 
@@ -85,7 +84,7 @@ class MagicStarterGuestAuthController extends MagicController
       setSuccess(true);
 
       // 5. Navigate home.
-      navigateTo(MagicStarterConfig.homeRoute());
+      navigateHome();
     } catch (e, stackTrace) {
       Log.error(
         '[MagicStarterGuestAuthController.doGuestLogin] $e\n$stackTrace',

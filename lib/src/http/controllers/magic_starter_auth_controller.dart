@@ -118,7 +118,7 @@ class MagicStarterAuthController extends MagicController
       // 3. Authenticate the user and navigate home.
       await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
-      navigateTo(MagicStarterConfig.homeRoute());
+      navigateHome();
     } on TimeoutException catch (e, stackTrace) {
       Log.error(
         '[MagicStarterAuthController.doLogin] Timeout: $e\n$stackTrace',
@@ -186,7 +186,7 @@ class MagicStarterAuthController extends MagicController
         // 3. Auto-login when the server returns credentials immediately.
         await Auth.login({'token': token}, MagicStarter.createUser(userData));
         setSuccess(true);
-        navigateTo(MagicStarterConfig.homeRoute());
+        navigateHome();
         return;
       }
 
@@ -321,7 +321,7 @@ class MagicStarterAuthController extends MagicController
       // 2. Log the user in and navigate to home.
       await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
-      navigateTo(MagicStarterConfig.homeRoute());
+      navigateHome();
     } catch (e, stackTrace) {
       Log.error(
         '[MagicStarterAuthController.doTwoFactorChallenge] $e\n$stackTrace',
