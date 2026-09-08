@@ -40,7 +40,14 @@ mixin NavigatesRoutes {
     if (MagicRouter.instance.navigatorKey.currentContext == null) return;
 
     final String? intended = MagicRouter.instance.pullIntendedUrl();
-    final bool hasValidIntent = intended != null && intended.startsWith('/');
+    // `//host/path` is protocol-relative: it starts with a slash and is a
+    // different ORIGIN, so the leading-slash test alone lets it through.
+    // Nothing reachable can store one today, since only a router location is
+    // ever recorded, which is exactly why the check is cheap to keep.
+    final bool hasValidIntent =
+        intended != null &&
+        intended.startsWith('/') &&
+        !intended.startsWith('//');
     final String target = hasValidIntent
         ? intended
         : MagicStarterConfig.homeRoute();
