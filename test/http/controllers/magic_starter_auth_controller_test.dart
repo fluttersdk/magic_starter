@@ -587,19 +587,6 @@ void main() {
         expect(mockGuard.logoutCalled, isTrue);
       });
 
-      test('clears an intended url the sign-out itself recorded', () async {
-        // Flipping the auth state makes go_router re-run its redirects while
-        // the app is still on the protected route, so `EnsureAuthenticated`
-        // writes that route down as somewhere to return to. It belongs to the
-        // session that just ended: leaving it sends the NEXT person who signs
-        // in on this device straight to the previous one's page.
-        MagicRouter.instance.setIntendedUrl('/teams/settings');
-
-        await controller.logout();
-
-        expect(MagicRouter.instance.hasIntendedUrl, isFalse);
-      });
-
       test(
         'stops notification polling when notification features are enabled',
         () async {

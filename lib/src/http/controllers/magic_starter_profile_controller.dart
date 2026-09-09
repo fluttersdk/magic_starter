@@ -191,14 +191,6 @@ class MagicStarterProfileController extends MagicController
       }
 
       await Auth.logout();
-
-      // Same reason as the sign-out path in MagicStarterAuthController: the
-      // auth flip makes go_router re-run redirects while still on the deleted
-      // account's page, so `EnsureAuthenticated` records it as somewhere to
-      // return to. Sending the next person who signs in to a deleted account's
-      // settings screen is the worse version of that bug.
-      MagicRouter.instance.pullIntendedUrl();
-
       navigateTo(MagicStarterConfig.loginRoute());
       setSuccess(true);
       return true;

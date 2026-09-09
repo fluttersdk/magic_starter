@@ -125,7 +125,12 @@ class SessionScopeSync {
     if (identity == _identity) return;
 
     _identity = identity;
-    if (identity == null) return;
+
+    if (identity == null) {
+      _forgetIntendedUrl();
+
+      return;
+    }
 
     // Snapshot first: a reset may resolve another controller and register it,
     // which would otherwise mutate the registry mid-iteration.
@@ -144,5 +149,41 @@ class SessionScopeSync {
         }),
       );
     }
+  }
+
+  /// Drops the intended url when the session it belongs to ends.
+  ///
+  /// Signing out re-runs go_router's redirects while the app is still on the
+  /// protected route, so `EnsureAuthenticated` writes that route down as
+  /// somewhere to return to. Nobody asked for it: a sign-out on
+  /// `/teams/settings` would send the NEXT person who signs in on this device
+  /// straight there.
+  ///
+  /// Here rather than at each `Auth.logout()` call site, which is where this
+  /// first landed and is a shape that covers only the logouts a user asks for.
+  /// The one that matters most is the one the app performs on its own:
+  /// magic's `AuthInterceptor` calls `Auth.logout()` when a token refresh fails
+  /// (`auth_interceptor.dart:77`) and `AuthServiceProvider` installs that
+  /// interceptor unconditionally, so a session that simply EXPIRES on a
+  /// protected route leaked it too. This notifier is the one funnel all three
+  /// pass through.
+  ///
+  /// Deferred by a microtask, and that is load-bearing rather than caution.
+  /// `Auth.stateNotifier` fans out to its listeners in registration order, and
+  /// this one attaches during the starter provider's boot while go_router's
+  /// attaches when magic builds the router AFTER boot. Clearing synchronously
+  /// would therefore run BEFORE the redirect that records the value, and clear
+  /// nothing. The microtask runs once the synchronous fan-out is done.
+  ///
+  /// Read-and-discard because `pullIntendedUrl` is the one-time read and
+  /// `MagicRouter` exposes no separate clear. Known limit: a host whose route
+  /// carries an ASYNC `redirect` records after the microtask, and this misses
+  /// it.
+  static void _forgetIntendedUrl() {
+    scheduleMicrotask(() {
+      if (Auth.check()) return;
+
+      MagicRouter.instance.pullIntendedUrl();
+    });
   }
 }
