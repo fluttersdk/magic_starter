@@ -352,6 +352,17 @@ class MagicStarterAuthController extends MagicController
 
     // 2. Clear authentication tokens and navigate to login.
     await Auth.logout();
+
+    // Drop any intended url the sign-out itself just recorded. Flipping the
+    // auth state makes go_router re-run its redirects while the app is still
+    // sitting on the protected route, so `EnsureAuthenticated` writes that
+    // route down as somewhere to return to, between this line and the one
+    // above it. It belongs to the session that just ended: without this, a
+    // sign-out on /teams/settings sends the NEXT person who signs in on this
+    // device straight to it. Read-and-discard because `pullIntendedUrl` is the
+    // one-time read and there is no separate clear.
+    MagicRouter.instance.pullIntendedUrl();
+
     navigateTo(MagicStarterConfig.loginRoute());
   }
 

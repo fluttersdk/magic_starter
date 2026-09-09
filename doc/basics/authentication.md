@@ -52,7 +52,7 @@ await MagicStarterAuthController.instance.doLogin(
 
 The login flow has three possible outcomes:
 
-1. **Success** — the controller extracts `token` and `user` from the nested `data` key, calls `Auth.login()`, sets success state, and navigates to `MagicStarterConfig.homeRoute()`.
+1. **Success** — the controller extracts `token` and `user` from the nested `data` key, calls `Auth.login()`, sets success state, and calls `navigateHome()`. That is the intended url a bounced deep link recorded, read once through `MagicRouter.pullIntendedUrl()`, and `MagicStarterConfig.homeRoute()` only as the fallback when nothing was recorded or the recorded value is not an in-app path. A sign-out clears any intent first, so it belongs to the session that asked for it rather than to the next person on the device.
 2. **Two-factor required** — the controller detects the challenge flag and navigates to `MagicStarterConfig.twoFactorChallengeRoute()` with the encrypted token as a query parameter. No login occurs yet.
 3. **Failure** — `handleApiError()` sets the error state with a localized fallback message.
 
