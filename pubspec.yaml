@@ -49,15 +49,9 @@ dependencies:
   # a `0.0.x` is `>=0.0.x <0.1.0`, because pub_semver raises the MINOR whenever
   # the major is zero, so `^0.0.2` equally admits 0.0.3, which has no
   # `Notify.view` at all, and a solver could hand this package a version its own
-  # routes cannot compile against. `^0.3.0` is `>=0.3.0 <0.4.0` by that same
+  # routes cannot compile against. `^0.2.0` is `>=0.2.0 <0.3.0` by that same
   # rule and admits nothing below the release that carries the signature.
-  #
-  # Raised from `^0.2.0` for the 0.3.0 release, and the raise is not optional
-  # bookkeeping: 0.3.0 is where a push tapped on a COLD START stops depending
-  # on provider order, and `^0.2.0` excludes it, so a starter left on the old
-  # constraint holds every adopter on the version where that tap silently opens
-  # the wrong screen.
-  magic_notifications: ^0.3.0
+  magic_notifications: ^0.2.0
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
