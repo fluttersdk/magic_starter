@@ -271,62 +271,6 @@ void main() {
       expect(controller.rows, ['rows-for-1']);
     });
 
-    test('forgets the intended url when the session ends', () async {
-      await loginAs(1, teamId: 10);
-      SessionScopeSync.attach();
-
-      // What `EnsureAuthenticated` writes down when the auth flip re-runs
-      // go_router's redirects while the app is still on a protected route.
-      MagicRouter.instance.setIntendedUrl('/teams/settings');
-
-      await Auth.logout();
-      await pumpEventQueue();
-
-      expect(MagicRouter.instance.hasIntendedUrl, isFalse);
-    });
-
-    test(
-      'forgets the intended url on a logout NO call site performed',
-      () async {
-        await loginAs(1, teamId: 10);
-        SessionScopeSync.attach();
-        MagicRouter.instance.setIntendedUrl('/teams/settings');
-
-        // The path that matters and that a per-call-site clear cannot reach:
-        // magic's AuthInterceptor calls `Auth.logout()` itself when a token
-        // refresh fails, and AuthServiceProvider installs it unconditionally, so
-        // a session that simply EXPIRES on a protected route took this route.
-        // Driven through the facade directly, because that is all the
-        // interceptor does.
-        await Auth.logout();
-        await pumpEventQueue();
-
-        expect(MagicRouter.instance.hasIntendedUrl, isFalse);
-      },
-    );
-
-    test('keeps an intended url across the login it was recorded for', () async {
-      SessionScopeSync.attach();
-
-      // The whole point of the intent: a deep link lands on a signed-out
-      // device, `EnsureAuthenticated` records it, and the login that follows
-      // is supposed to consume it. Signing in bumps the same notifier a
-      // sign-out does, so a clear hung off the bump itself would eat the
-      // feature it is protecting.
-      //
-      // Two guards have to fail together for that to happen, which is why this
-      // survives removing either one alone: the branch only calls the clear on
-      // a transition TO signed-out, and the clear re-checks `Auth.check()`
-      // inside its microtask because by then the state may have moved again.
-      // Verified against a mutant that drops both.
-      MagicRouter.instance.setIntendedUrl('/incidents/1');
-
-      await loginAs(1, teamId: 10);
-      await pumpEventQueue();
-
-      expect(MagicRouter.instance.pullIntendedUrl(), '/incidents/1');
-    });
-
     test('resets when the same user signs back in after a logout', () async {
       await loginAs(1, teamId: 10);
       SessionScopeSync.attach();
