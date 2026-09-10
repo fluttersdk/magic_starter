@@ -288,7 +288,12 @@
     "channel_email": "Email",
     "channel_in_app": "In-App",
     "channel_push": "Push",
-    "channel_push_unconfigured": "Push not yet configured"
+    "channel_push_unconfigured": "Push not yet configured",
+    "channel_sms": "SMS",
+    "delete": "Delete notification",
+    "delete_failed": "Failed to delete notification",
+    "bulk_title": "All notification types",
+    "bulk_description": "Turn a channel on or off for every notification type at once."
   },
   "profile": {
     "browser_sessions": "Browser Sessions",
