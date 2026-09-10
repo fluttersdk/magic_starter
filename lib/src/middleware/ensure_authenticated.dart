@@ -59,6 +59,21 @@ class EnsureAuthenticated extends MagicMiddleware {
 
   /// Whether [location] is one of the guest-only auth routes registered in
   /// `auth_routes.dart` (the login route itself is handled by the caller).
+  ///
+  /// Unreachable through THIS package's own route table, and kept anyway.
+  /// `auth_routes.dart:19` registers the whole auth group under
+  /// `middleware: ['guest']`, so this middleware never sees `/auth/register`
+  /// or its siblings there. What it is for is a host that applies `auth`
+  /// globally, over a shell route wrapping everything, which the middleware
+  /// being public API makes a supported configuration rather than a
+  /// hypothetical: without this, such an app would bounce a visitor off
+  /// `/auth/register`, record it, and send them back to a guest-only route
+  /// after they sign in.
+  ///
+  /// Named here because a reviewer asked three times whether the branch was
+  /// dead. It is dead for us and live for an adopter, and the two tests over
+  /// it call [redirectTarget] directly, so nothing shows the router reaching
+  /// it.
   bool _isGuestRoute(String location) {
     final String authPrefix = MagicStarterConfig.authPrefix();
     return _guestRouteSuffixes.any(
