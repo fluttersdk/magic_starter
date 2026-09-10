@@ -60,13 +60,20 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _forgetIntendedUrlOnSignOut();
   }
 
-  /// The notifier [_forgetIntendedUrlOnSignOut] subscribed to.
+  /// The notifier [_forgetIntendedUrlOnSignOut] is currently subscribed to.
   ///
   /// Held rather than resolved again at removal time for the same reason
   /// `SessionScopeSync` holds its own: `Auth.stateNotifier` resolves through
   /// the container, so re-binding the guard hands back a DIFFERENT notifier and
   /// unsubscribing through the facade would leave this listener on the old one.
-  /// Doubles as the attached flag, so a hot restart cannot double-subscribe.
+  ///
+  /// Compared by identity rather than treated as a one-way latch, which is what
+  /// it was first written as and what a review caught. A latch never cleared,
+  /// so a second boot after a re-bind returned early and left the subscription
+  /// on a notifier nobody bumps any more: no clear at all, and a test suite
+  /// where the assertion holds only because an earlier test happened to attach
+  /// first. It failed under `--test-randomize-ordering-seed=1` and passed in
+  /// declaration order, which is the worst way for it to be wrong.
   static ValueNotifier<int>? _authState;
 
   /// Discards the intended url when the session that recorded it ends.
@@ -101,21 +108,30 @@ class MagicStarterServiceProvider extends ServiceProvider {
   /// `pullIntendedUrl` is the one-time read and `MagicRouter` exposes no
   /// separate clear.
   void _forgetIntendedUrlOnSignOut() {
-    if (_authState != null) return;
+    final ValueNotifier<int> notifier = Auth.stateNotifier;
+    if (identical(_authState, notifier)) return;
 
-    _authState = Auth.stateNotifier
-      ..addListener(() {
-        if (Auth.check()) return;
+    // Moves rather than adds. Booting twice against the same notifier is the
+    // no-op above; booting against a NEW one has to take the subscription with
+    // it, or the listener sits on a notifier nothing bumps.
+    _authState?.removeListener(_forgetIntendedUrl);
+    _authState = notifier..addListener(_forgetIntendedUrl);
+  }
 
-        scheduleMicrotask(() {
-          // Re-checked inside the microtask: by the time it runs the state may
-          // have moved again, and clearing after a login would eat the deep
-          // link the intent exists to serve.
-          if (Auth.check()) return;
+  /// The listener itself, a named static so [_forgetIntendedUrlOnSignOut] can
+  /// remove it: `removeListener` matches by identity and a fresh closure never
+  /// equals the one that was added.
+  static void _forgetIntendedUrl() {
+    if (Auth.check()) return;
 
-          MagicRouter.instance.pullIntendedUrl();
-        });
-      });
+    scheduleMicrotask(() {
+      // Re-checked inside the microtask: by the time it runs the state may
+      // have moved again, and clearing after a login would eat the deep link
+      // the intent exists to serve.
+      if (Auth.check()) return;
+
+      MagicRouter.instance.pullIntendedUrl();
+    });
   }
 
   /// Registers Gate abilities that control profile section visibility.
