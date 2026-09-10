@@ -1194,6 +1194,33 @@ class AppServiceProvider extends ServiceProvider {
       }
     });
   });
+
+  group('magicNotificationsConstraint', () {
+    test('matches the floor this package declares in pubspec.yaml', () {
+      // `starter:install` writes this constraint into the consumer's own
+      // pubspec, so it and this package's floor describe the same dependency
+      // from two files. When they disagree there is no intersection to solve,
+      // and pub answers that by walking magic_starter BACKWARDS to a release
+      // that fits rather than by failing: a scaffolded app silently gets an
+      // older starter. The literal sat at `^0.0.1-alpha.1` for twenty-six
+      // releases, excluding every 0.1.0 and later the floor has required since
+      // alpha.25, which is the drift this test exists to stop.
+      final String pubspec = File(
+        '${Directory.current.path}/pubspec.yaml',
+      ).readAsStringSync();
+      final RegExpMatch? declared = RegExp(
+        r'^  magic_notifications:\s*(\S+)',
+        multiLine: true,
+      ).firstMatch(pubspec);
+
+      expect(
+        declared,
+        isNotNull,
+        reason: 'pubspec.yaml declares a magic_notifications constraint',
+      );
+      expect(magicNotificationsConstraint, declared!.group(1));
+    });
+  });
 }
 
 void setupMagicProjectFiles(Directory directory) {
