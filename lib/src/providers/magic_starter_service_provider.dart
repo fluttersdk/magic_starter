@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -54,6 +56,82 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // 2. If not, register 'indigo' as the fallback primary color.
     // 3. Emit info log to notify about the fallback.
     _bootPrimaryColorFallback();
+
+    _forgetIntendedUrlOnSignOut();
+  }
+
+  /// The notifier [_forgetIntendedUrlOnSignOut] is currently subscribed to.
+  ///
+  /// Held rather than resolved again at removal time for the same reason
+  /// `SessionScopeSync` holds its own: `Auth.stateNotifier` resolves through
+  /// the container, so re-binding the guard hands back a DIFFERENT notifier and
+  /// unsubscribing through the facade would leave this listener on the old one.
+  ///
+  /// Compared by identity rather than treated as a one-way latch, which is what
+  /// it was first written as and what a review caught. A latch never cleared,
+  /// so a second boot after a re-bind returned early and left the subscription
+  /// on a notifier nobody bumps any more: no clear at all, and a test suite
+  /// where the assertion holds only because an earlier test happened to attach
+  /// first. It failed under `--test-randomize-ordering-seed=1` and passed in
+  /// declaration order, which is the worst way for it to be wrong.
+  static ValueNotifier<int>? _authState;
+
+  /// Discards the intended url when the session that recorded it ends.
+  ///
+  /// [EnsureAuthenticated] records a protected route before bouncing to login,
+  /// so `navigateHome()` can send the visitor back to it afterwards. Signing
+  /// out flips the auth state, which re-runs go_router's redirects while the
+  /// app is STILL on that route, so the sign-out records it too. Nobody asked
+  /// for that: it would send the next person who signs in on this device to the
+  /// previous one's page, and on the account-deletion path to a deleted
+  /// account's settings.
+  ///
+  /// Hung off the auth notifier rather than off each `Auth.logout()` call site,
+  /// which is where this first landed and covers only the logouts a user asks
+  /// for. The one that matters most is the one the app performs on its own:
+  /// magic's `AuthInterceptor` calls `Auth.logout()` when a token refresh fails
+  /// (`auth_interceptor.dart:77`) and `AuthServiceProvider` installs it
+  /// unconditionally, so a session that simply EXPIRES on a protected route
+  /// took that path. The notifier is the one funnel all three pass through.
+  ///
+  /// Here rather than in `SessionScopeSync`, which listens to the same notifier
+  /// and was the second thing tried: that class is OPT-IN and nothing in this
+  /// package calls `attach()`, so an app that never adopted
+  /// `SessionScopedController` would have had no clear at all. This provider
+  /// boots in every starter app.
+  ///
+  /// Deferred by a microtask because the whole record path (`stateNotifier` ->
+  /// `GoRouteInformationProvider.notifyListeners` -> parse -> redirect) is
+  /// synchronous: clearing inline would run before the redirect that writes the
+  /// value. Known limit: a host route with an ASYNC `redirect` records after
+  /// the microtask and is not covered. Read-and-discard because
+  /// `pullIntendedUrl` is the one-time read and `MagicRouter` exposes no
+  /// separate clear.
+  void _forgetIntendedUrlOnSignOut() {
+    final ValueNotifier<int> notifier = Auth.stateNotifier;
+    if (identical(_authState, notifier)) return;
+
+    // Moves rather than adds. Booting twice against the same notifier is the
+    // no-op above; booting against a NEW one has to take the subscription with
+    // it, or the listener sits on a notifier nothing bumps.
+    _authState?.removeListener(_forgetIntendedUrl);
+    _authState = notifier..addListener(_forgetIntendedUrl);
+  }
+
+  /// The listener itself, a named static so [_forgetIntendedUrlOnSignOut] can
+  /// remove it: `removeListener` matches by identity and a fresh closure never
+  /// equals the one that was added.
+  static void _forgetIntendedUrl() {
+    if (Auth.check()) return;
+
+    scheduleMicrotask(() {
+      // Re-checked inside the microtask: by the time it runs the state may
+      // have moved again, and clearing after a login would eat the deep link
+      // the intent exists to serve.
+      if (Auth.check()) return;
+
+      MagicRouter.instance.pullIntendedUrl();
+    });
   }
 
   /// Registers Gate abilities that control profile section visibility.

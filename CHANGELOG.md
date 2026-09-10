@@ -2,7 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.1-alpha.27] - 2026-09-09
+
+### Added
+- **A deep link that lands on a signed-out device now survives the login bounce.** `EnsureAuthenticated.redirectTarget` records the requested location via `MagicRouter.setIntendedUrl` before bouncing an unauthenticated visitor to login, and a new `NavigatesRoutes.navigateHome` reads it back with `pullIntendedUrl` once they authenticate, falling back to `MagicStarterConfig.homeRoute()` when no intent was stored or the stored value is not an in-app path. Nothing is recorded for the login route itself or for any other guest-only auth route (register, forgot-password, reset-password, two-factor-challenge, otp), since a bounced visitor cannot use one of those as a destination either. All five post-auth navigations (login, register auto-login, two-factor challenge, OTP verification, guest login) now call `navigateHome()` instead of navigating straight to the home route. Known limit: `redirectTarget` only ever sees `state.matchedLocation`, which carries no query string, so a recorded intent loses any `?token=...` the original link carried.
+
+  **An intent belongs to the session that asked for it, and ending that session discards it.** Signing out flips the auth state, which re-runs go_router's redirects while the app is still on the protected route, so `EnsureAuthenticated` writes that route down as somewhere to return to. Nobody asked for it: a sign-out on `/teams/settings` would otherwise send the NEXT person who signs in on that device straight there, and the account-deletion path would send them to a deleted account's settings. `MagicStarterServiceProvider` now listens to `Auth.stateNotifier` and discards the intent whenever the state goes to signed-out, which is the one funnel all three logouts pass through: the two a user asks for, and the one the app performs on its own when magic's `AuthInterceptor` fails a token refresh, which no call-site clear can reach. In this provider rather than in `SessionScopeSync`, which listens to the same notifier: that one is opt-in and nothing in this package calls `attach()`, so an app that never adopted `SessionScopedController` would have had no clear at all. This provider boots in every starter app, so no host action is needed. The clear is deferred by a microtask because the whole record path is synchronous and clearing inline would run before the redirect that writes the value. A host route with an ASYNC `redirect` records after that microtask and is not covered.
 
 ## [0.0.1-alpha.26] - 2026-09-03
 
