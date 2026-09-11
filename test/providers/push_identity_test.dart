@@ -182,9 +182,10 @@ void main() {
     Config.set('magic_starter.notifications.external_id_prefix', 'user_');
 
     // `NotificationManager` is a process-wide singleton with no reset
-    // (a `static final` on `NotificationManager`), so the declared intent outlives the
-    // container flush above and the next test asserts against the previous
-    // one's session. This is the only public way to put it back to nobody.
+    // (a `static final` on `NotificationManager`), so the declared intent
+    // outlives the container flush above and the next test asserts against the
+    // previous one's session. This is the only public way to put it back to
+    // nobody.
     await Notify.logoutPush();
   });
 
@@ -232,11 +233,11 @@ void main() {
       // and the distinction is load-bearing: the REAL restore ends in
       // `setUser(cachedUser)` (`base_guard.dart:315`) which bumps
       // (`base_guard.dart:99`), but the test double's restore is
-      // `Future<void>.value()` (`magic/lib/src/testing/fake_auth_manager.dart:156`)
-      // and bumps nothing at all. Calling it here would assert against the
-      // double's silence and pass whatever this listener did. So the bump is
-      // the contract under test, and the line above is the evidence the real
-      // path produces one.
+      // `Future<void>.value()`
+      // (`magic/lib/src/testing/fake_auth_manager.dart:156`) and bumps nothing
+      // at all. Calling it here would assert against the double's silence and
+      // pass whatever this listener did. So the bump is the contract under
+      // test, and the line above is the evidence the real path produces one.
       Auth.fake(user: _fakeUser());
       await bootProvider();
 
@@ -251,15 +252,17 @@ void main() {
       () async {
         // The ordinary cold boot, and the one every other test here misses by
         // bumping after `bootProvider()`. Providers boot in order and this one
-        // goes last: magic_example ships Auth, then Notifications, then Starter,
-        // every doc prescribes it, and artisan's installer appends to the end.
-        // So `AuthServiceProvider.boot` has already awaited `Auth.restore()` and
-        // bumped, and the driver has already attached on a broadcast stream that
-        // replays nothing. Subscribing alone declared nothing at all.
+        // goes last: magic_example ships Auth, then Notifications, then
+        // Starter, every doc prescribes it, and artisan's installer appends to
+        // the end. So `AuthServiceProvider.boot` has already awaited
+        // `Auth.restore()` and bumped, and the driver has already attached on a
+        // broadcast stream that replays nothing. Subscribing alone declared
+        // nothing at all.
         //
         // What hid it in production is a SECOND bump from the unawaited
         // `_syncUserFromApi()` inside restore, which is absent on a token with
-        // no cached user, on a device with no network, and with no userEndpoint.
+        // no cached user, on a device with no network, and with no
+        // userEndpoint.
         Auth.fake(user: _fakeUser());
         Auth.stateNotifier.value++;
         await pumpEventQueue();
@@ -395,15 +398,15 @@ void main() {
     test(
       'is not declared for a guard that still answers id() after sign-out',
       () async {
-        // The discriminating case. Against `BaseGuard` a sign-out nulls the user,
-        // so `check()` and `id()` fall together and the id check alone appears to
-        // cover it; removing the signed-in check left every other test here
-        // green. A guard that keeps its id is what shows the check is load
-        // bearing, and the Guard contract permits one.
+        // The discriminating case. Against `BaseGuard` a sign-out nulls the
+        // user, so `check()` and `id()` fall together and the id check alone
+        // appears to cover it; removing the signed-in check left every other
+        // test here green. A guard that keeps its id is what shows the check is
+        // load bearing, and the Guard contract permits one.
         // Registered through the manager the way the auth controller tests do
-        // it, because `Auth.stateNotifier` resolves `auth` as an AuthManager and
-        // binding a bare Guard under that key throws inside the sibling listener
-        // this provider also installs.
+        // it, because `Auth.stateNotifier` resolves `auth` as an AuthManager
+        // and binding a bare Guard under that key throws inside the sibling
+        // listener this provider also installs.
         final guard = _StaleIdGuard();
         Magic.singleton('auth', () => AuthManager());
         Auth.manager.forgetGuards();
