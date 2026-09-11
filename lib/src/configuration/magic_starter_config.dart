@@ -28,6 +28,16 @@ class MagicStarterConfig {
   static const String _defaultLocale = 'en';
   static const String _defaultTimezone = 'UTC';
 
+  /// What a push external id is prefixed with before the user's own id.
+  ///
+  /// `user_` because that is what the Laravel counterpart's `HasNotifications`
+  /// composes when it routes a notification (`routeNotificationForOneSignal`
+  /// returns `user_<id>`), and the two have to agree exactly or the server
+  /// addresses an id no device carries. It is a config key rather than a
+  /// constant because an app can serve more than one kind of subject on one
+  /// OneSignal app, and OneSignal rejects a bare numeric id outright.
+  static const String _defaultPushExternalIdPrefix = 'user_';
+
   static const List<String> _defaultSupportedLocales = ['en', 'tr'];
 
   static const String _defaultHomeRoute = '/';
@@ -198,6 +208,29 @@ class MagicStarterConfig {
           _defaultLocale,
         ) ??
         _defaultLocale;
+  }
+
+  /// Returns the prefix a push external id carries before the user's own id.
+  static String pushExternalIdPrefix() {
+    final String? configured = Config.get<String>(
+      'magic_starter.notifications.external_id_prefix',
+      _defaultPushExternalIdPrefix,
+    );
+
+    // Blank reads as the default, and trimmed, because the PHP counterpart
+    // does exactly this (`MagicStarter::onesignalExternalIdPrefix()`) and the
+    // two have to produce the same string or the server addresses an id no
+    // device carries. The `??` alone did not: `Config.get` returns the stored
+    // value whenever it is a String at all
+    // (`magic/lib/src/foundation/config_repository.dart:76`), and `''` is one,
+    // so an empty key gave a bare id here and `user_` there. Following both
+    // changelogs' "change one side and change the other" advice with an empty
+    // value produced the exact silent mismatch this key exists to prevent.
+    if (configured == null || configured.trim().isEmpty) {
+      return _defaultPushExternalIdPrefix;
+    }
+
+    return configured.trim();
   }
 
   /// Returns the default timezone for new users.

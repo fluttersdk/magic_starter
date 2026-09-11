@@ -5,6 +5,7 @@
 - [Feature Toggles](#feature-toggles)
 - [Route Customization](#route-customization)
 - [Billing](#billing)
+- [The push external id](#push-external-id)
 - [Auth Identity Modes](#auth-identity-modes)
 - [Locale & Timezone Defaults](#locale-timezone-defaults)
 - [Accessing Values](#accessing-values)
@@ -67,6 +68,9 @@ Map<String, dynamic> get magicStarterConfig => {
     },
     'billing': {
       'web_origin': null,
+    },
+    'notifications': {
+      'external_id_prefix': 'user_',
     },
     'legal': {
       'terms_url': null,
@@ -193,6 +197,37 @@ app with no team features can still sell one.
 
 The origin is the host app's own web origin, with no trailing slash. It is only read on the web rail;
 a store purchase on iOS or Android never touches it.
+
+---
+
+<a name="push-external-id"></a>
+## The push external id
+
+With the `notifications` feature on, this package declares who the device is subscribed as every
+time a session begins, and releases it on every sign-out, including the ones no call site performs
+(account deletion, and a session that simply expires). You wire nothing.
+
+What it declares is the prefix below followed by the authenticated user's id:
+
+```dart
+'notifications': {
+  'external_id_prefix': 'user_',
+},
+```
+
+> [!WARNING]
+> This has to match what your backend addresses. `magic-starter-laravel`'s `HasNotifications`
+> composes `user_<id>`, so the default is correct against that backend and changing one side alone
+> means the server sends to an id no device carries. Nothing fails visibly when they disagree: the
+> notification is accepted and delivered to nobody, and only a zero-recipient report on the server
+> says so.
+>
+> A blank value resolves to `user_` rather than to no prefix, and surrounding whitespace is trimmed,
+> because OneSignal rejects a bare numeric external id outright and the PHP side normalises the same
+> way. So emptying this key does not switch the prefix off; it restores the default.
+
+Change it when one OneSignal app serves more than one kind of subject, and change the backend with
+it.
 
 ---
 

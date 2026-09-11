@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
 
+import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../magic_starter_manager.dart';
 
@@ -58,6 +60,142 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _bootPrimaryColorFallback();
 
     _forgetIntendedUrlOnSignOut();
+    _declarePushIdentityOnSignIn();
+  }
+
+  /// The notifier [_declarePushIdentityOnSignIn] is currently subscribed to.
+  ///
+  /// Held and identity-compared for the same reasons [_authState] is; see the
+  /// note there, including why a one-way latch was wrong.
+  static ValueNotifier<int>? _pushAuthState;
+
+  /// The subscription that re-declares once a push driver exists.
+  static StreamSubscription<PushDriver>? _pushDriverArrival;
+
+  /// Declares who this device is subscribed as, whenever a session begins.
+  ///
+  /// This is the half that was missing. [MagicStarterAuthController.logout]
+  /// calls `Notify.logoutPush()` (`magic_starter_auth_controller.dart:343`) and
+  /// nothing anywhere called `initializePush`, so the package tore down an
+  /// identity it never established: an adopter who wired nothing got a device
+  /// subscribed under no external id while the Laravel counterpart addressed
+  /// `user_<id>`, and the only trace was a zero-recipient report on the server.
+  /// Nothing on the client failed, which is why it survived so long.
+  ///
+  /// Hung off the auth notifier rather than off each authenticating call site,
+  /// for the reason [_forgetIntendedUrlOnSignOut] gives at length: there are
+  /// six ways into a session here (password, two-factor challenge, social,
+  /// guest, phone otp) plus the one no call site can see, `Auth.restore()` on a
+  /// cold boot, which is the ORDINARY launch for somebody already signed in.
+  /// The notifier is the one funnel all of them pass through.
+  ///
+  /// Safe to run on every bump, which matters because the notifier bumps for
+  /// reasons that are not a new session (a team switch calls `Auth.restore()`).
+  /// `want` returns early when the intent is unchanged
+  /// (`NotificationManager.want`), and the permission prompt it raises
+  /// first is claimed once per process (`_autoRequestRaised`), so a repeat costs a vault
+  /// read and nothing else.
+  void _declarePushIdentityOnSignIn() {
+    final ValueNotifier<int> notifier = Auth.stateNotifier;
+    if (identical(_pushAuthState, notifier)) return;
+
+    _pushAuthState?.removeListener(_declarePushIdentity);
+    _pushAuthState = notifier..addListener(_declarePushIdentity);
+
+    // The ordering the package documents at `NotificationManager.onPushDriverAttached`:
+    // auth providers register ahead of the notifications one, so a cold boot
+    // that restores a stored session declares an identity while no driver
+    // exists to carry it. `want` records the intent either way, but the
+    // permission ask is skipped (the driver-less early return in `_autoRequestPermissionOnLogin`) and nothing re-raises it, so the
+    // device sits unasked for the whole launch. This is the package's own
+    // signal for coming back once a driver is there.
+    unawaited(_pushDriverArrival?.cancel());
+    _pushDriverArrival = Notify.manager.onPushDriverAttached.listen(
+      (PushDriver _) => _declarePushIdentity(),
+    );
+
+    // And once, now, because on the ordinary cold boot BOTH triggers above
+    // have already fired by the time this provider boots and neither replays.
+    //
+    // Providers boot in order (`Application.boot`)
+    // and this one goes last: `magic_example` ships Auth, then Notifications,
+    // then Starter, every doc here prescribes that order, and artisan's
+    // installer appends to the END of the list. So `AuthServiceProvider.boot`
+    // has already awaited `Auth.restore()` and bumped the notifier
+    // (`AuthServiceProvider.boot` awaits it, `BaseGuard.setUser` bumps), and
+    // `NotificationServiceProvider.boot` has already attached the driver, on a
+    // broadcast stream that hands nothing to a later subscriber. Subscribing
+    // alone therefore declared nothing at all for somebody already signed in.
+    //
+    // The stream's own documentation says as much
+    // (`NotificationManager.onPushDriverAttached`'s own doc): read `pushDriverOrNull` for the
+    // current answer and listen for the next one. This is the read half.
+    //
+    // What hid it is that a cold boot usually bumps a SECOND time: `restore()`
+    // fires an unawaited `_syncUserFromApi()` that
+    // lands after boot. That rescue is incidental and absent in three ordinary
+    // states: a token with no cached user, a cached user with the network
+    // down, and no `userEndpoint` configured.
+    _declarePushIdentity();
+  }
+
+  /// The listener itself, a named static so it can be removed by identity.
+  static void _declarePushIdentity() {
+    if (!MagicStarterConfig.hasNotificationFeatures()) return;
+
+    // A sign-out is answered here too, and the first version of this returned
+    // instead. That was the same mistake this listener exists to avoid, made
+    // on the other half: `Notify.logoutPush()` has exactly one caller
+    // (`magic_starter_auth_controller.dart:343`) while `Auth.logout()` has
+    // three more that never reach it, and account deletion
+    // (`magic_starter_profile_controller.dart:193`) and a failed token refresh
+    // (magic's `AuthInterceptor`, on a failed token refresh) are two of them. The intent is
+    // PERSISTED, so a device whose account was just deleted would stay
+    // subscribed as that account across restarts and keep receiving its
+    // pushes. Declaring an identity is what creates that window, so closing it
+    // belongs here.
+    //
+    // Not a race with the controller, which tears down before it calls
+    // `Auth.logout()`: by the time this bump arrives the intent is already
+    // null and `want(null)` returns early (`NotificationManager.want`).
+    if (!Auth.check()) {
+      unawaited(
+        Notify.logoutPush().catchError((Object error, StackTrace stackTrace) {
+          Log.error(
+            '[MagicStarter] push identity release failed: $error\n$stackTrace',
+          );
+        }),
+      );
+
+      // Both halves, because the controller does both and these paths get
+      // neither. Releasing the push identity while leaving the poller running
+      // would swap one silent leak for another: after an account deletion it
+      // keeps issuing `GET /notifications` with a dead token, forever, and a
+      // 401 on a polling request is not a path anything here watches.
+      // Null-safe and idempotent (`NotificationManager.stopPolling`), so the
+      // ordinary case where the controller already stopped it costs nothing.
+      Notify.stopPolling();
+      return;
+    }
+
+    final String? id = Auth.id()?.toString();
+    if (id == null || id.isEmpty) return;
+
+    unawaited(
+      Notify.initializePush(
+        '${MagicStarterConfig.pushExternalIdPrefix()}$id',
+      ).catchError((Object error, StackTrace stackTrace) {
+        // Logged rather than rethrown: this runs off a ValueNotifier
+        // callback, where a throw becomes an unhandled async error, and a
+        // push identity the device could not declare is not a reason to
+        // fail the sign-in that triggered it. The manager keeps the intent
+        // and reports itself un-converged, so the next reconcile retries.
+        Log.error(
+          '[MagicStarter] push identity declaration failed: '
+          '$error\n$stackTrace',
+        );
+      }),
+    );
   }
 
   /// The notifier [_forgetIntendedUrlOnSignOut] is currently subscribed to.
