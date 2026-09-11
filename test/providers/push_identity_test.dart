@@ -84,6 +84,100 @@ class _StaleIdGuard implements Guard {
   Future<void> restore() async {}
 }
 
+/// A guard holding a valid token whose user never materialised.
+///
+/// The shape magic produces on an ordinary launch with no network: `restore()`
+/// loads the token, finds no cached user, awaits `_syncUserFromApi()`, and a
+/// transport failure returns without `setUser` because magic reads a
+/// statusCode 0 as "nobody answered" rather than as a rejected token. The
+/// session is alive and `check()` is false, which is the one combination that
+/// tells the signed-in check apart from the token read beside it.
+class _UnmaterialisedSessionGuard implements Guard {
+  @override
+  final ValueNotifier<int> stateNotifier = ValueNotifier<int>(0);
+
+  /// Always false: this is what `_user == null` answers.
+  @override
+  bool check() => false;
+
+  @override
+  bool get guest => !check();
+
+  /// Null with it, because `id()` reads the same absent user.
+  @override
+  dynamic id() => null;
+
+  @override
+  T? user<T extends Model>() => null;
+
+  /// True, because the token is in the vault and the server never rejected it.
+  @override
+  Future<bool> hasToken() async => true;
+
+  @override
+  Future<String?> getToken() async => 'token';
+
+  @override
+  Future<void> login(Map<String, dynamic> data, Authenticatable user) async {}
+
+  @override
+  Future<void> logout() async {}
+
+  @override
+  void setUser(Authenticatable user) {}
+
+  @override
+  Future<bool> refreshToken() async => false;
+
+  @override
+  Future<void> restore() async {}
+}
+
+/// A guard whose token read fails, the way secure storage can.
+///
+/// `hasToken()` reaches `Vault.get(tokenKey)`, so a platform-side failure
+/// throws here rather than answering false. It runs unawaited off a
+/// `ValueNotifier` callback, where a throw is an unhandled async error nobody
+/// sees and the release is skipped in silence.
+class _ThrowingTokenGuard implements Guard {
+  @override
+  final ValueNotifier<int> stateNotifier = ValueNotifier<int>(0);
+
+  @override
+  bool check() => false;
+
+  @override
+  bool get guest => !check();
+
+  @override
+  dynamic id() => null;
+
+  @override
+  T? user<T extends Model>() => null;
+
+  @override
+  Future<bool> hasToken() async => throw StateError('secure storage is gone');
+
+  @override
+  Future<String?> getToken() async =>
+      throw StateError('secure storage is gone');
+
+  @override
+  Future<void> login(Map<String, dynamic> data, Authenticatable user) async {}
+
+  @override
+  Future<void> logout() async {}
+
+  @override
+  void setUser(Authenticatable user) {}
+
+  @override
+  Future<bool> refreshToken() async => false;
+
+  @override
+  Future<void> restore() async {}
+}
+
 /// A push driver that records the external id it was told to log in as.
 ///
 /// The only way to tell the `onPushDriverAttached` subscription apart from the
@@ -180,6 +274,14 @@ void main() {
     // the gate the declaration is behind.
     Config.set('magic_starter.features.notifications', true);
     Config.set('magic_starter.notifications.external_id_prefix', 'user_');
+
+    // Production always has this: `Magic.init` binds it before any app
+    // provider boots (`magic/lib/src/foundation/magic.dart:87`), and this
+    // provider boots last. A hand-built container that omits it turns every
+    // `Log.error` in the code under test into a container exception, so the
+    // error handler this file exercises would throw from inside its own catch
+    // and the arrangement would read as a defect in the provider.
+    Magic.singleton('log', () => LogManager());
 
     // `NotificationManager` is a process-wide singleton with no reset
     // (a `static final` on `NotificationManager`), so the declared intent
@@ -429,6 +531,66 @@ void main() {
         expect(Notify.manager.pushIntent, isNull);
       },
     );
+
+    test('is kept when a live token outlived the user it belongs to', () async {
+      // The regression the first version of this listener shipped. `check()`
+      // is `_user != null`, not "is there a session", so a launch with no
+      // network reaches this provider's boot signed in and unmaterialised.
+      // Releasing there is not free: `logoutPush()` clears the cached
+      // notifications unconditionally and its `want(null)` reads the VAULT
+      // before the equality check, so a device carrying `user_42` persisted
+      // null and reached `driver.logout()`. Somebody going through a tunnel
+      // lost a valid subscription until their next launch with a network.
+      //
+      // Declared first, so there is something real to take away: a test
+      // starting from a null intent cannot tell a guard that preserved one
+      // from a guard that had nothing to preserve.
+      await Notify.initializePush('user_42');
+      expect(Notify.manager.pushIntent, 'user_42');
+
+      final guard = _UnmaterialisedSessionGuard();
+      Magic.singleton('auth', () => AuthManager());
+      Auth.manager.forgetGuards();
+      Auth.manager.extend('unmaterialised', (_) => guard);
+      Config.set('auth.defaults.guard', 'unmaterialised');
+      Config.set('auth.guards', {
+        'unmaterialised': {'driver': 'unmaterialised'},
+      });
+
+      await bootProvider();
+      await pumpEventQueue();
+
+      expect(Notify.manager.pushIntent, 'user_42');
+    });
+
+    test('logs rather than escaping when the token read itself fails', () async {
+      // The release runs unawaited off a `ValueNotifier` callback, so anything
+      // it throws is an unhandled async error rather than a failure anybody
+      // sees, and the release is skipped in silence either way. Two calls in
+      // it throw on their own: `Auth.hasToken()` reaches `Vault.get` and
+      // `Notify.stopPolling()` throws when Magic is not fully initialised.
+      //
+      // This test IS the assertion: without the guard the throw escapes the
+      // unawaited future and the binding reports it, so the test goes red
+      // without anything here having to catch it by hand.
+      await Notify.initializePush('user_42');
+
+      final guard = _ThrowingTokenGuard();
+      Magic.singleton('auth', () => AuthManager());
+      Auth.manager.forgetGuards();
+      Auth.manager.extend('throwing', (_) => guard);
+      Config.set('auth.defaults.guard', 'throwing');
+      Config.set('auth.guards', {
+        'throwing': {'driver': 'throwing'},
+      });
+
+      await bootProvider();
+      await pumpEventQueue();
+
+      // And the intent is left alone, because nothing established that the
+      // session ended: a vault that cannot answer is not a sign-out.
+      expect(Notify.manager.pushIntent, 'user_42');
+    });
 
     test('survives a second boot against a re-bound auth guard', () async {
       // The failure mode a review caught on the sibling listener: a one-way

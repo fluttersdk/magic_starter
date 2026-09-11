@@ -160,23 +160,11 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // Not a race with the controller, which tears down before it calls
     // `Auth.logout()`: by the time this bump arrives the intent is already
     // null and `want(null)` returns early (`NotificationManager.want`).
+    //
+    // `check()` alone does not decide it, though. See
+    // [_releaseIfTheSessionIsOver].
     if (!Auth.check()) {
-      unawaited(
-        Notify.logoutPush().catchError((Object error, StackTrace stackTrace) {
-          Log.error(
-            '[MagicStarter] push identity release failed: $error\n$stackTrace',
-          );
-        }),
-      );
-
-      // Both halves, because the controller does both and these paths get
-      // neither. Releasing the push identity while leaving the poller running
-      // would swap one silent leak for another: after an account deletion it
-      // keeps issuing `GET /notifications` with a dead token, forever, and a
-      // 401 on a polling request is not a path anything here watches.
-      // Null-safe and idempotent (`NotificationManager.stopPolling`), so the
-      // ordinary case where the controller already stopped it costs nothing.
-      Notify.stopPolling();
+      unawaited(_releaseIfTheSessionIsOver());
       return;
     }
 
@@ -198,6 +186,62 @@ class MagicStarterServiceProvider extends ServiceProvider {
         );
       }),
     );
+  }
+
+  /// Releases the push identity and stops the poller, but only once the vault
+  /// agrees the session is over.
+  ///
+  /// `Auth.check()` is `_user != null` (magic's `BaseGuard`), which is a
+  /// different question from "is there a session". `restore()` on a stored
+  /// token with no cached user AWAITS `_syncUserFromApi()`, and a transport
+  /// failure keeps the session and returns without calling `setUser`: magic
+  /// treats a statusCode 0 as "nobody answered" rather than as a rejected
+  /// token, deliberately. So somebody signed in on a dead mobile link reaches
+  /// this provider's boot with `check()` false and a perfectly good token.
+  ///
+  /// Releasing there is not free, which is what makes the extra read worth its
+  /// await. `logoutPush()` clears the cached notifications unconditionally,
+  /// and its `want(null)` reads the VAULT before the equality check (on
+  /// purpose, so a signed-out boot can delete an id the vault still holds), so
+  /// a device carrying `user_42` persists null and reaches `driver.logout()`.
+  /// The first version of this listener therefore took a valid subscription
+  /// away from somebody who had only gone through a tunnel, and gave it back
+  /// on the next launch with a network.
+  ///
+  /// The token is the stronger signal and the ordering is what makes it safe:
+  /// `BaseGuard.logout()` awaits `clearTokens()` BEFORE it bumps the notifier,
+  /// so every real sign-out arrives here with nothing in the vault. The one
+  /// case left is a `clearTokens()` that THREW, where the guard rethrows to
+  /// its caller and this leaves the device subscribed while the app shows it
+  /// signed out; a failed vault write is not a state this can reconcile from
+  /// the outside.
+  /// Logged rather than rethrown, for the reason the declaring branch gives:
+  /// this runs unawaited off a `ValueNotifier` callback, where a throw becomes
+  /// an unhandled async error. Around the WHOLE body rather than only around
+  /// `logoutPush()`, because two other calls here throw on their own and
+  /// either would skip the release in silence: `Auth.hasToken()` reaches
+  /// `Vault.get(tokenKey)` and fails when secure storage does, and
+  /// `Notify.stopPolling()` throws when Magic is not fully initialised, which
+  /// is why `MagicStarterAppLayout.dispose` guards its own call to it.
+  static Future<void> _releaseIfTheSessionIsOver() async {
+    try {
+      if (await Auth.hasToken()) return;
+
+      await Notify.logoutPush();
+
+      // Both halves, because the controller does both and these paths get
+      // neither. Releasing the push identity while leaving the poller running
+      // would swap one silent leak for another: after an account deletion it
+      // keeps issuing `GET /notifications` with a dead token, forever, and a
+      // 401 on a polling request is not a path anything here watches.
+      // Null-safe and idempotent (`NotificationManager.stopPolling`), so the
+      // ordinary case where the controller already stopped it costs nothing.
+      Notify.stopPolling();
+    } catch (error, stackTrace) {
+      Log.error(
+        '[MagicStarter] push identity release failed: $error\n$stackTrace',
+      );
+    }
   }
 
   /// The notifier [_forgetIntendedUrlOnSignOut] is currently subscribed to.
