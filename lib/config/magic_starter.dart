@@ -39,6 +39,11 @@ Map<String, dynamic> get magicStarterConfig => {
     // successUrl, cancelUrl or portal returnUrl, and the failure is only
     // logged. `starter:doctor` reports it.
     'billing': {'web_origin': null},
+    // What a push external id is prefixed with before the user's own id.
+    // It has to match what the backend addresses: magic-starter-laravel's
+    // `HasNotifications` composes `user_<id>`, so leave this alone unless you
+    // changed that side too. OneSignal rejects a bare numeric id outright.
+    'notifications': {'external_id_prefix': 'user_'},
     'legal': {'terms_url': null, 'privacy_url': null},
   },
 };

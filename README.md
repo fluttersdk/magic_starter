@@ -155,7 +155,7 @@ All 14 features default to `false` (opt-in). Enable only what your app needs:
 | `email_verification` | Email verification notice and resend flow |
 | `extended_profile` | Extended profile fields: phone, timezone, language |
 | `social_login` | Social login buttons (Google, Apple, etc.) |
-| `notifications` | Real-time notification polling, read/unread, preference matrix |
+| `notifications` | Real-time notification polling, read/unread, preference matrix. Also declares and releases the push external id as sessions begin and end, prefixed by `notifications.external_id_prefix` (default `user_`, matching the backend) |
 | `timezones` | Timezone selection via async API search |
 | `billing` | Subscription and billing screen over `magic_payments`. Also needs `billing.web_origin`, an absolute url Stripe can return to |
 

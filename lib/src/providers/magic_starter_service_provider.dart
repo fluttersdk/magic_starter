@@ -119,10 +119,31 @@ class MagicStarterServiceProvider extends ServiceProvider {
   static void _declarePushIdentity() {
     if (!MagicStarterConfig.hasNotificationFeatures()) return;
 
-    // Sign-out is the auth controller's, and it is not merely the opposite of
-    // this: it also drops the rows held for the session that ended. Answering
-    // a sign-out here too would race it.
-    if (!Auth.check()) return;
+    // A sign-out is answered here too, and the first version of this returned
+    // instead. That was the same mistake this listener exists to avoid, made
+    // on the other half: `Notify.logoutPush()` has exactly one caller
+    // (`magic_starter_auth_controller.dart:343`) while `Auth.logout()` has
+    // three more that never reach it, and account deletion
+    // (`magic_starter_profile_controller.dart:193`) and a failed token refresh
+    // (magic's `auth_interceptor.dart:77`) are two of them. The intent is
+    // PERSISTED, so a device whose account was just deleted would stay
+    // subscribed as that account across restarts and keep receiving its
+    // pushes. Declaring an identity is what creates that window, so closing it
+    // belongs here.
+    //
+    // Not a race with the controller, which tears down before it calls
+    // `Auth.logout()`: by the time this bump arrives the intent is already
+    // null and `want(null)` returns early (`notification_manager.dart:922`).
+    if (!Auth.check()) {
+      unawaited(
+        Notify.logoutPush().catchError((Object error, StackTrace stackTrace) {
+          Log.error(
+            '[MagicStarter] push identity release failed: $error\n$stackTrace',
+          );
+        }),
+      );
+      return;
+    }
 
     final String? id = Auth.id()?.toString();
     if (id == null || id.isEmpty) return;

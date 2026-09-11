@@ -191,24 +191,25 @@ void main() {
       expect(Notify.manager.pushIntent, isNull);
     });
 
-    test(
-      'is not declared by a sign-out, which the auth controller owns',
-      () async {
-        Auth.fake(user: _fakeUser());
-        await bootProvider();
-        Auth.stateNotifier.value++;
-        await pumpEventQueue();
-        expect(Notify.manager.pushIntent, 'user_42');
+    test('is released by a sign-out the auth controller never saw', () async {
+      // Account deletion (`magic_starter_profile_controller.dart:193`) and a
+      // failed token refresh (magic's `auth_interceptor.dart:77`) call
+      // `Auth.logout()` bare, so `Notify.logoutPush()`'s single caller in the
+      // auth controller never runs for either. The intent is persisted, so
+      // without this the device stays subscribed as a deleted account across
+      // restarts. An earlier version of this test asserted the opposite and
+      // encoded the defect.
+      Auth.fake(user: _fakeUser());
+      await bootProvider();
+      Auth.stateNotifier.value++;
+      await pumpEventQueue();
+      expect(Notify.manager.pushIntent, 'user_42');
 
-        // The listener must answer a sign-out with silence rather than with a
-        // second declaration: `logoutPush` also drops the rows held for the
-        // session that ended, and answering here would race it.
-        await Auth.logout();
-        await pumpEventQueue();
+      await Auth.logout();
+      await pumpEventQueue();
 
-        expect(Notify.manager.pushIntent, 'user_42');
-      },
-    );
+      expect(Notify.manager.pushIntent, isNull);
+    });
 
     test(
       'is not declared for a guard that still answers id() after sign-out',
