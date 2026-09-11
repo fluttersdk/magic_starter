@@ -92,9 +92,9 @@ class MagicStarterServiceProvider extends ServiceProvider {
   /// Safe to run on every bump, which matters because the notifier bumps for
   /// reasons that are not a new session (a team switch calls `Auth.restore()`).
   /// `want` returns early when the intent is unchanged
-  /// (`NotificationManager.want`), and the permission prompt it raises
-  /// first is claimed once per process (`_autoRequestRaised`), so a repeat costs a vault
-  /// read and nothing else.
+  /// (`NotificationManager.want`), and the permission prompt it raises first
+  /// is claimed once per process (`_autoRequestRaised`), so a repeat costs a
+  /// vault read and nothing else.
   void _declarePushIdentityOnSignIn() {
     final ValueNotifier<int> notifier = Auth.stateNotifier;
     if (identical(_pushAuthState, notifier)) return;
@@ -102,13 +102,14 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _pushAuthState?.removeListener(_declarePushIdentity);
     _pushAuthState = notifier..addListener(_declarePushIdentity);
 
-    // The ordering the package documents at `NotificationManager.onPushDriverAttached`:
-    // auth providers register ahead of the notifications one, so a cold boot
-    // that restores a stored session declares an identity while no driver
-    // exists to carry it. `want` records the intent either way, but the
-    // permission ask is skipped (the driver-less early return in `_autoRequestPermissionOnLogin`) and nothing re-raises it, so the
-    // device sits unasked for the whole launch. This is the package's own
-    // signal for coming back once a driver is there.
+    // The ordering the package documents at
+    // `NotificationManager.onPushDriverAttached`: auth providers register
+    // ahead of the notifications one, so a cold boot that restores a stored
+    // session declares an identity while no driver exists to carry it. `want`
+    // records the intent either way, but the permission ask is skipped (the
+    // driver-less early return in `_autoRequestPermissionOnLogin`) and nothing
+    // re-raises it, so the device sits unasked for the whole launch. This is
+    // the package's own signal for coming back once a driver is there.
     unawaited(_pushDriverArrival?.cancel());
     _pushDriverArrival = Notify.manager.onPushDriverAttached.listen(
       (PushDriver _) => _declarePushIdentity(),
@@ -128,8 +129,9 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // alone therefore declared nothing at all for somebody already signed in.
     //
     // The stream's own documentation says as much
-    // (`NotificationManager.onPushDriverAttached`'s own doc): read `pushDriverOrNull` for the
-    // current answer and listen for the next one. This is the read half.
+    // (`NotificationManager.onPushDriverAttached`'s own doc): read
+    // `pushDriverOrNull` for the current answer and listen for the next one.
+    // This is the read half.
     //
     // What hid it is that a cold boot usually bumps a SECOND time: `restore()`
     // fires an unawaited `_syncUserFromApi()` that
@@ -148,9 +150,9 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // on the other half: `Notify.logoutPush()` has exactly one caller
     // (`magic_starter_auth_controller.dart:343`) while `Auth.logout()` has
     // three more that never reach it, and account deletion
-    // (`magic_starter_profile_controller.dart:193`) and a failed token refresh
-    // (magic's `AuthInterceptor`, on a failed token refresh) are two of them. The intent is
-    // PERSISTED, so a device whose account was just deleted would stay
+    // (`magic_starter_profile_controller.dart:193`) and magic's
+    // `AuthInterceptor` on a failed token refresh are two of them. The intent
+    // is PERSISTED, so a device whose account was just deleted would stay
     // subscribed as that account across restarts and keep receiving its
     // pushes. Declaring an identity is what creates that window, so closing it
     // belongs here.
