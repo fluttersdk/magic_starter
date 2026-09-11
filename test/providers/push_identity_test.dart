@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -80,6 +82,81 @@ class _StaleIdGuard implements Guard {
 
   @override
   Future<void> restore() async {}
+}
+
+/// A push driver that records the external id it was told to log in as.
+///
+/// The only way to tell the `onPushDriverAttached` subscription apart from the
+/// immediate declaration beside it: both set the same intent, and only the
+/// reconcile that follows a driver arriving reaches `login`. Deleting the
+/// subscription left every other test here green, which is what this exists
+/// to stop.
+class _RecordingPushDriver extends PushDriver {
+  String? loggedInAs;
+  bool loggedOut = false;
+
+  final _received = StreamController<PushNotificationEvent>.broadcast();
+  final _clicked = StreamController<PushNotificationEvent>.broadcast();
+  final _permission = StreamController<PushPermissionState>.broadcast();
+  final _identity = StreamController<PushIdentityChange>.broadcast();
+
+  @override
+  String get name => 'recording';
+
+  @override
+  bool get isSupported => true;
+
+  @override
+  bool get isOptedIn => true;
+
+  @override
+  Future<PushPermissionState> permissionState() async =>
+      PushPermissionState.authorized;
+
+  @override
+  Future<void> initialize(Map<String, dynamic> config) async {}
+
+  @override
+  Future<void> login(String externalId) async => loggedInAs = externalId;
+
+  @override
+  Future<void> logout() async {
+    loggedOut = true;
+    loggedInAs = null;
+  }
+
+  @override
+  Future<String?> currentExternalId() async => loggedInAs;
+
+  @override
+  Future<String?> currentSubscriptionId() async => 'subscription';
+
+  @override
+  Future<bool> requestPermission() async => true;
+
+  @override
+  Future<void> optIn() async {}
+
+  @override
+  Future<void> optOut() async {}
+
+  @override
+  Future<void> setTags(Map<String, String> tags) async {}
+
+  @override
+  Future<void> removeTag(String key) async {}
+
+  @override
+  Stream<PushNotificationEvent> get onNotificationReceived => _received.stream;
+
+  @override
+  Stream<PushNotificationEvent> get onNotificationClicked => _clicked.stream;
+
+  @override
+  Stream<PushPermissionState> get onPermissionChanged => _permission.stream;
+
+  @override
+  Stream<PushIdentityChange> get onIdentityChanged => _identity.stream;
 }
 
 void main() {
@@ -194,6 +271,29 @@ void main() {
         await pumpEventQueue();
 
         expect(Notify.manager.pushIntent, 'user_42');
+      },
+    );
+
+    test(
+      'reaches the driver when one attaches after this provider boots',
+      () async {
+        // The other half of the ordering, and the half the immediate
+        // declaration cannot cover. `want` records an intent with no driver
+        // present, so `pushIntent` looks right either way; only the reconcile
+        // that follows a driver arriving pushes the id INTO the SDK.
+        // `_attachPushDriver` announces and does not reconcile on its own
+        // (`notification_manager.dart:771-789`), so `login` here is the
+        // subscription's work and nothing else's.
+        Auth.fake(user: _fakeUser());
+        await bootProvider();
+        Auth.stateNotifier.value++;
+        await pumpEventQueue();
+
+        final driver = _RecordingPushDriver();
+        Notify.manager.setPushDriver(driver);
+        await pumpEventQueue();
+
+        expect(driver.loggedInAs, 'user_42');
       },
     );
 
