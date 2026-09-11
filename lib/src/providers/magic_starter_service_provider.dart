@@ -142,6 +142,15 @@ class MagicStarterServiceProvider extends ServiceProvider {
           );
         }),
       );
+
+      // Both halves, because the controller does both and these paths get
+      // neither. Releasing the push identity while leaving the poller running
+      // would swap one silent leak for another: after an account deletion it
+      // keeps issuing `GET /notifications` with a dead token, forever, and a
+      // 401 on a polling request is not a path anything here watches.
+      // Null-safe and idempotent (`notification_manager.dart:1978`), so the
+      // ordinary case where the controller already stopped it costs nothing.
+      Notify.stopPolling();
       return;
     }
 

@@ -5,6 +5,7 @@
 - [Feature Toggles](#feature-toggles)
 - [Route Customization](#route-customization)
 - [Billing](#billing)
+- [The push external id](#push-external-id)
 - [Auth Identity Modes](#auth-identity-modes)
 - [Locale & Timezone Defaults](#locale-timezone-defaults)
 - [Accessing Values](#accessing-values)
@@ -67,6 +68,9 @@ Map<String, dynamic> get magicStarterConfig => {
     },
     'billing': {
       'web_origin': null,
+    },
+    'notifications': {
+      'external_id_prefix': 'user_',
     },
     'legal': {
       'terms_url': null,

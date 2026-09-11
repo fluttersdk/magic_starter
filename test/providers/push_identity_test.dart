@@ -211,6 +211,27 @@ void main() {
       expect(Notify.manager.pushIntent, isNull);
     });
 
+    test('stops the poller on those same sign-outs', () async {
+      // Both halves, because the auth controller does both
+      // (`magic_starter_auth_controller.dart:343-344`) and these paths reach
+      // neither. Releasing the identity while leaving the poller running
+      // swaps one silent leak for another: after an account deletion it keeps
+      // issuing `GET /notifications` with a dead token and nothing watches
+      // the 401 that comes back.
+      Auth.fake(user: _fakeUser());
+      await bootProvider();
+      Auth.stateNotifier.value++;
+      await pumpEventQueue();
+
+      Notify.startPolling();
+      expect(Notify.manager.isPolling, isTrue);
+
+      await Auth.logout();
+      await pumpEventQueue();
+
+      expect(Notify.manager.isPolling, isFalse);
+    });
+
     test(
       'is not declared for a guard that still answers id() after sign-out',
       () async {
