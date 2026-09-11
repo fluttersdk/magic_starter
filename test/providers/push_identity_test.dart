@@ -169,6 +169,34 @@ void main() {
       expect(Notify.manager.pushIntent, 'user_42');
     });
 
+    test(
+      'is declared when the session was restored BEFORE this provider boots',
+      () async {
+        // The ordinary cold boot, and the one every other test here misses by
+        // bumping after `bootProvider()`. Providers boot in order and this one
+        // goes last: magic_example ships Auth, then Notifications, then Starter,
+        // every doc prescribes it, and artisan's installer appends to the end.
+        // So `AuthServiceProvider.boot` has already awaited `Auth.restore()` and
+        // bumped, and the driver has already attached on a broadcast stream that
+        // replays nothing. Subscribing alone declared nothing at all.
+        //
+        // What hid it in production is a SECOND bump from the unawaited
+        // `_syncUserFromApi()` inside restore, which is absent on a token with
+        // no cached user, on a device with no network, and with no userEndpoint.
+        Auth.fake(user: _fakeUser());
+        Auth.stateNotifier.value++;
+        await pumpEventQueue();
+
+        // Nothing is listening yet, so nothing has been declared.
+        expect(Notify.manager.pushIntent, isNull);
+
+        await bootProvider();
+        await pumpEventQueue();
+
+        expect(Notify.manager.pushIntent, 'user_42');
+      },
+    );
+
     test('carries a configured prefix instead of the default', () async {
       Config.set('magic_starter.notifications.external_id_prefix', 'operator-');
       Auth.fake();
@@ -178,6 +206,38 @@ void main() {
       await pumpEventQueue();
 
       expect(Notify.manager.pushIntent, 'operator-42');
+    });
+
+    test('falls back to the default when the prefix is blank', () async {
+      // The two halves of one stack normalise this the same way or they
+      // compose different ids. PHP's accessor maps a blank to `user_` and
+      // trims; the Dart `??` did neither, because `Config.get` returns the
+      // stored value whenever it is a String and `''` is one. An adopter
+      // following both changelogs' "change one side and change the other"
+      // with an empty value got `42` here and `user_42` there.
+      for (final String blank in const ['', '   ']) {
+        Config.set('magic_starter.notifications.external_id_prefix', blank);
+        await Notify.logoutPush();
+        Auth.unfake();
+        Auth.fake();
+        await bootProvider();
+
+        await Auth.login({'token': 't'}, _fakeUser());
+        await pumpEventQueue();
+
+        expect(Notify.manager.pushIntent, 'user_42', reason: 'blank: "$blank"');
+      }
+    });
+
+    test('trims a prefix written with surrounding space', () async {
+      Config.set('magic_starter.notifications.external_id_prefix', ' staff_ ');
+      Auth.fake();
+      await bootProvider();
+
+      await Auth.login({'token': 't'}, _fakeUser());
+      await pumpEventQueue();
+
+      expect(Notify.manager.pushIntent, 'staff_42');
     });
 
     test('is not declared while the notifications feature is off', () async {

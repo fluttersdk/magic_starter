@@ -212,11 +212,25 @@ class MagicStarterConfig {
 
   /// Returns the prefix a push external id carries before the user's own id.
   static String pushExternalIdPrefix() {
-    return Config.get<String>(
-          'magic_starter.notifications.external_id_prefix',
-          _defaultPushExternalIdPrefix,
-        ) ??
-        _defaultPushExternalIdPrefix;
+    final String? configured = Config.get<String>(
+      'magic_starter.notifications.external_id_prefix',
+      _defaultPushExternalIdPrefix,
+    );
+
+    // Blank reads as the default, and trimmed, because the PHP counterpart
+    // does exactly this (`MagicStarter::onesignalExternalIdPrefix()`) and the
+    // two have to produce the same string or the server addresses an id no
+    // device carries. The `??` alone did not: `Config.get` returns the stored
+    // value whenever it is a String at all
+    // (`magic/lib/src/foundation/config_repository.dart:76`), and `''` is one,
+    // so an empty key gave a bare id here and `user_` there. Following both
+    // changelogs' "change one side and change the other" advice with an empty
+    // value produced the exact silent mismatch this key exists to prevent.
+    if (configured == null || configured.trim().isEmpty) {
+      return _defaultPushExternalIdPrefix;
+    }
+
+    return configured.trim();
   }
 
   /// Returns the default timezone for new users.

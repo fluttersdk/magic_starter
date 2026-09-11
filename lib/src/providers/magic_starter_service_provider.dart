@@ -113,6 +113,30 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _pushDriverArrival = Notify.manager.onPushDriverAttached.listen(
       (PushDriver _) => _declarePushIdentity(),
     );
+
+    // And once, now, because on the ordinary cold boot BOTH triggers above
+    // have already fired by the time this provider boots and neither replays.
+    //
+    // Providers boot in order (`magic/lib/src/foundation/application.dart:378`)
+    // and this one goes last: `magic_example` ships Auth, then Notifications,
+    // then Starter, every doc here prescribes that order, and artisan's
+    // installer appends to the END of the list. So `AuthServiceProvider.boot`
+    // has already awaited `Auth.restore()` and bumped the notifier
+    // (`auth_service_provider.dart:69` to `base_guard.dart:99`), and
+    // `NotificationServiceProvider.boot` has already attached the driver, on a
+    // broadcast stream that hands nothing to a later subscriber. Subscribing
+    // alone therefore declared nothing at all for somebody already signed in.
+    //
+    // The stream's own documentation says as much
+    // (`notification_manager.dart:861`): read `pushDriverOrNull` for the
+    // current answer and listen for the next one. This is the read half.
+    //
+    // What hid it is that a cold boot usually bumps a SECOND time: `restore()`
+    // fires an unawaited `_syncUserFromApi()` (`base_guard.dart:337`) that
+    // lands after boot. That rescue is incidental and absent in three ordinary
+    // states: a token with no cached user, a cached user with the network
+    // down, and no `userEndpoint` configured.
+    _declarePushIdentity();
   }
 
   /// The listener itself, a named static so it can be removed by identity.
