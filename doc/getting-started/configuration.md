@@ -229,6 +229,26 @@ What it declares is the prefix below followed by the authenticated user's id:
 Change it when one OneSignal app serves more than one kind of subject, and change the backend with
 it.
 
+`dart run <app>:artisan starter:doctor` prints the prefix this config resolves to, so the two sides
+can be read against each other:
+
+```
+Push external id prefix: user_ (default, key not set)
+Push external id prefix: user_ (blank, using default)
+Push external id prefix: operator-
+```
+
+The first two resolve to the same prefix and are not the same situation: the second means the value
+you wrote is being discarded, which "key not set" would hide.
+
+It is printed rather than checked, and never fails: any prefix is valid as long as the backend uses
+the same one, and nothing inside this repository can see the other side to compare. `--verbose` adds
+the key name and the file to compare it against. The value comes from this config FILE, so an app
+that writes the key at runtime through `Config.set` is not covered; the command boots nothing and
+has no container to ask. Whole-line `//` comments are skipped, so a commented-out old key above the
+live one does not win; a block comment around it, or a key written outside the `notifications`
+block, is not covered.
+
 ---
 
 <a name="auth-identity-modes"></a>

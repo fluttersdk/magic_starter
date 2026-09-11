@@ -78,6 +78,32 @@ void _setupFullInstall(Directory dir) {
   _writeFile(dir, 'assets/lang/en.json', '{}');
 }
 
+/// Set up a full install in [dir] whose config carries the notifications
+/// feature at [notifications] and the push prefix key set to [value], or with
+/// no prefix key at all when [value] is null.
+///
+/// The `'notifications'` block is written even when the feature is off,
+/// because that is what tells the feature flag apart from the block holding
+/// the key: a probe matching either one would read this file as having push on.
+void _setupNotificationsConfig(
+  Directory dir, {
+  String? value,
+  bool notifications = true,
+}) {
+  _setupFullInstall(dir);
+  _writeFile(
+    dir,
+    'lib/config/magic_starter.dart',
+    'Map<String, dynamic> get magicStarterConfig => {\n'
+        "  'magic_starter': {\n"
+        "    'features': {'notifications': $notifications},\n"
+        "    'notifications': {"
+        '${value == null ? '' : "'external_id_prefix': '$value'"}},\n'
+        '  },\n'
+        '};\n',
+  );
+}
+
 void main() {
   late Directory tempDir;
   late _TestMagicStarterDoctorCommand command;
@@ -389,6 +415,199 @@ void main() {
       // A missing config is already reported by checkConfigExists; reporting it
       // twice would tell an adopter to fix billing when the install never ran.
       expect(command.checkBillingWebOrigin(tempDir.path), isTrue);
+    });
+  });
+
+  group('pushExternalIdPrefix', () {
+    // Reported rather than checked, because what can be wrong about a prefix
+    // lives in the other repository: `HasNotifications`, `OneSignalChannel`
+    // and `PushTestController` compose the same id on the Laravel side, and
+    // OneSignal accepts a mismatch and delivers it to nobody. So these cover
+    // what the report tells a human, and that it never becomes a failure.
+
+    test('reads the prefix the config file declares', () {
+      _setupNotificationsConfig(tempDir, value: 'operator-');
+
+      expect(command.pushExternalIdPrefix(tempDir.path), (
+        prefix: 'operator-',
+        source: PushPrefixSource.declared,
+      ));
+    });
+
+    test('falls back to user_ when the key was never written, and says so', () {
+      _setupNotificationsConfig(tempDir);
+
+      expect(command.pushExternalIdPrefix(tempDir.path), (
+        prefix: 'user_',
+        source: PushPrefixSource.absent,
+      ));
+    });
+
+    test('tells a blank key apart from a key nobody wrote', () {
+      // Both resolve to `user_` and they are not the same situation. An
+      // adopter chasing a mismatch who is told the key is not set goes and
+      // writes the key they already wrote, and never learns that the value
+      // they wrote is the one being discarded.
+      //
+      // The normalisation itself has to match `MagicStarterConfig` exactly or
+      // the report lies about what the app will send. Dart's
+      // `Config.get<String>(key, default)` returns the STORED value whenever
+      // it is a String at all, and `''` is one, so the runtime's own fallback
+      // is the explicit blank check rather than the `??`.
+      for (final String blank in ['', '   ']) {
+        _setupNotificationsConfig(tempDir, value: blank);
+
+        expect(command.pushExternalIdPrefix(tempDir.path), (
+          prefix: 'user_',
+          source: PushPrefixSource.blank,
+        ), reason: 'a blank prefix of ${blank.length} chars');
+      }
+    });
+
+    test('trims a declared value, the way the runtime does', () {
+      _setupNotificationsConfig(tempDir, value: '  staff_  ');
+
+      expect(command.pushExternalIdPrefix(tempDir.path), (
+        prefix: 'staff_',
+        source: PushPrefixSource.declared,
+      ));
+    });
+
+    test('ignores a commented-out key above the live one', () {
+      // How a prefix change actually looks in a config file: the old line is
+      // commented out rather than deleted. The match takes the first hit in
+      // the file, so without the comment strip this reports `old_`, which the
+      // app has not sent since the day the line was commented out.
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/config/magic_starter.dart',
+        'Map<String, dynamic> get magicStarterConfig => {\n'
+            "  'magic_starter': {\n"
+            "    'features': {'notifications': true},\n"
+            "    // 'external_id_prefix': 'old_',\n"
+            "    'notifications': {'external_id_prefix': 'new_'},\n"
+            '  },\n'
+            '};\n',
+      );
+
+      expect(command.pushExternalIdPrefix(tempDir.path), (
+        prefix: 'new_',
+        source: PushPrefixSource.declared,
+      ));
+    });
+
+    test('keeps a live key that carries a trailing comment', () {
+      // The other half of the comment strip: only a line that is nothing BUT a
+      // comment goes. Dropping the whole line here would report the key as
+      // never written.
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/config/magic_starter.dart',
+        'Map<String, dynamic> get magicStarterConfig => {\n'
+            "  'magic_starter': {\n"
+            "    'features': {'notifications': true},\n"
+            "    'billing': {'web_origin': 'https://app.example.com'},\n"
+            "    'notifications': {'external_id_prefix': 'staff_'}, // was old_\n"
+            '  },\n'
+            '};\n',
+      );
+
+      expect(command.pushExternalIdPrefix(tempDir.path), (
+        prefix: 'staff_',
+        source: PushPrefixSource.declared,
+      ));
+    });
+
+    test('reports nothing when the notifications feature is off', () {
+      // The discriminating case for the feature probe: this file contains
+      // `'notifications'` twice, once as the flag and once as the block that
+      // holds the key, and only the flag decides whether push is in play.
+      _setupNotificationsConfig(tempDir, value: 'user_', notifications: false);
+
+      expect(command.pushExternalIdPrefix(tempDir.path), isNull);
+    });
+
+    test('reports nothing when the config file is absent', () {
+      expect(command.pushExternalIdPrefix(tempDir.path), isNull);
+    });
+
+    test('never turns a prefix into a missing requirement', () {
+      // Any prefix is valid as long as the backend uses the same one, so the
+      // two configs below have to produce identical requirement lists. This
+      // goes red the day somebody makes the prefix a check.
+      _setupNotificationsConfig(tempDir, value: 'user_');
+      final List<String> withDefault = command.getMissingRequirements();
+
+      _setupNotificationsConfig(tempDir, value: 'zzz-');
+      final List<String> withOdd = command.getMissingRequirements();
+
+      expect(withOdd, equals(withDefault));
+    });
+  });
+
+  group('generateReport: push external id prefix', () {
+    test('prints the declared prefix', () {
+      _setupNotificationsConfig(tempDir, value: 'operator-');
+
+      expect(
+        command.generateReport(),
+        contains('Push external id prefix: operator-'),
+      );
+    });
+
+    test('marks a prefix nobody set as the default', () {
+      _setupNotificationsConfig(tempDir);
+
+      expect(
+        command.generateReport(),
+        contains('Push external id prefix: user_ (default, key not set)'),
+      );
+    });
+
+    test('says a blank key is blank rather than unset', () {
+      // Same resolved prefix as the test above, different sentence, and the
+      // difference is the whole point: "key not set" sends an adopter to write
+      // a key that is already there.
+      _setupNotificationsConfig(tempDir, value: '');
+
+      final String report = command.generateReport();
+
+      expect(
+        report,
+        contains('Push external id prefix: user_ (blank, using default)'),
+      );
+      expect(report, isNot(contains('key not set')));
+    });
+
+    test('says nothing at all when notifications are off', () {
+      // An app that sends no push has no side to agree with, so the line is
+      // absent rather than reported as not applicable.
+      _setupNotificationsConfig(tempDir, value: 'user_', notifications: false);
+
+      expect(command.generateReport(), isNot(contains('external id prefix')));
+    });
+
+    test('verbose names the key and the file on the other side', () {
+      _setupNotificationsConfig(tempDir, value: 'user_');
+
+      final String report = command.generateReport(verbose: true);
+
+      expect(
+        report,
+        contains('magic_starter.notifications.external_id_prefix'),
+      );
+      expect(report, contains('config/magic-starter.php'));
+    });
+
+    test('non-verbose leaves the backend pointer out', () {
+      _setupNotificationsConfig(tempDir, value: 'user_');
+
+      expect(
+        command.generateReport(),
+        isNot(contains('config/magic-starter.php')),
+      );
     });
   });
 
