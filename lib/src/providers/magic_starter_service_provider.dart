@@ -92,8 +92,8 @@ class MagicStarterServiceProvider extends ServiceProvider {
   /// Safe to run on every bump, which matters because the notifier bumps for
   /// reasons that are not a new session (a team switch calls `Auth.restore()`).
   /// `want` returns early when the intent is unchanged
-  /// (`notification_manager.dart:922`), and the permission prompt it raises
-  /// first is claimed once per process (`:1671`), so a repeat costs a vault
+  /// (`NotificationManager.want`), and the permission prompt it raises
+  /// first is claimed once per process (`_autoRequestRaised`), so a repeat costs a vault
   /// read and nothing else.
   void _declarePushIdentityOnSignIn() {
     final ValueNotifier<int> notifier = Auth.stateNotifier;
@@ -102,11 +102,11 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _pushAuthState?.removeListener(_declarePushIdentity);
     _pushAuthState = notifier..addListener(_declarePushIdentity);
 
-    // The ordering the package documents at `notification_manager.dart:846`:
+    // The ordering the package documents at `NotificationManager.onPushDriverAttached`:
     // auth providers register ahead of the notifications one, so a cold boot
     // that restores a stored session declares an identity while no driver
     // exists to carry it. `want` records the intent either way, but the
-    // permission ask is skipped (`:1665`) and nothing re-raises it, so the
+    // permission ask is skipped (the driver-less early return in `_autoRequestPermissionOnLogin`) and nothing re-raises it, so the
     // device sits unasked for the whole launch. This is the package's own
     // signal for coming back once a driver is there.
     unawaited(_pushDriverArrival?.cancel());
@@ -117,22 +117,22 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // And once, now, because on the ordinary cold boot BOTH triggers above
     // have already fired by the time this provider boots and neither replays.
     //
-    // Providers boot in order (`magic/lib/src/foundation/application.dart:378`)
+    // Providers boot in order (`Application.boot`)
     // and this one goes last: `magic_example` ships Auth, then Notifications,
     // then Starter, every doc here prescribes that order, and artisan's
     // installer appends to the END of the list. So `AuthServiceProvider.boot`
     // has already awaited `Auth.restore()` and bumped the notifier
-    // (`auth_service_provider.dart:69` to `base_guard.dart:99`), and
+    // (`AuthServiceProvider.boot` awaits it, `BaseGuard.setUser` bumps), and
     // `NotificationServiceProvider.boot` has already attached the driver, on a
     // broadcast stream that hands nothing to a later subscriber. Subscribing
     // alone therefore declared nothing at all for somebody already signed in.
     //
     // The stream's own documentation says as much
-    // (`notification_manager.dart:861`): read `pushDriverOrNull` for the
+    // (`NotificationManager.onPushDriverAttached`'s own doc): read `pushDriverOrNull` for the
     // current answer and listen for the next one. This is the read half.
     //
     // What hid it is that a cold boot usually bumps a SECOND time: `restore()`
-    // fires an unawaited `_syncUserFromApi()` (`base_guard.dart:337`) that
+    // fires an unawaited `_syncUserFromApi()` that
     // lands after boot. That rescue is incidental and absent in three ordinary
     // states: a token with no cached user, a cached user with the network
     // down, and no `userEndpoint` configured.
@@ -149,7 +149,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // (`magic_starter_auth_controller.dart:343`) while `Auth.logout()` has
     // three more that never reach it, and account deletion
     // (`magic_starter_profile_controller.dart:193`) and a failed token refresh
-    // (magic's `auth_interceptor.dart:77`) are two of them. The intent is
+    // (magic's `AuthInterceptor`, on a failed token refresh) are two of them. The intent is
     // PERSISTED, so a device whose account was just deleted would stay
     // subscribed as that account across restarts and keep receiving its
     // pushes. Declaring an identity is what creates that window, so closing it
@@ -157,7 +157,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
     //
     // Not a race with the controller, which tears down before it calls
     // `Auth.logout()`: by the time this bump arrives the intent is already
-    // null and `want(null)` returns early (`notification_manager.dart:922`).
+    // null and `want(null)` returns early (`NotificationManager.want`).
     if (!Auth.check()) {
       unawaited(
         Notify.logoutPush().catchError((Object error, StackTrace stackTrace) {
@@ -172,7 +172,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
       // would swap one silent leak for another: after an account deletion it
       // keeps issuing `GET /notifications` with a dead token, forever, and a
       // 401 on a polling request is not a path anything here watches.
-      // Null-safe and idempotent (`notification_manager.dart:1978`), so the
+      // Null-safe and idempotent (`NotificationManager.stopPolling`), so the
       // ordinary case where the controller already stopped it costs nothing.
       Notify.stopPolling();
       return;
