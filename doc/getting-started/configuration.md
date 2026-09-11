@@ -220,7 +220,11 @@ What it declares is the prefix below followed by the authenticated user's id:
 > composes `user_<id>`, so the default is correct against that backend and changing one side alone
 > means the server sends to an id no device carries. Nothing fails visibly when they disagree: the
 > notification is accepted and delivered to nobody, and only a zero-recipient report on the server
-> says so. OneSignal also rejects a bare numeric id, so an empty prefix is not an option.
+> says so.
+>
+> A blank value resolves to `user_` rather than to no prefix, and surrounding whitespace is trimmed,
+> because OneSignal rejects a bare numeric external id outright and the PHP side normalises the same
+> way. So emptying this key does not switch the prefix off; it restores the default.
 
 Change it when one OneSignal app serves more than one kind of subject, and change the backend with
 it.

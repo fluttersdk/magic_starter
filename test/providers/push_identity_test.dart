@@ -182,7 +182,7 @@ void main() {
     Config.set('magic_starter.notifications.external_id_prefix', 'user_');
 
     // `NotificationManager` is a process-wide singleton with no reset
-    // (`notification_manager.dart:36`), so the declared intent outlives the
+    // (a `static final` on `NotificationManager`), so the declared intent outlives the
     // container flush above and the next test asserts against the previous
     // one's session. This is the only public way to put it back to nobody.
     await Notify.logoutPush();
@@ -281,9 +281,9 @@ void main() {
         // declaration cannot cover. `want` records an intent with no driver
         // present, so `pushIntent` looks right either way; only the reconcile
         // that follows a driver arriving pushes the id INTO the SDK.
-        // `_attachPushDriver` announces and does not reconcile on its own
-        // (`notification_manager.dart:771-789`), so `login` here is the
-        // subscription's work and nothing else's.
+        // `NotificationManager._attachPushDriver` announces and does not
+        // reconcile on its own, so `login` here is the subscription's work
+        // and nothing else's.
         Auth.fake(user: _fakeUser());
         await bootProvider();
         Auth.stateNotifier.value++;
