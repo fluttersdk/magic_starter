@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.0.27] - 2026-09-11
+## [0.0.27] - 2026-09-12
 
 ### Changed
 - **The version rail leaves the alpha suffix: `0.0.1-alpha.N` becomes `0.0.N`, and this release is the alpha.27 that was never tagged.** Twenty-six releases arrived as prereleases of a `0.0.1` that never shipped, which is not what the suffix means: every one of them was the current release, and pub.dev showed the package as having no stable version at all while an adopter's `flutter pub add magic_starter` refused to take it without an explicit prerelease pin. The counter is carried rather than reset, so 0.0.27 follows 0.0.1-alpha.26 and the release history stays monotonic.
