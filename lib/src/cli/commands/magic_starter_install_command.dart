@@ -7,6 +7,16 @@ import 'package:path/path.dart' as p;
 
 import '../helpers/magic_starter_config_helper.dart';
 
+/// The `magic_notifications` constraint `starter:install` writes into the host
+/// application's own `pubspec.yaml` when the notifications feature is enabled.
+///
+/// Mirrors this package's floor for the same dependency, and
+/// `magic_starter_install_command_test.dart` reads both and fails when they
+/// disagree. They describe one dependency from two files, so a disagreement
+/// leaves pub no intersection to solve, and pub answers that by walking
+/// magic_starter backwards to a release that fits rather than by failing.
+const String magicNotificationsConstraint = '^0.3.0';
+
 /// Installs and configures Magic Starter inside a host Magic application.
 ///
 /// ## Layered architecture (hybrid manifest + fluent override)
@@ -1157,7 +1167,7 @@ $teamArgs    );
         ConfigEditor.addDependencyToPubspec(
           pubspecPath: pubspecPath,
           name: 'magic_notifications',
-          version: '^0.0.1-alpha.1',
+          version: magicNotificationsConstraint,
         );
       } catch (_) {
         // Ignore YAML update failures to keep install resilient.

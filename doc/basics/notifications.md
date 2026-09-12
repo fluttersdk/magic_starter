@@ -124,6 +124,19 @@ Locked channels display a lock icon and their toggle is disabled — the backend
 > [!NOTE]
 > Preference updates use optimistic UI. The toggle flips immediately and a `PUT /notification-preferences` request is sent. On failure, the matrix reverts to its pre-update snapshot. This state lives in `magic_notifications`'s own `NotificationPreferencesController` now; this package no longer carries one.
 
+Since `magic_notifications` 0.3.0 the screen also opens with a bulk card above the
+matrix, one switch per channel applying to every type at once, backed by the batch
+shape `PUT /notification-preferences` with `{preferences: [{type, channel, is_enabled}, ...]}`.
+`magic-starter-laravel` has accepted that shape since 0.0.7; a hand-rolled endpoint
+that only takes the single shape answers 422 and the card is dead.
+
+The notification screens read five `notifications.*` keys that no package supplies:
+`bulk_title` and `bulk_description` head the bulk card, `delete` names the list
+row's delete glyph for a screen reader, `delete_failed` is shown when the server
+refuses a delete, and `channel_sms` labels the SMS row. All five ship in
+`assets/stubs/install/en.stub`, so an app scaffolded by `starter:install` has them;
+an app with a hand-written catalogue adds them, or each renders as its own key.
+
 <a name="notification-dropdown"></a>
 ## Notification Dropdown
 
