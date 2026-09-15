@@ -150,6 +150,21 @@ class _MagicStarterTimezoneSelectState
   void _resetCursorOnOpen() {
     if (!mounted) return;
 
+    // Before the guard below, and that order is the point: a debounce pending
+    // from a query the reader typed and then closed the menu on has written
+    // none of the three fields the guard reads, so the guard returns and the
+    // timer fires afterwards onto a menu that is showing the unfiltered list.
+    // It would then set `_query` to a word nobody can see and `_page` to one,
+    // and the next scroll would ask for page two OF THAT query. Completing the
+    // completer is what `_handleSearch` already does when a keystroke
+    // supersedes an earlier one: `WSelect` awaits this future behind its own
+    // in-flight flag, so dropping the timer without answering it leaves the
+    // menu waiting on a response that will never come.
+    _debounceTimer?.cancel();
+    if (_searchCompleter != null && !_searchCompleter!.isCompleted) {
+      _searchCompleter!.complete(_allOptions);
+    }
+
     // `_hasMore == _baseHasMore` is the third term and it is load-bearing.
     // `_fetchTimezones` answers `hasMore: false` on any failure, so typing a
     // character and deleting it fires `onSearch('')`, and if THAT request fails

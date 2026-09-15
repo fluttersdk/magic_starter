@@ -645,5 +645,75 @@ void main() {
         reason: 'the reopened list starts at page one, so the next is two',
       );
     });
+
+    testWidgets('a debounce pending at the reopen is dropped', (tester) async {
+      // Type, close the menu inside the 300ms window, reopen. The reset has
+      // nothing to undo yet, because the timer has written none of the three
+      // fields it reads, so a reset that only looks at state returns and lets
+      // the timer fire afterwards: the cursor then names a query whose rows
+      // the reader cannot see and whose search box is blank, and the next
+      // scroll asks for page two of it.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 5, 'total': 100},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Pacific/Auckland', 'label': 'Auckland (GMT+12)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 3, 'total': 50},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final Future<List<SelectOption<String>>> pending = tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onSearch!('pacif');
+
+      // Inside the debounce window, so no request has gone out yet.
+      await tester.pump(const Duration(milliseconds: 100));
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onOpen!();
+
+      // Past the window the timer would have fired in.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      // `WSelect` awaits this behind its own in-flight flag and only lowers
+      // that flag for a response whose query still matches, so a dropped
+      // search that never answers strands the menu on a spinner.
+      expect(
+        await pending,
+        isNotEmpty,
+        reason: 'the superseded search still answers its caller',
+      );
+
+      await tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        contains('search=&'),
+        reason: 'the cursor belongs to the unfiltered list the reader sees',
+      );
+      expect(mockDriver.requestedUrls.last, endsWith('page=2'));
+    });
   });
 }
