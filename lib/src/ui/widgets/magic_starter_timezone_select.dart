@@ -95,6 +95,19 @@ class _MagicStarterTimezoneSelectState
   /// the reader could scroll it end to end and never reach page two again.
   bool _baseHasMore = false;
 
+  /// Bumped every time the menu resets its own list, which is every open.
+  ///
+  /// Captured by both async paths before they await, because neither can tell
+  /// a stale response from a current one by looking at the cursor. A search
+  /// has no cursor to compare yet, since writing one is the thing it is about
+  /// to do. A load-more compares the page it asked for against the page after
+  /// the current one, which agrees with itself in the case that matters: a
+  /// page two in flight while the cursor sits at page one is indistinguishable
+  /// from a page two about to be asked for, so the reopen that put the cursor
+  /// back to one let the stale response set it to two and the reader lost page
+  /// two for the life of the menu.
+  int _menuEpoch = 0;
+
   @override
   void initState() {
     super.initState();
@@ -165,6 +178,13 @@ class _MagicStarterTimezoneSelectState
       _searchCompleter!.complete(_allOptions);
     }
 
+    // Ahead of the guard as well, and for a sharper reason than the cancel:
+    // cancelling helps only while the timer is PENDING. Once it has fired the
+    // request is on the wire and nothing recalls it, so the window is network
+    // latency rather than 300ms. The epoch is what a response landing inside
+    // that window checks itself against.
+    _menuEpoch++;
+
     // `_hasMore == _baseHasMore` is the third term and it is load-bearing.
     // `_fetchTimezones` answers `hasMore: false` on any failure, so typing a
     // character and deleting it fires `onSearch('')`, and if THAT request fails
@@ -195,12 +215,14 @@ class _MagicStarterTimezoneSelectState
     // and reopen would otherwise land on a cursor the reopen had already put
     // back to one, set it to two, and make the next scroll skip page two: the
     // same defect the reopen reset exists to remove, one race later.
+    final int epoch = _menuEpoch;
     final String query = _query;
     final int page = _page + 1;
 
     final next = await _fetchTimezones(query, page: page);
 
     if (!mounted) return next.options;
+    if (epoch != _menuEpoch) return const [];
     if (query != _query || page != _page + 1) return const [];
 
     setState(() {
@@ -286,13 +308,21 @@ class _MagicStarterTimezoneSelectState
 
     // 3. Start a debounce timer — only fire API after 300ms of inactivity.
     _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      // Read at fire time rather than at schedule time: a reopen before the
+      // timer fires cancels it outright, so the only epoch this callback can
+      // be stale against is the one in force when its request leaves.
+      final int epoch = _menuEpoch;
+
       try {
         final page = await _fetchTimezones(query);
         final results = [...page.options];
 
         // A search restarts the cursor: the next scroll to the bottom has to
         // ask for page two OF THIS QUERY, not of whatever was loaded before.
-        if (mounted) {
+        // Unless the menu reset under it, in which case writing the cursor
+        // would name a query whose rows the reader cannot see and whose
+        // search box is blank.
+        if (mounted && epoch == _menuEpoch) {
           setState(() {
             _query = query;
             _page = 1;

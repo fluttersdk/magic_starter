@@ -715,5 +715,147 @@ void main() {
       );
       expect(mockDriver.requestedUrls.last, endsWith('page=2'));
     });
+
+    testWidgets('a search already on the wire at the reopen is dropped', (
+      tester,
+    ) async {
+      // Cancelling the timer covers only the 300ms it is pending. Let it fire,
+      // so the request is on the wire, then close and reopen inside the round
+      // trip: the reset finds the cursor already at base and returns, and the
+      // response writes a query nobody can see onto a menu showing the
+      // unfiltered list. The window here is network latency, so it is wider
+      // than the one the cancel closes.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 5, 'total': 100},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Pacific/Auckland', 'label': 'Auckland (GMT+12)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 3, 'total': 50},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/London', 'label': 'London (GMT+0)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 5, 'total': 100},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onSearch!('pacif');
+
+      // Past the debounce, so the request has left.
+      await tester.pump(const Duration(milliseconds: 400));
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onOpen!();
+      await tester.pumpAndSettle();
+
+      await tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        contains('search=&'),
+        reason: 'the cursor belongs to the unfiltered list the reader sees',
+      );
+      expect(mockDriver.requestedUrls.last, endsWith('page=2'));
+    });
+
+    testWidgets('a FIRST page in flight at the reopen is dropped too', (
+      tester,
+    ) async {
+      // The corner the page comparison cannot see. It asks whether the page it
+      // requested is still the page after the current one, and for a page two
+      // requested from page one that is true both before and after a reopen
+      // puts the cursor back to one. The reset also early-returns here, since
+      // the cursor never left base, so nothing else catches it either: the
+      // stale response sets the cursor to two while the reader is looking at
+      // page one, and page two becomes unreachable for the life of the menu.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 5, 'total': 100},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/London', 'label': 'London (GMT+0)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 5, 'total': 100},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Paris', 'label': 'Paris (GMT+1)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 5, 'total': 100},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Page two goes out from a cursor sitting at page one.
+      final Future<List<SelectOption<String>>> inFlight = tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onOpen!();
+      await tester.pumpAndSettle();
+
+      expect(
+        await inFlight,
+        isEmpty,
+        reason: 'the stale first page is dropped rather than appended',
+      );
+
+      await tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        endsWith('page=2'),
+        reason: 'the reader is still on page one, so the next ask is page two',
+      );
+    });
   });
 }
