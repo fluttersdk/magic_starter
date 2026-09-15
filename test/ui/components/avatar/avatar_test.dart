@@ -3,32 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
-/// Minimal authenticated user for the fake auth manager, mirroring the
-/// `_FakeUser` helper in `test/middleware/redirect_if_authenticated_test.dart`.
-class _FakeUser extends Model with Authenticatable {
-  @override
-  String get table => 'users';
-
-  @override
-  String get resource => 'users';
-
-  @override
-  List<String> get fillable => ['id', 'name', 'email', 'profile_photo_url'];
-}
-
-_FakeUser _fakeUser({String? photoUrl}) {
-  final user = _FakeUser();
-  user.fill({
-    'id': 1,
-    'name': 'Anilcan Cakir',
-    'email': 'a@example.test',
-    if (photoUrl != null) 'profile_photo_url': photoUrl,
-  });
-  user.exists = true;
-
-  return user;
-}
-
 void main() {
   setUp(() {
     MagicApp.reset();
@@ -110,33 +84,6 @@ void main() {
       );
 
       expect(find.byType(ClipRRect), findsWidgets);
-    });
-  });
-
-  group('MSUserProfileDropdown', () {
-    testWidgets('shows the signed-in account photo in its trigger', (
-      tester,
-    ) async {
-      // The one control on screen at all times drew the initial whatever the
-      // account carried, so a person who had uploaded a photo saw it on the
-      // profile screen and nowhere else.
-      Auth.fake(user: _fakeUser(photoUrl: 'https://example.test/me.png'));
-
-      await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
-
-      expect(find.byType(MSAvatar), findsOneWidget);
-      expect(
-        tester.widget<MSAvatar>(find.byType(MSAvatar)).photoUrl,
-        'https://example.test/me.png',
-      );
-    });
-
-    testWidgets('falls back to the initial with no photo', (tester) async {
-      Auth.fake(user: _fakeUser());
-
-      await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
-
-      expect(find.text('A'), findsOneWidget);
     });
   });
 }

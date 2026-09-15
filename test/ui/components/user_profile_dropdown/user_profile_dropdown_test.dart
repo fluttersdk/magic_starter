@@ -289,4 +289,70 @@ void main() {
     expect(find.byIcon(Icons.dark_mode_outlined), findsNothing);
     expect(find.text('common.toggle_theme'), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------------------
+  // The account's photo. This trigger is the one avatar on screen at all times,
+  // and it drew the initial whatever the account carried, so a person who had
+  // uploaded a photo saw it on the profile screen and nowhere else.
+  // ---------------------------------------------------------------------------
+
+  testWidgets('shows the signed-in account photo in its trigger', (
+    tester,
+  ) async {
+    mockGuard.setUser(
+      MagicStarterAuthUser.fromMap({
+        'id': 1,
+        'name': 'Anilcan Cakir',
+        'email': 'a@example.test',
+        'profile_photo_url': 'https://example.test/me.png',
+      }),
+    );
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+
+    expect(
+      tester.widget<MSAvatar>(find.byType(MSAvatar)).photoUrl,
+      'https://example.test/me.png',
+    );
+  });
+
+  testWidgets('falls back to the initial with no photo', (tester) async {
+    mockGuard.setUser(
+      MagicStarterAuthUser.fromMap({
+        'id': 1,
+        'name': 'Anilcan Cakir',
+        'email': 'a@example.test',
+      }),
+    );
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+
+    expect(find.text('A'), findsOneWidget);
+  });
+
+  testWidgets('keeps the themed class on the node that carries states', (
+    tester,
+  ) async {
+    // The avatar takes no states, so a theme className moved inside it would
+    // silently drop the hover and active branches of a host that themed one.
+    // The shipped default has no state variants, so nothing else would show it.
+    MagicStarter.manager.navigationTheme = const MagicStarterNavigationTheme(
+      dropdownAvatarClassName: 'bg-primary hover:bg-accent',
+    );
+
+    mockGuard.setUser(
+      MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Anilcan Cakir'}),
+    );
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+
+    final WDiv themed = tester.widget<WDiv>(
+      find
+          .ancestor(of: find.byType(MSAvatar), matching: find.byType(WDiv))
+          .first,
+    );
+
+    expect(themed.className, contains('hover:bg-accent'));
+    expect(themed.states, isNotNull);
+  });
 }
