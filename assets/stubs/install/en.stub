@@ -302,6 +302,7 @@
     "confirm_password_description": "Please confirm your password before continuing.",
     "copy_recovery_codes": "Copy Recovery Codes",
     "current_device": "Current device",
+    "unknown_device": "Unknown device",
     "delete_failed": "Failed to delete account. Please try again.",
     "extended_information": "Extended Information",
     "language_label": "Language",

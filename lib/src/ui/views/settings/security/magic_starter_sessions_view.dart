@@ -262,13 +262,21 @@ class _MagicStarterSessionsViewState
     final isDesktop = agent['is_desktop'] as bool? ?? true;
     final platform = agent['platform'] as String? ?? '';
     final browser = agent['browser'] as String? ?? '';
+    // The native application's name, sent since magic-starter-laravel 0.0.9 for
+    // an agent shaped `<App> (Flutter; iOS)`. Absent for a browser, and absent
+    // entirely from an older backend, which is why it is read defensively.
+    final app = agent['app'] as String? ?? '';
     final ip = session['ip_address'] as String? ?? '';
     final city = locationMap['city'] as String? ?? '';
     final country = locationMap['country'] as String? ?? '';
     final isCurrent = session['is_current_device'] as bool? ?? false;
     final tokenId = session['id']?.toString() ?? '';
 
-    final title = [platform, browser].where((s) => s.isNotEmpty).join(' - ');
+    final title = sessionDeviceTitle(
+      platform: platform,
+      browser: browser,
+      app: app,
+    );
     final locationText = [city, country].where((s) => s.isNotEmpty).join(', ');
     final subtitleText = [
       ip,
@@ -277,7 +285,7 @@ class _MagicStarterSessionsViewState
 
     return MSSettingsRow(
       icon: isDesktop ? _iconDesktop : _iconMobile,
-      title: title.isNotEmpty ? title : trans('profile.browser_sessions'),
+      title: title.isNotEmpty ? title : trans('profile.unknown_device'),
       subtitle: subtitleText.isNotEmpty ? subtitleText : null,
       trailing: isCurrent
           ? WDiv(
@@ -304,4 +312,35 @@ class _MagicStarterSessionsViewState
             ),
     );
   }
+}
+
+/// Names the device behind one session row, or `''` when nothing is known.
+///
+/// Platform first, then whichever client this is: a browser name for a web
+/// session, the application's own name for a native one. The two are mutually
+/// exclusive by construction (`SessionAgent` leaves `browser` empty for a
+/// native agent and `app` empty for a browser), so the result reads
+/// "Mac - Chrome" or "iOS - Uptizm" and never both.
+///
+/// Empty rather than a word when every part is, because the caller is the only
+/// side that can translate and the package ships no catalogue. The caller's
+/// fallback is `profile.unknown_device`, and that key exists because the
+/// fallback used to be the SECTION HEADING: a row in a Turkish app read
+/// "Tarayıcı Oturumları" as the name of a device, directly beneath a heading
+/// saying the same words.
+///
+/// Top-level and public so the rule can be tested for what it is, a small
+/// derivation with three inputs and two empty cases, without standing up the
+/// whole view and its network.
+String sessionDeviceTitle({
+  required String platform,
+  required String browser,
+  required String app,
+}) {
+  final String client = browser.isNotEmpty ? browser : app;
+
+  return <String>[
+    platform,
+    client,
+  ].where((String part) => part.isNotEmpty).join(' - ');
 }
