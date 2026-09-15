@@ -87,6 +87,14 @@ class _MagicStarterTimezoneSelectState
   /// arrives with a response and the widget has already been built.
   bool _hasMore = false;
 
+  /// Whether the UNFILTERED first page had another page after it.
+  ///
+  /// Held apart from [_hasMore], which tracks whatever query is running. A
+  /// reopen throws that query away, so a search that ended on its last page
+  /// would otherwise leave the restored full list reporting no more pages and
+  /// the reader could scroll it end to end and never reach page two again.
+  bool _baseHasMore = false;
+
   @override
   void initState() {
     super.initState();
@@ -141,7 +149,17 @@ class _MagicStarterTimezoneSelectState
   /// was added to remove.
   void _resetCursorOnOpen() {
     if (!mounted) return;
-    if (_query.isEmpty && _page == 1) return;
+
+    // `_hasMore == _baseHasMore` is the third term and it is load-bearing.
+    // `_fetchTimezones` answers `hasMore: false` on any failure, so typing a
+    // character and deleting it fires `onSearch('')`, and if THAT request fails
+    // the state is `_query == ''`, `_page == 1`, `_hasMore == false` while the
+    // unfiltered list still has pages. Guarding on the first two alone returns
+    // here forever after, and the reader scrolls twenty rows to the bottom for
+    // the life of the widget with nothing loading. The load-more failure path
+    // recovers on its own because `_page` is already past one by then; the
+    // search path is the one that needs this.
+    if (_query.isEmpty && _page == 1 && _hasMore == _baseHasMore) return;
 
     setState(() {
       _query = '';
@@ -150,14 +168,6 @@ class _MagicStarterTimezoneSelectState
     });
   }
 
-  /// Whether the UNFILTERED first page had another page after it.
-  ///
-  /// Held separately because `_hasMore` tracks whatever query is running, and a
-  /// reopen throws that query away: a search that ended on its last page would
-  /// otherwise leave the restored full list reporting no more pages, so the
-  /// reader could scroll it end to end and never reach page two again.
-  bool _baseHasMore = false;
-
   /// Fetch the page after the one on screen and hand it to [WSelect].
   ///
   /// The rows are returned rather than pushed into [_allOptions], because
@@ -165,14 +175,23 @@ class _MagicStarterTimezoneSelectState
   /// replacing `options` from here would throw that filtered list away. Only
   /// the cursor and the has-more flag live on this side.
   Future<List<SelectOption<String>>> _loadMoreTimezones() async {
-    final next = await _fetchTimezones(_query, page: _page + 1);
+    // Captured before the await and re-checked after it. Nothing cancels a
+    // request when the menu closes, so a page three in flight across a close
+    // and reopen would otherwise land on a cursor the reopen had already put
+    // back to one, set it to two, and make the next scroll skip page two: the
+    // same defect the reopen reset exists to remove, one race later.
+    final String query = _query;
+    final int page = _page + 1;
 
-    if (mounted) {
-      setState(() {
-        _page += 1;
-        _hasMore = next.hasMore;
-      });
-    }
+    final next = await _fetchTimezones(query, page: page);
+
+    if (!mounted) return next.options;
+    if (query != _query || page != _page + 1) return const [];
+
+    setState(() {
+      _page = page;
+      _hasMore = next.hasMore;
+    });
 
     return next.options;
   }

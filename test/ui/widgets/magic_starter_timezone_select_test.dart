@@ -513,5 +513,137 @@ void main() {
         reason: 'the unfiltered list still has three pages',
       );
     });
+
+    testWidgets('a reopen recovers from a failed empty-query search', (
+      tester,
+    ) async {
+      // `_fetchTimezones` answers `hasMore: false` on any failure, so typing a
+      // character and deleting it fires `onSearch('')`, and if THAT request
+      // fails the widget is left saying the unfiltered list has no more pages.
+      // A reopen guard that only checks the query and the page returns early on
+      // exactly that state, and the reader then scrolls twenty rows to the
+      // bottom for the life of the widget with nothing loading.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 3, 'total': 60},
+        },
+      );
+      mockDriver.queueResponse(statusCode: 500, data: {});
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onSearch!('');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isFalse,
+        reason: 'the failed request is what puts the widget in this state',
+      );
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onOpen!();
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isTrue,
+        reason: 'the reopen restores what the unfiltered first page reported',
+      );
+    });
+
+    testWidgets('a load-more landing after a reopen is discarded', (
+      tester,
+    ) async {
+      // Nothing cancels the request when the menu closes, so a page three in
+      // flight across a close and reopen would land on a cursor the reopen has
+      // already put back to one, set it to two, and make the next scroll skip
+      // page two: the same defect the reopen reset removes, one race later.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 5, 'total': 100},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/London', 'label': 'London (GMT+0)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 5, 'total': 100},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Paris', 'label': 'Paris (GMT+1)'},
+          ],
+          'meta': {'current_page': 3, 'last_page': 5, 'total': 100},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final select = tester.widget<WFormSelect<String>>(
+        find.byType(WFormSelect<String>),
+      );
+
+      await select.onLoadMore!();
+      await tester.pumpAndSettle();
+
+      // Page three goes out, then the menu is reopened before it lands.
+      final Future<List<SelectOption<String>>> inFlight = tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onOpen!();
+      await tester.pumpAndSettle();
+
+      expect(
+        await inFlight,
+        isEmpty,
+        reason: 'the stale page is dropped rather than appended',
+      );
+
+      await tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        endsWith('page=2'),
+        reason: 'the reopened list starts at page one, so the next is two',
+      );
+    });
   });
 }
