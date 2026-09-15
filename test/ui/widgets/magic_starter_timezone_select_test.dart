@@ -10,14 +10,17 @@ class MockNetworkDriver implements NetworkDriver {
   final List<MagicResponse> _responses = [];
   final List<String> requestedUrls = [];
 
-  /// When set, the next [get] waits on this before answering, then clears it.
+  /// One gate per [get], in call order: each request waits on its own before
+  /// answering, so a test decides the order responses LAND in.
   ///
   /// A test that needs a request to be genuinely IN FLIGHT across another
   /// interaction cannot get there by pumping: this driver answers on the
   /// microtask after the call, so by the time the test does anything else the
   /// response has already been applied and the window it meant to test never
-  /// existed. Anything asserting about a stale response needs this.
-  Completer<void>? gate;
+  /// existed. A queue rather than a single gate, because the narrowest race
+  /// here is two requests in flight at once whose responses come back out of
+  /// order, which one gate cannot express.
+  final List<Completer<void>> gates = [];
 
   void queueResponse({required int statusCode, dynamic data}) {
     _responses.add(MagicResponse(data: data ?? {}, statusCode: statusCode));
@@ -42,10 +45,8 @@ class MockNetworkDriver implements NetworkDriver {
   }) async {
     requestedUrls.add(url);
 
-    final held = gate;
-    if (held != null) {
-      gate = null;
-      await held.future;
+    if (gates.isNotEmpty) {
+      await gates.removeAt(0).future;
     }
 
     return _nextResponse();
@@ -782,7 +783,7 @@ void main() {
       // cursor is already written before `onOpen` fires, and the reset then
       // legitimately clears it: the test would pass against the defect.
       final onTheWire = Completer<void>();
-      mockDriver.gate = onTheWire;
+      mockDriver.gates.add(onTheWire);
 
       tester
           .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
@@ -882,6 +883,74 @@ void main() {
         mockDriver.requestedUrls.last,
         endsWith('page=2'),
         reason: 'the reader is still on page one, so the next ask is page two',
+      );
+    });
+
+    testWidgets('the cursor follows the newest search, not the last to land', (
+      tester,
+    ) async {
+      // The one race an epoch cannot see, because both requests belong to the
+      // same one. Cancelling covers only a PENDING timer, so typing past the
+      // debounce twice puts two searches on the wire at once, and the cursor
+      // was written by whichever landed last rather than whichever was asked
+      // for last. WSelect is right here and this side was wrong: it drops the
+      // older response on its own query mismatch, so the visible list stays
+      // the newer query's while the cursor names the older one, and the
+      // asymmetry only shows on the next scroll.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 5, 'total': 100},
+        },
+      );
+      for (var i = 0; i < 3; i++) {
+        mockDriver.queueResponse(
+          statusCode: 200,
+          data: {
+            'data': [
+              {'identifier': 'Pacific/Auckland', 'label': 'Auckland (GMT+12)'},
+            ],
+            'meta': {'current_page': 1, 'last_page': 3, 'total': 50},
+          },
+        );
+      }
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final older = Completer<void>();
+      final newer = Completer<void>();
+      mockDriver.gates.addAll([older, newer]);
+
+      WFormSelect<String> select() =>
+          tester.widget<WFormSelect<String>>(find.byType(WFormSelect<String>));
+
+      // Both go out: the first is past its debounce before the second is typed.
+      select().onSearch!('pacif');
+      await tester.pump(const Duration(milliseconds: 400));
+      select().onSearch!('pacifi');
+      await tester.pump(const Duration(milliseconds: 400));
+
+      // They come back the other way round, which is the whole trigger.
+      newer.complete();
+      await tester.pump();
+      older.complete();
+      await tester.pumpAndSettle();
+
+      await select().onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        contains('search=pacifi&'),
+        reason: 'the older response wrote its query over the newer cursor',
       );
     });
   });

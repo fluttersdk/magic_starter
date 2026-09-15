@@ -322,7 +322,16 @@ class _MagicStarterTimezoneSelectState
         // Unless the menu reset under it, in which case writing the cursor
         // would name a query whose rows the reader cannot see and whose
         // search box is blank.
-        if (mounted && epoch == _menuEpoch) {
+        //
+        // The completer is the second half and the epoch cannot stand in for
+        // it: two searches can be on the wire at once, since cancelling only
+        // reaches a timer that has not fired, and both of them captured the
+        // same epoch. Without this term the cursor is written by whichever
+        // response LANDS last rather than whichever the reader asked for last.
+        // `WSelect` gets that right on its own side and drops the older list,
+        // so the two disagree silently until the next scroll asks for page two
+        // of a query nobody typed.
+        if (mounted && epoch == _menuEpoch && _searchCompleter == completer) {
           setState(() {
             _query = query;
             _page = 1;
