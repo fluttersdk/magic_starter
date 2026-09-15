@@ -124,10 +124,39 @@ class _MagicStarterTimezoneSelectState
         _query = '';
         _page = 1;
         _hasMore = first.hasMore;
+        _baseHasMore = first.hasMore;
         _isInitializing = false;
       });
     }
   }
+
+  /// Put the cursor back to the start, because the menu reset its own list.
+  ///
+  /// `WSelect` clears its search and restores `options` every time the menu
+  /// OPENS, which this side cannot see from any other signal. Without this the
+  /// cursor survives that reset and the next scroll to the bottom asks for the
+  /// page AFTER the one the reader can no longer see: open, scroll once to pull
+  /// page two, close, reopen, and page two's twenty identifiers were
+  /// unreachable without searching for them, which is the symptom pagination
+  /// was added to remove.
+  void _resetCursorOnOpen() {
+    if (!mounted) return;
+    if (_query.isEmpty && _page == 1) return;
+
+    setState(() {
+      _query = '';
+      _page = 1;
+      _hasMore = _baseHasMore;
+    });
+  }
+
+  /// Whether the UNFILTERED first page had another page after it.
+  ///
+  /// Held separately because `_hasMore` tracks whatever query is running, and a
+  /// reopen throws that query away: a search that ended on its last page would
+  /// otherwise leave the restored full list reporting no more pages, so the
+  /// reader could scroll it end to end and never reach page two again.
+  bool _baseHasMore = false;
 
   /// Fetch the page after the one on screen and hand it to [WSelect].
   ///
@@ -319,6 +348,7 @@ class _MagicStarterTimezoneSelectState
       onSearch: _handleSearch,
       onLoadMore: _loadMoreTimezones,
       hasMore: _hasMore,
+      onOpen: _resetCursorOnOpen,
       label: widget.label,
       labelClassName:
           widget.labelClassName ?? 'text-sm font-medium text-fg-muted mb-1',

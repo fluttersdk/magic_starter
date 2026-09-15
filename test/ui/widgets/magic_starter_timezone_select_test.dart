@@ -381,5 +381,137 @@ void main() {
         reason: 'page 2 of 3 still has a page after it',
       );
     });
+
+    testWidgets('a reopen puts the cursor back to the first page', (
+      tester,
+    ) async {
+      // `WSelect` clears its search and restores `options` every time the menu
+      // opens, which this widget cannot see from any other signal. Without the
+      // `onOpen` reset the cursor survives it and the next scroll asks for the
+      // page AFTER the one the reader can now see: open, pull page two, close,
+      // reopen, and page two is unreachable without searching for it.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 3, 'total': 60},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/London', 'label': 'London (GMT+0)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 3, 'total': 60},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Paris', 'label': 'Paris (GMT+1)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 3, 'total': 60},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final select = tester.widget<WFormSelect<String>>(
+        find.byType(WFormSelect<String>),
+      );
+
+      await select.onLoadMore!();
+      await tester.pumpAndSettle();
+      expect(mockDriver.requestedUrls.last, endsWith('page=2'));
+
+      // What the widget sees when the menu is reopened.
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onOpen!();
+      await tester.pumpAndSettle();
+
+      await tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        endsWith('page=2'),
+        reason: 'the reopened list starts at page one, so the next is two',
+      );
+    });
+
+    testWidgets('a reopen after a search restores the unfiltered has-more', (
+      tester,
+    ) async {
+      // A search that ended on its last page would otherwise leave the restored
+      // full list reporting no more pages, so the reader could scroll the whole
+      // unfiltered list and never reach page two again.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 3, 'total': 60},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Pacific/Fiji', 'label': 'Fiji (GMT+12)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 1, 'total': 1},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Fire and pump rather than await: the search resolves through a
+      // debounce timer, so awaiting it before the timer runs deadlocks the
+      // test. The existing debounce case does the same.
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onSearch!('pacif');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isFalse,
+        reason: 'the search landed on its only page',
+      );
+
+      tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onOpen!();
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isTrue,
+        reason: 'the unfiltered list still has three pages',
+      );
+    });
   });
 }
