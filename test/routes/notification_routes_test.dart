@@ -390,7 +390,7 @@ void main() {
         await tester.pumpWidget(wrap(routeFor(route)!.buildWidget(const {})));
         await tester.pump();
 
-        final String? passed =
+        final String passed =
             find.byType(NotificationsListView).evaluate().isNotEmpty
             ? tester
                   .widget<NotificationsListView>(

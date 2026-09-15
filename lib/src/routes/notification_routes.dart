@@ -86,10 +86,7 @@ void _mountNotificationViews() {
     // this one page sits twice as far from the display as its neighbours:
     // measured on a phone at 32 logical pixels against the host's 16.
     () => _inHostPageGeometry(
-      NotificationsListView(
-        onDelete: _confirmThenDelete,
-        contentClassName: '',
-      ),
+      NotificationsListView(onDelete: _confirmThenDelete, contentClassName: ''),
     ),
   );
   _mountUnlessOverridden(
