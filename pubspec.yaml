@@ -52,7 +52,15 @@ dependencies:
   # magic_notifications loses starter releases with an exit code of zero and
   # nothing said. 0.3.0 also adds the bulk preferences card, whose two
   # translation keys ship in this package's install stub.
-  magic_notifications: ^0.3.0
+  #
+  # ^0.3.2 rather than ^0.3.0 because `notification_routes.dart` passes
+  # `contentClassName`, which 0.3.2 adds. A caret spans the whole 0.3.x line, so
+  # leaving the floor lower does not merely make CI red until that release: it
+  # lets pub resolve an adopter onto 0.3.0 or 0.3.1 and hand them a COMPILE
+  # error at `notification_routes.dart` instead of a version-solve message
+  # naming the package. Raising it is the difference between a readable refusal
+  # and a broken build.
+  magic_notifications: ^0.3.2
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
