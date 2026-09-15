@@ -18,7 +18,11 @@ All notable changes to this project will be documented in this file.
   **Adopters add one key, `profile.unknown_device`, and it is a live regression on UPGRADE as well as a new key at install.** An app that published its catalogue before this release renders the raw key on any session whose agent is unreadable, until the key is added. The install stub carries it for a fresh install. (`lib/src/ui/views/settings/security/magic_starter_sessions_view.dart`, `assets/stubs/install/en.stub`)
 - **This package's own page padding no longer doubles `magic_notifications`' own.** Both notification screens are mounted here inside `MSPageContainer`, which carries the host app's width cap and edge margins, and the package padded its content column on top of that. The two applied to the same edge, so these two pages sat twice as far from the display as every other page in the shell: measured on a phone at 32 logical pixels against the host's 16. `contentClassName: ''` hands the geometry to the container alone.
 
-  Requires `magic_notifications` 0.3.2, a floor rather than a reservation: the code passes an argument 0.3.1 does not accept. The caret here stays at `^0.3.0` until that release lands, so this repository's CI is red against hosted resolution meanwhile; a consuming app building through path overrides already has both halves.
+  **Requires `magic_notifications` 0.3.2, and the floor is declared rather than deferred.** A caret spans the whole 0.3.x line, so leaving it at `^0.3.0` would not merely keep CI red until that release: after it shipped, pub could still resolve an adopter onto 0.3.0 or 0.3.1 and hand them a COMPILE error at `notification_routes.dart` rather than a version-solve message naming the package. `^0.3.2` turns that into a readable refusal.
+
+  `magicNotificationsConstraint` moves with it, so `starter:install` writes `^0.3.2` into a host's pubspec. **A scaffolding consumer sees that change.** The two are held together by a test, because when they disagree pub finds no intersection and answers by walking magic_starter BACKWARDS to an older release rather than failing: an adopter enabling notifications at install time would silently scaffold onto an older starter.
+
+  Until 0.3.2 is published this repository's CI is red against hosted resolution; a consuming app building through path overrides already has both halves.
 
 ## [0.0.27] - 2026-09-12
 
