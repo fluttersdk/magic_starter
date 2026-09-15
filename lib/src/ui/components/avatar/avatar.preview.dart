@@ -60,10 +60,7 @@ class AvatarPreview extends StatelessWidget {
         _row('glyph fallback', <Widget>[
           MSAvatar(
             className: 'w-20 h-20 rounded-full bg-surface-container-high',
-            fallback: WIcon(
-              _iconPerson,
-              className: 'text-fg-muted text-3xl',
-            ),
+            fallback: WIcon(_iconPerson, className: 'text-fg-muted text-3xl'),
           ),
         ]),
         _row('a team, squared off', <Widget>[
@@ -92,10 +89,7 @@ class AvatarPreview extends StatelessWidget {
       className: 'flex flex-col gap-2',
       children: [
         WText(label, className: 'text-xs font-medium text-fg-muted'),
-        WDiv(
-          className: 'flex flex-row items-center gap-4',
-          children: children,
-        ),
+        WDiv(className: 'flex flex-row items-center gap-4', children: children),
       ],
     );
   }

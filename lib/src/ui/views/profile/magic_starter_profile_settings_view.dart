@@ -494,8 +494,7 @@ class _MagicStarterProfileSettingsViewState
         children: [
           MSAvatar(
             photoUrl: photoUrl,
-            className:
-                'w-20 h-20 rounded-full bg-surface-container-high',
+            className: 'w-20 h-20 rounded-full bg-surface-container-high',
             fallback: WIcon(
               Icons.person_outline,
               className: 'text-fg-muted text-3xl',

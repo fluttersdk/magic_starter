@@ -73,8 +73,7 @@ class MSUserProfileDropdown extends StatelessWidget {
     // profile screen and nowhere else, which reads as the upload not working.
     return WDiv(
       states: {if (isOpen) 'active', if (isHovering) 'hover'},
-      className:
-          '''
+      className: '''
                 cursor-pointer
                 transition-all duration-200
                 hover:scale-105
