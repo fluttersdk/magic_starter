@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart' as m show Colors, showModalBottomSheet;
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart' as m show Colors, showModalBottomSheet;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
