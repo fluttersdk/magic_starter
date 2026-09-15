@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' as m show Colors, showModalBottomSheet;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_theme.dart';
 import '../../../facades/magic_starter.dart';
 
 /// A reusable bottom-sheet component with Wind UI chrome driven by
@@ -76,15 +77,66 @@ class MSBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = MagicStarter.manager.modalTheme;
 
-    // 1. Constrain sheet height to 85% of screen minus safe area.
+    // 1. Constrain sheet height to 85% of the space the sheet can actually
+    //    occupy: the screen, less the safe area, less the software keyboard.
+    //
+    //    The keyboard term is load-bearing and it is the consumer's job.
+    //    `showModalBottomSheet` does not compensate for it: `viewInsets`
+    //    appears nowhere in Flutter's `material/bottom_sheet.dart`, so a sheet
+    //    asked for 85% of the FULL screen keeps that height while the keyboard
+    //    covers the bottom third of it. Measured on an iPhone 17, a sheet whose
+    //    last field sat low in the body had that field 259 logical pixels under
+    //    the keyboard with nothing to scroll, because the body's own scroll
+    //    view had not been told the viewport shrank.
+    //    The two bottom insets are taken as the LARGER of the pair rather than
+    //    summed, because they describe the same strip of screen: the keyboard
+    //    is drawn over the home indicator, so charging for both leaves a sheet
+    //    one indicator height shorter than the room it has.
     final viewPadding = MediaQuery.viewPaddingOf(context);
+    final double keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final double bottomInset = keyboardInset > viewPadding.bottom
+        ? keyboardInset
+        : viewPadding.bottom;
     final maxHeight =
-        (MediaQuery.sizeOf(context).height -
-            viewPadding.top -
-            viewPadding.bottom) *
+        (MediaQuery.sizeOf(context).height - viewPadding.top - bottomInset) *
         0.85;
 
-    // 2. Build the sheet panel with rounded top corners.
+    // 2. Build the sheet panel with rounded top corners, lifted clear of the
+    //    keyboard. `removeViewInsets` states that the inset is spent here, so a
+    //    body widget reading `viewInsets.bottom` for itself does not reserve
+    //    the same height a second time inside a panel that already moved.
+    //
+    //    The panel's own safe-area strip goes to zero while the keyboard is up,
+    //    for the same reason the two insets are not summed: the keyboard
+    //    already clears the home indicator, and a strip there would read as an
+    //    unexplained gap between the sheet's last control and the keys.
+    return Padding(
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: MediaQuery.removeViewInsets(
+        context: context,
+        removeBottom: true,
+        child: _buildPanel(
+          context,
+          theme,
+          maxHeight,
+          keyboardInset > 0 ? 0 : viewPadding.bottom,
+        ),
+      ),
+    );
+  }
+
+  /// The sheet panel itself: handle, optional header, scrollable body, optional
+  /// sticky footer, and the bottom safe-area strip.
+  ///
+  /// [bottomSafeArea] is passed in rather than read here because the caller has
+  /// already removed the keyboard inset from this subtree's [MediaQuery], and
+  /// the home-indicator strip is a different inset that still applies.
+  Widget _buildPanel(
+    BuildContext context,
+    MagicStarterModalTheme theme,
+    double maxHeight,
+    double bottomSafeArea,
+  ) {
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: maxHeight),
       child: WDiv(
@@ -132,7 +184,7 @@ class MSBottomSheet extends StatelessWidget {
                 ),
               ),
             // 7. Bottom safe-area padding.
-            SizedBox(height: viewPadding.bottom),
+            SizedBox(height: bottomSafeArea),
           ],
         ),
       ),
