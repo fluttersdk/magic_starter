@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
+import '../../components/avatar/index.dart';
 import '../../components/settings_section/index.dart';
 import '../../components/page_scaffold/index.dart';
 
@@ -190,24 +191,12 @@ class _MagicStarterProfileSubPageViewState
           className:
               'w-full flex flex-col sm:flex-row items-center gap-6 px-5 py-4',
           children: [
-            ClipOval(
-              child: SizedBox(
-                width: 80,
-                height: 80,
-                child: (photoUrl != null && photoUrl.isNotEmpty)
-                    ? WImage(
-                        src: photoUrl,
-                        className: 'w-full h-full object-cover',
-                      )
-                    : WDiv(
-                        className:
-                            'w-full h-full bg-surface-container-high '
-                            'flex items-center justify-center',
-                        child: WIcon(
-                          Icons.person_outline,
-                          className: 'text-fg-muted text-3xl',
-                        ),
-                      ),
+            MSAvatar(
+              photoUrl: photoUrl,
+              className: 'w-20 h-20 rounded-full bg-surface-container-high',
+              fallback: WIcon(
+                Icons.person_outline,
+                className: 'text-fg-muted text-3xl',
               ),
             ),
             WDiv(

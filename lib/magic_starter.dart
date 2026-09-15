@@ -48,6 +48,7 @@ export 'src/ui/views/teams/magic_starter_team_settings_view.dart';
 export 'src/ui/layouts/magic_starter_app_layout.dart';
 export 'src/ui/layouts/magic_starter_guest_layout.dart';
 export 'src/ui/widgets/magic_starter_auth_form_card.dart';
+export 'src/ui/components/avatar/index.dart';
 export 'src/ui/components/team_selector/index.dart';
 export 'src/ui/components/card/index.dart';
 export 'src/ui/components/user_profile_dropdown/index.dart';

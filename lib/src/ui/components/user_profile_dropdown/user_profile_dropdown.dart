@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
+import '../avatar/index.dart';
 
 /// A dropdown widget for the user profile.
 ///
@@ -61,25 +62,31 @@ class MSUserProfileDropdown extends StatelessWidget {
     bool isOpen,
     bool isHovering,
   ) {
-    final userName = Auth.user()?.get<String>('name') ?? trans('common.user');
+    final user = Auth.user();
+    final userName = user?.get<String>('name') ?? trans('common.user');
     final initial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
     final navTheme = MagicStarter.navigationTheme;
 
+    // Through [MSAvatar] so the account's photo reaches the one control that
+    // is on screen at all times. This trigger drew the initial whatever the
+    // account carried, so a person who had uploaded a photo saw it on the
+    // profile screen and nowhere else, which reads as the upload not working.
     return WDiv(
       states: {if (isOpen) 'active', if (isHovering) 'hover'},
       className:
           '''
-                w-8 h-8
-                rounded-full
-                ${navTheme.dropdownAvatarClassName}
-                flex items-center justify-center
                 cursor-pointer
-                shadow-sm
                 transition-all duration-200
                 hover:scale-105
                 active:scale-95
             ''',
-      child: WText(initial, className: 'text-sm font-bold text-white'),
+      child: MSAvatar(
+        photoUrl: user?.get<String>('profile_photo_url'),
+        className:
+            'w-8 h-8 rounded-full shadow-sm '
+            '${navTheme.dropdownAvatarClassName}',
+        fallback: WText(initial, className: 'text-sm font-bold text-white'),
+      ),
     );
   }
 
