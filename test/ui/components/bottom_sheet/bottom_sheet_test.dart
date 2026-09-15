@@ -148,6 +148,44 @@ void main() {
       expect(footerBottom, lessThanOrEqualTo(500.0));
     });
 
+    testWidgets('keeps the strip the keyboard has not covered yet', (
+      tester,
+    ) async {
+      // A dismissing keyboard descends through intermediate values, so there
+      // are frames where the inset is smaller than the home indicator. A branch
+      // on `keyboardInset > 0` drops the strip to zero across all of them and
+      // the sheet's last control sits on the indicator with nothing under it.
+      // 20 of inset against a 34 indicator leaves 14.
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.viewInsets = const FakeViewPadding(bottom: 20);
+      tester.view.viewPadding = const FakeViewPadding(bottom: 34);
+      tester.view.padding = const FakeViewPadding(bottom: 34);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      addTearDown(tester.view.resetViewPadding);
+      addTearDown(tester.view.resetPadding);
+
+      await tester.pumpWidget(
+        wrap(
+          MSBottomSheet(
+            body: const Text('body'),
+            footerBuilder: (_) => const Text('footer content'),
+          ),
+        ),
+      );
+
+      final double panelBottom = tester
+          .getRect(find.byKey(const Key('bottom_sheet_footer')))
+          .bottom;
+      final double sheetBottom = tester
+          .getRect(find.byType(MSBottomSheet))
+          .bottom;
+
+      expect(sheetBottom - panelBottom, 14.0);
+    });
+
     testWidgets('states that it has spent the keyboard inset', (tester) async {
       // A body widget reading `viewInsets.bottom` for itself would otherwise
       // reserve the same 300 pixels a second time, inside a panel that has

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart' as m show Colors, showModalBottomSheet;
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -106,10 +108,15 @@ class MSBottomSheet extends StatelessWidget {
     //    body widget reading `viewInsets.bottom` for itself does not reserve
     //    the same height a second time inside a panel that already moved.
     //
-    //    The panel's own safe-area strip goes to zero while the keyboard is up,
-    //    for the same reason the two insets are not summed: the keyboard
-    //    already clears the home indicator, and a strip there would read as an
-    //    unexplained gap between the sheet's last control and the keys.
+    //    The panel's own safe-area strip is whatever the keyboard has not
+    //    already covered, for the same reason the two insets are not summed:
+    //    the keyboard clears the home indicator, and a strip on top of it would
+    //    read as an unexplained gap between the sheet's last control and the
+    //    keys. A subtraction rather than a branch on `keyboardInset > 0`,
+    //    because the inset descends through intermediate values as the keyboard
+    //    DISMISSES: for the frames where it is smaller than the indicator, a
+    //    branch drops the strip to zero and the last control sits on the
+    //    indicator with nothing under it.
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
       child: MediaQuery.removeViewInsets(
@@ -119,7 +126,7 @@ class MSBottomSheet extends StatelessWidget {
           context,
           theme,
           maxHeight,
-          keyboardInset > 0 ? 0 : viewPadding.bottom,
+          math.max(0.0, viewPadding.bottom - keyboardInset),
         ),
       ),
     );
