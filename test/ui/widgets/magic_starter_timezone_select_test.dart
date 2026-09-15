@@ -138,7 +138,7 @@ void main() {
       expect(mockDriver.requestedUrls, isNotEmpty);
       expect(
         mockDriver.requestedUrls.first,
-        equals('/timezones?search=&per_page=20'),
+        equals('/timezones?search=&per_page=20&page=1'),
       );
     });
 
@@ -246,5 +246,140 @@ void main() {
         );
       },
     );
+
+    testWidgets('reports more pages when the server says there are', (
+      tester,
+    ) async {
+      // Over 400 IANA identifiers exist and the endpoint pages them, so a
+      // select that never reports `hasMore` shows the first 20 and hides the
+      // rest behind a search box the reader has no reason to think is
+      // mandatory. `WSelect` only calls `onLoadMore` when `hasMore` is true.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 22, 'total': 425},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final select = tester.widget<WFormSelect<String>>(
+        find.byType(WFormSelect<String>),
+      );
+
+      expect(select.hasMore, isTrue);
+      expect(select.onLoadMore, isNotNull);
+    });
+
+    testWidgets('reports no more pages on the last one', (tester) async {
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 1, 'total': 1},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isFalse,
+      );
+    });
+
+    testWidgets('a response with no meta is treated as the last page', (
+      tester,
+    ) async {
+      // Guessing "there is more" would have the select ask for a page that
+      // does not exist every time the reader reaches the bottom.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isFalse,
+      );
+    });
+
+    testWidgets('loading more asks for the next page of the same query', (
+      tester,
+    ) async {
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 3, 'total': 60},
+        },
+      );
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/London', 'label': 'London (GMT+0)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 3, 'total': 60},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final more = await tester
+          .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+          .onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        '/timezones?search=&per_page=20&page=2',
+      );
+      expect(more.single.value, 'Europe/London');
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isTrue,
+        reason: 'page 2 of 3 still has a page after it',
+      );
+    });
   });
 }

@@ -58,12 +58,34 @@ class MagicStarterTimezoneSelect extends StatefulWidget {
       _MagicStarterTimezoneSelectState();
 }
 
+/// One page of timezone options, plus whether the server holds another.
+typedef _TimezonePage = ({List<SelectOption<String>> options, bool hasMore});
+
 class _MagicStarterTimezoneSelectState
     extends State<MagicStarterTimezoneSelect> {
+  /// Rows per request. Small enough that the first page arrives quickly and
+  /// large enough that a reader scrolling a dropdown is not asking for another
+  /// round trip every few rows.
+  static const int _perPage = 20;
+
   List<SelectOption<String>> _allOptions = [];
   bool _isInitializing = true;
   Timer? _debounceTimer;
   Completer<List<SelectOption<String>>>? _searchCompleter;
+
+  /// The query the visible page belongs to, so a scroll asks for the next page
+  /// OF THAT SEARCH rather than of the unfiltered list.
+  String _query = '';
+
+  /// The last page fetched for [_query]. A new search puts it back to one.
+  int _page = 1;
+
+  /// Whether the server said there is another page after [_page].
+  ///
+  /// `WSelect` reads this to decide whether a scroll to the bottom should call
+  /// `onLoadMore` at all, so it has to be state rather than a local: the value
+  /// arrives with a response and the widget has already been built.
+  bool _hasMore = false;
 
   @override
   void initState() {
@@ -79,8 +101,9 @@ class _MagicStarterTimezoneSelectState
 
   /// Load default timezones and ensure the current value is included.
   Future<void> _initialize() async {
-    // 1. Fetch default (popular) timezones.
-    final defaultOptions = await _fetchTimezones('');
+    // 1. Fetch the first page of the unfiltered list.
+    final first = await _fetchTimezones('');
+    final defaultOptions = [...first.options];
 
     // 2. If a value is pre-selected, ensure it exists in the options list.
     if (widget.value != null && widget.value!.isNotEmpty) {
@@ -89,8 +112,8 @@ class _MagicStarterTimezoneSelectState
       );
       if (!selectedExists) {
         final selectedOption = await _fetchTimezones(widget.value!);
-        if (selectedOption.isNotEmpty) {
-          defaultOptions.insert(0, selectedOption.first);
+        if (selectedOption.options.isNotEmpty) {
+          defaultOptions.insert(0, selectedOption.options.first);
         }
       }
     }
@@ -98,21 +121,52 @@ class _MagicStarterTimezoneSelectState
     if (mounted) {
       setState(() {
         _allOptions = defaultOptions;
+        _query = '';
+        _page = 1;
+        _hasMore = first.hasMore;
         _isInitializing = false;
       });
     }
   }
 
-  /// Fetch timezones from the API with an optional search query.
-  Future<List<SelectOption<String>>> _fetchTimezones(String query) async {
+  /// Fetch the page after the one on screen and hand it to [WSelect].
+  ///
+  /// The rows are returned rather than pushed into [_allOptions], because
+  /// `WSelect` owns the visible list once a search has filtered it and
+  /// replacing `options` from here would throw that filtered list away. Only
+  /// the cursor and the has-more flag live on this side.
+  Future<List<SelectOption<String>>> _loadMoreTimezones() async {
+    final next = await _fetchTimezones(_query, page: _page + 1);
+
+    if (mounted) {
+      setState(() {
+        _page += 1;
+        _hasMore = next.hasMore;
+      });
+    }
+
+    return next.options;
+  }
+
+  /// Fetch one page of timezones, optionally filtered by [query].
+  ///
+  /// Returns the options AND whether the server holds another page, because
+  /// both come from the same response and the caller needs both: there are
+  /// well over 400 IANA identifiers and the endpoint pages them, so a list that
+  /// stops at the first page silently hides most of them behind a search box
+  /// the reader has no reason to think is mandatory.
+  Future<_TimezonePage> _fetchTimezones(String query, {int page = 1}) async {
     try {
-      final response = await Http.get('/timezones?search=$query&per_page=20');
+      final response = await Http.get(
+        '/timezones?search=$query&per_page=$_perPage&page=$page',
+      );
       if (response.successful) {
         final data = response.data['data'];
         if (data == null || data is! List) {
-          return [];
+          return const (options: <SelectOption<String>>[], hasMore: false);
         }
-        return data
+
+        final List<SelectOption<String>> options = data
             .where(
               (tz) =>
                   tz != null &&
@@ -127,11 +181,28 @@ class _MagicStarterTimezoneSelectState
               );
             })
             .toList();
+
+        return (options: options, hasMore: _hasNextPage(response, page));
       }
     } catch (e) {
       Log.error('Failed to fetch timezones: $e');
     }
-    return [];
+    return const (options: <SelectOption<String>>[], hasMore: false);
+  }
+
+  /// Whether the response says a page after [page] exists.
+  ///
+  /// Reads `meta.last_page`, which Laravel's `LengthAwarePaginator` sends. A
+  /// response carrying no meta is treated as the end rather than as unknown:
+  /// guessing "there is more" here would have the select ask for a page that
+  /// does not exist every time the reader reaches the bottom.
+  bool _hasNextPage(MagicResponse response, int page) {
+    final meta = response.data['meta'];
+    if (meta is! Map) return false;
+
+    final lastPage = meta['last_page'];
+
+    return lastPage is int && page < lastPage;
   }
 
   /// Handle search requests with debounce to prevent excessive API calls.
@@ -153,7 +224,18 @@ class _MagicStarterTimezoneSelectState
     // 3. Start a debounce timer — only fire API after 300ms of inactivity.
     _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
       try {
-        final results = await _fetchTimezones(query);
+        final page = await _fetchTimezones(query);
+        final results = [...page.options];
+
+        // A search restarts the cursor: the next scroll to the bottom has to
+        // ask for page two OF THIS QUERY, not of whatever was loaded before.
+        if (mounted) {
+          setState(() {
+            _query = query;
+            _page = 1;
+            _hasMore = page.hasMore;
+          });
+        }
 
         // Always include the currently selected value in results.
         if (widget.value != null && widget.value!.isNotEmpty) {
@@ -191,10 +273,10 @@ class _MagicStarterTimezoneSelectState
     if (value != null && value.isNotEmpty) {
       final exists = _allOptions.any((opt) => opt.value == value);
       if (!exists) {
-        _fetchTimezones(value).then((options) {
-          if (mounted && options.isNotEmpty) {
+        _fetchTimezones(value).then((page) {
+          if (mounted && page.options.isNotEmpty) {
             setState(() {
-              _allOptions = [options.first, ..._allOptions];
+              _allOptions = [page.options.first, ..._allOptions];
             });
           }
         });
@@ -235,6 +317,8 @@ class _MagicStarterTimezoneSelectState
       onChange: _handleChange,
       searchable: true,
       onSearch: _handleSearch,
+      onLoadMore: _loadMoreTimezones,
+      hasMore: _hasMore,
       label: widget.label,
       labelClassName:
           widget.labelClassName ?? 'text-sm font-medium text-fg-muted mb-1',
