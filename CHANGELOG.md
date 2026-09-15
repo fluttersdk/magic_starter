@@ -32,6 +32,8 @@ All notable changes to this project will be documented in this file.
 
   **The reopen is the half a first pass missed.** `WSelect` clears its search and restores `options` every time the menu opens, and the cursor survived that reset: open, scroll once to pull page two, close, reopen, and page two's twenty identifiers were unreachable without searching for them, which is the same symptom pagination exists to remove. The cursor now resets through `WSelect.onOpen`, and the unfiltered has-more is held separately from the running query's, so a search that ended on its last page does not leave the restored full list reporting that it has no more.
 
+  **Both async paths re-check themselves against the reopen**, because each one can be in flight when it happens. A page in flight is captured before the await and discarded if the cursor moved under it, and a search still inside its 300ms debounce is cancelled by the reset rather than left to fire afterwards onto a menu showing the unfiltered list. The cancel runs ahead of the reset's own early return, since a pending timer has written none of the state that guard reads, and it answers the pending completer the way a superseding keystroke does: `WSelect` awaits that future behind its own in-flight flag.
+
   Requires the `fluttersdk_wind` release carrying `WSelect.onOpen`, a floor rather than a reservation: the code passes an argument 1.5.3 does not accept. (`lib/src/ui/widgets/magic_starter_timezone_select.dart`)
 
 ## [0.0.27] - 2026-09-12
