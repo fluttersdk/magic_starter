@@ -15,6 +15,7 @@ library;
 import 'package:flutter/widgets.dart';
 
 import 'src/ui/components/accordion/accordion.preview.dart';
+import 'src/ui/components/avatar/avatar.preview.dart';
 import 'src/ui/components/badge/badge.preview.dart';
 import 'src/ui/components/settings_nav_row/settings_nav_row.preview.dart';
 import 'src/ui/components/settings_row/settings_row.preview.dart';
@@ -68,6 +69,7 @@ List<StarterComponentPreview> starterComponentPreviews() {
       slug: 'accordion',
       builder: (_) => const AccordionPreview(),
     ),
+    (label: 'Avatar', slug: 'avatar', builder: (_) => const AvatarPreview()),
     (label: 'Badge', slug: 'badge', builder: (_) => const BadgePreview()),
     (
       label: 'Bottom Sheet',

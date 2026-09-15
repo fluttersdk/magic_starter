@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
+import '../avatar/index.dart';
 
 /// A dropdown widget for the user profile.
 ///
@@ -61,25 +62,38 @@ class MSUserProfileDropdown extends StatelessWidget {
     bool isOpen,
     bool isHovering,
   ) {
-    final userName = Auth.user()?.get<String>('name') ?? trans('common.user');
+    final user = Auth.user();
+    final userName = user?.get<String>('name') ?? trans('common.user');
     final initial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
     final navTheme = MagicStarter.navigationTheme;
 
+    // Through [MSAvatar] so the account's photo reaches the one control that
+    // is on screen at all times. This trigger drew the initial whatever the
+    // account carried, so a person who had uploaded a photo saw it on the
+    // profile screen and nowhere else, which reads as the upload not working.
+    //
+    // `dropdownAvatarClassName` stays on the WDiv that carries `states`, not on
+    // the avatar. The avatar takes no states, so moving the theme className
+    // inside would silently drop the hover and active branches of a host that
+    // themed one: the shipped default has no state variants, so nothing would
+    // have shown it. The avatar keeps only the geometry, which is what it needs
+    // to clip the photo to the same circle this div paints.
     return WDiv(
       states: {if (isOpen) 'active', if (isHovering) 'hover'},
       className:
           '''
-                w-8 h-8
-                rounded-full
+                w-8 h-8 rounded-full shadow-sm
                 ${navTheme.dropdownAvatarClassName}
-                flex items-center justify-center
                 cursor-pointer
-                shadow-sm
                 transition-all duration-200
                 hover:scale-105
                 active:scale-95
             ''',
-      child: WText(initial, className: 'text-sm font-bold text-white'),
+      child: MSAvatar(
+        photoUrl: user?.get<String>('profile_photo_url'),
+        className: 'w-full h-full rounded-full',
+        fallback: WText(initial, className: 'text-sm font-bold text-white'),
+      ),
     );
   }
 

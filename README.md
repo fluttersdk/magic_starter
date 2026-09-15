@@ -230,7 +230,7 @@ WindApp(
 | Display | `MSBadge`, `MSTypography`, `MSSkeleton`, `MSToast`, `MSTooltip`, `MSEmptyState`, `MSErrorState`, `MSDataTable` |
 | Selection / navigation | `MSSegmentedControl`, `MSTabs`, `MSAccordion`, `MSNavbar`, `MSDropdownMenu` |
 | Overlay | `MSDialog`, `MSBottomSheet`, `MSConfirmDialog` |
-| Composition | `MSFormField`, `MSCard`, `MSPageHeader`, `MSSocialDivider` |
+| Composition | `MSAvatar`, `MSFormField`, `MSCard`, `MSPageHeader`, `MSSocialDivider` |
 | Page geometry | `MSPageContainer`, `MSPageScaffold` |
 | Settings surface | `MSSettingsSection`, `MSSettingsRow`, `MSSettingsNavRow` |
 | Billing surface | `MSUsageMeter`, `MSUpgradeDialog`, `MSUpgradeNudge` |
@@ -374,6 +374,7 @@ final success = await MagicStarterTwoFactorModal.show(
 | `MagicStarterAuthFormCard` | Centered card wrapper for auth-adjacent screens (invite accept, onboarding) |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
 | `MSTeamSelector` | Current-team switcher dropdown with create/settings links |
+| `MSAvatar` | Photo with an initials or glyph fallback, clipped to the shape you pass |
 | `MSUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
 | `MSSocialDivider` | "Or continue with" divider for auth forms |
 
