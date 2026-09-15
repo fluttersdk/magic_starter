@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -7,6 +9,15 @@ import 'package:magic_starter/src/ui/widgets/magic_starter_timezone_select.dart'
 class MockNetworkDriver implements NetworkDriver {
   final List<MagicResponse> _responses = [];
   final List<String> requestedUrls = [];
+
+  /// When set, the next [get] waits on this before answering, then clears it.
+  ///
+  /// A test that needs a request to be genuinely IN FLIGHT across another
+  /// interaction cannot get there by pumping: this driver answers on the
+  /// microtask after the call, so by the time the test does anything else the
+  /// response has already been applied and the window it meant to test never
+  /// existed. Anything asserting about a stale response needs this.
+  Completer<void>? gate;
 
   void queueResponse({required int statusCode, dynamic data}) {
     _responses.add(MagicResponse(data: data ?? {}, statusCode: statusCode));
@@ -30,6 +41,12 @@ class MockNetworkDriver implements NetworkDriver {
     Map<String, String>? headers,
   }) async {
     requestedUrls.add(url);
+
+    final held = gate;
+    if (held != null) {
+      gate = null;
+      await held.future;
+    }
 
     return _nextResponse();
   }
@@ -760,6 +777,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Held open so the request is genuinely on the wire when the menu
+      // reopens. Without it the driver answers on the next microtask, the
+      // cursor is already written before `onOpen` fires, and the reset then
+      // legitimately clears it: the test would pass against the defect.
+      final onTheWire = Completer<void>();
+      mockDriver.gate = onTheWire;
+
       tester
           .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
           .onSearch!('pacif');
@@ -770,6 +794,9 @@ void main() {
       tester
           .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
           .onOpen!();
+      await tester.pump();
+
+      onTheWire.complete();
       await tester.pumpAndSettle();
 
       await tester
