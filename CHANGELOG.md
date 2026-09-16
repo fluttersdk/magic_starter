@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Every settings screen can be left again: swipe back on iOS, system back on Android.** `MagicRoute.to()` calls `go()`, which replaces the Navigator's whole page list, and none of this package's routes opted out of it, so a settings app was never more than one page deep. That reads as a missing iOS edge swipe and is worse than that on Android: Flutter reports `canHandlePop: false` to the platform at a stack depth of one, the embedder unregisters its own back callback, and the system back button LEAVES THE APP from a settings sub-page. Twelve routes now push instead: the eight settings spokes, team create and team settings, and both notification screens.
+
+  The hub keeps replacing, and so does the invitation-acceptance route. A hub is where a host commonly points a nav destination, and a destination that pushes grows the stack every time its tab is tapped; an emailed invitation link is an arrival, with nothing behind it to go back to. The auth routes are untouched for a third reason: a login bounce is a go_router redirect rather than a `to()`, and stacking them risks leaving a login screen underneath a signed-in app.
+
+  **A stacked route now names no transition, which is the half a host controls.** These routes each pinned `RouteTransition.none`, and magic reads an explicit value as opting OUT of `MagicRouter.defaultTransition`, so an app that had asked for the platform animation app-wide still got none of it here, and no back gesture with it: only `RouteTransition.platform` builds a page whose route mixes in `MaterialRouteTransitionMixin`, and Flutter installs the edge-swipe detector inside that transition rather than beside it. Dropping the pin sends them to the host's default, which is itself `none`, so an app that sets nothing sees exactly what it saw before.
+
 ## [0.0.28] - 2026-09-16
 
 ### Added

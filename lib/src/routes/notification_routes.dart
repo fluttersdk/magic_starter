@@ -18,6 +18,18 @@ import '../ui/components/page_scaffold/page_scaffold.recipe.dart';
 /// these routes. What stays here is what a published notifications package
 /// cannot know: the paths, the authenticated `layout.app` shell, and the page
 /// geometry the screens are mounted in.
+///
+/// Both are `.stacked()`, so they push and can be popped: this package's own
+/// shell reaches the list from the bell dropdown's "see all" and the
+/// preferences from the settings hub, and both are places a reader goes rather
+/// than places they switch to. Without it `MagicRoute.to()` replaces the whole
+/// page list, which costs the iOS edge swipe and makes Android's system back
+/// leave the app.
+///
+/// A host that instead gives the LIST a nav destination should know the cost:
+/// `to()` returns early on a same-path re-tap, so tapping that destination
+/// twice does nothing, but alternating between it and another destination
+/// grows the stack.
 void registerMagicStarterNotificationRoutes() {
   if (!MagicStarterConfig.hasNotificationFeatures()) return;
 
@@ -29,17 +41,13 @@ void registerMagicStarterNotificationRoutes() {
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(
-            MagicStarterConfig.notificationsRoute(),
-            () => Notify.view.make('notifications.list'),
-          )
-          .title('magic_starter.titles.notifications')
-          .transition(RouteTransition.none);
+        MagicStarterConfig.notificationsRoute(),
+        () => Notify.view.make('notifications.list'),
+      ).title('magic_starter.titles.notifications').stacked();
       MagicRoute.page(
-            MagicStarterConfig.notificationPreferencesRoute(),
-            () => Notify.view.make('notifications.preferences'),
-          )
-          .title('magic_starter.titles.notification_preferences')
-          .transition(RouteTransition.none);
+        MagicStarterConfig.notificationPreferencesRoute(),
+        () => Notify.view.make('notifications.preferences'),
+      ).title('magic_starter.titles.notification_preferences').stacked();
     },
   );
 }
