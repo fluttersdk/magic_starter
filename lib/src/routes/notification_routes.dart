@@ -81,8 +81,12 @@ void _mountNotificationViews() {
     // geometry, so a null here is the whole ecosystem's answer. Left unpassed,
     // `Notify.deleteNotification` and the backend route behind it had no
     // surface anywhere: a working endpoint nothing could call.
+    // `contentClassName: ''` because the wrap below already carries the host's
+    // edge margins. Left at the package default the two pad the same edge and
+    // this one page sits twice as far from the display as its neighbours:
+    // measured on a phone at 32 logical pixels against the host's 16.
     () => _inHostPageGeometry(
-      NotificationsListView(onDelete: _confirmThenDelete),
+      NotificationsListView(onDelete: _confirmThenDelete, contentClassName: ''),
     ),
   );
   _mountUnlessOverridden(
@@ -90,6 +94,7 @@ void _mountNotificationViews() {
     () => _inHostPageGeometry(
       NotificationPreferencesView(
         backRoute: MagicStarterConfig.settingsHubRoute(),
+        contentClassName: '',
       ),
     ),
   );

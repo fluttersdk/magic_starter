@@ -368,6 +368,45 @@ void main() {
       expect(width, greaterThan(1000));
     });
 
+    testWidgets('both mounted screens hand their padding to the container', (
+      tester,
+    ) async {
+      // `MSPageContainer` already carries the host's edge margins, so a screen
+      // that also pads its own content column puts these two pages twice as far
+      // from the display as every neighbour: measured on a phone at 32 logical
+      // pixels against the host's 16.
+      //
+      // Asserted on the argument rather than on a measured width because the
+      // two are not the same claim. A width assertion passes on a page whose
+      // margins happen to add up, and the doubled padding is a regression that
+      // compiles and renders.
+      fakeNotificationEndpoints();
+      registerMagicStarterNotificationRoutes();
+
+      for (final String route in <String>[
+        MagicStarterConfig.notificationsRoute(),
+        MagicStarterConfig.notificationPreferencesRoute(),
+      ]) {
+        await tester.pumpWidget(wrap(routeFor(route)!.buildWidget(const {})));
+        await tester.pump();
+
+        final String passed =
+            find.byType(NotificationsListView).evaluate().isNotEmpty
+            ? tester
+                  .widget<NotificationsListView>(
+                    find.byType(NotificationsListView),
+                  )
+                  .contentClassName
+            : tester
+                  .widget<NotificationPreferencesView>(
+                    find.byType(NotificationPreferencesView),
+                  )
+                  .contentClassName;
+
+        expect(passed, '', reason: '$route pads its own content column');
+      }
+    });
+
     testWidgets('a host registration made after the routes wins', (
       tester,
     ) async {
