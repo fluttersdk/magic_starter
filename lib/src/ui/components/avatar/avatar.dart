@@ -73,9 +73,23 @@ class MSAvatar extends StatelessWidget {
               // exceptional: a photo deleted on another device, a signed link
               // past its window. Showing the fallback is the same answer as
               // having no photo, which is what the account now effectively has.
-              errorBuilder: (context, error, stackTrace) => fallback,
+              errorBuilder: (context, error, stackTrace) => _centred(fallback),
             )
-          : fallback,
+          : _centred(fallback),
+    );
+  }
+
+  /// Centres [child] inside the avatar box.
+  ///
+  /// On the fallback branch only. Putting it on the box instead made the box a
+  /// flex, and a wind flex hands its child the screen width for `w-full` and
+  /// starves `h-full`, so the photo laid out as a wide thin band and the clip
+  /// showed a slice of it. A full-size child of a NON-flex box does resolve to
+  /// that box, which is why this wrapper works where the outer one did not.
+  Widget _centred(Widget child) {
+    return WDiv(
+      className: 'w-full h-full flex items-center justify-center',
+      child: child,
     );
   }
 }
