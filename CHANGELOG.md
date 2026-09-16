@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.28] - 2026-09-16
+
 ### Added
 - **`MSAvatar`, and the account's photo finally reaches the one avatar that is always on screen.** A starter app drew a person's photo on the profile screen and nowhere else: `MSUserProfileDropdown` rendered an initial whatever the account carried, so uploading a photo looked like it had not worked. The component owns exactly two things, clipping the photo to the box and choosing between the photo and a fallback. It owns no size, no shape and no colour, because those genuinely differ per surface (32 logical pixels in a header against 80 on a profile screen, a circle for a person against a rounded square for a team) and a variant axis over them is a list nobody could finish; they arrive as `className`. The fallback is a WIDGET rather than a string, because the initials rule is not shared: this package takes one letter and a host app commonly takes the first letter of each of the first two words, and handing the rendered fallback in keeps both correct instead of making one of them wrong. It also lets the profile screens keep their person glyph, which is not initials at all. A photo that fails to load falls back too, so an expired signed link or a photo deleted on another device shows the initial rather than a grey box.
 
@@ -22,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
   `magicNotificationsConstraint` moves with it, so `starter:install` writes `^0.3.2` into a host's pubspec. **A scaffolding consumer sees that change.** The two are held together by a test, because when they disagree pub finds no intersection and answers by walking magic_starter BACKWARDS to an older release rather than failing: an adopter enabling notifications at install time would silently scaffold onto an older starter.
 
-  Until 0.3.2 is published this repository's CI is red against hosted resolution; a consuming app building through path overrides already has both halves.
+  `magic_notifications 0.3.2` and `fluttersdk_wind 1.6.0` are both on pub.dev as of this release, so the hosted graph resolves; the floors were declared before either shipped and the CI job that resolves against pub.dev was red until they did.
 
   **The second screen that draws sessions got the same fix, one release late.** `MagicStarterProfileSettingsView` keeps its own sessions section and was still building the row title from platform and browser alone, so the same phone read as the page heading there while the sessions screen named it correctly. Both screens are exported and publishable, so an adopter who published the profile one saw the old behaviour after the fix landed. It now calls `sessionDeviceTitle` and falls back to `profile.unknown_device` like its sibling, and two widget tests drive the section rather than trusting the call sites to stay in step: a native agent, and the unreadable one that was rendering an empty title.
 
