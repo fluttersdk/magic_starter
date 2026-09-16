@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:magic_starter/src/ui/views/settings/security/magic_starter_sessions_view.dart';
+import 'package:magic_starter/magic_starter.dart';
 
 void main() {
   group('sessionDeviceTitle', () {

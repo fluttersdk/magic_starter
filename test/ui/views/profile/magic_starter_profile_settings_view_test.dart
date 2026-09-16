@@ -376,6 +376,35 @@ void main() {
       expect(find.text('iOS - Uptizm'), findsOneWidget);
     });
 
+    testWidgets('an unreadable agent falls back to the key, not to nothing', (
+      tester,
+    ) async {
+      // The half that was silently rendering an empty title here, and the half
+      // the CHANGELOG calls a live regression on upgrade: an app whose
+      // catalogue predates the key sees `profile.unknown_device` rendered as
+      // itself, which is loud, where an empty row says nothing at all.
+      Config.set('magic_starter.features.sessions', true);
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {
+              'id': 9,
+              'ip_address': '10.0.0.2',
+              'is_current_device': false,
+              'agent': <String, dynamic>{'is_desktop': true},
+              'location': <String, dynamic>{},
+            },
+          ],
+        },
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('profile.unknown_device'), findsOneWidget);
+    });
+
     // -----------------------------------------------------------------------
     // Theme consumption tests
     // -----------------------------------------------------------------------

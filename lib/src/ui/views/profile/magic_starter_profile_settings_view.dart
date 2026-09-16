@@ -15,8 +15,7 @@ import '../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../widgets/magic_starter_two_factor_modal.dart';
 import '../../../http/controllers/magic_starter_newsletter_controller.dart';
 import '../../widgets/magic_starter_timezone_select.dart';
-import '../settings/security/magic_starter_sessions_view.dart'
-    show sessionDeviceTitle;
+import '../../../support/session_device_title.dart';
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///

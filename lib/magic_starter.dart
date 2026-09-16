@@ -98,6 +98,7 @@ export 'src/ui/components/page_scaffold/index.dart';
 export 'src/ui/components/upgrade_dialog/index.dart';
 export 'src/ui/components/upgrade_nudge/index.dart';
 export 'src/ui/components/usage_meter/index.dart';
+export 'src/support/session_device_title.dart';
 export 'src/support/plan_upgrade.dart';
 export 'src/support/upgrade_prompt.dart';
 export 'src/http/session_scoped_controller.dart';
