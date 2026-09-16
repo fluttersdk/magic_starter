@@ -142,4 +142,7 @@ There is no magic-starter-specific skill. The per-directory conventions live in 
 
 ## CI
 
-- `ci.yml`: push/PR → `flutter pub get` → `flutter analyze` → `dart format --set-exit-if-changed` → `flutter test --coverage` → codecov upload
+- `ci.yml` runs TWO jobs, because there are two questions and one job answers one of them.
+  - **Lint & Test**: clones the six fluttersdk siblings, writes the `pubspec_overrides.yaml` a developer keeps locally, then `flutter pub get` → `flutter analyze` → `dart format --set-exit-if-changed` → `flutter test --coverage` → codecov. This is also where `skill_reference_stamp_test.dart` FIRES rather than skips, since `../magic` exists here.
+  - **Published graph**: no clones, no overrides, `flutter pub get` + `flutter analyze` against pub.dev. It is blocking: a red means this package declares a floor an adopter cannot resolve, which happened three times in one day while wind 1.6.1, magic_notifications 0.3.2 and magic 0.0.12 were unpublished.
+- `publish.yml` (tag): validate → OIDC publish to pub.dev → GitHub release from the CHANGELOG section. That last job was missing until 2026-09-17, which is why 0.0.27 and 0.0.28 are on pub.dev with no release page here.

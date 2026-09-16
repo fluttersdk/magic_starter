@@ -16,7 +16,7 @@ on:
 # until release day. Both facts stay visible.
 jobs:
   siblings:
-    name: Sibling working trees (analyze + format + test)
+    name: Lint & Test
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -91,22 +91,20 @@ jobs:
           fail_ci_if_error: false
 
   published:
-    # KNOWN RED, and the name says why so a reader does not have to open this
-    # file. `magic_payments 0.0.1` is not on pub.dev yet, so the resolution below
-    # fails with "could not find package magic_payments" and nothing else. That
-    # is the truth about this package right now: an adopter cannot install it
-    # either, and hiding that behind a sibling clone would be the whole point of
-    # this job thrown away.
+    # Blocking, and it earns that. Every dependency this package declares is on
+    # pub.dev now (magic_payments 0.0.2 closed the last gap), so a red here is
+    # never "waiting for a release" and always a floor naming a version an
+    # adopter cannot resolve. It caught exactly that three times in one day:
+    # `fluttersdk_wind ^1.6.0`, `magic_notifications ^0.3.2` and `magic ^0.0.12`
+    # each sat red until the sibling published, which is the window in which an
+    # adopter would have met `version solving failed` instead.
     #
-    # Remove `continue-on-error` the day magic_payments 0.0.1 is published. The
-    # check is one command: `curl -sI https://pub.dev/api/packages/magic_payments`
-    # returning 200 rather than 404. Nothing else in this job is allowed to be
-    # non-blocking, and this package must not be published before magic_payments
-    # is, or every adopter meets the same failure.
-    name: Published graph (red until magic_payments 0.0.1 is on pub.dev)
+    # It was advisory while `magic_payments 0.0.1` was unpublished, with the
+    # wait written into the job name. That wait is over; the name and the
+    # `continue-on-error` went with it.
+    name: Published graph
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v7

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Improvements
+
+- **CI takes the shape the sibling repos use, and the gate that was advertising a wait stops advertising it.** The first job is `Lint & Test`, named as it is in `magic` and `wind` rather than describing its own mechanics. The second was called `Published graph (red until magic_payments 0.0.1 is on pub.dev)` and carried `continue-on-error`, which made it decoration: that wait ended when magic_payments 0.0.2 shipped, so the job is `Published graph` now and it blocks. It earns that, having gone red three times in one day for the right reason, once each for `fluttersdk_wind ^1.6.0`, `magic_notifications ^0.3.2` and `magic ^0.0.12` while those releases were still in flight, which is exactly the window an adopter would have met `version solving failed` in.
+
+- **`publish.yml` creates the GitHub release it never created.** `magic` and `wind` both cut one from the CHANGELOG section after publishing; this package did not, which is why 0.0.27 and 0.0.28 are on pub.dev while the newest release page here is `v0.0.1-alpha.26` from 2 September. The tag always carried the code; what was missing is the page a changelog link or a dependency bump lands on. (`.github/workflows/ci.yml`, `.github/workflows/publish.yml`, `CLAUDE.md`)
+
 ### Fixed
 - **Every settings screen can be left again: swipe back on iOS, system back on Android.** `MagicRoute.to()` calls `go()`, which replaces the Navigator's whole page list, and none of this package's routes opted out of it, so a settings app was never more than one page deep. That reads as a missing iOS edge swipe and is worse than that on Android: Flutter reports `canHandlePop: false` to the platform at a stack depth of one, the embedder unregisters its own back callback, and the system back button LEAVES THE APP from a settings sub-page. Twelve routes now push instead: the eight settings spokes, team create and team settings, and both notification screens.
 
