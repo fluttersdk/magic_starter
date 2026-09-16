@@ -727,7 +727,7 @@ The modal can also be used for standalone re-authentication (e.g. before a sensi
 | Widget | Description |
 |--------|-------------|
 | `MagicStarterAuthFormCard` | Centered card wrapper (max 480 px) for auth-adjacent screens — invite accept, onboarding, etc. Accepts `title`, `subtitle`, optional `errorMessage`, and a theme-toggle button. |
-| `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones?search=...`. Debounces search at 300 ms and always includes the pre-selected value in options. |
+| `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones?search=...`. Debounces search at 300 ms and always includes the pre-selected value in options. Pages through the endpoint on scroll and resets its cursor when the menu reopens, since the reopen restores the unfiltered list; a response whose list the reopen already replaced is dropped rather than written. |
 | `MSTeamSelector` | Current-team switcher dropdown. Requires `MagicStarter.teamResolver` to be registered. `compact` mode hides the team name label. |
 | `MSAvatar` | A photo with a fallback, clipped to whatever shape `className` asks for. Owns no size, shape or colour, because those differ per surface; the fallback is a WIDGET so a host keeps its own initials rule. Falls back on an empty url and on a load error. |
 | `MSUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, theme toggle, and logout. Supports a custom `triggerBuilder`. |

@@ -58,12 +58,65 @@ class MagicStarterTimezoneSelect extends StatefulWidget {
       _MagicStarterTimezoneSelectState();
 }
 
+/// One page of timezone options, plus whether the server holds another.
+///
+/// [failed] says the request taught us NOTHING about the list, which an empty
+/// [options] cannot say on its own: a dropped request and a genuinely empty
+/// last page both arrive as no rows and no more pages, and they want opposite
+/// handling. The cursor must not advance past the first and must not keep
+/// re-asking for the second.
+typedef _TimezonePage = ({
+  List<SelectOption<String>> options,
+  bool hasMore,
+  bool failed,
+});
+
 class _MagicStarterTimezoneSelectState
     extends State<MagicStarterTimezoneSelect> {
+  /// Rows per request. Small enough that the first page arrives quickly and
+  /// large enough that a reader scrolling a dropdown is not asking for another
+  /// round trip every few rows.
+  static const int _perPage = 20;
+
   List<SelectOption<String>> _allOptions = [];
   bool _isInitializing = true;
   Timer? _debounceTimer;
   Completer<List<SelectOption<String>>>? _searchCompleter;
+
+  /// The query the visible page belongs to, so a scroll asks for the next page
+  /// OF THAT SEARCH rather than of the unfiltered list.
+  String _query = '';
+
+  /// The last page fetched for [_query]. A new search puts it back to one.
+  int _page = 1;
+
+  /// Whether the server said there is another page after [_page].
+  ///
+  /// `WSelect` reads this to decide whether a scroll to the bottom should call
+  /// `onLoadMore` at all, so it has to be state rather than a local: the value
+  /// arrives with a response and the widget has already been built.
+  bool _hasMore = false;
+
+  /// Whether the UNFILTERED first page had another page after it.
+  ///
+  /// Held apart from [_hasMore], which tracks whatever query is running. A
+  /// reopen throws that query away, so a search that ended on its last page
+  /// would otherwise leave the restored full list reporting no more pages and
+  /// the reader could scroll it end to end and never reach page two again.
+  bool _baseHasMore = false;
+
+  /// Bumped every time the menu resets its own list, which is every open.
+  ///
+  /// Captured by both async paths before they await, because neither can tell
+  /// a stale response from a current one by looking at the cursor. A search
+  /// has no cursor to compare yet, since writing one is the thing it is about
+  /// to do. A load-more compares the page it asked for against the page after
+  /// the current one, which agrees with itself in the case that matters: a
+  /// page two in flight while the cursor sits at page one is indistinguishable
+  /// from a page two about to be asked for, so the reopen that put the cursor
+  /// back to one let the stale response set it to two and the reader lost page
+  /// two for the life of the menu.
+  int _menuEpoch = 0;
 
   @override
   void initState() {
@@ -79,8 +132,9 @@ class _MagicStarterTimezoneSelectState
 
   /// Load default timezones and ensure the current value is included.
   Future<void> _initialize() async {
-    // 1. Fetch default (popular) timezones.
-    final defaultOptions = await _fetchTimezones('');
+    // 1. Fetch the first page of the unfiltered list.
+    final first = await _fetchTimezones('');
+    final defaultOptions = [...first.options];
 
     // 2. If a value is pre-selected, ensure it exists in the options list.
     if (widget.value != null && widget.value!.isNotEmpty) {
@@ -89,8 +143,8 @@ class _MagicStarterTimezoneSelectState
       );
       if (!selectedExists) {
         final selectedOption = await _fetchTimezones(widget.value!);
-        if (selectedOption.isNotEmpty) {
-          defaultOptions.insert(0, selectedOption.first);
+        if (selectedOption.options.isNotEmpty) {
+          defaultOptions.insert(0, selectedOption.options.first);
         }
       }
     }
@@ -98,21 +152,139 @@ class _MagicStarterTimezoneSelectState
     if (mounted) {
       setState(() {
         _allOptions = defaultOptions;
+        _query = '';
+        _page = 1;
+        _hasMore = first.hasMore;
+        _baseHasMore = first.hasMore;
         _isInitializing = false;
       });
     }
   }
 
-  /// Fetch timezones from the API with an optional search query.
-  Future<List<SelectOption<String>>> _fetchTimezones(String query) async {
+  /// Put the cursor back to the start, because the menu reset its own list.
+  ///
+  /// `WSelect` clears its search and restores `options` every time the menu
+  /// OPENS, which this side cannot see from any other signal. Without this the
+  /// cursor survives that reset and the next scroll to the bottom asks for the
+  /// page AFTER the one the reader can no longer see: open, scroll once to pull
+  /// page two, close, reopen, and page two's twenty identifiers were
+  /// unreachable without searching for them, which is the symptom pagination
+  /// was added to remove.
+  void _resetCursorOnOpen() {
+    if (!mounted) return;
+
+    // Before the guard below, and that order is the point: a debounce pending
+    // from a query the reader typed and then closed the menu on has written
+    // none of the three fields the guard reads, so the guard returns and the
+    // timer fires afterwards onto a menu that is showing the unfiltered list.
+    // It would then set `_query` to a word nobody can see and `_page` to one,
+    // and the next scroll would ask for page two OF THAT query. Completing the
+    // completer is what `_handleSearch` already does when a keystroke
+    // supersedes an earlier one: `WSelect` awaits this future behind its own
+    // in-flight flag, so dropping the timer without answering it leaves the
+    // menu waiting on a response that will never come.
+    _debounceTimer?.cancel();
+    if (_searchCompleter != null && !_searchCompleter!.isCompleted) {
+      _searchCompleter!.complete(_allOptions);
+    }
+
+    // Ahead of the guard as well, and for a sharper reason than the cancel:
+    // cancelling helps only while the timer is PENDING. Once it has fired the
+    // request is on the wire and nothing recalls it, so the window is network
+    // latency rather than 300ms. The epoch is what a response landing inside
+    // that window checks itself against.
+    _menuEpoch++;
+
+    // `_hasMore == _baseHasMore` is the third term and it is load-bearing.
+    // `_fetchTimezones` answers `hasMore: false` on any failure, so typing a
+    // character and deleting it fires `onSearch('')`, and if THAT request fails
+    // the state is `_query == ''`, `_page == 1`, `_hasMore == false` while the
+    // unfiltered list still has pages. Guarding on the first two alone returns
+    // here forever after, and the reader scrolls twenty rows to the bottom for
+    // the life of the widget with nothing loading. The load-more failure path
+    // recovers on its own because `_page` is already past one by then; the
+    // search path is the one that needs this.
+    if (_query.isEmpty && _page == 1 && _hasMore == _baseHasMore) return;
+
+    setState(() {
+      _query = '';
+      _page = 1;
+      _hasMore = _baseHasMore;
+    });
+  }
+
+  /// Fetch the page after the one on screen and hand it to [WSelect].
+  ///
+  /// The rows are returned rather than pushed into [_allOptions], because
+  /// `WSelect` owns the visible list once a search has filtered it and
+  /// replacing `options` from here would throw that filtered list away. Only
+  /// the cursor and the has-more flag live on this side.
+  Future<List<SelectOption<String>>> _loadMoreTimezones() async {
+    // Captured before the await and re-checked after it. Nothing cancels a
+    // request when the menu closes, so a page three in flight across a close
+    // and reopen would otherwise land on a cursor the reopen had already put
+    // back to one, set it to two, and make the next scroll skip page two: the
+    // same defect the reopen reset exists to remove, one race later.
+    final int epoch = _menuEpoch;
+    final String query = _query;
+    final int page = _page + 1;
+
+    final next = await _fetchTimezones(query, page: page);
+
+    if (!mounted) return next.options;
+    if (epoch != _menuEpoch) return const [];
+    if (query != _query || page != _page + 1) return const [];
+
+    // A FAILED page is not the end of the list. `_fetchTimezones` answers
+    // `hasMore: false` on any failure, so writing that here unconditionally let
+    // one dropped request end pagination for the life of the open menu: the
+    // reader scrolls to the bottom and nothing loads again until they close and
+    // reopen, which they have no reason to try. The cursor does not advance
+    // either, so the next scroll retries the same page rather than skipping it.
+    //
+    // It reads `failed` rather than inferring the failure from an empty page,
+    // because the two are not the same answer. A final page that really is
+    // empty is reachable on the `links.next` path below, which says another
+    // page exists without saying it has rows, and through the row filter in
+    // `_fetchTimezones` when every entry on a page is malformed. Treating that
+    // as a dropped request leaves `_hasMore` true and every later scroll to
+    // the bottom re-requests the same page forever.
+    if (next.failed) return const [];
+
+    setState(() {
+      _page = page;
+      _hasMore = next.hasMore;
+    });
+
+    return next.options;
+  }
+
+  /// Fetch one page of timezones, optionally filtered by [query].
+  ///
+  /// Returns the options AND whether the server holds another page, because
+  /// both come from the same response and the caller needs both: there are
+  /// well over 400 IANA identifiers and the endpoint pages them, so a list that
+  /// stops at the first page silently hides most of them behind a search box
+  /// the reader has no reason to think is mandatory.
+  Future<_TimezonePage> _fetchTimezones(String query, {int page = 1}) async {
     try {
-      final response = await Http.get('/timezones?search=$query&per_page=20');
+      final response = await Http.get(
+        '/timezones?search=$query&per_page=$_perPage&page=$page',
+      );
       if (response.successful) {
         final data = response.data['data'];
         if (data == null || data is! List) {
-          return [];
+          // The server answered and the answer is unreadable, which is not the
+          // same as "there are no more rows": nothing was learned, so this is
+          // a failure rather than an empty page.
+          return const (
+            options: <SelectOption<String>>[],
+            hasMore: false,
+            failed: true,
+          );
         }
-        return data
+
+        final List<SelectOption<String>> options = data
             .where(
               (tz) =>
                   tz != null &&
@@ -127,11 +299,52 @@ class _MagicStarterTimezoneSelectState
               );
             })
             .toList();
+
+        return (
+          options: options,
+          hasMore: _hasNextPage(response, page),
+          failed: false,
+        );
       }
     } catch (e) {
       Log.error('Failed to fetch timezones: $e');
     }
-    return [];
+    return const (
+      options: <SelectOption<String>>[],
+      hasMore: false,
+      failed: true,
+    );
+  }
+
+  /// Whether the response says a page after [page] exists.
+  ///
+  /// Reads `meta.last_page`, which Laravel's `LengthAwarePaginator` sends. A
+  /// response carrying no meta is treated as the end rather than as unknown:
+  /// guessing "there is more" here would have the select ask for a page that
+  /// does not exist every time the reader reaches the bottom.
+  bool _hasNextPage(MagicResponse response, int page) {
+    final meta = response.data['meta'];
+
+    if (meta is Map) {
+      final lastPage = meta['last_page'];
+      if (lastPage is int) return page < lastPage;
+    }
+
+    // `last_page` is what a `LengthAwarePaginator` sends, which is what this
+    // endpoint uses today. A `SimplePaginator` sends a `meta` WITHOUT it, and
+    // reading only that key would answer "no more" on page one and revert this
+    // widget to the single-page behaviour it exists to fix, silently.
+    // `links.next` is what it does send.
+    //
+    // A CURSOR paginator is not covered and this fallback does not make it so:
+    // the request above is built as `page=$page`, which a cursor paginator
+    // ignores, so it would serve page one again with `links.next` still set and
+    // every scroll would append the same rows. Covering one means changing how
+    // the url is built, not how the response is read.
+    final links = response.data['links'];
+    if (links is Map) return links['next'] != null;
+
+    return false;
   }
 
   /// Handle search requests with debounce to prevent excessive API calls.
@@ -152,8 +365,36 @@ class _MagicStarterTimezoneSelectState
 
     // 3. Start a debounce timer — only fire API after 300ms of inactivity.
     _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      // Read at fire time rather than at schedule time: a reopen before the
+      // timer fires cancels it outright, so the only epoch this callback can
+      // be stale against is the one in force when its request leaves.
+      final int epoch = _menuEpoch;
+
       try {
-        final results = await _fetchTimezones(query);
+        final page = await _fetchTimezones(query);
+        final results = [...page.options];
+
+        // A search restarts the cursor: the next scroll to the bottom has to
+        // ask for page two OF THIS QUERY, not of whatever was loaded before.
+        // Unless the menu reset under it, in which case writing the cursor
+        // would name a query whose rows the reader cannot see and whose
+        // search box is blank.
+        //
+        // The completer is the second half and the epoch cannot stand in for
+        // it: two searches can be on the wire at once, since cancelling only
+        // reaches a timer that has not fired, and both of them captured the
+        // same epoch. Without this term the cursor is written by whichever
+        // response LANDS last rather than whichever the reader asked for last.
+        // `WSelect` gets that right on its own side and drops the older list,
+        // so the two disagree silently until the next scroll asks for page two
+        // of a query nobody typed.
+        if (mounted && epoch == _menuEpoch && _searchCompleter == completer) {
+          setState(() {
+            _query = query;
+            _page = 1;
+            _hasMore = page.hasMore;
+          });
+        }
 
         // Always include the currently selected value in results.
         if (widget.value != null && widget.value!.isNotEmpty) {
@@ -191,10 +432,10 @@ class _MagicStarterTimezoneSelectState
     if (value != null && value.isNotEmpty) {
       final exists = _allOptions.any((opt) => opt.value == value);
       if (!exists) {
-        _fetchTimezones(value).then((options) {
-          if (mounted && options.isNotEmpty) {
+        _fetchTimezones(value).then((page) {
+          if (mounted && page.options.isNotEmpty) {
             setState(() {
-              _allOptions = [options.first, ..._allOptions];
+              _allOptions = [page.options.first, ..._allOptions];
             });
           }
         });
@@ -235,6 +476,9 @@ class _MagicStarterTimezoneSelectState
       onChange: _handleChange,
       searchable: true,
       onSearch: _handleSearch,
+      onLoadMore: _loadMoreTimezones,
+      hasMore: _hasMore,
+      onOpen: _resetCursorOnOpen,
       label: widget.label,
       labelClassName:
           widget.labelClassName ?? 'text-sm font-medium text-fg-muted mb-1',
