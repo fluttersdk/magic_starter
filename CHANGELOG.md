@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.28] - 2026-09-16
+
 ### Added
 - **`MSAvatar`, and the account's photo finally reaches the one avatar that is always on screen.** A starter app drew a person's photo on the profile screen and nowhere else: `MSUserProfileDropdown` rendered an initial whatever the account carried, so uploading a photo looked like it had not worked. The component owns exactly two things, clipping the photo to the box and choosing between the photo and a fallback. It owns no size, no shape and no colour, because those genuinely differ per surface (32 logical pixels in a header against 80 on a profile screen, a circle for a person against a rounded square for a team) and a variant axis over them is a list nobody could finish; they arrive as `className`. The fallback is a WIDGET rather than a string, because the initials rule is not shared: this package takes one letter and a host app commonly takes the first letter of each of the first two words, and handing the rendered fallback in keeps both correct instead of making one of them wrong. It also lets the profile screens keep their person glyph, which is not initials at all. A photo that fails to load falls back too, so an expired signed link or a photo deleted on another device shows the initial rather than a grey box.
 
