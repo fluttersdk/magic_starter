@@ -38,6 +38,8 @@ All notable changes to this project will be documented in this file.
 
   The epoch cannot see the last one, because both requests belong to it: type past the debounce twice and two searches are on the wire at once, and the cursor was written by whichever LANDED last rather than whichever was asked for last. `WSelect` gets its own half right and drops the older list on its query mismatch, which is what made this quiet, since the visible rows stay the newer query's while the cursor names the older one and the two only disagree on the next scroll. The completer identity is the term that closes it.
 
+  **Two ways the list could end early, both silent.** `_fetchTimezones` answers `hasMore: false` on any failure and the load-more path wrote that straight into the cursor, so ONE dropped request ended pagination for the life of the open menu: the reader scrolls to the bottom and nothing loads again until they close and reopen, which they have no reason to try. An empty page no longer advances the cursor or clears the flag, so the next scroll retries. And `_hasNextPage` read only `meta.last_page`, which is a `LengthAwarePaginator` field: a `SimplePaginator` or a cursor paginator sends a `meta` without it and the widget would have answered "no more" on page one and reverted to the single-page behaviour this entry exists to remove. `links.next` is the fallback, which both of those do send. The endpoint is length-aware today, so the second is about the shape changing rather than about the shape now.
+
   Requires the `fluttersdk_wind` release carrying `WSelect.onOpen`, a floor rather than a reservation: the code passes an argument 1.5.3 does not accept. (`lib/src/ui/widgets/magic_starter_timezone_select.dart`)
 
 ## [0.0.27] - 2026-09-12

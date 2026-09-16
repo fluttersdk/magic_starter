@@ -225,6 +225,16 @@ class _MagicStarterTimezoneSelectState
     if (epoch != _menuEpoch) return const [];
     if (query != _query || page != _page + 1) return const [];
 
+    // A FAILED page is not the end of the list. `_fetchTimezones` answers
+    // `hasMore: false` on any failure, so writing that here unconditionally let
+    // one dropped request end pagination for the life of the open menu: the
+    // reader scrolls to the bottom and nothing loads again until they close and
+    // reopen, which they have no reason to try. An empty page is the signal,
+    // and it is the same signal the search path already guards against with
+    // `_baseHasMore`. The cursor does not advance either, so the next scroll
+    // retries the same page rather than skipping it.
+    if (next.options.isEmpty && !next.hasMore) return const [];
+
     setState(() {
       _page = page;
       _hasMore = next.hasMore;
@@ -283,11 +293,21 @@ class _MagicStarterTimezoneSelectState
   /// does not exist every time the reader reaches the bottom.
   bool _hasNextPage(MagicResponse response, int page) {
     final meta = response.data['meta'];
-    if (meta is! Map) return false;
 
-    final lastPage = meta['last_page'];
+    if (meta is Map) {
+      final lastPage = meta['last_page'];
+      if (lastPage is int) return page < lastPage;
+    }
 
-    return lastPage is int && page < lastPage;
+    // `last_page` is what a `LengthAwarePaginator` sends, which is what this
+    // endpoint uses today. A `SimplePaginator` or a cursor paginator sends a
+    // `meta` WITHOUT it, and reading only that key would answer "no more" on
+    // page one and revert this widget to the single-page behaviour it exists to
+    // fix, silently. `links.next` is what both of those do send.
+    final links = response.data['links'];
+    if (links is Map) return links['next'] != null;
+
+    return false;
   }
 
   /// Handle search requests with debounce to prevent excessive API calls.

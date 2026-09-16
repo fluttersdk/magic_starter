@@ -953,5 +953,98 @@ void main() {
         reason: 'the older response wrote its query over the newer cursor',
       );
     });
+
+    testWidgets('a failed page does not end pagination for the menu', (
+      tester,
+    ) async {
+      // `_fetchTimezones` answers `hasMore: false` on any failure, and the
+      // load-more path wrote that into `_hasMore` unconditionally, so ONE
+      // dropped request ended pagination for the life of the open menu: the
+      // reader scrolls to the bottom and nothing more ever loads until they
+      // close and reopen, which they have no reason to try. This is the same
+      // trap the search path already guards with `_baseHasMore`, on the site
+      // that did not get the guard.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'current_page': 1, 'last_page': 5, 'total': 100},
+        },
+      );
+      // The dropped one.
+      mockDriver.queueResponse(statusCode: 500);
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/London', 'label': 'London (GMT+0)'},
+          ],
+          'meta': {'current_page': 2, 'last_page': 5, 'total': 100},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      WFormSelect<String> select() =>
+          tester.widget<WFormSelect<String>>(find.byType(WFormSelect<String>));
+
+      await select().onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        select().hasMore,
+        isTrue,
+        reason: 'one dropped request must not end the list',
+      );
+
+      // And the retry works rather than merely being offered.
+      await select().onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(mockDriver.requestedUrls.last, endsWith('page=2'));
+    });
+
+    testWidgets('a cursor response is paged through links.next', (
+      tester,
+    ) async {
+      // `last_page` is a `LengthAwarePaginator` field. A `SimplePaginator` or a
+      // cursor paginator sends a `meta` without it, and reading only that key
+      // answered "no more" on page one and reverted this widget to the
+      // single-page behaviour it exists to fix, with nothing anywhere saying
+      // so. The endpoint is length-aware today, so this is about the shape
+      // changing rather than about the shape now.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'per_page': 20},
+          'links': {'next': 'https://example.test/timezones?page=2'},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WFormSelect<String>>(find.byType(WFormSelect<String>))
+            .hasMore,
+        isTrue,
+        reason: 'a next link is a next page, whatever the meta calls it',
+      );
+    });
   });
 }
