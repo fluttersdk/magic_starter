@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.29] - 2026-09-17
+
 ### Improvements
 
 - **CI takes the shape the sibling repos use, and the gate that was advertising a wait stops advertising it.** The first job is `Lint & Test`, named as it is in `magic` and `wind` rather than describing its own mechanics. The second was called `Published graph (red until magic_payments 0.0.1 is on pub.dev)` and carried `continue-on-error`, which made it decoration: that wait ended when magic_payments 0.0.2 shipped, so the job is `Published graph` now and it blocks. It earns that, having gone red three times in one day for the right reason, once each for `fluttersdk_wind ^1.6.0`, `magic_notifications ^0.3.2` and `magic ^0.0.12` while those releases were still in flight, which is exactly the window an adopter would have met `version solving failed` in.
