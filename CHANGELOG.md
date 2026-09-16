@@ -17,6 +17,10 @@ All notable changes to this project will be documented in this file.
 
   **Adopters add one key, `profile.unknown_device`, and it is a live regression on UPGRADE as well as a new key at install.** An app that published its catalogue before this release renders the raw key on any session whose agent is unreadable, until the key is added. The install stub carries it for a fresh install. (`lib/src/ui/views/settings/security/magic_starter_sessions_view.dart`, `assets/stubs/install/en.stub`)
 
+  **The second screen that draws sessions got the same fix, one release late.** `MagicStarterProfileSettingsView` keeps its own sessions section and was still building the row title from platform and browser alone, so the same phone read as the page heading there while the sessions screen named it correctly. Both screens are exported and publishable, so an adopter who published the profile one saw the old behaviour after the fix landed. It now calls `sessionDeviceTitle` and falls back to `profile.unknown_device` like its sibling, and a widget test drives the section against a native agent rather than trusting the two call sites to stay in step. (`lib/src/ui/views/profile/magic_starter_profile_settings_view.dart`)
+
+- **An `MSAvatar` whose photo fails to load now has a test saying so.** The `errorBuilder` branch shipped with the component and nothing exercised it, which is the branch that matters most in production: a signed link past its window and a photo deleted on another device both arrive as a failed load rather than as a null url. The test binding refuses every network image, so the case reproduces without a fixture. (`test/ui/components/avatar/avatar_test.dart`)
+
 ## [0.0.27] - 2026-09-12
 
 ### Changed

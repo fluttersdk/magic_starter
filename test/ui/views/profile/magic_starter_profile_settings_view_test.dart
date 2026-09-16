@@ -340,6 +340,43 @@ void main() {
     });
 
     // -----------------------------------------------------------------------
+    // Sessions section
+    // -----------------------------------------------------------------------
+
+    testWidgets('a native session is named by its application', (tester) async {
+      // This screen kept building the row title from platform and browser
+      // alone while the sessions screen moved onto `sessionDeviceTitle`, so a
+      // phone still rendered as the page heading beside a mobile icon. Both
+      // screens are published, so an adopter who published this one saw the
+      // old behaviour after the fix.
+      Config.set('magic_starter.features.sessions', true);
+      mockDriver.mockResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {
+              'id': 7,
+              'ip_address': '10.0.0.1',
+              'is_current_device': false,
+              'agent': {
+                'is_desktop': false,
+                'platform': 'iOS',
+                'browser': '',
+                'app': 'Uptizm',
+              },
+              'location': {'city': 'Istanbul', 'country': 'Turkey'},
+            },
+          ],
+        },
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('iOS - Uptizm'), findsOneWidget);
+    });
+
+    // -----------------------------------------------------------------------
     // Theme consumption tests
     // -----------------------------------------------------------------------
 

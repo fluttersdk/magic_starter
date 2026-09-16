@@ -15,6 +15,8 @@ import '../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../widgets/magic_starter_two_factor_modal.dart';
 import '../../../http/controllers/magic_starter_newsletter_controller.dart';
 import '../../widgets/magic_starter_timezone_select.dart';
+import '../settings/security/magic_starter_sessions_view.dart'
+    show sessionDeviceTitle;
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
@@ -1107,12 +1109,21 @@ class _MagicStarterProfileSettingsViewState
     final isDesktop = agent['is_desktop'] as bool? ?? true;
     final platform = agent['platform'] as String? ?? '';
     final browser = agent['browser'] as String? ?? '';
+    // The native application's name, sent since magic-starter-laravel 0.0.9 for
+    // an agent shaped `<App> (Flutter; iOS)`. Absent for a browser, and absent
+    // entirely from an older backend, which is why it is read defensively.
+    final app = agent['app'] as String? ?? '';
     final ip = session['ip_address'] as String? ?? '';
     final city = locationMap['city'] as String? ?? '';
     final country = locationMap['country'] as String? ?? '';
     final isCurrent = session['is_current_device'] as bool? ?? false;
     final tokenId = session['id']?.toString() ?? '';
     final locationText = [city, country].where((s) => s.isNotEmpty).join(', ');
+    final title = sessionDeviceTitle(
+      platform: platform,
+      browser: browser,
+      app: app,
+    );
 
     return WDiv(
       className:
@@ -1129,7 +1140,7 @@ class _MagicStarterProfileSettingsViewState
               className: 'flex flex-row items-center gap-2 flex-wrap',
               children: [
                 WText(
-                  [platform, browser].where((s) => s.isNotEmpty).join(' - '),
+                  title.isNotEmpty ? title : trans('profile.unknown_device'),
                   className: 'text-sm font-medium text-fg',
                 ),
                 if (isCurrent)
