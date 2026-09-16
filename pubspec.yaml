@@ -24,7 +24,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  magic: ^0.0.6
+  # `RouteDefinition.stacked()` is the API this floor names, and it exists in no
+  # release below 0.0.12: `git show 0.0.11:lib/src/routing/route_definition.dart`
+  # has no `stacked` at all. Eleven routes here call it. A caret on a zero major
+  # spans the whole 0.0.x line, so leaving the floor at `^0.0.6` lets pub resolve
+  # an adopter onto 0.0.11 and hand them `The method 'stacked' isn't defined`
+  # inside a package they do not own, rather than a version-solve message naming
+  # magic.
+  magic: ^0.0.12
   fluttersdk_artisan: ^0.0.9
   # This is a FLOOR for an API, not an upper-bound fix, and the API is
   # `Notify.view`: the notification screens, the bell dropdown and the

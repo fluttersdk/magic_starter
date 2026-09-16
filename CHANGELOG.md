@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 
   **A stacked route now names no transition, which is the half a host controls.** These routes each pinned `RouteTransition.none`, and magic reads an explicit value as opting OUT of `MagicRouter.defaultTransition`, so an app that had asked for the platform animation app-wide still got none of it here, and no back gesture with it: only `RouteTransition.platform` builds a page whose route mixes in `MaterialRouteTransitionMixin`, and Flutter installs the edge-swipe detector inside that transition rather than beside it. Dropping the pin sends them to the host's default, which is itself `none`, so an app that sets nothing sees exactly what it saw before.
 
+  **Requires `magic ^0.0.12`, and the floor is the point rather than a formality.** `RouteDefinition.stacked()` exists in no release below it: `git show 0.0.11:lib/src/routing/route_definition.dart` has no `stacked` at all, and eleven routes here call it. A caret on a zero major spans the whole `0.0.x` line, so a lower floor lets pub resolve an adopter onto 0.0.11 and hand them `The method 'stacked' isn't defined` inside a package they do not own instead of a version-solve message naming magic. magic 0.0.12 also carries the fix for a routed page that was transparent, which nothing could see until a route stacked: without it, these pushes show the outgoing screen through the incoming one for the length of the animation.
+
 ## [0.0.28] - 2026-09-16
 
 ### Added
