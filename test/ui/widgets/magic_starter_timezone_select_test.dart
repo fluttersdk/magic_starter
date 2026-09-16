@@ -1011,15 +1011,90 @@ void main() {
       expect(mockDriver.requestedUrls.last, endsWith('page=2'));
     });
 
-    testWidgets('a cursor response is paged through links.next', (
+    testWidgets('an empty last page ends pagination instead of repeating', (
       tester,
     ) async {
-      // `last_page` is a `LengthAwarePaginator` field. A `SimplePaginator` or a
-      // cursor paginator sends a `meta` without it, and reading only that key
-      // answered "no more" on page one and reverted this widget to the
-      // single-page behaviour it exists to fix, with nothing anywhere saying
-      // so. The endpoint is length-aware today, so this is about the shape
-      // changing rather than about the shape now.
+      // The mirror of the test above, and the reason the failure is carried on
+      // the record rather than inferred from an empty page: a page that really
+      // is empty and really is last arrives as no rows and no more pages,
+      // which is byte for byte what a dropped request answers. Reading the
+      // empty page as a failure leaves `_hasMore` true and the cursor where it
+      // was, so every later scroll to the bottom re-requests the same page for
+      // as long as the menu stays open.
+      //
+      // `links.next` on page one is what makes the shape reachable: it says
+      // another page exists without saying it has rows. The row filter in
+      // `_fetchTimezones` is the second route, when every entry on a final
+      // page is malformed.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [
+            {'identifier': 'Europe/Istanbul', 'label': 'Istanbul (GMT+3)'},
+          ],
+          'meta': {'per_page': 20},
+          'links': {'next': 'https://example.test/timezones?page=2'},
+        },
+      );
+      // Page two is empty and says so: no rows, no next link.
+      mockDriver.queueResponse(
+        statusCode: 200,
+        data: {
+          'data': [],
+          'meta': {'per_page': 20},
+          'links': {'next': null},
+        },
+      );
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      WFormSelect<String> select() =>
+          tester.widget<WFormSelect<String>>(find.byType(WFormSelect<String>));
+
+      expect(select().hasMore, isTrue, reason: 'the next link said so');
+
+      await select().onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        select().hasMore,
+        isFalse,
+        reason: 'an empty page that says it is last IS last',
+      );
+
+      expect(mockDriver.requestedUrls.last, endsWith('page=2'));
+
+      // `hasMore: false` is what stops `WSelect` calling this again, so the
+      // cursor is the second half: driving `onLoadMore` directly bypasses that
+      // gate, and a cursor still sitting at page one would ask for page two a
+      // second time. Page three is the fixed answer, page two the broken one.
+      mockDriver.queueResponse(statusCode: 200, data: {'data': []});
+      await select().onLoadMore!();
+      await tester.pumpAndSettle();
+
+      expect(
+        mockDriver.requestedUrls.last,
+        endsWith('page=3'),
+        reason: 'the empty page still advanced the cursor past itself',
+      );
+    });
+
+    testWidgets('a meta without last_page is paged through links.next', (
+      tester,
+    ) async {
+      // `last_page` is a `LengthAwarePaginator` field. A `SimplePaginator`
+      // sends a `meta` without it, and reading only that key answered "no
+      // more" on page one and reverted this widget to the single-page
+      // behaviour it exists to fix, with nothing anywhere saying so. The
+      // endpoint is length-aware today, so this is about the shape changing
+      // rather than about the shape now. A cursor paginator is NOT covered
+      // and this is not the test for one: the request is built as `page=`,
+      // which a cursor paginator ignores.
       mockDriver.queueResponse(
         statusCode: 200,
         data: {

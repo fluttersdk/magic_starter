@@ -59,7 +59,17 @@ class MagicStarterTimezoneSelect extends StatefulWidget {
 }
 
 /// One page of timezone options, plus whether the server holds another.
-typedef _TimezonePage = ({List<SelectOption<String>> options, bool hasMore});
+///
+/// [failed] says the request taught us NOTHING about the list, which an empty
+/// [options] cannot say on its own: a dropped request and a genuinely empty
+/// last page both arrive as no rows and no more pages, and they want opposite
+/// handling. The cursor must not advance past the first and must not keep
+/// re-asking for the second.
+typedef _TimezonePage = ({
+  List<SelectOption<String>> options,
+  bool hasMore,
+  bool failed,
+});
 
 class _MagicStarterTimezoneSelectState
     extends State<MagicStarterTimezoneSelect> {
@@ -229,11 +239,17 @@ class _MagicStarterTimezoneSelectState
     // `hasMore: false` on any failure, so writing that here unconditionally let
     // one dropped request end pagination for the life of the open menu: the
     // reader scrolls to the bottom and nothing loads again until they close and
-    // reopen, which they have no reason to try. An empty page is the signal,
-    // and it is the same signal the search path already guards against with
-    // `_baseHasMore`. The cursor does not advance either, so the next scroll
-    // retries the same page rather than skipping it.
-    if (next.options.isEmpty && !next.hasMore) return const [];
+    // reopen, which they have no reason to try. The cursor does not advance
+    // either, so the next scroll retries the same page rather than skipping it.
+    //
+    // It reads `failed` rather than inferring the failure from an empty page,
+    // because the two are not the same answer. A final page that really is
+    // empty is reachable on the `links.next` path below, which says another
+    // page exists without saying it has rows, and through the row filter in
+    // `_fetchTimezones` when every entry on a page is malformed. Treating that
+    // as a dropped request leaves `_hasMore` true and every later scroll to
+    // the bottom re-requests the same page forever.
+    if (next.failed) return const [];
 
     setState(() {
       _page = page;
@@ -258,7 +274,14 @@ class _MagicStarterTimezoneSelectState
       if (response.successful) {
         final data = response.data['data'];
         if (data == null || data is! List) {
-          return const (options: <SelectOption<String>>[], hasMore: false);
+          // The server answered and the answer is unreadable, which is not the
+          // same as "there are no more rows": nothing was learned, so this is
+          // a failure rather than an empty page.
+          return const (
+            options: <SelectOption<String>>[],
+            hasMore: false,
+            failed: true,
+          );
         }
 
         final List<SelectOption<String>> options = data
@@ -277,12 +300,20 @@ class _MagicStarterTimezoneSelectState
             })
             .toList();
 
-        return (options: options, hasMore: _hasNextPage(response, page));
+        return (
+          options: options,
+          hasMore: _hasNextPage(response, page),
+          failed: false,
+        );
       }
     } catch (e) {
       Log.error('Failed to fetch timezones: $e');
     }
-    return const (options: <SelectOption<String>>[], hasMore: false);
+    return const (
+      options: <SelectOption<String>>[],
+      hasMore: false,
+      failed: true,
+    );
   }
 
   /// Whether the response says a page after [page] exists.
@@ -300,10 +331,16 @@ class _MagicStarterTimezoneSelectState
     }
 
     // `last_page` is what a `LengthAwarePaginator` sends, which is what this
-    // endpoint uses today. A `SimplePaginator` or a cursor paginator sends a
-    // `meta` WITHOUT it, and reading only that key would answer "no more" on
-    // page one and revert this widget to the single-page behaviour it exists to
-    // fix, silently. `links.next` is what both of those do send.
+    // endpoint uses today. A `SimplePaginator` sends a `meta` WITHOUT it, and
+    // reading only that key would answer "no more" on page one and revert this
+    // widget to the single-page behaviour it exists to fix, silently.
+    // `links.next` is what it does send.
+    //
+    // A CURSOR paginator is not covered and this fallback does not make it so:
+    // the request above is built as `page=$page`, which a cursor paginator
+    // ignores, so it would serve page one again with `links.next` still set and
+    // every scroll would append the same rows. Covering one means changing how
+    // the url is built, not how the response is read.
     final links = response.data['links'];
     if (links is Map) return links['next'] != null;
 
