@@ -130,6 +130,30 @@ void main() {
       expect(find.byType(WImage), findsNothing);
     });
 
+    testWidgets('falls back when the photo fails to load', (tester) async {
+      // An expired signed link, or a photo deleted on another device. The
+      // account effectively has no photo at that moment, so the answer is the
+      // same as having none rather than a grey box. The test binding refuses
+      // every network image, which is exactly the failure this branch exists
+      // for.
+      await tester.pumpWidget(
+        wrap(
+          const MSAvatar(
+            photoUrl: 'https://example.test/gone.png',
+            className: 'w-8 h-8 rounded-full',
+            fallback: WText('AC'),
+          ),
+        ),
+      );
+
+      // The load fails on a later frame, so the first pump still shows the
+      // image widget with nothing in it.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('AC'), findsOneWidget);
+    });
+
     testWidgets('clips, so the shape applies to the photo', (tester) async {
       // Without `overflow-hidden` from the recipe base the rounding reaches
       // only the background behind the image, and a square photo sits inside a

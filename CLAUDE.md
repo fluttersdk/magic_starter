@@ -12,7 +12,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 
 | Command | Description |
 |---------|-------------|
-| `flutter test --coverage` | Run all tests (110 files, ~1426 cases) with coverage |
+| `flutter test --coverage` | Run all tests (112 files, ~1470 cases) with coverage |
 | `flutter test test/http/controllers/` | Run controller tests only |
 | `flutter test --name "pattern"` | Run tests matching pattern |
 | `flutter analyze` | Static analysis (flutter_lints ^6.0). Infos are fatal in CI, so a new lint is fixed rather than filed. |
@@ -35,7 +35,7 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 
 ```
 lib/
-├── magic_starter.dart              # Barrel export — 91 exports
+├── magic_starter.dart              # Barrel export — 89 exports
 ├── config/
 │   └── magic_starter.dart          # Configuration template stub
 └── src/

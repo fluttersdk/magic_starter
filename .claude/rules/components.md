@@ -5,7 +5,7 @@ paths:
 
 # Design-System Components
 
-The 30 `MS`-prefixed components under `lib/src/ui/components/`. These carry a visual contract and nothing else: an API call, a wizard or a layout signal belongs in `lib/src/ui/widgets/` instead.
+The 39 `MS`-prefixed components under `lib/src/ui/components/`. These carry a visual contract and nothing else: an API call, a wizard or a layout signal belongs in `lib/src/ui/widgets/` instead.
 
 ## Folder shape is fixed
 
