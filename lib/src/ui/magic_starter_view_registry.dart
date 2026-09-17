@@ -31,10 +31,29 @@ class _RouteScope extends StatelessWidget {
   /// `maybeOf`, and a widget test that pumps a layout with no router above it
   /// is ordinary. The path is a cache key and nothing else, so an empty one is
   /// the right answer there.
+  ///
+  /// The assert exists because the key is computed wherever the HOST chose to
+  /// render the child, not at the layout's own build context. A host that
+  /// places it somewhere go_router's inherited state does not reach, an
+  /// `Overlay` entry or a nested `Navigator`, would otherwise get a constant
+  /// `ValueKey('')` for every route and no remount at all: the exact failure
+  /// this wrapper exists to remove, arriving silently. Release behaviour is
+  /// unchanged.
   String _path(BuildContext context) {
     try {
       return GoRouterState.of(context).uri.path;
     } on Object {
+      assert(() {
+        debugPrint(
+          'magic_starter: a layout rendered its child where GoRouterState is '
+          'not reachable, so every route shares one subtree key and no route '
+          'change remounts the page. Render the child inside the routed '
+          'subtree rather than in an Overlay or a nested Navigator.',
+        );
+
+        return true;
+      }());
+
       return '';
     }
   }

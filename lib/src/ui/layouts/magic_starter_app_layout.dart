@@ -18,6 +18,12 @@ import '../widgets/magic_starter_hide_bottom_nav.dart';
 /// - Navigation items (customizable via [MagicStarter.useNavigation])
 /// - Bottom navigation bar for mobile
 /// - Content Area
+///
+/// **Construct this through `MagicStarter.view.makeLayout('layout.app', child:
+/// ...)` rather than directly.** That is where the route-keyed `KeyedSubtree`
+/// is applied, and this widget no longer carries its own: a host that reaches
+/// past the registry gets the unkeyed shell the keying exists to prevent. See
+/// `MagicStarterViewRegistry.makeLayout` for what the key is for.
 class MagicStarterAppLayout extends StatefulWidget {
   final Widget child;
 

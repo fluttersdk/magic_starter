@@ -7,6 +7,12 @@ import '../../facades/magic_starter.dart';
 /// Default Guest Layout for Magic Starter.
 ///
 /// Simple centered wrapper for authentication pages.
+///
+/// **Construct this through `MagicStarter.view.makeLayout('layout.guest', child:
+/// ...)` rather than directly.** That is where the route-keyed `KeyedSubtree`
+/// is applied, and this widget no longer carries its own: a host that reaches
+/// past the registry gets the unkeyed shell the keying exists to prevent. See
+/// `MagicStarterViewRegistry.makeLayout` for what the key is for.
 class MagicStarterGuestLayout extends StatelessWidget {
   final Widget child;
 

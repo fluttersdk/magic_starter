@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
 
   The wrap goes around the child rather than around the builder's result on purpose: keying the shell itself would tear the navigation chrome down on every route change, which is the opposite of what a persistent shell is for.
 
+  Both default layouts now say in their own doc comment that they must be constructed through `makeLayout`. They are public barrel exports, and after this change neither keys its own child, so a host reaching past the registry would get exactly the unkeyed shell this fixes, with the silent loss simply moved to a different door.
+
+  `_RouteScope` asserts in debug when `GoRouterState` is unreachable. The key is computed wherever the HOST chose to render the child rather than at the layout's own build context, so a host placing it in an `Overlay` entry or a nested `Navigator` would get one constant key for every route and no remount at all, with nothing to read. Release behaviour is unchanged.
+
   `test/ui/magic_starter_view_registry_test.dart`'s `wraps child with registered layout builder` asserted `contains(child)` and changes with the behaviour. (`lib/src/ui/magic_starter_view_registry.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `lib/src/ui/layouts/magic_starter_guest_layout.dart`, `doc/architecture/view-registry.md`)
 
 ## [0.0.29] - 2026-09-17
