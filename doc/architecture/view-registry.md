@@ -207,6 +207,25 @@ MagicStarter.view.registerLayout(
 > [!NOTE]
 > When overriding `layout.app`, your custom layout is responsible for rendering navigation, header, and responsive behavior. The plugin's controllers still work — only the layout shell changes.
 
+### The child arrives route-keyed
+
+`makeLayout` wraps `child` in a `KeyedSubtree` keyed on the current route path
+before the builder sees it, so your layout renders it wherever you like and
+keeps the per-route remount the default layouts carry. You do not add the key
+yourself and should not strip it.
+
+It matters because a layout is persistent: one element holds one child slot
+that every route in the group takes turns in. Without the key that slot is
+reused across routes, and swapping one scrollable view for another tears down
+render objects in a confused order under accumulated navigation. The guest
+layout has the sibling of the same problem: under `RouteTransition.none` the
+outgoing and incoming routes are briefly mounted together, so a login to
+register move reparents the previous page's element tree instead of unmounting
+it.
+
+The wrap goes around the child rather than around your layout's result, so your
+navigation chrome is NOT torn down on a route change.
+
 <a name="overriding-modals"></a>
 ## Overriding Modals
 

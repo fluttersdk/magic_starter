@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A layout registered through `registerLayout` now keeps the per-route keying the default layouts carry.** `makeLayout` wraps `child` in a `KeyedSubtree` keyed on the live route path before the builder sees it, and both default layouts drop their own copy.
+
+  The keying was correctness rather than appearance and each default layout documented its own reason: `MagicStarterAppLayout` because a persistent shell reuses one child slot across routes, so swapping one scrollable view for another tears down render objects in a confused order under accumulated navigation; `MagicStarterGuestLayout` because under `RouteTransition.none` the outgoing and incoming routes are briefly mounted together, so a guest to guest move reparents the previous page's element tree instead of unmounting it. Neither lives in the router, so `registerLayout` was the exact moment a host app dropped both, silently and with nothing to read.
+
+  Found by a consumer app, `watchools`, which replaced both layouts to get off Material and shipped the app half without the key. It came back by reading the layout it had replaced, which is not a way to find a defect.
+
+  The wrap goes around the child rather than around the builder's result on purpose: keying the shell itself would tear the navigation chrome down on every route change, which is the opposite of what a persistent shell is for.
+
+  `test/ui/magic_starter_view_registry_test.dart`'s `wraps child with registered layout builder` asserted `contains(child)` and changes with the behaviour. (`lib/src/ui/magic_starter_view_registry.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `lib/src/ui/layouts/magic_starter_guest_layout.dart`, `doc/architecture/view-registry.md`)
+
 ## [0.0.29] - 2026-09-17
 
 ### Improvements

@@ -63,6 +63,33 @@ void main() {
       },
     );
 
+    test('hands the override a route-keyed child, not the bare one', () {
+      // The mechanism a host app cannot be expected to reproduce. Both default
+      // layouts key their child by route path, and the app layout's own
+      // comment records why: a persistent shell reuses the same child slot
+      // across routes, so swapping one scrollable view for another tears down
+      // render objects in a confused order under accumulated navigation
+      // (markNeedsLayout on an already-dirty relayout boundary, a double
+      // detach). The guest layout's reason is the sibling of it: under
+      // RouteTransition.none the outgoing and incoming routes are briefly
+      // mounted together, so a guest to guest move reparents the previous
+      // page's element tree instead of unmounting it.
+      //
+      // Neither lives in the router, so registerLayout was the exact moment a
+      // host app dropped both, silently. A consumer app shipped a replacement
+      // without the key and only found out by reading the layout it replaced.
+      late Widget received;
+
+      manager.view.registerLayout('layout.app', (child) {
+        received = child;
+        return _CustomAppShell(child: child);
+      });
+
+      manager.view.makeLayout('layout.app', child: const SizedBox());
+
+      expect(received, isNot(isA<SizedBox>()));
+    });
+
     test('the key stays "layout.app" after an override is registered', () {
       manager.view.registerLayout(
         'layout.app',
