@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.30] - 2026-09-19
+
 ### Fixed
 
 - **A layout registered through `registerLayout` now keeps the per-route keying the default layouts carry.** `makeLayout` wraps `child` in a `KeyedSubtree` keyed on the live route path before the builder sees it, and both default layouts drop their own copy.
@@ -11,6 +13,8 @@ All notable changes to this project will be documented in this file.
   The keying was correctness rather than appearance and each default layout documented its own reason: `MagicStarterAppLayout` because a persistent shell reuses one child slot across routes, so swapping one scrollable view for another tears down render objects in a confused order under accumulated navigation; `MagicStarterGuestLayout` because under `RouteTransition.none` the outgoing and incoming routes are briefly mounted together, so a guest to guest move reparents the previous page's element tree instead of unmounting it. Neither lives in the router, so `registerLayout` was the exact moment a host app dropped both, silently and with nothing to read.
 
   Found by a consumer app, `watchools`, which replaced both layouts to get off Material and shipped the app half without the key. It came back by reading the layout it had replaced, which is not a way to find a defect.
+
+- **Every sibling floor names this batch's release.** `magic` goes `^0.0.12` to `^0.0.14`, `fluttersdk_artisan` `^0.0.9` to `^0.0.16`, `fluttersdk_wind` `^1.6.0` to `^1.6.2`, and `magic_payments` `^0.0.1` to `^0.0.2`. Every old range already admitted its new version, so nothing resolves differently for a consumer on a fresh `pub get`; what changes is that the floors say which releases this package is verified against. magic 0.0.14 is BREAKING (an unresolvable route middleware alias stops the app at `Magic.init`), so a consumer below it no longer resolves this package. `magic_notifications` stays at `^0.3.2`, which is still its newest. (`pubspec.yaml`)
 
   The wrap goes around the child rather than around the builder's result on purpose: keying the shell itself would tear the navigation chrome down on every route change, which is the opposite of what a persistent shell is for.
 
