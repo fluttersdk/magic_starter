@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:magic/magic.dart' show GoRouterState;
 
 typedef MagicStarterViewBuilder = Widget Function();
 typedef MagicStarterLayoutBuilder = Widget Function(Widget child);
@@ -6,6 +7,65 @@ typedef MagicStarterModalBuilder = Widget Function();
 
 /// Slot builder receives the current [BuildContext] and returns a widget.
 typedef MagicStarterSlotBuilder = Widget Function(BuildContext context);
+
+/// Wraps a routed page in a [KeyedSubtree] keyed on the current route path.
+///
+/// A widget rather than an inline [Builder] so the reason has somewhere to
+/// live, and so [MagicStarterViewRegistry.makeLayout] reads as one call. The
+/// [Builder] is what supplies a [BuildContext] under the route: `makeLayout`
+/// is reached through `layout: (child) => ...`, which has none.
+class _RouteScope extends StatelessWidget {
+  const _RouteScope({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (BuildContext inner) =>
+          KeyedSubtree(key: ValueKey<String>(_path(inner)), child: child),
+    );
+  }
+
+  /// `GoRouterState.of` throws rather than answering null and ships no
+  /// `maybeOf`, and a widget test that pumps a layout with no router above it
+  /// is ordinary. The path is a cache key and nothing else, so an empty one is
+  /// the right answer there.
+  ///
+  /// The assert exists because the key is computed wherever the HOST chose to
+  /// render the child, not at the layout's own build context. A host that
+  /// places it somewhere go_router's inherited state does not reach, an
+  /// `Overlay` entry or a nested `Navigator`, would otherwise get a constant
+  /// `ValueKey('')` for every route and no remount at all: the exact failure
+  /// this wrapper exists to remove, arriving silently. Release behaviour is
+  /// unchanged.
+  ///
+  /// It cannot tell those two cases apart, so it names both. A widget test that
+  /// pumps a layout with no router is the common reader of this line and it is
+  /// doing nothing wrong: distinguishing a harness from a live app would mean
+  /// importing `flutter_test` into `lib/`, and a diagnostic that reads as a
+  /// defect report in the ordinary case is a diagnostic that stops being read.
+  String _path(BuildContext context) {
+    try {
+      return GoRouterState.of(context).uri.path;
+    } on Object {
+      assert(() {
+        debugPrint(
+          'magic_starter: a layout rendered its child where GoRouterState is '
+          'not reachable, so every route shares one subtree key and no route '
+          'change remounts the page. Expected in a widget test that pumps a '
+          'layout with no router above it. In a running app it means the child '
+          'was rendered outside the routed subtree, in an Overlay entry or a '
+          'nested Navigator; move it inside.',
+        );
+
+        return true;
+      }());
+
+      return '';
+    }
+  }
+}
 
 /// Registry for starter view builders.
 ///
@@ -53,6 +113,34 @@ class MagicStarterViewRegistry {
 
   /// Build a layout by [key] wrapping [child].
   ///
+  /// [child] reaches the builder already wrapped in a route-keyed
+  /// [KeyedSubtree], so a host app that replaces a layout through
+  /// [registerLayout] keeps the remount behaviour the default layouts carry
+  /// without having to know it exists.
+  ///
+  /// The keying is correctness rather than appearance, and both default
+  /// layouts used to carry their own copy:
+  ///
+  /// - `MagicStarterAppLayout`: a persistent shell reuses the same child slot
+  ///   across routes, so swapping one scrollable view for another tears down
+  ///   render objects in a confused order under accumulated navigation
+  ///   (`markNeedsLayout` on an already-dirty relayout boundary, a double
+  ///   detach).
+  /// - `MagicStarterGuestLayout`: under `RouteTransition.none` the outgoing
+  ///   and incoming routes are briefly mounted together, so a guest to guest
+  ///   move reparents the previous page's element tree instead of unmounting
+  ///   it, and it tears down mid-build.
+  ///
+  /// Neither mechanism lives in the router, so before this it survived only
+  /// for as long as a host used the default layout. A consumer app shipped a
+  /// replacement without the key and found out by reading the layout it had
+  /// replaced.
+  ///
+  /// The wrap goes around [child] rather than around the builder's result on
+  /// purpose: keying the shell itself would tear the navigation chrome down on
+  /// every route change, which is the opposite of what a persistent shell is
+  /// for.
+  ///
   /// Throws [StateError] when the key is not registered.
   Widget makeLayout(String key, {required Widget child}) {
     final builder = _layouts[key];
@@ -61,7 +149,7 @@ class MagicStarterViewRegistry {
       throw StateError('No layout builder registered for key "$key".');
     }
 
-    return builder(child);
+    return builder(_RouteScope(child: child));
   }
 
   /// Register a modal builder under the given key.

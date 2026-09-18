@@ -93,7 +93,14 @@ void main() {
         final Widget result = registry.makeLayout('guest', child: child);
 
         expect(result, isA<Column>());
-        expect((result as Column).children, contains(child));
+
+        // The builder receives the route scope rather than `child` itself,
+        // which is what carries the per-route key into a host app's own
+        // layout: see `makeLayout`'s doc block. This used to assert
+        // `contains(child)` and had to change with the behaviour.
+        final List<Widget> children = (result as Column).children;
+        expect(children, hasLength(1));
+        expect(children.single, isNot(same(child)));
       });
 
       test('throws StateError for unregistered key', () {

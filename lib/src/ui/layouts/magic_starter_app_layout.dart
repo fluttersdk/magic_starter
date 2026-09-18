@@ -18,6 +18,12 @@ import '../widgets/magic_starter_hide_bottom_nav.dart';
 /// - Navigation items (customizable via [MagicStarter.useNavigation])
 /// - Bottom navigation bar for mobile
 /// - Content Area
+///
+/// **Construct this through `MagicStarter.view.makeLayout('layout.app', child:
+/// ...)` rather than directly.** That is where the route-keyed `KeyedSubtree`
+/// is applied, and this widget no longer carries its own: a host that reaches
+/// past the registry gets the unkeyed shell the keying exists to prevent. See
+/// `MagicStarterViewRegistry.makeLayout` for what the key is for.
 class MagicStarterAppLayout extends StatefulWidget {
   final Widget child;
 
@@ -124,19 +130,20 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 WDiv(
                   className: 'flex-1 overflow-y-auto',
                   scrollPrimary: true,
-                  // Key the route content by path so each route mounts as a
-                  // distinct subtree. Without this the persistent shell reuses
-                  // the scroll container's child slot across different route
+                  // The route content is keyed by path so each route mounts as
+                  // a distinct subtree. Without it the persistent shell reuses
+                  // this scroll container's child slot across different route
                   // views; swapping a scrollable view for another then tears
                   // down render objects in a confused order (markNeedsLayout on
                   // an already-dirty relayout boundary, double detach) under
-                  // accumulated navigation. A per-route key forces a clean
-                  // unmount-then-mount. Debug-only asserts, but they surface the
-                  // red ErrorWidget in dev; the keyed subtree removes the smell.
-                  child: KeyedSubtree(
-                    key: ValueKey(currentPath),
-                    child: widget.child,
-                  ),
+                  // accumulated navigation. Debug-only asserts, but they
+                  // surface the red ErrorWidget in dev.
+                  //
+                  // That key is applied by
+                  // MagicStarterViewRegistry.makeLayout rather than here, so a
+                  // host app replacing this layout keeps it; see that method's
+                  // doc block.
+                  child: widget.child,
                 ),
               ],
             ),
