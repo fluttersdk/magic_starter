@@ -77,7 +77,7 @@ body:
     id: plugin-version
     attributes:
       label: Magic Starter Version
-      placeholder: "0.0.29"
+      placeholder: "0.0.30"
     validations:
       required: true
 

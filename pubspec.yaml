@@ -1,6 +1,6 @@
 name: magic_starter
 description: Starter kit for Magic Framework. Auth, Profile, Teams, Notifications — 14 opt-in features with overridable views.
-version: 0.0.29
+version: 0.0.30
 homepage: https://magic.fluttersdk.com/starter
 documentation: https://magic.fluttersdk.com/packages/starter/getting-started/installation
 repository: https://github.com/fluttersdk/magic_starter
@@ -31,8 +31,8 @@ dependencies:
   # an adopter onto 0.0.11 and hand them `The method 'stacked' isn't defined`
   # inside a package they do not own, rather than a version-solve message naming
   # magic.
-  magic: ^0.0.12
-  fluttersdk_artisan: ^0.0.9
+  magic: ^0.0.14
+  fluttersdk_artisan: ^0.0.16
   # This is a FLOOR for an API, not an upper-bound fix, and the API is
   # `Notify.view`: the notification screens, the bell dropdown and the
   # preferences controller live in that package now, and this package's routes
@@ -78,7 +78,7 @@ dependencies:
   # get `undefined_named_parameter` inside a package they do not own, with
   # nothing saying why; with the floor they get a version-solve message naming
   # wind.
-  fluttersdk_wind: ^1.6.0
+  fluttersdk_wind: ^1.6.2
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
@@ -98,7 +98,7 @@ dependencies:
   # `Notify.view`, `hasOverride` and `forgetView`. The `Published graph` CI job
   # is what says so out loud, by resolving the graph a third party actually gets
   # rather than the local path overrides.
-  magic_payments: ^0.0.1
+  magic_payments: ^0.0.2
   args: ^2.7.0
   path: ^1.9.0
 
