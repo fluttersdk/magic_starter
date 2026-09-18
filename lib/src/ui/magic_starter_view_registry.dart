@@ -39,6 +39,12 @@ class _RouteScope extends StatelessWidget {
   /// `ValueKey('')` for every route and no remount at all: the exact failure
   /// this wrapper exists to remove, arriving silently. Release behaviour is
   /// unchanged.
+  ///
+  /// It cannot tell those two cases apart, so it names both. A widget test that
+  /// pumps a layout with no router is the common reader of this line and it is
+  /// doing nothing wrong: distinguishing a harness from a live app would mean
+  /// importing `flutter_test` into `lib/`, and a diagnostic that reads as a
+  /// defect report in the ordinary case is a diagnostic that stops being read.
   String _path(BuildContext context) {
     try {
       return GoRouterState.of(context).uri.path;
@@ -47,8 +53,10 @@ class _RouteScope extends StatelessWidget {
         debugPrint(
           'magic_starter: a layout rendered its child where GoRouterState is '
           'not reachable, so every route shares one subtree key and no route '
-          'change remounts the page. Render the child inside the routed '
-          'subtree rather than in an Overlay or a nested Navigator.',
+          'change remounts the page. Expected in a widget test that pumps a '
+          'layout with no router above it. In a running app it means the child '
+          'was rendered outside the routed subtree, in an Overlay entry or a '
+          'nested Navigator; move it inside.',
         );
 
         return true;
