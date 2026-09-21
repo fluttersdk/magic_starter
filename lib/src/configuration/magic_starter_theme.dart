@@ -540,10 +540,16 @@ class MagicStarterLayoutTheme {
 
   /// Sidebar width in logical pixels while it is compact.
   ///
-  /// Wide enough for the icon plus its tap target, and no wider: a label at
-  /// this width would be clipped rather than shortened.
+  /// The floor is the compact team selector rather than the nav icon, and it
+  /// is exact: `MSTeamSelector`'s compact trigger is `mx-3 p-2` around a `w-8`
+  /// avatar, which is 24 + 16 + 32 = 72 at Wind's 4.0 spacing unit, and
+  /// `sidebarClassName`'s own `border-r` takes one more out of this box. 72
+  /// was measured overflowing by exactly 1 pixel.
   ///
-  /// Defaults to `72`.
+  /// Defaults to `80`, which clears the border and leaves two spacing units of
+  /// slack. A host that lowers it below 73 and enables team features gets a
+  /// `RenderFlex` overflow, and one that lowers it at all should check its own
+  /// `brandBuilder` and `sidebarFooterBuilder` against the new width.
   final double sidebarCompactWidth;
 
   /// Top header bar className.
@@ -614,7 +620,7 @@ class MagicStarterLayoutTheme {
     this.sidebarWidth = 256,
     this.navigationBreakpoint = 'lg',
     this.sidebarExpandedBreakpoint = 'lg',
-    this.sidebarCompactWidth = 72,
+    this.sidebarCompactWidth = 80,
     this.headerClassName =
         'h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between',
     this.headerHeight = 64,

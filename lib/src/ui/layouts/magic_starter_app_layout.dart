@@ -89,6 +89,32 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     return currentPath.startsWith(path);
   }
 
+  /// Answers whether the window is at least [name] wide, where [name] is a key
+  /// of the Wind theme's `screens` map and [field] is the
+  /// [MagicStarterLayoutTheme] field it came from.
+  ///
+  /// Throws [StateError] when the theme does not carry [name]. `wScreenIs`
+  /// resolves an unknown key to null and answers false, so a typo would not
+  /// fail: it would pin the shell to its narrow form at every width, dropping
+  /// every sidebar label or leaving a 4K window on the drawer for ever, with
+  /// nothing to read. Both values were hardcoded before they became fields, so
+  /// this is a failure class the configuration introduced and has to close.
+  bool _isAtLeast(BuildContext context, String field, String name) {
+    final screens = WindTheme.dataOf(context).screens;
+
+    if (!screens.containsKey(name)) {
+      final known = screens.entries.toList()
+        ..sort((a, b) => a.value.compareTo(b.value));
+
+      throw StateError(
+        'MagicStarterLayoutTheme.$field is "$name", which the Wind theme does '
+        'not carry. Use one of: ${known.map((e) => e.key).join(', ')}.',
+      );
+    }
+
+    return wScreenIs(context, name);
+  }
+
   // -------------------------------------------------------------------------
   // Build
   // -------------------------------------------------------------------------
@@ -116,14 +142,26 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     //
     // Which breakpoint is the host's call: the shipped `'lg'` suits a desktop
     // web app, and a rail on a television or a small window needs it lower.
-    final isDesktop = wScreenIs(context, layoutTheme.navigationBreakpoint);
+    final isDesktop = _isAtLeast(
+      context,
+      'navigationBreakpoint',
+      layoutTheme.navigationBreakpoint,
+    );
 
     // Compact is the band between the two breakpoints: the sidebar has been
     // chosen over the drawer, but the window is too narrow to spend
     // `sidebarWidth` on it. Equal breakpoints leave the band empty, which is
     // the shipped default.
-    final isCompact =
-        isDesktop && !wScreenIs(context, layoutTheme.sidebarExpandedBreakpoint);
+    //
+    // Resolved at every width rather than behind `isDesktop`, so a typo in the
+    // field is reported on the window the host is looking at rather than on
+    // the one that happens to consult it.
+    final isExpanded = _isAtLeast(
+      context,
+      'sidebarExpandedBreakpoint',
+      layoutTheme.sidebarExpandedBreakpoint,
+    );
+    final isCompact = isDesktop && !isExpanded;
 
     return Scaffold(
       backgroundColor: wColor(
@@ -569,7 +607,14 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     return WAnchor(
       onTap: () => MagicRoute.to(path),
       child: WDiv(
-        className: 'py-2 flex flex-col items-center gap-1',
+        // The focus className is the same one the sidebar items take: a host
+        // that lights a focused destination wants every destination lit, and
+        // the bottom bar is where a small window puts them. Wind reads the
+        // state off the enclosing WAnchor, so the ring follows the same
+        // primary focus the tap does.
+        className:
+            'py-2 flex flex-col items-center gap-1 '
+            '${navTheme.focusItemClassName}',
         children: [
           WIcon(
             isActive ? activeIcon : icon,

@@ -250,17 +250,19 @@ MagicStarter.useNavigationTheme(
 
 ### Where the sidebar starts, and where it grows labels
 
-Two breakpoint names on `MagicStarterLayoutTheme` decide the shell's shape, and both are keys of the Wind theme's `screens` map rather than pixel counts:
+Three fields on `MagicStarterLayoutTheme` decide the shell's shape. The first two are breakpoints, named as keys of the Wind theme's `screens` map (`sm md lg xl 2xl` by default) rather than as pixel counts; the third is a width in logical pixels:
 
 | Field | Default | What it decides |
 |-------|---------|-----------------|
-| `navigationBreakpoint` | `'lg'` | From this width the sidebar replaces the drawer and the bottom bar |
-| `sidebarExpandedBreakpoint` | `'lg'` | From this width the sidebar carries labels beside its icons |
-| `sidebarCompactWidth` | `72` | Sidebar width while it is compact |
+| `navigationBreakpoint` | `'lg'` | Breakpoint from which the sidebar replaces the drawer and the bottom bar |
+| `sidebarExpandedBreakpoint` | `'lg'` | Breakpoint from which the sidebar carries labels beside its icons |
+| `sidebarCompactWidth` | `80` | Width in logical pixels of the sidebar while it is compact |
 
-Between the two the sidebar renders compact: `sidebarCompactWidth` wide, icons only, and every text label dropped, because a label at that width would be clipped rather than shortened. That is the app name in the brand bar, the nav item labels, the system section's name, and the user's name and email, which falls back to the same avatar trigger the mobile header mounts. What a host supplies itself, `brandBuilder` and `sidebarFooterBuilder`, is passed through untouched: only the host knows whether its own widget fits an icon column.
+Between the two breakpoints the sidebar renders compact: `sidebarCompactWidth` wide, icons only, and every text label dropped, because a label at that width would be clipped rather than shortened. That is the app name in the brand bar, the nav item labels, the system section's name, and the user's name and email, which falls back to the same avatar trigger the mobile header mounts. What a host supplies itself, `brandBuilder` and `sidebarFooterBuilder`, is passed through untouched: only the host knows whether its own widget fits an icon column.
 
-The shipped defaults leave the two equal, so the compact form never fires until a host lowers one of them:
+A name the Wind theme does not carry throws a `StateError` naming the field and listing the valid keys. `wScreenIs` answers false for an unknown key, so a typo would otherwise pin the shell to its narrow form at every width with nothing to read.
+
+The shipped defaults leave the two breakpoints equal, so the compact form never fires until a host lowers one of them:
 
 ```dart
 // An icon rail from 640 px, labels from 1024 px.
@@ -268,14 +270,15 @@ MagicStarter.useLayoutTheme(
   const MagicStarterLayoutTheme(
     navigationBreakpoint: 'sm',
     sidebarExpandedBreakpoint: 'lg',
-    sidebarCompactWidth: 64,
   ),
 );
 ```
 
+Take care lowering `sidebarCompactWidth`. Its floor is the compact team selector rather than the nav icon: `MSTeamSelector`'s compact trigger is `mx-3 p-2` around a `w-8` avatar, which is 72 logical pixels, and `sidebarClassName`'s own `border-r` takes one more out of the box. 72 was measured overflowing by exactly 1 pixel, which is why the default is 80.
+
 ### A focus ring for a keyboard or a remote
 
-`MagicStarterNavigationTheme.focusItemClassName` is applied to every sidebar and drawer nav item, beside the active and hover classNames. Each token carries the `focus:` prefix; the item already sits inside a `WAnchor`, so Wind lights them the moment it holds primary focus. It defaults to `''`, which is the shipped shell's no-ring behaviour, and an app driven by arrow keys or a television remote wants it set:
+`MagicStarterNavigationTheme.focusItemClassName` is applied to every navigation item the shell draws: the sidebar and drawer items beside their active and hover classNames, and the bottom bar's items too, so a small window is lit the same way a wide one is. Each token carries the `focus:` prefix; the item already sits inside a `WAnchor`, so Wind lights them the moment it holds primary focus. It defaults to `''`, which is the shipped shell's no-ring behaviour, and an app driven by arrow keys or a television remote wants it set:
 
 ```dart
 MagicStarter.useNavigationTheme(
