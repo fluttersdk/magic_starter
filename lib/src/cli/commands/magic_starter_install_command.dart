@@ -15,7 +15,7 @@ import '../helpers/magic_starter_config_helper.dart';
 /// disagree. They describe one dependency from two files, so a disagreement
 /// leaves pub no intersection to solve, and pub answers that by walking
 /// magic_starter backwards to a release that fits rather than by failing.
-const String magicNotificationsConstraint = '^0.3.2';
+const String magicNotificationsConstraint = '^0.3.3';
 
 /// Installs and configures Magic Starter inside a host Magic application.
 ///
