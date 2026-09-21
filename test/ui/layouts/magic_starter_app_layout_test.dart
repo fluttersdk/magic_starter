@@ -916,6 +916,114 @@ void main() {
       expect(ringed, hasLength(1));
     });
 
+    // A screen shaped like a television guide or a media catalogue: a full
+    // height column whose body takes the slack and scrolls inside itself. It
+    // needs a bounded height from its parent, which is exactly what the
+    // shell's scrolling content area cannot give.
+    Widget fillShapedScreen() {
+      return WDiv(
+        key: const Key('fill-screen'),
+        className: 'h-full flex flex-col',
+        children: [
+          WDiv(className: 'h-12', child: WText('Toolbar')),
+          WDiv(className: 'flex-1 overflow-y-auto', child: WText('Body')),
+        ],
+      );
+    }
+
+    testWidgets(
+      'the default content area scrolls and owns the primary scroll',
+      (tester) async {
+        useViewport(tester, 400, 800);
+
+        await tester.pumpWidget(
+          createApp(child: const SizedBox(key: Key('route-content'))),
+        );
+        await tester.pumpAndSettle();
+
+        final scrollView = tester.widget<SingleChildScrollView>(
+          find
+              .ancestor(
+                of: find.byKey(const Key('route-content')),
+                matching: find.byType(SingleChildScrollView),
+              )
+              .first,
+        );
+
+        expect(scrollView.primary, isTrue);
+      },
+    );
+
+    testWidgets('a non-scrolling contentClassName leaves the child unscrolled', (
+      tester,
+    ) async {
+      useViewport(tester, 400, 800);
+
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(
+          contentClassName: 'flex-1 min-h-0',
+          contentScrollPrimary: false,
+        ),
+      );
+
+      await tester.pumpWidget(
+        createApp(child: const SizedBox(key: Key('route-content'))),
+      );
+      await tester.pumpAndSettle();
+
+      // No scroll view above the route child at all, so nothing of the shell's
+      // can be attached to the ambient PrimaryScrollController either.
+      expect(
+        find.ancestor(
+          of: find.byKey(const Key('route-content')),
+          matching: find.byType(SingleChildScrollView),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a fill-shaped child lays out under a non-scrolling content', (
+      tester,
+    ) async {
+      useViewport(tester, 1440, 900);
+
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(
+          contentClassName: 'flex-1 min-h-0',
+          contentScrollPrimary: false,
+        ),
+      );
+
+      await tester.pumpWidget(createApp(child: fillShapedScreen()));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('fill-screen')), findsOneWidget);
+      expect(find.text('Body'), findsOneWidget);
+    });
+
+    testWidgets('the shipped scrolling content area cannot hold that child', (
+      tester,
+    ) async {
+      useViewport(tester, 1440, 900);
+
+      await tester.pumpWidget(createApp(child: fillShapedScreen()));
+      await tester.pump();
+
+      // The reason the field exists, asserted rather than described: under the
+      // default the same screen is handed an unbounded height and fails to lay
+      // out. A host whose screens are all this shape renders nothing.
+      //
+      // Asserted on the cause rather than on "something threw", so the test
+      // cannot go on passing for a different reason. Wind names it here; a
+      // real run reports the same thing as a raw infinite-size failure once
+      // the assert is compiled out.
+      expect(
+        tester.takeException().toString(),
+        contains('resolves to an unbounded height'),
+      );
+    });
+
     test('the new theme fields default to today shell behaviour', () {
       const layout = MagicStarterLayoutTheme();
       const navigation = MagicStarterNavigationTheme();
@@ -927,6 +1035,8 @@ void main() {
       // was measured overflowing by exactly 1.
       expect(layout.sidebarCompactWidth, equals(80));
       expect(navigation.focusItemClassName, equals(''));
+      expect(layout.contentClassName, equals('flex-1 overflow-y-auto'));
+      expect(layout.contentScrollPrimary, isTrue);
     });
   });
 }

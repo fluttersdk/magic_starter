@@ -199,9 +199,16 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                     className: 'flex-1 flex flex-col h-full overflow-hidden',
                     children: [
                       _buildHeader(context, isDesktop),
+                      // The content box is the host's, because only the host
+                      // knows the shape of its screens. The shipped
+                      // `flex-1 overflow-y-auto` scrolls the child and so
+                      // hands it an unbounded height, which a fill-shaped
+                      // screen (an `h-full` column with a body that scrolls
+                      // inside itself) cannot resolve: it fails to lay out and
+                      // renders nothing.
                       WDiv(
-                        className: 'flex-1 overflow-y-auto',
-                        scrollPrimary: true,
+                        className: layoutTheme.contentClassName,
+                        scrollPrimary: layoutTheme.contentScrollPrimary,
                         child: widget.child,
                       ),
                     ],

@@ -614,6 +614,41 @@ class MagicStarterLayoutTheme {
   /// Defaults to `''` (empty, no default override).
   final String bottomNavClassName;
 
+  /// Content area className: the box the shell hands the route child.
+  ///
+  /// Defaults to `'flex-1 overflow-y-auto'`, which scrolls the child and so
+  /// hands it an unbounded height. That suits a page that is as tall as its
+  /// content and is wrong for a fill-shaped screen: an `h-full` column with a
+  /// body that scrolls inside itself resolves its height against infinity and
+  /// fails to lay out at all, rendering nothing. Such a host sets
+  /// `'flex-1 min-h-0'` and owns its own scrolling.
+  ///
+  /// Worth knowing before choosing: every view this package ships goes through
+  /// `MSPageScaffold`, which brings its own `SingleChildScrollView`, so the
+  /// default nests two scrollables on each of them. The default stays because
+  /// changing it would move layout for every existing host, but a host that
+  /// puts every page through `MSPageScaffold` can set `'flex-1 min-h-0'` and
+  /// lose nothing.
+  final String contentClassName;
+
+  /// Whether the content area attaches to the ambient
+  /// `PrimaryScrollController`.
+  ///
+  /// Defaults to `true`, which is what the shell has always passed. Set it
+  /// false alongside a [contentClassName] that scrolls horizontally, or one
+  /// whose scrolling belongs to the page rather than to the shell: two
+  /// `primary: true` scrollables in one tree contend for the single
+  /// controller, which is the `dropChild` cascade `MSPageScaffold` already
+  /// avoids by passing `primary: false`.
+  ///
+  /// A separate field rather than a value derived from [contentClassName],
+  /// for two measured reasons. Wind reads this flag only inside the branch
+  /// that builds a scroll view (`w_div.dart`), so leaving it true beside a
+  /// non-scrolling className claims nothing and is inert. And deriving it
+  /// would mean restating Wind's own overflow branch order here, which is a
+  /// copy that goes silently wrong the first time Wind reorders it.
+  final bool contentScrollPrimary;
+
   const MagicStarterLayoutTheme({
     this.sidebarClassName =
         'h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700',
@@ -635,6 +670,8 @@ class MagicStarterLayoutTheme {
     this.brandBarClassName =
         'h-14 px-5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800',
     this.bottomNavClassName = '',
+    this.contentClassName = 'flex-1 overflow-y-auto',
+    this.contentScrollPrimary = true,
   });
 }
 

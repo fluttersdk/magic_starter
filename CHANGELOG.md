@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **The app layout's content area is a theme field now, so a host with fill-shaped screens can render at all.** `MagicStarterLayoutTheme.contentClassName` (default `'flex-1 overflow-y-auto'`) is the className of the one `WDiv` the shell wraps the route child in, and `.contentScrollPrimary` (default `true`) is whether that area attaches to the ambient `PrimaryScrollController`. Both defaults are what the shell has always passed, so nothing moves for an existing host.
+
+  The default scrolls the child and therefore hands it `0 <= h <= Infinity`. That suits a page as tall as its content and is wrong for a fill-shaped screen: an `h-full` column whose body takes the slack and scrolls inside itself resolves its height against infinity and fails to lay out. Wind names it in debug (`h-full` inside a vertical scroll resolves to an unbounded height) and a release build reports the raw infinite-size failure instead. Such a host now sets `'flex-1 min-h-0'` with `contentScrollPrimary: false` and owns its own scrolling.
+
+  The flag is a second field rather than a value derived from the className, for two measured reasons. Wind reads `scrollPrimary` only inside the branch that builds a scroll view, so leaving it true beside a non-scrolling className claims nothing and is inert; it earns its keep when the className scrolls horizontally, where a hardcoded true would attach a horizontal viewport to the vertical primary controller. And deriving it would mean restating Wind's own overflow branch order here, a copy that goes silently wrong the first time Wind reorders it.
+
+  Worth stating because the field exposes it: every one of this package's own views goes through `MSPageScaffold`, which brings its own `SingleChildScrollView(primary: false)`, so the shipped default nests two scrollables on each of them. The default stays, because changing it would move layout for every existing host, and a host that puts every page through `MSPageScaffold` can set `'flex-1 min-h-0'` and lose nothing.
+
+  Found by a consumer app running against 0.0.32 rather than by reading it: at 1440x900 the shell itself was correct and all six of its screens were blank. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `doc/basics/views-and-layouts.md`)
+
 ## [0.0.32] - 2026-09-22
 
 ### Added

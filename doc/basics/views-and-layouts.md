@@ -288,6 +288,31 @@ MagicStarter.useNavigationTheme(
 );
 ```
 
+### The box the route child is handed
+
+The shell wraps the route child in one `WDiv`, and two fields on `MagicStarterLayoutTheme` own it:
+
+| Field | Default | What it decides |
+|-------|---------|-----------------|
+| `contentClassName` | `'flex-1 overflow-y-auto'` | The content area's own className |
+| `contentScrollPrimary` | `true` | Whether that area attaches to the ambient `PrimaryScrollController` |
+
+The default scrolls the child, which hands it an unbounded height. That suits a page as tall as its content and is wrong for a fill-shaped screen: an `h-full` column whose body takes the slack and scrolls inside itself resolves its height against infinity, fails to lay out, and renders nothing at all. A host whose screens are all that shape, which is what a television guide or a media catalogue is, sets:
+
+```dart
+MagicStarter.useLayoutTheme(
+  const MagicStarterLayoutTheme(
+    contentClassName: 'flex-1 min-h-0',
+    contentScrollPrimary: false,
+  ),
+);
+```
+
+Set the two together. Wind reads `scrollPrimary` only where it builds a scroll view, so leaving it true beside a non-scrolling className claims nothing and is inert; it matters the moment the className scrolls horizontally, or scrolls in a way that belongs to the page rather than to the shell. Two `primary: true` scrollables in one tree contend for the single controller.
+
+> [!NOTE]
+> Every view this package ships goes through `MSPageScaffold`, which brings its own `SingleChildScrollView(primary: false)`. So the default nests two scrollables on each of them. The default stays as it is, because changing it would move layout for every existing host, but a host that puts every one of its own pages through `MSPageScaffold` can set `'flex-1 min-h-0'` and lose nothing.
+
 ### An immersive route
 
 `MagicStarterHideBottomNav` drops the mobile bottom bar. `MagicStarterHideChrome` drops all of the chrome, so a player, a viewfinder or a map paints the whole window:
