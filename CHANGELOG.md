@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.32] - 2026-09-22
+
 ### Added
 
 - **The default app layout can now serve a rail, a television and a full-screen route, without being replaced.** Four additions, every default unchanged, so an existing host sees nothing move.
