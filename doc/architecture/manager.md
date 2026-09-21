@@ -439,7 +439,7 @@ scaffold consumer.
 <a name="layout-theme"></a>
 ## Layout Theme
 
-`MagicStarterLayoutTheme` overrides Wind UI class names and dimensions for the app layout shell: sidebar, header, content background, drawer background, brand bar, and bottom navigation.
+`MagicStarterLayoutTheme` overrides Wind UI class names and dimensions for the app layout shell: sidebar, header, the content area and its background, drawer background, brand bar, and bottom navigation. It also carries the two breakpoints and the compact width that decide when the sidebar appears and when it renders as an icon rail.
 
 ```dart
 MagicStarter.useLayoutTheme(
