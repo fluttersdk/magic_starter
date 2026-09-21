@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.33] - 2026-09-22
+
 ### Added
 
 - **The app layout's content area is a theme field now, so a host with fill-shaped screens can render at all.** `MagicStarterLayoutTheme.contentClassName` (default `'flex-1 overflow-y-auto'`) is the className of the one `WDiv` the shell wraps the route child in, and `.contentScrollPrimary` (default `true`) is whether that area attaches to the ambient `PrimaryScrollController`. Both defaults are what the shell has always passed, so nothing moves for an existing host.
