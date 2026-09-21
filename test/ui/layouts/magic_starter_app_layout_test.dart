@@ -197,19 +197,23 @@ void main() {
     } catch (_) {}
   });
 
-  GoRouter createRouter({required Widget child}) {
+  GoRouter createRouter({required Widget child, bool hideChrome = false}) {
     return GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => MagicStarterAppLayout(child: child),
+          builder: (context, state) => hideChrome
+              ? MagicStarterHideChrome(
+                  child: MagicStarterAppLayout(child: child),
+                )
+              : MagicStarterAppLayout(child: child),
         ),
       ],
     );
   }
 
-  Widget createApp({required Widget child}) {
-    final router = createRouter(child: child);
+  Widget createApp({required Widget child, bool hideChrome = false}) {
+    final router = createRouter(child: child, hideChrome: hideChrome);
 
     return WindTheme(
       data: WindThemeData(),
@@ -558,6 +562,230 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(NotificationDropdown), findsNothing);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Shell capabilities: navigation breakpoint, compact rail, focus ring, chrome
+  // ---------------------------------------------------------------------------
+
+  group('MagicStarterAppLayout shell capabilities', () {
+    void useViewport(WidgetTester tester, double width, double height) {
+      tester.view.physicalSize = Size(width, height);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+    }
+
+    void useHomeItem() {
+      MagicStarter.useNavigation(
+        mainItems: const [
+          MagicStarterNavItem(icon: Icons.home, labelKey: 'Home', path: '/'),
+        ],
+      );
+    }
+
+    /// True when a [SizedBox] of exactly [width] logical pixels is mounted,
+    /// which is how the shell states the sidebar column is on screen.
+    bool hasSidebarOfWidth(WidgetTester tester, double width) {
+      return tester
+          .widgetList<SizedBox>(find.byType(SizedBox))
+          .any((box) => box.width == width);
+    }
+
+    testWidgets(
+      'puts the sidebar on screen below lg when navigationBreakpoint is lowered',
+      (tester) async {
+        useViewport(tester, 700, 800);
+        useHomeItem();
+
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(
+            navigationBreakpoint: 'sm',
+            sidebarExpandedBreakpoint: 'sm',
+            sidebarWidth: 300,
+          ),
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(hasSidebarOfWidth(tester, 300), isTrue);
+        // The mobile header's hamburger belongs to the drawer shell, which this
+        // width no longer selects.
+        expect(find.byIcon(Icons.menu), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'keeps the drawer shell below lg when navigationBreakpoint is unset',
+      (tester) async {
+        useViewport(tester, 700, 800);
+        useHomeItem();
+
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(sidebarWidth: 300),
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(hasSidebarOfWidth(tester, 300), isFalse);
+        expect(find.byIcon(Icons.menu), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'renders the compact rail with icons only below sidebarExpandedBreakpoint',
+      (tester) async {
+        useViewport(tester, 700, 800);
+        useHomeItem();
+
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(
+            navigationBreakpoint: 'sm',
+            sidebarCompactWidth: 64,
+          ),
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(hasSidebarOfWidth(tester, 64), isTrue);
+        expect(find.byIcon(Icons.home), findsOneWidget);
+        expect(find.text('Home'), findsNothing);
+      },
+    );
+
+    testWidgets('renders labels at the full width once expanded', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(
+          navigationBreakpoint: 'sm',
+          sidebarCompactWidth: 64,
+        ),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(hasSidebarOfWidth(tester, 256), isTrue);
+      expect(find.text('Home'), findsOneWidget);
+    });
+
+    testWidgets('applies focusItemClassName to the sidebar nav item', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+
+      const focusClass = 'focus:ring-2 focus:ring-amber-500';
+      MagicStarter.useNavigationTheme(
+        const MagicStarterNavigationTheme(focusItemClassName: focusClass),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      final ringed = tester
+          .widgetList<WDiv>(find.byType(WDiv))
+          .where(
+            (div) => div.className?.contains('focus:ring-amber-500') ?? false,
+          );
+
+      expect(ringed, hasLength(1));
+    });
+
+    testWidgets(
+      'writes no focus tokens into the item when the field is unset',
+      (tester) async {
+        useViewport(tester, 1280, 800);
+        useHomeItem();
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final ringed = tester
+            .widgetList<WDiv>(find.byType(WDiv))
+            .where((div) => div.className?.contains('focus:') ?? false);
+
+        expect(ringed, isEmpty);
+      },
+    );
+
+    testWidgets('renders no header and no bottom bar under hidden chrome', (
+      tester,
+    ) async {
+      useViewport(tester, 400, 800);
+
+      MagicStarter.useNavigation(
+        mainItems: const [],
+        bottomItems: const [
+          MagicStarterNavItem(
+            icon: Icons.dashboard_outlined,
+            labelKey: 'Overview',
+            path: '/',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        createApp(child: const SizedBox(), hideChrome: true),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.menu), findsNothing);
+      expect(find.text('Overview'), findsNothing);
+    });
+
+    testWidgets('renders no sidebar under hidden chrome', (tester) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(sidebarWidth: 300),
+      );
+
+      await tester.pumpWidget(
+        createApp(child: const SizedBox(), hideChrome: true),
+      );
+      await tester.pumpAndSettle();
+
+      expect(hasSidebarOfWidth(tester, 300), isFalse);
+      expect(find.text('Home'), findsNothing);
+    });
+
+    testWidgets('still renders the route content under hidden chrome', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+
+      await tester.pumpWidget(
+        createApp(
+          child: const SizedBox(key: Key('route-content')),
+          hideChrome: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('route-content')), findsOneWidget);
+    });
+
+    test('the new theme fields default to today shell behaviour', () {
+      const layout = MagicStarterLayoutTheme();
+      const navigation = MagicStarterNavigationTheme();
+
+      expect(layout.navigationBreakpoint, equals('lg'));
+      expect(layout.sidebarExpandedBreakpoint, equals('lg'));
+      expect(layout.sidebarCompactWidth, equals(72));
+      expect(navigation.focusItemClassName, equals(''));
     });
   });
 }

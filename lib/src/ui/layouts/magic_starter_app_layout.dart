@@ -9,6 +9,7 @@ import '../../magic_starter_manager.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
+import '../widgets/magic_starter_hide_chrome.dart';
 
 /// Default App Layout for Magic Starter.
 ///
@@ -96,7 +97,14 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   Widget build(BuildContext context) {
     final currentPath = _getCurrentPath(context);
     final navConfig = MagicStarter.navigationConfig;
+    final layoutTheme = MagicStarter.manager.layoutTheme;
     final hasBottomNav = navConfig != null && navConfig.bottomItems.isNotEmpty;
+
+    // An immersive route keeps the shell mounted (polling, auth listeners, the
+    // route key) and gives the window to its child: no bar, no safe-area inset
+    // and no scroll container, since a player or a map sizes itself and a
+    // scroll view would hand it unbounded height.
+    final hideChrome = MagicStarterHideChrome.of(context);
 
     // Responsive breakpoint via MediaQuery (wScreenIs reads MediaQuery.size),
     // NOT a LayoutBuilder. A LayoutBuilder here makes itself the build-scope
@@ -105,53 +113,69 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     // LayoutBuilder-slot / GlobalKey / RenderFlex exception cascade (worst at
     // narrow widths). MediaQuery.of registers a normal dependency, so width
     // changes still rebuild the shell without the layout-phase build boundary.
-    final isDesktop = wScreenIs(context, 'lg');
+    //
+    // Which breakpoint is the host's call: the shipped `'lg'` suits a desktop
+    // web app, and a rail on a television or a small window needs it lower.
+    final isDesktop = wScreenIs(context, layoutTheme.navigationBreakpoint);
+
+    // Compact is the band between the two breakpoints: the sidebar has been
+    // chosen over the drawer, but the window is too narrow to spend
+    // `sidebarWidth` on it. Equal breakpoints leave the band empty, which is
+    // the shipped default.
+    final isCompact =
+        isDesktop && !wScreenIs(context, layoutTheme.sidebarExpandedBreakpoint);
 
     return Scaffold(
       backgroundColor: wColor(
         context,
-        MagicStarter.manager.layoutTheme.contentBackgroundLightColor,
-        shade: MagicStarter.manager.layoutTheme.contentBackgroundLightShade,
-        darkColorName:
-            MagicStarter.manager.layoutTheme.contentBackgroundDarkColor,
-        darkShade: MagicStarter.manager.layoutTheme.contentBackgroundDarkShade,
+        layoutTheme.contentBackgroundLightColor,
+        shade: layoutTheme.contentBackgroundLightShade,
+        darkColorName: layoutTheme.contentBackgroundDarkColor,
+        darkShade: layoutTheme.contentBackgroundDarkShade,
       ),
-      drawer: isDesktop ? null : _buildDrawer(context, currentPath),
-      body: SafeArea(
-        bottom: false,
-        child: WDiv(
-          className: 'flex flex-row w-full h-full',
-          children: [
-            if (isDesktop) _buildSidebar(context, currentPath),
-            WDiv(
-              className: 'flex-1 flex flex-col h-full overflow-hidden',
-              children: [
-                _buildHeader(context, isDesktop),
-                WDiv(
-                  className: 'flex-1 overflow-y-auto',
-                  scrollPrimary: true,
-                  // The route content is keyed by path so each route mounts as
-                  // a distinct subtree. Without it the persistent shell reuses
-                  // this scroll container's child slot across different route
-                  // views; swapping a scrollable view for another then tears
-                  // down render objects in a confused order (markNeedsLayout on
-                  // an already-dirty relayout boundary, double detach) under
-                  // accumulated navigation. Debug-only asserts, but they
-                  // surface the red ErrorWidget in dev.
-                  //
-                  // That key is applied by
-                  // MagicStarterViewRegistry.makeLayout rather than here, so a
-                  // host app replacing this layout keeps it; see that method's
-                  // doc block.
-                  child: widget.child,
-                ),
-              ],
+      drawer: (isDesktop || hideChrome)
+          ? null
+          : _buildDrawer(context, currentPath),
+      // The route content is keyed by path so each route mounts as a distinct
+      // subtree. Without it the persistent shell reuses the scroll container's
+      // child slot across different route views; swapping a scrollable view for
+      // another then tears down render objects in a confused order
+      // (markNeedsLayout on an already-dirty relayout boundary, double detach)
+      // under accumulated navigation. Debug-only asserts, but they surface the
+      // red ErrorWidget in dev.
+      //
+      // That key is applied by MagicStarterViewRegistry.makeLayout rather than
+      // here, so a host app replacing this layout keeps it; see that method's
+      // doc block. It survives the immersive branch below too, because the key
+      // IS `widget.child` rather than something this shell wraps around it.
+      body: hideChrome
+          ? widget.child
+          : SafeArea(
+              bottom: false,
+              child: WDiv(
+                className: 'flex flex-row w-full h-full',
+                children: [
+                  if (isDesktop)
+                    _buildSidebar(context, currentPath, compact: isCompact),
+                  WDiv(
+                    className: 'flex-1 flex flex-col h-full overflow-hidden',
+                    children: [
+                      _buildHeader(context, isDesktop),
+                      WDiv(
+                        className: 'flex-1 overflow-y-auto',
+                        scrollPrimary: true,
+                        child: widget.child,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
       bottomNavigationBar:
-          (!isDesktop && hasBottomNav && !MagicStarterHideBottomNav.of(context))
+          (!isDesktop &&
+              hasBottomNav &&
+              !hideChrome &&
+              !MagicStarterHideBottomNav.of(context))
           ? _buildBottomNav(context, currentPath)
           : null,
     );
@@ -161,21 +185,37 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // Sidebar
   // -------------------------------------------------------------------------
 
-  Widget _buildSidebar(BuildContext context, String currentPath) {
+  /// Builds the persistent sidebar column.
+  ///
+  /// [compact] is the icon-rail form. One rule governs it everywhere below:
+  /// the rail carries what fits an icon column and drops every text label,
+  /// because a label at `sidebarCompactWidth` is clipped rather than
+  /// shortened. What a host supplies itself (`brandBuilder`,
+  /// `sidebarFooterBuilder`) is passed through untouched, since only the host
+  /// knows whether its widget fits.
+  Widget _buildSidebar(
+    BuildContext context,
+    String currentPath, {
+    required bool compact,
+  }) {
     final layoutTheme = MagicStarter.manager.layoutTheme;
     return SizedBox(
-      width: layoutTheme.sidebarWidth,
+      width: compact
+          ? layoutTheme.sidebarCompactWidth
+          : layoutTheme.sidebarWidth,
       child: WDiv(
         className: layoutTheme.sidebarClassName,
         children: [
-          _buildBrand(context),
+          _buildBrand(context, compact: compact),
           const WSpacer(className: 'h-4'),
-          _buildTeamSelector(context),
+          _buildTeamSelector(context, compact: compact),
           const WSpacer(className: 'h-2'),
-          Expanded(child: _buildNavigation(context, currentPath)),
+          Expanded(
+            child: _buildNavigation(context, currentPath, compact: compact),
+          ),
           if (MagicStarter.manager.sidebarFooterBuilder != null)
             MagicStarter.manager.sidebarFooterBuilder!(context),
-          _buildUserMenu(context),
+          _buildUserMenu(context, compact: compact),
         ],
       ),
     );
@@ -258,9 +298,27 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // Brand
   // -------------------------------------------------------------------------
 
-  Widget _buildBrand(BuildContext context, {bool showClose = false}) {
+  Widget _buildBrand(
+    BuildContext context, {
+    bool showClose = false,
+    bool compact = false,
+  }) {
     final navTheme = MagicStarter.navigationTheme;
     final layoutTheme = MagicStarter.manager.layoutTheme;
+
+    // The app name is a label, so the compact rail keeps only a brand the host
+    // built for it. The bar itself stays, because the rail's first item lines
+    // up with the header's baseline on the expanded form and should not jump
+    // when the window crosses the breakpoint.
+    if (compact) {
+      return WDiv(
+        className: layoutTheme.brandBarClassName,
+        children: [
+          if (navTheme.brandBuilder != null) navTheme.brandBuilder!(context),
+        ],
+      );
+    }
+
     return WDiv(
       className: layoutTheme.brandBarClassName,
       children: [
@@ -286,17 +344,19 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // Team Selector
   // -------------------------------------------------------------------------
 
-  Widget _buildTeamSelector(BuildContext context) {
+  Widget _buildTeamSelector(BuildContext context, {bool compact = false}) {
     if (!MagicStarterConfig.hasTeamFeatures()) {
       return const SizedBox.shrink();
     }
 
+    // A registered override owns its own width; the shell cannot compact a
+    // widget it did not build.
     if (MagicStarter.view.has('sidebar.team_selector')) {
       return MagicStarter.view.make('sidebar.team_selector');
     }
 
     if (MagicStarter.hasTeamResolver) {
-      return MSTeamSelector();
+      return MSTeamSelector(compact: compact);
     }
 
     return const SizedBox.shrink();
@@ -310,6 +370,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     BuildContext context,
     String currentPath, {
     VoidCallback? onItemTap,
+    bool compact = false,
   }) {
     final navConfig = MagicStarter.navigationConfig;
 
@@ -320,6 +381,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         currentPath,
         navConfig,
         onItemTap: onItemTap,
+        compact: compact,
       );
     }
 
@@ -334,6 +396,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           onTap: () => MagicRoute.to('/'),
           onBeforeTap: onItemTap,
           isActive: currentPath == '/',
+          compact: compact,
         ),
         _navItem(
           context,
@@ -345,6 +408,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             MagicStarterConfig.settingsHubRoute(),
             currentPath,
           ),
+          compact: compact,
         ),
       ],
     );
@@ -355,6 +419,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     String currentPath,
     MagicStarterNavigationConfig config, {
     VoidCallback? onItemTap,
+    bool compact = false,
   }) {
     return WDiv(
       className: 'flex flex-col py-2 gap-1 w-full overflow-y-auto',
@@ -368,6 +433,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             onTap: () => MagicRoute.to(item.path),
             onBeforeTap: onItemTap,
             isActive: _isActive(item.path, currentPath),
+            compact: compact,
           ),
         ),
 
@@ -380,17 +446,19 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                             border-t border-color-border-subtle
                         ''',
           ),
-          // Section header
-          WDiv(
-            className: 'mx-3 px-3 pb-1',
-            child: WText(
-              trans('nav.system'),
-              className: '''
+          // Section header. The rule stays the divider on a compact rail: the
+          // section is still marked off, and its name is a label.
+          if (!compact)
+            WDiv(
+              className: 'mx-3 px-3 pb-1',
+              child: WText(
+                trans('nav.system'),
+                className: '''
                                 text-xs font-bold uppercase tracking-wide
                                 text-fg-muted
                             ''',
+              ),
             ),
-          ),
           // System items
           ...config.systemItems.map(
             (item) => _navItem(
@@ -400,6 +468,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               onTap: () => MagicRoute.to(item.path),
               onBeforeTap: onItemTap,
               isActive: _isActive(item.path, currentPath),
+              compact: compact,
             ),
           ),
         ],
@@ -414,8 +483,17 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     required VoidCallback onTap,
     VoidCallback? onBeforeTap,
     bool isActive = false,
+    bool compact = false,
   }) {
     final navTheme = MagicStarter.navigationTheme;
+
+    // The compact row centres the icon in the rail instead of reserving a
+    // label column: no horizontal padding to push it off centre, and no gap to
+    // an element that is not there.
+    final rowClassName = compact
+        ? 'mx-2 py-2.5 rounded-lg flex items-center justify-center'
+        : 'mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3';
+
     return WAnchor(
       onTap: () {
         onBeforeTap?.call();
@@ -425,15 +503,16 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         states: {if (isActive) 'active'},
         className:
             '''
-                    mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3
+                    $rowClassName
                     duration-150 text-sm font-medium
                     text-fg-muted
                     ${navTheme.activeItemClassName}
                     ${navTheme.hoverItemClassName}
+                    ${navTheme.focusItemClassName}
                 ''',
         children: [
           WIcon(icon, className: 'text-[20px]'),
-          Expanded(child: WText(label, className: 'truncate')),
+          if (!compact) Expanded(child: WText(label, className: 'truncate')),
         ],
       ),
     );
@@ -513,13 +592,30 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // User Menu
   // -------------------------------------------------------------------------
 
-  Widget _buildUserMenu(BuildContext context) {
+  Widget _buildUserMenu(BuildContext context, {bool compact = false}) {
     final userName = Auth.user()?.get<String>('name') ?? trans('common.user');
     final userEmail = Auth.user()?.get<String>('email') ?? '';
     final initial = userName.isNotEmpty
         ? userName[0].toUpperCase()
         : trans('common.unknown');
     final navTheme = MagicStarter.navigationTheme;
+
+    // The compact rail drops the name and email and falls back to the
+    // dropdown's own avatar trigger, the same one the mobile header already
+    // mounts. The bell stacks under it rather than beside it, because two
+    // controls do not fit the rail's width side by side.
+    if (compact) {
+      return WDiv(
+        className: 'p-3 border-t border-color-border-subtle',
+        child: WDiv(
+          className: 'flex flex-col items-center gap-2',
+          children: [
+            const MSUserProfileDropdown(alignment: PopoverAlignment.topRight),
+            _buildNotificationBell(),
+          ],
+        ),
+      );
+    }
 
     return WDiv(
       className: 'p-3 border-t border-color-border-subtle',

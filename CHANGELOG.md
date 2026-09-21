@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **The default app layout can now serve a rail, a television and a full-screen route, without being replaced.** Four additions, every default unchanged, so an existing host sees nothing move.
+
+  `MagicStarterLayoutTheme.navigationBreakpoint` (default `'lg'`) is the Wind breakpoint from which the persistent sidebar replaces the drawer plus bottom bar. It was hardcoded, so a host that wanted chrome on a 640 px window or on a television had to replace the layout to get it.
+
+  `MagicStarterLayoutTheme.sidebarExpandedBreakpoint` (default `'lg'`) and `.sidebarCompactWidth` (default `72`) are the compact rail: between the two breakpoints the sidebar renders at the compact width with icons only and every text label dropped, because a label at that width is clipped rather than shortened. Equal breakpoints, which is the shipped pair, leave the band empty and the compact form off.
+
+  `MagicStarterNavigationTheme.focusItemClassName` (default `''`) is applied to every navigation item, so a host driven by arrow keys or a remote can light the destination that holds focus. The active and hover classNames had no focus sibling, and a keyboard user could not tell where they were.
+
+  `MagicStarterHideChrome` is `MagicStarterHideBottomNav`'s shape for the whole shell: a route group wrapped in it keeps the layout mounted, with its notification polling, its auth listeners and its route key, and hands the window to its child with no sidebar, no drawer, no header, no bottom bar, no safe-area inset and no scroll container. A media player or a map sizes itself, and a scroll view would hand it unbounded height.
+
+  Asked for by a consumer app that was maintaining a parallel shell of its own for exactly these four reasons.
+
 ## [0.0.31] - 2026-09-21
 
 ### Changed

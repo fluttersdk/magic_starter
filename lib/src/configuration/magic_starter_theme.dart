@@ -91,6 +91,16 @@ class MagicStarterNavigationTheme {
   /// Defaults to `'bg-gradient-to-tr from-primary to-gray-200'`.
   final String dropdownAvatarClassName;
 
+  /// Focus className for sidebar/drawer nav items.
+  ///
+  /// Each token must carry the `focus:` prefix. The item is already inside a
+  /// `WAnchor`, so Wind lights these the moment the item holds primary focus,
+  /// which is the only feedback a keyboard or a remote gets: without it a host
+  /// driven by arrow keys cannot tell which destination is selected.
+  ///
+  /// Defaults to `''`, leaving the shipped shell with no ring.
+  final String focusItemClassName;
+
   const MagicStarterNavigationTheme({
     this.activeItemClassName =
         'active:text-primary active:bg-primary/10 dark:active:bg-primary/10',
@@ -101,6 +111,7 @@ class MagicStarterNavigationTheme {
     this.avatarClassName = 'bg-primary/10 dark:bg-primary/10',
     this.avatarTextClassName = 'text-sm font-bold text-primary',
     this.dropdownAvatarClassName = 'bg-gradient-to-tr from-primary to-gray-200',
+    this.focusItemClassName = '',
   });
 }
 
@@ -499,10 +510,41 @@ class MagicStarterLayoutTheme {
   /// `'h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700'`.
   final String sidebarClassName;
 
-  /// Sidebar width in logical pixels.
+  /// Sidebar width in logical pixels, in its labelled form.
   ///
   /// Defaults to `256`.
   final double sidebarWidth;
+
+  /// Wind breakpoint name from which the shell shows the persistent sidebar
+  /// instead of the drawer plus bottom bar.
+  ///
+  /// Read through `wScreenIs`, so the value is a key of the Wind theme's
+  /// `screens` map rather than a pixel count: `'sm'` puts the sidebar on
+  /// screen from 640 px, which is what a host with a rail on a small window
+  /// or a television wants.
+  ///
+  /// Defaults to `'lg'`.
+  final String navigationBreakpoint;
+
+  /// Wind breakpoint name from which the sidebar carries labels beside its
+  /// icons.
+  ///
+  /// Between [navigationBreakpoint] and this one the sidebar renders compact:
+  /// [sidebarCompactWidth] wide, icons only, and every text label dropped,
+  /// since nothing else fits an icon column. Leaving this equal to
+  /// [navigationBreakpoint] means the sidebar is never compact.
+  ///
+  /// Defaults to `'lg'`, which is [navigationBreakpoint]'s own default, so the
+  /// compact form is off until a host lowers one of the two.
+  final String sidebarExpandedBreakpoint;
+
+  /// Sidebar width in logical pixels while it is compact.
+  ///
+  /// Wide enough for the icon plus its tap target, and no wider: a label at
+  /// this width would be clipped rather than shortened.
+  ///
+  /// Defaults to `72`.
+  final double sidebarCompactWidth;
 
   /// Top header bar className.
   ///
@@ -570,6 +612,9 @@ class MagicStarterLayoutTheme {
     this.sidebarClassName =
         'h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700',
     this.sidebarWidth = 256,
+    this.navigationBreakpoint = 'lg',
+    this.sidebarExpandedBreakpoint = 'lg',
+    this.sidebarCompactWidth = 72,
     this.headerClassName =
         'h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between',
     this.headerHeight = 64,
