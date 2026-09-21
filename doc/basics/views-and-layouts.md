@@ -248,6 +248,62 @@ MagicStarter.useNavigationTheme(
 > [!TIP]
 > `MagicStarterAppLayout.refreshNotifier` is a static `ValueNotifier<int>` that triggers layout rebuilds. It is bumped automatically by auth state changes. Do not poke it manually unless you have a specific reason to force a layout rebuild.
 
+### Where the sidebar starts, and where it grows labels
+
+Three fields on `MagicStarterLayoutTheme` decide the shell's shape. The first two are breakpoints, named as keys of the Wind theme's `screens` map (`sm md lg xl 2xl` by default) rather than as pixel counts; the third is a width in logical pixels:
+
+| Field | Default | What it decides |
+|-------|---------|-----------------|
+| `navigationBreakpoint` | `'lg'` | Breakpoint from which the sidebar replaces the drawer and the bottom bar |
+| `sidebarExpandedBreakpoint` | `'lg'` | Breakpoint from which the sidebar carries labels beside its icons |
+| `sidebarCompactWidth` | `80` | Width in logical pixels of the sidebar while it is compact |
+
+Between the two breakpoints the sidebar renders compact: `sidebarCompactWidth` wide, icons only, and every text label dropped, because a label at that width would be clipped rather than shortened. That is the app name in the brand bar, the nav item labels, the system section's name, and the user's name and email, which falls back to the same avatar trigger the mobile header mounts. What a host supplies itself, `brandBuilder` and `sidebarFooterBuilder`, is passed through untouched: only the host knows whether its own widget fits an icon column.
+
+A name the Wind theme does not carry throws a `StateError` naming the field and listing the valid keys. `wScreenIs` answers false for an unknown key, so a typo would otherwise pin the shell to its narrow form at every width with nothing to read.
+
+The shipped defaults leave the two breakpoints equal, so the compact form never fires until a host lowers one of them:
+
+```dart
+// An icon rail from 640 px, labels from 1024 px.
+MagicStarter.useLayoutTheme(
+  const MagicStarterLayoutTheme(
+    navigationBreakpoint: 'sm',
+    sidebarExpandedBreakpoint: 'lg',
+  ),
+);
+```
+
+Take care lowering `sidebarCompactWidth`. Its floor is the compact team selector rather than the nav icon: `MSTeamSelector`'s compact trigger is `mx-3 p-2` around a `w-8` avatar, which is 72 logical pixels, and `sidebarClassName`'s own `border-r` takes one more out of the box. 72 was measured overflowing by exactly 1 pixel, which is why the default is 80.
+
+### A focus ring for a keyboard or a remote
+
+`MagicStarterNavigationTheme.focusItemClassName` is applied to every navigation item the shell draws: the sidebar and drawer items beside their active and hover classNames, and the bottom bar's items too, so a small window is lit the same way a wide one is. Each token carries the `focus:` prefix; the item already sits inside a `WAnchor`, so Wind lights them the moment it holds primary focus. It defaults to `''`, which is the shipped shell's no-ring behaviour, and an app driven by arrow keys or a television remote wants it set:
+
+```dart
+MagicStarter.useNavigationTheme(
+  const MagicStarterNavigationTheme(
+    focusItemClassName: 'focus:ring-2 focus:ring-primary focus:ring-offset-2',
+  ),
+);
+```
+
+### An immersive route
+
+`MagicStarterHideBottomNav` drops the mobile bottom bar. `MagicStarterHideChrome` drops all of the chrome, so a player, a viewfinder or a map paints the whole window:
+
+```dart
+MagicRoute.group(
+  layout: (child) => MagicStarterHideChrome(
+    child: MagicStarter.view.makeLayout('layout.app', child: child),
+  ),
+  layoutId: 'app.immersive',
+  routes: () { ... },
+);
+```
+
+No sidebar, no drawer, no header and no bottom bar. The route also gets the window with no safe-area inset and without the shell's own scroll container, since a surface that sizes itself cannot be handed unbounded height. The shell stays in the tree: its layout state, its notification polling and its auth listeners all survive the route, which wrapping the route in a bare page would throw away.
+
 <a name="guestlayout"></a>
 ## GuestLayout
 
@@ -733,6 +789,7 @@ The modal can also be used for standalone re-authentication (e.g. before a sensi
 | `MSUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, theme toggle, and logout. Supports a custom `triggerBuilder`. |
 | `MSSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |
 | `MagicStarterHideBottomNav` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar. Wrap a route layout with this widget and check `MagicStarterHideBottomNav.of(context)` in the layout's build method. |
+| `MagicStarterHideChrome` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the whole shell chrome: sidebar, drawer, header and bottom bar, plus the safe-area inset and the shell's scroll container. Same wrapping shape, read with `MagicStarterHideChrome.of(context)`. See [An immersive route](#applayout). |
 
 > [!NOTE]
 > The bell-icon dropdown is not in this table. It moved to `magic_notifications` as `NotificationDropdown`; see [Notifications](notifications.md).
