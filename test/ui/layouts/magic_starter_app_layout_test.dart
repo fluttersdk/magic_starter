@@ -106,6 +106,34 @@ class MockNetworkDriver implements NetworkDriver {
   }) async => _respond('UPLOAD', url, data: data);
 }
 
+/// A [CacheStore] held in memory, recording the TTL each key was written with.
+class MemoryCacheStore implements CacheStore {
+  final Map<String, dynamic> values = {};
+  final Map<String, Duration?> ttls = {};
+
+  @override
+  dynamic get(String key, {dynamic defaultValue}) =>
+      values.containsKey(key) ? values[key] : defaultValue;
+
+  @override
+  Future<void> put(String key, dynamic value, {Duration? ttl}) async {
+    values[key] = value;
+    ttls[key] = ttl;
+  }
+
+  @override
+  bool has(String key) => values.containsKey(key);
+
+  @override
+  Future<void> forget(String key) async => values.remove(key);
+
+  @override
+  Future<void> flush() async => values.clear();
+
+  @override
+  Future<void> init() async {}
+}
+
 class MockGuard implements Guard {
   Authenticatable? _user;
   final ValueNotifier<int> _stateNotifier = ValueNotifier<int>(0);
@@ -1037,6 +1065,235 @@ void main() {
       expect(navigation.focusItemClassName, equals(''));
       expect(layout.contentClassName, equals('flex-1 overflow-y-auto'));
       expect(layout.contentScrollPrimary, isTrue);
+    });
+  });
+
+  group('MagicStarterAppLayout collapsible sidebar', () {
+    const expandIcon = Icons.keyboard_double_arrow_right;
+    const collapseIcon = Icons.keyboard_double_arrow_left;
+    const preferenceKey = 'magic_starter.sidebar_collapsed';
+
+    void useViewport(WidgetTester tester, double width, double height) {
+      tester.view.physicalSize = Size(width, height);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+    }
+
+    void useHomeItem() {
+      MagicStarter.useNavigation(
+        mainItems: const [
+          MagicStarterNavItem(icon: Icons.home, labelKey: 'Home', path: '/'),
+        ],
+      );
+    }
+
+    void useCollapsible({bool collapsedByDefault = true}) {
+      MagicStarter.useLayoutTheme(
+        MagicStarterLayoutTheme(
+          navigationBreakpoint: 'sm',
+          sidebarCollapsible: true,
+          sidebarCollapsedByDefault: collapsedByDefault,
+        ),
+      );
+    }
+
+    MemoryCacheStore bindCache() {
+      final store = MemoryCacheStore();
+      Config.set('cache.driver', store);
+      Magic.singleton('cache', () => CacheManager());
+
+      return store;
+    }
+
+    bool hasSidebarOfWidth(WidgetTester tester, double width) {
+      return tester
+          .widgetList<SizedBox>(find.byType(SizedBox))
+          .any((box) => box.width == width);
+    }
+
+    testWidgets('starts compact on a wide window when collapsed by default', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+      useCollapsible();
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(hasSidebarOfWidth(tester, 80), isTrue);
+      expect(find.text('Home'), findsNothing);
+      expect(find.byIcon(expandIcon), findsOneWidget);
+    });
+
+    testWidgets('the toggle expands the rail and collapses it again', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+      useCollapsible();
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      // 1. Expanded: the labelled width, the label, and the way back.
+      await tester.tap(find.byIcon(expandIcon));
+      await tester.pumpAndSettle();
+
+      expect(hasSidebarOfWidth(tester, 256), isTrue);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.byIcon(collapseIcon), findsOneWidget);
+
+      // 2. Collapsed again.
+      await tester.tap(find.byIcon(collapseIcon));
+      await tester.pumpAndSettle();
+
+      expect(hasSidebarOfWidth(tester, 80), isTrue);
+      expect(find.text('Home'), findsNothing);
+    });
+
+    testWidgets('remembers the choice across a remount through the cache', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+      useCollapsible();
+      final store = bindCache();
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(expandIcon));
+      await tester.pumpAndSettle();
+
+      expect(store.values[preferenceKey], isFalse);
+
+      // The file store's own default TTL is an hour, which would quietly hand
+      // the viewer the default back the next morning.
+      expect(
+        store.ttls[preferenceKey],
+        greaterThanOrEqualTo(const Duration(days: 365)),
+      );
+
+      // A fresh shell reads the stored choice over the theme's default.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(hasSidebarOfWidth(tester, 256), isTrue);
+      expect(find.text('Home'), findsOneWidget);
+    });
+
+    testWidgets('keeps the choice in memory when no cache is bound', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+      useCollapsible();
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(expandIcon));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(hasSidebarOfWidth(tester, 256), isTrue);
+    });
+
+    testWidgets('offers no toggle when the sidebar is not collapsible', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(
+          navigationBreakpoint: 'sm',
+          sidebarCollapsedByDefault: true,
+        ),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      // A default the viewer cannot undo would be a rail they are stuck with,
+      // so the default only means something on a collapsible sidebar.
+      expect(hasSidebarOfWidth(tester, 256), isTrue);
+      expect(find.byIcon(expandIcon), findsNothing);
+      expect(find.byIcon(collapseIcon), findsNothing);
+    });
+
+    testWidgets('offers no toggle in the compact band, which cannot expand', (
+      tester,
+    ) async {
+      useViewport(tester, 700, 800);
+      useHomeItem();
+      useCollapsible(collapsedByDefault: false);
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(hasSidebarOfWidth(tester, 80), isTrue);
+      expect(find.byIcon(expandIcon), findsNothing);
+      expect(find.byIcon(collapseIcon), findsNothing);
+    });
+
+    testWidgets(
+      'renders compactBrandBuilder on the rail, brandBuilder beside labels',
+      (tester) async {
+        useViewport(tester, 1280, 800);
+        useHomeItem();
+        useCollapsible();
+
+        MagicStarter.useNavigationTheme(
+          MagicStarterNavigationTheme(
+            brandBuilder: (_) => const Text('Full brand'),
+            compactBrandBuilder: (_) => const Text('Glyph'),
+          ),
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Glyph'), findsOneWidget);
+        expect(find.text('Full brand'), findsNothing);
+
+        await tester.tap(find.byIcon(expandIcon));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Full brand'), findsOneWidget);
+        expect(find.text('Glyph'), findsNothing);
+      },
+    );
+
+    testWidgets('names the icon-only toggle for assistive technology', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+      useCollapsible();
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel('nav.expand_sidebar'), findsOneWidget);
+
+      semantics.dispose();
+    });
+
+    test('the collapse fields default to a sidebar that never collapses', () {
+      const layout = MagicStarterLayoutTheme();
+      const navigation = MagicStarterNavigationTheme();
+
+      expect(layout.sidebarCollapsible, isFalse);
+      expect(layout.sidebarCollapsedByDefault, isFalse);
+      expect(navigation.compactBrandBuilder, isNull);
     });
   });
 }
