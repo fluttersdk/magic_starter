@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.34] - 2026-09-22
+
 ### Added
 
 - **The viewer can collapse the sidebar, and a collapsed sidebar can carry its own brand.** Three fields, every default unchanged, so an existing host sees nothing move.
