@@ -402,6 +402,9 @@ MagicStarter.useNavigationTheme(
     // Brand: image/SVG logo (overrides brandClassName when set)
     brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
 
+    // Brand: a glyph for the compact, icon-only sidebar (falls back to brandBuilder)
+    compactBrandBuilder: (context) => Image.asset('assets/logo-mark.png', height: 28),
+
     // Bottom nav active color
     bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
 

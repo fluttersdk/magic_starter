@@ -64,6 +64,16 @@ class MagicStarterNavigationTheme {
   /// ```
   final Widget Function(BuildContext context)? brandBuilder;
 
+  /// Brand builder for the compact, icon-only sidebar.
+  ///
+  /// The compact rail is [MagicStarterLayoutTheme.sidebarCompactWidth] wide
+  /// (80 by default), which a wordmark rarely fits, so a host with a logo glyph
+  /// hands it here and keeps its full lockup in [brandBuilder]. When `null`,
+  /// the rail shows [brandBuilder], which is what it did before this field
+  /// existed; with neither set it shows no brand, since the app name is a
+  /// label and the rail drops every label.
+  final Widget Function(BuildContext context)? compactBrandBuilder;
+
   /// Active bottom navigation item className tokens.
   ///
   /// Applied to both the icon and label [WIcon]/[WText] widgets that have
@@ -107,6 +117,7 @@ class MagicStarterNavigationTheme {
     this.hoverItemClassName = 'hover:bg-gray-100 dark:hover:bg-gray-800',
     this.brandClassName = 'text-lg font-bold text-primary',
     this.brandBuilder,
+    this.compactBrandBuilder,
     this.bottomNavActiveClassName = 'active:text-primary',
     this.avatarClassName = 'bg-primary/10 dark:bg-primary/10',
     this.avatarTextClassName = 'text-sm font-bold text-primary',
@@ -552,6 +563,29 @@ class MagicStarterLayoutTheme {
   /// `brandBuilder` and `sidebarFooterBuilder` against the new width.
   final double sidebarCompactWidth;
 
+  /// Whether the viewer can collapse the labelled sidebar to its compact form
+  /// and expand it again.
+  ///
+  /// Adds a toggle above the user menu, on windows at or above
+  /// [sidebarExpandedBreakpoint] only: below it the sidebar is compact because
+  /// the window cannot spare [sidebarWidth], and a toggle there would promise
+  /// an expansion the shell will not make.
+  ///
+  /// The choice is remembered through Magic's `Cache` when the host binds one,
+  /// under `magic_starter.sidebar_collapsed`, and held in memory otherwise.
+  ///
+  /// Defaults to `false`.
+  final bool sidebarCollapsible;
+
+  /// Whether a collapsible sidebar starts compact before the viewer has chosen.
+  ///
+  /// Ignored unless [sidebarCollapsible] is set: a default the viewer cannot
+  /// undo would be a rail they are stuck with, and a host that wants that has
+  /// [sidebarExpandedBreakpoint] for it. A remembered choice wins over it.
+  ///
+  /// Defaults to `false`.
+  final bool sidebarCollapsedByDefault;
+
   /// Top header bar className.
   ///
   /// Defaults to
@@ -656,6 +690,8 @@ class MagicStarterLayoutTheme {
     this.navigationBreakpoint = 'lg',
     this.sidebarExpandedBreakpoint = 'lg',
     this.sidebarCompactWidth = 80,
+    this.sidebarCollapsible = false,
+    this.sidebarCollapsedByDefault = false,
     this.headerClassName =
         'h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between',
     this.headerHeight = 64,

@@ -38,11 +38,37 @@ class MagicStarterAppLayout extends StatefulWidget {
 }
 
 class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
+  /// Where a collapsible sidebar's state is remembered in Magic's `Cache`.
+  static const _collapsedKey = 'magic_starter.sidebar_collapsed';
+
+  /// How long the remembered state is kept.
+  ///
+  /// The cache has no `forever`, and a write without a TTL takes the store's
+  /// own `cache.ttl` (an hour in the shipped config), which would quietly hand
+  /// the viewer the default back the next morning.
+  static const _collapsedLifetime = Duration(days: 3650);
+
+  static const _expandIcon = Icons.keyboard_double_arrow_right;
+  static const _collapseIcon = Icons.keyboard_double_arrow_left;
+
+  /// What the viewer chose for a collapsible sidebar, or `null` until they
+  /// have, in which case `sidebarCollapsedByDefault` decides. Held apart from
+  /// that default so a host changing its theme still moves a viewer who never
+  /// touched the toggle.
+  bool? _collapsedChoice;
+
   @override
   void initState() {
     super.initState();
     MagicStarterAppLayout.refreshNotifier.addListener(_refresh);
     Auth.stateNotifier.addListener(_refresh);
+
+    // A host that binds no cache keeps the choice for this shell's lifetime
+    // only; that is a host decision rather than a failure.
+    if (Magic.bound('cache')) {
+      final stored = Cache.get(_collapsedKey);
+      if (stored is bool) _collapsedChoice = stored;
+    }
 
     // Start notification polling when layout mounts (user is authenticated).
     // startPolling() is idempotent and calls fetchNotifications() immediately.
@@ -74,6 +100,18 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
 
   void _refresh() {
     if (mounted) setState(() {});
+  }
+
+  /// Records the viewer's choice, and remembers it when a cache is bound.
+  ///
+  /// The write is awaited rather than dropped, so a store that fails reports
+  /// through the zone instead of vanishing; the rail has already moved by then.
+  Future<void> _setCollapsed(bool collapsed) async {
+    setState(() => _collapsedChoice = collapsed);
+
+    if (!Magic.bound('cache')) return;
+
+    await Cache.put(_collapsedKey, collapsed, ttl: _collapsedLifetime);
   }
 
   String _getCurrentPath(BuildContext context) {
@@ -161,7 +199,14 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       'sidebarExpandedBreakpoint',
       layoutTheme.sidebarExpandedBreakpoint,
     );
-    final isCompact = isDesktop && !isExpanded;
+    // A collapsible sidebar can also be compact by the viewer's choice, and
+    // only where it could have been expanded: in the band the window decides.
+    final canCollapse =
+        isDesktop && isExpanded && layoutTheme.sidebarCollapsible;
+    final collapsed =
+        canCollapse &&
+        (_collapsedChoice ?? layoutTheme.sidebarCollapsedByDefault);
+    final isCompact = isDesktop && (!isExpanded || collapsed);
 
     return Scaffold(
       backgroundColor: wColor(
@@ -194,7 +239,12 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 className: 'flex flex-row w-full h-full',
                 children: [
                   if (isDesktop)
-                    _buildSidebar(context, currentPath, compact: isCompact),
+                    _buildSidebar(
+                      context,
+                      currentPath,
+                      compact: isCompact,
+                      collapsible: canCollapse,
+                    ),
                   WDiv(
                     className: 'flex-1 flex flex-col h-full overflow-hidden',
                     children: [
@@ -238,10 +288,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   /// shortened. What a host supplies itself (`brandBuilder`,
   /// `sidebarFooterBuilder`) is passed through untouched, since only the host
   /// knows whether its widget fits.
+  ///
+  /// [collapsible] adds the viewer's toggle above the user menu.
   Widget _buildSidebar(
     BuildContext context,
     String currentPath, {
     required bool compact,
+    required bool collapsible,
   }) {
     final layoutTheme = MagicStarter.manager.layoutTheme;
     return SizedBox(
@@ -260,7 +313,43 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           ),
           if (MagicStarter.manager.sidebarFooterBuilder != null)
             MagicStarter.manager.sidebarFooterBuilder!(context),
+          if (collapsible) _buildCollapseToggle(compact: compact),
           _buildUserMenu(context, compact: compact),
+        ],
+      ),
+    );
+  }
+
+  /// The viewer's collapse toggle, drawn as a nav row so it lines up with the
+  /// destinations above it in both forms.
+  ///
+  /// The icon-only form names itself through `semanticLabel`, since nothing
+  /// else on it does; the labelled form reads its own text instead of a
+  /// second copy of it.
+  Widget _buildCollapseToggle({required bool compact}) {
+    final navTheme = MagicStarter.navigationTheme;
+    final label = trans(
+      compact ? 'nav.expand_sidebar' : 'nav.collapse_sidebar',
+    );
+
+    return WAnchor(
+      onTap: () => _setCollapsed(!compact),
+      semanticLabel: compact ? label : null,
+      child: WDiv(
+        className:
+            '''
+                    ${_navRowClassName(compact: compact)} mb-2
+                    duration-150 text-sm font-medium
+                    text-fg-muted
+                    ${navTheme.hoverItemClassName}
+                    ${navTheme.focusItemClassName}
+                ''',
+        children: [
+          WIcon(
+            compact ? _expandIcon : _collapseIcon,
+            className: 'text-[20px]',
+          ),
+          if (!compact) Expanded(child: WText(label, className: 'truncate')),
         ],
       ),
     );
@@ -352,14 +441,29 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     final layoutTheme = MagicStarter.manager.layoutTheme;
 
     // The app name is a label, so the compact rail keeps only a brand the host
-    // built for it. The bar itself stays, because the rail's first item lines
-    // up with the header's baseline on the expanded form and should not jump
-    // when the window crosses the breakpoint.
+    // built for it, preferring the one built for the rail's width. The bar
+    // itself stays, because the rail's first item lines up with the header's
+    // baseline on the expanded form and should not jump when the window
+    // crosses the breakpoint.
+    //
+    // Centred, because the compact nav rows centre their icons and a lone brand
+    // on a `justify-between` bar sits on the bar's left padding instead, off
+    // that line. Appended rather than substituted, so the host's height,
+    // padding and border stay; the last `justify-*` wins, and a symmetric
+    // horizontal padding keeps the centre where the rail's is.
+    //
+    // The brand is wrapped in a `Flexible` here because Wind only adds one to a
+    // row that distributes space, which `justify-center` does not: without it
+    // a brand wider than the rail's content box overflows instead of being
+    // bounded, as it was on the `justify-between` bar.
     if (compact) {
+      final compactBrand =
+          navTheme.compactBrandBuilder ?? navTheme.brandBuilder;
+
       return WDiv(
-        className: layoutTheme.brandBarClassName,
+        className: '${layoutTheme.brandBarClassName} justify-center',
         children: [
-          if (navTheme.brandBuilder != null) navTheme.brandBuilder!(context),
+          if (compactBrand != null) Flexible(child: compactBrand(context)),
         ],
       );
     }
@@ -531,13 +635,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     bool compact = false,
   }) {
     final navTheme = MagicStarter.navigationTheme;
-
-    // The compact row centres the icon in the rail instead of reserving a
-    // label column: no horizontal padding to push it off centre, and no gap to
-    // an element that is not there.
-    final rowClassName = compact
-        ? 'mx-2 py-2.5 rounded-lg flex items-center justify-center'
-        : 'mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3';
+    final rowClassName = _navRowClassName(compact: compact);
 
     return WAnchor(
       onTap: () {
@@ -561,6 +659,18 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         ],
       ),
     );
+  }
+
+  /// The geometry of one sidebar row, shared by the destinations and the
+  /// collapse toggle so the two cannot drift apart.
+  ///
+  /// The compact row centres the icon in the rail instead of reserving a label
+  /// column: no horizontal padding to push it off centre, and no gap to an
+  /// element that is not there.
+  static String _navRowClassName({required bool compact}) {
+    return compact
+        ? 'mx-2 py-2.5 rounded-lg flex items-center justify-center'
+        : 'mx-3 px-3 py-2.5 rounded-lg flex items-center gap-3';
   }
 
   // -------------------------------------------------------------------------
