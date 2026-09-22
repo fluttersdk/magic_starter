@@ -420,6 +420,24 @@ void main() {
     expect(accountRows.length, 1);
   });
 
+  testWidgets('offers a guest a sign-in row beside the upgrade', (
+    tester,
+  ) async {
+    // The upgrade turns this guest into an account; a guest who already has
+    // one elsewhere needs the login page instead, which the hub never offered.
+    Gate.define('starter.delete-account', (user, [_]) => false);
+
+    await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+
+    expect(navRowFor(tester, MagicStarterConfig.loginRoute()), isNotNull);
+  });
+
+  testWidgets('offers an account no sign-in row', (tester) async {
+    await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+
+    expect(navRowFor(tester, MagicStarterConfig.loginRoute()), isNull);
+  });
+
   // -------------------------------------------------------------------------
   // Slot hooks
   // -------------------------------------------------------------------------

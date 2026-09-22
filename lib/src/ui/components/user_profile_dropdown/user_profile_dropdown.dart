@@ -37,6 +37,8 @@ class MSUserProfileDropdown extends StatelessWidget {
 
   static const _iconLightMode = Icons.light_mode_outlined;
   static const _iconDarkMode = Icons.dark_mode_outlined;
+  static const _iconSignIn = Icons.login;
+  static const _iconCreateAccount = Icons.person_add_alt_outlined;
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +105,13 @@ class MSUserProfileDropdown extends StatelessWidget {
     final profileMenuItems =
         MagicStarter.navigationConfig?.profileMenuItems ?? [];
 
+    // A guest session is signed in, so without these the menu offered it
+    // profile, settings and logout and nothing that turns it into an account.
+    // Sign in reaches the login page (which lets a guest through), and create
+    // account reaches the profile page's in-place upgrade, the same door the
+    // settings hub's upgrade row opens, so the guest keeps its own data.
+    final isGuest = Auth.user()?.get<bool>('is_guest') == true;
+
     return WDiv(
       className: 'flex flex-col py-2 w-full',
       children: [
@@ -128,6 +137,27 @@ class MSUserProfileDropdown extends StatelessWidget {
           ],
         ),
         const WSpacer(className: 'h-1'),
+        if (isGuest) ...[
+          _buildMenuItem(
+            icon: _iconSignIn,
+            label: trans('auth.sign_in'),
+            onTap: () {
+              close();
+              MagicRoute.to(MagicStarterConfig.loginRoute());
+            },
+          ),
+          _buildMenuItem(
+            icon: _iconCreateAccount,
+            label: trans('magic_starter.titles.register'),
+            onTap: () {
+              close();
+              MagicRoute.to(MagicStarterConfig.profileRoute());
+            },
+          ),
+          WDiv(
+            className: 'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full',
+          ),
+        ],
         WDiv(
           className: 'flex-1 overflow-y-auto',
           children: [

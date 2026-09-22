@@ -110,10 +110,14 @@ class MockNetworkDriver implements NetworkDriver {
 class MemoryCacheStore implements CacheStore {
   final Map<String, dynamic> values = {};
   final Map<String, Duration?> ttls = {};
+  final List<String> reads = [];
 
   @override
-  dynamic get(String key, {dynamic defaultValue}) =>
-      values.containsKey(key) ? values[key] : defaultValue;
+  dynamic get(String key, {dynamic defaultValue}) {
+    reads.add(key);
+
+    return values.containsKey(key) ? values[key] : defaultValue;
+  }
 
   @override
   Future<void> put(String key, dynamic value, {Duration? ttl}) async {
@@ -1205,6 +1209,25 @@ void main() {
       expect(hasSidebarOfWidth(tester, 256), isTrue);
     });
 
+    testWidgets('never reads the preference for a host that has not opted in', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+      final store = bindCache();
+
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(navigationBreakpoint: 'sm'),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      // Every read dispatches a hit-or-miss event, which a host without the
+      // toggle would see logged on every shell mount.
+      expect(store.reads, isNot(contains(preferenceKey)));
+    });
+
     testWidgets('offers no toggle when the sidebar is not collapsible', (
       tester,
     ) async {
@@ -1299,6 +1322,63 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'takes a compact brand that is already a flex child without a crash',
+      (tester) async {
+        useViewport(tester, 1280, 800);
+        useHomeItem();
+        useCollapsible();
+
+        // The shape a host reached for to centre its glyph before the bar did:
+        // a `flex-1` root. Wrapped in a second flex parent it throws "Incorrect
+        // use of ParentDataWidget" on every rail frame.
+        MagicStarter.useNavigationTheme(
+          MagicStarterNavigationTheme(
+            compactBrandBuilder: (_) => const WDiv(
+              className: 'flex-1 flex justify-center',
+              child: SizedBox(width: 36, height: 36),
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('bounds a compact brand wider than the rail to the rail', (
+      tester,
+    ) async {
+      useViewport(tester, 1280, 800);
+      useHomeItem();
+      useCollapsible();
+
+      // What the bar offers the brand, read where the brand lays out. A row
+      // that neither distributes space nor wraps its child hands it an
+      // unbounded width, and a brand that fills what it is offered then runs
+      // off the rail.
+      double? offered;
+      MagicStarter.useNavigationTheme(
+        MagicStarterNavigationTheme(
+          compactBrandBuilder: (_) => LayoutBuilder(
+            builder: (context, constraints) {
+              offered = constraints.maxWidth;
+
+              return const SizedBox(width: 36, height: 36);
+            },
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(offered, isNotNull);
+      expect(offered, lessThanOrEqualTo(80));
+    });
 
     testWidgets('names the icon-only toggle for assistive technology', (
       tester,

@@ -24,9 +24,19 @@ class RedirectIfAuthenticated extends MagicMiddleware {
     // Guard the home route itself so the redirect can never loop: go_router
     // raises after more than five successive redirects.
     final String home = MagicStarterConfig.homeRoute();
-    if (Auth.check() && location != home) {
+    if (Auth.check() && !_isGuestAccount() && location != home) {
       return home;
     }
     return null;
+  }
+
+  /// Whether the signed-in user is a guest session rather than an account.
+  ///
+  /// A guest is authenticated, so `Auth.check()` alone sent it home from the
+  /// login and registration pages, which are exactly where a guest becomes an
+  /// account. The same `is_guest` flag the `starter.delete-account` ability
+  /// reads.
+  bool _isGuestAccount() {
+    return Auth.user()?.get<bool>('is_guest') == true;
   }
 }

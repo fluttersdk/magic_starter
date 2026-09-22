@@ -38,7 +38,18 @@ class MagicStarterGuestAuthController extends MagicController
   ///   3. Send `POST /auth/guest` with the device ID.
   ///   4. Store the returned auth token via [Auth.login].
   ///   5. Navigate to the home route on success.
+  ///
+  /// A user who is already a guest goes home without a request. The login
+  /// page lets a guest in (it is where a guest signs in to an account), so
+  /// "Continue as guest" is that guest's way back, and a second
+  /// `POST /auth/guest` would revoke every token the returning guest holds,
+  /// including one a host keeps to claim the guest's data at sign-in.
   Future<void> doGuestLogin() async {
+    if (isGuestUser) {
+      navigateHome();
+      return;
+    }
+
     if (_isSubmitting) return;
     _isSubmitting = true;
     setLoading();

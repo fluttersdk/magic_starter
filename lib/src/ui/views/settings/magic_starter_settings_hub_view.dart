@@ -46,6 +46,7 @@ class _MagicStarterSettingsHubViewState
   // tree-shaking keeps them (const tear-offs inside build() get dropped).
   static const _iconProfile = Icons.person_outline;
   static const _iconGuestUpgrade = Icons.upgrade;
+  static const _iconGuestSignIn = Icons.login;
   static const _iconTwoFactor = Icons.lock_outline;
   static const _iconPassword = Icons.password_outlined;
   static const _iconSessions = Icons.devices_outlined;
@@ -64,7 +65,8 @@ class _MagicStarterSettingsHubViewState
   // -------------------------------------------------------------------------
 
   /// Builds the Account group rows: the Profile drill plus, for guests, an
-  /// upgrade prompt that reuses the profile route's guest-upgrade flow.
+  /// upgrade prompt that reuses the profile route's guest-upgrade flow and a
+  /// sign-in row for a guest who already has an account elsewhere.
   List<Widget> _accountRows() {
     final user = Auth.user();
     final name = user?.get<String>('name');
@@ -84,6 +86,13 @@ class _MagicStarterSettingsHubViewState
           title: trans('magic_starter.guest_upgrade.title'),
           subtitle: trans('magic_starter.guest_upgrade.description'),
           to: MagicStarterConfig.profileRoute(),
+        ),
+      if (_isGuest)
+        MSSettingsNavRow(
+          icon: _iconGuestSignIn,
+          title: trans('auth.sign_in'),
+          subtitle: trans('auth.already_have_account'),
+          to: MagicStarterConfig.loginRoute(),
         ),
     ];
   }

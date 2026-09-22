@@ -63,9 +63,12 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     MagicStarterAppLayout.refreshNotifier.addListener(_refresh);
     Auth.stateNotifier.addListener(_refresh);
 
-    // A host that binds no cache keeps the choice for this shell's lifetime
-    // only; that is a host decision rather than a failure.
-    if (Magic.bound('cache')) {
+    // Read only by a host that opted in: every read dispatches a cache
+    // hit-or-miss event, and a host without the toggle would log a miss on
+    // every shell mount. A host that binds no cache keeps the choice for this
+    // shell's lifetime only; that is a host decision rather than a failure.
+    if (MagicStarter.manager.layoutTheme.sidebarCollapsible &&
+        Magic.bound('cache')) {
       final stored = Cache.get(_collapsedKey);
       if (stored is bool) _collapsedChoice = stored;
     }
@@ -452,19 +455,19 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     // padding and border stay; the last `justify-*` wins, and a symmetric
     // horizontal padding keeps the centre where the rail's is.
     //
-    // The brand is wrapped in a `Flexible` here because Wind only adds one to a
-    // row that distributes space, which `justify-center` does not: without it
-    // a brand wider than the rail's content box overflows instead of being
-    // bounded, as it was on the `justify-between` bar.
+    // `justify-around` rather than `justify-center`: with one child the two
+    // centre it identically, but only a space-distributing row keeps Wind's
+    // own child wrapping, which bounds a brand wider than the rail and passes
+    // through one that is already a flex child (`flex-1`, an `Expanded`). A
+    // `Flexible` added here did the first and broke the second: a `flex-1`
+    // brand then sat inside two flex parents and threw on every frame.
     if (compact) {
       final compactBrand =
           navTheme.compactBrandBuilder ?? navTheme.brandBuilder;
 
       return WDiv(
-        className: '${layoutTheme.brandBarClassName} justify-center',
-        children: [
-          if (compactBrand != null) Flexible(child: compactBrand(context)),
-        ],
+        className: '${layoutTheme.brandBarClassName} justify-around',
+        children: [if (compactBrand != null) compactBrand(context)],
       );
     }
 

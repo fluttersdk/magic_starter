@@ -252,6 +252,24 @@ void main() {
     // -----------------------------------------------------------------------
 
     group('doGuestLogin', () {
+      test('a signed-in guest continues without a second request', () async {
+        // A guest can reach the login page now, and "Continue as guest" is its
+        // only way back. A second POST /auth/guest revokes every token of a
+        // returning guest, including the one a host holds to claim the
+        // guest's data later, so the session already in hand must be kept.
+        mockGuard.setUser(
+          MagicStarterAuthUser.fromMap({
+            'id': 99,
+            'name': 'Guest',
+            'is_guest': true,
+          }),
+        );
+
+        await controller.doGuestLogin();
+
+        expect(mockDriver.lastUrl, isNull);
+      });
+
       test('success — generates UUID and calls POST /auth/guest', () async {
         mockDriver.mockResponse(
           statusCode: 200,

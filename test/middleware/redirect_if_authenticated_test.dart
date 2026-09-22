@@ -12,12 +12,12 @@ class _FakeUser extends Model with Authenticatable {
   String get resource => 'users';
 
   @override
-  List<String> get fillable => ['id', 'name'];
+  List<String> get fillable => ['id', 'name', 'is_guest'];
 }
 
-_FakeUser _fakeUser() {
+_FakeUser _fakeUser({bool guest = false}) {
   final user = _FakeUser();
-  user.fill({'id': 1, 'name': 'Alice'});
+  user.fill({'id': 1, 'name': 'Alice', 'is_guest': guest});
   user.exists = true;
   return user;
 }
@@ -48,6 +48,16 @@ void main() {
       final middleware = RedirectIfAuthenticated();
 
       expect(middleware.redirectTarget(MagicStarterConfig.homeRoute()), isNull);
+    });
+
+    test('lets a guest account through to sign in or register', () {
+      // A guest session is authenticated, so `Auth.check()` alone sent it
+      // home from the very pages that turn it into an account.
+      Auth.fake(user: _fakeUser(guest: true));
+      final middleware = RedirectIfAuthenticated();
+
+      expect(middleware.redirectTarget('/auth/login'), isNull);
+      expect(middleware.redirectTarget('/auth/register'), isNull);
     });
 
     test('allows an unauthenticated navigation to any guest route', () {
