@@ -65,7 +65,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.34
+  magic_starter: ^0.0.35
 ```
 
 ### 2. Install configuration
@@ -395,9 +395,9 @@ MagicStarter.useNavigationTheme(
     activeItemClassName:
         'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
 
-    // Brand: gradient text
-    brandClassName:
-        'text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+    // Brand: text. Gradient text needs brandBuilder and a ShaderMask:
+    // Wind has no bg-clip-text, so text-transparent hides the label.
+    brandClassName: 'text-lg font-bold text-amber-500 dark:text-amber-400',
 
     // Brand: image/SVG logo (overrides brandClassName when set)
     brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),

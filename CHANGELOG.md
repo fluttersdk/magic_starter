@@ -4,9 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.35] - 2026-09-22
+
 ### Changed
 
 - **The sidebar toggle states that it does not wait on its write, and a test ties its labels to the stub.** Two review notes on #151 closed after it merged: the toggle's `onTap` now wraps the preference write in `unawaited`, so dropping the future reads as the decision it is (the rail moves on `setState`; a failed write still surfaces in the zone), and a test asserts `nav.collapse_sidebar` and `nav.expand_sidebar` exist in `assets/stubs/install/en.stub`, which the widget tests could not see because they find the raw keys. No behaviour change. (`lib/src/ui/layouts/magic_starter_app_layout.dart`, `test/ui/layouts/magic_starter_app_layout_test.dart`)
+
+- **Every sibling floor names this batch's release.** `magic` moves `^0.0.15` to `^0.0.16`, `magic_notifications` `^0.3.3` to `^0.3.4`, `magic_payments` `^0.0.3` to `^0.0.4` and `fluttersdk_wind` `^1.6.2` to `^1.6.3`; `fluttersdk_artisan` stays at `^0.0.16`, still the newest. The old ranges already admitted the new versions, so a fresh `pub get` resolves nothing differently; what changes is that the floors name the releases this package is verified against. The install command's `magicNotificationsConstraint` moves with the notifications floor, and the issue template's version placeholder, four releases stale, names this one. wind 1.6.3 makes `bg-transparent` resolve for the first time, and seven defaults here carry it (`secondaryButtonClassName`, `themeToggleClassName` and `guestButtonClassName` in both theme presets, and the button recipe's `ghost` intent): where one follows another background token, transparent now wins as it was written to. magic 0.0.16 widens `file_picker` to admit 13; the profile photo goes through `Pick.image`, which is `image_picker`, so nothing here calls it. (`pubspec.yaml`, `lib/src/cli/commands/magic_starter_install_command.dart`, `.github/ISSUE_TEMPLATE/bug_report.yml`)
+
+### Fixed
+
+- **The brand className examples no longer hide the brand.** `MagicStarterNavigationTheme`'s class doc, the README and `doc/architecture/manager.md` showed gradient text as `bg-gradient-to-r ... bg-clip-text text-transparent`. Wind has no `bg-clip-text`, and until wind 1.6.3 it had no working `text-transparent` either, so the example rendered a gradient box behind ordinary text. From 1.6.3 the same className hides the label, so an adopter who copied it gets an empty brand bar. The examples are a plain text colour now, and the field's doc says gradient text goes through `brandBuilder` with a `ShaderMask`. (`lib/src/configuration/magic_starter_theme.dart`, `README.md`, `doc/architecture/manager.md`)
 
 ## [0.0.34] - 2026-09-22
 

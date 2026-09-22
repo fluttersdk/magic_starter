@@ -1,6 +1,6 @@
 name: magic_starter
 description: Starter kit for Magic Framework. Auth, Profile, Teams, Notifications — 14 opt-in features with overridable views.
-version: 0.0.34
+version: 0.0.35
 homepage: https://magic.fluttersdk.com/starter
 documentation: https://magic.fluttersdk.com/packages/starter/getting-started/installation
 repository: https://github.com/fluttersdk/magic_starter
@@ -31,7 +31,7 @@ dependencies:
   # an adopter onto 0.0.11 and hand them `The method 'stacked' isn't defined`
   # inside a package they do not own, rather than a version-solve message naming
   # magic.
-  magic: ^0.0.15
+  magic: ^0.0.16
   fluttersdk_artisan: ^0.0.16
   # This is a FLOOR for an API, not an upper-bound fix, and the API is
   # `Notify.view`: the notification screens, the bell dropdown and the
@@ -66,9 +66,9 @@ dependencies:
   # lets pub resolve an adopter onto 0.3.0 or 0.3.1 and hand them a COMPILE
   # error at `notification_routes.dart` instead of a version-solve message
   # naming the package. Raising it is the difference between a readable refusal
-  # and a broken build. It names 0.3.3 rather than 0.3.2 because a release batch
+  # and a broken build. It names 0.3.4 rather than 0.3.2 because a release batch
   # re-pins every sibling to its newest release.
-  magic_notifications: ^0.3.3
+  magic_notifications: ^0.3.4
   # Direct rather than transitive, and this is the point of declaring it:
   # `fluttersdk_wind` reaches this package through `magic`, so without an entry
   # here there is no floor to raise when this package starts calling a new Wind
@@ -79,7 +79,7 @@ dependencies:
   # get `undefined_named_parameter` inside a package they do not own, with
   # nothing saying why; with the floor they get a version-solve message naming
   # wind.
-  fluttersdk_wind: ^1.6.2
+  fluttersdk_wind: ^1.6.3
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
@@ -99,7 +99,7 @@ dependencies:
   # `Notify.view`, `hasOverride` and `forgetView`. The `Published graph` CI job
   # is what says so out loud, by resolving the graph a third party actually gets
   # rather than the local path overrides.
-  magic_payments: ^0.0.3
+  magic_payments: ^0.0.4
   args: ^2.7.0
   path: ^1.9.0
 
