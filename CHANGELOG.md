@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **The viewer can collapse the sidebar, and a collapsed sidebar can carry its own brand.** Three fields, every default unchanged, so an existing host sees nothing move.
+- **The viewer can collapse the sidebar, and a collapsed sidebar can carry its own brand.** Three fields, every default unchanged. One thing does move for a host already on the compact band: its rail brand is now centred (below).
 
   `MagicStarterLayoutTheme.sidebarCollapsible` (default `false`) adds a toggle above the user menu that collapses the labelled sidebar to its compact, icon-only form and expands it again. It appears only at or above `sidebarExpandedBreakpoint`: below it the window already decides, and a toggle there would promise an expansion the shell will not make. `.sidebarCollapsedByDefault` (default `false`) is the state before the viewer has chosen, and is ignored on a sidebar that is not collapsible, since a default the viewer cannot undo is a rail they are stuck with.
 
@@ -14,9 +14,17 @@ All notable changes to this project will be documented in this file.
 
   `MagicStarterNavigationTheme.compactBrandBuilder` (default `null`) is the brand the compact rail shows, for a host whose wordmark does not fit 80 logical pixels. Unset, the rail shows `brandBuilder` as before.
 
-  The compact brand bar now centres its brand, as the compact rows centre their icons. The shipped bar is `justify-between`, which put a lone brand on the bar's left padding: measured at 1.5 pixels off the icon line, and visibly off on a consumer's rail. The shell appends `justify-center` to `brandBarClassName` on the rail only and wraps the brand in a `Flexible`, since Wind adds one only to a space-distributing row and a brand wider than the rail would otherwise overflow rather than be bounded as before.
+  The compact brand bar now centres its brand, as the compact rows centre their icons. The shipped bar is `justify-between`, which put a lone brand on the bar's left padding: measured at 1.5 pixels off the icon line, and visibly off on a consumer's rail. The shell appends `justify-around` to `brandBarClassName` on the rail only. With one child it centres exactly as `justify-center` would, and unlike it the row still distributes space, so Wind keeps wrapping the brand the way it did before: a brand wider than the rail stays bounded, and one that is already a flex child (`flex-1`, an `Expanded`) passes through. A `Flexible` added by the shell did the first and crashed the second with "Incorrect use of ParentDataWidget"; a review caught it before release.
+
+  Reading the remembered choice is gated on `sidebarCollapsible`, because every `Cache.get` dispatches a hit-or-miss event and a host without the toggle would log a miss on every shell mount.
 
   The toggle reads two new keys, `nav.collapse_sidebar` and `nav.expand_sidebar`, and names itself through `semanticLabel` while it is icon-only. Both ship in the install stub; a host installed earlier adds them to its own language files, or the labelled form shows the raw key. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `assets/stubs/install/en.stub`, `doc/basics/views-and-layouts.md`, `doc/architecture/manager.md`)
+
+- **A guest can sign in or create an account from the user menu and the settings hub.** A guest session is signed in, so the menu offered it profile, settings and logout and nothing that turns it into an account, and the hub offered only the in-place upgrade. For a user whose `is_guest` is true, `MSUserProfileDropdown` now starts with Sign in (the login route) and Create account (the profile route's upgrade, the door the hub's upgrade row opens, so the guest keeps its data), and the hub's Account group adds a Sign in row under the upgrade. Every label is an existing stub key: `auth.sign_in`, `magic_starter.titles.register`, `auth.already_have_account`. (`lib/src/ui/components/user_profile_dropdown/user_profile_dropdown.dart`, `lib/src/ui/views/settings/magic_starter_settings_hub_view.dart`)
+
+### Fixed
+
+- **A guest reaches the login and registration pages instead of being sent home.** `RedirectIfAuthenticated` redirected on `Auth.check()`, which a guest session passes, so every door a guest had to an account landed on the home route before the page built. It now lets a user whose `is_guest` is true through; an account is still sent home. (`lib/src/middleware/redirect_if_authenticated.dart`)
 
 ## [0.0.33] - 2026-09-22
 
