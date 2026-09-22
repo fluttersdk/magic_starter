@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -1394,6 +1397,21 @@ void main() {
       expect(find.bySemanticsLabel('nav.expand_sidebar'), findsOneWidget);
 
       semantics.dispose();
+    });
+
+    test('the toggle\'s two labels ship in the install stub', () {
+      // The toggle reads these keys; a host installed from the stub gets them,
+      // and without them the labelled form shows the raw key. The widget tests
+      // above find the keys themselves, so only this ties them to the stub.
+      final stub =
+          jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
+              as Map<String, dynamic>;
+      final nav = stub['nav'] as Map<String, dynamic>;
+
+      expect(nav['collapse_sidebar'], isA<String>());
+      expect(nav['collapse_sidebar'], isNotEmpty);
+      expect(nav['expand_sidebar'], isA<String>());
+      expect(nav['expand_sidebar'], isNotEmpty);
     });
 
     test('the collapse fields default to a sidebar that never collapses', () {
