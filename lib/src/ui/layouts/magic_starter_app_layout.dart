@@ -445,13 +445,26 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     // itself stays, because the rail's first item lines up with the header's
     // baseline on the expanded form and should not jump when the window
     // crosses the breakpoint.
+    //
+    // Centred, because the compact nav rows centre their icons and a lone brand
+    // on a `justify-between` bar sits on the bar's left padding instead, off
+    // that line. Appended rather than substituted, so the host's height,
+    // padding and border stay; the last `justify-*` wins, and a symmetric
+    // horizontal padding keeps the centre where the rail's is.
+    //
+    // The brand is wrapped in a `Flexible` here because Wind only adds one to a
+    // row that distributes space, which `justify-center` does not: without it
+    // a brand wider than the rail's content box overflows instead of being
+    // bounded, as it was on the `justify-between` bar.
     if (compact) {
       final compactBrand =
           navTheme.compactBrandBuilder ?? navTheme.brandBuilder;
 
       return WDiv(
-        className: layoutTheme.brandBarClassName,
-        children: [if (compactBrand != null) compactBrand(context)],
+        className: '${layoutTheme.brandBarClassName} justify-center',
+        children: [
+          if (compactBrand != null) Flexible(child: compactBrand(context)),
+        ],
       );
     }
 

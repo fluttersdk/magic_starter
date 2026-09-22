@@ -1271,6 +1271,35 @@ void main() {
       },
     );
 
+    testWidgets(
+      'centres the compact brand on the rail, as it centres the icons',
+      (tester) async {
+        useViewport(tester, 1280, 800);
+        useHomeItem();
+        useCollapsible();
+
+        const glyph = ValueKey<String>('glyph');
+        MagicStarter.useNavigationTheme(
+          MagicStarterNavigationTheme(
+            compactBrandBuilder: (_) =>
+                const SizedBox(key: glyph, width: 36, height: 36),
+          ),
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        // The shipped brand bar is `justify-between`, which left a lone brand on
+        // the bar's left padding, off the line the nav icons below it sit on.
+        final railCentre = tester.getCenter(find.byIcon(Icons.home)).dx;
+
+        expect(
+          tester.getCenter(find.byKey(glyph)).dx,
+          closeTo(railCentre, 0.5),
+        );
+      },
+    );
+
     testWidgets('names the icon-only toggle for assistive technology', (
       tester,
     ) async {

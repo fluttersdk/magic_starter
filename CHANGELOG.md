@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
   `MagicStarterNavigationTheme.compactBrandBuilder` (default `null`) is the brand the compact rail shows, for a host whose wordmark does not fit 80 logical pixels. Unset, the rail shows `brandBuilder` as before.
 
+  The compact brand bar now centres its brand, as the compact rows centre their icons. The shipped bar is `justify-between`, which put a lone brand on the bar's left padding: measured at 1.5 pixels off the icon line, and visibly off on a consumer's rail. The shell appends `justify-center` to `brandBarClassName` on the rail only and wraps the brand in a `Flexible`, since Wind adds one only to a space-distributing row and a brand wider than the rail would otherwise overflow rather than be bounded as before.
+
   The toggle reads two new keys, `nav.collapse_sidebar` and `nav.expand_sidebar`, and names itself through `semanticLabel` while it is icon-only. Both ship in the install stub; a host installed earlier adds them to its own language files, or the labelled form shows the raw key. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `assets/stubs/install/en.stub`, `doc/basics/views-and-layouts.md`, `doc/architecture/manager.md`)
 
 ## [0.0.33] - 2026-09-22
