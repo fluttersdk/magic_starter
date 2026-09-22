@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart' show Drawer, Scaffold, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
@@ -107,8 +109,10 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
 
   /// Records the viewer's choice, and remembers it when a cache is bound.
   ///
-  /// The write is awaited rather than dropped, so a store that fails reports
-  /// through the zone instead of vanishing; the rail has already moved by then.
+  /// The toggle does not wait on this (`unawaited` at the call site): the rail
+  /// moves on the `setState`, and the write finishes in the background. The
+  /// write is awaited in here rather than dropped, so a store that fails
+  /// surfaces as an uncaught error in the zone instead of vanishing.
   Future<void> _setCollapsed(bool collapsed) async {
     setState(() => _collapsedChoice = collapsed);
 
@@ -336,7 +340,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     );
 
     return WAnchor(
-      onTap: () => _setCollapsed(!compact),
+      onTap: () => unawaited(_setCollapsed(!compact)),
       semanticLabel: compact ? label : null,
       child: WDiv(
         className:

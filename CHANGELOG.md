@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **The sidebar toggle states that it does not wait on its write, and a test ties its labels to the stub.** Two review notes on #151 closed after it merged: the toggle's `onTap` now wraps the preference write in `unawaited`, so dropping the future reads as the decision it is (the rail moves on `setState`; a failed write still surfaces in the zone), and a test asserts `nav.collapse_sidebar` and `nav.expand_sidebar` exist in `assets/stubs/install/en.stub`, which the widget tests could not see because they find the raw keys. No behaviour change. (`lib/src/ui/layouts/magic_starter_app_layout.dart`, `test/ui/layouts/magic_starter_app_layout_test.dart`)
+
 ## [0.0.34] - 2026-09-22
 
 ### Added
