@@ -219,6 +219,49 @@ void main() {
     expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
   });
 
+  testWidgets('offers a guest a way to sign in or create an account', (
+    tester,
+  ) async {
+    // A guest session is signed in, so the menu showed it profile, settings
+    // and logout, and nothing that turns it into an account.
+    mockGuard.setUser(
+      MagicStarterAuthUser.fromMap({
+        'id': 1,
+        'name': 'Guest',
+        'is_guest': true,
+      }),
+    );
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('G'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('auth.sign_in'), findsOneWidget);
+    expect(find.text('magic_starter.titles.register'), findsOneWidget);
+  });
+
+  testWidgets('offers an account no guest entries', (tester) async {
+    mockGuard.setUser(
+      MagicStarterAuthUser.fromMap({
+        'id': 1,
+        'name': 'Anilcan',
+        'email': 'anilcan@example.com',
+        'is_guest': false,
+      }),
+    );
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('A'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('auth.sign_in'), findsNothing);
+    expect(find.text('magic_starter.titles.register'), findsNothing);
+  });
+
   testWidgets('shows logout item in dropdown and handles tap', (tester) async {
     bool logoutCalled = false;
     MagicStarter.manager.onLogout = () async {
