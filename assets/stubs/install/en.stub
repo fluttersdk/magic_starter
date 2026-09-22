@@ -266,7 +266,9 @@
     }
   },
   "nav": {
+    "collapse_sidebar": "Collapse sidebar",
     "dashboard": "Dashboard",
+    "expand_sidebar": "Expand sidebar",
     "profile": "Profile",
     "settings": "Settings",
     "system": "System"
