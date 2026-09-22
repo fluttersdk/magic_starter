@@ -205,6 +205,7 @@ All fields are optional — omitted fields fall back to the current defaults.
 | `hoverItemClassName` | `hover:bg-gray-100 dark:hover:bg-gray-800` | Sidebar/drawer hover state |
 | `brandClassName` | `text-lg font-bold text-primary` | Brand/logo text style (supports gradient tokens) |
 | `brandBuilder` | `null` | Custom brand widget builder (image, SVG, etc.) — overrides `brandClassName` when set |
+| `compactBrandBuilder` | `null` | Brand builder for the compact, icon-only sidebar; falls back to `brandBuilder` when unset |
 | `bottomNavActiveClassName` | `active:text-primary` | Bottom nav active icon and label |
 | `avatarClassName` | `bg-primary/10 dark:bg-primary/10` | Sidebar user menu avatar background |
 | `avatarTextClassName` | `text-sm font-bold text-primary` | Sidebar user menu avatar initial color |

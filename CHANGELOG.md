@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **The viewer can collapse the sidebar, and a collapsed sidebar can carry its own brand.** Three fields, every default unchanged, so an existing host sees nothing move.
+
+  `MagicStarterLayoutTheme.sidebarCollapsible` (default `false`) adds a toggle above the user menu that collapses the labelled sidebar to its compact, icon-only form and expands it again. It appears only at or above `sidebarExpandedBreakpoint`: below it the window already decides, and a toggle there would promise an expansion the shell will not make. `.sidebarCollapsedByDefault` (default `false`) is the state before the viewer has chosen, and is ignored on a sidebar that is not collapsible, since a default the viewer cannot undo is a rail they are stuck with.
+
+  The choice is remembered through Magic's `Cache` under `magic_starter.sidebar_collapsed` when the host binds one, with a ten year TTL: the cache has no `forever`, and the file store's own default of an hour would hand the viewer the default back the next morning. Without a cache the choice lives for the life of the shell.
+
+  `MagicStarterNavigationTheme.compactBrandBuilder` (default `null`) is the brand the compact rail shows, for a host whose wordmark does not fit 80 logical pixels. Unset, the rail shows `brandBuilder` as before.
+
+  The toggle reads two new keys, `nav.collapse_sidebar` and `nav.expand_sidebar`, and names itself through `semanticLabel` while it is icon-only. Both ship in the install stub; a host installed earlier adds them to its own language files, or the labelled form shows the raw key. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `assets/stubs/install/en.stub`, `doc/basics/views-and-layouts.md`, `doc/architecture/manager.md`)
+
 ## [0.0.33] - 2026-09-22
 
 ### Added

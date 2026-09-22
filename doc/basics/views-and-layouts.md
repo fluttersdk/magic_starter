@@ -258,7 +258,7 @@ Three fields on `MagicStarterLayoutTheme` decide the shell's shape. The first tw
 | `sidebarExpandedBreakpoint` | `'lg'` | Breakpoint from which the sidebar carries labels beside its icons |
 | `sidebarCompactWidth` | `80` | Width in logical pixels of the sidebar while it is compact |
 
-Between the two breakpoints the sidebar renders compact: `sidebarCompactWidth` wide, icons only, and every text label dropped, because a label at that width would be clipped rather than shortened. That is the app name in the brand bar, the nav item labels, the system section's name, and the user's name and email, which falls back to the same avatar trigger the mobile header mounts. What a host supplies itself, `brandBuilder` and `sidebarFooterBuilder`, is passed through untouched: only the host knows whether its own widget fits an icon column.
+Between the two breakpoints the sidebar renders compact: `sidebarCompactWidth` wide, icons only, and every text label dropped, because a label at that width would be clipped rather than shortened. That is the app name in the brand bar, the nav item labels, the system section's name, and the user's name and email, which falls back to the same avatar trigger the mobile header mounts. What a host supplies itself, `brandBuilder` and `sidebarFooterBuilder`, is passed through untouched: only the host knows whether its own widget fits an icon column. A host whose wordmark does not fit sets `MagicStarterNavigationTheme.compactBrandBuilder` to a glyph, and the compact rail shows that instead.
 
 A name the Wind theme does not carry throws a `StateError` naming the field and listing the valid keys. `wScreenIs` answers false for an unknown key, so a typo would otherwise pin the shell to its narrow form at every width with nothing to read.
 
@@ -275,6 +275,38 @@ MagicStarter.useLayoutTheme(
 ```
 
 Take care lowering `sidebarCompactWidth`. Its floor is the compact team selector rather than the nav icon: `MSTeamSelector`'s compact trigger is `mx-3 p-2` around a `w-8` avatar, which is 72 logical pixels, and `sidebarClassName`'s own `border-r` takes one more out of the box. 72 was measured overflowing by exactly 1 pixel, which is why the default is 80.
+
+### Letting the viewer collapse the sidebar
+
+Two more fields hand the compact form to the viewer on a window wide enough for labels:
+
+| Field | Default | What it decides |
+|-------|---------|-----------------|
+| `sidebarCollapsible` | `false` | Whether a toggle above the user menu collapses the labelled sidebar to its compact form and back |
+| `sidebarCollapsedByDefault` | `false` | Whether a collapsible sidebar starts compact before the viewer has chosen |
+
+The toggle appears only at or above `sidebarExpandedBreakpoint`. Below it the sidebar is compact because the window cannot spare `sidebarWidth`, so a toggle there would promise an expansion the shell will not make. `sidebarCollapsedByDefault` is ignored unless the sidebar is collapsible: a default the viewer cannot undo would be a rail they are stuck with, and `sidebarExpandedBreakpoint` already expresses that.
+
+The viewer's choice is remembered through Magic's `Cache` under `magic_starter.sidebar_collapsed`, written with a ten year TTL because the cache has no `forever` and its own default of an hour would hand the viewer the default back the next morning. A host that binds no cache keeps the choice in memory for the life of the shell. A remembered choice wins over `sidebarCollapsedByDefault`; changing the default moves only the viewers who never touched the toggle.
+
+The toggle reads `nav.collapse_sidebar` and `nav.expand_sidebar`, and names itself with the second through `semanticLabel` while it is icon-only. Both keys ship in the install stub; a host installed before 0.0.34 adds them to its own language files.
+
+```dart
+// Icons only until the viewer asks for labels, with a glyph for the rail.
+MagicStarter.useLayoutTheme(
+  const MagicStarterLayoutTheme(
+    sidebarCollapsible: true,
+    sidebarCollapsedByDefault: true,
+  ),
+);
+
+MagicStarter.useNavigationTheme(
+  MagicStarterNavigationTheme(
+    brandBuilder: (context) => const MyLogoLockup(),
+    compactBrandBuilder: (context) => const MyLogoGlyph(),
+  ),
+);
+```
 
 ### A focus ring for a keyboard or a remote
 
