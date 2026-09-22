@@ -22,7 +22,7 @@ import '../ui/theme/magic_starter_tokens.dart';
 ///     activeItemClassName:
 ///         'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
 ///     brandClassName:
-///         'text-lg font-bold bg-gradient-to-r from-primary-400 to-accent-500 bg-clip-text text-transparent',
+///         'text-lg font-bold text-amber-500 dark:text-amber-400',
 ///     bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
 ///     avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
 ///     avatarTextClassName: 'text-sm font-bold text-amber-600 dark:text-amber-400',
@@ -46,8 +46,9 @@ class MagicStarterNavigationTheme {
 
   /// Brand/logo text className. Used when [brandBuilder] is `null`.
   ///
-  /// Supports gradient text by combining Tailwind-like tokens, e.g.
-  /// `'text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent'`.
+  /// Gradient text needs [brandBuilder] (a `ShaderMask` over the label): Wind
+  /// has no `bg-clip-text`, so `text-transparent` beside a gradient hides the
+  /// label and paints the gradient as a box behind where it was.
   ///
   /// Defaults to `'text-lg font-bold text-primary'`.
   final String brandClassName;

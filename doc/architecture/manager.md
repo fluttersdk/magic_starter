@@ -187,7 +187,7 @@ MagicStarter.useNavigationTheme(
     activeItemClassName:
         'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
     brandClassName:
-        'text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+        'text-lg font-bold text-amber-500 dark:text-amber-400',
     brandBuilder: (context) => Image.asset('assets/logo.png', height: 28),
     bottomNavActiveClassName: 'active:text-amber-500 dark:active:text-amber-400',
     avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
