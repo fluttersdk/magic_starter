@@ -42,6 +42,14 @@ void main() {
       );
     });
 
+    test('treats a whitespace-only part as unknown', () {
+      expect(
+        sessionDeviceTitle(platform: 'Mac', browser: '  ', app: 'Uptizm'),
+        'Mac - Uptizm',
+      );
+      expect(sessionDeviceTitle(platform: ' ', browser: '', app: ''), '');
+    });
+
     test('keeps the platform when the client is unreadable', () {
       expect(sessionDeviceTitle(platform: 'Mac', browser: '', app: ''), 'Mac');
     });

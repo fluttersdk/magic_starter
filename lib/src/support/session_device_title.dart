@@ -24,10 +24,12 @@ String sessionDeviceTitle({
   required String browser,
   required String app,
 }) {
-  final String client = browser.isNotEmpty ? browser : app;
+  final String client = browser.trim().isNotEmpty ? browser : app;
 
-  return <String>[
-    platform,
-    client,
-  ].where((String part) => part.isNotEmpty).join(' - ');
+  // A part made only of whitespace is as unknown as an empty one; kept, it
+  // rendered as "Mac -  " with a dangling separator.
+  return <String>[platform, client]
+      .map((String part) => part.trim())
+      .where((String part) => part.isNotEmpty)
+      .join(' - ');
 }
