@@ -120,8 +120,7 @@ class _MagicStarterProfileSettingsViewState
       profileForm.set('timezone', user.get<String>('timezone') ?? '');
       profileForm.set('language', user.get<String>('locale') ?? '');
     }
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
 
     if (MagicStarterConfig.hasSessionsFeatures()) {
       _loadSessions();

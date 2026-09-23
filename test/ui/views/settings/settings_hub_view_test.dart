@@ -3,6 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 import 'package:magic_starter/src/ui/views/settings/magic_starter_settings_hub_view.dart';
+import 'package:magic_starter/src/ui/views/settings/preferences/magic_starter_appearance_view.dart';
+import 'package:magic_starter/src/ui/views/settings/preferences/magic_starter_language_view.dart';
+import 'package:magic_starter/src/ui/views/settings/preferences/magic_starter_timezone_view.dart';
+import 'package:magic_starter/src/ui/views/settings/security/magic_starter_password_view.dart';
+import 'package:magic_starter/src/ui/views/settings/security/magic_starter_sessions_view.dart';
 
 // ---------------------------------------------------------------------------
 // Mock NetworkDriver
@@ -454,5 +459,61 @@ void main() {
     await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
 
     expect(find.text('INJECTED HEADER'), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
+  // A sub-page opened over the hub
+  // -------------------------------------------------------------------------
+
+  group('a sub-page opened over the hub', () {
+    // The hub and every sub-page below bind the same controller, and the hub
+    // stays mounted under the sub-page route. A sub-page that resets the
+    // controller in `onInit` with a notifying call marks the hub dirty in the
+    // middle of the new route's build, which Flutter refuses with "setState()
+    // or markNeedsBuild() called during build".
+    final Map<String, Widget Function()> subPages = <String, Widget Function()>{
+      'appearance': () => const MagicStarterAppearanceView(),
+      'language': () => const MagicStarterLanguageView(),
+      'timezone': () => const MagicStarterTimezoneView(),
+      'password': () => const MagicStarterPasswordView(),
+      'sessions': () => const MagicStarterSessionsView(),
+    };
+
+    for (final MapEntry<String, Widget Function()> subPage
+        in subPages.entries) {
+      testWidgets('${subPage.key} opens without rebuilding the hub mid-build', (
+        tester,
+      ) async {
+        final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: navigator,
+            home: WindTheme(
+              data: WindThemeData(),
+              child: const Scaffold(body: MagicStarterSettingsHubView()),
+            ),
+          ),
+        );
+
+        // The state the hub leaves behind in a real session: a previous
+        // sub-page's failed save, so the reset has something to clear.
+        final MagicStarterProfileController profile =
+            Magic.find<MagicStarterProfileController>();
+        profile.setError('stale');
+        profile.validationErrors = {'password': 'stale'};
+
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => WindTheme(
+              data: WindThemeData(),
+              child: Scaffold(body: subPage.value()),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }

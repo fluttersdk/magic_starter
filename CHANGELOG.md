@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Opening a settings sub-page no longer rebuilds the hub in the middle of a build.** The hub and every settings sub-page bind `MagicStarterProfileController`, and the hub stays mounted under a stacked sub-page. Each sub-page reset the controller in `onInit` with `clearErrors()` and `setEmpty()`, which notify, and `onInit` runs while the new route is being built, so the hub was marked dirty mid-build and every opening reported "setState() or markNeedsBuild() called during build". The eight views that share the controller (appearance, language, timezone, password, sessions, two-factor, profile settings, profile sub-page) now reset it without notifying. Closes #161. (`lib/src/ui/views/settings/`, `lib/src/ui/views/profile/`)
+
+### Added
+
+- **`MagicStarterProfileController.resetQuietly()`**, the non-notifying reset those views call: errors cleared, state empty, no listener told. A host view that binds the same controller and resets it in `onInit` should call it too. (`lib/src/http/controllers/magic_starter_profile_controller.dart`)
+
 ## [0.0.36] - 2026-09-23
 
 ### Fixed

@@ -53,8 +53,7 @@ class _MagicStarterAppearanceViewState
 
   @override
   void onInit() {
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
   }
 
   /// Resolves the currently active appearance mode from the theme controller.

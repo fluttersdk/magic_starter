@@ -48,8 +48,7 @@ class _MagicStarterTwoFactorViewState
 
   @override
   void onInit() {
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
     if (controller.isTwoFactorEnabled) {
       _twoFactorState = 'enabled';
     }

@@ -45,6 +45,25 @@ class MagicStarterProfileController extends MagicController
     }
   }
 
+  /// Clears errors and returns to the empty state without notifying.
+  ///
+  /// For a view's `onInit`, which runs while its route is being built. The
+  /// settings hub and every settings sub-page bind this one controller, and
+  /// the hub stays mounted under a stacked sub-page, so a notifying reset
+  /// marked the hub dirty in the middle of the new route's build and Flutter
+  /// refused it with "setState() or markNeedsBuild() called during build".
+  /// Nothing needs the notification: the view calling this reads the state in
+  /// its own first build, and the hub renders nothing from it.
+  void resetQuietly() {
+    _suppressNotifications = true;
+    try {
+      clearErrors();
+      setEmpty();
+    } finally {
+      _suppressNotifications = false;
+    }
+  }
+
   @override
   void notifyListeners() {
     if (_suppressNotifications) return;

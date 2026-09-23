@@ -51,8 +51,7 @@ class _MagicStarterSessionsViewState
 
   @override
   void onInit() {
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
     if (MagicStarterConfig.hasSessionsFeatures()) {
       _loadSessions();
     }

@@ -43,8 +43,7 @@ class _MagicStarterTimezoneViewState
   void onInit() {
     final user = Auth.user();
     form.set('timezone', user?.get<String>('timezone') ?? '');
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
   }
 
   @override
