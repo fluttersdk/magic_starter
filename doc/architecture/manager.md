@@ -193,6 +193,7 @@ MagicStarter.useNavigationTheme(
     avatarClassName: 'bg-amber-500/10 dark:bg-amber-400/10',
     avatarTextClassName: 'text-sm font-bold text-amber-600 dark:text-amber-400',
     dropdownAvatarClassName: 'bg-gradient-to-tr from-amber-500 to-amber-300',
+    dropdownAvatarTextClassName: 'text-sm font-bold text-white',
   ),
 );
 ```
@@ -208,8 +209,11 @@ All fields are optional — omitted fields fall back to the current defaults.
 | `compactBrandBuilder` | `null` | Brand builder for the compact, icon-only sidebar; falls back to `brandBuilder` when unset |
 | `bottomNavActiveClassName` | `active:text-primary` | Bottom nav active icon and label |
 | `avatarClassName` | `bg-primary/10 dark:bg-primary/10` | Sidebar user menu avatar background |
-| `avatarTextClassName` | `text-sm font-bold text-primary` | Sidebar user menu avatar initial color |
+| `avatarTextClassName` | `text-sm font-bold text-primary` | Sidebar user menu avatar initial and placeholder glyph color |
 | `dropdownAvatarClassName` | `bg-gradient-to-tr from-primary to-gray-200` | Profile dropdown trigger avatar gradient |
+| `dropdownAvatarTextClassName` | `text-sm font-bold text-white` | Profile dropdown trigger avatar initial and placeholder glyph color |
+
+Both avatars draw the account's photo when `profile_photo_url` carries one, the first letter of the account's name when it does not, and a person glyph when there is no name to take a letter from: before the session is known, or for an account that never set one.
 
 The theme is stored on `MagicStarterManager` as `navigationTheme` and reset to defaults by `manager.reset()`. The active theme is read at widget build time, so `useNavigationTheme()` can be called at any point before the layout is first painted.
 

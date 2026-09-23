@@ -601,6 +601,131 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // The sidebar avatar. A host that opens a guest session without awaiting it
+  // paints its first frame with no user, so both forms are driven across that
+  // gap: a placeholder initial taken from the word "User" is what a person saw
+  // there, and the compact rail's const dropdown was not rebuilt with the shell.
+  // ---------------------------------------------------------------------------
+
+  group('MagicStarterAppLayout sidebar avatar', () {
+    Finder avatarGlyph() => find.descendant(
+      of: find.byType(MSAvatar),
+      matching: find.byIcon(Icons.person_outline),
+    );
+
+    void useViewport(WidgetTester tester, double width) {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+    }
+
+    Future<void> openGuestSession() {
+      return Auth.guard().login(
+        {},
+        MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'name': 'Guest',
+          'is_guest': true,
+        }),
+      );
+    }
+
+    testWidgets('the expanded form draws a glyph, then the guest initial', (
+      tester,
+    ) async {
+      useViewport(tester, 1280);
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(avatarGlyph(), findsOneWidget);
+      expect(find.text('U'), findsNothing);
+      expect(find.text('C'), findsNothing);
+
+      await openGuestSession();
+      await tester.pumpAndSettle();
+
+      expect(find.text('G'), findsOneWidget);
+      expect(avatarGlyph(), findsNothing);
+    });
+
+    testWidgets('the compact rail draws a glyph, then the guest initial', (
+      tester,
+    ) async {
+      useViewport(tester, 700);
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(navigationBreakpoint: 'sm'),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(avatarGlyph(), findsOneWidget);
+      expect(find.text('C'), findsNothing);
+
+      await openGuestSession();
+      await tester.pumpAndSettle();
+
+      expect(find.text('G'), findsOneWidget);
+      expect(avatarGlyph(), findsNothing);
+    });
+
+    testWidgets('the expanded form draws the account photo', (tester) async {
+      useViewport(tester, 1280);
+
+      await Auth.guard().login(
+        {},
+        MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'name': 'Anilcan Cakir',
+          'profile_photo_url': 'https://example.test/me.png',
+        }),
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pump();
+
+      expect(
+        tester.widget<MSAvatar>(find.byType(MSAvatar)).photoUrl,
+        'https://example.test/me.png',
+      );
+    });
+
+    testWidgets('the expanded form draws the initial on the theme classes', (
+      tester,
+    ) async {
+      useViewport(tester, 1280);
+      MagicStarter.useNavigationTheme(
+        const MagicStarterNavigationTheme(
+          avatarClassName: 'bg-amber-500/10',
+          avatarTextClassName: 'text-sm font-bold text-amber-500',
+        ),
+      );
+
+      await openGuestSession();
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<WText>(
+              find.ancestor(of: find.text('G'), matching: find.byType(WText)),
+            )
+            .className,
+        'text-sm font-bold text-amber-500',
+      );
+      expect(
+        tester.widget<MSAvatar>(find.byType(MSAvatar)).className,
+        contains('bg-amber-500/10'),
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Shell capabilities: navigation breakpoint, compact rail, focus ring, chrome
   // ---------------------------------------------------------------------------
 

@@ -414,6 +414,7 @@ MagicStarter.useNavigationTheme(
 
     // Profile dropdown trigger avatar
     dropdownAvatarClassName: 'bg-gradient-to-tr from-amber-500 to-amber-300',
+    dropdownAvatarTextClassName: 'text-sm font-bold text-white',
   ),
 );
 ```

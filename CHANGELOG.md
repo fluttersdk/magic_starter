@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The sidebar avatar no longer draws a "U" that belongs to nobody.** With no user yet, both forms of the user menu took the initial from `trans('common.user')`, so a host that opens its guest session after the first frame (the guest flow does not await it, deliberately) painted a "U" on the brand, then swapped it for the guest's own initial. The expanded form fell back to `trans('common.unknown')` for an empty name, a whole word inside a 36 pixel circle. With no name to take a letter from, both forms now draw a person glyph on the theme's own avatar classes, the same glyph the profile screens already use for an account with no photo. (`lib/src/ui/components/user_profile_dropdown/user_profile_dropdown.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
+- **The compact rail's avatar follows the session.** The shell rebuilds on `Auth.stateNotifier`, but it mounts `MSUserProfileDropdown` const, and a const child is not rebuilt with its parent: a session that opened after the first frame left the trigger drawing what it drew before anyone signed in, until something else happened to rebuild it. The trigger now listens to `Auth.stateNotifier` itself, custom `triggerBuilder` included, so a guest reads as "G" on the frame after its session opens. (`lib/src/ui/components/user_profile_dropdown/user_profile_dropdown.dart`)
+
+- **The expanded sidebar draws the account's photo.** It was the one avatar left that drew the initial whatever the account carried; it now goes through `MSAvatar` like the compact trigger. (`lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
+### Added
+
+- **`MagicStarterNavigationTheme.dropdownAvatarTextClassName`**, the initial and glyph class for the dropdown trigger, which was a hard-coded `text-sm font-bold text-white`. The default is that same string, so nothing changes for a host that does not set it. (`lib/src/configuration/magic_starter_theme.dart`)
+
+Pairs with `magic-starter-laravel`'s change sending `profile_photo_url: null` for an account with no upload. Until a backend carries it, an account with no photo still receives a generated ui-avatars.com image and draws that instead of its themed initial.
+
 ## [0.0.35] - 2026-09-22
 
 ### Changed

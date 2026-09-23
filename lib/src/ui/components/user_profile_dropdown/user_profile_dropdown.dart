@@ -39,6 +39,7 @@ class MSUserProfileDropdown extends StatelessWidget {
   static const _iconDarkMode = Icons.dark_mode_outlined;
   static const _iconSignIn = Icons.login;
   static const _iconCreateAccount = Icons.person_add_alt_outlined;
+  static const _iconPlaceholder = Icons.person_outline;
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +53,17 @@ class MSUserProfileDropdown extends StatelessWidget {
                 mt-2
                 border border-gray-100 dark:border-gray-700
             ''',
-      triggerBuilder: (context, isOpen, isHovering) =>
-          triggerBuilder?.call(context, isOpen, isHovering) ??
-          _buildAvatarTrigger(context, isOpen, isHovering),
+      // The trigger listens to the session itself. A shell that rebuilds on an
+      // auth change mounts this widget const, and a const child is not rebuilt
+      // with its parent, so a session that opens after the first frame (a
+      // guest session a host deliberately does not await) left the trigger
+      // drawing whatever it drew before anyone was signed in.
+      triggerBuilder: (context, isOpen, isHovering) => MagicBuilder<int>(
+        listenable: Auth.stateNotifier,
+        builder: (_) =>
+            triggerBuilder?.call(context, isOpen, isHovering) ??
+            _buildAvatarTrigger(context, isOpen, isHovering),
+      ),
       contentBuilder: (context, close) => _buildMenu(context, close),
     );
   }
@@ -65,8 +74,7 @@ class MSUserProfileDropdown extends StatelessWidget {
     bool isHovering,
   ) {
     final user = Auth.user();
-    final userName = user?.get<String>('name') ?? trans('common.user');
-    final initial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
+    final userName = user?.get<String>('name')?.trim() ?? '';
     final navTheme = MagicStarter.navigationTheme;
 
     // Through [MSAvatar] so the account's photo reaches the one control that
@@ -94,9 +102,26 @@ class MSUserProfileDropdown extends StatelessWidget {
       child: MSAvatar(
         photoUrl: user?.get<String>('profile_photo_url'),
         className: 'w-full h-full rounded-full',
-        fallback: WText(initial, className: 'text-sm font-bold text-white'),
+        fallback: _buildAvatarFallback(
+          userName,
+          navTheme.dropdownAvatarTextClassName,
+        ),
       ),
     );
+  }
+
+  /// The initial of [userName], or a person glyph when there is none.
+  ///
+  /// No name is the state before the session is known as well as an account
+  /// that never set one. The initial used to come from the word "User" there,
+  /// which drew a "U" belonging to nobody and then swapped it for the real
+  /// initial once the session opened.
+  Widget _buildAvatarFallback(String userName, String className) {
+    if (userName.isEmpty) {
+      return WIcon(_iconPlaceholder, className: className);
+    }
+
+    return WText(userName.characters.first.toUpperCase(), className: className);
   }
 
   Widget _buildMenu(BuildContext context, VoidCallback close) {
