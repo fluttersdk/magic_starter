@@ -159,6 +159,19 @@ void main() {
     );
   });
 
+  testWidgets('names a blank-name account with the placeholder in the menu', (
+    tester,
+  ) async {
+    mockGuard.setUser(MagicStarterAuthUser.fromMap({'id': 1, 'name': '  '}));
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(MSAvatar));
+    await tester.pumpAndSettle();
+
+    expect(find.text('common.user'), findsOneWidget);
+  });
+
   testWidgets('draws the initial once a session opens after the first frame', (
     tester,
   ) async {

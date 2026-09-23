@@ -26,6 +26,12 @@ class MSUserProfileDropdown extends StatelessWidget {
   /// Custom builder for the trigger widget.
   ///
   /// When null, renders the default circular avatar with user initial.
+  ///
+  /// It is called again whenever `Auth.stateNotifier` fires, so a builder that
+  /// reads `Auth.user()` when it RUNS follows the session. One that closes
+  /// over values its enclosing `build` computed does not: re-running it
+  /// replays the captured values, and only a rebuild of that enclosing widget
+  /// refreshes them, which is how the app layout's expanded form stays current.
   final Widget Function(BuildContext context, bool isOpen, bool isHovering)?
   triggerBuilder;
 
@@ -125,7 +131,10 @@ class MSUserProfileDropdown extends StatelessWidget {
   }
 
   Widget _buildMenu(BuildContext context, VoidCallback close) {
-    final userName = Auth.user()?.get<String>('name') ?? trans('common.user');
+    final accountName = Auth.user()?.get<String>('name')?.trim() ?? '';
+    final userName = accountName.isNotEmpty
+        ? accountName
+        : trans('common.user');
     final userEmail = Auth.user()?.get<String>('email') ?? '';
     final profileMenuItems =
         MagicStarter.navigationConfig?.profileMenuItems ?? [];
