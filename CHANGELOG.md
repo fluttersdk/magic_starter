@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.36] - 2026-09-23
+
 ### Fixed
 
 - **The sidebar avatar no longer draws a "U" that belongs to nobody.** With no user yet, both forms of the user menu took the initial from `trans('common.user')`, so a host that opens its guest session after the first frame (the guest flow does not await it, deliberately) painted a "U" on the brand, then swapped it for the guest's own initial. The expanded form fell back to `trans('common.unknown')` for an empty name, a whole word inside a 36 pixel circle. With no name to take a letter from, both forms now draw a person glyph on the theme's own avatar classes, the same glyph the profile screens already use for an account with no photo. (`lib/src/ui/components/user_profile_dropdown/user_profile_dropdown.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`)
@@ -16,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 - **`MagicStarterNavigationTheme.dropdownAvatarTextClassName`**, the initial and glyph class for the dropdown trigger, which was a hard-coded `text-sm font-bold text-white`. The default is that same string, so nothing changes for a host that does not set it. `MagicStarterTheme.fromWind` (and so `useWindTheme`) derives it from `text-on-primary`, since the trigger's background starts at the primary colour; a theme that defines no `on-primary` role keeps the white it had. (`lib/src/configuration/magic_starter_theme.dart`)
 
-Pairs with `magic-starter-laravel`'s change sending `profile_photo_url: null` for an account with no upload, and **release order matters**: against a backend on magic-starter-laravel 0.0.10 or earlier, which sends a generated ui-avatars.com image for every account without an upload, the expanded sidebar now shows that green image where 0.0.35 showed the themed initial, because it passes `profile_photo_url` to `MSAvatar`. A backend on 0.0.9 or 0.0.10 can send `null` today by setting `MAGIC_STARTER_UI_AVATARS_URL=` to an empty string. magic-starter-laravel 0.0.11 sends `null` by default and removes the need.
+Pairs with `magic-starter-laravel` 0.0.11 sending `profile_photo_url: null` for an account with no upload, and **release order matters**: against a backend on magic-starter-laravel 0.0.10 or earlier, which sends a generated ui-avatars.com image for every account without an upload, the expanded sidebar now shows that green image where 0.0.35 showed the themed initial, because it passes `profile_photo_url` to `MSAvatar`. A backend on 0.0.9 or 0.0.10 can send `null` today by setting `MAGIC_STARTER_UI_AVATARS_URL=` to an empty string. magic-starter-laravel 0.0.11 sends `null` by default and removes the need.
 
 ## [0.0.35] - 2026-09-22
 
