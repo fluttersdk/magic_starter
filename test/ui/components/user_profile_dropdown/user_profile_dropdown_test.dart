@@ -6,10 +6,12 @@ import 'package:magic_starter/src/ui/components/user_profile_dropdown/user_profi
 
 class MockGuard implements Guard {
   Authenticatable? _user;
+  final ValueNotifier<int> _stateNotifier = ValueNotifier<int>(0);
 
   @override
   Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
     _user = user;
+    _stateNotifier.value++;
   }
 
   @override
@@ -45,7 +47,7 @@ class MockGuard implements Guard {
   Future<void> restore() async {}
 
   @override
-  ValueNotifier<int> get stateNotifier => ValueNotifier(0);
+  ValueNotifier<int> get stateNotifier => _stateNotifier;
 }
 
 class MockRouter implements MagicRouter {
@@ -117,10 +119,100 @@ void main() {
     expect(find.text('J'), findsOneWidget);
   });
 
-  testWidgets('renders fallback initial when no user', (tester) async {
+  testWidgets('renders a person glyph rather than an initial when no user', (
+    tester,
+  ) async {
+    // Before the session is known there is nobody to take an initial from. The
+    // trigger used to take it from the word "User", so a host whose guest
+    // session opens after the first frame drew a "U" that no account has, and
+    // then swapped it for the real initial.
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
-    expect(find.text('C'), findsOneWidget);
+
+    expect(
+      find.descendant(
+        of: find.byType(MSAvatar),
+        matching: find.byIcon(Icons.person_outline),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byType(MSAvatar), matching: find.byType(WText)),
+      findsNothing,
+    );
+  });
+
+  testWidgets('renders a person glyph for an account with a blank name', (
+    tester,
+  ) async {
+    mockGuard.setUser(MagicStarterAuthUser.fromMap({'id': 1, 'name': '  '}));
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(MSAvatar),
+        matching: find.byIcon(Icons.person_outline),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('names a blank-name account with the placeholder in the menu', (
+    tester,
+  ) async {
+    mockGuard.setUser(MagicStarterAuthUser.fromMap({'id': 1, 'name': '  '}));
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(MSAvatar));
+    await tester.pumpAndSettle();
+
+    expect(find.text('common.user'), findsOneWidget);
+  });
+
+  testWidgets('draws the initial once a session opens after the first frame', (
+    tester,
+  ) async {
+    // The guest session a host opens without awaiting it: the first frame has
+    // no user, the next one does. A const trigger in a shell that rebuilds on
+    // auth change is not rebuilt with it, so the trigger listens itself.
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('G'), findsNothing);
+
+    await mockGuard.login(
+      {},
+      MagicStarterAuthUser.fromMap({
+        'id': 1,
+        'name': 'Guest',
+        'is_guest': true,
+      }),
+    );
+    await tester.pump();
+
+    expect(find.text('G'), findsOneWidget);
+    expect(find.byIcon(Icons.person_outline), findsNothing);
+  });
+
+  testWidgets('draws the initial on the theme\'s text class', (tester) async {
+    MagicStarter.manager.navigationTheme = const MagicStarterNavigationTheme(
+      dropdownAvatarTextClassName: 'text-sm font-bold text-amber-500',
+    );
+    mockGuard.setUser(MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Guest'}));
+
+    await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
+
+    expect(
+      tester
+          .widget<WText>(
+            find.ancestor(of: find.text('G'), matching: find.byType(WText)),
+          )
+          .className,
+      'text-sm font-bold text-amber-500',
+    );
   });
 
   testWidgets('tapping avatar opens dropdown with user info', (tester) async {
@@ -189,12 +281,12 @@ void main() {
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 
-    // trans('common.user')[0] is the fallback avatar initial.
-    await tester.tap(find.text('C'));
+    await tester.tap(find.byType(MSAvatar));
     await tester.pumpAndSettle();
 
     expect(find.text('auth.profile'), findsOneWidget);
-    expect(find.byIcon(Icons.person_outline), findsOneWidget);
+    // The menu's profile row, beside the trigger's own placeholder glyph.
+    expect(find.byIcon(Icons.person_outline), findsNWidgets(2));
   });
 
   testWidgets('shows custom profileMenuItems in dropdown', (tester) async {
@@ -212,7 +304,7 @@ void main() {
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('C'));
+    await tester.tap(find.byType(MSAvatar));
     await tester.pumpAndSettle();
 
     expect(find.text('Notifications'), findsOneWidget);
@@ -271,7 +363,7 @@ void main() {
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('C'));
+    await tester.tap(find.byType(MSAvatar));
     await tester.pumpAndSettle();
 
     expect(find.text('auth.logout'), findsOneWidget);
@@ -301,7 +393,7 @@ void main() {
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('C'));
+    await tester.tap(find.byType(MSAvatar));
     await tester.pumpAndSettle();
 
     for (int i = 0; i < 10; i++) {
@@ -315,7 +407,7 @@ void main() {
     await tester.pumpWidget(wrap(const MSUserProfileDropdown()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('C'));
+    await tester.tap(find.byType(MSAvatar));
     await tester.pumpAndSettle();
 
     // Light mode shows the dark-mode affordance, not both.

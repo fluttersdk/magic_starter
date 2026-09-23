@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The sidebar avatar no longer draws a "U" that belongs to nobody.** With no user yet, both forms of the user menu took the initial from `trans('common.user')`, so a host that opens its guest session after the first frame (the guest flow does not await it, deliberately) painted a "U" on the brand, then swapped it for the guest's own initial. The expanded form fell back to `trans('common.unknown')` for an empty name, a whole word inside a 36 pixel circle. With no name to take a letter from, both forms now draw a person glyph on the theme's own avatar classes, the same glyph the profile screens already use for an account with no photo. (`lib/src/ui/components/user_profile_dropdown/user_profile_dropdown.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
+- **The compact rail's avatar follows the session.** The shell rebuilds on `Auth.stateNotifier`, but it mounts `MSUserProfileDropdown` const, and a const child is not rebuilt with its parent: a session that opened after the first frame left the trigger drawing what it drew before anyone signed in, until something else happened to rebuild it. The trigger now listens to `Auth.stateNotifier` itself, so a guest reads as "G" on the frame after its session opens. A custom `triggerBuilder` is re-run too, which follows the session when it reads `Auth.user()` as it runs; one that captures values from its enclosing `build` is refreshed by that build instead, as the layout's expanded form is. The menu header names a blank-name account with the `common.user` placeholder, as the expanded sidebar does, rather than an empty line. (`lib/src/ui/components/user_profile_dropdown/user_profile_dropdown.dart`)
+
+- **The expanded sidebar draws the account's photo.** It was the one avatar left that drew the initial whatever the account carried; it now goes through `MSAvatar` like the compact trigger. (`lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
+### Added
+
+- **`MagicStarterNavigationTheme.dropdownAvatarTextClassName`**, the initial and glyph class for the dropdown trigger, which was a hard-coded `text-sm font-bold text-white`. The default is that same string, so nothing changes for a host that does not set it. `MagicStarterTheme.fromWind` (and so `useWindTheme`) derives it from `text-on-primary`, since the trigger's background starts at the primary colour; a theme that defines no `on-primary` role keeps the white it had. (`lib/src/configuration/magic_starter_theme.dart`)
+
+Pairs with `magic-starter-laravel`'s change sending `profile_photo_url: null` for an account with no upload, and **release order matters**: against a backend on magic-starter-laravel 0.0.10 or earlier, which sends a generated ui-avatars.com image for every account without an upload, the expanded sidebar now shows that green image where 0.0.35 showed the themed initial, because it passes `profile_photo_url` to `MSAvatar`. A backend on 0.0.9 or 0.0.10 can send `null` today by setting `MAGIC_STARTER_UI_AVATARS_URL=` to an empty string. magic-starter-laravel 0.0.11 sends `null` by default and removes the need.
+
 ## [0.0.35] - 2026-09-22
 
 ### Changed

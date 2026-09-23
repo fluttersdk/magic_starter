@@ -8,6 +8,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
+import '../components/avatar/index.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
@@ -52,6 +53,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
 
   static const _expandIcon = Icons.keyboard_double_arrow_right;
   static const _collapseIcon = Icons.keyboard_double_arrow_left;
+  static const _avatarPlaceholderIcon = Icons.person_outline;
 
   /// What the viewer chose for a collapsible sidebar, or `null` until they
   /// have, in which case `sidebarCollapsedByDefault` decides. Held apart from
@@ -762,11 +764,12 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   // -------------------------------------------------------------------------
 
   Widget _buildUserMenu(BuildContext context, {bool compact = false}) {
-    final userName = Auth.user()?.get<String>('name') ?? trans('common.user');
-    final userEmail = Auth.user()?.get<String>('email') ?? '';
-    final initial = userName.isNotEmpty
-        ? userName[0].toUpperCase()
-        : trans('common.unknown');
+    final user = Auth.user();
+    final accountName = user?.get<String>('name')?.trim() ?? '';
+    final userName = accountName.isNotEmpty
+        ? accountName
+        : trans('common.user');
+    final userEmail = user?.get<String>('email') ?? '';
     final navTheme = MagicStarter.navigationTheme;
 
     // The compact rail drops the name and email and falls back to the
@@ -805,17 +808,25 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                   transition-colors duration-150
                 ''',
                 children: [
-                  // Avatar
-                  WDiv(
+                  // Through [MSAvatar] for the same reason as the compact
+                  // trigger: an uploaded photo belongs on the control that is
+                  // on screen at all times. With no name to take an initial
+                  // from (no session yet, or an account that never set one) it
+                  // draws a person glyph rather than the first letter of the
+                  // word "User", which belonged to nobody.
+                  MSAvatar(
+                    photoUrl: user?.get<String>('profile_photo_url'),
                     className:
-                        '''
-                      w-9 h-9 rounded-full ${navTheme.avatarClassName}
-                      flex items-center justify-center flex-shrink-0
-                    ''',
-                    child: WText(
-                      initial,
-                      className: navTheme.avatarTextClassName,
-                    ),
+                        'w-9 h-9 rounded-full ${navTheme.avatarClassName}',
+                    fallback: accountName.isEmpty
+                        ? WIcon(
+                            _avatarPlaceholderIcon,
+                            className: navTheme.avatarTextClassName,
+                          )
+                        : WText(
+                            accountName.characters.first.toUpperCase(),
+                            className: navTheme.avatarTextClassName,
+                          ),
                   ),
                   // Name + Email
                   Expanded(

@@ -130,6 +130,29 @@ void main() {
       );
     });
 
+    test('derives the dropdown avatar initial from on-primary', () {
+      // The trigger's background starts at the primary colour, so its initial
+      // is the colour a theme chose to put on primary, not a fixed white.
+      MagicStarter.useWindTheme(windTheme);
+
+      expect(
+        hasToken(
+          MagicStarter.navigationTheme.dropdownAvatarTextClassName,
+          'text-on-primary',
+        ),
+        isTrue,
+      );
+    });
+
+    test('keeps a white dropdown initial when the theme omits on-primary', () {
+      MagicStarter.useWindTheme(WindThemeData());
+
+      final className =
+          MagicStarter.navigationTheme.dropdownAvatarTextClassName;
+      expect(hasToken(className, 'text-on-primary'), isFalse);
+      expect(hasToken(className, 'text-white'), isTrue);
+    });
+
     test('falls back to a visible default when the theme omits a role', () {
       // A bare theme defines no semantic aliases; `bg-surface` is unavailable,
       // so the derivation must NOT emit a token that silently no-ops. It falls

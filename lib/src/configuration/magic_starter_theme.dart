@@ -102,6 +102,14 @@ class MagicStarterNavigationTheme {
   /// Defaults to `'bg-gradient-to-tr from-primary to-gray-200'`.
   final String dropdownAvatarClassName;
 
+  /// Initial and placeholder glyph className for the dropdown trigger avatar.
+  ///
+  /// The foreground half of [dropdownAvatarClassName]: a host that themes the
+  /// background away from the brand needs to move the initial with it.
+  ///
+  /// Defaults to `'text-sm font-bold text-white'`.
+  final String dropdownAvatarTextClassName;
+
   /// Focus className for sidebar/drawer nav items.
   ///
   /// Each token must carry the `focus:` prefix. The item is already inside a
@@ -123,6 +131,7 @@ class MagicStarterNavigationTheme {
     this.avatarClassName = 'bg-primary/10 dark:bg-primary/10',
     this.avatarTextClassName = 'text-sm font-bold text-primary',
     this.dropdownAvatarClassName = 'bg-gradient-to-tr from-primary to-gray-200',
+    this.dropdownAvatarTextClassName = 'text-sm font-bold text-white',
     this.focusItemClassName = '',
   });
 }
@@ -956,6 +965,7 @@ class MagicStarterTheme {
         avatarClassName: 'bg-primary/10 dark:bg-primary/10',
         avatarTextClassName: 'text-sm font-bold $textPrimary',
         dropdownAvatarClassName: 'bg-gradient-to-tr from-primary to-gray-200',
+        dropdownAvatarTextClassName: 'text-sm font-bold $onPrimary',
       ),
       modal: MagicStarterModalTheme(
         containerClassName: '$surfaceContainer rounded-2xl',

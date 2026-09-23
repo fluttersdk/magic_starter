@@ -68,6 +68,12 @@ void main() {
           theme.dropdownAvatarClassName,
           'bg-gradient-to-tr from-primary to-gray-200',
         );
+        // The trigger's initial kept the colour it had before the field
+        // existed, so a host that never sets it sees no change.
+        expect(
+          theme.dropdownAvatarTextClassName,
+          'text-sm font-bold text-white',
+        );
       });
 
       test('useNavigationTheme() stores theme on manager', () {
