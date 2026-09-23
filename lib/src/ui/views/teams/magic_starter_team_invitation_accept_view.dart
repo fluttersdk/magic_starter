@@ -50,11 +50,21 @@ class _MagicStarterTeamInvitationAcceptViewState
       context,
     );
 
-    return controller.renderState(
-      (_) => _buildSuccess(headerSlot: headerSlot, footerSlot: footerSlot),
-      onEmpty: _buildDefault(headerSlot: headerSlot, footerSlot: footerSlot),
-      onError: (message) =>
-          _buildError(message, headerSlot: headerSlot, footerSlot: footerSlot),
+    // Its own scroll, like every other starter screen gets from
+    // `MSPageScaffold`: a host whose content box does not scroll hands this
+    // view a bounded height, and the card overflowed a short one. Not the
+    // ambient primary controller, for the reason `MSPageScaffold` gives.
+    return SingleChildScrollView(
+      primary: false,
+      child: controller.renderState(
+        (_) => _buildSuccess(headerSlot: headerSlot, footerSlot: footerSlot),
+        onEmpty: _buildDefault(headerSlot: headerSlot, footerSlot: footerSlot),
+        onError: (message) => _buildError(
+          message,
+          headerSlot: headerSlot,
+          footerSlot: footerSlot,
+        ),
+      ),
     );
   }
 

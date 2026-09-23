@@ -667,12 +667,22 @@ class MagicStarterLayoutTheme {
   /// fails to lay out at all, rendering nothing. Such a host sets
   /// `'flex-1 min-h-0'` and owns its own scrolling.
   ///
-  /// Worth knowing before choosing: every view this package ships goes through
-  /// `MSPageScaffold`, which brings its own `SingleChildScrollView`, so the
-  /// default nests two scrollables on each of them. The default stays because
-  /// changing it would move layout for every existing host, but a host that
-  /// puts every page through `MSPageScaffold` can set `'flex-1 min-h-0'` and
-  /// lose nothing.
+  /// Worth knowing before choosing: every view this package ships scrolls
+  /// itself (through `MSPageScaffold`, or its own `SingleChildScrollView` for
+  /// the invitation card), so the default nests two scrollables on each of
+  /// them. The default stays because changing it would move layout for every
+  /// existing host, but a host whose own pages scroll themselves can set
+  /// `'flex-1 min-h-0'` and lose nothing.
+  ///
+  /// A host that registers any `.stacked()` route under this layout should
+  /// make that change. In a go_router shell the route child is the nested
+  /// Navigator, so the default scrolls the Navigator and lays its Overlay out
+  /// under an unbounded height. The page left under a stacked route is then
+  /// never laid out again, and its second rebuild while hidden (a controller
+  /// notify, a resize, a locale switch) fails
+  /// `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout` in debug and leaves the
+  /// tree inconsistent. With a non-scrolling content box, each routed page
+  /// scrolls itself instead. See #160 and flutter/flutter#193247.
   final String contentClassName;
 
   /// Whether the content area attaches to the ambient
