@@ -965,6 +965,7 @@ class MagicStarterTheme {
         avatarClassName: 'bg-primary/10 dark:bg-primary/10',
         avatarTextClassName: 'text-sm font-bold $textPrimary',
         dropdownAvatarClassName: 'bg-gradient-to-tr from-primary to-gray-200',
+        dropdownAvatarTextClassName: 'text-sm font-bold $onPrimary',
       ),
       modal: MagicStarterModalTheme(
         containerClassName: '$surfaceContainer rounded-2xl',

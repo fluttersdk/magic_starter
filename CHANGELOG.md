@@ -14,9 +14,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`MagicStarterNavigationTheme.dropdownAvatarTextClassName`**, the initial and glyph class for the dropdown trigger, which was a hard-coded `text-sm font-bold text-white`. The default is that same string, so nothing changes for a host that does not set it. (`lib/src/configuration/magic_starter_theme.dart`)
+- **`MagicStarterNavigationTheme.dropdownAvatarTextClassName`**, the initial and glyph class for the dropdown trigger, which was a hard-coded `text-sm font-bold text-white`. The default is that same string, so nothing changes for a host that does not set it. `MagicStarterTheme.fromWind` (and so `useWindTheme`) derives it from `text-on-primary`, since the trigger's background starts at the primary colour; a theme that defines no `on-primary` role keeps the white it had. (`lib/src/configuration/magic_starter_theme.dart`)
 
-Pairs with `magic-starter-laravel`'s change sending `profile_photo_url: null` for an account with no upload. Until a backend carries it, an account with no photo still receives a generated ui-avatars.com image and draws that instead of its themed initial.
+Pairs with `magic-starter-laravel`'s change sending `profile_photo_url: null` for an account with no upload, and **release order matters**: against a backend on magic-starter-laravel 0.0.10 or earlier, which sends a generated ui-avatars.com image for every account without an upload, the expanded sidebar now shows that green image where 0.0.35 showed the themed initial, because it passes `profile_photo_url` to `MSAvatar`. A backend on 0.0.9 or 0.0.10 can send `null` today by setting `MAGIC_STARTER_UI_AVATARS_URL=` to an empty string. magic-starter-laravel 0.0.11 sends `null` by default and removes the need.
 
 ## [0.0.35] - 2026-09-22
 
