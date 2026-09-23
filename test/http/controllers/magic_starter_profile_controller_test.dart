@@ -1044,25 +1044,30 @@ void main() {
     // -----------------------------------------------------------------------
 
     group('withoutNotifying', () {
-      test('an overlapping action stays quiet after an inner one ends', () async {
-        // A save still in flight when the reader opens another settings page
-        // that loads on mount: two suppressed actions overlap. A flag cleared
-        // by the one that finishes first un-suppressed the other.
-        var notificationCount = 0;
-        controller.addListener(() => notificationCount++);
+      test(
+        'an overlapping action stays quiet after an inner one ends',
+        () async {
+          // A save still in flight when the reader opens another settings page
+          // that loads on mount: two suppressed actions overlap. A flag cleared
+          // by the one that finishes first un-suppressed the other.
+          var notificationCount = 0;
+          controller.addListener(() => notificationCount++);
 
-        final Completer<void> outerHeld = Completer<void>();
-        final Future<void> outer = controller.withoutNotifying(() async {
-          await outerHeld.future;
-          controller.setError('outer finished');
-        });
+          final Completer<void> outerHeld = Completer<void>();
+          final Future<void> outer = controller.withoutNotifying(() async {
+            await outerHeld.future;
+            controller.setError('outer finished');
+          });
 
-        await controller.withoutNotifying(() async => controller.setLoading());
-        outerHeld.complete();
-        await outer;
+          await controller.withoutNotifying(
+            () async => controller.setLoading(),
+          );
+          outerHeld.complete();
+          await outer;
 
-        expect(notificationCount, 0);
-      });
+          expect(notificationCount, 0);
+        },
+      );
 
       test('resetQuietly clears errors and state without notifying', () {
         var notificationCount = 0;
