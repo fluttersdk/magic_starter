@@ -12,12 +12,13 @@ class MagicStarterProfileController extends MagicController
       Magic.findOrPut(MagicStarterProfileController.new);
   bool _isSubmitting = false;
 
-  /// Whether controller notifications are temporarily suppressed.
+  /// How many [withoutNotifying] actions are in flight.
   ///
-  /// When `true`, [notifyListeners] calls are silently discarded.
-  /// Used by [withoutNotifying] to prevent full-page rebuilds when
-  /// form-level loading state (via [MagicFormData.process]) is sufficient.
-  bool _suppressNotifications = false;
+  /// While above zero, [notifyListeners] calls are silently discarded. A count
+  /// rather than a flag, because two of them can overlap (a save still in
+  /// flight when the reader opens another settings page that loads on mount),
+  /// and a flag cleared by the first to finish would un-suppress the other.
+  int _suppressionDepth = 0;
 
   /// Render profile settings view via registry key.
   Widget profile() => MagicStarter.view.make('profile.settings');
@@ -37,11 +38,11 @@ class MagicStarterProfileController extends MagicController
   /// ));
   /// ```
   Future<T> withoutNotifying<T>(Future<T> Function() action) async {
-    _suppressNotifications = true;
+    _suppressionDepth++;
     try {
       return await action();
     } finally {
-      _suppressNotifications = false;
+      _suppressionDepth--;
     }
   }
 
@@ -55,18 +56,13 @@ class MagicStarterProfileController extends MagicController
   /// Nothing needs the notification: the view calling this reads the state in
   /// its own first build, and the hub renders nothing from it.
   void resetQuietly() {
-    _suppressNotifications = true;
-    try {
-      clearErrors();
-      setEmpty();
-    } finally {
-      _suppressNotifications = false;
-    }
+    validationErrors = {};
+    setState(null, status: const RxStatus.empty(), notify: false);
   }
 
   @override
   void notifyListeners() {
-    if (_suppressNotifications) return;
+    if (_suppressionDepth > 0) return;
     super.notifyListeners();
   }
 

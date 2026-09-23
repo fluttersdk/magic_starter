@@ -6,11 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **Opening a settings sub-page no longer rebuilds the hub in the middle of a build.** The hub and every settings sub-page bind `MagicStarterProfileController`, and the hub stays mounted under a stacked sub-page. Each sub-page reset the controller in `onInit` with `clearErrors()` and `setEmpty()`, which notify, and `onInit` runs while the new route is being built, so the hub was marked dirty mid-build and every opening reported "setState() or markNeedsBuild() called during build". The eight views that share the controller (appearance, language, timezone, password, sessions, two-factor, profile settings, profile sub-page) now reset it without notifying. Closes #161. (`lib/src/ui/views/settings/`, `lib/src/ui/views/profile/`)
+- **Opening a settings sub-page no longer rebuilds the hub in the middle of a build.** The hub and every settings sub-page bind `MagicStarterProfileController`, and the hub stays mounted under a stacked sub-page. Each sub-page reset the controller in `onInit` with `clearErrors()` and `setEmpty()`, which notify, and `onInit` runs while the new route is being built, so the hub was marked dirty mid-build and every opening reported "setState() or markNeedsBuild() called during build". The eight views that share the controller (appearance, language, timezone, password, sessions, two-factor, profile settings, profile sub-page) now reset it without notifying, and the two that load sessions on mount do so under `withoutNotifying`, since `getSessions()` sets loading before its first await. Team create had the same shape over team settings (the team selector opens it from there) and resets its controller the same way. Closes #161. (`lib/src/ui/views/settings/`, `lib/src/ui/views/profile/`, `lib/src/ui/views/teams/magic_starter_team_create_view.dart`)
+
+- **Overlapping `withoutNotifying` calls no longer un-suppress each other.** The suppression was a flag cleared by whichever action finished first, so a save still in flight when the reader opened a page that loads on mount notified every listener on completion. It is a count now. (`lib/src/http/controllers/magic_starter_profile_controller.dart`)
 
 ### Added
 
-- **`MagicStarterProfileController.resetQuietly()`**, the non-notifying reset those views call: errors cleared, state empty, no listener told. A host view that binds the same controller and resets it in `onInit` should call it too. (`lib/src/http/controllers/magic_starter_profile_controller.dart`)
+- **`resetQuietly()` on `MagicStarterProfileController` and `MagicStarterTeamController`**, the non-notifying reset those views call: errors cleared, state empty, no listener told. A host view that binds either controller and resets it in `onInit` should call it too. (`lib/src/http/controllers/`)
 
 ## [0.0.36] - 2026-09-23
 

@@ -8,6 +8,8 @@ import 'package:magic_starter/src/ui/views/settings/preferences/magic_starter_la
 import 'package:magic_starter/src/ui/views/settings/preferences/magic_starter_timezone_view.dart';
 import 'package:magic_starter/src/ui/views/settings/security/magic_starter_password_view.dart';
 import 'package:magic_starter/src/ui/views/settings/security/magic_starter_sessions_view.dart';
+import 'package:magic_starter/src/ui/views/settings/security/magic_starter_two_factor_view.dart';
+import 'package:magic_starter/src/ui/views/profile/magic_starter_profile_sub_page_view.dart';
 
 // ---------------------------------------------------------------------------
 // Mock NetworkDriver
@@ -477,6 +479,9 @@ void main() {
       'timezone': () => const MagicStarterTimezoneView(),
       'password': () => const MagicStarterPasswordView(),
       'sessions': () => const MagicStarterSessionsView(),
+      'two-factor': () => const MagicStarterTwoFactorView(),
+      'profile settings': () => const MagicStarterProfileSettingsView(),
+      'profile sub-page': () => const MagicStarterProfileSubPageView(),
     };
 
     for (final MapEntry<String, Widget Function()> subPage
@@ -484,6 +489,9 @@ void main() {
       testWidgets('${subPage.key} opens without rebuilding the hub mid-build', (
         tester,
       ) async {
+        // On, because the sessions pages only load on mount with it on, and
+        // that load is the second notifying call made during the build.
+        Config.set('magic_starter.features.sessions', true);
         final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
         await tester.pumpWidget(
           MaterialApp(

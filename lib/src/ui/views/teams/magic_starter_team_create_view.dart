@@ -26,8 +26,7 @@ class _MagicStarterTeamCreateViewState
 
   @override
   void onInit() {
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
   }
 
   @override
