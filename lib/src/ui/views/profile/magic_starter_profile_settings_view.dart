@@ -347,6 +347,7 @@ class _MagicStarterProfileSettingsViewState
     // every other view of the shared controller dirty mid-build (the settings
     // hub under this page). This view drives its own spinner.
     final result = await controller.withoutNotifying(controller.getSessions);
+    if (!mounted) return;
     setState(() {
       _sessions = result ?? [];
       _sessionsLoading = false;
