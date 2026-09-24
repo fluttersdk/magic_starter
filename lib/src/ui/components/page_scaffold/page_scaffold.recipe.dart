@@ -7,10 +7,10 @@ import 'package:magic/magic.dart';
 /// not just the content height — otherwise everything below the last section
 /// shows the layout's grey content background.
 ///
-/// Uses `min-h-full` (not `h-full`): the scaffold sits inside the app layout's
-/// vertical scroll (`overflow-y-auto`), where a hard `h-full` resolves to an
-/// unbounded height and Wind rejects it. `min-h-full` fills the viewport as a
-/// floor while still growing with taller content.
+/// Uses `min-h-full` (not `h-full`): a host whose content box still scrolls
+/// (the pre-#160 default, available as an opt-in) hands the scaffold an
+/// unbounded height, where a hard `h-full` does not resolve and Wind rejects
+/// it. `min-h-full` fills the viewport as a floor under either shape.
 ///
 /// Emission order: base (width + min-height + surface token).
 String pageScaffoldSurfaceRecipe() {

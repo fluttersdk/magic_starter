@@ -12,15 +12,21 @@ All notable changes to this project will be documented in this file.
 
 - **Overlapping `withoutNotifying` calls no longer un-suppress each other.** The suppression was a flag cleared by whichever action finished first, so a save still in flight when the reader opened a page that loads on mount notified every listener on completion. It is a count now. (`lib/src/http/controllers/magic_starter_profile_controller.dart`)
 
-- **The invitation-accept screen scrolls itself.** It was the one starter screen in the app shell with no scroll of its own, so a host whose content box does not scroll (the setting a host with `.stacked()` routes needs) handed it a bounded height, and on a short viewport the card overflowed with nothing to drag. It now sits in its own `SingleChildScrollView(primary: false)`, as `MSPageScaffold` screens do. (`lib/src/ui/views/teams/magic_starter_team_invitation_accept_view.dart`)
+- **The invitation-accept screen scrolls itself.** It was the one starter screen in the app shell with no scroll of its own, so a content box that does not scroll (the default from this release, see Changed) handed it a bounded height, and on a short viewport the card overflowed with nothing to drag. It now sits in its own `SingleChildScrollView(primary: false)`, as `MSPageScaffold` screens do. (`lib/src/ui/views/teams/magic_starter_team_invitation_accept_view.dart`)
 
 ### Added
 
 - **`resetQuietly()` on `MagicStarterProfileController` and `MagicStarterTeamController`**, the non-notifying reset those views call: errors cleared, state empty, no listener told. A host view that binds either controller and resets it in `onInit` should call it too. (`lib/src/http/controllers/`)
 
-### Changed
+### Breaking
 
-- **`MagicStarterLayoutTheme.contentClassName` documents the stacked-route hazard.** The default `'flex-1 overflow-y-auto'` scrolls the shell's nested Navigator, which breaks a page left under a `.stacked()` route on its second hidden rebuild. The default is unchanged; the doc now says to set `'flex-1 min-h-0'` in any app that stacks routes under this layout. Refs #160. (`lib/src/configuration/magic_starter_theme.dart`)
+- **The app shell's content box no longer scrolls; each routed page scrolls itself.** `MagicStarterLayoutTheme.contentClassName` defaults to `'flex-1 min-h-0'` and `contentScrollPrimary` to `false` (they were `'flex-1 overflow-y-auto'` and `true`). In a go_router shell the route child is the nested Navigator, so the old default scrolled the Navigator and laid its Overlay out under an unbounded height: a page left under a `.stacked()` route was never laid out again, and its second rebuild while hidden failed `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout` in debug and left the tree inconsistent. Closes #160. (`lib/src/configuration/magic_starter_theme.dart`)
+
+  The starter's own screens already scroll themselves (`MSPageScaffold`, the invitation card), and two changed to keep doing so correctly: the notification screens now take the host page geometry inside their own scroll view rather than wrapped around it, where the padding would inset the viewport and clip a long list (`lib/src/routes/notification_routes.dart`), and the `starter:install` dashboard stub now scrolls itself (`assets/stubs/install/dashboard_view.stub`).
+
+  **Migrating:** a page of your own that relied on the shell to scroll it now renders cut off at the window. Put it through `MSPageScaffold` or wrap it in `SingleChildScrollView(primary: false)`; an app installed from an earlier stub has a `DashboardView` that needs the same. Or set the old pair back with `MagicStarter.useLayoutTheme(const MagicStarterLayoutTheme(contentClassName: 'flex-1 overflow-y-auto', contentScrollPrimary: true))`, accepting that stacked routes then carry the hazard above. `doc/basics/views-and-layouts.md` covers both.
+
+  **Lost:** tapping the iOS status bar no longer scrolls a shell page to the top. The shell's `Scaffold` scrolls the primary controller above the nested Navigator, which the old scrolling content box was attached to; every page's scroll now sits inside a route that scopes its own controller. Restoring it needs a status-bar handler below the Navigator, which is a separate change.
 
 ## [0.0.36] - 2026-09-23
 

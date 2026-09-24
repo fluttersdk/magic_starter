@@ -1092,9 +1092,17 @@ void main() {
     }
 
     testWidgets(
-      'the default content area scrolls and owns the primary scroll',
+      'a scrolling content area scrolls and owns the primary scroll',
       (tester) async {
         useViewport(tester, 400, 800);
+
+        // The previous default, still available as an opt-in.
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(
+            contentClassName: 'flex-1 overflow-y-auto',
+            contentScrollPrimary: true,
+          ),
+        );
 
         await tester.pumpWidget(
           createApp(child: const SizedBox(key: Key('route-content'))),
@@ -1114,17 +1122,10 @@ void main() {
       },
     );
 
-    testWidgets('a non-scrolling contentClassName leaves the child unscrolled', (
+    testWidgets('the default content area leaves the child unscrolled', (
       tester,
     ) async {
       useViewport(tester, 400, 800);
-
-      MagicStarter.useLayoutTheme(
-        const MagicStarterLayoutTheme(
-          contentClassName: 'flex-1 min-h-0',
-          contentScrollPrimary: false,
-        ),
-      );
 
       await tester.pumpWidget(
         createApp(child: const SizedBox(key: Key('route-content'))),
@@ -1142,17 +1143,10 @@ void main() {
       );
     });
 
-    testWidgets('a fill-shaped child lays out under a non-scrolling content', (
+    testWidgets('a fill-shaped child lays out under the default content', (
       tester,
     ) async {
       useViewport(tester, 1440, 900);
-
-      MagicStarter.useLayoutTheme(
-        const MagicStarterLayoutTheme(
-          contentClassName: 'flex-1 min-h-0',
-          contentScrollPrimary: false,
-        ),
-      );
 
       await tester.pumpWidget(createApp(child: fillShapedScreen()));
       await tester.pumpAndSettle();
@@ -1162,17 +1156,24 @@ void main() {
       expect(find.text('Body'), findsOneWidget);
     });
 
-    testWidgets('the shipped scrolling content area cannot hold that child', (
+    testWidgets('a scrolling content area cannot hold that child', (
       tester,
     ) async {
       useViewport(tester, 1440, 900);
 
+      MagicStarter.useLayoutTheme(
+        const MagicStarterLayoutTheme(
+          contentClassName: 'flex-1 overflow-y-auto',
+          contentScrollPrimary: true,
+        ),
+      );
+
       await tester.pumpWidget(createApp(child: fillShapedScreen()));
       await tester.pump();
 
-      // The reason the field exists, asserted rather than described: under the
-      // default the same screen is handed an unbounded height and fails to lay
-      // out. A host whose screens are all this shape renders nothing.
+      // One of the reasons the default stopped scrolling, asserted rather than
+      // described: under a scrolling content area the same screen is handed an
+      // unbounded height and fails to lay out, rendering nothing.
       //
       // Asserted on the cause rather than on "something threw", so the test
       // cannot go on passing for a different reason. Wind names it here; a
@@ -1184,7 +1185,7 @@ void main() {
       );
     });
 
-    test('the new theme fields default to today shell behaviour', () {
+    test('the theme fields default to the shell behaviour', () {
       const layout = MagicStarterLayoutTheme();
       const navigation = MagicStarterNavigationTheme();
 
@@ -1195,8 +1196,9 @@ void main() {
       // was measured overflowing by exactly 1.
       expect(layout.sidebarCompactWidth, equals(80));
       expect(navigation.focusItemClassName, equals(''));
-      expect(layout.contentClassName, equals('flex-1 overflow-y-auto'));
-      expect(layout.contentScrollPrimary, isTrue);
+      // A box that does not scroll, so each routed page scrolls itself (#160).
+      expect(layout.contentClassName, equals('flex-1 min-h-0'));
+      expect(layout.contentScrollPrimary, isFalse);
     });
   });
 
@@ -1546,6 +1548,74 @@ void main() {
       expect(layout.sidebarCollapsible, isFalse);
       expect(layout.sidebarCollapsedByDefault, isFalse);
       expect(navigation.compactBrandBuilder, isNull);
+    });
+  });
+  // ---------------------------------------------------------------------------
+  // A page left under a stacked route (#160)
+  // ---------------------------------------------------------------------------
+
+  group('MagicStarterAppLayout with a page under a stacked route', () {
+    testWidgets('the hidden page takes live rebuilds without breaking layout', (
+      tester,
+    ) async {
+      // In a go_router shell the route child is the nested Navigator. A
+      // content box that scrolls hands its Overlay an unbounded height, the
+      // Overlay then never lays the hidden page out again, and that page's
+      // second rebuild fails `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout`
+      // and leaves the tree inconsistent (flutter/flutter#193247). Under the
+      // shipped content box the Navigator gets a bounded height instead.
+      final ValueNotifier<int> reading = ValueNotifier<int>(0);
+      addTearDown(reading.dispose);
+
+      final GoRouter router = GoRouter(
+        initialLocation: '/list',
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) =>
+                MagicStarterAppLayout(child: child),
+            routes: [
+              GoRoute(
+                path: '/list',
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  child: ValueListenableBuilder<int>(
+                    valueListenable: reading,
+                    builder: (context, value, _) => Row(
+                      children: [
+                        const Expanded(child: Text('Checkout')),
+                        SizedBox(width: 64, child: Text('${value}ms')),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              GoRoute(
+                path: '/list/detail',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage<void>(child: Text('detail')),
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        WindTheme(
+          data: WindThemeData(),
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+      router.push('/list/detail');
+      await tester.pumpAndSettle();
+      expect(find.text('detail'), findsOneWidget);
+
+      for (int i = 1; i <= 3; i++) {
+        reading.value = i * 100;
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      expect(tester.takeException(), isNull);
     });
   });
 }
