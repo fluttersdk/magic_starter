@@ -326,24 +326,24 @@ The shell wraps the route child in one `WDiv`, and two fields on `MagicStarterLa
 
 | Field | Default | What it decides |
 |-------|---------|-----------------|
-| `contentClassName` | `'flex-1 overflow-y-auto'` | The content area's own className |
-| `contentScrollPrimary` | `true` | Whether that area attaches to the ambient `PrimaryScrollController` |
+| `contentClassName` | `'flex-1 min-h-0'` | The content area's own className |
+| `contentScrollPrimary` | `false` | Whether that area attaches to the ambient `PrimaryScrollController` |
 
-The default scrolls the child, which hands it an unbounded height. That suits a page as tall as its content and is wrong for a fill-shaped screen: an `h-full` column whose body takes the slack and scrolls inside itself resolves its height against infinity, fails to lay out, and renders nothing at all. A host whose screens are all that shape, which is what a television guide or a media catalogue is, sets:
+The default is a box of bounded height that does not scroll, so **each routed page scrolls itself**. Every view this package ships already does, through `MSPageScaffold` (which brings its own `SingleChildScrollView(primary: false)`) or, for the invitation card, its own scroll view. A fill-shaped screen, an `h-full` column whose body takes the slack and scrolls inside itself (a television guide, a media catalogue), lays out under it as well.
+
+A page of your own that is taller than the window needs its own vertical scroll: put it through `MSPageScaffold`, or wrap it:
 
 ```dart
-MagicStarter.useLayoutTheme(
-  const MagicStarterLayoutTheme(
-    contentClassName: 'flex-1 min-h-0',
-    contentScrollPrimary: false,
-  ),
+MagicRoute.page(
+  '/reports',
+  () => const SingleChildScrollView(child: ReportsView()),
 );
 ```
 
-Set the two together. Wind reads `scrollPrimary` only where it builds a scroll view, so leaving it true beside a non-scrolling className claims nothing and is inert; it matters the moment the className scrolls horizontally, or scrolls in a way that belongs to the page rather than to the shell. Two `primary: true` scrollables in one tree contend for the single controller.
+> [!WARNING]
+> The default used to be `'flex-1 overflow-y-auto'` with `contentScrollPrimary: true`, and you can still set that pair. Know what it costs before you do. In a go_router shell the route child is the nested Navigator, so a scrolling content box scrolls the Navigator and lays its Overlay out under an unbounded height. A page left under a `.stacked()` route is then never laid out again, and its second rebuild while hidden (a controller notify, a resize, a locale switch) fails `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout` in debug and leaves the tree inconsistent from there. The same setting also gives a fill-shaped screen an unbounded height, which it cannot lay out. See [#160](https://github.com/fluttersdk/magic_starter/issues/160) and [flutter/flutter#193247](https://github.com/flutter/flutter/issues/193247).
 
-> [!NOTE]
-> Every view this package ships goes through `MSPageScaffold`, which brings its own `SingleChildScrollView(primary: false)`. So the default nests two scrollables on each of them. The default stays as it is, because changing it would move layout for every existing host, but a host that puts every one of its own pages through `MSPageScaffold` can set `'flex-1 min-h-0'` and lose nothing.
+Set the two fields together. Wind reads `scrollPrimary` only where it builds a scroll view, so beside a non-scrolling className it claims nothing and is inert; it matters the moment the className scrolls. Two `primary: true` scrollables in one tree contend for the single controller.
 
 ### An immersive route
 

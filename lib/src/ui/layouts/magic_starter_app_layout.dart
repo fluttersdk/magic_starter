@@ -259,12 +259,11 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                     children: [
                       _buildHeader(context, isDesktop),
                       // The content box is the host's, because only the host
-                      // knows the shape of its screens. The shipped
-                      // `flex-1 overflow-y-auto` scrolls the child and so
-                      // hands it an unbounded height, which a fill-shaped
-                      // screen (an `h-full` column with a body that scrolls
-                      // inside itself) cannot resolve: it fails to lay out and
-                      // renders nothing.
+                      // knows the shape of its screens. The shipped one does
+                      // not scroll: the child is the shell's nested Navigator,
+                      // and scrolling it gave its Overlay an unbounded height
+                      // that breaks a page left under a stacked route (see
+                      // `MagicStarterLayoutTheme.contentClassName`).
                       WDiv(
                         className: layoutTheme.contentClassName,
                         scrollPrimary: layoutTheme.contentScrollPrimary,

@@ -660,47 +660,43 @@ class MagicStarterLayoutTheme {
 
   /// Content area className: the box the shell hands the route child.
   ///
-  /// Defaults to `'flex-1 overflow-y-auto'`, which scrolls the child and so
-  /// hands it an unbounded height. That suits a page that is as tall as its
-  /// content and is wrong for a fill-shaped screen: an `h-full` column with a
-  /// body that scrolls inside itself resolves its height against infinity and
-  /// fails to lay out at all, rendering nothing. Such a host sets
-  /// `'flex-1 min-h-0'` and owns its own scrolling.
+  /// Defaults to `'flex-1 min-h-0'`: a box of bounded height that does not
+  /// scroll, so each routed page scrolls itself. Every view this package
+  /// ships does (through `MSPageScaffold`, or its own `SingleChildScrollView`
+  /// for the invitation card), and a fill-shaped screen, an `h-full` column
+  /// whose body scrolls inside itself, lays out under it too.
   ///
-  /// Worth knowing before choosing: every view this package ships scrolls
-  /// itself (through `MSPageScaffold`, or its own `SingleChildScrollView` for
-  /// the invitation card), so the default nests two scrollables on each of
-  /// them. The default stays because changing it would move layout for every
-  /// existing host, but a host whose own pages scroll themselves can set
-  /// `'flex-1 min-h-0'` and lose nothing.
+  /// It used to be `'flex-1 overflow-y-auto'`, and that default was the
+  /// defect. In a go_router shell the route child is the nested Navigator, so
+  /// scrolling the child scrolled the Navigator and laid its Overlay out
+  /// under an unbounded height. The page left under a `.stacked()` route was
+  /// then never laid out again, and its second rebuild while hidden (a
+  /// controller notify, a resize, a locale switch) failed
+  /// `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout` in debug and left the
+  /// tree inconsistent from there. See #160 and flutter/flutter#193247.
   ///
-  /// A host that registers any `.stacked()` route under this layout should
-  /// make that change. In a go_router shell the route child is the nested
-  /// Navigator, so the default scrolls the Navigator and lays its Overlay out
-  /// under an unbounded height. The page left under a stacked route is then
-  /// never laid out again, and its second rebuild while hidden (a controller
-  /// notify, a resize, a locale switch) fails
-  /// `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout` in debug and leaves the
-  /// tree inconsistent. With a non-scrolling content box, each routed page
-  /// scrolls itself instead. See #160 and flutter/flutter#193247.
+  /// A host whose own pages leaned on the shell for scrolling either wraps
+  /// them in a vertical scroll (or `MSPageScaffold`), or sets the old value
+  /// back, accepting that stacked routes then carry the hazard above.
   final String contentClassName;
 
   /// Whether the content area attaches to the ambient
   /// `PrimaryScrollController`.
   ///
-  /// Defaults to `true`, which is what the shell has always passed. Set it
-  /// false alongside a [contentClassName] that scrolls horizontally, or one
-  /// whose scrolling belongs to the page rather than to the shell: two
+  /// Defaults to `false`, since the default content box does not scroll: each
+  /// page's own scroll belongs to its route, and every route scopes its own
+  /// primary controller. Set it true alongside a [contentClassName] that
+  /// scrolls, which is the pairing the old default shipped. Two
   /// `primary: true` scrollables in one tree contend for the single
   /// controller, which is the `dropChild` cascade `MSPageScaffold` already
   /// avoids by passing `primary: false`.
   ///
   /// A separate field rather than a value derived from [contentClassName],
   /// for two measured reasons. Wind reads this flag only inside the branch
-  /// that builds a scroll view (`w_div.dart`), so leaving it true beside a
-  /// non-scrolling className claims nothing and is inert. And deriving it
-  /// would mean restating Wind's own overflow branch order here, which is a
-  /// copy that goes silently wrong the first time Wind reorders it.
+  /// that builds a scroll view (`w_div.dart`), so beside a non-scrolling
+  /// className it claims nothing and is inert. And deriving it would mean
+  /// restating Wind's own overflow branch order here, which is a copy that
+  /// goes silently wrong the first time Wind reorders it.
   final bool contentScrollPrimary;
 
   const MagicStarterLayoutTheme({
@@ -726,8 +722,8 @@ class MagicStarterLayoutTheme {
     this.brandBarClassName =
         'h-14 px-5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800',
     this.bottomNavClassName = '',
-    this.contentClassName = 'flex-1 overflow-y-auto',
-    this.contentScrollPrimary = true,
+    this.contentClassName = 'flex-1 min-h-0',
+    this.contentScrollPrimary = false,
   });
 }
 
