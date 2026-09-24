@@ -10,9 +10,15 @@ All notable changes to this project will be documented in this file.
 
 - **Overlapping `withoutNotifying` calls no longer un-suppress each other.** The suppression was a flag cleared by whichever action finished first, so a save still in flight when the reader opened a page that loads on mount notified every listener on completion. It is a count now. (`lib/src/http/controllers/magic_starter_profile_controller.dart`)
 
+- **The invitation-accept screen scrolls itself.** It was the one starter screen in the app shell with no scroll of its own, so a host whose content box does not scroll (the setting a host with `.stacked()` routes needs) handed it a bounded height, and on a short viewport the card overflowed with nothing to drag. It now sits in its own `SingleChildScrollView(primary: false)`, as `MSPageScaffold` screens do. (`lib/src/ui/views/teams/magic_starter_team_invitation_accept_view.dart`)
+
 ### Added
 
 - **`resetQuietly()` on `MagicStarterProfileController` and `MagicStarterTeamController`**, the non-notifying reset those views call: errors cleared, state empty, no listener told. A host view that binds either controller and resets it in `onInit` should call it too. (`lib/src/http/controllers/`)
+
+### Changed
+
+- **`MagicStarterLayoutTheme.contentClassName` documents the stacked-route hazard.** The default `'flex-1 overflow-y-auto'` scrolls the shell's nested Navigator, which breaks a page left under a `.stacked()` route on its second hidden rebuild. The default is unchanged; the doc now says to set `'flex-1 min-h-0'` in any app that stacks routes under this layout. Refs #160. (`lib/src/configuration/magic_starter_theme.dart`)
 
 ## [0.0.36] - 2026-09-23
 
