@@ -91,8 +91,7 @@ class _MagicStarterProfileSubPageViewState
       profileForm.set('timezone', user.get<String>('timezone') ?? '');
       profileForm.set('language', user.get<String>('locale') ?? '');
     }
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
   }
 
   @override

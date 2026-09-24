@@ -50,8 +50,7 @@ class _MagicStarterPasswordViewState
 
   @override
   void onInit() {
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
   }
 
   @override
