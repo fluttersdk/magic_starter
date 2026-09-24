@@ -12,12 +12,13 @@ class MagicStarterProfileController extends MagicController
       Magic.findOrPut(MagicStarterProfileController.new);
   bool _isSubmitting = false;
 
-  /// Whether controller notifications are temporarily suppressed.
+  /// How many [withoutNotifying] actions are in flight.
   ///
-  /// When `true`, [notifyListeners] calls are silently discarded.
-  /// Used by [withoutNotifying] to prevent full-page rebuilds when
-  /// form-level loading state (via [MagicFormData.process]) is sufficient.
-  bool _suppressNotifications = false;
+  /// While above zero, [notifyListeners] calls are silently discarded. A count
+  /// rather than a flag, because two of them can overlap (a save still in
+  /// flight when the reader opens another settings page that loads on mount),
+  /// and a flag cleared by the first to finish would un-suppress the other.
+  int _suppressionDepth = 0;
 
   /// Render profile settings view via registry key.
   Widget profile() => MagicStarter.view.make('profile.settings');
@@ -37,17 +38,31 @@ class MagicStarterProfileController extends MagicController
   /// ));
   /// ```
   Future<T> withoutNotifying<T>(Future<T> Function() action) async {
-    _suppressNotifications = true;
+    _suppressionDepth++;
     try {
       return await action();
     } finally {
-      _suppressNotifications = false;
+      _suppressionDepth--;
     }
+  }
+
+  /// Clears errors and returns to the empty state without notifying.
+  ///
+  /// For a view's `onInit`, which runs while its route is being built. The
+  /// settings hub and every settings sub-page bind this one controller, and
+  /// the hub stays mounted under a stacked sub-page, so a notifying reset
+  /// marked the hub dirty in the middle of the new route's build and Flutter
+  /// refused it with "setState() or markNeedsBuild() called during build".
+  /// Nothing needs the notification: the view calling this reads the state in
+  /// its own first build, and the hub renders nothing from it.
+  void resetQuietly() {
+    validationErrors = {};
+    setState(null, status: const RxStatus.empty(), notify: false);
   }
 
   @override
   void notifyListeners() {
-    if (_suppressNotifications) return;
+    if (_suppressionDepth > 0) return;
     super.notifyListeners();
   }
 

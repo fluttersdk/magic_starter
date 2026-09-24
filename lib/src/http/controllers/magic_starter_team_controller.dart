@@ -58,6 +58,18 @@ class MagicStarterTeamController extends MagicController
   Widget acceptInvitation() =>
       MagicStarter.view.make('teams.invitation_accept');
 
+  /// Clears errors and returns to the empty state without notifying.
+  ///
+  /// For a view's `onInit`, which runs while its route is being built. Team
+  /// create is stacked over team settings (the team selector opens it from
+  /// there), and both bind this controller, so a notifying reset marked the
+  /// settings view dirty in the middle of the new route's build. Same defect
+  /// and same cure as `MagicStarterProfileController.resetQuietly`.
+  void resetQuietly() {
+    validationErrors = {};
+    setState(null, status: const RxStatus.empty(), notify: false);
+  }
+
   /// Load members and invitations for the active team.
   bool _isLoadingMembers = false;
   Future<void> loadMembersAndInvitations() async {

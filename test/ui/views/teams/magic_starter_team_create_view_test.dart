@@ -57,4 +57,53 @@ void main() {
       expect(find.text('Custom Footer'), findsOneWidget);
     });
   });
+
+  group('MagicStarterTeamCreateView — opened over team settings', () {
+    late MagicStarterTeamController controller;
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Config.set('magic_starter.features.teams', true);
+      controller = MagicStarterTeamController.instance;
+    });
+
+    tearDown(() {
+      controller.members.dispose();
+      controller.invitations.dispose();
+      controller.currentTeamId.dispose();
+    });
+
+    testWidgets('does not rebuild the settings view mid-build', (tester) async {
+      // The team selector opens create from the settings page, and both bind
+      // this controller. A notifying reset in create's onInit marked settings
+      // dirty while the create route was being built.
+      final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          home: WindTheme(
+            data: WindThemeData(),
+            child: const Scaffold(body: MagicStarterTeamSettingsView()),
+          ),
+        ),
+      );
+      await tester.pump();
+      controller.setError('stale');
+
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => WindTheme(
+            data: WindThemeData(),
+            child: const Scaffold(body: MagicStarterTeamCreateView()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

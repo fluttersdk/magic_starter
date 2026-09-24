@@ -43,8 +43,7 @@ class _MagicStarterLanguageViewState
   void onInit() {
     final user = Auth.user();
     form.set('language', user?.get<String>('locale') ?? '');
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
   }
 
   @override

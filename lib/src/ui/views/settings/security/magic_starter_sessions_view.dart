@@ -51,8 +51,7 @@ class _MagicStarterSessionsViewState
 
   @override
   void onInit() {
-    controller.clearErrors();
-    controller.setEmpty();
+    controller.resetQuietly();
     if (MagicStarterConfig.hasSessionsFeatures()) {
       _loadSessions();
     }
@@ -80,7 +79,11 @@ class _MagicStarterSessionsViewState
 
   Future<void> _loadSessions() async {
     setState(() => _sessionsLoading = true);
-    final result = await controller.getSessions();
+    // Quietly: this runs from onInit, while the route is still being built,
+    // and `getSessions` sets loading before its first await, which would mark
+    // every other view of the shared controller dirty mid-build (the settings
+    // hub under this page). This view drives its own spinner.
+    final result = await controller.withoutNotifying(controller.getSessions);
     if (!mounted) return;
     setState(() {
       _sessions = result ?? [];
