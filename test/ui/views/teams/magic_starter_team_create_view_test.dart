@@ -76,6 +76,42 @@ void main() {
       controller.currentTeamId.dispose();
     });
 
+    testWidgets('settings opened over it does not rebuild it mid-build', (
+      tester,
+    ) async {
+      // After a successful create the view navigates to team settings, which
+      // is stacked over it. Settings loads members on mount, and that load
+      // set loading before its first await, marking this view dirty while the
+      // settings route was being built (#163). A team id is what makes the
+      // load run at all.
+      Http.fake();
+      controller.currentTeamId.value = 1;
+      final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          home: WindTheme(
+            data: WindThemeData(),
+            child: const Scaffold(body: MagicStarterTeamCreateView()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => WindTheme(
+            data: WindThemeData(),
+            child: const Scaffold(body: MagicStarterTeamSettingsView()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('does not rebuild the settings view mid-build', (tester) async {
       // The team selector opens create from the settings page, and both bind
       // this controller. A notifying reset in create's onInit marked settings
