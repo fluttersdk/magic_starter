@@ -16,11 +16,15 @@ All notable changes to this project will be documented in this file.
 
 - **`resetQuietly()` on `MagicStarterProfileController` and `MagicStarterTeamController`**, the non-notifying reset those views call: errors cleared, state empty, no listener told. A host view that binds either controller and resets it in `onInit` should call it too. (`lib/src/http/controllers/`)
 
-### Changed
+### Breaking
 
-- **Breaking: the app shell's content box no longer scrolls; each routed page scrolls itself.** `MagicStarterLayoutTheme.contentClassName` defaults to `'flex-1 min-h-0'` and `contentScrollPrimary` to `false` (they were `'flex-1 overflow-y-auto'` and `true`). In a go_router shell the route child is the nested Navigator, so the old default scrolled the Navigator and laid its Overlay out under an unbounded height: a page left under a `.stacked()` route was never laid out again, and its second rebuild while hidden failed `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout` in debug and left the tree inconsistent. Every view this package ships already scrolls itself, so nothing of the starter's own moves. Closes #160. (`lib/src/configuration/magic_starter_theme.dart`)
+- **The app shell's content box no longer scrolls; each routed page scrolls itself.** `MagicStarterLayoutTheme.contentClassName` defaults to `'flex-1 min-h-0'` and `contentScrollPrimary` to `false` (they were `'flex-1 overflow-y-auto'` and `true`). In a go_router shell the route child is the nested Navigator, so the old default scrolled the Navigator and laid its Overlay out under an unbounded height: a page left under a `.stacked()` route was never laid out again, and its second rebuild while hidden failed `_debugRelayoutBoundaryAlreadyMarkedNeedsLayout` in debug and left the tree inconsistent. Closes #160. (`lib/src/configuration/magic_starter_theme.dart`)
 
-  **Migrating:** a page of your own that relied on the shell to scroll it now renders cut off at the window. Put it through `MSPageScaffold` or wrap it in a vertical scroll view; or set the old pair back with `MagicStarter.useLayoutTheme(const MagicStarterLayoutTheme(contentClassName: 'flex-1 overflow-y-auto', contentScrollPrimary: true))`, accepting that stacked routes then carry the hazard above. `doc/basics/views-and-layouts.md` covers both.
+  The starter's own screens already scroll themselves (`MSPageScaffold`, the invitation card), and two changed to keep doing so correctly: the notification screens now take the host page geometry inside their own scroll view rather than wrapped around it, where the padding would inset the viewport and clip a long list (`lib/src/routes/notification_routes.dart`), and the `starter:install` dashboard stub now scrolls itself (`assets/stubs/install/dashboard_view.stub`).
+
+  **Migrating:** a page of your own that relied on the shell to scroll it now renders cut off at the window. Put it through `MSPageScaffold` or wrap it in `SingleChildScrollView(primary: false)`; an app installed from an earlier stub has a `DashboardView` that needs the same. Or set the old pair back with `MagicStarter.useLayoutTheme(const MagicStarterLayoutTheme(contentClassName: 'flex-1 overflow-y-auto', contentScrollPrimary: true))`, accepting that stacked routes then carry the hazard above. `doc/basics/views-and-layouts.md` covers both.
+
+  **Lost:** tapping the iOS status bar no longer scrolls a shell page to the top. The shell's `Scaffold` scrolls the primary controller above the nested Navigator, which the old scrolling content box was attached to; every page's scroll now sits inside a route that scopes its own controller. Restoring it needs a status-bar handler below the Navigator, which is a separate change.
 
 ## [0.0.36] - 2026-09-23
 

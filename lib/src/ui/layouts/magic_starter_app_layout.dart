@@ -174,9 +174,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     final hasBottomNav = navConfig != null && navConfig.bottomItems.isNotEmpty;
 
     // An immersive route keeps the shell mounted (polling, auth listeners, the
-    // route key) and gives the window to its child: no bar, no safe-area inset
-    // and no scroll container, since a player or a map sizes itself and a
-    // scroll view would hand it unbounded height.
+    // route key) and gives the window to its child: no bar and no safe-area
+    // inset, since a player or a map sizes itself to the whole window.
     final hideChrome = MagicStarterHideChrome.of(context);
 
     // Responsive breakpoint via MediaQuery (wScreenIs reads MediaQuery.size),

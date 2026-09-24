@@ -336,7 +336,8 @@ A page of your own that is taller than the window needs its own vertical scroll:
 ```dart
 MagicRoute.page(
   '/reports',
-  () => const SingleChildScrollView(child: ReportsView()),
+  // `primary: false`, as MSPageScaffold does: the page owns its controller.
+  () => const SingleChildScrollView(primary: false, child: ReportsView()),
 );
 ```
 
@@ -359,7 +360,7 @@ MagicRoute.group(
 );
 ```
 
-No sidebar, no drawer, no header and no bottom bar. The route also gets the window with no safe-area inset and without the shell's own scroll container, since a surface that sizes itself cannot be handed unbounded height. The shell stays in the tree: its layout state, its notification polling and its auth listeners all survive the route, which wrapping the route in a bare page would throw away.
+No sidebar, no drawer, no header and no bottom bar. The route also gets the window with no safe-area inset, since a surface that sizes itself wants the whole of it. The shell stays in the tree: its layout state, its notification polling and its auth listeners all survive the route, which wrapping the route in a bare page would throw away.
 
 <a name="guestlayout"></a>
 ## GuestLayout

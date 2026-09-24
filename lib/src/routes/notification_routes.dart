@@ -5,7 +5,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../ui/components/confirm_dialog/confirm_dialog.dart';
-import '../ui/components/page_container/page_container.dart';
+import '../ui/components/page_container/page_container.recipe.dart';
 import '../ui/components/page_scaffold/page_scaffold.recipe.dart';
 
 /// Registers notification routes provided by Magic Starter plugin.
@@ -89,20 +89,21 @@ void _mountNotificationViews() {
     // geometry, so a null here is the whole ecosystem's answer. Left unpassed,
     // `Notify.deleteNotification` and the backend route behind it had no
     // surface anywhere: a working endpoint nothing could call.
-    // `contentClassName: ''` because the wrap below already carries the host's
-    // edge margins. Left at the package default the two pad the same edge and
-    // this one page sits twice as far from the display as its neighbours:
-    // measured on a phone at 32 logical pixels against the host's 16.
+    // The host's page geometry travels as `contentClassName`, which the view
+    // applies INSIDE its own scroll view; see [_inHostPageGeometry].
     () => _inHostPageGeometry(
-      NotificationsListView(onDelete: _confirmThenDelete, contentClassName: ''),
+      (String geometry) => NotificationsListView(
+        onDelete: _confirmThenDelete,
+        contentClassName: geometry,
+      ),
     ),
   );
   _mountUnlessOverridden(
     'notifications.preferences',
     () => _inHostPageGeometry(
-      NotificationPreferencesView(
+      (String geometry) => NotificationPreferencesView(
         backRoute: MagicStarterConfig.settingsHubRoute(),
-        contentClassName: '',
+        contentClassName: geometry,
       ),
     ),
   );
@@ -188,16 +189,26 @@ void _mountUnlessOverridden(String key, Widget Function() builder) {
   Notify.view.register(key, builder);
 }
 
-/// Wraps [view] in the host's shared page geometry.
+/// Builds a notification screen in the host's shared page geometry.
 ///
-/// The surface fill sits OUTSIDE the container, exactly as [MSPageScaffold]
-/// composes it, so the page token paints the whole content viewport rather
-/// than only the capped column; the shell's own content background is a grey,
-/// so a surface that stopped at the cap would show gutters no other page in the
-/// app has.
-Widget _inHostPageGeometry(Widget view) {
+/// The geometry is handed to the screen, which applies it inside its own
+/// scroll view, rather than wrapped around it. The shell's content box does
+/// not scroll, so the screen's scroll view is the page's scroll: wrapped
+/// around it, the container's top and bottom padding inset the viewport and a
+/// long list clipped at a hard line with the padding never scrolling away.
+/// Handing it over also keeps the one set of edge margins; padded twice, this
+/// page sat 32 logical pixels from a phone's edge against its neighbours' 16.
+///
+/// The surface fill still sits outside, exactly as [MSPageScaffold] composes
+/// it, so the page token paints the whole content viewport rather than only
+/// the capped column.
+Widget _inHostPageGeometry(Widget Function(String geometry) view) {
   return WDiv(
     className: pageScaffoldSurfaceRecipe(),
-    child: MSPageContainer(child: view),
+    child: view(
+      pageContainerRecipe(
+        hostClassName: MagicStarter.manager.pageContainerClassName,
+      ),
+    ),
   );
 }

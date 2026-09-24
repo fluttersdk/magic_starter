@@ -170,8 +170,15 @@ void main() {
 
       expect(find.byType(NotificationPreferencesView), findsOneWidget);
       // The width cap and the edge margins come from the host, and the package
-      // cannot resolve them; the mount point is what restores them.
-      expect(find.byType(MSPageContainer), findsOneWidget);
+      // cannot resolve them; the mount point is what hands them over.
+      expect(
+        tester
+            .widget<NotificationPreferencesView>(
+              find.byType(NotificationPreferencesView),
+            )
+            .contentClassName,
+        contains(MagicStarter.manager.pageContainerClassName),
+      );
 
       final view = tester.widget<NotificationPreferencesView>(
         find.byType(NotificationPreferencesView),
@@ -191,7 +198,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(NotificationsListView), findsOneWidget);
-      expect(find.byType(MSPageContainer), findsOneWidget);
+      expect(
+        tester
+            .widget<NotificationsListView>(find.byType(NotificationsListView))
+            .contentClassName,
+        contains(MagicStarter.manager.pageContainerClassName),
+      );
     });
 
     testWidgets('the list route wires the delete affordance', (tester) async {
@@ -360,26 +372,42 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       // `max-w-7xl px-4 lg:px-8` from the manager's default geometry: 1280 of
-      // column minus 32 of horizontal padding per side.
+      // column minus 32 of horizontal padding per side. Measured on the
+      // content column, which carries the geometry inside the screen's scroll.
+      final Finder column = find.descendant(
+        of: find.byType(NotificationPreferencesView),
+        matching: find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WDiv &&
+              (widget.className ?? '').contains(
+                MagicStarter.manager.pageContainerClassName,
+              ),
+        ),
+      );
+      // The WDiv itself is the centring wrapper and spans the viewport; the
+      // box it constrains is the capped one.
       final width = tester
-          .getSize(find.byType(NotificationPreferencesView))
+          .getSize(
+            find
+                .descendant(
+                  of: column.first,
+                  matching: find.byType(ConstrainedBox),
+                )
+                .first,
+          )
           .width;
       expect(width, lessThanOrEqualTo(1280));
       expect(width, greaterThan(1000));
     });
 
-    testWidgets('both mounted screens hand their padding to the container', (
+    testWidgets('both mounted screens scroll their page geometry with them', (
       tester,
     ) async {
-      // `MSPageContainer` already carries the host's edge margins, so a screen
-      // that also pads its own content column puts these two pages twice as far
-      // from the display as every neighbour: measured on a phone at 32 logical
-      // pixels against the host's 16.
-      //
-      // Asserted on the argument rather than on a measured width because the
-      // two are not the same claim. A width assertion passes on a page whose
-      // margins happen to add up, and the doubled padding is a regression that
-      // compiles and renders.
+      // The shell's content box does not scroll, so each screen's own scroll
+      // view is the page's scroll. The host's page geometry has to sit INSIDE
+      // it: wrapped around it, the top and bottom padding inset the viewport,
+      // and a long list clipped at a hard line above the bottom bar with the
+      // padding never scrolling away (#160).
       fakeNotificationEndpoints();
       registerMagicStarterNotificationRoutes();
 
@@ -390,6 +418,20 @@ void main() {
         await tester.pumpWidget(wrap(routeFor(route)!.buildWidget(const {})));
         await tester.pump();
 
+        final Rect page = tester.getRect(find.byType(Scaffold));
+        final Rect scroll = tester.getRect(
+          find.byType(SingleChildScrollView).first,
+        );
+        expect(scroll.top, page.top, reason: '$route insets its scroll top');
+        expect(
+          scroll.bottom,
+          page.bottom,
+          reason: '$route insets its scroll bottom',
+        );
+
+        // And the geometry is the host's, handed to the screen rather than
+        // doubled around it: measured on a phone at 32 logical pixels
+        // against the host's 16 when both padded the same edge.
         final String passed =
             find.byType(NotificationsListView).evaluate().isNotEmpty
             ? tester
@@ -402,8 +444,11 @@ void main() {
                     find.byType(NotificationPreferencesView),
                   )
                   .contentClassName;
-
-        expect(passed, '', reason: '$route pads its own content column');
+        expect(
+          passed,
+          contains(MagicStarter.manager.pageContainerClassName),
+          reason: '$route does not carry the host page geometry',
+        );
       }
     });
 
