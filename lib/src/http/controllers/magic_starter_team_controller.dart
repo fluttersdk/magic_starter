@@ -71,13 +71,25 @@ class MagicStarterTeamController extends MagicController
   }
 
   /// Load members and invitations for the active team.
+  ///
+  /// [quietStart] sets the loading state without notifying, for a caller in
+  /// a view's `onInit`, which runs while its route is being built. Team
+  /// settings is stacked over team create after a successful create, and both
+  /// bind this controller, so a notifying start marked the create view dirty
+  /// in the middle of the settings route's build (#163). The calling view
+  /// reads the loading state in its own first build; the result still
+  /// notifies, after the await, outside any build.
   bool _isLoadingMembers = false;
-  Future<void> loadMembersAndInvitations() async {
+  Future<void> loadMembersAndInvitations({bool quietStart = false}) async {
     if (_isLoadingMembers) return;
     final teamId = activeTeamId;
     if (teamId == null) return;
     _isLoadingMembers = true;
-    setLoading();
+    if (quietStart) {
+      setState(null, status: const RxStatus.loading(), notify: false);
+    } else {
+      setLoading();
+    }
     try {
       final results = await Future.wait([
         Http.get('/teams/$teamId/members'),

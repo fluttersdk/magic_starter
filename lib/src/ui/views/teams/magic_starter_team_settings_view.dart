@@ -39,7 +39,7 @@ class _MagicStarterTeamSettingsViewState
     if (teamName != null && teamName.isNotEmpty) {
       form.set('name', teamName);
     }
-    controller.loadMembersAndInvitations();
+    controller.loadMembersAndInvitations(quietStart: true);
   }
 
   @override
