@@ -106,6 +106,17 @@ class MagicStarterManager {
   /// Custom logout callback. When set, called instead of default logout.
   Future<void> Function()? onLogout;
 
+  /// Custom login callback. When set, called after a fresh sign-in.
+  ///
+  /// Fires on `AuthLogin` (see [MagicStarterServiceProvider]'s registration
+  /// in `register()`): password, two-factor challenge, social, guest, and
+  /// phone OTP sign-ins. Deliberately NOT called on a cold-boot restore of a
+  /// stored session or a team switch: both go through `Auth.restore()`,
+  /// which dispatches `AuthRestored`, and only once an API sync confirms the
+  /// user (never offline, never on a failed sync, never without a
+  /// `userEndpoint` configured); neither path ever dispatches `AuthLogin`.
+  Future<void> Function()? onLogin;
+
   /// Custom header builder. When set, replaces the default header.
   Widget Function(BuildContext context, bool isDesktop)? headerBuilder;
 
@@ -243,6 +254,111 @@ class MagicStarterManager {
   }
 
   List<SelectOption<String>>? _localeOptions;
+
+  /// Target of an in-flight [applyLocale] call, or `null` when none is
+  /// pending.
+  String? _pendingLocale;
+
+  /// Locale an in-flight [Lang.setLocale] call is currently switching to, or
+  /// `null` when no switch is awaiting its catalogue load.
+  ///
+  /// `Translator.load` only updates [Lang.current] once its OWN catalogue
+  /// load resolves, so for the whole duration of that await [Lang.current]
+  /// still reports the locale being REPLACED, not the one in flight. A call
+  /// that arrives during that window and trusts [Lang.current] alone reads a
+  /// stale answer twice: once to decide whether it is redundant, and once
+  /// more, in its own callback, to decide whether to actually switch (which
+  /// is how a second target used to get silently dropped on the floor while
+  /// the first one was still loading). Both guards in [applyLocale] read
+  /// through this field first so they see the target actually in flight.
+  String? _applyingLocale;
+
+  /// Switches the running app's locale to [code], deduplicating against
+  /// whichever caller reaches this first in the same frame.
+  ///
+  /// `MagicStarterServiceProvider`'s `Auth.stateNotifier` listener and
+  /// `MagicStarterProfileController.doUpdateProfile` both call this: a
+  /// profile save persists a new `locale` and then calls `Auth.restore()`,
+  /// which bumps the very notifier the provider listens on, so both can
+  /// reach this method in the same frame. A shared pending target is what
+  /// keeps that pairing to exactly one [Lang.setLocale] call regardless of
+  /// how long the catalogue load takes: a real app loads it from assets
+  /// asynchronously (`compute()`, past 50 KB), so a fixed number of deferred
+  /// frames cannot be relied on to outlast it.
+  ///
+  /// A no-op when [code] is empty, or when [code] is already the pending
+  /// target (or, with nothing pending, whatever switch is currently in
+  /// flight, or, with neither, the current locale). Otherwise records [code]
+  /// as the new pending target, superseding whatever was pending before it,
+  /// and defers the switch to a post-frame callback.
+  ///
+  /// Deferred rather than switched synchronously: [Lang.setLocale] calls
+  /// `Magic.reload()`, which unmounts whatever is mid-build or mid-await
+  /// right now, and both callers reach this off a `ValueNotifier` callback or
+  /// mid `await` in an async method. `addPostFrameCallback` does not ASK for
+  /// a frame, and an idle app stops producing them, so
+  /// [WidgetsBinding.scheduleFrame] runs alongside it.
+  void applyLocale(String code) {
+    if (code.isEmpty) return;
+    final String current = _applyingLocale ?? Lang.current.languageCode;
+    if (code == (_pendingLocale ?? current)) return;
+
+    _pendingLocale = code;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // A later call superseded this one before its frame arrived; the
+      // superseding call owns the switch now.
+      if (_pendingLocale != code) return;
+
+      // A different switch is already in flight. `Lang.current` cannot tell
+      // this call whether it is redundant (see [_applyingLocale]'s doc), so
+      // rather than guess it leaves its target in `_pendingLocale`: the
+      // in-flight switch chases it, below, once it settles.
+      if (_applyingLocale != null) return;
+
+      await _performLocaleSwitch(code);
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  /// Runs one [Lang.setLocale] call for [code] and, once it settles, chases
+  /// whatever target arrived in `_pendingLocale` while it was in flight.
+  ///
+  /// Split out of [applyLocale] so the chase can run its own await and its
+  /// own follow-up chase without another post-frame round trip: by the time
+  /// this runs, [applyLocale]'s deferral has already happened once, so a
+  /// chased switch is not started mid-build.
+  Future<void> _performLocaleSwitch(String code) async {
+    _pendingLocale = null;
+    _applyingLocale = code;
+    try {
+      if (Lang.current.languageCode != code) {
+        await Lang.setLocale(Locale(code));
+      }
+    } catch (error, stackTrace) {
+      // Logged rather than rethrown: this runs off a post-frame callback (or
+      // a chase from one), where a throw becomes an unhandled async error.
+      Log.error(
+        '[MagicStarter] applying locale "$code" failed: $error\n$stackTrace',
+      );
+    } finally {
+      if (_applyingLocale == code) _applyingLocale = null;
+    }
+
+    // A newer target arrived while this switch was in flight: `Lang.current`
+    // stayed on the OLD locale for the whole await, so that caller's own
+    // callback read this switch as not-yet-applied and backed off instead of
+    // running it. Chase it now that this switch has actually settled.
+    //
+    // A pending target equal to the one just applied (reverted and restored
+    // while in flight) is already satisfied and must be cleared, or it would
+    // read as "already pending" to the next request for the same code.
+    final String? next = _pendingLocale;
+    if (next == code) {
+      _pendingLocale = null;
+    } else if (next != null) {
+      await _performLocaleSwitch(next);
+    }
+  }
 
   /// Guest authentication entry point builder.
   /// When set, renders custom widget for guest/anonymous login flows.
@@ -443,6 +559,7 @@ class MagicStarterManager {
     teamResolver = null;
     navigationConfig = null;
     onLogout = null;
+    onLogin = null;
     headerBuilder = null;
     sidebarFooterBuilder = null;
     socialLoginBuilder = null;
@@ -454,6 +571,8 @@ class MagicStarterManager {
     pageHeaderTheme = const MagicStarterPageHeaderTheme();
     layoutTheme = const MagicStarterLayoutTheme();
     _localeOptions = null;
+    _pendingLocale = null;
+    _applyingLocale = null;
     guestAuthEntryBuilder = null;
     newsletterLabel = null;
     _viewRegistry.clear();

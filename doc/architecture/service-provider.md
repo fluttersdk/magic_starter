@@ -39,14 +39,19 @@ void register() {
 
   EventDispatcher.instance
       .register(AuthRestored, [() => _ReloadOnAuthRestored()]);
+
+  EventDispatcher.instance
+      .register(AuthLogin, [() => _CallOnLoginHook()]);
 }
 ```
 
-Two things happen here:
+Three things happen here:
 
 1. **Manager singleton** — binds `MagicStarterManager` under the key `'magic_starter'`. The manager's constructor calls `registerDefaultViews()`, so all default views and layouts are immediately available.
 
 2. **Auth restored listener** — registers `_ReloadOnAuthRestored`, which calls `Magic.reload()` when `AuthRestored` fires. This triggers a soft app reload after team switches so all team-scoped data refreshes.
+
+3. **Auth login listener**: registers `_CallOnLoginHook`, which calls the host's `MagicStarter.useLogin()` callback (unawaited, logged on failure) whenever `AuthLogin` fires: every fresh sign-in path, never a cold-boot restore. See [Login Callback](manager.md#login-callback).
 
 > [!NOTE]
 > The `MagicStarterManager` constructor calls `registerDefaultViews()` at instantiation time. If you want to override views, register them in your `AppServiceProvider.boot()` — the "register if absent" strategy in `registerDefaultViews()` will skip any keys you have already set.
@@ -62,6 +67,7 @@ Future<void> boot() async {
   // 1. Teams feature warning
   // 2. Gate abilities
   // 3. Primary color fallback
+  // 4. Locale application (see manager.md#locale-application)
 }
 ```
 

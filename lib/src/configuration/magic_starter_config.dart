@@ -27,6 +27,7 @@ class MagicStarterConfig {
 
   static const String _defaultLocale = 'en';
   static const String _defaultTimezone = 'UTC';
+  static const bool _defaultApplyUserLocale = true;
 
   /// What a push external id is prefixed with before the user's own id.
   ///
@@ -231,6 +232,19 @@ class MagicStarterConfig {
     }
 
     return configured.trim();
+  }
+
+  /// Returns whether a signed-in user's saved locale preference is applied
+  /// to the running app automatically on sign-in and on restore.
+  ///
+  /// Defaults to `true`. A host that wants to own locale switching itself
+  /// (for example, to ask before switching) sets this to `false`.
+  static bool applyUserLocale() {
+    return Config.get<bool>(
+          'magic_starter.localization.apply_user_locale',
+          _defaultApplyUserLocale,
+        ) ??
+        _defaultApplyUserLocale;
   }
 
   /// Returns the default timezone for new users.
