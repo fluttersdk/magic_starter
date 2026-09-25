@@ -348,8 +348,14 @@ class MagicStarterManager {
     // stayed on the OLD locale for the whole await, so that caller's own
     // callback read this switch as not-yet-applied and backed off instead of
     // running it. Chase it now that this switch has actually settled.
+    //
+    // A pending target equal to the one just applied (reverted and restored
+    // while in flight) is already satisfied and must be cleared, or it would
+    // read as "already pending" to the next request for the same code.
     final String? next = _pendingLocale;
-    if (next != null && next != code) {
+    if (next == code) {
+      _pendingLocale = null;
+    } else if (next != null) {
       await _performLocaleSwitch(next);
     }
   }

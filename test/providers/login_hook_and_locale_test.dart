@@ -485,5 +485,38 @@ void main() {
         expect(switchCount, equals(2));
       },
     );
+
+    testWidgets(
+      'a target reverted and restored while its switch is in flight leaves '
+      'nothing pending behind',
+      (tester) async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await Translator.instance.setLocale(const Locale('en'));
+
+        final completer = Completer<void>();
+        Translator.instance.setLoader(_SlowLangLoader(completer));
+
+        manager.applyLocale('tr');
+        await tester.pump();
+        await tester.pump();
+
+        // 'tr' is loading: revert to 'en', then restore 'tr' before it lands.
+        manager.applyLocale('en');
+        manager.applyLocale('tr');
+        await tester.pump();
+
+        completer.complete();
+        await tester.pumpAndSettle();
+        expect(Lang.current.languageCode, equals('tr'));
+
+        // Something else moves the app back to 'en'; asking for 'tr' again
+        // must switch rather than read a stale pending 'tr' as done.
+        await Translator.instance.setLocale(const Locale('en'));
+        manager.applyLocale('tr');
+        await tester.pumpAndSettle();
+
+        expect(Lang.current.languageCode, equals('tr'));
+      },
+    );
   });
 }
