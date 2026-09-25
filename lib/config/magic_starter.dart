@@ -25,6 +25,9 @@ Map<String, dynamic> get magicStarterConfig => {
     },
     'auth': {'email': true, 'phone': false},
     'defaults': {'locale': 'en', 'timezone': 'UTC'},
+    // Applies a signed-in user's saved locale automatically on sign-in and
+    // restore. Set to false to own locale switching yourself.
+    'localization': {'apply_user_locale': true},
     'supported_locales': ['en', 'tr'],
     'routes': {
       'home': '/',

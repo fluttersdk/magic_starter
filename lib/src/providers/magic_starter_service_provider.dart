@@ -17,6 +17,35 @@ class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   }
 }
 
+/// Calls the host's [MagicStarterManager.onLogin] hook after a fresh sign-in.
+///
+/// Fires on `AuthLogin`, dispatched at the end of `BaseGuard.startSession` for
+/// every sign-in path (password, two-factor challenge, social, guest, phone
+/// OTP). Deliberately NOT `AuthRestored`: a cold-boot restore of a stored
+/// session and a team switch both go through `Auth.restore()` instead, which
+/// dispatches `AuthRestored` only once an API sync confirms the user (never
+/// offline, never on a failed sync, never without a `userEndpoint`
+/// configured) and never dispatches `AuthLogin`; neither path is a fresh
+/// sign-in the host should react to a second time.
+class _CallOnLoginHook extends MagicListener<AuthLogin> {
+  @override
+  Future<void> handle(AuthLogin event) async {
+    final onLogin = MagicStarter.manager.onLogin;
+    if (onLogin == null) return;
+
+    // Unawaited and logged rather than rethrown: `EventDispatcher.dispatch`
+    // only catches what a listener's `handle` itself throws while awaited, and
+    // a throw surfacing AFTER this method returns would become an unhandled
+    // async error. It also keeps a broken host hook from failing the sign-in
+    // that triggered it.
+    unawaited(
+      onLogin().catchError((Object error, StackTrace stackTrace) {
+        Log.error('[MagicStarter] onLogin hook failed: $error\n$stackTrace');
+      }),
+    );
+  }
+}
+
 /// Service provider for Magic Starter.
 ///
 /// Register in your app's kernel:
@@ -36,6 +65,9 @@ class MagicStarterServiceProvider extends ServiceProvider {
     EventDispatcher.instance.register(AuthRestored, [
       () => _ReloadOnAuthRestored(),
     ]);
+
+    // Register event listener to call the host's onLogin hook on sign-in.
+    EventDispatcher.instance.register(AuthLogin, [() => _CallOnLoginHook()]);
   }
 
   @override
@@ -61,6 +93,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
 
     _forgetIntendedUrlOnSignOut();
     _declarePushIdentityOnSignIn();
+    _applySavedLocaleOnSignIn();
   }
 
   /// The notifier [_declarePushIdentityOnSignIn] is currently subscribed to.
@@ -242,6 +275,58 @@ class MagicStarterServiceProvider extends ServiceProvider {
         '[MagicStarter] push identity release failed: $error\n$stackTrace',
       );
     }
+  }
+
+  /// The notifier [_applySavedLocaleOnSignIn] is currently subscribed to.
+  ///
+  /// Held and identity-compared for the same reasons [_pushAuthState] is; see
+  /// the note there.
+  static ValueNotifier<int>? _localeAuthState;
+
+  /// Applies a signed-in user's saved locale preference, whenever a session
+  /// begins or is restored.
+  ///
+  /// Pre-login, magic's own `auto_detect_locale` already renders the device
+  /// locale, and once a user carries a persisted `locale` preference this
+  /// switches to it instead.
+  ///
+  /// Hung off `Auth.stateNotifier` rather than off `AuthLogin` alone, for the
+  /// reason [_declarePushIdentityOnSignIn] gives at length: a cold-boot
+  /// restore of a stored session dispatches `AuthRestored`, not `AuthLogin`,
+  /// and is the ORDINARY launch for somebody already signed in. The notifier
+  /// is the one funnel both paths pass through.
+  void _applySavedLocaleOnSignIn() {
+    final ValueNotifier<int> notifier = Auth.stateNotifier;
+    if (identical(_localeAuthState, notifier)) return;
+
+    _localeAuthState?.removeListener(_applySavedLocale);
+    _localeAuthState = notifier..addListener(_applySavedLocale);
+
+    // And once, now, for the same reason as the push identity declaration:
+    // on an ordinary cold boot the notifier has already bumped by the time
+    // this provider boots, and subscribing alone would apply nothing to
+    // somebody already signed in.
+    _applySavedLocale();
+  }
+
+  /// The listener itself, a named static so [_applySavedLocaleOnSignIn] can
+  /// remove it by identity.
+  ///
+  /// Gated by `magic_starter.localization.apply_user_locale` so a host that
+  /// wants to own locale switching itself can turn this off entirely.
+  static void _applySavedLocale() {
+    if (!MagicStarterConfig.applyUserLocale()) return;
+    if (!Auth.check()) return;
+
+    final String? locale = Auth.user()?.get<String>('locale');
+    if (locale == null || locale.isEmpty) return;
+
+    // Delegated to the manager's shared pending target rather than scheduled
+    // here: a profile save calls `Auth.restore()`, which bumps this same
+    // notifier and reaches this method a second time right before that
+    // save's own `_applySavedLanguage` call, and `applyLocale` is what keeps
+    // that pairing to one switch.
+    MagicStarter.manager.applyLocale(locale);
   }
 
   /// The notifier [_forgetIntendedUrlOnSignOut] is currently subscribed to.

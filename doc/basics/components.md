@@ -20,7 +20,7 @@
 
 Magic Starter ships a complete atomic design-system component library under `lib/src/ui/components/`. Every component is driven by a `WindRecipe` that resolves colors through the `MagicStarterTokens` semantic alias layer, so a single brand configuration flows into all built-in screens and every component your host app composes directly.
 
-All 39 components are exported from `package:magic_starter/magic_starter.dart`.
+All 44 components are exported from `package:magic_starter/magic_starter.dart`.
 
 <a name="semantic-token-layer"></a>
 ## Semantic Token Layer
@@ -135,6 +135,9 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 | `MSRadio` | | Single-select option |
 | `MSSelect` | `selectRecipe` | Dropdown single-select backed by an item list |
 | `MSCombobox` | `comboboxRecipe` | Searchable single-select with filter input |
+| `MSSwitchRow` | `switchRowRecipe` | An `MSSwitch` with its `label` beside it; the label doubles as the switch's accessibility name |
+| `MSKeyValueEditor` | `MSKeyValueRow`, `keyValueEditorRecipe` | Controlled editor for an ordered list of key/value pairs (e.g. HTTP headers); every mutation emits a fresh list |
+| `MSStringValueList` | `StringValueListTone`, `stringValueListRecipe` | Controlled editor for a short list of distinct strings rendered as chips; commits on Enter/IME-done, trims and de-duplicates |
 
 <a name="display-and-feedback"></a>
 ### Display and Feedback
@@ -182,6 +185,8 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 | `MSTeamSelector` | Current-team switcher; requires a registered team resolver |
 | `MSPageContainer` | Shared page geometry: width cap, edge margins, vertical rhythm, horizontal safe area. Reads `MagicStarter.manager.pageContainerClassName` |
 | `MSPageScaffold` | Full page treatment: page surface + own scroll + `MSPageContainer` + `MSPageHeader` + `gap-6` sections column |
+| `MSFormActions` | Cancel/submit footer row for a form; `cancelLabel`/`onCancel` are optional (omitting both renders no cancel button) |
+| `MSHeaderAction` | Page-header action that collapses to an icon-only glyph below `lg` and a labelled `MSButton` at `lg` and up; `label` becomes the icon form's accessibility label |
 
 > [!NOTE]
 > The bell-icon dropdown is not in this table. It moved to `magic_notifications` as `NotificationDropdown`; see [Notifications](notifications.md).

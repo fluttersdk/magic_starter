@@ -11,6 +11,8 @@
 - [Sidebar Footer Builder](#sidebar-footer-builder)
 - [Header Builder](#header-builder)
 - [Logout Callback](#logout-callback)
+- [Login Callback](#login-callback)
+- [Locale Application](#locale-application)
 - [Unified Theme](#unified-theme)
 - [Form Theme](#form-theme)
 - [Auth Theme](#auth-theme)
@@ -309,6 +311,39 @@ MagicStarter.useLogout(() async {
 
 When set, the app layout's logout button calls this callback instead of `MagicStarterAuthController.instance.logout()`. This is useful for apps that need to unregister push tokens, sign out of social providers, or perform other cleanup before navigating to the login screen.
 
+<a name="login-callback"></a>
+## Login Callback
+
+Run custom logic after a fresh sign-in:
+
+```dart
+MagicStarter.useLogin(() async {
+  await Analytics.identify(Auth.user());
+});
+```
+
+`MagicStarterServiceProvider` registers an internal listener on magic's `AuthLogin` event (dispatched at the end of `BaseGuard.startSession`) that calls this callback, unawaited, and logs rather than rethrows on failure. It fires for every fresh sign-in path this package ships (password, two-factor challenge, social, guest, and phone OTP) and deliberately **not** for a cold-boot restore of a stored session or a team switch: both go through `Auth.restore()`, which dispatches `AuthRestored`, and only once an API sync confirms the user (never offline, never on a failed sync, never without a `userEndpoint` configured); neither path ever dispatches `AuthLogin`.
+
+When `onLogin` is `null` (the default), nothing runs.
+
+<a name="locale-application"></a>
+## Locale Application
+
+`MagicStarterServiceProvider` also applies a signed-in user's saved `locale` attribute to the running app automatically, so a Turkish account does not land on an English shell until its next cold boot. Configured with `magic_starter.localization.apply_user_locale` (default `true`):
+
+```dart
+Map<String, dynamic> get magicStarterConfig => {
+  'magic_starter': {
+    'localization': {'apply_user_locale': false}, // opt out
+    // ...
+  },
+};
+```
+
+A named static listener on `Auth.stateNotifier`, plus one immediate "once, now" read in `boot()` for the ordinary cold-boot case, reads `Auth.user()?.get<String>('locale')` and hands any non-empty value to `MagicStarterManager.applyLocale()`, the same method [`_applySavedLanguage`](../basics/profile.md#updating-profile-information) calls after a profile save. `applyLocale()` holds a single pending target: whichever call reaches it first for a given locale wins, and a same-frame second call for the same target is a no-op, so a profile save (which itself calls `Auth.restore()` and so wakes this listener too) still issues exactly one `Lang.setLocale()` call however long the catalogue load takes.
+
+When `Auth.check()` is `false`, the user carries no `locale`, or the toggle is off, nothing happens.
+
 <a name="unified-theme"></a>
 ## Unified Theme
 
@@ -561,6 +596,7 @@ Default layouts:
 | `MagicStarter.useSidebarFooter(builder)` | `manager.sidebarFooterBuilder = builder` |
 | `MagicStarter.useHeader(builder)` | `manager.headerBuilder = builder` |
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |
+| `MagicStarter.useLogin(callback)` | `manager.onLogin = callback` |
 | `MagicStarter.useSocialLogin(builder)` | `manager.socialLoginBuilder = builder` |
 | `MagicStarter.useLocaleOptions(locales)` | `manager.localeOptions = options` |
 | `MagicStarter.useGuestAuthEntry(builder)` | `manager.guestAuthEntryBuilder = builder` |

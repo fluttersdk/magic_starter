@@ -76,6 +76,11 @@ class MagicStarter {
   /// that gap by making the three universal pieces required arguments and the
   /// team trio a checked, all-or-nothing group.
   ///
+  /// [onLogin] is optional: unlike [onLogout], the starter already has a
+  /// working default (nothing) for a fresh sign-in, so a host that has no use
+  /// for the hook is not forced to pass one. Pass it the same way as
+  /// [useLogin] would.
+  ///
   /// [currentTeam], [allTeams] and [onSwitch] are optional because teams are
   /// an opt-in feature (`magic_starter.features.teams` defaults to `false`); a
   /// teamless app must not be forced to pass stub callbacks. They are still
@@ -119,6 +124,7 @@ class MagicStarter {
     required UserModelFactory userFactory,
     required Future<void> Function() onLogout,
     required Map<String, String> locales,
+    Future<void> Function()? onLogin,
     MagicStarterTeam? Function()? currentTeam,
     List<MagicStarterTeam> Function()? allTeams,
     Future<void> Function(dynamic teamId)? onSwitch,
@@ -146,6 +152,7 @@ class MagicStarter {
     useUserModel(userFactory);
     useLogout(onLogout);
     useLocaleOptions(locales);
+    if (onLogin != null) useLogin(onLogin);
 
     if (teamCallbacks == 3) {
       useTeamResolver(
@@ -267,6 +274,21 @@ class MagicStarter {
   /// ```
   static void useLogout(Future<void> Function() callback) {
     manager.onLogout = callback;
+  }
+
+  /// Register a custom login callback.
+  ///
+  /// Called after a fresh sign-in (password, two-factor challenge, social,
+  /// guest, phone OTP), never on a cold-boot restore or a team switch. See
+  /// [MagicStarterManager.onLogin] for the full contract.
+  ///
+  /// ```dart
+  /// MagicStarter.useLogin(() async {
+  ///   await Analytics.identify(Auth.user());
+  /// });
+  /// ```
+  static void useLogin(Future<void> Function() callback) {
+    manager.onLogin = callback;
   }
 
   /// Register a custom header builder.

@@ -61,6 +61,8 @@ The login flow has three possible outcomes:
 
 A `_isSubmitting` guard prevents double-submit — concurrent calls to `doLogin()` are silently discarded.
 
+`Auth.login()` dispatches magic's `AuthLogin` event, which `MagicStarterServiceProvider` listens for to call the host's `MagicStarter.useLogin()` hook (see [Login Callback](../architecture/manager.md#login-callback)), unawaited and logged on failure. It fires for every sign-in path this package ships: password (above), [two-factor challenge](#two-factor-challenge), [social login](#social-login), guest login (`MagicStarterGuestAuthController.doGuestLogin()`) and [OTP verification](#verifying-an-otp), and never for a cold-boot restore of a stored session.
+
 <a name="registration"></a>
 ## Registration
 

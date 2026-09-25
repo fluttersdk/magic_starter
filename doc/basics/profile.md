@@ -74,7 +74,10 @@ final success = await controller.withoutNotifying(
 
 The `withoutNotifying()` wrapper suppresses full-page `notifyListeners()` calls while the form-level `MagicFormData.process()` drives the submit button's loading state. This prevents the entire settings page from rebuilding during a single section's save.
 
-On success, `Auth.restore()` refreshes the user model and a toast confirmation is shown.
+On success, `Auth.restore()` refreshes the user model and a toast confirmation is shown. When `language` is present, the controller hands it to `MagicStarterManager.applyLocale()`, which switches the app to it after the current frame.
+
+> [!NOTE]
+> `MagicStarterServiceProvider` separately applies a signed-in user's saved `locale` attribute on every sign-in and `Auth.restore()`, gated by `magic_starter.localization.apply_user_locale` (default `true`); see [Locale Application](../architecture/manager.md#locale-application). The two mechanisms share `applyLocale()`'s pending target rather than racing: a profile save's own `Auth.restore()` wakes the provider's listener too, and whichever of the two reaches `applyLocale()` first for a given locale is the one that switches, so one save still issues exactly one `Lang.setLocale()` call.
 
 <a name="changing-password"></a>
 ### Changing Password

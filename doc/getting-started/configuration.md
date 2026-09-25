@@ -53,6 +53,9 @@ Map<String, dynamic> get magicStarterConfig => {
       'locale': 'en',
       'timezone': 'UTC',
     },
+    'localization': {
+      'apply_user_locale': true,
+    },
     'supported_locales': [
       'en',
       'tr',
@@ -322,6 +325,7 @@ The `defaults` and `supported_locales` sections configure localisation behaviour
 |-----|---------|-------------|
 | `defaults.locale` | `'en'` | Default locale for new users. |
 | `defaults.timezone` | `'UTC'` | Default timezone for new users. |
+| `localization.apply_user_locale` | `true` | Whether a signed-in user's saved `locale` attribute is applied to the running app automatically, on sign-in and on restore. Set `false` to own locale switching yourself. See [Locale Application](../architecture/manager.md#locale-application). |
 | `supported_locales` | `['en', 'tr']` | Locales available in the language selector (when `extended_profile` is enabled). |
 
 Access these values at runtime:
@@ -330,6 +334,7 @@ Access these values at runtime:
 final locale = MagicStarterConfig.defaultLocale();       // 'en'
 final timezone = MagicStarterConfig.defaultTimezone();    // 'UTC'
 final locales = MagicStarterConfig.supportedLocales();    // ['en', 'tr']
+final applies = MagicStarterConfig.applyUserLocale();     // true
 ```
 
 The `legal` block provides optional links displayed on auth screens:

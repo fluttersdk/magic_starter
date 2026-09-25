@@ -5,7 +5,7 @@ paths:
 
 # Design-System Components
 
-The 39 `MS`-prefixed components under `lib/src/ui/components/`. These carry a visual contract and nothing else: an API call, a wizard or a layout signal belongs in `lib/src/ui/widgets/` instead.
+The 44 `MS`-prefixed components under `lib/src/ui/components/`. These carry a visual contract and nothing else: an API call, a wizard or a layout signal belongs in `lib/src/ui/widgets/` instead.
 
 ## Folder shape is fixed
 
@@ -44,6 +44,12 @@ lib/src/ui/components/<name>/
 - **Dialog safe area**: compute `safeHeight` from `MediaQuery.viewPaddingOf(context)`, subtract the top and bottom insets from screen height, then apply `* 0.85` for `maxHeight`. Vertical `insetPadding: 24` keeps a phone off the edges.
 - **`MSTeamSelector`**: built from `MagicStarter.manager.teamResolver` callbacks. **`MSUserProfileDropdown`**: reads `MagicStarter.navigationTheme.dropdownAvatarClassName` and `dropdownAvatarTextClassName` for the trigger avatar, and listens to `Auth.stateNotifier` itself: the shell mounts it const, so it is not rebuilt when the shell is. With no name it draws a person glyph, never an initial taken from a placeholder word. The bell dropdown (`StreamBuilder<List<DatabaseNotification>>` for the live unread badge) is not one of this package's components anymore: it is `NotificationDropdown` in `magic_notifications`, mounted by `MagicStarterAppLayout._buildNotificationBell()`.
 - **`MSSocialDivider`**: `WDiv` + centred `WText('or')`, used between a form and the social login buttons.
+- **`MSFormActions`**: the cancel/submit footer row for a form; `submitLabel` and `isSubmitting` are required, `cancelLabel`/`onCancel` are optional (null renders no cancel button). Wraps (`wrap`) rather than stretching, since a full-width `MSButton` hands the row an unbounded child.
+- **`MSSwitchRow`**: an `MSSwitch` with its `label` beside it; the label is also the switch's accessibility name, since the switch itself renders none. The row's className can be overridden by a caller, but the label's `flex-1 min-w-0` shrink fix cannot, on purpose.
+- **`MSHeaderAction`**: a page-header action that collapses to an icon-only glyph below `lg` and a labelled `MSButton` at `lg` and up; `label` becomes the icon form's accessibility label rather than being dropped.
+- **`MSKeyValueEditor`** / **`MSKeyValueRow`**: controlled editor for an ordered list of key/value pairs (e.g. HTTP headers); every mutation emits a fresh list via `onChanged`, never mutating `value` in place.
+- **`MSStringValueList`**: controlled editor for a short list of distinct strings, rendered as `WBadge` chips; commits on Enter/IME-done, trims and case-insensitively de-duplicates before appending, and Backspace on an empty draft drops the last chip.
+- All five take every visible string as a required constructor parameter (no `cancelLabel`/`onCancel` pair, which is optional): none reads a translation key of its own.
 
 ## Sizing and tree-shaking
 
