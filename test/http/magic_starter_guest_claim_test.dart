@@ -273,6 +273,33 @@ void main() {
     expect(reported, isEmpty);
   });
 
+  test('a driver that throws answers none, keeps the record, and does not '
+      'throw at a host awaiting claimIfPending directly', () async {
+    stubClaim(() => throw StateError('boom'));
+    await Vault.put(MagicStarterGuestClaim.tokenKey, 'guest-token');
+    await Vault.put(MagicStarterGuestClaim.userKey, 'g-1');
+    await Auth.login(<String, dynamic>{'token': 'target-token'}, _user('u-2'));
+
+    final GuestClaimOutcome outcome = await MagicStarterGuestClaim.instance
+        .claimIfPending();
+
+    expect(outcome, GuestClaimOutcome.none);
+    expect(await Vault.get(MagicStarterGuestClaim.tokenKey), 'guest-token');
+    expect(await Vault.get(MagicStarterGuestClaim.userKey), 'g-1');
+    expect(
+      logs.entries.where((FakeLogEntry entry) => entry.level == 'error'),
+      hasLength(1),
+    );
+
+    // A later claim with a working driver still posts the record.
+    stubClaim(() => status(200));
+    final GuestClaimOutcome retried = await MagicStarterGuestClaim.instance
+        .claimIfPending();
+
+    expect(retried, GuestClaimOutcome.claimed);
+    claimApi.assertSentCount(1);
+  });
+
   test(
     'the promoted guest itself posts nothing and reports promoted',
     () async {

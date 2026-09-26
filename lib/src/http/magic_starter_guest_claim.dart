@@ -132,9 +132,11 @@ class MagicStarterGuestClaim {
   /// Claims the recorded guest session for whoever is signed in now.
   ///
   /// Idempotent within a session: while one claim runs, every caller
-  /// receives that same future, until [forget] ends the session. Never throws
-  /// on the ordinary paths; a transport failure comes back as
-  /// [GuestClaimOutcome.none] with the record kept.
+  /// receives that same future, until [forget] ends the session. Never
+  /// throws: the configured driver turns a transport failure into a
+  /// [MagicResponse] (see the class doc), and any exception the driver still
+  /// raises is logged and answers [GuestClaimOutcome.none], with the record
+  /// kept for the next sign-in or restore.
   Future<GuestClaimOutcome> claimIfPending() {
     final Future<GuestClaimOutcome>? running = _inFlight;
     if (running != null) return running;
@@ -238,11 +240,26 @@ class MagicStarterGuestClaim {
         return GuestClaimOutcome.promoted;
       }
 
-      final MagicResponse response = await _driver().post(
-        path,
-        data: <String, dynamic>{'guest_token': guestToken},
-        headers: <String, String>{'Authorization': 'Bearer $targetToken'},
-      );
+      final MagicResponse response;
+
+      try {
+        response = await _driver().post(
+          path,
+          data: <String, dynamic>{'guest_token': guestToken},
+          headers: <String, String>{'Authorization': 'Bearer $targetToken'},
+        );
+      } catch (error, stackTrace) {
+        // Logged rather than rethrown: the configured `DioNetworkDriver`
+        // already turns a transport failure into a response (see the class
+        // doc), so this only fires for an injected driver that throws. The
+        // record is kept so the next sign-in or restore retries, and a host
+        // awaiting the claim after a successful sign-in must not see a throw.
+        Log.error(
+          '[MagicStarter] guest claim driver threw: $error\n$stackTrace',
+        );
+
+        return GuestClaimOutcome.none;
+      }
 
       if (session != _session) return GuestClaimOutcome.none;
 
