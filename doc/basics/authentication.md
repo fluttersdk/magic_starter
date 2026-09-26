@@ -13,6 +13,7 @@
 - [OTP Flow](#otp-flow)
     - [Sending an OTP](#sending-an-otp)
     - [Verifying an OTP](#verifying-an-otp)
+- [Guest Claim](#guest-claim)
 - [Identity Modes](#identity-modes)
 - [Feature Gates](#feature-gates)
 - [Controllers](#controllers)
@@ -222,6 +223,27 @@ On success, the controller calls `Auth.login()` with the returned token and navi
 
 > [!NOTE]
 > The `OtpStep` enum drives the view state. Check `controller.step` to determine which input (phone or code) to display.
+
+<a name="guest-claim"></a>
+## Guest Claim
+
+With `guest_auth` on, what a guest accumulated moves to the account they sign in to next. `MagicStarterGuestClaim` runs the flow, and `MagicStarterServiceProvider` wires it to magic's auth events:
+
+1. **Guest sign-in** (`AuthLogin` for a user whose `is_guest` is `true`): the guest's bearer token and user id are written to `Vault` under `MagicStarterGuestClaim.tokenKey` (`guest_claim_token`) and `MagicStarterGuestClaim.userKey` (`guest_claim_user`). The write is local and awaited.
+2. **Sign-in or restore of a real account** (`AuthLogin` for a non-guest, or `AuthRestored`): `claimIfPending()` runs unawaited, so it never holds up `Auth.login` or a cold-boot `Magic.init`. When the recorded id equals the signed-in id (registration promoted the guest row in place), the record is dropped with no request. Otherwise it posts `POST /auth/guest/claim` with `{'guest_token': <guest token>}` and `Authorization: Bearer <signed-in token>`. A 2xx settles as `claimed`, a 404 (the backend has no claim route) or a 422 settles as `refused`, and either drops the record; anything else keeps it for the next sign-in or restore.
+3. **Sign-out** (`AuthLogout`): `MagicStarterGuestClaim.forget()` deletes the record before `Auth.logout()` returns, so the next person to sign in on the device cannot claim the previous viewer's rows. It also ends the session a claim in flight belongs to: that claim's answer is dropped, it settles as `none`, it never touches a guest recorded after it, and the next sign-in starts its own claim.
+
+Every outcome but `GuestClaimOutcome.none` reaches `MagicStarter.useGuestClaimed()` (see [Guest Claim Callback](../architecture/manager.md#guest-claim-callback)).
+
+An app that needs its own ordering after the claim (a refetch that must see the moved rows, say) calls it directly:
+
+```dart
+final GuestClaimOutcome outcome = await MagicStarterGuestClaim.instance.claimIfPending();
+```
+
+A claim already in flight hands every caller in the same session the same future, so this never posts the token twice.
+
+The claim does not ride the `Http` facade. Its body is the guest's live bearer token, and the facade's driver is the one `magic_devtools` records request bodies from in debug and profile builds. It goes out on a bare `DioNetworkDriver` built from `network.drivers.api` (`base_url`, `timeout`, `headers`) with no interceptors. That driver sends no magic `User-Agent`: `NetworkServiceProvider` adds that header only to the facade driver, so set one in `network.drivers.api.headers` if the backend needs it on this request.
 
 <a name="identity-modes"></a>
 ## Identity Modes

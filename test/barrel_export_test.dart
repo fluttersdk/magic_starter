@@ -75,6 +75,12 @@ void main() {
       expect(SessionScopeSync.isAttached, isFalse);
     });
 
+    test('the guest claim and its outcomes are reachable', () {
+      expect(MagicStarterGuestClaim.tokenKey, 'guest_claim_token');
+      expect(MagicStarterGuestClaim.userKey, 'guest_claim_user');
+      expect(GuestClaimOutcome.values, hasLength(4));
+    });
+
     test('both middlewares are reachable and construct', () {
       expect(EnsureAuthenticated(), isA<MagicMiddleware>());
       expect(RedirectIfAuthenticated(), isA<MagicMiddleware>());
