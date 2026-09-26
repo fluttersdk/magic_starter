@@ -40,8 +40,10 @@ class MagicStarterTeamController extends MagicController
 
     final localId = currentTeamId.value;
     if (localId != null) {
+      // Compared as strings: `MagicStarter.switchTeam` takes a String id while
+      // a resolver's teams usually carry the backend's int.
       for (final team in resolver.allTeams()) {
-        if (team.id == localId) return team.name;
+        if ('${team.id}' == '$localId') return team.name;
       }
     }
 

@@ -4,6 +4,7 @@
 - [Team Resolver](#team-resolver)
 - [Creating Teams](#creating-teams)
 - [Team Switching](#team-switching)
+    - [The Billable Subject](#billable-subject)
 - [Invitation](#invitation)
     - [Sending Invitations](#sending-invitations)
     - [Accepting Invitations](#accepting-invitations)
@@ -36,7 +37,7 @@ MagicStarter.useTeamResolver(
   allTeams: () => User.current.allTeams
       .map((t) => t.toMagicStarterTeam())
       .toList(),
-  onSwitch: (id) => MagicStarterTeamController.instance.switchTeam(id),
+  onSwitch: (id) => MagicStarter.switchTeam('$id'),
 );
 ```
 
@@ -75,15 +76,40 @@ The create team view is registered under `teams.create` and accessible at `Magic
 <a name="team-switching"></a>
 ## Team Switching
 
-Switch the active team via `switchTeam()`:
+Switch the active team via `MagicStarter.switchTeam()`, which answers whether the backend accepted it:
 
 ```dart
-final success = await MagicStarterTeamController.instance.switchTeam(teamId);
+if (!await MagicStarter.switchTeam(teamId)) return;
+
+MagicRoute.to('/projects/$projectId');
 ```
 
-This sends `PUT /user/current-team` with the target `team_id`. On success, the controller updates `currentTeamId.value` and calls `Auth.restore()` to refresh the user model with the new team context.
+It goes through `MagicStarterTeamController.instance.switchTeam()`, which sends `PUT /user/current-team` with the target `team_id` and, on success, updates `currentTeamId.value` and calls `Auth.restore()` to refresh the user model with the new team context. A refused switch answers `false` and leaves the session on the team it was on, so a caller that navigates after a switch (a deep link into another team's page) must check the answer first.
+
+On success it also re-identifies the store rail as the paying subject (`StoreIdentitySync.syncNow()` from `magic_payments`), so a purchase made after the switch is not attributed to the team that was left. It identifies the team the switch was accepted for, not what the resolver reads at that moment: `Auth.restore()` returns with the cached user and syncs the fresh one in the background, so the resolver can still name the old team for a moment. A build without a store rail (web, desktop) identifies nothing. A refused switch identifies nothing.
+
+Pass it as the resolver's `onSwitch` (above) so the team selector gets the same behaviour. `MagicStarter.currentTeamId()` answers the active team's id as a string (`null` without a resolver or an active team), so an int id from your model and a string id from a link or a push payload compare equal.
 
 The team selector dropdown (see [Widget: MSTeamSelector](#widget-msteamselector)) is built from the resolver's `allTeams()` callback and triggers `onSwitch()` when a selection changes.
+
+<a name="billable-subject"></a>
+### The Billable Subject
+
+`magic_starter.billing.billable` names what a store purchase is billed to, and it mirrors magic-starter-laravel's key of the same name. The two must agree:
+
+| Value | The store rail is identified as |
+|---|---|
+| `'user'` (default) | `Auth.id()` |
+| `'team'` | the active team id |
+
+```dart
+'billing': {
+  'web_origin': 'https://app.example.com',
+  'billable': 'team',
+},
+```
+
+`MagicStarterServiceProvider` reads it at boot and sets `StoreIdentitySync.billableId`; any other value refuses the boot with a `StateError`, because a typo that fell back to `'user'` would bind every purchase to the wrong subject. Identifying on login and restore as well stays your call: add `StoreIdentitySync.attach()` to your provider's `boot()`.
 
 <a name="invitation"></a>
 ## Invitation

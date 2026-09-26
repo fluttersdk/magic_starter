@@ -5,7 +5,6 @@ import 'package:magic/magic.dart';
 import 'package:magic_payments/magic_payments.dart';
 
 import '../../models/magic_starter_plan.dart';
-import '../session_scoped_controller.dart';
 
 /// Pairs the consumer's display copy onto the usage stats the billing wire
 /// carries.
@@ -130,7 +129,7 @@ typedef MagicStarterTeamOwnershipReader = bool? Function();
 /// );
 /// ```
 class MagicStarterBillingController extends MagicController
-    implements SessionScopedController {
+    implements SessionScoped {
   /// Creates the billing controller.
   ///
   /// [billingService] overrides [Payments.billing] for tests. A fake that also
@@ -494,7 +493,7 @@ class MagicStarterBillingController extends MagicController
   /// Drops every field the six reads populate, publishes the cleared state,
   /// then refetches for the identity that is now authenticated.
   ///
-  /// Called on login and on team switch (see [SessionScopedController]),
+  /// Called on login and on team switch (see [SessionScoped]),
   /// never from [onInit]: this controller is a `Magic.findOrPut` singleton
   /// and `onInit` runs once per instance lifetime, so without this reset a
   /// team switch would leave the previous team's plan, invoices, usage and

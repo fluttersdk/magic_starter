@@ -611,7 +611,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
         ? '''
             currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
             allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
-            onSwitch: (teamId) => MagicStarterTeamController.instance.switchTeam(teamId),
+            onSwitch: (teamId) => MagicStarter.switchTeam('\$teamId'),
 '''
         : '';
 
@@ -771,7 +771,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
           ? '''
       currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
       allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
-      onSwitch: (teamId) => MagicStarterTeamController.instance.switchTeam(teamId),
+      onSwitch: (teamId) => MagicStarter.switchTeam('\$teamId'),
 '''
           : '';
 

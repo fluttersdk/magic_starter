@@ -312,10 +312,16 @@ class MSUserProfileDropdown extends StatelessWidget {
     );
   }
 
+  /// Signs out through the host's custom callback when there is one, the
+  /// controller otherwise.
+  ///
+  /// The before-logout hooks run here for the custom path only: the controller
+  /// runs them itself, and running them here too would release a device twice.
   Future<void> _handleLogout() async {
     final customLogout = MagicStarter.manager.onLogout;
 
     if (customLogout != null) {
+      await MagicStarter.manager.runBeforeLogoutHooks();
       await customLogout();
       return;
     }

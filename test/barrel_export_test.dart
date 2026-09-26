@@ -12,17 +12,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
-/// A minimal implementer, present only to prove the CONTRACT is exported and
-/// implementable from outside the package, not just that its name resolves.
-class _ExternalScopedController implements SessionScopedController {
-  bool didReset = false;
-
-  @override
-  Future<void> resetForSession() async {
-    didReset = true;
-  }
-}
-
 void main() {
   group('barrel exports', () {
     test('the plan-gate value object is reachable and parses a gated 403', () {
@@ -62,17 +51,11 @@ void main() {
       expect(UpgradePrompt.showIfGated, isA<Function>());
     });
 
-    test('the session-scope contract is implementable from outside', () async {
-      final _ExternalScopedController controller = _ExternalScopedController();
-
-      await controller.resetForSession();
-
-      expect(controller.didReset, isTrue);
-      expect(controller, isA<SessionScopedController>());
-    });
-
-    test('the session-scope driver is reachable', () {
-      expect(SessionScopeSync.isAttached, isFalse);
+    test('the onboarding gate is reachable', () {
+      expect(
+        MagicStarterOnboarding.vaultKeyFor('tour'),
+        'onboarding_tour_done',
+      );
     });
 
     test('the guest claim and its outcomes are reachable', () {

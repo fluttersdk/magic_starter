@@ -541,6 +541,10 @@ void main() {
         // positional or misnamed parameter would silently not compile in the
         // generated app.
         expect(content, contains('onSwitch: (teamId)'));
+
+        // Through the facade's switch contract, which also re-identifies the
+        // store customer; calling the team controller directly skipped that.
+        expect(content, contains(r"MagicStarter.switchTeam('$teamId')"));
       },
     );
 

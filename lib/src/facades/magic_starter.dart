@@ -116,7 +116,7 @@ class MagicStarter {
   ///   currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
   ///   allTeams: () =>
   ///       User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
-  ///   onSwitch: (id) => MagicStarterTeamController.instance.switchTeam(id),
+  ///   onSwitch: (id) => MagicStarter.switchTeam('$id'),
   /// );
   /// ```
   ///
@@ -202,7 +202,7 @@ class MagicStarter {
   /// MagicStarter.useTeamResolver(
   ///   currentTeam: () => User.current.currentTeam?.toMagicStarterTeam(),
   ///   allTeams: () => User.current.allTeams.map((t) => t.toMagicStarterTeam()).toList(),
-  ///   onSwitch: (id) => MagicStarterTeamController.instance.switchTeam(id),
+  ///   onSwitch: (id) => MagicStarter.switchTeam('$id'),
   /// );
   /// ```
   static void useTeamResolver({
@@ -279,6 +279,34 @@ class MagicStarter {
   static void useLogout(Future<void> Function() callback) {
     manager.onLogout = callback;
   }
+
+  /// Register a hook that runs before every user sign-out, while the session
+  /// token is still valid.
+  ///
+  /// Runs ahead of a custom [useLogout] callback and ahead of `Auth.logout()`
+  /// on both starter sign-out paths, each hook isolated and bounded to five
+  /// seconds. See [MagicStarterManager.beforeLogout] for the full contract.
+  ///
+  /// ```dart
+  /// MagicStarter.beforeLogout(() => SocialAuth.signOut());
+  /// ```
+  static void beforeLogout(Future<void> Function() hook) {
+    manager.beforeLogout(hook);
+  }
+
+  /// Switch the active team and answer whether the backend accepted it.
+  ///
+  /// A successful switch re-identifies the store rail as the paying subject; a
+  /// refused one changes nothing. See [MagicStarterManager.switchTeam].
+  ///
+  /// ```dart
+  /// if (!await MagicStarter.switchTeam(teamId)) return;
+  /// MagicRoute.to('/monitors/$monitorId');
+  /// ```
+  static Future<bool> switchTeam(String teamId) => manager.switchTeam(teamId);
+
+  /// The active team's id as a string, or `null` when there is none.
+  static String? currentTeamId() => manager.currentTeamId();
 
   /// Register a custom login callback.
   ///

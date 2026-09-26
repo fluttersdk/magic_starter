@@ -1,5 +1,20 @@
 import 'package:magic/magic.dart';
 
+/// Which kind of subject a store purchase is billed to
+/// (`magic_starter.billing.billable`).
+///
+/// Mirrors magic-starter-laravel's `billable` key, and the two have to agree:
+/// the store rail's App User ID is what the vendor's webhook attributes a
+/// purchase to, and the backend resolves that id as a user or as a team by
+/// this same setting.
+enum MagicStarterBillable {
+  /// The signed-in user pays; the store rail is identified as `Auth.id()`.
+  user,
+
+  /// The active team pays; the store rail is identified as the team id.
+  team,
+}
+
 /// Feature toggle helper for Magic Starter.
 ///
 /// All opt-in features default to `false` — matching the Laravel backend
@@ -443,5 +458,31 @@ class MagicStarterConfig {
     if (origin == null || origin.isEmpty) return null;
 
     return origin;
+  }
+
+  /// Returns which subject a store purchase is billed to
+  /// (`magic_starter.billing.billable`), [MagicStarterBillable.user] when the
+  /// key is unset.
+  ///
+  /// `user` is the default for the reason the Laravel side gives: the teams
+  /// feature ships off, so a fresh install has no team to bill.
+  ///
+  /// Throws a [StateError] for any other value. A typo such as `teams` must not
+  /// fall back to `user`: that binds every purchase to the person instead of
+  /// the team, and nothing on screen would show it.
+  static MagicStarterBillable billable() {
+    final Object? configured = Config.get<Object>(
+      'magic_starter.billing.billable',
+    );
+    if (configured == null) return MagicStarterBillable.user;
+
+    for (final MagicStarterBillable billable in MagicStarterBillable.values) {
+      if (billable.name == configured) return billable;
+    }
+
+    throw StateError(
+      'magic_starter.billing.billable must be "user" or "team"; '
+      'got "$configured".',
+    );
   }
 }
