@@ -109,5 +109,6 @@ export 'src/support/plan_upgrade.dart';
 export 'src/support/upgrade_prompt.dart';
 export 'src/http/session_scoped_controller.dart';
 export 'src/http/session_scope_sync.dart';
+export 'src/http/magic_starter_guest_claim.dart';
 export 'src/middleware/ensure_authenticated.dart';
 export 'src/middleware/redirect_if_authenticated.dart';

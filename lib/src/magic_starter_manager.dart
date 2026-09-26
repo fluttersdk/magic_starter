@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import 'configuration/magic_starter_config.dart';
 import 'configuration/magic_starter_theme.dart';
 import 'facades/magic_starter.dart';
+import 'http/magic_starter_guest_claim.dart';
 import 'models/magic_starter_auth_user.dart';
 import 'models/magic_starter_nav_item.dart';
 import 'models/magic_starter_team.dart';
@@ -116,6 +117,17 @@ class MagicStarterManager {
   /// user (never offline, never on a failed sync, never without a
   /// `userEndpoint` configured); neither path ever dispatches `AuthLogin`.
   Future<void> Function()? onLogin;
+
+  /// Called when a guest claim settles, with any outcome but
+  /// [GuestClaimOutcome.none].
+  ///
+  /// Fires from the `AuthLogin` and `AuthRestored` listeners the service
+  /// provider registers while the guest-auth feature is on, after
+  /// [MagicStarterGuestClaim.claimIfPending] answers. Every outcome it
+  /// receives marks the first sign-in to a real account after a guest session
+  /// on this device. Runs unawaited, so it never holds up the sign-in; a
+  /// throw is logged.
+  Future<void> Function(GuestClaimOutcome outcome)? onGuestClaimed;
 
   /// Custom header builder. When set, replaces the default header.
   Widget Function(BuildContext context, bool isDesktop)? headerBuilder;
@@ -560,6 +572,7 @@ class MagicStarterManager {
     navigationConfig = null;
     onLogout = null;
     onLogin = null;
+    onGuestClaimed = null;
     headerBuilder = null;
     sidebarFooterBuilder = null;
     socialLoginBuilder = null;

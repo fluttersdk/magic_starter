@@ -12,6 +12,7 @@
 - [Header Builder](#header-builder)
 - [Logout Callback](#logout-callback)
 - [Login Callback](#login-callback)
+- [Guest Claim Callback](#guest-claim-callback)
 - [Locale Application](#locale-application)
 - [Unified Theme](#unified-theme)
 - [Form Theme](#form-theme)
@@ -326,6 +327,21 @@ MagicStarter.useLogin(() async {
 
 When `onLogin` is `null` (the default), nothing runs.
 
+<a name="guest-claim-callback"></a>
+## Guest Claim Callback
+
+Run custom logic once a guest claim settles:
+
+```dart
+MagicStarter.useGuestClaimed((GuestClaimOutcome outcome) async {
+  if (outcome == GuestClaimOutcome.claimed) await Library.refresh();
+});
+```
+
+Also accepted as the `onGuestClaimed` argument of `MagicStarter.bootstrap()`. With the `guest_auth` feature on, the provider's `AuthLogin` and `AuthRestored` listeners run `MagicStarterGuestClaim.instance.claimIfPending()` for a non-guest user and call this callback with every outcome but `none` (`claimed`, `refused`, `promoted`), each of which marks the first sign-in to a real account after a guest session on this device. It runs unawaited and a failure is logged, not rethrown; a sign-in and a restore that share one claim call it once. See [Guest Claim](../basics/authentication.md#guest-claim) for the flow.
+
+When `onGuestClaimed` is `null` (the default), nothing runs.
+
 <a name="locale-application"></a>
 ## Locale Application
 
@@ -597,6 +613,7 @@ Default layouts:
 | `MagicStarter.useHeader(builder)` | `manager.headerBuilder = builder` |
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |
 | `MagicStarter.useLogin(callback)` | `manager.onLogin = callback` |
+| `MagicStarter.useGuestClaimed(callback)` | `manager.onGuestClaimed = callback` |
 | `MagicStarter.useSocialLogin(builder)` | `manager.socialLoginBuilder = builder` |
 | `MagicStarter.useLocaleOptions(locales)` | `manager.localeOptions = options` |
 | `MagicStarter.useGuestAuthEntry(builder)` | `manager.guestAuthEntryBuilder = builder` |

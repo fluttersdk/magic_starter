@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_theme.dart';
+import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 import '../models/magic_starter_team.dart';
 import '../models/magic_starter_nav_item.dart';
@@ -79,7 +80,8 @@ class MagicStarter {
   /// [onLogin] is optional: unlike [onLogout], the starter already has a
   /// working default (nothing) for a fresh sign-in, so a host that has no use
   /// for the hook is not forced to pass one. Pass it the same way as
-  /// [useLogin] would.
+  /// [useLogin] would. [onGuestClaimed] is optional for the same reason, and
+  /// is passed the way [useGuestClaimed] would.
   ///
   /// [currentTeam], [allTeams] and [onSwitch] are optional because teams are
   /// an opt-in feature (`magic_starter.features.teams` defaults to `false`); a
@@ -125,6 +127,7 @@ class MagicStarter {
     required Future<void> Function() onLogout,
     required Map<String, String> locales,
     Future<void> Function()? onLogin,
+    Future<void> Function(GuestClaimOutcome outcome)? onGuestClaimed,
     MagicStarterTeam? Function()? currentTeam,
     List<MagicStarterTeam> Function()? allTeams,
     Future<void> Function(dynamic teamId)? onSwitch,
@@ -153,6 +156,7 @@ class MagicStarter {
     useLogout(onLogout);
     useLocaleOptions(locales);
     if (onLogin != null) useLogin(onLogin);
+    if (onGuestClaimed != null) useGuestClaimed(onGuestClaimed);
 
     if (teamCallbacks == 3) {
       useTeamResolver(
@@ -289,6 +293,23 @@ class MagicStarter {
   /// ```
   static void useLogin(Future<void> Function() callback) {
     manager.onLogin = callback;
+  }
+
+  /// Register a callback for a settled guest claim.
+  ///
+  /// Called with every outcome but [GuestClaimOutcome.none], on the first
+  /// sign-in to a real account after a guest session on this device. See
+  /// [MagicStarterManager.onGuestClaimed] for the full contract.
+  ///
+  /// ```dart
+  /// MagicStarter.useGuestClaimed((outcome) async {
+  ///   if (outcome == GuestClaimOutcome.claimed) await Library.refresh();
+  /// });
+  /// ```
+  static void useGuestClaimed(
+    Future<void> Function(GuestClaimOutcome outcome) callback,
+  ) {
+    manager.onGuestClaimed = callback;
   }
 
   /// Register a custom header builder.

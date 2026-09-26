@@ -6,6 +6,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
+import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 
 /// Listener to reload app when auth is restored (e.g., after team switch)
@@ -46,6 +47,47 @@ class _CallOnLoginHook extends MagicListener<AuthLogin> {
   }
 }
 
+/// Records a guest sign-in, and claims a recorded guest on a real one.
+///
+/// The record is local and awaited, so a claim can never race an unwritten
+/// record. The claim does network work and runs unawaited:
+/// `EventDispatcher.dispatch` awaits every listener, so awaiting it here would
+/// hold `Auth.login` for a round trip.
+class _RecordOrClaimGuest extends MagicListener<AuthLogin> {
+  @override
+  Future<void> handle(AuthLogin event) async {
+    if (event.user.get<bool>('is_guest') == true) {
+      await MagicStarterGuestClaim.instance.record(event.user);
+      return;
+    }
+
+    MagicStarterGuestClaim.instance.claimInBackground();
+  }
+}
+
+/// Claims a recorded guest when a stored session is restored, which covers a
+/// sign-in whose claim could not reach the API before the app closed.
+///
+/// Unawaited for the reason [_RecordOrClaimGuest] gives, and because a
+/// cold-boot restore runs inside `Magic.init`.
+class _ClaimGuestOnRestore extends MagicListener<AuthRestored> {
+  @override
+  Future<void> handle(AuthRestored event) async {
+    MagicStarterGuestClaim.instance.claimInBackground();
+  }
+}
+
+/// Drops the guest record, and the claim in flight, on every sign-out.
+///
+/// Awaited inside [handle], so it is gone before `Auth.logout()` returns: an
+/// unawaited delete would let a sign-in that follows at once read the record,
+/// and the next person on the device would claim the previous viewer's rows.
+/// A local vault delete is quick, so this blocks nothing noticeable.
+class _ForgetGuestOnLogout extends MagicListener<AuthLogout> {
+  @override
+  Future<void> handle(AuthLogout event) => MagicStarterGuestClaim.forget();
+}
+
 /// Service provider for Magic Starter.
 ///
 /// Register in your app's kernel:
@@ -68,6 +110,15 @@ class MagicStarterServiceProvider extends ServiceProvider {
 
     // Register event listener to call the host's onLogin hook on sign-in.
     EventDispatcher.instance.register(AuthLogin, [() => _CallOnLoginHook()]);
+
+    // Read at register time: `Magic.init` loads config before any provider
+    // registers, and a feature that is off must leave no listener behind.
+    if (MagicStarterConfig.hasGuestAuthFeatures()) {
+      EventDispatcher.instance
+        ..register(AuthLogin, [() => _RecordOrClaimGuest()])
+        ..register(AuthRestored, [() => _ClaimGuestOnRestore()])
+        ..register(AuthLogout, [() => _ForgetGuestOnLogout()]);
+    }
   }
 
   @override

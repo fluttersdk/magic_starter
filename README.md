@@ -51,6 +51,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :busts_in_silhouette: | **Teams** | Create, switch, invite members, manage roles |
 | :bell: | **Notifications** | Real-time polling, mark read/unread, preference matrix |
 | :iphone: | **OTP Login** | Phone-based guest authentication with send/verify flow |
+| :inbox_tray: | **Guest Claim** | A guest's data moves to the account they sign in to next, with an `onGuestClaimed` hook |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
 | :package: | **Design-System Components** | 39 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, MSDataTable, and more) plus `MagicStarterTokens` semantic alias layer |
 | :gear: | **14 Feature Toggles** | All opt-in, configure only what you need |
