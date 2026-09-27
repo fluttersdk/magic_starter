@@ -284,4 +284,127 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Session scope reset: a team switch must refresh THIS mounted screen
+  // without a full app remount (see MagicStarterServiceProvider's
+  // _ReloadOnAuthRestored and MagicStarterTeamController.resetForSession).
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterTeamSettingsView, session scope reset', () {
+    late MagicStarterTeamController controller;
+    late FakeNetworkDriver network;
+    dynamic activeTeamId;
+
+    const teamX = MagicStarterTeam(id: 1, name: 'Team X');
+    const teamY = MagicStarterTeam(id: 2, name: 'Team Y');
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      SessionScope.detach();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Config.set('magic_starter.features.teams', true);
+      Config.set('wind.colors.primary', 'indigo');
+
+      activeTeamId = 1;
+      MagicStarter.useTeamResolver(
+        currentTeam: () => activeTeamId == 1 ? teamX : teamY,
+        allTeams: () => const [teamX, teamY],
+        onSwitch: (dynamic id) => MagicStarter.switchTeam('$id'),
+      );
+
+      Auth.fake(
+        user: MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'name': 'Ada',
+          'current_team_id': 1,
+        }),
+      );
+      SessionScope.identity = () =>
+          Auth.check() ? '${Auth.id()}:${MagicStarter.currentTeamId()}' : null;
+      SessionScope.attach();
+
+      // A callback stub, not a URL map: the members/invitations answer
+      // depends on WHICH team the request names, and `activeTeamId` moves
+      // once the PUT below lands, exactly the way a real backend would move
+      // its own current-team pointer.
+      network = Http.fake((MagicRequest request) {
+        if (request.method == 'PUT' && request.url == '/user/current-team') {
+          activeTeamId = (request.data as Map<String, dynamic>)['team_id'];
+          return Http.response({
+            'data': {'id': 1, 'name': 'Ada', 'current_team_id': activeTeamId},
+          });
+        }
+        if (request.method == 'GET' && request.url == '/teams/1/members') {
+          return Http.response({
+            'data': [
+              {
+                'id': 10,
+                'name': 'Alice X',
+                'email': 'alice@x.example',
+                'role': 'owner',
+              },
+            ],
+          });
+        }
+        if (request.method == 'GET' && request.url == '/teams/2/members') {
+          return Http.response({
+            'data': [
+              {
+                'id': 20,
+                'name': 'Bob Y',
+                'email': 'bob@y.example',
+                'role': 'owner',
+              },
+            ],
+          });
+        }
+        // Invitations: empty for both teams, and the catch-all for anything
+        // else this test does not care about.
+        return Http.response({'data': []});
+      });
+
+      controller = MagicStarterTeamController.instance;
+    });
+
+    tearDown(() {
+      SessionScope.detach();
+      Auth.unfake();
+      Http.unfake();
+      controller.members.dispose();
+      controller.invitations.dispose();
+      controller.currentTeamId.dispose();
+    });
+
+    testWidgets(
+      'reseeds the name field and reloads members for the team a switch '
+      'landed on, while this view stays mounted',
+      (tester) async {
+        await tester.pumpWidget(wrap(const MagicStarterTeamSettingsView()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Team X'), findsOneWidget);
+        expect(find.text('Alice X'), findsOneWidget);
+
+        final switched = await controller.switchTeam(2);
+        expect(switched, isTrue);
+
+        // The fake guard's `setUser` does not bump `Auth.stateNotifier` on
+        // its own (only a real `login`/`logout` does), so this drives the
+        // sync a real guard would have triggered from inside `setUser`.
+        SessionScope.sync();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Team Y'), findsOneWidget);
+        expect(find.text('Bob Y'), findsOneWidget);
+        expect(find.text('Team X'), findsNothing);
+        expect(find.text('Alice X'), findsNothing);
+        network.assertSent(
+          (r) => r.method == 'GET' && r.url == '/teams/2/members',
+        );
+      },
+    );
+  });
 }

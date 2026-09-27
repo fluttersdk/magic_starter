@@ -10,19 +10,23 @@ import '../facades/magic_starter.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 
-/// Reloads the app whenever the authenticated identity is restored, which
-/// covers a team switch: every team-scoped screen loads once on mount, so
-/// without this a screen would keep showing the PREVIOUS team's rows while
-/// its writes landed on the new one.
+/// Reloads the app whenever a stored session is restored on cold boot.
 ///
-/// `AuthRestored` reaches here from two paths. A cold-boot restore of a
-/// stored session dispatches it from `Auth.restore()`'s own background user
-/// sync, once that sync confirms the user (never offline, never on a failed
-/// sync, never without a `userEndpoint` configured). A team switch (`switch`
-/// or create-then-switch, `MagicStarterTeamController._applySwitchedUser`)
-/// dispatches it directly, right after applying the fresh user the switch
-/// answered with, because that path bypasses `Auth.restore()` entirely and
-/// would otherwise tell nothing downstream that the identity moved.
+/// Serves ONLY the restore path now. A team switch (`switch` or
+/// create-then-switch, `MagicStarterTeamController._applySwitchedUser`) used
+/// to dispatch `AuthRestored` here too, so this same reload ran on every
+/// switch as well, which is what a live check on iOS caught the cost of: an
+/// app that switches teams from a push deeplink and then shows a "switched
+/// team" toast lost the toast, because `Magic.reload()` swaps the root key a
+/// frame later and takes the overlay with it. A switch now flips the session
+/// through magic's `SessionScope` instead, keyed on `<userId>:<teamId>` and
+/// flipped synchronously inside `_applySwitchedUser`'s own `guard.setUser`
+/// call, which resets the starter's own team screens with no remount.
+///
+/// `AuthRestored` still reaches here from the one path this reload actually
+/// serves: `Auth.restore()`'s own background user sync, once that sync
+/// confirms the user (never offline, never on a failed sync, never without a
+/// `userEndpoint` configured).
 class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   @override
   Future<void> handle(AuthRestored event) async {
@@ -38,10 +42,10 @@ class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
 /// OTP). Deliberately NOT `AuthRestored`: a cold-boot restore of a stored
 /// session dispatches it from `Auth.restore()`'s own background sync (never
 /// offline, never on a failed sync, never without a `userEndpoint`
-/// configured), and a team switch dispatches it directly once the switch
-/// answer applies (see `_ReloadOnAuthRestored`); neither ever dispatches
-/// `AuthLogin`, and neither is a fresh sign-in the host should react to a
-/// second time.
+/// configured), and a team switch flips the session through `SessionScope`
+/// instead of dispatching it at all (see `_ReloadOnAuthRestored`); neither
+/// path ever dispatches `AuthLogin`, and neither is a fresh sign-in the host
+/// should react to a second time.
 class _CallOnLoginHook extends MagicListener<AuthLogin> {
   @override
   Future<void> handle(AuthLogin event) async {
@@ -117,7 +121,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // Register manager singleton.
     app.singleton('magic_starter', () => MagicStarterManager());
 
-    // Register event listener to reload app after team switch
+    // Register event listener to reload the app after a cold-boot restore.
     EventDispatcher.instance.register(AuthRestored, [
       () => _ReloadOnAuthRestored(),
     ]);

@@ -552,14 +552,15 @@ void main() {
         },
       );
 
-      // Round 2 review: applying the fresh user bypasses `Auth.restore()`,
-      // whose own background sync is what normally dispatches `AuthRestored`
-      // and drives `_ReloadOnAuthRestored`'s reload of every team-scoped
-      // screen. Without dispatching it here too, a team switch changed the
-      // session but told nothing downstream, so a screen that loads once on
-      // mount (team settings, say) kept the PREVIOUS team's rows on screen.
-      test('success with the fresh user in the body dispatches AuthRestored '
-          'exactly once', () async {
+      // A switch no longer dispatches AuthRestored at all: that dispatch used
+      // to drive `_ReloadOnAuthRestored`'s `Magic.reload()`, which remounted
+      // the whole app on every switch and cost a live check on iOS a "switched
+      // team" toast that a push deeplink had just shown. `guard.setUser`
+      // still bumps `Auth.stateNotifier` synchronously, and an app that calls
+      // `SessionScope.attach()` resets its team screens off that bump
+      // instead, with no remount.
+      test('success with the fresh user in the body does NOT dispatch '
+          'AuthRestored, and still flips Auth.user to the new team', () async {
         mockDriver.stubResponse(
           '/user/current-team',
           statusCode: 200,
@@ -577,7 +578,8 @@ void main() {
         final result = await controller.switchTeam(7);
 
         expect(result, isTrue);
-        expect(restoredEvents, hasLength(1));
+        expect(restoredEvents, isEmpty);
+        expect(Auth.user<Model>()?.getAttribute('current_team_id'), 7);
       });
 
       test('failure — returns false, does not change currentTeamId', () async {
