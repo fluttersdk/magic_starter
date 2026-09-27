@@ -194,6 +194,14 @@ class MockGuard implements Guard {
   ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
+/// A [SessionScoped] controller standing in for billing or a host screen.
+class _ScopedProbe extends MagicController implements SessionScoped {
+  int resets = 0;
+
+  @override
+  Future<void> resetForSession() async => resets++;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -246,6 +254,12 @@ void main() {
       controller.dispose();
       Auth.manager.forgetGuards();
     });
+
+    // A switch answer is applied only when it is the signed-in user, so the
+    // tests that apply one start from a session for user 1.
+    void signIn() => mockGuard.setUser(
+      MagicStarter.createUser({'id': 1, 'name': 'Ada', 'current_team_id': 5}),
+    );
 
     // ---------------------------------------------------------------------
     // doCreate
@@ -300,6 +314,7 @@ void main() {
             'data': {'id': 10, 'name': 'New Team'},
           },
         );
+        signIn();
         mockDriver.stubResponse(
           '/user/current-team',
           statusCode: 200,
@@ -361,6 +376,29 @@ void main() {
           expect(controller.activeTeamName, equals('New Team'));
         },
       );
+
+      test('an empty switch answer after create keeps the session user and '
+          'falls back to Auth.restore()', () async {
+        signIn();
+        mockDriver.stubResponse(
+          '/teams',
+          statusCode: 200,
+          data: {
+            'data': {'id': 10, 'name': 'New Team'},
+          },
+        );
+        mockDriver.stubResponse(
+          '/user/current-team',
+          statusCode: 200,
+          data: {'data': <String, dynamic>{}},
+        );
+
+        final result = await controller.doCreate(name: 'New Team');
+
+        expect(result, isTrue);
+        expect(Auth.id(), 1);
+        expect(mockGuard.restoreCalled, isTrue);
+      });
 
       test('failure (422) — returns false, sets error', () async {
         mockDriver.stubResponse(
@@ -546,6 +584,7 @@ void main() {
           // The switch answer already carries the user on the new team. Waiting
           // on Auth.restore() instead would re-apply the CACHED user (still on
           // the old team) and leave the tenant change to a background sync.
+          signIn();
           mockDriver.stubResponse(
             '/user/current-team',
             statusCode: 200,
@@ -571,6 +610,7 @@ void main() {
       // instead, with no remount.
       test('success with the fresh user in the body does NOT dispatch '
           'AuthRestored, and still flips Auth.user to the new team', () async {
+        signIn();
         mockDriver.stubResponse(
           '/user/current-team',
           statusCode: 200,
@@ -591,6 +631,37 @@ void main() {
         expect(restoredEvents, isEmpty);
         expect(Auth.user<Model>()?.getAttribute('current_team_id'), 7);
       });
+
+      // `data` is only applied when it is the signed-in user: an empty map or
+      // a team record would otherwise become a user with no id, cached, and
+      // the session identity would read `null:<team>`.
+      for (final MapEntry<String, Map<String, dynamic>> reply
+          in <String, Map<String, dynamic>>{
+            'an empty data map': {'data': <String, dynamic>{}},
+            'a team record': {
+              'data': {'id': 7, 'name': 'Walk Team'},
+            },
+            'another user': {
+              'data': {'id': 2, 'name': 'Grace', 'current_team_id': 7},
+            },
+          }.entries) {
+        test('a switch answer carrying ${reply.key} keeps the session user '
+            'and falls back to Auth.restore()', () async {
+          signIn();
+          mockDriver.stubResponse(
+            '/user/current-team',
+            statusCode: 200,
+            data: reply.value,
+          );
+
+          final result = await controller.switchTeam(7);
+
+          expect(result, isTrue);
+          expect(Auth.id(), 1);
+          expect(Auth.user<Model>()?.getAttribute('current_team_id'), 5);
+          expect(mockGuard.restoreCalled, isTrue);
+        });
+      }
 
       test('failure — returns false, does not change currentTeamId', () async {
         mockDriver.stubResponse(
@@ -716,6 +787,7 @@ void main() {
           controller.members.value = [
             {'id': 1, 'name': 'Alice'},
           ];
+          signIn();
           mockDriver.stubResponse(
             '/user/current-team',
             statusCode: 200,
@@ -727,6 +799,29 @@ void main() {
           await controller.switchTeam(7);
 
           expect(controller.members.value, isEmpty);
+        },
+      );
+
+      // Billing is the scoped controller the starter ships besides this one;
+      // it is registered with `Magic.put`, the same way the probe is, and so
+      // are a host's own team-scoped controllers.
+      test(
+        'a switch in an app that never attached SessionScope resets every scoped controller Magic holds',
+        () async {
+          expect(SessionScope.isAttached, isFalse);
+          final _ScopedProbe probe = Magic.put(_ScopedProbe());
+          signIn();
+          mockDriver.stubResponse(
+            '/user/current-team',
+            statusCode: 200,
+            data: {
+              'data': {'id': 1, 'name': 'Ada', 'current_team_id': 7},
+            },
+          );
+
+          await controller.switchTeam(7);
+
+          expect(probe.resets, 1);
         },
       );
 

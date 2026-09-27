@@ -415,7 +415,10 @@ class MagicStarterTeamController extends MagicController
   /// back the CACHED user, still on the old team, and leave the change to a
   /// background `/auth/user` sync. When that sync fails, `SessionScope` never
   /// sees a new identity, so every scoped cache and the store rail stay on the
-  /// team that was left. A body without a user falls back to the restore.
+  /// team that was left. A body whose `data` is not the signed-in user (an
+  /// empty map, a team record, another account) falls back to the restore:
+  /// applied, it would cache a user with no id, or the wrong one, and put the
+  /// session identity on `null:<team>`.
   ///
   /// `guard.setUser(user)` bumps `Auth.stateNotifier` synchronously, and that
   /// bump is what magic's `SessionScope.sync()` listens for once an app has
@@ -430,7 +433,7 @@ class MagicStarterTeamController extends MagicController
   /// for the one path that still does.
   Future<void> _applySwitchedUser(Object? body) async {
     final Object? fresh = body is Map<String, dynamic> ? body['data'] : null;
-    if (fresh is! Map<String, dynamic>) {
+    if (fresh is! Map<String, dynamic> || !_isSignedInUser(fresh)) {
       await Auth.restore();
       return;
     }
@@ -441,9 +444,41 @@ class MagicStarterTeamController extends MagicController
     if (guard is BaseGuard) await guard.cacheUser(user);
 
     // An app that never attached SessionScope gets no reset from the bump
-    // above, and without the remount this controller used to rely on its
-    // team screens would keep the team that was left.
-    if (!SessionScope.isAttached) await resetForSession();
+    // above, and without the remount this controller used to rely on, every
+    // team screen would keep the team that was left.
+    if (!SessionScope.isAttached) await _resetScopedControllers();
+  }
+
+  /// Whether [data] is the signed-in user, compared by id as strings because
+  /// the backend may key users by int or by UUID.
+  bool _isSignedInUser(Map<String, dynamic> data) {
+    final Object? id = data['id'];
+    return id != null && '$id' == '${Auth.id()}';
+  }
+
+  /// Resets this controller and every [SessionScoped] controller [Magic]
+  /// holds (billing, and a host's own team-scoped screens), the same set
+  /// `SessionScope.sync()` resets once attached.
+  ///
+  /// Each reset is isolated: one that throws is logged and the others still
+  /// run, because the switch itself has already landed on the backend and
+  /// reporting it as failed would be wrong.
+  Future<void> _resetScopedControllers() async {
+    final Set<SessionScoped> scoped = <SessionScoped>{
+      this,
+      ...Magic.controllers.whereType<SessionScoped>(),
+    };
+
+    await Future.wait<void>(
+      scoped.map(
+        (SessionScoped holder) =>
+            holder.resetForSession().catchError((Object error) {
+              Log.error(
+                '[MagicStarterTeamController] session reset failed: $error',
+              );
+            }),
+      ),
+    );
   }
 
   /// Accept a team invitation by token.

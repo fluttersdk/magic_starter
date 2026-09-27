@@ -496,6 +496,29 @@ void main() {
         expect(mockGuard.logoutCalled, isFalse);
       });
 
+      // The server revokes every token as part of the delete, so a hook that
+      // calls the backend (a push device release) could only 401.
+      test(
+        'does not run the before-logout hooks when the delete succeeds',
+        () async {
+          final order = <String>[];
+          MagicStarter.manager.beforeLogout(() async => order.add('hook'));
+          mockGuard.onLogout = () => order.add('Auth.logout');
+
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {'message': 'Account deleted'},
+          );
+
+          final result = await controller.doDeleteAccount(
+            password: 'mysecretpass',
+          );
+
+          expect(result, isTrue);
+          expect(order, equals(['Auth.logout']));
+        },
+      );
+
       test(
         'does not run the before-logout hooks when the delete fails',
         () async {
