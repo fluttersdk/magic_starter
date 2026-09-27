@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -51,12 +53,20 @@ class MockNetworkDriver implements NetworkDriver {
   @override
   void addInterceptor(MagicNetworkInterceptor interceptor) {}
 
+  /// GETs to these urls wait on their completer before answering, so a test
+  /// can hold one read in flight while it drives something else.
+  final Map<String, Completer<void>> getGates = {};
+
   @override
   Future<MagicResponse> get(
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async => _respond('GET', url);
+  }) async {
+    final Completer<void>? gate = getGates[url];
+    if (gate != null) await gate.future;
+    return _respond('GET', url);
+  }
 
   @override
   Future<MagicResponse> post(
@@ -698,6 +708,89 @@ void main() {
         expect(controller.members.value, isEmpty);
         expect(controller.invitations.value, isEmpty);
       });
+
+      test(
+        'a switch in an app that never attached SessionScope still clears the previous team\'s members',
+        () async {
+          expect(SessionScope.isAttached, isFalse);
+          controller.members.value = [
+            {'id': 1, 'name': 'Alice'},
+          ];
+          mockDriver.stubResponse(
+            '/user/current-team',
+            statusCode: 200,
+            data: {
+              'data': {'id': 1, 'name': 'Ada', 'current_team_id': 7},
+            },
+          );
+
+          await controller.switchTeam(7);
+
+          expect(controller.members.value, isEmpty);
+        },
+      );
+
+      test(
+        'a read for the previous team that lands after a session reset publishes nothing',
+        () async {
+          controller.currentTeamId.value = 5;
+          mockDriver.stubResponse(
+            '/teams/5/members',
+            statusCode: 200,
+            data: {
+              'data': [
+                {'id': 1, 'name': 'Alice'},
+              ],
+            },
+          );
+          mockDriver.stubResponse(
+            '/teams/5/invitations',
+            statusCode: 200,
+            data: {'data': <dynamic>[]},
+          );
+          final Completer<void> gate = Completer<void>();
+          mockDriver.getGates['/teams/5/members'] = gate;
+
+          // Team 5's read is in flight when the session moves: its members
+          // must not land on the next team's screen, where a removal would
+          // send DELETE /teams/<next>/members/<id>.
+          final Future<void> pending = controller.loadMembersAndInvitations();
+          await controller.resetForSession();
+          gate.complete();
+          await pending;
+
+          expect(controller.members.value, isEmpty);
+        },
+      );
+
+      test(
+        'a session reset with a settings screen mounted reads the new team even while the old read is in flight',
+        () async {
+          MagicStarter.useTeamResolver(
+            currentTeam: () => const MagicStarterTeam(id: 6, name: 'Team Y'),
+            allTeams: () => const [MagicStarterTeam(id: 6, name: 'Team Y')],
+            onSwitch: (_) async {},
+          );
+          controller.currentTeamId.value = 5;
+          controller.settingsViewMountCount = 1;
+          mockDriver.setDefaultResponse(
+            statusCode: 200,
+            data: {'data': <dynamic>[]},
+          );
+          final Completer<void> gate = Completer<void>();
+          mockDriver.getGates['/teams/5/members'] = gate;
+
+          final Future<void> pending = controller.loadMembersAndInvitations();
+          await controller.resetForSession();
+          gate.complete();
+          await pending;
+
+          expect(
+            mockDriver.calls.where((c) => c.url == '/teams/6/members'),
+            hasLength(1),
+          );
+        },
+      );
     });
 
     // ---------------------------------------------------------------------

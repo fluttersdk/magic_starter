@@ -93,12 +93,19 @@ class MagicStarterTeamController extends MagicController
   /// in the middle of the settings route's build (#163). The calling view
   /// reads the loading state in its own first build; the result still
   /// notifies, after the await, outside any build.
-  bool _isLoadingMembers = false;
+  ///
+  /// One read per team at a time. A read for another team (the session moved
+  /// while it was in flight) supersedes it rather than waiting behind it, and
+  /// the superseded answer publishes nothing: landing a team's members on the
+  /// next team's screen would aim a removal at the wrong team.
   Future<void> loadMembersAndInvitations({bool quietStart = false}) async {
-    if (_isLoadingMembers) return;
     final teamId = activeTeamId;
     if (teamId == null) return;
-    _isLoadingMembers = true;
+    if (_loadingMembersFor != null && '$_loadingMembersFor' == '$teamId') {
+      return;
+    }
+    _loadingMembersFor = teamId;
+    final int token = _memberReads.begin();
     if (quietStart) {
       setState(null, status: const RxStatus.loading(), notify: false);
     } else {
@@ -109,6 +116,7 @@ class MagicStarterTeamController extends MagicController
         Http.get('/teams/$teamId/members'),
         Http.get('/teams/$teamId/invitations'),
       ]);
+      if (!_memberReads.isCurrent(token)) return;
       final membersResponse = results[0];
       final invitationsResponse = results[1];
       var hasFailure = false;
@@ -141,11 +149,17 @@ class MagicStarterTeamController extends MagicController
       Log.error(
         '[MagicStarterTeamController.loadMembersAndInvitations] $e\n$stackTrace',
       );
-      setError(trans('errors.unexpected'));
+      if (_memberReads.isCurrent(token)) setError(trans('errors.unexpected'));
     } finally {
-      _isLoadingMembers = false;
+      if (_memberReads.isCurrent(token)) _loadingMembersFor = null;
     }
   }
+
+  /// Drops a members read superseded by a newer one or a session reset.
+  final LatestRead _memberReads = LatestRead();
+
+  /// The team whose members read is in flight, or null when none is.
+  Object? _loadingMembersFor;
 
   /// Cancel a pending invitation.
   Future<bool> cancelInvitation(dynamic invitationId) async {
@@ -425,6 +439,11 @@ class MagicStarterTeamController extends MagicController
     final Guard guard = Auth.guard();
     guard.setUser(user);
     if (guard is BaseGuard) await guard.cacheUser(user);
+
+    // An app that never attached SessionScope gets no reset from the bump
+    // above, and without the remount this controller used to rely on its
+    // team screens would keep the team that was left.
+    if (!SessionScope.isAttached) await resetForSession();
   }
 
   /// Accept a team invitation by token.
@@ -484,6 +503,8 @@ class MagicStarterTeamController extends MagicController
   /// with no settings screen mounted would spend a request nobody reads.
   @override
   Future<void> resetForSession() async {
+    _memberReads.invalidate();
+    _loadingMembersFor = null;
     members.value = [];
     invitations.value = [];
     currentTeamId.value = MagicStarter.teamResolver?.currentTeam()?.id;

@@ -10,23 +10,16 @@ import '../facades/magic_starter.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 
-/// Reloads the app whenever a stored session is restored on cold boot.
+/// Reloads the app whenever `Auth.restore()`'s background user sync confirms
+/// the user: on cold boot, and after every write that calls `Auth.restore()`
+/// (team rename, invitation accept, profile updates). The remount a frame
+/// later discards any toast shown just before it.
 ///
-/// Serves ONLY the restore path now. A team switch (`switch` or
-/// create-then-switch, `MagicStarterTeamController._applySwitchedUser`) used
-/// to dispatch `AuthRestored` here too, so this same reload ran on every
-/// switch as well, which is what a live check on iOS caught the cost of: an
-/// app that switches teams from a push deeplink and then shows a "switched
-/// team" toast lost the toast, because `Magic.reload()` swaps the root key a
-/// frame later and takes the overlay with it. A switch now flips the session
-/// through magic's `SessionScope` instead, keyed on `<userId>:<teamId>` and
-/// flipped synchronously inside `_applySwitchedUser`'s own `guard.setUser`
-/// call, which resets the starter's own team screens with no remount.
-///
-/// `AuthRestored` still reaches here from the one path this reload actually
-/// serves: `Auth.restore()`'s own background user sync, once that sync
-/// confirms the user (never offline, never on a failed sync, never without a
-/// `userEndpoint` configured).
+/// A team switch (`switch` or create-then-switch,
+/// `MagicStarterTeamController._applySwitchedUser`) no longer comes through
+/// here: it applies the switch answer's user, which flips magic's
+/// `SessionScope` identity synchronously and resets the scoped screens with no
+/// remount, so a "switched team" toast survives.
 class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   @override
   Future<void> handle(AuthRestored event) async {
@@ -121,7 +114,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // Register manager singleton.
     app.singleton('magic_starter', () => MagicStarterManager());
 
-    // Register event listener to reload the app after a cold-boot restore.
+    // Register event listener to reload the app after a confirmed restore.
     EventDispatcher.instance.register(AuthRestored, [
       () => _ReloadOnAuthRestored(),
     ]);
