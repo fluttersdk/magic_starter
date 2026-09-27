@@ -205,6 +205,15 @@ class MagicStarterManager {
   /// so a purchase made after the switch is not attributed to the team that
   /// was left. A refused switch identifies nothing: the session is still on
   /// the team it was on.
+  ///
+  /// A failed re-identify does not undo a successful switch. The team change
+  /// already happened on the backend by the time [StoreIdentitySync.syncNow]
+  /// runs, so a caller that read this future's failure as "the switch failed"
+  /// (magic_deeplink's gate is one; it calls `onSwitchFailed` instead of
+  /// `onSwitchSucceeded`) would report a landed switch as refused. Logged
+  /// rather than swallowed: `syncNow` already logs its own
+  /// [BillingException]s and returns normally, so anything that reaches this
+  /// catch is something else, an error worth keeping visible.
   Future<bool> switchTeam(String teamId) async {
     final bool switched = await MagicStarterTeamController.instance.switchTeam(
       teamId,
@@ -214,6 +223,11 @@ class MagicStarterManager {
     _landedTeamId = teamId;
     try {
       await StoreIdentitySync.syncNow();
+    } catch (error, stackTrace) {
+      Log.error(
+        '[MagicStarter] store identity sync after team switch failed: '
+        '$error\n$stackTrace',
+      );
     } finally {
       _landedTeamId = null;
     }

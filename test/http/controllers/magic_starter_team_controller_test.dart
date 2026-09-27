@@ -499,6 +499,28 @@ void main() {
         expect(controller.isSuccess, isTrue);
       });
 
+      test(
+        'success with the fresh user in the body applies it before returning',
+        () async {
+          // The switch answer already carries the user on the new team. Waiting
+          // on Auth.restore() instead would re-apply the CACHED user (still on
+          // the old team) and leave the tenant change to a background sync.
+          mockDriver.stubResponse(
+            '/user/current-team',
+            statusCode: 200,
+            data: {
+              'data': {'id': 1, 'name': 'Ada', 'current_team_id': 7},
+            },
+          );
+
+          final result = await controller.switchTeam(7);
+
+          expect(result, isTrue);
+          expect(Auth.user<Model>()?.getAttribute('current_team_id'), 7);
+          expect(mockGuard.restoreCalled, isFalse);
+        },
+      );
+
       test('failure — returns false, does not change currentTeamId', () async {
         mockDriver.stubResponse(
           '/user/current-team',

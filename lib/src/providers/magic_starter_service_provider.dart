@@ -120,6 +120,21 @@ class MagicStarterServiceProvider extends ServiceProvider {
         ..register(AuthRestored, [() => _ClaimGuestOnRestore()])
         ..register(AuthLogout, [() => _ForgetGuestOnLogout()]);
     }
+
+    // Declared at register time rather than in `boot()`, which is what this
+    // provider used to do. `Magic.init` calls every provider's `register()`
+    // before any provider's `boot()`, and the app's own
+    // `AuthServiceProvider.boot()` restores a stored session in between: a
+    // resolver declared only in THIS provider's `boot()` (which runs after
+    // `AuthServiceProvider`'s own, on the ordering this file documents at
+    // `_declarePushIdentityOnSignIn`) missed that launch restore entirely and
+    // read it under the plain user-id default, so the team-aware identity
+    // only started applying on the FIRST bump after this provider's boot,
+    // forcing a second full reset of every scoped holder right after the
+    // first. Both resolvers read state lazily when called, so nothing is
+    // read at register time and moving them here costs nothing.
+    _declareSessionIdentity();
+    _declareStoreBillable();
   }
 
   @override
@@ -146,8 +161,6 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _forgetIntendedUrlOnSignOut();
     _declarePushIdentityOnSignIn();
     _applySavedLocaleOnSignIn();
-    _declareSessionIdentity();
-    _declareStoreBillable();
     _releasePushDeviceBeforeLogout();
   }
 
@@ -160,9 +173,11 @@ class MagicStarterServiceProvider extends ServiceProvider {
   /// `User` class; without one the team leg is `null` and the user leg still
   /// does its job.
   ///
-  /// Declared only. `SessionScope.attach()` stays the app's call, made LAST in
-  /// its own provider's `boot()`, so realtime, polling and locale already
-  /// point at the new session before its data is refetched.
+  /// Declared only, at register() so it is in place before any provider's
+  /// boot runs (see [register]'s own note on why). `SessionScope.attach()`
+  /// stays the app's call, made LAST in its own provider's `boot()`, so
+  /// realtime, polling and locale already point at the new session before its
+  /// data is refetched.
   void _declareSessionIdentity() {
     SessionScope.identity = () =>
         Auth.check() ? '${Auth.id()}:${MagicStarter.currentTeamId()}' : null;
@@ -171,11 +186,11 @@ class MagicStarterServiceProvider extends ServiceProvider {
   /// Points [StoreIdentitySync] at the subject `magic_starter.billing.billable`
   /// names.
   ///
-  /// Read once here so an invalid value refuses the boot rather than binding
-  /// purchases to the wrong subject; the id itself is read per sync, because
-  /// the signed-in user and the active team both move. An app that pays as
-  /// something else sets `StoreIdentitySync.billableId` after this provider
-  /// boots.
+  /// Read once here, at register(), so an invalid value refuses the boot
+  /// rather than binding purchases to the wrong subject; the id itself is
+  /// read per sync, because the signed-in user and the active team both
+  /// move. An app that pays as something else sets
+  /// `StoreIdentitySync.billableId` after this provider registers.
   void _declareStoreBillable() {
     final MagicStarterBillable billable = MagicStarterConfig.billable();
 

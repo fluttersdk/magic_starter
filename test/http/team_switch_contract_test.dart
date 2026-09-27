@@ -20,6 +20,24 @@ class _RecordingStoreRail implements StoreBillingService {
   Future<void> openStoreManagement() async {}
 }
 
+/// A store rail whose `identify` throws a plain (non-[BillingException])
+/// error, the shape [StoreIdentitySync.syncNow] does not swallow and
+/// rethrows to its caller.
+class _ThrowingStoreRail implements StoreBillingService {
+  @override
+  Future<void> identify(String appUserId) async =>
+      throw StateError('rail unreachable');
+
+  @override
+  Future<bool> purchase({required String plan}) async => false;
+
+  @override
+  Future<bool> restore() async => false;
+
+  @override
+  Future<void> openStoreManagement() async {}
+}
+
 void main() {
   // The provider's boot reads `WidgetsBinding.instance` for its primary colour
   // fallback, and every test here boots it for real.
@@ -139,6 +157,34 @@ void main() {
 
       expect(await MagicStarter.switchTeam('20'), isTrue);
     });
+
+    test(
+      'still answers true when the store re-identify throws, and logs it',
+      () async {
+        // The backend already switched the team by the time syncNow() runs;
+        // a non-BillingException from the rail must not read back as a
+        // failed switch (magic_deeplink's gate would call `onSwitchFailed`
+        // for a team change that in fact landed).
+        Config.set('magic_starter.billing.billable', 'team');
+        Payments.manager.forgetDrivers();
+        Payments.extend(PaymentsManager.storeRole, () => _ThrowingStoreRail());
+        final log = Log.fake();
+        await bootProvider();
+
+        final bool switched = await MagicStarter.switchTeam('20');
+
+        expect(switched, isTrue);
+        expect(
+          log.entries.where(
+            (entry) =>
+                entry.level == 'error' &&
+                entry.message.contains('rail unreachable'),
+          ),
+          hasLength(1),
+        );
+        Log.unfake();
+      },
+    );
   });
 
   group('MagicStarter.currentTeamId', () {
@@ -160,6 +206,25 @@ void main() {
       Config.set('magic_starter.billing.billable', 'account');
 
       await expectLater(bootProvider(), throwsStateError);
+    });
+
+    test('the resolver is set at register(), before boot() runs', () async {
+      Config.set('magic_starter.billing.billable', 'team');
+      Auth.fake(
+        user: MagicStarterAuthUser.fromMap({'id': 42, 'name': 'Alice'}),
+      );
+
+      final provider = MagicStarterServiceProvider(MagicApp.instance);
+      provider.register();
+      MagicStarter.useTeamResolver(
+        currentTeam: () => MagicStarterTeam(id: activeTeamId),
+        allTeams: () => [MagicStarterTeam(id: activeTeamId)],
+        onSwitch: (dynamic id) => MagicStarter.switchTeam('$id'),
+      );
+
+      // No boot() at all: the resolver only reads state lazily when called.
+      expect(StoreIdentitySync.billableId, isNotNull);
+      expect(StoreIdentitySync.billableId!(), '10');
     });
   });
 }

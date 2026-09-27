@@ -43,6 +43,14 @@ class _FakeBilling
   /// Held open to park every read before it resolves.
   Completer<void>? gate;
 
+  /// The plan [currentEntitlement] answers with, captured at CALL time
+  /// (before the read parks on [gate]) rather than at resolution time: a
+  /// caller that changes it while an earlier call is still parked models a
+  /// session change arriving while that earlier call's answer is still in
+  /// flight, and the earlier call must keep answering for the session it was
+  /// actually asked about.
+  String entitlementPlan = 'tier-b';
+
   /// Every read that has STARTED, in dispatch order.
   final List<String> started = <String>[];
 
@@ -54,17 +62,18 @@ class _FakeBilling
 
   @override
   Future<BillingEntitlement> currentEntitlement() async {
+    final String plan = entitlementPlan;
     await _enter(_entitlementRead);
     if (failEntitlement) {
       throw const BillingException('entitlement read failed');
     }
 
-    return const BillingEntitlement(
-      plan: 'tier-b',
+    return BillingEntitlement(
+      plan: plan,
       manageVia: ManageVia.portal,
       manageUrl: 'https://example.test/manage',
       aiAnalysisTrialsRemaining: null,
-      raw: <String, dynamic>{'plan': 'tier-b'},
+      raw: <String, dynamic>{'plan': plan},
     );
   }
 
@@ -1074,6 +1083,45 @@ void main() {
 
       gate.complete();
       await resetting;
+      controller.dispose();
+    });
+
+    test('a read from the session a switch interrupted does not land after the '
+        'fresh one that replaced it', () async {
+      // 1. Team A's own load starts and parks on its own gate: this models
+      //    the ordinary `onInit` load still in flight when the team switch
+      //    below arrives, which is the window a plain field assignment
+      //    after an `await` cannot tell apart from a fresh read for the
+      //    NEW session.
+      final Completer<void> teamAGate = Completer<void>();
+      billing.gate = teamAGate;
+      billing.entitlementPlan = 'team-a-plan';
+      final MagicStarterBillingController controller = build();
+      final Future<void> teamALoad = controller.load();
+      await Future<void>.delayed(Duration.zero);
+
+      // 2. The session resets to team B while team A's read is still
+      //    parked. `resetForSession` clears the fields and starts its OWN
+      //    load, which parks on a fresh gate of its own.
+      final Completer<void> teamBGate = Completer<void>();
+      billing.gate = teamBGate;
+      billing.entitlementPlan = 'team-b-plan';
+      final Future<void> resetting = controller.resetForSession();
+      await Future<void>.delayed(Duration.zero);
+
+      // 3. Team B's fresh read lands first, same as a customer who stays
+      //    on the billing screen through an ordinary switch.
+      teamBGate.complete();
+      await resetting;
+      expect(controller.currentPlanId, 'team-b-plan');
+
+      // 4. Only now does team A's superseded read land. Without the
+      //    guard this overwrites team B's plan with team A's, which is
+      //    the defect this test exists to catch.
+      teamAGate.complete();
+      await teamALoad;
+
+      expect(controller.currentPlanId, 'team-b-plan');
       controller.dispose();
     });
   });

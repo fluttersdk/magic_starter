@@ -362,7 +362,7 @@ class MagicStarterTeamController extends MagicController
       }
 
       currentTeamId.value = teamId;
-      await Auth.restore();
+      await _applySwitchedUser(response.data);
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
@@ -372,6 +372,28 @@ class MagicStarterTeamController extends MagicController
     } finally {
       _isSubmitting = false;
     }
+  }
+
+  /// Puts the session on the team the switch landed on, before [switchTeam]
+  /// returns.
+  ///
+  /// `PUT /user/current-team` answers the fresh user in `data`, and applying
+  /// it here is what flips the session identity: `Auth.restore()` would put
+  /// back the CACHED user, still on the old team, and leave the change to a
+  /// background `/auth/user` sync. When that sync fails, `SessionScope` never
+  /// sees a new identity, so every scoped cache and the store rail stay on the
+  /// team that was left. A body without a user falls back to the restore.
+  Future<void> _applySwitchedUser(Object? body) async {
+    final Object? fresh = body is Map<String, dynamic> ? body['data'] : null;
+    if (fresh is! Map<String, dynamic>) {
+      await Auth.restore();
+      return;
+    }
+
+    final Authenticatable user = MagicStarter.createUser(fresh);
+    final Guard guard = Auth.guard();
+    guard.setUser(user);
+    if (guard is BaseGuard) await guard.cacheUser(user);
   }
 
   /// Accept a team invitation by token.

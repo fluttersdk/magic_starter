@@ -97,5 +97,32 @@ void main() {
       // provider must not do it on the app's behalf.
       expect(SessionScope.isAttached, isFalse);
     });
+
+    test('is declared at register(), before boot() runs', () async {
+      // `Magic.init` calls every provider's `register()` before any
+      // provider's `boot()`, and the app's own `AuthServiceProvider.boot()`
+      // restores a stored session in between. A resolver declared only in
+      // THIS provider's `boot()` (which runs after AuthServiceProvider's, on
+      // the ordering `MagicStarterServiceProvider` itself documents) misses
+      // that restore entirely, and the team-aware identity only starts
+      // applying on the FIRST bump after this provider's own boot, forcing
+      // a second full reset. The resolver reads state lazily when called,
+      // so declaring it here costs nothing at register time.
+      Auth.fake();
+      currentTeam = const MagicStarterTeam(id: 10, name: 'Alpha');
+
+      final provider = MagicStarterServiceProvider(MagicApp.instance);
+      provider.register();
+      MagicStarter.useTeamResolver(
+        currentTeam: () => currentTeam,
+        allTeams: () => [?currentTeam],
+        onSwitch: (_) async {},
+      );
+
+      // No boot() at all.
+      await Auth.login({'token': 't'}, user(1));
+
+      expect(SessionScope.identity(), '1:10');
+    });
   });
 }

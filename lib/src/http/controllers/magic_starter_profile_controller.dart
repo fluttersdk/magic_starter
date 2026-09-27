@@ -203,6 +203,12 @@ class MagicStarterProfileController extends MagicController
         return false;
       }
 
+      // Run the same before-logout hooks the other two sign-out paths do
+      // (the profile dropdown, `MagicStarterAuthController.logout`), while
+      // the token this delete just invalidated on the server is still the
+      // one the client holds: a social sign-out or a device release hook
+      // needs it to make its own authenticated request.
+      await MagicStarter.manager.runBeforeLogoutHooks();
       await Auth.logout();
       navigateTo(MagicStarterConfig.loginRoute());
       setSuccess(true);
