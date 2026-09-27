@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.37] - 2026-09-27
+
 ### Fixed
 
 - **Team settings opened over team create no longer rebuilds the create view mid-build.** After a successful create the view navigates to team settings, which is stacked over it, and settings loads members on mount. That load set loading before its first await, which notified the create view while the settings route was being built. `loadMembersAndInvitations(quietStart: true)` sets the loading state without notifying, and settings' `onInit` uses it; the result still notifies after the await. Closes #163. (`lib/src/http/controllers/magic_starter_team_controller.dart`, `lib/src/ui/views/teams/magic_starter_team_settings_view.dart`)
@@ -45,6 +47,8 @@ All notable changes to this project will be documented in this file.
 - **Five new design-system components**: `MSFormActions` (cancel/submit form footer row), `MSSwitchRow` (a labelled `MSSwitch`), `MSHeaderAction` (a page-header action that collapses to an icon below `lg`), `MSKeyValueEditor` (controlled editor for a list of key/value pairs) and `MSStringValueList` (controlled chip editor for a list of distinct strings). All five take every visible string as a required constructor parameter; none reads a translation key of its own. (`lib/src/ui/components/`)
 
 ### Changed
+
+- **The `fluttersdk_wind` floor moves `^1.6.3` to `^1.7.0`.** The old range already admitted 1.7.0, so a fresh `pub get` resolves nothing differently; what changes is that the floor names the release this package is verified against. (`pubspec.yaml`)
 
 - **The `magic`, `magic_notifications` and `magic_payments` floors name the releases that ship the APIs this one calls.** `magic` moves `^0.0.16` to `^0.0.22` (`SessionScope`, `SessionScoped`, the keyed `LatestRead`, `BaseGuard.cacheUser`), `magic_notifications` `^0.3.4` to `^0.3.5` (`Notify.pushState`) and `magic_payments` `^0.0.4` to `^0.0.5` (`StoreIdentitySync`). A caret on a zero major spans the whole line, so without the move pub could resolve an adopter onto a release that lacks them and fail to compile inside this package. `starter:install` writes `magic_notifications: ^0.3.5` to match. (`pubspec.yaml`, `lib/src/cli/commands/magic_starter_install_command.dart`)
 
