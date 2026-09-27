@@ -33,19 +33,49 @@ class _MagicStarterTeamSettingsViewState
     'role': 'member',
   }, controller: controller);
 
+  /// The team id the name field was last seeded from, so
+  /// [_reseedNameOnTeamChange] can tell a session reset that landed on a
+  /// DIFFERENT team from any other controller notification.
+  dynamic _seededTeamId;
+
   @override
   void onInit() {
-    final teamName = controller.activeTeamName;
-    if (teamName != null && teamName.isNotEmpty) {
-      form.set('name', teamName);
-    }
+    _seededTeamId = controller.activeTeamId;
+    _seedNameField();
+    controller.settingsViewMountCount++;
+    controller.addListener(_reseedNameOnTeamChange);
     controller.loadMembersAndInvitations(quietStart: true);
   }
 
   @override
   void onClose() {
+    controller.removeListener(_reseedNameOnTeamChange);
+    controller.settingsViewMountCount--;
     form.dispose();
     inviteForm.dispose();
+  }
+
+  /// Re-seeds the name field from [MagicStarterTeamController.activeTeamName]
+  /// once a session reset (`resetForSession`, fired by a team switch or a
+  /// plain login) moves [MagicStarterTeamController.activeTeamId] while this
+  /// view is mounted.
+  ///
+  /// Compares against [_seededTeamId] rather than reseeding on every
+  /// notification: this view is also notified by an unrelated `refreshUI`
+  /// (a member removed, an invite sent), and reseeding then would clobber a
+  /// name the user is mid-typing for the SAME team.
+  void _reseedNameOnTeamChange() {
+    final activeId = controller.activeTeamId;
+    if (activeId == _seededTeamId) return;
+    _seededTeamId = activeId;
+    _seedNameField();
+  }
+
+  void _seedNameField() {
+    final teamName = controller.activeTeamName;
+    if (teamName != null && teamName.isNotEmpty) {
+      form.set('name', teamName);
+    }
   }
 
   Future<void> _submit() async {

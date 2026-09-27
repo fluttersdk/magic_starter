@@ -5,7 +5,8 @@ import '../../facades/magic_starter.dart';
 
 /// Team controller for Magic Starter plugin.
 class MagicStarterTeamController extends MagicController
-    with MagicStateMixin<bool>, ValidatesRequests {
+    with MagicStateMixin<bool>, ValidatesRequests
+    implements SessionScoped {
   static MagicStarterTeamController get instance =>
       Magic.findOrPut(MagicStarterTeamController.new);
 
@@ -21,6 +22,17 @@ class MagicStarterTeamController extends MagicController
   final ValueNotifier<List<Map<String, dynamic>>> invitations = ValueNotifier(
     [],
   );
+
+  /// Count of currently mounted [MagicStarterTeamSettingsView] instances.
+  ///
+  /// [resetForSession] only refetches [members] and [invitations] while this
+  /// is above zero: no other screen in this controller renders those rows, so
+  /// a switch that lands with no settings screen showing would fetch data
+  /// nobody reads. A count rather than a bool, so a settings screen pushed
+  /// onto itself (two mounted instances) does not read as unmounted the
+  /// moment either one's `onClose` runs. Incremented in the settings view's
+  /// `onInit`, decremented in its `onClose`.
+  int settingsViewMountCount = 0;
 
   /// Get the active team ID — from explicit value or team resolver.
   dynamic get activeTeamId =>
@@ -40,8 +52,10 @@ class MagicStarterTeamController extends MagicController
 
     final localId = currentTeamId.value;
     if (localId != null) {
+      // Compared as strings: `MagicStarter.switchTeam` takes a String id while
+      // a resolver's teams usually carry the backend's int.
       for (final team in resolver.allTeams()) {
-        if (team.id == localId) return team.name;
+        if ('${team.id}' == '$localId') return team.name;
       }
     }
 
@@ -79,12 +93,19 @@ class MagicStarterTeamController extends MagicController
   /// in the middle of the settings route's build (#163). The calling view
   /// reads the loading state in its own first build; the result still
   /// notifies, after the await, outside any build.
-  bool _isLoadingMembers = false;
+  ///
+  /// One read per team at a time. A read for another team (the session moved
+  /// while it was in flight) supersedes it rather than waiting behind it, and
+  /// the superseded answer publishes nothing: landing a team's members on the
+  /// next team's screen would aim a removal at the wrong team.
   Future<void> loadMembersAndInvitations({bool quietStart = false}) async {
-    if (_isLoadingMembers) return;
     final teamId = activeTeamId;
     if (teamId == null) return;
-    _isLoadingMembers = true;
+    if (_loadingMembersFor != null && '$_loadingMembersFor' == '$teamId') {
+      return;
+    }
+    _loadingMembersFor = teamId;
+    final int token = _memberReads.begin();
     if (quietStart) {
       setState(null, status: const RxStatus.loading(), notify: false);
     } else {
@@ -95,6 +116,7 @@ class MagicStarterTeamController extends MagicController
         Http.get('/teams/$teamId/members'),
         Http.get('/teams/$teamId/invitations'),
       ]);
+      if (!_memberReads.isCurrent(token)) return;
       final membersResponse = results[0];
       final invitationsResponse = results[1];
       var hasFailure = false;
@@ -127,11 +149,17 @@ class MagicStarterTeamController extends MagicController
       Log.error(
         '[MagicStarterTeamController.loadMembersAndInvitations] $e\n$stackTrace',
       );
-      setError(trans('errors.unexpected'));
+      if (_memberReads.isCurrent(token)) setError(trans('errors.unexpected'));
     } finally {
-      _isLoadingMembers = false;
+      if (_memberReads.isCurrent(token)) _loadingMembersFor = null;
     }
   }
+
+  /// Drops a members read superseded by a newer one or a session reset.
+  final LatestRead _memberReads = LatestRead();
+
+  /// The team whose members read is in flight, or null when none is.
+  Object? _loadingMembersFor;
 
   /// Cancel a pending invitation.
   Future<bool> cancelInvitation(dynamic invitationId) async {
@@ -205,15 +233,22 @@ class MagicStarterTeamController extends MagicController
         );
         if (switchResponse.successful) {
           currentTeamId.value = createdTeamId;
+          // Applies the fresh user the switch answered with, same as
+          // [switchTeam]: `Auth.restore()` would re-apply the CACHED user,
+          // still on the previous team, and leave the identity flip to a
+          // background sync that may never land. See [_applySwitchedUser].
+          await _applySwitchedUser(switchResponse.data);
         } else {
           Log.error(
             '[MagicStarterTeamController.doCreate] team $createdTeamId created '
             'but current-team switch failed (${switchResponse.statusCode})',
           );
+          await Auth.restore();
         }
+      } else {
+        await Auth.restore();
       }
 
-      await Auth.restore();
       Magic.toast(trans('teams.created'));
       setSuccess(true);
       return true;
@@ -360,7 +395,7 @@ class MagicStarterTeamController extends MagicController
       }
 
       currentTeamId.value = teamId;
-      await Auth.restore();
+      await _applySwitchedUser(response.data);
       setSuccess(true);
       return true;
     } catch (e, stackTrace) {
@@ -370,6 +405,80 @@ class MagicStarterTeamController extends MagicController
     } finally {
       _isSubmitting = false;
     }
+  }
+
+  /// Puts the session on the team the switch landed on, before [switchTeam]
+  /// or [doCreate] returns.
+  ///
+  /// `PUT /user/current-team` answers the fresh user in `data`, and applying
+  /// it here is what flips the session identity: `Auth.restore()` would put
+  /// back the CACHED user, still on the old team, and leave the change to a
+  /// background `/auth/user` sync. When that sync fails, `SessionScope` never
+  /// sees a new identity, so every scoped cache and the store rail stay on the
+  /// team that was left. A body whose `data` is not the signed-in user (an
+  /// empty map, a team record, another account) falls back to the restore:
+  /// applied, it would cache a user with no id, or the wrong one, and put the
+  /// session identity on `null:<team>`.
+  ///
+  /// `guard.setUser(user)` bumps `Auth.stateNotifier` synchronously, and that
+  /// bump is what magic's `SessionScope.sync()` listens for once an app has
+  /// called `SessionScope.attach()`: it resets this controller's own
+  /// [resetForSession] (and any other scoped controller) for the team the
+  /// switch landed on, with no remount. `AuthRestored` used to be dispatched
+  /// here for the same purpose, driving `_ReloadOnAuthRestored`'s
+  /// `Magic.reload()` (`magic_starter_service_provider.dart`); that remounted
+  /// the whole app a frame after every switch, costly enough on its own (a
+  /// "switched team" toast from a push deeplink never survived it) that a
+  /// switch no longer dispatches the event at all. See `_ReloadOnAuthRestored`
+  /// for the one path that still does.
+  Future<void> _applySwitchedUser(Object? body) async {
+    final Object? fresh = body is Map<String, dynamic> ? body['data'] : null;
+    if (fresh is! Map<String, dynamic> || !_isSignedInUser(fresh)) {
+      await Auth.restore();
+      return;
+    }
+
+    final Authenticatable user = MagicStarter.createUser(fresh);
+    final Guard guard = Auth.guard();
+    guard.setUser(user);
+    if (guard is BaseGuard) await guard.cacheUser(user);
+
+    // An app that never attached SessionScope gets no reset from the bump
+    // above, and without the remount this controller used to rely on, every
+    // team screen would keep the team that was left.
+    if (!SessionScope.isAttached) await _resetScopedControllers();
+  }
+
+  /// Whether [data] is the signed-in user, compared by id as strings because
+  /// the backend may key users by int or by UUID.
+  bool _isSignedInUser(Map<String, dynamic> data) {
+    final Object? id = data['id'];
+    return id != null && '$id' == '${Auth.id()}';
+  }
+
+  /// Resets this controller and every [SessionScoped] controller [Magic]
+  /// holds (billing, and a host's own team-scoped screens), the same set
+  /// `SessionScope.sync()` resets once attached.
+  ///
+  /// Each reset is isolated: one that throws is logged and the others still
+  /// run, because the switch itself has already landed on the backend and
+  /// reporting it as failed would be wrong.
+  Future<void> _resetScopedControllers() async {
+    final Set<SessionScoped> scoped = <SessionScoped>{
+      this,
+      ...Magic.controllers.whereType<SessionScoped>(),
+    };
+
+    await Future.wait<void>(
+      scoped.map(
+        (SessionScoped holder) =>
+            holder.resetForSession().catchError((Object error) {
+              Log.error(
+                '[MagicStarterTeamController] session reset failed: $error',
+              );
+            }),
+      ),
+    );
   }
 
   /// Accept a team invitation by token.
@@ -399,6 +508,46 @@ class MagicStarterTeamController extends MagicController
       return false;
     } finally {
       _isSubmitting = false;
+    }
+  }
+
+  /// Drops the previous session's team members and invitations, re-points
+  /// [currentTeamId] at whatever the team resolver now calls current, then
+  /// refetches only while a settings screen is actually showing.
+  ///
+  /// Called on login and on team switch (see [SessionScoped]). [currentTeamId]
+  /// is re-read from the resolver rather than left alone: a plain login as a
+  /// DIFFERENT user leaves it holding whichever team the previous user last
+  /// explicitly switched or created into, and [activeTeamId] prefers a
+  /// non-null [currentTeamId] over the resolver, so a leftover value would
+  /// keep pointing this controller at that team under the new identity. A
+  /// team switch by the SAME user already set [currentTeamId] to the team it
+  /// landed on before this runs (see [switchTeam]'s call order into
+  /// [_applySwitchedUser]), and the resolver ordinarily agrees by the time
+  /// this fires: `guard.setUser` applies the fresh user BEFORE it bumps the
+  /// notifier this reset listens through, so a resolver reading `Auth.user()`
+  /// already sees the new team.
+  ///
+  /// Clears members and invitations BEFORE any refetch, same reasoning as
+  /// [MagicStarterBillingController.resetForSession]: a failed refetch across
+  /// an identity change must leave the screen empty, never populated with the
+  /// previous session's rows.
+  ///
+  /// Reloads only while [settingsViewMountCount] is above zero: nothing else
+  /// in this controller renders [members] or [invitations], so refetching
+  /// with no settings screen mounted would spend a request nobody reads.
+  @override
+  Future<void> resetForSession() async {
+    _memberReads.invalidate();
+    _loadingMembersFor = null;
+    members.value = [];
+    invitations.value = [];
+    currentTeamId.value = MagicStarter.teamResolver?.currentTeam()?.id;
+    clearErrors();
+    refreshUI();
+
+    if (settingsViewMountCount > 0) {
+      await loadMembersAndInvitations(quietStart: true);
     }
   }
 

@@ -203,6 +203,15 @@ class MagicStarterProfileController extends MagicController
         return false;
       }
 
+      // No before-logout hooks here, unlike the other two sign-out paths
+      // (the profile dropdown, `MagicStarterAuthController.logout`): the
+      // server has already deleted every token for this user
+      // (`magic-starter-laravel`'s `DeleteUser` action), so a hook that makes
+      // its own authenticated request (a device-release call, say) answers
+      // 401 and the auth interceptor logs out mid-hook, on top of the
+      // logout this method already performs below. The push-state and
+      // device rows a hook would otherwise release are cascade-deleted with
+      // the account regardless.
       await Auth.logout();
       navigateTo(MagicStarterConfig.loginRoute());
       setSuccess(true);

@@ -3,13 +3,23 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
+import 'package:magic_payments/magic_payments.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 
-/// Listener to reload app when auth is restored (e.g., after team switch)
+/// Reloads the app whenever `Auth.restore()`'s background user sync confirms
+/// the user: on cold boot, and after every write that calls `Auth.restore()`
+/// (team rename, invitation accept, profile updates). The remount a frame
+/// later discards any toast shown just before it.
+///
+/// A team switch (`switch` or create-then-switch,
+/// `MagicStarterTeamController._applySwitchedUser`) no longer comes through
+/// here: it applies the switch answer's user, which flips magic's
+/// `SessionScope` identity synchronously and resets the scoped screens with no
+/// remount, so a "switched team" toast survives.
 class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   @override
   Future<void> handle(AuthRestored event) async {
@@ -23,11 +33,12 @@ class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
 /// Fires on `AuthLogin`, dispatched at the end of `BaseGuard.startSession` for
 /// every sign-in path (password, two-factor challenge, social, guest, phone
 /// OTP). Deliberately NOT `AuthRestored`: a cold-boot restore of a stored
-/// session and a team switch both go through `Auth.restore()` instead, which
-/// dispatches `AuthRestored` only once an API sync confirms the user (never
+/// session dispatches it from `Auth.restore()`'s own background sync (never
 /// offline, never on a failed sync, never without a `userEndpoint`
-/// configured) and never dispatches `AuthLogin`; neither path is a fresh
-/// sign-in the host should react to a second time.
+/// configured), and a team switch flips the session through `SessionScope`
+/// instead of dispatching it at all (see `_ReloadOnAuthRestored`); neither
+/// path ever dispatches `AuthLogin`, and neither is a fresh sign-in the host
+/// should react to a second time.
 class _CallOnLoginHook extends MagicListener<AuthLogin> {
   @override
   Future<void> handle(AuthLogin event) async {
@@ -103,7 +114,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // Register manager singleton.
     app.singleton('magic_starter', () => MagicStarterManager());
 
-    // Register event listener to reload app after team switch
+    // Register event listener to reload the app after a confirmed restore.
     EventDispatcher.instance.register(AuthRestored, [
       () => _ReloadOnAuthRestored(),
     ]);
@@ -119,6 +130,21 @@ class MagicStarterServiceProvider extends ServiceProvider {
         ..register(AuthRestored, [() => _ClaimGuestOnRestore()])
         ..register(AuthLogout, [() => _ForgetGuestOnLogout()]);
     }
+
+    // Declared at register time rather than in `boot()`, which is what this
+    // provider used to do. `Magic.init` calls every provider's `register()`
+    // before any provider's `boot()`, and the app's own
+    // `AuthServiceProvider.boot()` restores a stored session in between: a
+    // resolver declared only in THIS provider's `boot()` (which runs after
+    // `AuthServiceProvider`'s own, on the ordering this file documents at
+    // `_declarePushIdentityOnSignIn`) missed that launch restore entirely and
+    // read it under the plain user-id default, so the team-aware identity
+    // only started applying on the FIRST bump after this provider's boot,
+    // forcing a second full reset of every scoped holder right after the
+    // first. Both resolvers read state lazily when called, so nothing is
+    // read at register time and moving them here costs nothing.
+    _declareSessionIdentity();
+    _declareStoreBillable();
   }
 
   @override
@@ -145,6 +171,54 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _forgetIntendedUrlOnSignOut();
     _declarePushIdentityOnSignIn();
     _applySavedLocaleOnSignIn();
+    _releasePushDeviceBeforeLogout();
+  }
+
+  /// Tells magic's [SessionScope] that a session is the user AND the active
+  /// team, so a team switch by the same user resets every scoped holder.
+  ///
+  /// The core default is the user id alone, which reads a team switch as no
+  /// change and keeps the previous tenant's rows on screen. The team comes from
+  /// the starter's resolver because a package cannot know the consumer's
+  /// `User` class; without one the team leg is `null` and the user leg still
+  /// does its job.
+  ///
+  /// Declared only, at register() so it is in place before any provider's
+  /// boot runs (see [register]'s own note on why). `SessionScope.attach()`
+  /// stays the app's call, made LAST in its own provider's `boot()`, so
+  /// realtime, polling and locale already point at the new session before its
+  /// data is refetched.
+  void _declareSessionIdentity() {
+    SessionScope.identity = () =>
+        Auth.check() ? '${Auth.id()}:${MagicStarter.currentTeamId()}' : null;
+  }
+
+  /// Points [StoreIdentitySync] at the subject `magic_starter.billing.billable`
+  /// names.
+  ///
+  /// Read once here, at register(), so an invalid value refuses the boot
+  /// rather than binding purchases to the wrong subject; the id itself is
+  /// read per sync, because the signed-in user and the active team both
+  /// move. An app that pays as something else sets
+  /// `StoreIdentitySync.billableId` after this provider registers.
+  void _declareStoreBillable() {
+    final MagicStarterBillable billable = MagicStarterConfig.billable();
+
+    StoreIdentitySync.billableId = () =>
+        MagicStarter.manager.billableId(billable);
+  }
+
+  /// Releases this device's push-state row on the backend before every user
+  /// sign-out, while the token that authorises the release is still valid.
+  ///
+  /// Only when the notifications package is bound and the app names a
+  /// push-state endpoint: without either there is no row to release, and a
+  /// hook would cost every sign-out a no-op.
+  void _releasePushDeviceBeforeLogout() {
+    if (!Magic.bound('notifications')) return;
+    if (!Notify.pushState.isConfigured) return;
+
+    MagicStarter.manager.beforeLogout(Notify.pushState.release);
   }
 
   /// The notifier [_declarePushIdentityOnSignIn] is currently subscribed to.
@@ -383,9 +457,10 @@ class MagicStarterServiceProvider extends ServiceProvider {
   /// The notifier [_forgetIntendedUrlOnSignOut] is currently subscribed to.
   ///
   /// Held rather than resolved again at removal time for the same reason
-  /// `SessionScopeSync` holds its own: `Auth.stateNotifier` resolves through
-  /// the container, so re-binding the guard hands back a DIFFERENT notifier and
-  /// unsubscribing through the facade would leave this listener on the old one.
+  /// magic's `SessionScope` holds its own: `Auth.stateNotifier` resolves
+  /// through the container, so re-binding the guard hands back a DIFFERENT
+  /// notifier and unsubscribing through the facade would leave this listener
+  /// on the old one.
   ///
   /// Compared by identity rather than treated as a one-way latch, which is what
   /// it was first written as and what a review caught. A latch never cleared,
@@ -414,11 +489,11 @@ class MagicStarterServiceProvider extends ServiceProvider {
   /// unconditionally, so a session that simply EXPIRES on a protected route
   /// took that path. The notifier is the one funnel all three pass through.
   ///
-  /// Here rather than in `SessionScopeSync`, which listens to the same notifier
-  /// and was the second thing tried: that class is OPT-IN and nothing in this
-  /// package calls `attach()`, so an app that never adopted
-  /// `SessionScopedController` would have had no clear at all. This provider
-  /// boots in every starter app.
+  /// Here rather than in the session-scope sync, which listens to the same
+  /// notifier and was the second thing tried: that sync is OPT-IN and nothing
+  /// in this package calls `attach()`, so an app that never adopted session
+  /// scoping would have had no clear at all. This provider boots in every
+  /// starter app.
   ///
   /// Deferred by a microtask because the whole record path (`stateNotifier` ->
   /// `GoRouteInformationProvider.notifyListeners` -> parse -> redirect) is

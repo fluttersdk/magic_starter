@@ -103,10 +103,11 @@ void main() {
     /// Boots the starter provider, which is what registers the clear.
     ///
     /// Through the provider rather than a helper, because the finding this
-    /// covers was that the clear used to hang off `SessionScopeSync.attach()`,
-    /// which is OPT-IN and which nothing in this package calls: an app that
-    /// never adopted session scoping had no clear at all. Booting the provider
-    /// is what every starter app does, so that is what the test does.
+    /// covers was that the clear used to hang off the session-scope sync's
+    /// `attach()` (now magic's `SessionScope.attach()`), which is OPT-IN and
+    /// which nothing in this package calls: an app that never adopted session
+    /// scoping had no clear at all. Booting the provider is what every starter
+    /// app does, so that is what the test does.
     Future<void> bootProvider() async {
       final provider = MagicStarterServiceProvider(MagicApp.instance);
       provider.register();

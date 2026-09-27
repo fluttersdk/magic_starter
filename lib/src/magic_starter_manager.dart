@@ -1,9 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_payments/magic_payments.dart';
 
 import 'configuration/magic_starter_config.dart';
 import 'configuration/magic_starter_theme.dart';
 import 'facades/magic_starter.dart';
+import 'http/controllers/magic_starter_auth_controller.dart';
+import 'http/controllers/magic_starter_team_controller.dart';
 import 'http/magic_starter_guest_claim.dart';
 import 'models/magic_starter_auth_user.dart';
 import 'models/magic_starter_nav_item.dart';
@@ -105,7 +108,132 @@ class MagicStarterManager {
   MagicStarterNavigationConfig? navigationConfig;
 
   /// Custom logout callback. When set, called instead of default logout.
+  ///
+  /// The [beforeLogout] hooks still run first, so a custom callback never has
+  /// to repeat the package's own pre-sign-out work.
   Future<void> Function()? onLogout;
+
+  /// How long one [beforeLogout] hook may run before the sign-out goes on
+  /// without it.
+  ///
+  /// Five seconds because a hook is typically one request to the app's own
+  /// backend: long enough for a slow mobile link, short enough that a dead one
+  /// cannot trap somebody who asked to leave.
+  static const Duration beforeLogoutTimeout = Duration(seconds: 5);
+
+  /// The hooks [runBeforeLogoutHooks] awaits, in registration order.
+  final List<Future<void> Function()> _beforeLogoutHooks = [];
+
+  /// The registered [beforeLogout] hooks, in the order they run.
+  List<Future<void> Function()> get beforeLogoutHooks =>
+      List.unmodifiable(_beforeLogoutHooks);
+
+  /// Registers [hook] to run before every sign-out the user asks for, while
+  /// the session token is still valid.
+  ///
+  /// Both starter sign-out paths await it (the profile dropdown, ahead of a
+  /// custom [onLogout], and [MagicStarterAuthController.logout], ahead of
+  /// `Auth.logout()`), so a hook can still make authenticated requests: a
+  /// push-device release, a server-side session revoke.
+  ///
+  /// A hook that is already registered is not added twice, so a provider that
+  /// boots twice (hot restart) does not release a device twice per sign-out.
+  ///
+  /// Not run for a sign-out the app performs on its own: magic's
+  /// `AuthInterceptor` calls `Auth.logout()` after a failed token refresh, and
+  /// by then the token is already dead, so an authenticated hook could only
+  /// answer 401.
+  void beforeLogout(Future<void> Function() hook) {
+    if (_beforeLogoutHooks.contains(hook)) return;
+
+    _beforeLogoutHooks.add(hook);
+  }
+
+  /// Awaits every [beforeLogout] hook in registration order, each isolated and
+  /// bounded by [beforeLogoutTimeout].
+  ///
+  /// Never throws. A hook that fails or runs out of time is logged and the next
+  /// one runs, because a sign-out the user asked for has to happen whatever a
+  /// hook's network does. A host with its own sign-out button calls this
+  /// before its own `Auth.logout()`.
+  Future<void> runBeforeLogoutHooks() async {
+    // Snapshot first: a hook that registers another would otherwise mutate the
+    // list mid-iteration.
+    for (final Future<void> Function() hook in List.of(_beforeLogoutHooks)) {
+      try {
+        await hook().timeout(beforeLogoutTimeout);
+      } catch (error, stackTrace) {
+        Log.error(
+          '[MagicStarter] before-logout hook failed: $error\n$stackTrace',
+        );
+      }
+    }
+  }
+
+  /// The team a switch was just accepted for, held only while that switch
+  /// identifies the store rail.
+  ///
+  /// `Auth.restore()` returns with the CACHED user and syncs the fresh one in
+  /// the background (magic's `BaseGuard.restore`), so right after a successful
+  /// switch the team resolver still names the team being left. Identifying
+  /// from the resolver there would bind the store account to that team.
+  String? _landedTeamId;
+
+  /// The active team's id as a string, or `null` without a team resolver or
+  /// an active team.
+  ///
+  /// A string whatever the consumer's id type, so an int id from one source and
+  /// a string id from another (a link, a push payload) compare equal.
+  String? currentTeamId() => teamResolver?.currentTeam()?.id?.toString();
+
+  /// The id the store rail is identified as for [billable], or `null` while
+  /// nobody is signed in or no team is active.
+  String? billableId(MagicStarterBillable billable) {
+    if (!Auth.check()) return null;
+
+    return switch (billable) {
+      MagicStarterBillable.user => '${Auth.id()}',
+      MagicStarterBillable.team => _landedTeamId ?? currentTeamId(),
+    };
+  }
+
+  /// Switches the active team to [teamId] and answers whether the backend
+  /// accepted it.
+  ///
+  /// On success the store rail is re-identified as the paying subject
+  /// ([StoreIdentitySync.syncNow], a no-op in a build without a store rail),
+  /// so a purchase made after the switch is not attributed to the team that
+  /// was left. A refused switch identifies nothing: the session is still on
+  /// the team it was on.
+  ///
+  /// A failed re-identify does not undo a successful switch. The team change
+  /// already happened on the backend by the time [StoreIdentitySync.syncNow]
+  /// runs, so a caller that read this future's failure as "the switch failed"
+  /// (magic_deeplink's gate is one; it calls `onSwitchFailed` instead of
+  /// `onSwitchSucceeded`) would report a landed switch as refused. Logged
+  /// rather than swallowed: `syncNow` already logs its own
+  /// [BillingException]s and returns normally, so anything that reaches this
+  /// catch is something else, an error worth keeping visible.
+  Future<bool> switchTeam(String teamId) async {
+    final bool switched = await MagicStarterTeamController.instance.switchTeam(
+      teamId,
+    );
+    if (!switched) return false;
+
+    _landedTeamId = teamId;
+    try {
+      await StoreIdentitySync.syncNow();
+    } catch (error, stackTrace) {
+      Log.error(
+        '[MagicStarter] store identity sync after team switch failed: '
+        '$error\n$stackTrace',
+      );
+    } finally {
+      _landedTeamId = null;
+    }
+
+    return true;
+  }
 
   /// Custom login callback. When set, called after a fresh sign-in.
   ///
@@ -571,6 +699,8 @@ class MagicStarterManager {
     teamResolver = null;
     navigationConfig = null;
     onLogout = null;
+    _beforeLogoutHooks.clear();
+    _landedTeamId = null;
     onLogin = null;
     onGuestClaimed = null;
     headerBuilder = null;

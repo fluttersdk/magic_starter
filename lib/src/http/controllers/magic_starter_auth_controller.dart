@@ -334,10 +334,15 @@ class MagicStarterAuthController extends MagicController
 
   /// Logout user.
   ///
-  /// 1. Stop notification services when the feature is active.
-  /// 2. Clear authentication tokens and navigate to login.
+  /// 1. Run the before-logout hooks while the token is still valid.
+  /// 2. Stop notification services when the feature is active.
+  /// 3. Clear authentication tokens and navigate to login.
   Future<void> logout() async {
-    // 1. Stop notification services when the feature is active.
+    // 1. Hooks first: a device release or a server-side revoke needs the token
+    //    that step 3 drops. Never throws; see runBeforeLogoutHooks.
+    await MagicStarter.manager.runBeforeLogoutHooks();
+
+    // 2. Stop notification services when the feature is active.
     if (MagicStarterConfig.hasNotificationFeatures()) {
       try {
         await Notify.logoutPush();
@@ -350,12 +355,13 @@ class MagicStarterAuthController extends MagicController
       }
     }
 
-    // 2. Clear authentication tokens and navigate to login.
+    // 3. Clear authentication tokens and navigate to login.
     await Auth.logout();
 
     // The intended url this sign-out just recorded is dropped by
-    // `SessionScopeSync`, which listens to the one notifier all three logout
-    // paths pass through, including the passive 401 one no call site can see.
+    // `MagicStarterServiceProvider`, which listens to the one notifier all
+    // three logout paths pass through, including the passive 401 one no call
+    // site can see.
     navigateTo(MagicStarterConfig.loginRoute());
   }
 

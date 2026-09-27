@@ -14,6 +14,9 @@
     - [Sending an OTP](#sending-an-otp)
     - [Verifying an OTP](#verifying-an-otp)
 - [Guest Claim](#guest-claim)
+- [Logout](#logout)
+    - [Before-Logout Hooks](#before-logout-hooks)
+- [Onboarding Steps](#onboarding-steps)
 - [Identity Modes](#identity-modes)
 - [Feature Gates](#feature-gates)
 - [Controllers](#controllers)
@@ -244,6 +247,61 @@ final GuestClaimOutcome outcome = await MagicStarterGuestClaim.instance.claimIfP
 A claim already in flight hands every caller in the same session the same future, so this never posts the token twice.
 
 The claim does not ride the `Http` facade. Its body is the guest's live bearer token, and the facade's driver is the one `magic_devtools` records request bodies from in debug and profile builds. It goes out on a bare `DioNetworkDriver` built from `network.drivers.api` (`base_url`, `timeout`, `headers`) with no interceptors. That driver sends no magic `User-Agent`: `NetworkServiceProvider` adds that header only to the facade driver, so set one in `network.drivers.api.headers` if the backend needs it on this request.
+
+<a name="logout"></a>
+## Logout
+
+There are two sign-out paths a user can take, and both end in `Auth.logout()`:
+
+- `MagicStarterAuthController.instance.logout()`: runs the before-logout hooks, stops notification polling and the push identity (when the `notifications` feature is on), calls `Auth.logout()`, then navigates to `MagicStarterConfig.loginRoute()`.
+- The profile dropdown's sign-out item: calls your `MagicStarter.useLogout()` callback when one is registered, after running the before-logout hooks, and the controller path above otherwise. The hooks run once either way.
+
+<a name="before-logout-hooks"></a>
+### Before-Logout Hooks
+
+Some work needs the session token and has to happen before it is dropped: releasing this device's push registration on your backend, revoking a server-side session, signing out of a social SDK. Register it once, from a service provider `boot()`:
+
+```dart
+MagicStarter.beforeLogout(() => SocialAuth.signOut());
+```
+
+The contract:
+
+- Hooks run in registration order, **before** a custom `useLogout()` callback and **before** `Auth.logout()`, on both paths above.
+- Each hook is isolated: a throw is logged with `Log.error` and the next hook runs.
+- Each hook is bounded to five seconds (`MagicStarterManager.beforeLogoutTimeout`); a dead network cannot trap somebody who asked to leave.
+- Registering the same hook twice keeps one copy.
+- A sign-out button of your own calls `await MagicStarter.manager.runBeforeLogoutHooks()` before its own `Auth.logout()`.
+
+When the `magic_notifications` package is bound and its push-state reporting is configured (`notifications.push_state.report_path`), `MagicStarterServiceProvider` registers `Notify.pushState.release` as a default hook, so the backend stops treating this device as reachable for the person who just left it. Nothing to wire.
+
+> [!WARNING]
+> Hooks do not run for a sign-out the app performs on its own. Magic's `AuthInterceptor` calls `Auth.logout()` when a token refresh fails, and by then the token is already dead: an authenticated hook could only answer `401`. Server-side state that must not outlive a session (a push-device row, for one) needs its own expiry on the backend.
+
+<a name="onboarding-steps"></a>
+## Onboarding Steps
+
+`MagicStarterOnboarding` is a one-time gate for first-run steps (a locale confirmation, a feature tour, a welcome banner): each step is shown once per device and never again. Each step persists under its own `Vault` key (`onboarding_<step>_done`), and every loaded step is mirrored in memory so a synchronous `build` can read it.
+
+Load the steps your app cares about once, after `Magic.init()`, then read and flip them from the screens that own them:
+
+```dart
+await MagicStarterOnboarding.load(['locale', 'tour']);
+
+if (!MagicStarterOnboarding.isCompleted('tour')) {
+  // Show the tour, then:
+  await MagicStarterOnboarding.markCompleted('tour');
+}
+```
+
+| Member | Purpose |
+|--------|---------|
+| `load(steps)` | Reads every step's flag from `Vault`. A missing key, or a `Vault` read that fails (logged as a warning), reads as not completed. |
+| `isCompleted(step)` | Whether the step was resolved on this device. Synchronous. |
+| `markCompleted(step)` | Flips the flag in memory at once and persists it. |
+| `vaultKeyFor(step)` | The `Vault` key a step persists under. |
+
+The flags are per device, not per account: they survive sign-out and a sign-in as someone else.
 
 <a name="identity-modes"></a>
 ## Identity Modes

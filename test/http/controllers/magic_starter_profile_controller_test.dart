@@ -138,6 +138,10 @@ class MockGuard implements Guard {
   bool restoreCalled = false;
   String? mockToken = 'mock-token';
 
+  /// Called from [logout], so a test can pin its ORDER against another hook
+  /// (a before-logout one) rather than only whether it ran at all.
+  void Function()? onLogout;
+
   @override
   Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
     mockToken = data['token'] as String?;
@@ -149,6 +153,7 @@ class MockGuard implements Guard {
     logoutCalled = true;
     _user = null;
     mockToken = null;
+    onLogout?.call();
   }
 
   @override
@@ -490,6 +495,55 @@ void main() {
         expect(controller.isSuccess, isFalse);
         expect(mockGuard.logoutCalled, isFalse);
       });
+
+      // The server revokes every token as part of the delete, so a hook that
+      // calls the backend (a push device release) could only 401.
+      test(
+        'does not run the before-logout hooks when the delete succeeds',
+        () async {
+          final order = <String>[];
+          MagicStarter.manager.beforeLogout(() async => order.add('hook'));
+          mockGuard.onLogout = () => order.add('Auth.logout');
+
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {'message': 'Account deleted'},
+          );
+
+          final result = await controller.doDeleteAccount(
+            password: 'mysecretpass',
+          );
+
+          expect(result, isTrue);
+          expect(order, equals(['Auth.logout']));
+        },
+      );
+
+      test(
+        'does not run the before-logout hooks when the delete fails',
+        () async {
+          final order = <String>[];
+          MagicStarter.manager.beforeLogout(() async => order.add('hook'));
+          mockGuard.onLogout = () => order.add('Auth.logout');
+
+          mockDriver.mockResponse(
+            statusCode: 422,
+            data: {
+              'message': 'Incorrect password',
+              'errors': {
+                'password': ['The password is incorrect.'],
+              },
+            },
+          );
+
+          final result = await controller.doDeleteAccount(
+            password: 'wrongpass',
+          );
+
+          expect(result, isFalse);
+          expect(order, isEmpty);
+        },
+      );
     });
 
     // -----------------------------------------------------------------------

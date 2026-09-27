@@ -47,11 +47,14 @@ Map<String, dynamic> get magicStarterConfig => {
       'notifications_prefix': '/notifications',
       'billing': '/teams/billing',
     },
-    // Required when the billing feature is on: Stripe rejects a relative
-    // successUrl, cancelUrl or portal returnUrl, and the failure is only
-    // logged. `starter:doctor` reports it.
     'billing': {
+      // Required when the billing feature is on: Stripe rejects a relative
+      // successUrl, cancelUrl or portal returnUrl, and the failure is only
+      // logged. `starter:doctor` reports it.
       'web_origin': null,
+      // What a store purchase is billed to: 'user' or 'team'. It must match
+      // magic-starter-laravel's `billable` config key.
+      'billable': 'user',
     },
     // What a push external id is prefixed with before the user's own id.
     // It has to match what the backend addresses: magic-starter-laravel's
