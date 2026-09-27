@@ -16,7 +16,7 @@
 
 Any controller that caches data belonging to one signed-in user (or to one of that user's teams) has to be told when that user changes. Magic core ships the two pieces for this: the `SessionScoped` contract, which a controller (or a repository) implements to declare "my rows belong to exactly one session", and `SessionScope`, which watches `Auth.stateNotifier` and resets every scoped holder whenever the authenticated identity changes.
 
-Magic Starter's part is the identity: `MagicStarterServiceProvider` sets `SessionScope.identity` to `<userId>:<teamId>` at boot, so a team switch by the same user counts as a change. Attaching stays your app's call (see [Wiring the Sync](#wiring-the-sync)).
+Magic Starter's part is the identity: `MagicStarterServiceProvider` sets `SessionScope.identity` to `<userId>:<teamId>` in `register()`, so a team switch by the same user counts as a change. Attaching stays your app's call (see [Wiring the Sync](#wiring-the-sync)).
 
 > [!NOTE]
 > Earlier releases shipped `SessionScopedController` and `SessionScopeSync` in this package. Both are gone: implement magic's `SessionScoped` and call `SessionScope.attach()` instead. There is no alias.
@@ -143,7 +143,7 @@ The members you use from an app:
 | `SessionScope.detach()` | Unsubscribe and forget the recorded identity. Mainly for tests. |
 | `SessionScope.isAttached` | Whether a subscription is active. |
 | `SessionScope.register(holder)` / `unregister(holder)` | Add or remove a non-controller holder. |
-| `SessionScope.identity` | The identity resolver. Magic Starter sets it at boot; see below. |
+| `SessionScope.identity` | The identity resolver. Magic Starter sets it in `register()`; see below. |
 
 > [!NOTE]
 > The state is static rather than per-instance because everything it coordinates is already process-wide: `Auth.stateNotifier` is one notifier per guard and `Magic.controllers` is one static registry. Two instances would both listen to that single notifier and reset every controller twice per identity change.
@@ -151,7 +151,7 @@ The members you use from an app:
 <a name="the-identity-key"></a>
 ## The Identity Key
 
-The sync compares a string key, not object identity. Magic's default is the user id alone; `MagicStarterServiceProvider` replaces it at boot with a two-leg key:
+The sync compares a string key, not object identity. Magic's default is the user id alone; `MagicStarterServiceProvider` replaces it in `register()` with a two-leg key:
 
 ```
 <userId>:<teamId>
@@ -169,7 +169,7 @@ The whole key is null when, and only when, nobody is signed in (`Auth.check()` i
 - **An unchanged key is a no-op.** `Auth.stateNotifier` also bumps on a plain session restore. Without this check, every incidental bump would stampede a fresh wave of refetches, visible as flicker and wasted requests.
 - **Only a change to a non-null key resets.** See below.
 
-Team switching triggers the sync for free: `MagicStarter.switchTeam()` goes through `MagicStarterTeamController.switchTeam()`, which calls `Auth.restore()` after the write and bumps `Auth.stateNotifier`. If you implement your own switch path, keep that `Auth.restore()` call.
+Team switching triggers the sync for free: `MagicStarter.switchTeam()` goes through `MagicStarterTeamController.switchTeam()`, which applies the fresh user the switch answer carries (falling back to `Auth.restore()` only when the answer carries none) and bumps `Auth.stateNotifier` either way. If you implement your own switch path, do the same: apply the answer's user directly rather than always calling `Auth.restore()`, which would re-apply the CACHED user, still on the previous team, and leave the identity flip to a background sync that may never land.
 
 An app that needs a different key (an organisation leg, say) sets `SessionScope.identity` in its own provider's `boot()`, after this one.
 

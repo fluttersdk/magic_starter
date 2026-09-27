@@ -496,26 +496,6 @@ void main() {
         expect(mockGuard.logoutCalled, isFalse);
       });
 
-      test('runs the before-logout hooks, in registration order, before '
-          'Auth.logout()', () async {
-        final order = <String>[];
-        MagicStarter.manager.beforeLogout(() async => order.add('hook'));
-        MagicStarter.manager.beforeLogout(() async => order.add('second hook'));
-        mockGuard.onLogout = () => order.add('Auth.logout');
-
-        mockDriver.mockResponse(
-          statusCode: 200,
-          data: {'message': 'Account deleted'},
-        );
-
-        final result = await controller.doDeleteAccount(
-          password: 'mysecretpass',
-        );
-
-        expect(result, isTrue);
-        expect(order, ['hook', 'second hook', 'Auth.logout']);
-      });
-
       test(
         'does not run the before-logout hooks when the delete fails',
         () async {

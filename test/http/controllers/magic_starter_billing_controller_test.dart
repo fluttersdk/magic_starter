@@ -43,6 +43,12 @@ class _FakeBilling
   /// Held open to park every read before it resolves.
   Completer<void>? gate;
 
+  /// Gates ONLY the entitlement read, independent of [gate], so a test can
+  /// hold that one kind open while the other five resolve normally: the
+  /// straddle this fixture exists for needs the batch's OTHER five reads to
+  /// have already landed while its entitlement read is still in flight.
+  Completer<void>? entitlementGate;
+
   /// The plan [currentEntitlement] answers with, captured at CALL time
   /// (before the read parks on [gate]) rather than at resolution time: a
   /// caller that changes it while an earlier call is still parked models a
@@ -64,6 +70,8 @@ class _FakeBilling
   Future<BillingEntitlement> currentEntitlement() async {
     final String plan = entitlementPlan;
     await _enter(_entitlementRead);
+    final Completer<void>? heldEntitlement = entitlementGate;
+    if (heldEntitlement != null) await heldEntitlement.future;
     if (failEntitlement) {
       throw const BillingException('entitlement read failed');
     }
@@ -1122,6 +1130,55 @@ void main() {
       await teamALoad;
 
       expect(controller.currentPlanId, 'team-b-plan');
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, a standalone read does not straddle '
+      'the batch', () {
+    test('a standalone entitlement read in flight does not invalidate the '
+        "batch's other five reads", () async {
+      // 1. Hold the batch's OWN entitlement read open while the other
+      //    five resolve normally: this is the shape a real batch takes
+      //    while a customer's browser is still waiting on invoices.
+      final Completer<void> batchEntitlementGate = Completer<void>();
+      billing.entitlementGate = batchEntitlementGate;
+      final MagicStarterBillingController controller = build(
+        storeFundedTeamReader: () async => 'Other Team',
+      );
+      final Future<void> batch = controller.load();
+
+      // One microtask turn is enough for the five ungated reads to
+      // land; it is not enough for the gate to open.
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.invoices, isNotEmpty);
+      expect(controller.pmLoading, isFalse);
+      expect(controller.paymentMethod, isNotNull);
+      expect(controller.storeFundedTeam, 'Other Team');
+
+      // 2. A standalone read of the SAME kind runs to completion while
+      //    the batch's own entitlement read is still parked, exactly as
+      //    the billing view's own retry affordances do. Before this
+      //    fix, `loadEntitlement()`'s `_latestRead.begin()` bumped the
+      //    ONE counter every read shared, which invalidated the
+      //    batch's five OTHER reads too.
+      billing.entitlementGate = null;
+      billing.entitlementPlan = 'standalone-plan';
+      await controller.loadEntitlement();
+      expect(controller.currentPlanId, 'standalone-plan');
+
+      // 3. Only now let the batch's own (now superseded) entitlement
+      //    read land. Its answer must be dropped rather than overwrite
+      //    the standalone one, and the batch's other five reads must
+      //    still have published rather than been dropped alongside it.
+      batchEntitlementGate.complete();
+      await batch;
+
+      expect(controller.currentPlanId, 'standalone-plan');
+      expect(controller.invoices, isNotEmpty);
+      expect(controller.pmLoading, isFalse);
+      expect(controller.paymentMethod, isNotNull);
+      expect(controller.storeFundedTeam, 'Other Team');
       controller.dispose();
     });
   });

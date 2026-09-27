@@ -10,7 +10,19 @@ import '../facades/magic_starter.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 
-/// Listener to reload app when auth is restored (e.g., after team switch)
+/// Reloads the app whenever the authenticated identity is restored, which
+/// covers a team switch: every team-scoped screen loads once on mount, so
+/// without this a screen would keep showing the PREVIOUS team's rows while
+/// its writes landed on the new one.
+///
+/// `AuthRestored` reaches here from two paths. A cold-boot restore of a
+/// stored session dispatches it from `Auth.restore()`'s own background user
+/// sync, once that sync confirms the user (never offline, never on a failed
+/// sync, never without a `userEndpoint` configured). A team switch (`switch`
+/// or create-then-switch, `MagicStarterTeamController._applySwitchedUser`)
+/// dispatches it directly, right after applying the fresh user the switch
+/// answered with, because that path bypasses `Auth.restore()` entirely and
+/// would otherwise tell nothing downstream that the identity moved.
 class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   @override
   Future<void> handle(AuthRestored event) async {
@@ -24,11 +36,12 @@ class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
 /// Fires on `AuthLogin`, dispatched at the end of `BaseGuard.startSession` for
 /// every sign-in path (password, two-factor challenge, social, guest, phone
 /// OTP). Deliberately NOT `AuthRestored`: a cold-boot restore of a stored
-/// session and a team switch both go through `Auth.restore()` instead, which
-/// dispatches `AuthRestored` only once an API sync confirms the user (never
+/// session dispatches it from `Auth.restore()`'s own background sync (never
 /// offline, never on a failed sync, never without a `userEndpoint`
-/// configured) and never dispatches `AuthLogin`; neither path is a fresh
-/// sign-in the host should react to a second time.
+/// configured), and a team switch dispatches it directly once the switch
+/// answer applies (see `_ReloadOnAuthRestored`); neither ever dispatches
+/// `AuthLogin`, and neither is a fresh sign-in the host should react to a
+/// second time.
 class _CallOnLoginHook extends MagicListener<AuthLogin> {
   @override
   Future<void> handle(AuthLogin event) async {

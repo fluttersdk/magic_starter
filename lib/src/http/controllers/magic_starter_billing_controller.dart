@@ -204,17 +204,38 @@ class MagicStarterBillingController extends MagicController
   /// cannot make.
   late final StoreBillingService? storeRail = _resolveStoreRail();
 
-  /// Guards every one of the six reads against landing after a session
-  /// change that superseded it.
+  /// Bumped ONLY by [resetForSession], never by an individual read.
   ///
-  /// A single shared key: all six reads belong to the same session, so one
-  /// generation counter is enough. [load] mints ONE token per call and
-  /// hands it to every read it dispatches, so a batch's six reads share an
-  /// identity; a standalone retry (the view calls several of the six alone,
-  /// see their own docs) mints its own when none is passed in, which is
-  /// still guarded against a session change but does not itself invalidate
-  /// the other five reads of a batch already in flight.
+  /// Every read (batch or standalone) captures this before its first await
+  /// and compares it after every one: a read from a session a switch has
+  /// since superseded must never publish, no matter which of the six kinds
+  /// it is. Kept apart from [_latestRead] on purpose: a single counter that
+  /// every read shared used to conflate "a session changed" with "a newer
+  /// read of the same kind started", so a standalone `loadEntitlement()`
+  /// bumped the ONE counter a `load()` batch's other five reads were also
+  /// reading against and dropped every one of them, including invoices and
+  /// the payment-method card, which left [pmLoading] stuck at `true`
+  /// forever. This field is the session axis; [_latestRead] below is the
+  /// per-kind axis, and the two never interact.
+  int _sessionGeneration = 0;
+
+  /// Guards each of the six reads against landing after a NEWER read of the
+  /// SAME kind superseded it, keyed by [_entitlementKey] and its five
+  /// siblings below.
+  ///
+  /// Per-kind rather than shared, so a standalone retry of one read (the
+  /// store-purchase gate re-asks [loadStoreFundedTeam] before money moves,
+  /// say) only ever supersedes an earlier read of THAT kind and leaves the
+  /// other five, batch or standalone, untouched. See [_sessionGeneration]
+  /// for the other, independent guard every read also carries.
   final LatestRead _latestRead = LatestRead();
+
+  static const String _entitlementKey = 'entitlement';
+  static const String _plansKey = 'plans';
+  static const String _usageKey = 'usage';
+  static const String _invoicesKey = 'invoices';
+  static const String _paymentMethodKey = 'paymentMethod';
+  static const String _storeFundedTeamKey = 'storeFundedTeam';
 
   String? _currentPlanId;
   bool _entitlementLoaded = false;
@@ -534,8 +555,12 @@ class MagicStarterBillingController extends MagicController
     // Drop whatever a load in flight from the PREVIOUS session answers with.
     // Without this, a read a switch interrupted mid-flight can land AFTER
     // this method's own fresh load has already published team B's rows,
-    // overwriting them with team A's.
-    _latestRead.invalidate();
+    // overwriting them with team A's. The session axis alone is enough here:
+    // every per-kind key below also gets a fresh token from the fresh
+    // [load] this method calls, but bumping the generation is what catches a
+    // read of a kind that fresh load has not reached its first `await` for
+    // yet.
+    _sessionGeneration++;
 
     _currentPlanId = null;
     _entitlementLoaded = false;
@@ -566,15 +591,13 @@ class MagicStarterBillingController extends MagicController
   /// request before the next line runs, and the returned future never completes
   /// with an error because no read throws.
   Future<void> load() {
-    final int token = _latestRead.begin();
-
     return Future.wait<void>(<Future<void>>[
-      loadEntitlement(token: token),
-      loadPlans(token: token),
-      loadUsage(token: token),
-      loadInvoices(token: token),
-      loadPaymentMethod(token: token),
-      loadStoreFundedTeam(token: token),
+      loadEntitlement(),
+      loadPlans(),
+      loadUsage(),
+      loadInvoices(),
+      loadPaymentMethod(),
+      loadStoreFundedTeam(),
     ]);
   }
 
@@ -593,11 +616,13 @@ class MagicStarterBillingController extends MagicController
   /// Deliberate degradation on failure: [currentPlanId] keeps whatever it held
   /// (for a first read, `null`) instead of throwing, and no plan id is ever
   /// fabricated.
-  Future<void> loadEntitlement({int? token}) async {
-    final int readToken = token ?? _latestRead.begin();
+  Future<void> loadEntitlement() async {
+    final int session = _sessionGeneration;
+    final int readToken = _latestRead.begin(_entitlementKey);
     try {
       final BillingEntitlement entitlement = await billing.currentEntitlement();
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _entitlementKey)) return;
 
       final String? plan = entitlement.plan;
       _manageVia = entitlement.manageVia;
@@ -611,7 +636,8 @@ class MagicStarterBillingController extends MagicController
       }
       refreshUI();
     } catch (error) {
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _entitlementKey)) return;
       _reportDegradation('currentEntitlement', error);
     }
   }
@@ -625,16 +651,19 @@ class MagicStarterBillingController extends MagicController
   ///
   /// Deliberate degradation on failure: [plans] stays empty, so the plan grid
   /// renders its loading or empty state instead of crashing.
-  Future<void> loadPlans({int? token}) async {
-    final int readToken = token ?? _latestRead.begin();
+  Future<void> loadPlans() async {
+    final int session = _sessionGeneration;
+    final int readToken = _latestRead.begin(_plansKey);
     try {
       final List<Map<String, dynamic>> rows = await billing.getPlans();
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _plansKey)) return;
 
       _plans = rows.map(MagicStarterPlan.fromMap).toList();
       refreshUI();
     } catch (error) {
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _plansKey)) return;
       _reportDegradation('getPlans', error);
     }
   }
@@ -649,16 +678,19 @@ class MagicStarterBillingController extends MagicController
   ///
   /// Deliberate degradation on failure: [usage] stays empty, so the meter grid
   /// renders no rows instead of crashing.
-  Future<void> loadUsage({int? token}) async {
-    final int readToken = token ?? _latestRead.begin();
+  Future<void> loadUsage() async {
+    final int session = _sessionGeneration;
+    final int readToken = _latestRead.begin(_usageKey);
     try {
       final List<UsageStat> stats = await billing.getUsage();
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _usageKey)) return;
 
       _usage = usageCopy(stats);
       refreshUI();
     } catch (error) {
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _usageKey)) return;
       _reportDegradation('getUsage', error);
     }
   }
@@ -677,8 +709,9 @@ class MagicStarterBillingController extends MagicController
   /// and reach `onInit`'s unawaited call as an unhandled zone error. The other
   /// five reads degrade rather than throw, and [load] documents that none of
   /// them throws; this one has to hold up its end.
-  Future<void> loadInvoices({int? token}) async {
-    final int readToken = token ?? _latestRead.begin();
+  Future<void> loadInvoices() async {
+    final int session = _sessionGeneration;
+    final int readToken = _latestRead.begin(_invoicesKey);
     final MagicPaginator<Invoice> pages = _invoicePages ?? _buildInvoicePages();
     _invoicePages = pages;
 
@@ -690,7 +723,8 @@ class MagicStarterBillingController extends MagicController
       failure = error;
     }
 
-    if (!_latestRead.isCurrent(readToken)) return;
+    if (session != _sessionGeneration) return;
+    if (!_latestRead.isCurrent(readToken, _invoicesKey)) return;
 
     if (failure != null) {
       _reportDegradation('getInvoices', failure);
@@ -729,17 +763,20 @@ class MagicStarterBillingController extends MagicController
   ///
   /// [pmLoading] clears on BOTH arms, because a card stuck in its skeleton is
   /// indistinguishable from a rail that is still thinking.
-  Future<void> loadPaymentMethod({int? token}) async {
-    final int readToken = token ?? _latestRead.begin();
+  Future<void> loadPaymentMethod() async {
+    final int session = _sessionGeneration;
+    final int readToken = _latestRead.begin(_paymentMethodKey);
     try {
       final PaymentMethod method = await billing.getPaymentMethod();
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _paymentMethodKey)) return;
 
       _paymentMethod = method;
       _pmLoading = false;
       refreshUI();
     } catch (error) {
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _paymentMethodKey)) return;
 
       _pmLoading = false;
       _pmError = true;
@@ -777,8 +814,9 @@ class MagicStarterBillingController extends MagicController
   /// named refusal renders no CTA to tap), so a name-to-null transition has no
   /// trigger here. A future caller that could produce one has to publish the
   /// empty answer too.
-  Future<void> loadStoreFundedTeam({int? token}) async {
-    final int readToken = token ?? _latestRead.begin();
+  Future<void> loadStoreFundedTeam() async {
+    final int session = _sessionGeneration;
+    final int readToken = _latestRead.begin(_storeFundedTeamKey);
     final MagicStarterStoreFundedTeamReader? reader = storeFundedTeamReader;
     if (reader == null) return;
 
@@ -792,13 +830,15 @@ class MagicStarterBillingController extends MagicController
       if (storeRail == null) return;
 
       final String? name = await reader();
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _storeFundedTeamKey)) return;
       if (name == null || name.isEmpty) return;
 
       _storeFundedTeam = name;
       refreshUI();
     } catch (error) {
-      if (!_latestRead.isCurrent(readToken)) return;
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _storeFundedTeamKey)) return;
       _reportDegradation('storeFundedTeamReader', error);
     }
   }

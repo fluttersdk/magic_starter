@@ -207,15 +207,22 @@ class MagicStarterTeamController extends MagicController
         );
         if (switchResponse.successful) {
           currentTeamId.value = createdTeamId;
+          // Applies the fresh user the switch answered with, same as
+          // [switchTeam]: `Auth.restore()` would re-apply the CACHED user,
+          // still on the previous team, and leave the identity flip to a
+          // background sync that may never land. See [_applySwitchedUser].
+          await _applySwitchedUser(switchResponse.data);
         } else {
           Log.error(
             '[MagicStarterTeamController.doCreate] team $createdTeamId created '
             'but current-team switch failed (${switchResponse.statusCode})',
           );
+          await Auth.restore();
         }
+      } else {
+        await Auth.restore();
       }
 
-      await Auth.restore();
       Magic.toast(trans('teams.created'));
       setSuccess(true);
       return true;
@@ -375,7 +382,7 @@ class MagicStarterTeamController extends MagicController
   }
 
   /// Puts the session on the team the switch landed on, before [switchTeam]
-  /// returns.
+  /// or [doCreate] returns.
   ///
   /// `PUT /user/current-team` answers the fresh user in `data`, and applying
   /// it here is what flips the session identity: `Auth.restore()` would put
@@ -383,6 +390,15 @@ class MagicStarterTeamController extends MagicController
   /// background `/auth/user` sync. When that sync fails, `SessionScope` never
   /// sees a new identity, so every scoped cache and the store rail stay on the
   /// team that was left. A body without a user falls back to the restore.
+  ///
+  /// Dispatches `AuthRestored` once the user is applied, which is the event
+  /// `Auth.restore()`'s own background sync would have dispatched on success.
+  /// `_ReloadOnAuthRestored` (`magic_starter_service_provider.dart`) listens
+  /// for it to reload every team-scoped screen; without this, a screen that
+  /// loads once on mount (team settings, say) kept the PREVIOUS team's rows
+  /// on screen while every write it made landed on the new one. The
+  /// `Auth.restore()` fallback above still gets the event from its own
+  /// background sync, so it is not dispatched twice.
   Future<void> _applySwitchedUser(Object? body) async {
     final Object? fresh = body is Map<String, dynamic> ? body['data'] : null;
     if (fresh is! Map<String, dynamic>) {
@@ -394,6 +410,8 @@ class MagicStarterTeamController extends MagicController
     final Guard guard = Auth.guard();
     guard.setUser(user);
     if (guard is BaseGuard) await guard.cacheUser(user);
+
+    await Event.dispatch(AuthRestored(user));
   }
 
   /// Accept a team invitation by token.

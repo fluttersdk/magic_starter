@@ -252,11 +252,13 @@ void main() {
               'data': {'id': 10, 'name': 'New Team'},
             },
           );
-          // doCreate switches the backend current team to the new one.
+          // doCreate switches the backend current team to the new one. No
+          // `data.data` in the answer, so there is no fresh user to apply and
+          // it falls back to Auth.restore().
           mockDriver.stubResponse(
             '/user/current-team',
             statusCode: 200,
-            data: {'data': {}},
+            data: {},
           );
 
           final result = await controller.doCreate(name: 'New Team');
@@ -273,6 +275,35 @@ void main() {
           expect(postCalls, hasLength(1));
         },
       );
+
+      // Round 2 review: `doCreate` used to switch the backend then always
+      // await `Auth.restore()`, which re-applies the CACHED user, still on
+      // the OLD team, before a background sync catches up (or never does).
+      // When the switch answer carries the fresh user, `doCreate` must apply
+      // it the same way `switchTeam` does, with no restore in between.
+      test('success with the fresh user in the switch answer leaves Auth.user '
+          'on the new team without a restore', () async {
+        mockDriver.stubResponse(
+          '/teams',
+          statusCode: 200,
+          data: {
+            'data': {'id': 10, 'name': 'New Team'},
+          },
+        );
+        mockDriver.stubResponse(
+          '/user/current-team',
+          statusCode: 200,
+          data: {
+            'data': {'id': 1, 'name': 'Ada', 'current_team_id': 10},
+          },
+        );
+
+        final result = await controller.doCreate(name: 'New Team');
+
+        expect(result, isTrue);
+        expect(Auth.user<Model>()?.getAttribute('current_team_id'), 10);
+        expect(mockGuard.restoreCalled, isFalse);
+      });
 
       // REPORT #14: after creating a team, the team settings view opens the
       // OLD team's settings. The settings view pre-fills its name field from
@@ -520,6 +551,34 @@ void main() {
           expect(mockGuard.restoreCalled, isFalse);
         },
       );
+
+      // Round 2 review: applying the fresh user bypasses `Auth.restore()`,
+      // whose own background sync is what normally dispatches `AuthRestored`
+      // and drives `_ReloadOnAuthRestored`'s reload of every team-scoped
+      // screen. Without dispatching it here too, a team switch changed the
+      // session but told nothing downstream, so a screen that loads once on
+      // mount (team settings, say) kept the PREVIOUS team's rows on screen.
+      test('success with the fresh user in the body dispatches AuthRestored '
+          'exactly once', () async {
+        mockDriver.stubResponse(
+          '/user/current-team',
+          statusCode: 200,
+          data: {
+            'data': {'id': 1, 'name': 'Ada', 'current_team_id': 7},
+          },
+        );
+
+        final restoredEvents = <AuthRestored>[];
+        final remove = Event.listenAny((event) {
+          if (event is AuthRestored) restoredEvents.add(event);
+        });
+        addTearDown(remove);
+
+        final result = await controller.switchTeam(7);
+
+        expect(result, isTrue);
+        expect(restoredEvents, hasLength(1));
+      });
 
       test('failure — returns false, does not change currentTeamId', () async {
         mockDriver.stubResponse(
