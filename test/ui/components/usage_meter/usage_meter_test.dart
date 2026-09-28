@@ -7,18 +7,20 @@ import 'package:magic_starter/magic_starter.dart';
 /// instantiations below stay `const`.
 String toStringFormatter(int value) => value.toString();
 
-/// Reads the resolved fill colour off the single `Container` nested under the
+/// Reads the resolved fill colour off the `DecoratedBox` nested under the
 /// meter's `FractionallySizedBox` (the bar). A dropped/unknown colour token
-/// renders a `Container` with no decoration at all, which this helper
-/// surfaces as `null` rather than throwing, so callers can assert on it.
+/// leaves the bar with no decoration and so no `DecoratedBox` at all, which
+/// this helper surfaces as `null` rather than throwing, so callers can assert
+/// on it.
 Color? fillColor(WidgetTester tester) {
-  final container = tester.widget<Container>(
+  final boxes = tester.widgetList<DecoratedBox>(
     find.descendant(
       of: find.byType(FractionallySizedBox),
-      matching: find.byType(Container),
+      matching: find.byType(DecoratedBox),
     ),
   );
-  final decoration = container.decoration;
+  if (boxes.isEmpty) return null;
+  final decoration = boxes.single.decoration;
   if (decoration is! BoxDecoration) return null;
   return decoration.color;
 }

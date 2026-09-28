@@ -290,15 +290,15 @@ void main() {
 
   group('critical tone resolves to the destructive container colour', () {
     Color? chipFillColor(WidgetTester tester) {
-      final container = tester
-          .widgetList<Container>(
+      final box = tester
+          .widgetList<DecoratedBox>(
             find.descendant(
               of: find.byType(WBadge),
-              matching: find.byType(Container),
+              matching: find.byType(DecoratedBox),
             ),
           )
           .first;
-      final decoration = container.decoration;
+      final decoration = box.decoration;
       if (decoration is! BoxDecoration) return null;
       return decoration.color;
     }
