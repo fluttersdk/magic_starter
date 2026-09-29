@@ -30,10 +30,11 @@ dependencies:
   # spans the whole 0.0.x line, so leaving the floor at `^0.0.6` lets pub resolve
   # an adopter onto 0.0.11 and hand them `The method 'stacked' isn't defined`
   # inside a package they do not own, rather than a version-solve message naming
-  # magic. It names 0.0.22 because `SessionScope`, `SessionScoped`, the keyed
-  # `LatestRead` and `BaseGuard.cacheUser`, which the team switch and the
-  # billing reads call, first ship there.
-  magic: ^0.0.22
+  # magic. `SessionScope`, `SessionScoped`, the keyed `LatestRead` and
+  # `BaseGuard.cacheUser`, which the team switch and the billing reads call,
+  # first ship in 0.0.22. It names 0.0.24 because the restore listener reads
+  # `AuthRestored.changed`, which first ships there.
+  magic: ^0.0.24
   fluttersdk_artisan: ^0.0.16
   # This is a FLOOR for an API, not an upper-bound fix, and the API is
   # `Notify.view`: the notification screens, the bell dropdown and the
