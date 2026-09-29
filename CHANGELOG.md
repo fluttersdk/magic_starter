@@ -4,9 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.38] - 2026-09-29
+
 ### Changed
 
-- **The `magic` floor moves to `^0.0.24`.** The restore listener (see Fixed) reads `AuthRestored.changed`, which magic 0.0.24 introduces, so this package does not compile below it. (`pubspec.yaml`)
+- **Every sibling floor names this batch's release.** `magic` moves `^0.0.22` to `^0.0.24`, a real requirement: the restore listener (see Fixed) reads `AuthRestored.changed`, which magic 0.0.24 introduces, so this package does not compile below it. `magic_notifications` moves `^0.3.5` to `^0.3.6`, `magic_payments` `^0.0.5` to `^0.0.7`, `fluttersdk_wind` `^1.7.0` to `^1.8.0` and `fluttersdk_artisan` `^0.0.16` to `^0.0.17`; those old ranges already admitted the new versions, so for them a fresh `pub get` resolves nothing differently. `magic_starter:install` writes `magic_notifications: ^0.3.6` to match. magic 0.0.24 removes `MagicController.onRefreshUI` (BREAKING); this package does not call it. (`pubspec.yaml`, `lib/src/cli/commands/magic_starter_install_command.dart`)
 
 ### Fixed
 
