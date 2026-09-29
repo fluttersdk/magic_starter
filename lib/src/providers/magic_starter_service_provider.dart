@@ -10,10 +10,18 @@ import '../facades/magic_starter.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 
-/// Reloads the app whenever `Auth.restore()`'s background user sync confirms
-/// the user: on cold boot, and after every write that calls `Auth.restore()`
-/// (team rename, invitation accept, profile updates). The remount a frame
-/// later discards any toast shown just before it.
+/// Reloads the app when `Auth.restore()`'s background user sync CHANGED the
+/// user: after a write that calls `Auth.restore()` (team rename, invitation
+/// accept, profile updates), whose answer carries the new `current_team`,
+/// `all_teams` or profile fields. The remount a frame later discards any
+/// toast shown just before it.
+///
+/// A sync that only confirms the user the guard already held
+/// (`AuthRestored.changed` false, the usual cold boot or web hot restart with
+/// a warm cache) reloads nothing. Reloading on it remounted the whole app
+/// about a second after its first frame, tearing down any overlay the user
+/// had just opened and swallowing any toast, for a user identical to the one
+/// on screen.
 ///
 /// A team switch (`switch` or create-then-switch,
 /// `MagicStarterTeamController._applySwitchedUser`) no longer comes through
@@ -23,6 +31,8 @@ import '../magic_starter_manager.dart';
 class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   @override
   Future<void> handle(AuthRestored event) async {
+    if (!event.changed) return;
+
     // Soft reload the app to refresh all team-scoped data
     Magic.reload();
   }

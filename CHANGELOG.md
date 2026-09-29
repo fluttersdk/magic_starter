@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **The `magic` floor moves to `^0.0.24`.** The restore listener (see Fixed) reads `AuthRestored.changed`, which magic 0.0.24 introduces, so this package does not compile below it. (`pubspec.yaml`)
+
+### Fixed
+
+- **A cold boot or web hot restart no longer remounts the whole app about a second after its first frame.** `_ReloadOnAuthRestored` answered every `AuthRestored` with `Magic.reload()`, and `Auth.restore()`'s background user sync dispatches one on every warm start, so the app re-keyed itself for a user identical to the cached one: an overlay the user had just opened (a select's options) vanished, a toast shown just before was lost, and every boot paid a full rebuild. The listener now skips the reload when `AuthRestored.changed` is `false` (the sync only confirmed the user the guard held) and still reloads after a write whose sync changed the user (team rename, invitation accept, profile and photo updates). Needs magic's `AuthRestored.changed` (magic Unreleased). (`lib/src/providers/magic_starter_service_provider.dart`)
+
 ## [0.0.37] - 2026-09-27
 
 ### Fixed

@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:ui' show Locale;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart' show SizedBox;
+import 'package:flutter/widgets.dart'
+    show BuildContext, SizedBox, State, StatefulWidget, Widget;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -112,6 +113,30 @@ class _RestoringGuard implements Guard {
   }
 }
 
+/// Calls [onMount] from `initState`, so a test can count how many times the
+/// app under `MagicApplication` was mounted.
+class _MountCounter extends StatefulWidget {
+  const _MountCounter({required this.onMount, required this.child});
+
+  final VoidCallback onMount;
+
+  final Widget child;
+
+  @override
+  State<_MountCounter> createState() => _MountCounterState();
+}
+
+class _MountCounterState extends State<_MountCounter> {
+  @override
+  void initState() {
+    super.initState();
+    widget.onMount();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 void main() {
   // The provider's boot reads `WidgetsBinding.instance` for its primary
   // colour fallback and the locale application's post-frame callback, and
@@ -194,6 +219,61 @@ void main() {
       await bootProvider();
 
       await expectLater(Event.dispatch(AuthLogin(_fakeUser())), completes);
+    });
+  });
+
+  group('reloading on AuthRestored', () {
+    // `Magic.reload()` re-keys the whole `MagicApplication`, so a builder
+    // layer that counts its own `initState` counts remounts, the pattern magic
+    // pins in `magic_application_builder_test.dart`. Every boot sync used to
+    // reload, even one that only confirmed the cached user: about a second
+    // after the first frame the app remounted and tore down whatever overlay
+    // the user had just opened.
+    Future<int Function()> pumpCountedApp(WidgetTester tester) async {
+      var mounts = 0;
+      MagicRoute.page('/', () => const SizedBox.shrink());
+      await tester.pumpWidget(
+        MagicApplication(
+          title: 'test',
+          builder: (_, child) =>
+              _MountCounter(onMount: () => mounts++, child: child!),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      Auth.fake();
+      await bootProvider();
+
+      return () => mounts;
+    }
+
+    testWidgets('an unchanged user does not reload the app', (tester) async {
+      final mounts = await pumpCountedApp(tester);
+
+      await Event.dispatch(AuthRestored(_fakeUser(), changed: false));
+      await tester.pump();
+
+      expect(mounts(), 1);
+    });
+
+    testWidgets('a changed user reloads the app', (tester) async {
+      final mounts = await pumpCountedApp(tester);
+
+      await Event.dispatch(AuthRestored(_fakeUser(), changed: true));
+      await tester.pump();
+
+      expect(mounts(), 2);
+    });
+
+    testWidgets('an event built without `changed` still reloads', (
+      tester,
+    ) async {
+      final mounts = await pumpCountedApp(tester);
+
+      await Event.dispatch(AuthRestored(_fakeUser()));
+      await tester.pump();
+
+      expect(mounts(), 2);
     });
   });
 

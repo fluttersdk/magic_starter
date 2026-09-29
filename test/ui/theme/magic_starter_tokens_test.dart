@@ -116,10 +116,16 @@ void main() {
 
       // WindParser expands aliases pre-parse. bg-surface -> bg-white which
       // the background parser resolves to a Color, so the WDiv renders a
-      // Container with a non-null decoration. We assert the widget tree builds
-      // without exception and find a Container (the decoration wrapper).
+      // DecoratedBox. We assert the widget tree builds without exception and
+      // that the decoration wrapper sits under the WDiv.
       expect(find.byType(WDiv), findsOneWidget);
-      expect(find.byType(Container), findsWidgets);
+      expect(
+        find.descendant(
+          of: find.byType(WDiv),
+          matching: find.byType(DecoratedBox),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('bg-surface resolves (not a silent no-op) in dark mode', (
@@ -130,7 +136,13 @@ void main() {
       );
 
       expect(find.byType(WDiv), findsOneWidget);
-      expect(find.byType(Container), findsWidgets);
+      expect(
+        find.descendant(
+          of: find.byType(WDiv),
+          matching: find.byType(DecoratedBox),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('bg-surface text-fg builds without exception', (

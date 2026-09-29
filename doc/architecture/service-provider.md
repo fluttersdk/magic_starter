@@ -13,7 +13,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-`MagicStarterServiceProvider` is the bootstrap entry point for the magic_starter plugin. It binds the `MagicStarterManager` singleton into the IoC container, registers an `AuthRestored` event listener for team-switch reloads, defines 9 Gate abilities for profile section visibility, and sets up a primary color fallback for Wind UI.
+`MagicStarterServiceProvider` is the bootstrap entry point for the magic_starter plugin. It binds the `MagicStarterManager` singleton into the IoC container, registers an `AuthRestored` event listener that soft-reloads the app when a restore changed the user, defines 9 Gate abilities for profile section visibility, and sets up a primary color fallback for Wind UI.
 
 The provider lives at `lib/src/providers/magic_starter_service_provider.dart` and extends `ServiceProvider` from `package:magic/magic.dart`.
 
@@ -49,7 +49,7 @@ Three things happen here:
 
 1. **Manager singleton** — binds `MagicStarterManager` under the key `'magic_starter'`. The manager's constructor calls `registerDefaultViews()`, so all default views and layouts are immediately available.
 
-2. **Auth restored listener** — registers `_ReloadOnAuthRestored`, which calls `Magic.reload()` when `AuthRestored` fires. This triggers a soft app reload after team switches so all team-scoped data refreshes.
+2. **Auth restored listener**: registers `_ReloadOnAuthRestored`, which calls `Magic.reload()` when `AuthRestored` fires with `changed` true, so screens refresh after a write that calls `Auth.restore()` (team rename, invitation accept, profile updates). A sync that only confirms the cached user (`changed` false, the usual cold boot) reloads nothing, so nothing on screen is torn down. A team switch does not come through here; it resets team-scoped screens through `SessionScope`.
 
 3. **Auth login listener**: registers `_CallOnLoginHook`, which calls the host's `MagicStarter.useLogin()` callback (unawaited, logged on failure) whenever `AuthLogin` fires: every fresh sign-in path, never a cold-boot restore. See [Login Callback](manager.md#login-callback).
 
