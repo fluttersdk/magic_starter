@@ -3,13 +3,84 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../../configuration/magic_starter_config.dart';
+import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
+import '../../../components/confirm_dialog/confirm_dialog.dart';
+import '../../../components/dialog/dialog.dart';
 import '../../../components/settings_row/index.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 import '../../../widgets/magic_starter_confirm_dialog.dart';
 import '../../../../support/confirms_identity.dart';
 import '../../../../support/session_device_title.dart';
+
+/// Asks whether the account goes in 30 days or now, then confirms identity and
+/// deletes it.
+///
+/// Shared by every screen that offers account deletion: the choice is a
+/// question about the account, so the screens ask it the same way. Dismissing
+/// the choice, or the identity dialog, deletes nothing. The server applies the
+/// same refusals and step-up whichever is chosen.
+Future<void> confirmAndDeleteAccount(
+  BuildContext context,
+  MagicStarterProfileController controller,
+) async {
+  if (!context.mounted) return;
+
+  // 1. The choice comes first: it decides what the proof is spent on.
+  final immediately = await MSDialog.show<bool>(
+    context,
+    title: trans('magic_starter.profile.delete_account.title'),
+    description: trans('magic_starter.profile.delete_account.description'),
+    body: Builder(
+      builder: (dialogContext) {
+        final theme = MagicStarter.manager.modalTheme;
+
+        return WDiv(
+          className: 'flex flex-col gap-3',
+          children: [
+            WButton(
+              onTap: () => Navigator.of(dialogContext).pop(false),
+              className: theme.primaryButtonClassName,
+              child: WText(
+                trans('magic_starter.profile.delete_account.option_scheduled'),
+              ),
+            ),
+            WButton(
+              onTap: () => Navigator.of(dialogContext).pop(true),
+              className: theme.dangerButtonClassName,
+              child: WText(
+                trans('magic_starter.profile.delete_account.option_immediate'),
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+    footerBuilder: (dialogContext) => WDiv(
+      className: 'flex flex-row justify-end',
+      child: WAnchor(
+        onTap: () => Navigator.of(dialogContext).pop(),
+        child: WDiv(
+          className: MagicStarter.manager.modalTheme.secondaryButtonClassName,
+          child: WText(trans('common.cancel')),
+        ),
+      ),
+    ),
+  );
+  if (immediately == null || !context.mounted) return;
+
+  // 2. Both answers are gated by the same proof.
+  await confirmAndRun(
+    context,
+    controller,
+    title: trans('magic_starter.profile.delete_account.title'),
+    description: trans('magic_starter.profile.delete_account.description'),
+    variant: ConfirmDialogVariant.danger,
+    action: (proof) =>
+        controller.doDeleteAccount(proof: proof, immediately: immediately),
+  );
+}
 
 /// Active sessions settings sub-page.
 ///
@@ -178,24 +249,11 @@ class _MagicStarterSessionsViewState
                 title: trans('magic_starter.profile.delete_account.button'),
                 icon: Icons.delete_outline,
                 tone: SettingsRowTone.destructive,
-                onTap: () => _confirmDeleteAccount(context),
+                onTap: () => confirmAndDeleteAccount(context, controller),
               ),
             ],
           ),
       ],
-    );
-  }
-
-  /// Confirms identity and deletes the account on confirm.
-  Future<void> _confirmDeleteAccount(BuildContext context) async {
-    if (!context.mounted) return;
-    await confirmAndRun(
-      context,
-      controller,
-      title: trans('magic_starter.profile.delete_account.title'),
-      description: trans('magic_starter.profile.delete_account.description'),
-      variant: ConfirmDialogVariant.danger,
-      action: (proof) => controller.doDeleteAccount(proof: proof),
     );
   }
 

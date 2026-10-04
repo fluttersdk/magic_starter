@@ -480,6 +480,71 @@ void main() {
         },
       );
 
+      test(
+        'immediately adds the flag to the body and signs out on 202',
+        () async {
+          mockDriver.mockResponse(
+            statusCode: 202,
+            data: {
+              'data': {
+                'deletion_scheduled_at': '2026-10-05T12:00:00.000000Z',
+                'immediate': true,
+              },
+              'message': 'Your account is being deleted.',
+            },
+          );
+
+          final result = await controller.doDeleteAccount(
+            proof: {'password': 'mysecretpass'},
+            immediately: true,
+          );
+
+          expect(result, isTrue);
+          expect(mockGuard.logoutCalled, isTrue);
+          expect(
+            mockDriver.lastData,
+            equals({
+              '_method': 'DELETE',
+              'password': 'mysecretpass',
+              'immediately': true,
+            }),
+          );
+        },
+      );
+
+      test('the default sends no immediately key', () async {
+        mockDriver.mockResponse(
+          statusCode: 202,
+          data: {'message': 'Your account will be deleted in 30 days.'},
+        );
+
+        await controller.doDeleteAccount(proof: {'password': 'mysecretpass'});
+
+        expect(mockDriver.lastData, isNot(contains('immediately')));
+      });
+
+      test('a refused immediate deletion keeps the user signed in', () async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The server wording.',
+            'code': 'owns_shared_teams',
+            'errors': {
+              'user': ['The server wording.'],
+            },
+          },
+        );
+
+        final result = await controller.doDeleteAccount(
+          proof: {'password': 'mysecretpass'},
+          immediately: true,
+        );
+
+        expect(result, isFalse);
+        expect(mockGuard.logoutCalled, isFalse);
+        expect(mockDriver.lastData['immediately'], isTrue);
+      });
+
       test('failure (422) — returns false and does not logout', () async {
         mockDriver.mockResponse(
           statusCode: 422,

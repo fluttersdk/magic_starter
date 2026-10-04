@@ -293,7 +293,15 @@ class MagicStarterProfileController extends MagicController
   /// with a sentence that says how to cancel (sign in again within the grace
   /// period). It is shown before the sign-out, since it is the only place the
   /// user learns the account is not gone yet.
-  Future<bool> doDeleteAccount({required Map<String, String> proof}) async {
+  ///
+  /// With [immediately] the request carries `immediately: true`: the server
+  /// applies the same refusals and step-up, then purges now instead of after
+  /// the grace period, and answers 202 with `data.immediate`. The key is
+  /// absent otherwise.
+  Future<bool> doDeleteAccount({
+    required Map<String, String> proof,
+    bool immediately = false,
+  }) async {
     if (_isSubmitting) return false;
     _isSubmitting = true;
     setLoading();
@@ -302,7 +310,11 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/user',
-        data: <String, dynamic>{'_method': 'DELETE', ...proof},
+        data: <String, dynamic>{
+          '_method': 'DELETE',
+          ...proof,
+          if (immediately) 'immediately': true,
+        },
       );
       if (!response.successful) {
         await _reportRefusal(

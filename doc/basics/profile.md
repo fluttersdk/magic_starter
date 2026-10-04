@@ -229,17 +229,22 @@ if (proof == null) return; // the user cancelled
 
 final success = await MagicStarterProfileController.instance.doDeleteAccount(
   proof: proof,
+  immediately: false, // true deletes now instead of after the grace period
 );
 ```
 
+The starter's delete screens (the Security sessions page and the long-form profile settings view) first ask which one the user wants: "Delete in 30 days (cancel by signing in)" or "Delete now, permanently", the second styled as the modal theme's danger button. Dismissing the choice deletes nothing; either answer then goes through the identity confirmation above.
+
 `proof` is `{'password': ...}` for an account with a password, `{'code': ...}` or `{'confirmation_token': ...}` for one without, and `{}` for a guest; see [Confirming Identity](identity-confirmation.md).
 
-The controller sends `POST /user` with `{'_method': 'DELETE', ...proof}`. The backend **schedules** the deletion and answers `202` with `data.deletion_scheduled_at` and a sentence that says how to cancel: every token is revoked at once, the account is purged after a grace period (30 days by default), and signing in again within it cancels the deletion. On success the controller shows that sentence as a toast, calls `Auth.logout()` and navigates to the login page. The next sign-in during the grace period shows the "Account deletion cancelled" toast. The user resource carries `deletion_scheduled_at` (`MagicStarterAuthUser.deletionScheduledAt`).
+The controller sends `POST /user` with `{'_method': 'DELETE', ...proof}`, plus `'immediately': true` only for the second choice. By default the backend **schedules** the deletion and answers `202` with `data.deletion_scheduled_at` and a sentence that says how to cancel: every token is revoked at once, the account is purged after a grace period (30 days by default), and signing in again within it cancels the deletion. On success the controller shows that sentence as a toast, calls `Auth.logout()` and navigates to the login page. The next sign-in during the grace period shows the "Account deletion cancelled" toast. The user resource carries `deletion_scheduled_at` (`MagicStarterAuthUser.deletionScheduledAt`).
+
+With `immediately: true` the backend applies the same refusals and step-up, then purges the account now rather than after the grace period, and answers `202` with `data.immediate: true`. The controller handles it the same way: the server's sentence as a toast, `Auth.logout()`, the login page. There is nothing to cancel by signing in afterwards.
 
 A refusal keeps the user signed in and shows its own sentence: `owns_shared_teams`, `team_has_active_subscription` and `subscription_active` (cancel the subscription first), `step_up_required` (the proof was missing or spent), and a wrong password.
 
 > [!IMPORTANT]
-> Deletion is scheduled, not instant, but it signs the user out immediately. Always confirm identity first. The dialog handles inline errors via `setState()` and never auto-closes on API failure.
+> Either way the user is signed out immediately; the scheduled deletion is the one that can still be cancelled. Always confirm identity first. The dialog handles inline errors via `setState()` and never auto-closes on API failure.
 
 <a name="two-factor-management"></a>
 ## Two-Factor Management

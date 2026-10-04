@@ -16,6 +16,8 @@ import '../../widgets/magic_starter_two_factor_modal.dart';
 import '../../../http/controllers/magic_starter_newsletter_controller.dart';
 import '../../widgets/magic_starter_timezone_select.dart';
 import '../../../support/session_device_title.dart';
+import '../settings/security/magic_starter_sessions_view.dart'
+    show confirmAndDeleteAccount;
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
@@ -1206,22 +1208,13 @@ class _MagicStarterProfileSettingsViewState
     );
   }
 
-  /// Confirms identity and deletes the account on confirm.
+  /// Asks how the account should go, then confirms identity and deletes it.
   ///
   /// The proof depends on the account (a password, a two-factor code, a
   /// provider re-authentication, or nothing for a guest), so the page does not
   /// ask for a password up front; the dialog asks for whichever applies.
-  Future<void> _confirmDeleteAccount() async {
-    if (!context.mounted) return;
-    await confirmAndRun(
-      context,
-      controller,
-      title: trans('magic_starter.profile.delete_account.title'),
-      description: trans('magic_starter.profile.delete_account.description'),
-      variant: ConfirmDialogVariant.danger,
-      action: (proof) => controller.doDeleteAccount(proof: proof),
-    );
-  }
+  Future<void> _confirmDeleteAccount() =>
+      confirmAndDeleteAccount(context, controller);
 
   // -- Email Verification Section -----------------------------------------------
 

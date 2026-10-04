@@ -235,8 +235,20 @@ void main() {
       Gate.flush();
     });
 
-    /// Opens the delete confirmation: scrolls to the section's button, taps it.
-    Future<void> tapDelete(WidgetTester tester) async {
+    const scheduledKey =
+        'magic_starter.profile.delete_account.option_scheduled';
+    const immediateKey =
+        'magic_starter.profile.delete_account.option_immediate';
+
+    Finder choiceButton(String key) => find.byWidgetPredicate(
+      (widget) =>
+          widget is WButton &&
+          widget.child is WText &&
+          (widget.child as WText).data == trans(key),
+    );
+
+    /// Opens the delete choice: scrolls to the section's button, taps it.
+    Future<void> openChoice(WidgetTester tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -251,6 +263,17 @@ void main() {
       );
       await tester.ensureVisible(button);
       await tester.tap(button);
+      await tester.pumpAndSettle();
+    }
+
+    /// Opens the delete choice and picks one: the scheduled deletion unless
+    /// [immediately].
+    Future<void> tapDelete(
+      WidgetTester tester, {
+      bool immediately = false,
+    }) async {
+      await openChoice(tester);
+      await tester.tap(choiceButton(immediately ? immediateKey : scheduledKey));
       await tester.pumpAndSettle();
     }
 
@@ -328,6 +351,75 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
     });
+
+    testWidgets(
+      'delete account first offers a scheduled and an immediate choice, the '
+      'immediate one styled destructive',
+      (tester) async {
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await openChoice(tester);
+
+        final scheduled = tester.widget<WButton>(choiceButton(scheduledKey));
+        final immediate = tester.widget<WButton>(choiceButton(immediateKey));
+        final danger = MagicStarter.manager.modalTheme.dangerButtonClassName;
+
+        expect(immediate.className, equals(danger));
+        expect(scheduled.className, isNot(equals(danger)));
+        // Nothing is asked or sent until a choice is made.
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+        expect(mockDriver.lastMethod, isNull);
+      },
+    );
+
+    testWidgets('cancelling the choice sends nothing and asks for nothing', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await openChoice(tester);
+
+      await tester.tap(find.text('common.cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+      expect(mockDriver.lastMethod, isNull);
+    });
+
+    testWidgets(
+      'choosing "Delete now" posts immediately: true with the proof',
+      (tester) async {
+        mockDriver.mockResponse(
+          statusCode: 202,
+          data: {
+            'data': {
+              'deletion_scheduled_at': '2026-10-05T12:00:00.000000Z',
+              'immediate': true,
+            },
+            'message': 'Your account is being deleted.',
+          },
+        );
+
+        await mountWithRouter(tester);
+        await tapDelete(tester, immediately: true);
+        await confirmWithPassword(tester, 'mysecretpass');
+        await tester.pump();
+        await tester.pump();
+
+        expect(
+          mockDriver.lastData,
+          equals({
+            '_method': 'DELETE',
+            'password': 'mysecretpass',
+            'immediately': true,
+          }),
+        );
+        expect(mockGuard.logoutCalled, isTrue);
+        await tester.pumpAndSettle(const Duration(milliseconds: 100));
+        expect(find.text('login page'), findsOneWidget);
+
+        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle();
+      },
+    );
 
     testWidgets('a password-less account is offered the step-up dialog', (
       tester,

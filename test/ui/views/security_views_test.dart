@@ -674,9 +674,76 @@ void main() {
         await tester.tap(deleteRow);
         await tester.pumpAndSettle();
 
+        await tester.tap(
+          find.text('magic_starter.profile.delete_account.option_scheduled'),
+        );
+        await tester.pumpAndSettle();
+
         expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
         expect(find.byType(MagicStarterStepUpDialog), findsOneWidget);
       },
     );
+
+    testWidgets('delete-account offers both choices and "Delete now" posts '
+        'immediately: true with the proof', (WidgetTester tester) async {
+      // Refused, so the test needs no router to land on: the flag is on the
+      // request either way.
+      mockDriver.mockResponse(
+        statusCode: 422,
+        data: <String, dynamic>{
+          'message': 'The server wording.',
+          'code': 'owns_shared_teams',
+          'errors': <String, dynamic>{
+            'user': <dynamic>['The server wording.'],
+          },
+        },
+      );
+
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(const MagicStarterSessionsView()));
+      await tester.pump();
+      await tester.pump();
+
+      final deleteRow = find.text(
+        trans('magic_starter.profile.delete_account.button'),
+      );
+      await tester.ensureVisible(deleteRow);
+      await tester.tap(deleteRow);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('magic_starter.profile.delete_account.option_scheduled'),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.text('magic_starter.profile.delete_account.option_immediate'),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(MagicStarterPasswordConfirmDialog),
+          matching: find.byType(EditableText),
+        ),
+        'mysecretpass',
+      );
+      await tester.tap(find.text('common.confirm'));
+      await tester.pumpAndSettle();
+
+      expect(mockDriver.lastUrl, '/user');
+      expect(
+        mockDriver.lastData,
+        equals(<String, dynamic>{
+          '_method': 'DELETE',
+          'password': 'mysecretpass',
+          'immediately': true,
+        }),
+      );
+      expect(Auth.check(), isTrue);
+    });
   });
 }
