@@ -6,7 +6,7 @@ import '../../../../configuration/magic_starter_config.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
-import '../../../widgets/magic_starter_password_confirm_dialog.dart';
+import '../../../../support/confirms_identity.dart';
 import '../../../widgets/magic_starter_two_factor_modal.dart';
 import '../../../widgets/magic_starter_confirm_dialog.dart';
 
@@ -18,8 +18,8 @@ import '../../../widgets/magic_starter_confirm_dialog.dart';
 /// The interaction wiring (enable / disable / show + regenerate recovery codes)
 /// is lifted verbatim from the original long-form profile settings view: it
 /// reuses the [MagicStarterProfileController] security methods and the
-/// [MagicStarterTwoFactorModal] / [MagicStarterPasswordConfirmDialog] widgets
-/// unchanged — no endpoint, controller, or modal internals are altered here.
+/// [MagicStarterTwoFactorModal] unchanged, confirming identity through
+/// [confirmAndRun] with whichever proof the account can send.
 class MagicStarterTwoFactorView
     extends MagicStatefulView<MagicStarterProfileController> {
   const MagicStarterTwoFactorView({super.key});
@@ -74,28 +74,23 @@ class _MagicStarterTwoFactorViewState
     }
   }
 
-  /// Enable 2FA flow with password confirmation and setup modal.
+  /// Enable 2FA flow with identity confirmation and setup modal.
   Future<void> _enableTwoFactor(BuildContext context) async {
     Map<String, dynamic>? setupData;
 
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    await MagicStarterPasswordConfirmDialog.show(
+    await confirmAndRun(
       context,
-      onConfirm: (password) async {
-        final data = await _trackLoading(
+      controller,
+      action: (proof) async {
+        setupData = await _trackLoading(
           _twoFactorLoading,
-          () => controller.doEnableTwoFactor(password: password),
+          () => controller.doEnableTwoFactor(proof: proof),
         );
-        if (data == null) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        setupData = data;
-        return null; // success → dialog closes
+
+        return setupData != null; // success → dialog closes
       },
     );
 
@@ -115,27 +110,19 @@ class _MagicStarterTwoFactorViewState
     }
   }
 
-  /// Disable 2FA --- requires password confirmation.
+  /// Disable 2FA --- requires identity confirmation.
   Future<void> _disableTwoFactor(BuildContext context) async {
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    final success = await MagicStarterPasswordConfirmDialog.show(
+    final success = await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.warning,
-      onConfirm: (password) async {
-        final ok = await _trackLoading(
-          _twoFactorLoading,
-          () => controller.doDisableTwoFactor(password: password),
-        );
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
+      action: (proof) => _trackLoading(
+        _twoFactorLoading,
+        () => controller.doDisableTwoFactor(proof: proof),
+      ),
     );
 
     if (success) {
@@ -150,21 +137,18 @@ class _MagicStarterTwoFactorViewState
   Future<void> _showRecoveryCodes(BuildContext context) async {
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
-    await MagicStarterPasswordConfirmDialog.show(
+    await confirmAndRun(
       context,
-      onConfirm: (password) async {
+      controller,
+      action: (proof) async {
         final codes = await _trackLoading(
           _twoFactorLoading,
-          () => controller.getRecoveryCodes(password: password),
+          () => controller.getRecoveryCodes(proof: proof),
         );
-        if (codes == null) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
+        if (codes == null) return false;
+
         setState(() => _recoveryCodes = codes);
-        return null;
+        return true;
       },
     );
   }
@@ -173,22 +157,19 @@ class _MagicStarterTwoFactorViewState
   Future<void> _regenerateRecoveryCodes(BuildContext context) async {
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
-    await MagicStarterPasswordConfirmDialog.show(
+    await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.warning,
-      onConfirm: (password) async {
+      action: (proof) async {
         final codes = await _trackLoading(
           _twoFactorLoading,
-          () => controller.doRegenerateRecoveryCodes(password: password),
+          () => controller.doRegenerateRecoveryCodes(proof: proof),
         );
-        if (codes == null) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
+        if (codes == null) return false;
+
         setState(() => _recoveryCodes = codes);
-        return null;
+        return true;
       },
     );
   }

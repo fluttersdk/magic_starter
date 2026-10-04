@@ -614,7 +614,7 @@ Default layouts:
 | `MagicStarter.useLogout(callback)` | `manager.onLogout = callback` |
 | `MagicStarter.useLogin(callback)` | `manager.onLogin = callback` |
 | `MagicStarter.useGuestClaimed(callback)` | `manager.onGuestClaimed = callback` |
-| `MagicStarter.useSocialLogin(builder)` | `manager.socialLoginBuilder = builder` |
+| `MagicStarter.useSocialAuth(socialAuth)` | `manager.socialAuth = socialAuth` |
 | `MagicStarter.useLocaleOptions(locales)` | `manager.localeOptions = options` |
 | `MagicStarter.useGuestAuthEntry(builder)` | `manager.guestAuthEntryBuilder = builder` |
 | `MagicStarter.useNewsletterLabel(label)` | `manager.newsletterLabel = label` |

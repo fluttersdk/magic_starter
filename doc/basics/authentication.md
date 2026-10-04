@@ -10,6 +10,7 @@
     - [Enabling Two-Factor](#enabling-two-factor)
     - [Recovery Codes](#recovery-codes)
 - [Social Login](#social-login)
+    - [The MagicStarterSocialAuth Contract](#the-magicstartersocialauth-contract)
 - [OTP Flow](#otp-flow)
     - [Sending an OTP](#sending-an-otp)
     - [Verifying an OTP](#verifying-an-otp)
@@ -56,7 +57,7 @@ await MagicStarterAuthController.instance.doLogin(
 
 The login flow has three possible outcomes:
 
-1. **Success** — the controller extracts `token` and `user` from the nested `data` key, calls `Auth.login()`, sets success state, and calls `navigateHome()`. That is the intended url a bounced deep link recorded, read once through `MagicRouter.pullIntendedUrl()`, and `MagicStarterConfig.homeRoute()` only as the fallback when nothing was recorded or the recorded value is not an in-app path. An intent belongs to the session that asked for it: `MagicStarterServiceProvider` listens to `Auth.stateNotifier` and discards it whenever the state goes to signed-out, so it never reaches the next person on the device. That covers the sign-out a user asks for, the account deletion, and the one the app performs on its own when a token refresh fails, since all three go through the same notifier. No host wiring is needed; the provider boots in every starter app.
+1. **Success**: the controller hands the body to `CompletesSignIn.completeSignIn()`, the one path every token takes (password, social, two-factor challenge, OTP and guest): it extracts `token` and `user` from the nested `data` key, calls `Auth.login()`, shows the `social.deletion_cancelled` toast when `data.deletion_cancelled` is `true` (a sign-in during the grace period of a scheduled account deletion cancels it), sets success state, and calls `navigateHome()`. That is the intended url a bounced deep link recorded, read once through `MagicRouter.pullIntendedUrl()`, and `MagicStarterConfig.homeRoute()` only as the fallback when nothing was recorded or the recorded value is not an in-app path. An intent belongs to the session that asked for it: `MagicStarterServiceProvider` listens to `Auth.stateNotifier` and discards it whenever the state goes to signed-out, so it never reaches the next person on the device. That covers the sign-out a user asks for, the account deletion, and the one the app performs on its own when a token refresh fails, since all three go through the same notifier. No host wiring is needed; the provider boots in every starter app.
 2. **Two-factor required** — the controller detects the challenge flag and navigates to `MagicStarterConfig.twoFactorChallengeRoute()` with the encrypted token as a query parameter. No login occurs yet.
 3. **Failure** — `handleApiError()` sets the error state with a localized fallback message.
 
@@ -151,9 +152,9 @@ Exactly one of `code` or `recoveryCode` must be provided — the controller asse
 
 Enabling 2FA is a multi-step process managed by `MagicStarterProfileController`:
 
-1. **Enable** — `doEnableTwoFactor(password:)` calls `POST /two-factor-authentication`. Returns a map containing `secret`, `qr_url`, `qr_svg`, and `recovery_codes`.
+1. **Enable**: `doEnableTwoFactor(proof:)` calls `POST /two-factor-authentication`. Returns a map containing `secret`, `qr_url`, `qr_svg`, and `recovery_codes`.
 2. **Confirm** — `doConfirmTwoFactor(code:)` calls `POST /two-factor-authentication/confirm` with the TOTP code from the authenticator app.
-3. **Disable** — `doDisableTwoFactor(password:)` uses Laravel method spoofing (`{'_method': 'DELETE'}`) via `Http.post()`.
+3. **Disable**: `doDisableTwoFactor(proof:)` uses Laravel method spoofing (`{'_method': 'DELETE'}`) via `Http.post()`.
 
 > [!NOTE]
 > The `isTwoFactorEnabled` getter reads `two_factor_enabled` from the authenticated user model. Use it to conditionally render the enable/disable UI.
@@ -164,33 +165,67 @@ Enabling 2FA is a multi-step process managed by `MagicStarterProfileController`:
 Recovery codes can be viewed and regenerated via `MagicStarterProfileController`:
 
 ```dart
-// View existing codes (requires password)
-final codes = await controller.getRecoveryCodes(password: currentPassword);
+// View existing codes (requires a step-up proof)
+final codes = await controller.getRecoveryCodes(proof: proof);
 
-// Regenerate codes (requires password)
-final newCodes = await controller.doRegenerateRecoveryCodes(password: currentPassword);
+// Regenerate codes (requires a step-up proof)
+final newCodes = await controller.doRegenerateRecoveryCodes(proof: proof);
 ```
 
-Both methods call endpoints under `/two-factor-recovery-codes` and require the current account password for sudo-mode confirmation.
+Both methods call endpoints under `/two-factor-recovery-codes`. Like enabling and disabling 2FA, they take a `proof` map: `{'password': ...}` for an account with a password, `{'code': ...}` or `{'confirmation_token': ...}` for one without, `{}` for a guest. See [Confirming Identity](identity-confirmation.md) for how the starter produces one.
 
 <a name="social-login"></a>
 ## Social Login
 
-Social login is feature-gated via `magic_starter.features.social_login`. When enabled, the host app registers a builder that renders OAuth provider buttons:
+Social login is feature-gated via `magic_starter.features.social_login`. The starter owns the screens (the "Continue with" buttons on login and register, the [Connected accounts](connected-accounts.md) page, the identity-confirmation dialog) and what a sign-in concludes (a session, a two-factor challenge, a cancelled deletion). The provider SDKs and the backend calls belong to a **bridge** the app registers, so this package depends on no social login package.
 
 ```dart
-MagicStarter.useSocialLogin((context, isLoading) {
-  return SocialLoginButtons(
-    onGoogle: () => controller.doSocialLogin('google'),
-    onApple: () => controller.doSocialLogin('apple'),
-  );
-});
+MagicStarter.useSocialAuth(AppSocialAuth());
 ```
 
-The builder is rendered on the login and register views when `MagicStarter.hasSocialLogin` returns `true`. The actual OAuth flow (token exchange, provider SDK calls) is implemented by the host app — the starter plugin only provides the UI integration point.
+While a bridge is registered and the feature is on, login and register render one button per provider the bridge offers, and the Connected accounts page is reachable from the settings hub. Without a bridge the buttons and the hub row are absent: the feature flag alone renders nothing. The page's route is registered on the feature alone, since the bridge is set after the routes are.
 
-> [!TIP]
-> Enable the feature flag **and** register a builder. The flag alone does not render anything — `MagicStarter.useSocialLogin()` must be called during app boot.
+`magic_social_auth` installs the bridge for you: `social:install` publishes `lib/app/providers/social_auth_starter_service_provider.dart`, which implements the contract below over `SocialAuth` and calls `MagicStarter.useSocialAuth`. See its installation guide.
+
+### The MagicStarterSocialAuth Contract
+
+```dart
+abstract class MagicStarterSocialAuth {
+  List<String> providers();                       // in display order: google, apple, ...
+  String label(String provider);                  // 'Google'
+  Widget icon(String provider);
+
+  Future<Map<String, dynamic>> signIn(String provider);
+
+  Future<Future<Map<String, dynamic>> Function()> beginConnect(
+    String provider,
+    Map<String, String> proof,
+  );
+
+  Future<String> confirm(String provider);        // the confirmation token
+  Future<void> signOut();
+}
+```
+
+| Method | Contract |
+|---|---|
+| `signIn(provider)` | Answers the backend's body untouched: a session (`{data: {user, token}}`, plus `data.deletion_cancelled` when the sign-in cancelled a scheduled deletion) or a challenge (`{two_factor: true, two_factor_token}`). Called synchronously from the user's tap, with no `await` before it, so a web implementation can still open its popup. A newer call supersedes a pending one. |
+| `beginConnect(provider, proof)` | Starts linking a provider to the signed-in account and answers the call that finishes it. `proof` is minted fresh for every call and empty for a guest. Whatever needs the network before the provider opens (a link ticket) happens here, so the returned call opens the provider before its first `await`: on the web the starter runs it from a fresh user tap, elsewhere at once. It answers `{data: {provider, email}}`. |
+| `confirm(provider)` | Re-authenticates the signed-in user with a linked provider and answers the confirmation token the backend issued. |
+| `signOut()` | Signs out of every provider SDK that keeps a session of its own. The starter does not call it; the bridge `social:install` publishes signs Google out itself whenever `Auth.stateNotifier` goes to signed-out, and a bridge of your own has to do the same. |
+
+Every failure surfaces as a `MagicStarterSocialException(code:, message:, cancelled:)`. `cancelled` marks the user backing out, which the starter shows nothing for. Otherwise the starter shows the `social.<code>` sentence (`social_email_taken`, `flow_expired`, `step_up_required`, ...) and falls back to `message`.
+
+### What a Social Sign-In Does
+
+`MagicStarterAuthController.doSocialSignIn(provider)` calls the bridge before anything is awaited, then concludes through the same `completeSignIn` as every other sign-in: a two-factor answer opens the challenge, a session logs in and goes home, and `deletion_cancelled` shows the "Account deletion cancelled" toast. A cancelled flow shows nothing; a pending flow does not block a new tap.
+
+> [!IMPORTANT]
+> Provider sign-out is the bridge's job. The Google SDK keeps its own session, so a bridge of your own has to sign it out on every transition to signed-out (listen to `Auth.stateNotifier`), or the next sign-in skips the account picker. The published bridge does this.
+
+### Language Keys
+
+The screens read a `social.*` group (`continue_with`, `connect`, `disconnect`, `connected_accounts`, `confirm_identity`, `confirm_with`, `step_up_required`, `deletion_cancelled`, `deletion_scheduled`, and one sentence per backend refusal code), `profile.set_password`, `profile.set_password_description`, `profile.password_set`, `profile.password_set_failed` and `magic_starter.titles.connected_accounts`. A fresh `starter:install` writes them to `assets/lang/en.json`; an existing app adds them from `assets/stubs/install/en.stub`.
 
 <a name="otp-flow"></a>
 ## OTP Flow
@@ -333,7 +368,7 @@ Authentication features are controlled by these configuration toggles. All defau
 | Config Key | Gate Method | Affects |
 |-----------|------------|---------|
 | `magic_starter.features.registration` | `hasRegistrationFeatures()` | Register view and route |
-| `magic_starter.features.social_login` | `hasSocialLoginFeatures()` | Social login buttons on login/register |
+| `magic_starter.features.social_login` | `hasSocialLoginFeatures()` | Social login buttons on login/register, the Connected accounts page and its settings row (all need a bridge from `MagicStarter.useSocialAuth`), and the "Confirm with a provider" option of the identity-confirmation dialog |
 | `magic_starter.features.two_factor` | `hasTwoFactorFeatures()` | 2FA enable/disable in profile, challenge route |
 | `magic_starter.features.guest_auth` | `hasGuestAuthFeatures()` | Guest login flow |
 | `magic_starter.features.phone_otp` | `hasPhoneOtpFeatures()` | Phone OTP send/verify |

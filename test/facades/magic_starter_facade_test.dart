@@ -11,39 +11,18 @@ void main() {
       Magic.singleton('magic_starter', () => MagicStarterManager());
     });
 
-    group('social login', () {
-      test('hasSocialLogin returns false when not configured', () {
-        expect(MagicStarter.hasSocialLogin, isFalse);
+    group('social auth', () {
+      test('socialAuth is null until a bridge is registered', () {
+        expect(MagicStarter.socialAuth, isNull);
       });
 
-      test('socialLoginBuilder returns null when not configured', () {
-        expect(MagicStarter.socialLoginBuilder, isNull);
-      });
+      test('useSocialAuth() registers the bridge on the manager', () {
+        final bridge = _SilentSocialAuth();
 
-      test('useSocialLogin() sets the builder on the manager', () {
-        Widget testBuilder(BuildContext context, bool isLoading) {
-          return const SizedBox();
-        }
+        MagicStarter.useSocialAuth(bridge);
 
-        MagicStarter.useSocialLogin(testBuilder);
-
-        expect(MagicStarter.manager.socialLoginBuilder, equals(testBuilder));
-      });
-
-      test('hasSocialLogin returns true after useSocialLogin()', () {
-        MagicStarter.useSocialLogin((_, _) => const SizedBox());
-
-        expect(MagicStarter.hasSocialLogin, isTrue);
-      });
-
-      test('socialLoginBuilder returns the registered builder', () {
-        Widget testBuilder(BuildContext context, bool isLoading) {
-          return const SizedBox();
-        }
-
-        MagicStarter.useSocialLogin(testBuilder);
-
-        expect(MagicStarter.socialLoginBuilder, equals(testBuilder));
+        expect(MagicStarter.manager.socialAuth, same(bridge));
+        expect(MagicStarter.socialAuth, same(bridge));
       });
     });
 
@@ -449,4 +428,32 @@ void main() {
       });
     });
   });
+}
+
+/// A bridge that is only ever registered, never driven.
+class _SilentSocialAuth implements MagicStarterSocialAuth {
+  @override
+  List<String> providers() => const [];
+
+  @override
+  String label(String provider) => provider;
+
+  @override
+  Widget icon(String provider) => const SizedBox();
+
+  @override
+  Future<Map<String, dynamic>> signIn(String provider) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Future<Map<String, dynamic>> Function()> beginConnect(
+    String provider,
+    Map<String, String> proof,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<String> confirm(String provider) => throw UnimplementedError();
+
+  @override
+  Future<void> signOut() async {}
 }

@@ -49,6 +49,7 @@ void enableEveryRoutedFeature() {
   Config.set('magic_starter.features.timezones', true);
   Config.set('magic_starter.features.newsletter', true);
   Config.set('magic_starter.features.sessions', true);
+  Config.set('magic_starter.features.social_login', true);
   Config.set('magic_starter.features.teams', true);
 }
 

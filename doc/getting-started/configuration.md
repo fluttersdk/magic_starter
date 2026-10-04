@@ -108,7 +108,7 @@ Every feature defaults to `false` and must be explicitly enabled. Each toggle co
 | `registration` | `false` | User registration screen and route. |
 | `extended_profile` | `false` | Additional profile fields: phone, timezone, and language preferences. |
 | `profile_photos` | `false` | Profile photo upload and removal in the profile settings. |
-| `social_login` | `false` | Social/OAuth login buttons on the auth screens. |
+| `social_login` | `false` | Social login: provider buttons on the login and register screens, the Connected accounts settings page, and the provider option of the identity-confirmation dialog. Needs a bridge registered with `MagicStarter.useSocialAuth(...)` (see [Social Login](../basics/authentication.md#social-login)); the flag alone renders nothing. |
 | `two_factor` | `false` | Two-factor authentication setup, challenge screen, and recovery codes. |
 | `sessions` | `false` | Browser sessions list with logout/revoke capability. |
 | `phone_otp` | `false` | Phone-based OTP authentication flow (send code, verify). |

@@ -7,8 +7,8 @@ import '../../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../../components/settings_row/index.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
-import '../../../widgets/magic_starter_password_confirm_dialog.dart';
 import '../../../widgets/magic_starter_confirm_dialog.dart';
+import '../../../../support/confirms_identity.dart';
 import '../../../../support/session_device_title.dart';
 
 /// Active sessions settings sub-page.
@@ -20,8 +20,8 @@ import '../../../../support/session_device_title.dart';
 /// for non-current devices). The load + revoke wiring is lifted verbatim from
 /// the original long-form profile settings view: it reuses
 /// [MagicStarterProfileController.getSessions] / `doRevokeSession` /
-/// `doRevokeOtherSessions` and the [MagicStarterPasswordConfirmDialog] widget
-/// unchanged — no endpoint or controller signature is altered here.
+/// `doRevokeOtherSessions` unchanged, confirming identity through
+/// [confirmAndRun] with whichever proof the account can send.
 class MagicStarterSessionsView
     extends MagicStatefulView<MagicStarterProfileController> {
   const MagicStarterSessionsView({super.key});
@@ -95,23 +95,14 @@ class _MagicStarterSessionsViewState
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    final success = await MagicStarterPasswordConfirmDialog.show(
+    final success = await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.danger,
-      onConfirm: (password) async {
-        final ok = await _trackLoading(
-          _sessionActionLoading,
-          () =>
-              controller.doRevokeSession(tokenId: tokenId, password: password),
-        );
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
+      action: (proof) => _trackLoading(
+        _sessionActionLoading,
+        () => controller.doRevokeSession(tokenId: tokenId, proof: proof),
+      ),
     );
 
     if (success) {
@@ -123,22 +114,14 @@ class _MagicStarterSessionsViewState
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    final success = await MagicStarterPasswordConfirmDialog.show(
+    final success = await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.danger,
-      onConfirm: (password) async {
-        final ok = await _trackLoading(
-          _sessionActionLoading,
-          () => controller.doRevokeOtherSessions(password: password),
-        );
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
+      action: (proof) => _trackLoading(
+        _sessionActionLoading,
+        () => controller.doRevokeOtherSessions(proof: proof),
+      ),
     );
 
     if (success) {
@@ -203,24 +186,16 @@ class _MagicStarterSessionsViewState
     );
   }
 
-  /// Opens the password-confirm dialog and deletes the account on confirm.
+  /// Confirms identity and deletes the account on confirm.
   Future<void> _confirmDeleteAccount(BuildContext context) async {
     if (!context.mounted) return;
-    await MagicStarterPasswordConfirmDialog.show(
+    await confirmAndRun(
       context,
+      controller,
       title: trans('magic_starter.profile.delete_account.title'),
       description: trans('magic_starter.profile.delete_account.description'),
       variant: ConfirmDialogVariant.danger,
-      onConfirm: (password) async {
-        final ok = await controller.doDeleteAccount(password: password);
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
+      action: (proof) => controller.doDeleteAccount(proof: proof),
     );
   }
 

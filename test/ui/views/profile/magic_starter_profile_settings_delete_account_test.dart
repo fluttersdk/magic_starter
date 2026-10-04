@@ -167,11 +167,11 @@ class MockGuard implements Guard {
 
 void main() {
   Widget wrap(Widget widget) {
+    // The theme wraps the Navigator, so a dialog (an overlay entry) has it too.
     return MaterialApp(
-      home: WindTheme(
-        data: WindThemeData(),
-        child: Scaffold(body: SingleChildScrollView(child: widget)),
-      ),
+      builder: (context, child) =>
+          WindTheme(data: WindThemeData(), child: child!),
+      home: Scaffold(body: SingleChildScrollView(child: widget)),
     );
   }
 
@@ -198,6 +198,9 @@ void main() {
       Auth.manager.forgetGuards();
       Auth.manager.extend('mock', (_) => mockGuard);
       Config.set('auth.defaults.guard', 'mock');
+      Config.set('auth.guards', {
+        'mock': {'driver': 'mock'},
+      });
 
       // 4. Set authenticated user.
       mockGuard.setUser(
@@ -232,19 +235,202 @@ void main() {
       Gate.flush();
     });
 
+    /// Opens the delete confirmation: scrolls to the section's button, taps it.
+    Future<void> tapDelete(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final button = find.byWidgetPredicate(
+        (widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data ==
+                trans('magic_starter.profile.delete_account.button'),
+      );
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+    }
+
+    /// Types [password] into the confirmation dialog and confirms it.
+    Future<void> confirmWithPassword(
+      WidgetTester tester,
+      String password,
+    ) async {
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(MagicStarterPasswordConfirmDialog),
+          matching: find.byType(EditableText),
+        ),
+        password,
+      );
+      await tester.tap(find.text('common.confirm'));
+    }
+
+    /// Mounts the view as the router's home, with a login page to land on, so
+    /// the toast and the navigation are real.
+    ///
+    /// [WindTheme] sits above the app because a toast is inserted into the
+    /// Navigator's overlay, a sibling of the routed pages.
+    Future<void> mountWithRouter(WidgetTester tester) async {
+      MagicRouter.reset();
+      addTearDown(MagicRouter.reset);
+      MagicRoute.page('/', () => const MagicStarterProfileSettingsView());
+      MagicRoute.page(
+        MagicStarterConfig.loginRoute(),
+        () => const Text('login page'),
+      );
+      MagicRouter.instance.setInitialLocation('/');
+
+      await tester.pumpWidget(
+        WindTheme(
+          data: WindThemeData(),
+          child: MaterialApp.router(
+            routerConfig: MagicRouter.instance.routerConfig,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
     testWidgets(
-      'delete account section renders with password input and button',
+      'delete account is a button that asks for the password, with no inline field',
       (tester) async {
         await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await tapDelete(tester);
 
-        // Verify WFormInput widgets exist (password input).
-        expect(find.byType(WFormInput), findsWidgets);
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+        expect(find.byType(MagicStarterStepUpDialog), findsNothing);
+        // Nothing is sent until the dialog confirms.
+        expect(mockDriver.lastMethod, isNull);
+      },
+    );
 
-        // Verify WButton widgets exist (action buttons including delete).
-        expect(find.byType(WButton), findsWidgets);
+    testWidgets('the confirmed password rides the delete request', (
+      tester,
+    ) async {
+      mockDriver.mockResponse(statusCode: 202, data: {'message': 'Scheduled'});
 
-        // Verify the delete card exists (MSCard).
-        expect(find.byType(MSCard), findsWidgets);
+      await mountWithRouter(tester);
+      await tapDelete(tester);
+      await confirmWithPassword(tester, 'mysecretpass');
+      await tester.pumpAndSettle();
+
+      expect(mockDriver.lastMethod, equals('POST'));
+      expect(mockDriver.lastUrl, equals('/user'));
+      expect(
+        mockDriver.lastData,
+        equals({'_method': 'DELETE', 'password': 'mysecretpass'}),
+      );
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a password-less account is offered the step-up dialog', (
+      tester,
+    ) async {
+      mockGuard.setUser(
+        MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'name': 'Test User',
+          'email': 'test@example.com',
+          'has_password': false,
+          'two_factor_enabled': true,
+        }),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tapDelete(tester);
+
+      expect(find.byType(MagicStarterStepUpDialog), findsOneWidget);
+      expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+    });
+
+    testWidgets('a guest deletes with no proof and no dialog', (tester) async {
+      mockGuard.setUser(
+        MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'name': 'Guest',
+          'has_password': false,
+          'is_guest': true,
+        }),
+      );
+      mockDriver.mockResponse(statusCode: 202, data: {'message': 'Scheduled'});
+
+      await mountWithRouter(tester);
+      await tapDelete(tester);
+
+      expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+      expect(find.byType(MagicStarterStepUpDialog), findsNothing);
+      expect(mockDriver.lastData, equals({'_method': 'DELETE'}));
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+      'a 202 shows the server message, signs out and lands on login',
+      (tester) async {
+        const message =
+            'Your account will be deleted in 30 days. Sign in again before '
+            'then to cancel the deletion.';
+        mockDriver.mockResponse(
+          statusCode: 202,
+          data: {
+            'data': {'deletion_scheduled_at': '2026-11-04T12:00:00.000000Z'},
+            'message': message,
+          },
+        );
+
+        await mountWithRouter(tester);
+        await tapDelete(tester);
+        await confirmWithPassword(tester, 'mysecretpass');
+        await tester.pump();
+        await tester.pump();
+
+        expect(mockGuard.logoutCalled, isTrue);
+        expect(find.text(message), findsOneWidget);
+        await tester.pumpAndSettle(const Duration(milliseconds: 100));
+        expect(find.text('login page'), findsOneWidget);
+
+        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle();
+      },
+    );
+
+    testWidgets(
+      'a 422 owns_shared_teams shows its sentence and keeps the user signed in',
+      (tester) async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The server wording.',
+            'code': 'owns_shared_teams',
+            'team_ids': ['9a8b7c6d'],
+            'errors': {
+              'user': ['The server wording.'],
+            },
+          },
+        );
+
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await tapDelete(tester);
+        await confirmWithPassword(tester, 'mysecretpass');
+        await tester.pumpAndSettle();
+
+        // No new proof fixes this refusal: the dialog closes and the
+        // controller keeps the code's sentence (a key here: no catalogue is
+        // loaded) rather than the server's.
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+        expect(
+          Magic.find<MagicStarterProfileController>().rxStatus.message,
+          'social.owns_shared_teams',
+        );
+        expect(mockGuard.logoutCalled, isFalse);
+        expect(Auth.check(), isTrue);
       },
     );
   });

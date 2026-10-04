@@ -1,7 +1,43 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+
+/// A bridge whose sign-in never settles, so a tap is observed on its own.
+class _FakeSocialAuth implements MagicStarterSocialAuth {
+  final List<String> signInCalls = [];
+
+  @override
+  List<String> providers() => const ['google', 'apple'];
+
+  @override
+  String label(String provider) => provider;
+
+  @override
+  Widget icon(String provider) =>
+      SizedBox.square(dimension: 16, key: Key('icon-$provider'));
+
+  @override
+  Future<Map<String, dynamic>> signIn(String provider) {
+    signInCalls.add(provider);
+
+    return Completer<Map<String, dynamic>>().future;
+  }
+
+  @override
+  Future<Future<Map<String, dynamic>> Function()> beginConnect(
+    String provider,
+    Map<String, String> proof,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<String> confirm(String provider) => throw UnimplementedError();
+
+  @override
+  Future<void> signOut() async {}
+}
 
 void main() {
   Widget wrap(Widget widget) {
@@ -13,62 +49,57 @@ void main() {
     );
   }
 
-  group('MagicStarterRegisterView — social login', () {
+  group('MagicStarterRegisterView: social sign-in', () {
     setUp(() {
       MagicApp.reset();
       Magic.flush();
-      Magic.singleton('magic_starter', () => MagicStarterManager());
+      setUpMagicStarterForTests();
       Magic.singleton('log', () => LogManager());
       Magic.put(MagicStarterAuthController());
     });
 
-    testWidgets('does not show social login when feature disabled (default)', (
-      tester,
-    ) async {
+    testWidgets('shows nothing while the feature is off', (tester) async {
+      MagicStarter.useSocialAuth(_FakeSocialAuth());
+
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
       expect(find.byType(MSSocialDivider), findsNothing);
+      expect(find.byType(MagicStarterSocialButtons), findsNothing);
     });
 
-    testWidgets(
-      'does not show social login when feature enabled but no builder',
-      (tester) async {
-        Config.set('magic_starter.features.social_login', true);
-
-        await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
-
-        expect(find.byType(MSSocialDivider), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'shows social login when feature enabled AND builder registered',
-      (tester) async {
-        Config.set('magic_starter.features.social_login', true);
-        MagicStarter.useSocialLogin((context, isLoading) {
-          return const SizedBox(key: Key('social-buttons'));
-        });
-
-        await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
-
-        expect(find.byType(MSSocialDivider), findsOneWidget);
-        expect(find.byKey(const Key('social-buttons')), findsOneWidget);
-      },
-    );
-
-    testWidgets('passes isLoading=false to builder when not submitting', (
+    testWidgets('shows nothing when the feature is on but no bridge is set', (
       tester,
     ) async {
       Config.set('magic_starter.features.social_login', true);
-      bool? receivedIsLoading;
-      MagicStarter.useSocialLogin((context, isLoading) {
-        receivedIsLoading = isLoading;
-        return const SizedBox();
-      });
 
       await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
 
-      expect(receivedIsLoading, isFalse);
+      expect(find.byType(MSSocialDivider), findsNothing);
+      expect(find.byType(MagicStarterSocialButtons), findsNothing);
+    });
+
+    testWidgets('renders one button per provider and signs in on a tap', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.social_login', true);
+      final bridge = _FakeSocialAuth();
+      MagicStarter.useSocialAuth(bridge);
+
+      await tester.pumpWidget(wrap(const MagicStarterRegisterView()));
+
+      expect(find.byType(MSSocialDivider), findsOneWidget);
+      expect(find.byKey(const Key('icon-google')), findsOneWidget);
+      expect(find.byKey(const Key('icon-apple')), findsOneWidget);
+
+      final appleButton = find.ancestor(
+        of: find.byKey(const Key('icon-apple')),
+        matching: find.byType(MSButton),
+      );
+      await tester.ensureVisible(appleButton);
+      await tester.tap(appleButton);
+      await tester.pump();
+
+      expect(bridge.signInCalls, ['apple']);
     });
   });
 }

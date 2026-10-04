@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_theme.dart';
+import '../contracts/magic_starter_social_auth.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 import '../models/magic_starter_team.dart';
@@ -361,29 +362,21 @@ class MagicStarter {
     manager.sidebarFooterBuilder = builder;
   }
 
-  /// Register a custom social login buttons builder.
+  /// Register the app's social login bridge.
   ///
-  /// When set, social login buttons appear on login and register pages
-  /// (requires `magic_starter.features.social_login` to be enabled).
+  /// While set and `magic_starter.features.social_login` is on, login and
+  /// register offer [MagicStarterSocialAuth.providers], and a tap signs in
+  /// through `MagicStarterAuthController.doSocialSignIn`.
   ///
   /// ```dart
-  /// MagicStarter.useSocialLogin((context, isLoading) {
-  ///   return SocialLoginButtons(
-  ///     loadingProvider: controller.socialLoginProvider,
-  ///     onGoogle: () => controller.doSocialLogin('google'),
-  ///   );
-  /// });
+  /// MagicStarter.useSocialAuth(AppSocialAuth());
   /// ```
-  static void useSocialLogin(SocialLoginBuilder builder) {
-    manager.socialLoginBuilder = builder;
+  static void useSocialAuth(MagicStarterSocialAuth socialAuth) {
+    manager.socialAuth = socialAuth;
   }
 
-  /// Whether social login buttons have been registered.
-  static bool get hasSocialLogin => manager.socialLoginBuilder != null;
-
-  /// Get the social login builder, or null if not registered.
-  static SocialLoginBuilder? get socialLoginBuilder =>
-      manager.socialLoginBuilder;
+  /// The registered social login bridge, or `null` when none is.
+  static MagicStarterSocialAuth? get socialAuth => manager.socialAuth;
 
   /// Locale options for language selection.
   static List<SelectOption<String>> get localeOptions => manager.localeOptions;

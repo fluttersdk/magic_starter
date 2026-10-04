@@ -216,7 +216,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<Map<String, dynamic>?> future = controller
-            .doEnableTwoFactor(password: 'secret123');
+            .doEnableTwoFactor(proof: {'password': 'secret123'});
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -252,7 +252,7 @@ void main() {
           mockDriver.startPendingResponse();
 
           final Future<Map<String, dynamic>?> future = controller
-              .doEnableTwoFactor(password: 'wrong-password');
+              .doEnableTwoFactor(proof: {'password': 'wrong-password'});
           expect(controller.isLoading, isTrue);
 
           mockDriver.completePendingResponse(
@@ -276,7 +276,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<Map<String, dynamic>?> future = controller
-            .doEnableTwoFactor(password: 'secret123');
+            .doEnableTwoFactor(proof: {'password': 'secret123'});
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(
@@ -353,7 +353,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<bool> future = controller.doDisableTwoFactor(
-          password: 'valid-password',
+          proof: {'password': 'valid-password'},
         );
         expect(controller.isLoading, isTrue);
 
@@ -382,7 +382,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<bool> future = controller.doDisableTwoFactor(
-          password: 'wrong-password',
+          proof: {'password': 'wrong-password'},
         );
         expect(controller.isLoading, isTrue);
 
@@ -409,7 +409,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<List<String>?> future = controller.getRecoveryCodes(
-          password: 'secret123',
+          proof: {'password': 'secret123'},
         );
         expect(controller.isLoading, isTrue);
 
@@ -445,7 +445,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<List<String>?> future = controller.getRecoveryCodes(
-          password: 'secret123',
+          proof: {'password': 'secret123'},
         );
         expect(controller.isLoading, isTrue);
 
@@ -469,7 +469,7 @@ void main() {
           mockDriver.startPendingResponse();
 
           final Future<List<String>?> future = controller
-              .doRegenerateRecoveryCodes(password: 'secret123');
+              .doRegenerateRecoveryCodes(proof: {'password': 'secret123'});
           expect(controller.isLoading, isTrue);
 
           mockDriver.completePendingResponse(
@@ -501,7 +501,7 @@ void main() {
         mockDriver.startPendingResponse();
 
         final Future<List<String>?> future = controller
-            .doRegenerateRecoveryCodes(password: 'secret123');
+            .doRegenerateRecoveryCodes(proof: {'password': 'secret123'});
         expect(controller.isLoading, isTrue);
 
         mockDriver.completePendingResponse(

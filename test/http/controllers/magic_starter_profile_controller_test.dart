@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'dart:ui' show Locale;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart' show SizedBox;
+import 'package:flutter/widgets.dart' show SizedBox, Widget;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -461,7 +463,7 @@ void main() {
           );
 
           final result = await controller.doDeleteAccount(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isTrue);
@@ -489,7 +491,9 @@ void main() {
           },
         );
 
-        final result = await controller.doDeleteAccount(password: 'wrongpass');
+        final result = await controller.doDeleteAccount(
+          proof: {'password': 'wrongpass'},
+        );
 
         expect(result, isFalse);
         expect(controller.isSuccess, isFalse);
@@ -511,7 +515,7 @@ void main() {
           );
 
           final result = await controller.doDeleteAccount(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isTrue);
@@ -537,13 +541,448 @@ void main() {
           );
 
           final result = await controller.doDeleteAccount(
-            password: 'wrongpass',
+            proof: {'password': 'wrongpass'},
           );
 
           expect(result, isFalse);
           expect(order, isEmpty);
         },
       );
+    });
+
+    group('doDeleteAccount refusals', () {
+      setUp(() async {
+        Translator.instance.setLoader(const _ShippedCatalogueLoader());
+        await Translator.instance.setLocale(const Locale('en'));
+      });
+
+      tearDown(() => Translator.instance.setLoader(_StubLangLoader()));
+
+      for (final code in [
+        'owns_shared_teams',
+        'team_has_active_subscription',
+        'subscription_active',
+      ]) {
+        test('$code shows its sentence and keeps the user signed in', () async {
+          mockDriver.mockResponse(
+            statusCode: 422,
+            data: {
+              'message': 'The server wording.',
+              'code': code,
+              'team_ids': ['9a8b7c6d'],
+              'errors': {
+                'user': ['The server wording.'],
+              },
+            },
+          );
+
+          final result = await controller.doDeleteAccount(
+            proof: {'password': 'mysecretpass'},
+          );
+
+          expect(result, isFalse);
+          expect(mockGuard.logoutCalled, isFalse);
+          expect(controller.rxStatus.message, equals(_shipped(code)));
+          expect(controller.rxStatus.message, isNot('The server wording.'));
+        });
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // Connected accounts
+    // -----------------------------------------------------------------------
+
+    group('connected accounts', () {
+      late _FakeSocialAuth bridge;
+
+      setUp(() async {
+        Translator.instance.setLoader(const _ShippedCatalogueLoader());
+        await Translator.instance.setLocale(const Locale('en'));
+
+        bridge = _FakeSocialAuth();
+        MagicStarter.useSocialAuth(bridge);
+      });
+
+      tearDown(() => Translator.instance.setLoader(_StubLangLoader()));
+
+      group('doDisconnectSocialAccount', () {
+        test('deletes the provider link, then restores the user', () async {
+          mockDriver.mockResponse(statusCode: 204, data: null);
+
+          final result = await controller.doDisconnectSocialAccount('google');
+
+          expect(result, isTrue);
+          expect(mockDriver.lastMethod, equals('DELETE'));
+          expect(mockDriver.lastUrl, equals('/user/social-accounts/google'));
+          expect(mockGuard.restoreCalled, isTrue);
+        });
+
+        test(
+          'last_login_method shows its sentence and restores nothing',
+          () async {
+            mockDriver.mockResponse(
+              statusCode: 422,
+              data: {
+                'message': 'The server wording.',
+                'code': 'last_login_method',
+                'errors': {
+                  'provider': ['The server wording.'],
+                },
+              },
+            );
+
+            final result = await controller.doDisconnectSocialAccount('google');
+
+            expect(result, isFalse);
+            expect(
+              controller.rxStatus.message,
+              equals(_shipped('last_login_method')),
+            );
+            expect(mockGuard.restoreCalled, isFalse);
+          },
+        );
+
+        test('an unknown link (404) is an error, not a success', () async {
+          mockDriver.mockResponse(statusCode: 404, data: {'message': 'Gone'});
+
+          final result = await controller.doDisconnectSocialAccount('github');
+
+          expect(result, isFalse);
+          expect(controller.isError, isTrue);
+        });
+      });
+
+      group('beginSocialConnect', () {
+        test('hands the provider and the proof to the bridge', () async {
+          final opener = await controller.beginSocialConnect(
+            'github',
+            proof: {'password': 'mysecretpass'},
+          );
+
+          expect(opener, isNotNull);
+          expect(bridge.beginCalls, equals(['github']));
+          expect(
+            bridge.beginProofs,
+            equals([
+              {'password': 'mysecretpass'},
+            ]),
+          );
+          expect(bridge.openerCalls, equals(0));
+        });
+
+        for (final code in [
+          'step_up_required',
+          'social_account_taken',
+          'flow_expired',
+        ]) {
+          test('$code shows its sentence and answers no opener', () async {
+            bridge.beginFailure = MagicStarterSocialException(
+              code: code,
+              message: 'The bridge wording.',
+            );
+
+            final opener = await controller.beginSocialConnect(
+              'github',
+              proof: {'code': '123456'},
+            );
+
+            expect(opener, isNull);
+            expect(controller.rxStatus.message, equals(_shipped(code)));
+          });
+        }
+
+        test(
+          'a failure the catalogue has no code for shows its message',
+          () async {
+            bridge.beginFailure = const MagicStarterSocialException(
+              message: 'The provider is down.',
+            );
+
+            await controller.beginSocialConnect('github', proof: {});
+
+            expect(
+              controller.rxStatus.message,
+              equals('The provider is down.'),
+            );
+          },
+        );
+
+        test('a cancelled flow shows nothing', () async {
+          bridge.beginFailure = const MagicStarterSocialException(
+            cancelled: true,
+          );
+
+          final opener = await controller.beginSocialConnect(
+            'github',
+            proof: {},
+          );
+
+          expect(opener, isNull);
+          expect(controller.isError, isFalse);
+        });
+      });
+
+      group('doConnectSocialAccount', () {
+        test('runs the opener, then restores the user', () async {
+          final opener = await controller.beginSocialConnect(
+            'github',
+            proof: {},
+          );
+
+          final result = await controller.doConnectSocialAccount(opener!);
+
+          expect(result, isTrue);
+          expect(bridge.openerCalls, equals(1));
+          expect(mockGuard.restoreCalled, isTrue);
+        });
+
+        test('calls the opener before anything is awaited', () {
+          // A web popup opens only inside the tap that started it.
+          var opened = false;
+
+          controller.doConnectSocialAccount(() {
+            opened = true;
+
+            return Future.value(<String, dynamic>{});
+          });
+
+          expect(opened, isTrue);
+        });
+
+        test('a refusal shows its sentence and restores nothing', () async {
+          bridge.openFailure = const MagicStarterSocialException(
+            code: 'social_account_taken',
+          );
+          final opener = await controller.beginSocialConnect(
+            'github',
+            proof: {},
+          );
+
+          final result = await controller.doConnectSocialAccount(opener!);
+
+          expect(result, isFalse);
+          expect(
+            controller.rxStatus.message,
+            equals(_shipped('social_account_taken')),
+          );
+          expect(mockGuard.restoreCalled, isFalse);
+        });
+
+        test('a cancelled flow shows nothing and restores nothing', () async {
+          bridge.openFailure = const MagicStarterSocialException(
+            cancelled: true,
+          );
+          final opener = await controller.beginSocialConnect(
+            'github',
+            proof: {},
+          );
+
+          final result = await controller.doConnectSocialAccount(opener!);
+
+          expect(result, isFalse);
+          expect(controller.isError, isFalse);
+          expect(mockGuard.restoreCalled, isFalse);
+        });
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // Step-up proofs and set-password
+    // -----------------------------------------------------------------------
+
+    group('step-up proofs', () {
+      setUp(() => Config.set('magic_starter.features.sessions', true));
+
+      final stepUpRefusal = <String, dynamic>{
+        'message': 'Please confirm your identity to continue.',
+        'code': 'step_up_required',
+        'accepts': ['confirmation_token'],
+        'errors': {
+          'confirmation_token': ['Please confirm your identity to continue.'],
+        },
+      };
+
+      test('a code proof is merged into the body beside _method', () async {
+        mockDriver.mockResponse(statusCode: 200, data: {'message': 'ok'});
+
+        await controller.doDisableTwoFactor(proof: {'code': '123456'});
+
+        expect(
+          mockDriver.lastData,
+          equals({'_method': 'DELETE', 'code': '123456'}),
+        );
+      });
+
+      test('a confirmation token proof reaches the body untouched', () async {
+        mockDriver.mockResponse(statusCode: 200, data: {'message': 'ok'});
+
+        await controller.doRevokeOtherSessions(
+          proof: {'confirmation_token': 'tok-1'},
+        );
+
+        expect(
+          mockDriver.lastData,
+          equals({'_method': 'DELETE', 'confirmation_token': 'tok-1'}),
+        );
+      });
+
+      test('an empty proof (a guest) sends no proof field', () async {
+        mockDriver.mockResponse(statusCode: 200, data: {'data': {}});
+
+        await controller.doEnableTwoFactor(proof: {});
+
+        expect(mockDriver.lastData, equals(<String, dynamic>{}));
+      });
+
+      test(
+        'step_up_required exposes the accepted proofs and its sentence',
+        () async {
+          mockDriver.mockResponse(statusCode: 422, data: stepUpRefusal);
+
+          final result = await controller.doRevokeSession(
+            tokenId: '7',
+            proof: {'code': '000000'},
+          );
+
+          expect(result, isFalse);
+          expect(controller.stepUpAccepts, equals(['confirmation_token']));
+          expect(
+            controller.rxStatus.message,
+            equals(trans('social.step_up_required')),
+          );
+        },
+      );
+
+      test('step_up_required without accepts does not throw', () async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'Please confirm your identity to continue.',
+            'code': 'step_up_required',
+          },
+        );
+
+        final result = await controller.doRevokeSession(
+          tokenId: '7',
+          proof: {'code': '000000'},
+        );
+
+        expect(result, isFalse);
+        expect(controller.stepUpAccepts, isNull);
+        expect(
+          controller.rxStatus.message,
+          equals(trans('social.step_up_required')),
+        );
+      });
+
+      test('the next gated call starts without the previous refusal', () async {
+        mockDriver.mockResponse(statusCode: 422, data: stepUpRefusal);
+        await controller.doRevokeOtherSessions(proof: {'code': '000000'});
+        expect(controller.stepUpAccepts, isNotNull);
+
+        mockDriver.mockResponse(statusCode: 200, data: {'message': 'ok'});
+        await controller.doRevokeOtherSessions(
+          proof: {'confirmation_token': 'tok-2'},
+        );
+
+        expect(controller.stepUpAccepts, isNull);
+      });
+
+      test(
+        'a refusal that is not a step-up leaves no accepted proofs',
+        () async {
+          mockDriver.mockResponse(
+            statusCode: 422,
+            data: {
+              'message': 'Incorrect password',
+              'errors': {
+                'password': ['The password is incorrect.'],
+              },
+            },
+          );
+
+          await controller.doDeleteAccount(proof: {'password': 'wrong'});
+
+          expect(controller.stepUpAccepts, isNull);
+        },
+      );
+    });
+
+    group('doSetPassword', () {
+      test(
+        'posts the new password with the proof, then restores the user',
+        () async {
+          mockDriver.mockResponse(statusCode: 200, data: {'data': null});
+
+          final result = await controller.doSetPassword(
+            password: 'NewSecret123',
+            passwordConfirmation: 'NewSecret123',
+            proof: {'confirmation_token': 'tok-1'},
+          );
+
+          expect(result, isTrue);
+          expect(mockDriver.lastMethod, equals('POST'));
+          expect(mockDriver.lastUrl, equals('/user/password/set'));
+          expect(
+            mockDriver.lastData,
+            equals({
+              'password': 'NewSecret123',
+              'password_confirmation': 'NewSecret123',
+              'confirmation_token': 'tok-1',
+            }),
+          );
+          expect(mockGuard.restoreCalled, isTrue);
+        },
+      );
+
+      test(
+        'password_already_set restores the user and shows its sentence',
+        () async {
+          mockDriver.mockResponse(
+            statusCode: 422,
+            data: {
+              'message': 'Your account already has a password set.',
+              'code': 'password_already_set',
+            },
+          );
+
+          final result = await controller.doSetPassword(
+            password: 'NewSecret123',
+            passwordConfirmation: 'NewSecret123',
+            proof: {},
+          );
+
+          expect(result, isFalse);
+          expect(mockGuard.restoreCalled, isTrue);
+          expect(
+            controller.rxStatus.message,
+            equals(trans('social.password_already_set')),
+          );
+        },
+      );
+
+      test('password_not_set on a password change restores the user', () async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'This account has no password yet.',
+            'code': 'password_not_set',
+          },
+        );
+
+        final result = await controller.doUpdatePassword(
+          currentPassword: 'anything',
+          password: 'NewSecret123',
+          passwordConfirmation: 'NewSecret123',
+        );
+
+        expect(result, isFalse);
+        expect(mockGuard.restoreCalled, isTrue);
+        expect(
+          controller.rxStatus.message,
+          equals(trans('social.password_not_set')),
+        );
+      });
     });
 
     // -----------------------------------------------------------------------
@@ -658,7 +1097,9 @@ void main() {
             },
           );
 
-          final result = await controller.doEnableTwoFactor(password: 'secret');
+          final result = await controller.doEnableTwoFactor(
+            proof: {'password': 'secret'},
+          );
 
           expect(result, isNotNull);
           expect(result!['secret'], equals('BASE32SECRET'));
@@ -673,7 +1114,9 @@ void main() {
             data: {'message': 'Server error'},
           );
 
-          final result = await controller.doEnableTwoFactor(password: 'wrong');
+          final result = await controller.doEnableTwoFactor(
+            proof: {'password': 'wrong'},
+          );
 
           expect(result, isNull);
           expect(controller.isSuccess, isFalse);
@@ -729,7 +1172,7 @@ void main() {
           ]);
 
           final result = await controller.doDisableTwoFactor(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isTrue);
@@ -756,7 +1199,7 @@ void main() {
           ]);
 
           final result = await controller.doDisableTwoFactor(
-            password: 'wrongpass',
+            proof: {'password': 'wrongpass'},
           );
 
           expect(result, isFalse);
@@ -767,7 +1210,7 @@ void main() {
           mockDriver.mockQueue([MagicResponse(statusCode: 500, data: {})]);
 
           final result = await controller.doDisableTwoFactor(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isFalse);
@@ -787,7 +1230,7 @@ void main() {
           ]);
 
           final result = await controller.getRecoveryCodes(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isNotNull);
@@ -804,7 +1247,7 @@ void main() {
           ]);
 
           final result = await controller.getRecoveryCodes(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isNull);
@@ -822,7 +1265,7 @@ void main() {
           ]);
 
           final result = await controller.doRegenerateRecoveryCodes(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isNotNull);
@@ -840,7 +1283,7 @@ void main() {
           ]);
 
           final result = await controller.doRegenerateRecoveryCodes(
-            password: 'mysecretpass',
+            proof: {'password': 'mysecretpass'},
           );
 
           expect(result, isNull);
@@ -925,7 +1368,7 @@ void main() {
 
             final result = await controller.doRevokeSession(
               tokenId: 'tok-abc',
-              password: 'mysecretpass',
+              proof: {'password': 'mysecretpass'},
             );
 
             expect(result, isTrue);
@@ -947,7 +1390,7 @@ void main() {
 
           final result = await controller.doRevokeSession(
             tokenId: 'tok-abc',
-            password: 'wrongpass',
+            proof: {'password': 'wrongpass'},
           );
 
           expect(result, isFalse);
@@ -965,7 +1408,7 @@ void main() {
             );
 
             final result = await controller.doRevokeOtherSessions(
-              password: 'mysecretpass',
+              proof: {'password': 'mysecretpass'},
             );
 
             expect(result, isTrue);
@@ -988,7 +1431,7 @@ void main() {
           );
 
           final result = await controller.doRevokeOtherSessions(
-            password: 'wrongpass',
+            proof: {'password': 'wrongpass'},
           );
 
           expect(result, isFalse);
@@ -1290,4 +1733,75 @@ void main() {
 class _StubLangLoader implements TranslationLoader {
   @override
   Future<Map<String, dynamic>> load(Locale locale) async => <String, dynamic>{};
+}
+
+/// The package's shipped `social` copy, so an assertion on a sentence is an
+/// assertion about what a host installs rather than a literal typed here.
+class _ShippedCatalogueLoader implements TranslationLoader {
+  const _ShippedCatalogueLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(Locale _) async => {
+    for (final entry in _shippedSocial().entries)
+      'social.${entry.key}': entry.value,
+  };
+}
+
+Map<String, dynamic> _shippedSocial() {
+  final stub =
+      jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
+          as Map<String, dynamic>;
+
+  return stub['social'] as Map<String, dynamic>;
+}
+
+String _shipped(String code) => _shippedSocial()[code] as String;
+
+/// A bridge whose connect answers, or fails, as scripted.
+class _FakeSocialAuth implements MagicStarterSocialAuth {
+  final List<String> beginCalls = [];
+  final List<Map<String, String>> beginProofs = [];
+  int openerCalls = 0;
+  MagicStarterSocialException? beginFailure;
+  MagicStarterSocialException? openFailure;
+
+  @override
+  List<String> providers() => const ['google', 'github'];
+
+  @override
+  String label(String provider) => provider;
+
+  @override
+  Widget icon(String provider) => const SizedBox();
+
+  @override
+  Future<Map<String, dynamic>> signIn(String provider) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Future<Map<String, dynamic>> Function()> beginConnect(
+    String provider,
+    Map<String, String> proof,
+  ) async {
+    beginCalls.add(provider);
+    beginProofs.add(proof);
+    final failure = beginFailure;
+    if (failure != null) throw failure;
+
+    return () async {
+      openerCalls++;
+      final failure = openFailure;
+      if (failure != null) throw failure;
+
+      return {
+        'data': {'provider': provider, 'email': 'ada@example.com'},
+      };
+    };
+  }
+
+  @override
+  Future<String> confirm(String provider) => throw UnimplementedError();
+
+  @override
+  Future<void> signOut() async {}
 }

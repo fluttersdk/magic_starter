@@ -66,7 +66,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.38
+  magic_starter: ^0.0.39
 ```
 
 ### 2. Install configuration
@@ -155,7 +155,7 @@ All 14 features default to `false` (opt-in). Enable only what your app needs:
 | `newsletter` | Newsletter subscribe/unsubscribe toggle |
 | `email_verification` | Email verification notice and resend flow |
 | `extended_profile` | Extended profile fields: phone, timezone, language |
-| `social_login` | Social login buttons (Google, Apple, etc.) |
+| `social_login` | Social login buttons on login and register (Google, Apple, GitHub, Microsoft), the Connected accounts page, and provider confirmation for sensitive actions. Needs a bridge registered with `MagicStarter.useSocialAuth(...)`; `magic_social_auth` publishes one |
 | `notifications` | Real-time notification polling, read/unread, preference matrix. Also declares and releases the push external id as sessions begin and end, prefixed by `notifications.external_id_prefix` (default `user_`, matching the backend) |
 | `timezones` | Timezone selection via async API search |
 | `billing` | Subscription and billing screen over `magic_payments`. Also needs `billing.web_origin`, an absolute url Stripe can return to |
@@ -599,6 +599,9 @@ App launch → MagicStarterServiceProvider.boot()
 | [Authentication](https://magic.fluttersdk.com/packages/starter/basics/authentication) | Login, register, forgot/reset password, 2FA, OTP |
 | [Profile](https://magic.fluttersdk.com/packages/starter/basics/profile) | Profile management, photo upload, sessions |
 | [Teams](https://magic.fluttersdk.com/packages/starter/basics/teams) | Team creation, switching, invitations, roles |
+| [Connected Accounts](https://magic.fluttersdk.com/packages/starter/basics/connected-accounts) | Link and unlink social providers |
+| [Confirming Identity](https://magic.fluttersdk.com/packages/starter/basics/identity-confirmation) | The step-up proof sensitive actions ask for |
+| [Set a Password](https://magic.fluttersdk.com/packages/starter/basics/set-password) | First password for a social-only account |
 | [Notifications](https://magic.fluttersdk.com/packages/starter/basics/notifications) | Real-time polling, preferences, read/unread |
 | [Views & Layouts](https://magic.fluttersdk.com/packages/starter/basics/views-and-layouts) | View registry, layout system, overriding screens |
 | [CLI Tools](https://magic.fluttersdk.com/packages/starter/basics/cli) | Install, configure, doctor, publish, uninstall |

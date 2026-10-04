@@ -37,7 +37,7 @@ Or add it manually to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.38
+  magic_starter: ^0.0.39
 ```
 
 Then fetch dependencies:
@@ -205,7 +205,7 @@ MagicStarter.useTeamResolver(
 | `MagicStarter.useTeamResolver()` | Yes, as the optional `currentTeam` / `allTeams` / `onSwitch` group. |
 
 > [!NOTE]
-> `bootstrap()` covers the identity contract only. Optional presentation setters (`useNavigation()`, `useTheme()`, `useWindTheme()`, `useHeader()`, `useSocialLogin()`, and the per-surface theme setters) stay separate and are called alongside it.
+> `bootstrap()` covers the identity contract only. Optional presentation setters (`useNavigation()`, `useTheme()`, `useWindTheme()`, `useHeader()`, `useSocialAuth()`, and the per-surface theme setters) stay separate and are called alongside it.
 
 <a name="configuration-reference"></a>
 ## Configuration Reference

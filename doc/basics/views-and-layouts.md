@@ -618,9 +618,14 @@ WDiv(
       ),
     ],
     if (MagicStarterConfig.hasSocialLoginFeatures() &&
-        MagicStarter.hasSocialLogin) ...[
+        MagicStarter.socialAuth != null) ...[
       const MSSocialDivider(),
-      MagicStarter.socialLoginBuilder!(context, isLoading),
+      MagicStarterSocialButtons(
+        socialAuth: MagicStarter.socialAuth!,
+        onSelected: controller.doSocialSignIn,
+        isLoading: controller.isLoading,
+        busyProvider: controller.pendingSocialProvider,
+      ),
     ],
   ],
 )

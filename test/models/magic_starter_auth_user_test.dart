@@ -105,6 +105,46 @@ void main() {
     });
 
     // ---------------------------------------------------------------------
+    // Sign-in method getters
+    // ---------------------------------------------------------------------
+
+    group('sign-in method getters', () {
+      test('read has_password, is_guest, social_accounts and the '
+          'scheduled deletion', () {
+        final user = MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'has_password': false,
+          'is_guest': true,
+          'social_accounts': [
+            {
+              'provider': 'github',
+              'email_at_link': 'ada@example.com',
+              'created_at': '2026-10-01T10:00:00Z',
+              'revoked_at': null,
+            },
+          ],
+          'deletion_scheduled_at': '2026-11-01T10:00:00Z',
+        });
+
+        expect(user.hasPassword, isFalse);
+        expect(user.isGuest, isTrue);
+        expect(user.socialAccounts, hasLength(1));
+        expect(user.socialAccounts.single['provider'], 'github');
+        expect(user.deletionScheduledAt, DateTime.utc(2026, 11, 1, 10));
+      });
+
+      test('an older backend that sends none of them reads as a password '
+          'account with nothing linked and nothing scheduled', () {
+        final user = MagicStarterAuthUser.fromMap({'id': 1});
+
+        expect(user.hasPassword, isTrue);
+        expect(user.isGuest, isFalse);
+        expect(user.socialAccounts, isEmpty);
+        expect(user.deletionScheduledAt, isNull);
+      });
+    });
+
+    // ---------------------------------------------------------------------
     // Authenticatable mixin
     // ---------------------------------------------------------------------
 

@@ -109,7 +109,7 @@ void main() {
 
         expect(MagicStarter.manager.navigationConfig, isNull);
         expect(MagicStarter.manager.headerBuilder, isNull);
-        expect(MagicStarter.manager.socialLoginBuilder, isNull);
+        expect(MagicStarter.manager.socialAuth, isNull);
         expect(
           MagicStarter.navigationTheme,
           equals(const MagicStarterNavigationTheme()),

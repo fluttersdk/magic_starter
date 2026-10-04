@@ -406,6 +406,10 @@ class MagicStarterConfig {
   static String settingsSessionsRoute() =>
       '${profilePrefix()}/security/sessions';
 
+  /// Full path for the Connected accounts security sub-page.
+  static String settingsConnectedAccountsRoute() =>
+      '${profilePrefix()}/security/connected-accounts';
+
   /// Full path for invitation acceptance page.
   static String invitationAcceptRoute(String token) =>
       '/invitations/$token/accept';

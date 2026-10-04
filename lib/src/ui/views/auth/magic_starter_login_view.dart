@@ -9,6 +9,7 @@ import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
 import '../../../http/controllers/magic_starter_guest_auth_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
+import '../../widgets/magic_starter_social_buttons.dart';
 
 /// Login view with dynamic identity field support.
 ///
@@ -77,6 +78,7 @@ class _MagicStarterLoginViewState
 
   Widget _buildForm({String? errorMessage}) {
     final isLoading = controller.isLoading;
+    final socialAuth = MagicStarter.socialAuth;
 
     final headerSlot = MagicStarter.view.buildSlot(
       'auth.login',
@@ -167,9 +169,14 @@ class _MagicStarterLoginViewState
             ],
             ?formFooterSlot,
             if (MagicStarterConfig.hasSocialLoginFeatures() &&
-                MagicStarter.hasSocialLogin) ...[
+                socialAuth != null) ...[
               const MSSocialDivider(),
-              MagicStarter.socialLoginBuilder!(context, isLoading),
+              MagicStarterSocialButtons(
+                socialAuth: socialAuth,
+                onSelected: controller.doSocialSignIn,
+                isLoading: isLoading,
+                busyProvider: controller.pendingSocialProvider,
+              ),
             ],
             if (MagicStarterConfig.hasRegistrationFeatures()) ...[
               const WSpacer(className: 'h-6'),

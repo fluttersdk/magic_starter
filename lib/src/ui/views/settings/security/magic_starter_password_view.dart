@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
+import '../../../../support/confirms_identity.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 
@@ -14,10 +15,12 @@ import '../../../components/settings_section/settings_section.dart';
 /// form in a [MSPageScaffold] with a unified back affordance returning to
 /// the hub.
 ///
-/// The form wiring is lifted verbatim from the original long-form profile
-/// settings view: the [passwordForm] (current/new/confirm) plus the
-/// [MagicStarterProfileController.doUpdatePassword] call are reused unchanged —
-/// no endpoint or controller signature is altered here.
+/// An account created through a provider has no password to change, so
+/// `has_password` false renders new/confirm only and sets the first one
+/// through [MagicStarterProfileController.doSetPassword], after the account
+/// confirms its identity. The page reads the user on every build, so a
+/// `password_already_set` or `password_not_set` refusal (the cached user was
+/// stale) shows the other form once the controller has restored it.
 class MagicStarterPasswordView
     extends MagicStatefulView<MagicStarterProfileController> {
   const MagicStarterPasswordView({super.key});
@@ -69,6 +72,10 @@ class _MagicStarterPasswordViewState
     }
   }
 
+  /// Whether the signed-in account has a password to change. Absent on a
+  /// backend that predates social login, where every account has one.
+  bool get _hasPassword => Auth.user()?.get<bool>('has_password') ?? true;
+
   Future<void> _submitPassword() async {
     if (!passwordForm.validate()) return;
     final success = await passwordForm.process(
@@ -82,10 +89,48 @@ class _MagicStarterPasswordViewState
     );
     _rebuildIfValidationErrors();
     if (success) {
-      passwordForm.set('current_password', '');
-      passwordForm.set('password', '');
-      passwordForm.set('password_confirmation', '');
+      _clearPasswordFields();
     }
+
+    // A `password_not_set` refusal restores the user; rebuild so the page
+    // shows the set-password form when the account turned out to have none.
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _submitSetPassword() async {
+    if (!passwordForm.validate()) return;
+
+    // The form only spins while a request is in flight, not while the
+    // confirmation dialog waits for the user.
+    final success = await confirmAndRun(
+      context,
+      controller,
+      title: trans('profile.set_password'),
+      action: (proof) => passwordForm.process(
+        () => controller.withoutNotifying(
+          () => controller.doSetPassword(
+            password: passwordForm.get('password'),
+            passwordConfirmation: passwordForm.get('password_confirmation'),
+            proof: proof,
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    // The controller restored the user on success and on a stale-mode
+    // refusal; rebuilding reads it and shows the form that now applies.
+    setState(() {});
+    if (success) {
+      _clearPasswordFields();
+    }
+  }
+
+  void _clearPasswordFields() {
+    passwordForm.set('current_password', '');
+    passwordForm.set('password', '');
+    passwordForm.set('password_confirmation', '');
   }
 
   // -- Build -----------------------------------------------------------------
@@ -93,9 +138,12 @@ class _MagicStarterPasswordViewState
   @override
   Widget build(BuildContext context) {
     final formTheme = MagicStarter.formTheme;
+    final hasPassword = _hasPassword;
 
     return MSPageScaffold(
-      title: trans('profile.update_password'),
+      title: trans(
+        hasPassword ? 'profile.update_password' : 'profile.set_password',
+      ),
       backLabel: trans('profile.settings'),
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
@@ -105,31 +153,35 @@ class _MagicStarterPasswordViewState
             className: 'flex flex-col gap-6',
             children: [
               MSSettingsSection(
+                footer: hasPassword
+                    ? null
+                    : trans('profile.set_password_description'),
                 children: [
                   WDiv(
                     className: 'flex flex-col gap-4 px-5 py-4',
                     children: [
-                      WFormInput(
-                        controller: passwordForm['current_password'],
-                        label: trans('attributes.current_password'),
-                        type: _obscureCurrent
-                            ? InputType.password
-                            : InputType.text,
-                        validator: rules([
-                          Required(),
-                        ], field: 'current_password'),
-                        suffix: WAnchor(
-                          onTap: () => setState(
-                            () => _obscureCurrent = !_obscureCurrent,
+                      if (hasPassword)
+                        WFormInput(
+                          controller: passwordForm['current_password'],
+                          label: trans('attributes.current_password'),
+                          type: _obscureCurrent
+                              ? InputType.password
+                              : InputType.text,
+                          validator: rules([
+                            Required(),
+                          ], field: 'current_password'),
+                          suffix: WAnchor(
+                            onTap: () => setState(
+                              () => _obscureCurrent = !_obscureCurrent,
+                            ),
+                            child: WIcon(
+                              _obscureCurrent ? _iconVisible : _iconHidden,
+                              className: 'text-fg-muted text-xl',
+                            ),
                           ),
-                          child: WIcon(
-                            _obscureCurrent ? _iconVisible : _iconHidden,
-                            className: 'text-fg-muted text-xl',
-                          ),
+                          labelClassName: formTheme.labelClassName,
+                          className: formTheme.inputClassName,
                         ),
-                        labelClassName: formTheme.labelClassName,
-                        className: formTheme.inputClassName,
-                      ),
                       WFormInput(
                         controller: passwordForm['password'],
                         label: trans('attributes.new_password'),
@@ -181,11 +233,21 @@ class _MagicStarterPasswordViewState
                   MagicBuilder<bool>(
                     listenable: passwordForm.processingListenable,
                     builder: (isProcessing) => WButton(
-                      onTap: isProcessing ? null : _submitPassword,
+                      onTap: isProcessing
+                          ? null
+                          : (hasPassword
+                                ? _submitPassword
+                                : _submitSetPassword),
                       isLoading: isProcessing,
                       className:
                           'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-                      child: WText(trans('profile.update_password')),
+                      child: WText(
+                        trans(
+                          hasPassword
+                              ? 'profile.update_password'
+                              : 'profile.set_password',
+                        ),
+                      ),
                     ),
                   ),
                 ],

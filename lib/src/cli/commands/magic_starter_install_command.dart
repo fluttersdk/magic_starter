@@ -619,11 +619,11 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
 
     final String socialLoginBlock = (features['social_login'] ?? false)
         ? '''
-    // 4. Register social login button builder.
-    MagicStarter.useSocialLogin((context, isLoading) {
-      // TODO: return your social login widget.
-      return const SizedBox.shrink();
-    });
+    // 4. Register your social login bridge, a MagicStarterSocialAuth
+    //    implementation (magic_social_auth's installer renders one). Until
+    //    one is registered, login and register offer no providers:
+    //
+    //    MagicStarter.useSocialAuth(AppSocialAuth());
 '''
         : '';
 

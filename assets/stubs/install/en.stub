@@ -230,7 +230,6 @@
         "description": "Permanently delete your account and all associated data. This action cannot be undone.",
         "guest_upgrade_description": "Convert your guest account to a full account to manage or delete your data.",
         "guest_upgrade_title": "Account Upgrade Required",
-        "password_label": "Confirm your password",
         "title": "Delete Account"
       }
     },
@@ -244,6 +243,7 @@
     },
     "titles": {
       "appearance": "Appearance",
+      "connected_accounts": "Connected Accounts",
       "forgot_password": "Forgot Password",
       "language": "Language",
       "login": "Sign In",
@@ -311,6 +311,8 @@
     "logout_other_sessions": "Log Out Other Browser Sessions",
     "no_active_sessions": "No active sessions found.",
     "other_sessions_revoke_error": "Failed to revoke other browser sessions.",
+    "password_set": "Password set successfully.",
+    "password_set_failed": "Failed to set password.",
     "password_update_failed": "Failed to update password. Please check your current password.",
     "password_updated": "Password updated successfully.",
     "phone_country_label": "Country Code",
@@ -323,6 +325,8 @@
     "profile_information": "Profile Information",
     "profile_photo": "Profile Photo",
     "revoke": "Revoke",
+    "set_password": "Set Password",
+    "set_password_description": "Your account has no password yet. Set one to also sign in with your email.",
     "session_revoke_error": "Failed to revoke browser session.",
     "sessions_fetch_error": "Failed to load browser sessions.",
     "settings": "Profile Settings",
@@ -358,6 +362,33 @@
       "copy_codes": "Copy All Codes",
       "invalid_code": "The provided two-factor authentication code was invalid."
     }
+  },
+  "social": {
+    "confirm_identity": "Confirm your identity",
+    "confirm_with": "Confirm with :provider",
+    "connect": "Connect",
+    "connected_accounts": "Connected accounts",
+    "connected_accounts_description": "Sign in with these accounts as well. Your account always keeps at least one way to sign in.",
+    "continue_with": "Continue with :provider",
+    "deletion_cancelled": "Account deletion cancelled. Your account is active again.",
+    "deletion_scheduled": "Your account will be deleted in :days days. Sign in again before then to cancel the deletion.",
+    "disconnect": "Disconnect",
+    "flow_expired": "Your sign-in took too long. Try again.",
+    "invalid_identity": "Could not verify your identity. Try again.",
+    "last_login_method": "This is your only login method. Add a password or link another provider before removing this one.",
+    "owns_shared_teams": "You own teams that you cannot delete. Transfer ownership or delete them before deleting your account.",
+    "password_already_set": "Your account already has a password set.",
+    "password_not_set": "This account has no password yet. Set one instead of changing it.",
+    "platform_not_configured": "This provider is not configured on this platform. Try again later.",
+    "provider_email_missing": "Your provider did not provide an email address. Try another provider or sign up with email.",
+    "provider_not_supported": "This provider is not supported.",
+    "provider_unavailable": "The sign-in provider could not be reached. Please try again later.",
+    "sdk_error": "The sign-in could not be completed. Please try again.",
+    "social_account_taken": "This provider account is already linked to another account.",
+    "social_email_taken": "An account with this email already exists. Sign in and link the provider from your profile.",
+    "step_up_required": "Please confirm your identity to continue.",
+    "subscription_active": "Your account has an active subscription. Cancel it before deleting your account.",
+    "team_has_active_subscription": "One of your teams has an active subscription. Cancel it first."
   },
   "teams": {
     "accept_invitation": "Accept Invitation",

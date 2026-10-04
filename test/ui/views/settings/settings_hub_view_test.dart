@@ -148,6 +148,34 @@ class MockGuard implements Guard {
   ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
+/// A bridge the hub only needs to see as present.
+class _SilentSocialAuth implements MagicStarterSocialAuth {
+  @override
+  List<String> providers() => const ['google'];
+
+  @override
+  String label(String provider) => 'Google';
+
+  @override
+  Widget icon(String provider) => const SizedBox();
+
+  @override
+  Future<Map<String, dynamic>> signIn(String provider) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Future<Map<String, dynamic>> Function()> beginConnect(
+    String provider,
+    Map<String, String> proof,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<String> confirm(String provider) => throw UnimplementedError();
+
+  @override
+  Future<void> signOut() async {}
+}
+
 // ---------------------------------------------------------------------------
 // Test Suite
 // ---------------------------------------------------------------------------
@@ -290,6 +318,52 @@ void main() {
 
     expect(
       navRowFor(tester, MagicStarterConfig.settingsSessionsRoute()),
+      isNull,
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // Security section: Connected accounts needs the feature AND a bridge
+  // -------------------------------------------------------------------------
+
+  testWidgets(
+    'Connected accounts row appears with the feature on and a bridge',
+    (tester) async {
+      Config.set('magic_starter.features.social_login', true);
+      MagicStarter.useSocialAuth(_SilentSocialAuth());
+
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsConnectedAccountsRoute()),
+        isNotNull,
+      );
+    },
+  );
+
+  testWidgets('Connected accounts row is hidden when the feature is off', (
+    tester,
+  ) async {
+    Config.set('magic_starter.features.social_login', false);
+    MagicStarter.useSocialAuth(_SilentSocialAuth());
+
+    await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+
+    expect(
+      navRowFor(tester, MagicStarterConfig.settingsConnectedAccountsRoute()),
+      isNull,
+    );
+  });
+
+  testWidgets('Connected accounts row is hidden when no bridge is set', (
+    tester,
+  ) async {
+    Config.set('magic_starter.features.social_login', true);
+
+    await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+
+    expect(
+      navRowFor(tester, MagicStarterConfig.settingsConnectedAccountsRoute()),
       isNull,
     );
   });

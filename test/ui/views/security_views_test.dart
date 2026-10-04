@@ -129,6 +129,21 @@ class MockGuard implements Guard {
     };
   }
 
+  /// An account created through a provider: no password, 2FA confirmed.
+  void setPasswordlessUser() {
+    _userData = <String, dynamic>{
+      'id': 1,
+      'name': 'Alice',
+      'email': 'alice@example.com',
+      'has_password': false,
+      'two_factor_enabled': true,
+    };
+  }
+
+  /// Runs on every [restore], so a test can move the account on the way the
+  /// backend would.
+  void Function()? onRestore;
+
   void setUserWithTwoFactorEnabled() {
     _userData = <String, dynamic>{
       'id': 1,
@@ -179,7 +194,7 @@ class MockGuard implements Guard {
   Future<bool> refreshToken() async => true;
 
   @override
-  Future<void> restore() async {}
+  Future<void> restore() async => onRestore?.call();
 
   @override
   ValueNotifier<int> get stateNotifier => ValueNotifier<int>(0);
@@ -336,6 +351,45 @@ void main() {
 
       expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
     });
+
+    testWidgets(
+      'a password-less account is asked for a code, which the call carries',
+      (WidgetTester tester) async {
+        mockGuard.setPasswordlessUser();
+        mockDriver.mockResponse(statusCode: 200, data: <String, dynamic>{});
+
+        tester.view.physicalSize = const Size(1200, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(wrap(const MagicStarterTwoFactorView()));
+        await tester.pump();
+
+        final btn = find.byWidgetPredicate(
+          (Widget w) =>
+              w is WButton &&
+              w.child is WText &&
+              (w.child as WText).data == trans('profile.two_factor_disable'),
+        );
+        await tester.ensureVisible(btn);
+        await tester.tap(btn);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+        expect(find.byType(MagicStarterStepUpDialog), findsOneWidget);
+
+        await tester.enterText(find.byType(EditableText), '123456');
+        await tester.tap(find.text('common.confirm'));
+        await tester.pumpAndSettle();
+
+        expect(mockDriver.lastUrl, contains('/two-factor-authentication'));
+        expect(
+          mockDriver.lastData,
+          equals(<String, dynamic>{'_method': 'DELETE', 'code': '123456'}),
+        );
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -389,6 +443,103 @@ void main() {
       expect(mockDriver.lastMethod, 'PUT');
       expect(mockDriver.lastUrl, contains('/user/password'));
       expect(mockDriver.lastData['current_password'], 'current-secret');
+    });
+  });
+
+  group('MagicStarterPasswordView: a password-less account', () {
+    Future<void> openView(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(wrap(const MagicStarterPasswordView()));
+      await tester.pump();
+    }
+
+    final setButton = find.byWidgetPredicate(
+      (Widget w) =>
+          w is WButton &&
+          w.child is WText &&
+          (w.child as WText).data == trans('profile.set_password'),
+    );
+
+    testWidgets('sees a set-password form with no current password', (
+      WidgetTester tester,
+    ) async {
+      mockGuard.setPasswordlessUser();
+
+      await openView(tester);
+
+      expect(find.byType(WFormInput), findsNWidgets(2));
+      expect(setButton, findsOneWidget);
+    });
+
+    testWidgets('confirms with a code, then posts /user/password/set', (
+      WidgetTester tester,
+    ) async {
+      mockGuard.setPasswordlessUser();
+      mockDriver.mockResponse(statusCode: 200, data: <String, dynamic>{});
+
+      await openView(tester);
+
+      final inputs = find.byType(WFormInput);
+      await tester.enterText(inputs.at(0), 'NewSecret123');
+      await tester.enterText(inputs.at(1), 'NewSecret123');
+      await tester.ensureVisible(setButton);
+      await tester.tap(setButton);
+      await tester.pumpAndSettle();
+
+      // Nothing is sent until identity is confirmed.
+      expect(mockDriver.lastUrl, isNull);
+      expect(find.byType(MagicStarterStepUpDialog), findsOneWidget);
+
+      await tester.enterText(find.byType(EditableText).last, '123456');
+      await tester.tap(find.text('common.confirm'));
+      await tester.pumpAndSettle();
+
+      expect(mockDriver.lastMethod, 'POST');
+      expect(mockDriver.lastUrl, contains('/user/password/set'));
+      expect(
+        mockDriver.lastData,
+        equals(<String, dynamic>{
+          'password': 'NewSecret123',
+          'password_confirmation': 'NewSecret123',
+          'code': '123456',
+        }),
+      );
+    });
+
+    testWidgets('password_already_set switches to the change form', (
+      WidgetTester tester,
+    ) async {
+      mockGuard.setPasswordlessUser();
+      mockGuard.onRestore = mockGuard.setUserWithTwoFactorEnabled;
+      mockDriver.mockResponse(
+        statusCode: 422,
+        data: <String, dynamic>{
+          'message': 'Your account already has a password set.',
+          'code': 'password_already_set',
+        },
+      );
+
+      await openView(tester);
+
+      final inputs = find.byType(WFormInput);
+      await tester.enterText(inputs.at(0), 'NewSecret123');
+      await tester.enterText(inputs.at(1), 'NewSecret123');
+      await tester.ensureVisible(setButton);
+      await tester.tap(setButton);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText).last, '123456');
+      await tester.tap(find.text('common.confirm'));
+      await tester.pumpAndSettle();
+
+      // The refusal is no proof problem: the dialog closes and the restored
+      // user lands the page on the change form.
+      expect(find.byType(MagicStarterStepUpDialog), findsNothing);
+      expect(find.byType(WFormInput), findsNWidgets(3));
+      expect(setButton, findsNothing);
     });
   });
 
@@ -478,6 +629,53 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'a password-less account revoking other sessions is offered the '
+      'step-up dialog, and delete-account asks for it too',
+      (WidgetTester tester) async {
+        mockGuard.setPasswordlessUser();
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: <String, dynamic>{'data': <dynamic>[]},
+        );
+
+        tester.view.physicalSize = const Size(1200, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(wrap(const MagicStarterSessionsView()));
+        await tester.pump();
+        await tester.pump();
+
+        final btn = find.byWidgetPredicate(
+          (Widget w) =>
+              w is WButton &&
+              w.child is WText &&
+              (w.child as WText).data == trans('profile.logout_other_sessions'),
+        );
+        await tester.ensureVisible(btn);
+        await tester.tap(btn);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+        expect(find.byType(MagicStarterStepUpDialog), findsOneWidget);
+
+        await tester.tap(find.text('common.cancel'));
+        await tester.pumpAndSettle();
+
+        final deleteRow = find.text(
+          trans('magic_starter.profile.delete_account.button'),
+        );
+        await tester.ensureVisible(deleteRow);
+        await tester.tap(deleteRow);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+        expect(find.byType(MagicStarterStepUpDialog), findsOneWidget);
       },
     );
   });

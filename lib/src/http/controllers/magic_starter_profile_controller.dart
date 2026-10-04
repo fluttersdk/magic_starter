@@ -2,7 +2,9 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../configuration/magic_starter_config.dart';
+import '../../contracts/magic_starter_social_auth.dart';
 import '../../facades/magic_starter.dart';
+import '../../support/social_failure_message.dart';
 import 'concerns/navigates_routes.dart';
 
 /// Profile controller for Magic Starter plugin.
@@ -19,6 +21,21 @@ class MagicStarterProfileController extends MagicController
   /// flight when the reader opens another settings page that loads on mount),
   /// and a flag cleared by the first to finish would un-suppress the other.
   int _suppressionDepth = 0;
+
+  List<String>? _stepUpAccepts;
+
+  /// The proofs the server takes after refusing a gated call with
+  /// `step_up_required` (`code`, `confirmation_token`), or `null` when the
+  /// last call was not refused that way.
+  ///
+  /// Cleared with the errors, so every gated call starts without it.
+  List<String>? get stepUpAccepts => _stepUpAccepts;
+
+  @override
+  void clearErrors() {
+    _stepUpAccepts = null;
+    super.clearErrors();
+  }
 
   /// Render profile settings view via registry key.
   Widget profile() => MagicStarter.view.make('profile.settings');
@@ -64,6 +81,39 @@ class MagicStarterProfileController extends MagicController
   void notifyListeners() {
     if (_suppressionDepth > 0) return;
     super.notifyListeners();
+  }
+
+  /// Reports a refused gated call, reading the refusal by its `code`.
+  ///
+  /// `step_up_required` keeps the proofs the server takes in [stepUpAccepts].
+  /// `password_already_set` and `password_not_set` mean the cached user is
+  /// stale, so it is restored first and the page that rebuilds shows the
+  /// other password form. `last_login_method` and the account deletion
+  /// refusals show their own sentence. Anything else is a plain
+  /// [handleApiError].
+  Future<void> _reportRefusal(
+    MagicResponse response, {
+    String? fallback,
+  }) async {
+    final body = response.data;
+    final code = body is Map<String, dynamic> ? body['code'] : null;
+
+    switch (code) {
+      case 'step_up_required':
+        _stepUpAccepts = ((body as Map<String, dynamic>)['accepts'] as List?)
+            ?.cast<String>();
+        setError(trans('social.step_up_required'));
+      case 'password_already_set' || 'password_not_set':
+        await Auth.restore();
+        setError(trans('social.$code'));
+      case 'last_login_method' ||
+          'owns_shared_teams' ||
+          'team_has_active_subscription' ||
+          'subscription_active':
+        setError(trans('social.$code'));
+      default:
+        handleApiError(response, fallback: fallback);
+    }
   }
 
   /// Update profile information.
@@ -165,7 +215,7 @@ class MagicStarterProfileController extends MagicController
       );
 
       if (!response.successful) {
-        handleApiError(
+        await _reportRefusal(
           response,
           fallback: trans('profile.password_update_failed'),
         );
@@ -186,8 +236,64 @@ class MagicStarterProfileController extends MagicController
     }
   }
 
+  /// Sets the first password of an account that signed up through a provider.
+  ///
+  /// A first password is a new way into the account, so it is stepped up with
+  /// [proof] (see [doDeleteAccount]). On success the user is restored, which
+  /// flips `has_password` and with it the page from set to change.
+  Future<bool> doSetPassword({
+    required String password,
+    required String passwordConfirmation,
+    required Map<String, String> proof,
+  }) async {
+    if (_isSubmitting) return false;
+    _isSubmitting = true;
+    setLoading();
+    clearErrors();
+
+    try {
+      final response = await Http.post(
+        '/user/password/set',
+        data: <String, dynamic>{
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+          ...proof,
+        },
+      );
+
+      if (!response.successful) {
+        await _reportRefusal(
+          response,
+          fallback: trans('profile.password_set_failed'),
+        );
+        return false;
+      }
+
+      await Auth.restore();
+      Magic.toast(trans('profile.password_set'));
+      setSuccess(true);
+      return true;
+    } catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterProfileController.doSetPassword] $e\n$stackTrace',
+      );
+      setError(trans('errors.unexpected'));
+      return false;
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
   /// Delete user account.
-  Future<bool> doDeleteAccount({required String password}) async {
+  ///
+  /// [proof] is the step-up proof from `confirmIdentity`: `{password}`,
+  /// `{code}`, `{confirmation_token}`, or `{}` for a guest.
+  ///
+  /// The server schedules the deletion rather than running it and answers
+  /// with a sentence that says how to cancel (sign in again within the grace
+  /// period). It is shown before the sign-out, since it is the only place the
+  /// user learns the account is not gone yet.
+  Future<bool> doDeleteAccount({required Map<String, String> proof}) async {
     if (_isSubmitting) return false;
     _isSubmitting = true;
     setLoading();
@@ -196,10 +302,13 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/user',
-        data: {'_method': 'DELETE', 'password': password},
+        data: <String, dynamic>{'_method': 'DELETE', ...proof},
       );
       if (!response.successful) {
-        handleApiError(response, fallback: trans('profile.delete_failed'));
+        await _reportRefusal(
+          response,
+          fallback: trans('profile.delete_failed'),
+        );
         return false;
       }
 
@@ -212,6 +321,11 @@ class MagicStarterProfileController extends MagicController
       // logout this method already performs below. The push-state and
       // device rows a hook would otherwise release are cascade-deleted with
       // the account regardless.
+      final message = response.data?['message'];
+      if (message is String && message.isNotEmpty) {
+        Magic.toast(message);
+      }
+
       await Auth.logout();
       navigateTo(MagicStarterConfig.loginRoute());
       setSuccess(true);
@@ -225,6 +339,112 @@ class MagicStarterProfileController extends MagicController
     } finally {
       _isSubmitting = false;
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Connected accounts
+  // -------------------------------------------------------------------------
+
+  /// Unlinks [provider] from the signed-in account, then restores the user.
+  ///
+  /// The server holds the `last_login_method` line (no password and this is
+  /// the last active link) whatever the page shows; the refusal surfaces as
+  /// its sentence.
+  Future<bool> doDisconnectSocialAccount(String provider) async {
+    if (_isSubmitting) return false;
+    _isSubmitting = true;
+    setLoading();
+    clearErrors();
+
+    try {
+      final response = await Http.delete('/user/social-accounts/$provider');
+
+      if (!response.successful) {
+        await _reportRefusal(response, fallback: trans('errors.unexpected'));
+        return false;
+      }
+
+      await Auth.restore();
+      setSuccess(true);
+      return true;
+    } catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterProfileController.doDisconnectSocialAccount] '
+        '$e\n$stackTrace',
+      );
+      setError(trans('errors.unexpected'));
+      return false;
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
+  /// Starts linking [provider] and answers the call that opens it, or `null`
+  /// when the bridge refused or the user backed out.
+  ///
+  /// [proof] is the step-up proof from `confirmIdentity`, minted for this call
+  /// only: a retry asks for a fresh one, since a confirmation token is single
+  /// use. The caller hands the opener to [doConnectSocialAccount] from a user
+  /// tap where the platform needs one (a web popup).
+  Future<Future<Map<String, dynamic>> Function()?> beginSocialConnect(
+    String provider, {
+    required Map<String, String> proof,
+  }) async {
+    setEmpty();
+    clearErrors();
+
+    try {
+      return await MagicStarter.socialAuth!.beginConnect(provider, proof);
+    } on MagicStarterSocialException catch (e) {
+      _reportSocialFailure(e);
+      return null;
+    } catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterProfileController.beginSocialConnect] $e\n$stackTrace',
+      );
+      setError(trans('errors.unexpected'));
+      return null;
+    }
+  }
+
+  /// Runs the [opener] [beginSocialConnect] answered, then restores the user.
+  ///
+  /// The opener is called before anything is awaited, so a web provider popup
+  /// still opens inside the tap that called this.
+  Future<bool> doConnectSocialAccount(
+    Future<Map<String, dynamic>> Function() opener,
+  ) async {
+    if (_isSubmitting) return false;
+    _isSubmitting = true;
+    setLoading();
+    clearErrors();
+
+    try {
+      await opener();
+      await Auth.restore();
+      setSuccess(true);
+      return true;
+    } on MagicStarterSocialException catch (e) {
+      _reportSocialFailure(e);
+      return false;
+    } catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterProfileController.doConnectSocialAccount] '
+        '$e\n$stackTrace',
+      );
+      setError(trans('errors.unexpected'));
+      return false;
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
+  /// Shows a social refusal through [socialFailureMessage]. A cancelled flow
+  /// shows nothing.
+  void _reportSocialFailure(MagicStarterSocialException exception) {
+    if (exception.cancelled) return;
+
+    setError(socialFailureMessage(exception));
   }
 
   /// Update profile photo.
@@ -299,12 +519,12 @@ class MagicStarterProfileController extends MagicController
 
   /// Enables two-factor authentication for the current user.
   ///
-  /// Requires the current account [password] for confirmation.
+  /// Requires the step-up [proof] (see [doDeleteAccount]).
   ///
   /// Returns a map containing [secret], [qr_url], [qr_svg], and [recovery_codes]
   /// on success, or null on failure.
   Future<Map<String, dynamic>?> doEnableTwoFactor({
-    required String password,
+    required Map<String, String> proof,
   }) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
@@ -314,11 +534,11 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-authentication',
-        data: {'password': password},
+        data: <String, dynamic>{...proof},
       );
 
       if (!response.successful) {
-        handleApiError(
+        await _reportRefusal(
           response,
           fallback: trans('profile.two_factor_enable_failed'),
         );
@@ -378,9 +598,9 @@ class MagicStarterProfileController extends MagicController
 
   /// Disables two-factor authentication.
   ///
-  /// Requires the current account [password] for sudo-mode confirmation.
-  /// The password is sent directly to the endpoint (no separate confirm call).
-  Future<bool> doDisableTwoFactor({required String password}) async {
+  /// Requires the step-up [proof] (see [doDeleteAccount]), which is sent
+  /// directly to the endpoint (no separate confirm call).
+  Future<bool> doDisableTwoFactor({required Map<String, String> proof}) async {
     if (_isSubmitting) return false;
     _isSubmitting = true;
     setLoading();
@@ -389,11 +609,11 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-authentication',
-        data: {'_method': 'DELETE', 'password': password},
+        data: <String, dynamic>{'_method': 'DELETE', ...proof},
       );
 
       if (!response.successful) {
-        handleApiError(
+        await _reportRefusal(
           response,
           fallback: trans('profile.two_factor_disable_failed'),
         );
@@ -415,9 +635,11 @@ class MagicStarterProfileController extends MagicController
 
   /// Retrieves the current two-factor authentication recovery codes.
   ///
-  /// Requires the current account [password] for sudo-mode confirmation.
-  /// Uses `POST /two-factor-recovery-codes/show` with password in body.
-  Future<List<String>?> getRecoveryCodes({required String password}) async {
+  /// Requires the step-up [proof] (see [doDeleteAccount]). Uses
+  /// `POST /two-factor-recovery-codes/show` with the proof in the body.
+  Future<List<String>?> getRecoveryCodes({
+    required Map<String, String> proof,
+  }) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
     setLoading();
@@ -426,11 +648,11 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-recovery-codes/show',
-        data: {'password': password},
+        data: <String, dynamic>{...proof},
       );
 
       if (!response.successful) {
-        handleApiError(
+        await _reportRefusal(
           response,
           fallback: trans('profile.two_factor_recovery_codes_fetch_failed'),
         );
@@ -453,10 +675,10 @@ class MagicStarterProfileController extends MagicController
 
   /// Regenerates two-factor authentication recovery codes.
   ///
-  /// Requires the current account [password] for sudo-mode confirmation.
-  /// The password is sent directly to the endpoint (no separate confirm call).
+  /// Requires the step-up [proof] (see [doDeleteAccount]), which is sent
+  /// directly to the endpoint (no separate confirm call).
   Future<List<String>?> doRegenerateRecoveryCodes({
-    required String password,
+    required Map<String, String> proof,
   }) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
@@ -466,11 +688,11 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/two-factor-recovery-codes',
-        data: {'password': password},
+        data: <String, dynamic>{...proof},
       );
 
       if (!response.successful) {
-        handleApiError(
+        await _reportRefusal(
           response,
           fallback: trans(
             'profile.two_factor_recovery_codes_regenerate_failed',
@@ -526,10 +748,10 @@ class MagicStarterProfileController extends MagicController
 
   /// Revokes a specific browser session by its token ID.
   ///
-  /// Requires the user's current password for sudo-mode validation.
+  /// Requires the step-up [proof] (see [doDeleteAccount]).
   Future<bool> doRevokeSession({
     required String tokenId,
-    required String password,
+    required Map<String, String> proof,
   }) async {
     if (!MagicStarterConfig.hasSessionsFeatures()) return false;
     if (_isSubmitting) return false;
@@ -540,11 +762,11 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/sessions/$tokenId',
-        data: {'_method': 'DELETE', 'password': password},
+        data: <String, dynamic>{'_method': 'DELETE', ...proof},
       );
 
       if (!response.successful) {
-        handleApiError(
+        await _reportRefusal(
           response,
           fallback: trans('profile.session_revoke_error'),
         );
@@ -564,8 +786,12 @@ class MagicStarterProfileController extends MagicController
     }
   }
 
-  /// Revokes all other browser sessions except the current one. Requires current password.
-  Future<bool> doRevokeOtherSessions({required String password}) async {
+  /// Revokes all other browser sessions except the current one.
+  ///
+  /// Requires the step-up [proof] (see [doDeleteAccount]).
+  Future<bool> doRevokeOtherSessions({
+    required Map<String, String> proof,
+  }) async {
     if (!MagicStarterConfig.hasSessionsFeatures()) return false;
     if (_isSubmitting) return false;
     _isSubmitting = true;
@@ -575,11 +801,11 @@ class MagicStarterProfileController extends MagicController
     try {
       final response = await Http.post(
         '/sessions/other',
-        data: {'_method': 'DELETE', 'password': password},
+        data: <String, dynamic>{'_method': 'DELETE', ...proof},
       );
 
       if (!response.successful) {
-        handleApiError(
+        await _reportRefusal(
           response,
           fallback: trans('profile.other_sessions_revoke_error'),
         );

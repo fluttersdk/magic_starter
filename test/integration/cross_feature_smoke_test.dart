@@ -152,8 +152,10 @@ void main() {
       mockDriver.mockResponse(
         statusCode: 200,
         data: {
-          'token': 'otp-token',
-          'user': {'id': 2, 'name': 'Otp User'},
+          'data': {
+            'token': 'otp-token',
+            'user': {'id': 2, 'name': 'Otp User'},
+          },
         },
       );
 

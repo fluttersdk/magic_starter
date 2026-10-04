@@ -4,7 +4,7 @@
 
 Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & Notifications — 14 opt-in features, every screen overridable via Wind UI.
 
-**Version:** 0.0.38 · **Dart:** >=3.11.0 · **Flutter:** >=3.41.0
+**Version:** 0.0.39 · **Dart:** >=3.11.0 · **Flutter:** >=3.41.0
 
 ## Commands
 
@@ -111,6 +111,9 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 
 | Mistake | Fix |
 |---------|-----|
+| Passing `password:` to a gated profile call | `doEnableTwoFactor`, `doDisableTwoFactor`, `getRecoveryCodes`, `doRegenerateRecoveryCodes`, `doRevokeSession`, `doRevokeOtherSessions` and `doDeleteAccount` take `proof:` (`{password}`, `{code}`, `{confirmation_token}` or `{}` for a guest); the screens get it from `confirmIdentity` / `confirmAndRun` |
+| Concluding a sign-in by hand | Every token (password, social, 2FA challenge, OTP, guest) goes through `CompletesSignIn.completeSignIn`, which also handles `deletion_cancelled` |
+| `social_login` flag without a bridge | Buttons and the Connected accounts page render only after `MagicStarter.useSocialAuth(bridge)`; `magic_social_auth` publishes one |
 | Missing `Auth.restore()` after login | Always call `Auth.restore()` after successful login — user model is incomplete without it |
 | Single-level two-factor check | Check BOTH `response['two_factor']` and `response['data']['two_factor']` |
 | Wrong identity mode precedence | Phone takes precedence when both enabled; use `_applyIdentityToPayload()` helper |
