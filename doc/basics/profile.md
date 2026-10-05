@@ -95,6 +95,8 @@ final success = await controller.doUpdatePassword(
 > [!IMPORTANT]
 > Password changes require the current password for verification. The confirmation dialog in the view uses inline error handling via `setState()` — it never auto-closes on error.
 
+An account created through a provider has no password to change (`has_password` is `false`): the backend answers `PUT /user/password` with 422 `password_not_set`. The password page renders a **Set password** form for it instead; see [Set a Password](set-password.md).
+
 <a name="email-verification"></a>
 ## Email Verification
 
@@ -137,7 +139,7 @@ Revoke a specific session:
 ```dart
 final success = await controller.doRevokeSession(
   tokenId: session['id'],
-  password: currentPassword,
+  proof: proof,
 );
 ```
 
@@ -145,14 +147,14 @@ Revoke all other sessions except the current one:
 
 ```dart
 final success = await controller.doRevokeOtherSessions(
-  password: currentPassword,
+  proof: proof,
 );
 ```
 
-Both revocation methods use Laravel method spoofing — `{'_method': 'DELETE'}` in an `Http.post()` call — and require the current account password for sudo-mode confirmation.
+Both revocation methods use Laravel method spoofing (`{'_method': 'DELETE'}` in an `Http.post()` call) and require a step-up `proof` for sudo-mode confirmation: `{'password': ...}`, `{'code': ...}`, `{'confirmation_token': ...}`, or `{}` for a guest. [Confirming Identity](identity-confirmation.md) covers how the right one is produced for the signed-in account.
 
 > [!TIP]
-> Session revocation is destructive. Always prompt the user for their password via a confirmation dialog before calling these methods.
+> Session revocation is destructive. Always confirm the user's identity (`confirmIdentity`) before calling these methods.
 
 <a name="timezone-selection"></a>
 ## Timezone Selection
@@ -218,18 +220,31 @@ The controller calls `GET /user/newsletter` and `PUT /user/newsletter` respectiv
 <a name="delete-account"></a>
 ## Delete Account
 
-Account deletion requires password confirmation and uses Laravel method spoofing:
+Account deletion requires a step-up proof and uses Laravel method spoofing:
 
 ```dart
+// confirmIdentity is the starter's own helper (see Confirming Identity).
+final proof = await confirmIdentity(context);
+if (proof == null) return; // the user cancelled
+
 final success = await MagicStarterProfileController.instance.doDeleteAccount(
-  password: confirmedPassword,
+  proof: proof,
+  immediately: false, // true deletes now instead of after the grace period
 );
 ```
 
-The controller sends `POST /user` with `{'_method': 'DELETE', 'password': password}`. On success, it calls `Auth.logout()` and navigates to the login page.
+The starter's delete screens (the Security sessions page and the long-form profile settings view) first ask which one the user wants: "Delete after the grace period (cancel by signing in)" or "Delete now, permanently", the second styled as the modal theme's danger button. Dismissing the choice deletes nothing; either answer then goes through the identity confirmation above.
+
+`proof` is `{'password': ...}` for an account with a password, `{'code': ...}` or `{'confirmation_token': ...}` for one without, and `{}` for a guest; see [Confirming Identity](identity-confirmation.md).
+
+The controller sends `POST /user` with `{'_method': 'DELETE', ...proof}`, plus `'immediately': true` only for the second choice. By default the backend **schedules** the deletion and answers `202` with `data.deletion_scheduled_at` and a sentence that says how to cancel: every token is revoked at once, the account is purged after a grace period (30 days by default), and signing in again within it cancels the deletion. On success the controller shows that sentence as a toast, calls `Auth.logout()` and navigates to the login page. The next sign-in during the grace period shows the "Account deletion cancelled" toast. The user resource carries `deletion_scheduled_at` (`MagicStarterAuthUser.deletionScheduledAt`).
+
+With `immediately: true` the backend applies the same refusals and step-up, then purges the account now rather than after the grace period, and answers `202` with `data.immediate: true`. The controller handles it the same way: the server's sentence as a toast, `Auth.logout()`, the login page. There is nothing to cancel by signing in afterwards.
+
+A refusal keeps the user signed in and shows its own sentence: `owns_shared_teams`, `team_has_active_subscription` and `subscription_active` (cancel the subscription first), `step_up_required` (the proof was missing or spent), and a wrong password.
 
 > [!IMPORTANT]
-> This action is irreversible. Always use a confirmation dialog that requires the user to re-enter their password. The dialog should handle inline errors via `setState()` — never auto-close on API failure.
+> Either way the user is signed out immediately; the scheduled deletion is the one that can still be cancelled. Always confirm identity first. The dialog handles inline errors via `setState()` and never auto-closes on API failure.
 
 <a name="two-factor-management"></a>
 ## Two-Factor Management

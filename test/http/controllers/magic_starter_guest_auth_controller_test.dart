@@ -366,6 +366,23 @@ void main() {
         expect(sentData?['device_id'], equals(existingId));
       });
 
+      test('a body without a token is an error, not a signed-out trip '
+          'home', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
+            },
+          },
+        );
+
+        await controller.doGuestLogin();
+
+        expect(controller.isError, isTrue);
+        expect(mockGuard.check(), isFalse);
+      });
+
       test('API error — sets error state', () async {
         mockDriver.mockResponse(
           statusCode: 400,

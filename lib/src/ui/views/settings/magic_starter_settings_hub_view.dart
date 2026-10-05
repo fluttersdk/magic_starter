@@ -21,7 +21,8 @@ import '../../components/settings_section/index.dart';
 ///
 /// 1. **Feature toggles** via [MagicStarterConfig] (`hasTwoFactorFeatures`,
 ///    `hasSessionsFeatures`, `hasNotificationFeatures`, ...). A section with no
-///    enabled rows is omitted entirely.
+///    enabled rows is omitted entirely. Connected accounts also needs the
+///    app's social login bridge.
 /// 2. **Guest detection** via `Gate.denies('starter.delete-account')`: guests
 ///    see an upgrade row in the Account group instead of editing affordances.
 ///
@@ -50,6 +51,7 @@ class _MagicStarterSettingsHubViewState
   static const _iconTwoFactor = Icons.lock_outline;
   static const _iconPassword = Icons.password_outlined;
   static const _iconSessions = Icons.devices_outlined;
+  static const _iconConnectedAccounts = Icons.link_outlined;
   static const _iconAppearance = Icons.palette_outlined;
   static const _iconNotifications = Icons.notifications_outlined;
   static const _iconLanguage = Icons.language_outlined;
@@ -125,6 +127,13 @@ class _MagicStarterSettingsHubViewState
           icon: _iconSessions,
           title: trans('profile.browser_sessions'),
           to: MagicStarterConfig.settingsSessionsRoute(),
+        ),
+      if (MagicStarterConfig.hasSocialLoginFeatures() &&
+          MagicStarter.socialAuth != null)
+        MSSettingsNavRow(
+          icon: _iconConnectedAccounts,
+          title: trans('social.connected_accounts'),
+          to: MagicStarterConfig.settingsConnectedAccountsRoute(),
         ),
     ];
   }

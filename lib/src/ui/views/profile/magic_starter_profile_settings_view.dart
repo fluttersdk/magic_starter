@@ -11,11 +11,13 @@ import '../../components/switch/switch.dart';
 import '../../components/card/card.dart';
 import '../../components/page_scaffold/page_scaffold.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
-import '../../widgets/magic_starter_password_confirm_dialog.dart';
+import '../../../support/confirms_identity.dart';
 import '../../widgets/magic_starter_two_factor_modal.dart';
 import '../../../http/controllers/magic_starter_newsletter_controller.dart';
 import '../../widgets/magic_starter_timezone_select.dart';
 import '../../../support/session_device_title.dart';
+import '../settings/security/magic_starter_sessions_view.dart'
+    show confirmAndDeleteAccount;
 
 /// Profile settings view --- multi-section page for managing user profile.
 ///
@@ -60,10 +62,6 @@ class _MagicStarterProfileSettingsViewState
     'current_password': '',
     'password': '',
     'password_confirmation': '',
-  }, controller: controller);
-
-  late final deleteAccountForm = MagicFormData({
-    'password': '',
   }, controller: controller);
 
   late final upgradeForm = MagicFormData({
@@ -138,7 +136,6 @@ class _MagicStarterProfileSettingsViewState
   void onClose() {
     profileForm.dispose();
     passwordForm.dispose();
-    deleteAccountForm.dispose();
     upgradeForm.dispose();
     _photoLoading.dispose();
     _emailVerificationLoading.dispose();
@@ -219,28 +216,23 @@ class _MagicStarterProfileSettingsViewState
 
   // -- 2FA actions -----------------------------------------------------------
 
-  /// Enable 2FA flow with password confirmation and setup modal.
+  /// Enable 2FA flow with identity confirmation and setup modal.
   Future<void> _enableTwoFactor(BuildContext context) async {
     Map<String, dynamic>? setupData;
 
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    await MagicStarterPasswordConfirmDialog.show(
+    await confirmAndRun(
       context,
-      onConfirm: (password) async {
-        final data = await _trackLoading(
+      controller,
+      action: (proof) async {
+        setupData = await _trackLoading(
           _twoFactorLoading,
-          () => controller.doEnableTwoFactor(password: password),
+          () => controller.doEnableTwoFactor(proof: proof),
         );
-        if (data == null) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        setupData = data;
-        return null; // success → dialog closes
+
+        return setupData != null; // success → dialog closes
       },
     );
 
@@ -260,27 +252,19 @@ class _MagicStarterProfileSettingsViewState
     }
   }
 
-  /// Disable 2FA --- requires password confirmation.
+  /// Disable 2FA --- requires identity confirmation.
   Future<void> _disableTwoFactor(BuildContext context) async {
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    final success = await MagicStarterPasswordConfirmDialog.show(
+    final success = await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.warning,
-      onConfirm: (password) async {
-        final ok = await _trackLoading(
-          _twoFactorLoading,
-          () => controller.doDisableTwoFactor(password: password),
-        );
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
+      action: (proof) => _trackLoading(
+        _twoFactorLoading,
+        () => controller.doDisableTwoFactor(proof: proof),
+      ),
     );
 
     if (success) {
@@ -295,21 +279,18 @@ class _MagicStarterProfileSettingsViewState
   Future<void> _showRecoveryCodes(BuildContext context) async {
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
-    await MagicStarterPasswordConfirmDialog.show(
+    await confirmAndRun(
       context,
-      onConfirm: (password) async {
+      controller,
+      action: (proof) async {
         final codes = await _trackLoading(
           _twoFactorLoading,
-          () => controller.getRecoveryCodes(password: password),
+          () => controller.getRecoveryCodes(proof: proof),
         );
-        if (codes == null) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
+        if (codes == null) return false;
+
         setState(() => _recoveryCodes = codes);
-        return null;
+        return true;
       },
     );
   }
@@ -318,22 +299,19 @@ class _MagicStarterProfileSettingsViewState
   Future<void> _regenerateRecoveryCodes(BuildContext context) async {
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
-    await MagicStarterPasswordConfirmDialog.show(
+    await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.warning,
-      onConfirm: (password) async {
+      action: (proof) async {
         final codes = await _trackLoading(
           _twoFactorLoading,
-          () => controller.doRegenerateRecoveryCodes(password: password),
+          () => controller.doRegenerateRecoveryCodes(proof: proof),
         );
-        if (codes == null) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
+        if (codes == null) return false;
+
         setState(() => _recoveryCodes = codes);
-        return null;
+        return true;
       },
     );
   }
@@ -358,23 +336,14 @@ class _MagicStarterProfileSettingsViewState
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    final success = await MagicStarterPasswordConfirmDialog.show(
+    final success = await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.danger,
-      onConfirm: (password) async {
-        final ok = await _trackLoading(
-          _sessionActionLoading,
-          () =>
-              controller.doRevokeSession(tokenId: tokenId, password: password),
-        );
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
+      action: (proof) => _trackLoading(
+        _sessionActionLoading,
+        () => controller.doRevokeSession(tokenId: tokenId, proof: proof),
+      ),
     );
 
     if (success) {
@@ -386,22 +355,14 @@ class _MagicStarterProfileSettingsViewState
     // ignore: use_build_context_synchronously
     if (!context.mounted) return;
 
-    final success = await MagicStarterPasswordConfirmDialog.show(
+    final success = await confirmAndRun(
       context,
+      controller,
       variant: ConfirmDialogVariant.danger,
-      onConfirm: (password) async {
-        final ok = await _trackLoading(
-          _sessionActionLoading,
-          () => controller.doRevokeOtherSessions(password: password),
-        );
-        if (!ok) {
-          final error =
-              controller.rxStatus.message ?? trans('common.error_occurred');
-          controller.clearErrors();
-          return error;
-        }
-        return null;
-      },
+      action: (proof) => _trackLoading(
+        _sessionActionLoading,
+        () => controller.doRevokeOtherSessions(proof: proof),
+      ),
     );
 
     if (success) {
@@ -1174,7 +1135,7 @@ class _MagicStarterProfileSettingsViewState
     );
   }
 
-  /// Builds the delete account section with password confirmation.
+  /// Builds the delete account section.
   ///
   /// When the user is a guest (denied `starter.delete-account`), renders an
   /// upgrade prompt instead of the destructive delete form.
@@ -1220,62 +1181,40 @@ class _MagicStarterProfileSettingsViewState
       );
     }
 
-    return MagicForm(
-      formData: deleteAccountForm,
-      child: MSCard(
-        title: trans('magic_starter.profile.delete_account.title'),
-        child: WDiv(
-          className: 'flex flex-col gap-4',
-          children: [
-            WText(
-              trans('magic_starter.profile.delete_account.description'),
-              className: 'text-sm text-fg-muted',
-            ),
-            WFormInput(
-              controller: deleteAccountForm['password'],
-              label: trans(
-                'magic_starter.profile.delete_account.password_label',
-              ),
-              type: InputType.password,
-              validator: rules([Required()], field: 'password'),
-              labelClassName: MagicStarter.formTheme.labelClassName,
-              className: MagicStarter.formTheme.inputClassName,
-            ),
-            WDiv(
-              className: 'flex justify-end',
-              children: [
-                MagicBuilder<bool>(
-                  listenable: deleteAccountForm.processingListenable,
-                  builder: (isProcessing) => WButton(
-                    onTap: isProcessing ? null : _submitDeleteAccount,
-                    isLoading: isProcessing,
-                    className:
-                        'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white text-sm font-medium',
-                    child: WText(
-                      trans('magic_starter.profile.delete_account.button'),
-                    ),
-                  ),
+    return MSCard(
+      title: trans('magic_starter.profile.delete_account.title'),
+      child: WDiv(
+        className: 'flex flex-col gap-4',
+        children: [
+          WText(
+            trans('magic_starter.profile.delete_account.description'),
+            className: 'text-sm text-fg-muted',
+          ),
+          WDiv(
+            className: 'flex justify-end',
+            children: [
+              WButton(
+                onTap: _confirmDeleteAccount,
+                className:
+                    'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white text-sm font-medium',
+                child: WText(
+                  trans('magic_starter.profile.delete_account.button'),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  /// Submit delete account form.
-  Future<void> _submitDeleteAccount() async {
-    if (!deleteAccountForm.validate()) return;
-    await deleteAccountForm.process(
-      () => controller.withoutNotifying(
-        () => controller.doDeleteAccount(
-          password: deleteAccountForm.get('password'),
-        ),
-      ),
-    );
-    _rebuildIfValidationErrors(deleteAccountForm);
-  }
+  /// Asks how the account should go, then confirms identity and deletes it.
+  ///
+  /// The proof depends on the account (a password, a two-factor code, a
+  /// provider re-authentication, or nothing for a guest), so the page does not
+  /// ask for a password up front; the dialog asks for whichever applies.
+  Future<void> _confirmDeleteAccount() =>
+      confirmAndDeleteAccount(context, controller);
 
   // -- Email Verification Section -----------------------------------------------
 

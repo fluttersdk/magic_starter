@@ -130,6 +130,7 @@ These are registered by `MagicStarterManager.registerDefaultViews()` at construc
 |-----|------|-------------|
 | `auth.two_factor_challenge` | `MagicStarterTwoFactorChallengeView` | `hasTwoFactorFeatures()` |
 | `auth.otp_verify` | `MagicStarterOtpVerifyView` | `hasPhoneOtpFeatures()` |
+| `settings.security.connected_accounts` | `MagicStarterConnectedAccountsView` | `hasSocialLoginFeatures()`; the hub row also needs a bridge from `MagicStarter.useSocialAuth` |
 
 **Profile views** (always registered):
 

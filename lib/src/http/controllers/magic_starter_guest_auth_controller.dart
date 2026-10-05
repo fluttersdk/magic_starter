@@ -2,9 +2,8 @@ import 'dart:math';
 
 import 'package:magic/magic.dart';
 
+import 'concerns/completes_sign_in.dart';
 import 'concerns/navigates_routes.dart';
-import '../../facades/magic_starter.dart';
-import '../../models/magic_starter_auth_user.dart';
 
 /// Controller managing guest authentication and device-ID-based upgrade flows.
 ///
@@ -17,7 +16,11 @@ import '../../models/magic_starter_auth_user.dart';
 /// await MagicStarterGuestAuthController.instance.doGuestLogin();
 /// ```
 class MagicStarterGuestAuthController extends MagicController
-    with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
+    with
+        MagicStateMixin<bool>,
+        ValidatesRequests,
+        NavigatesRoutes,
+        CompletesSignIn {
   /// Singleton accessor — follows the Magic Framework controller pattern.
   static MagicStarterGuestAuthController get instance =>
       Magic.findOrPut(MagicStarterGuestAuthController.new);
@@ -36,8 +39,7 @@ class MagicStarterGuestAuthController extends MagicController
   ///   1. Load existing device ID from Vault or generate a new UUID v4.
   ///   2. Persist the device ID in Vault for future app starts.
   ///   3. Send `POST /auth/guest` with the device ID.
-  ///   4. Store the returned auth token via [Auth.login].
-  ///   5. Navigate to the home route on success.
+  ///   4. Conclude the sign-in through [CompletesSignIn.completeSignIn].
   ///
   /// A user who is already a guest goes home without a request. The login
   /// page lets a guest in (it is where a guest signs in to an account), so
@@ -77,25 +79,13 @@ class MagicStarterGuestAuthController extends MagicController
         return;
       }
 
-      // 4. Store the auth token and set the authenticated user.
-      final responseData = response.data as Map<String, dynamic>?;
-      final nestedData = responseData?['data'] as Map<String, dynamic>?;
-      final token = nestedData?['token'] as String?;
-      final userData = nestedData?['user'] as Map<String, dynamic>?;
-
-      if (token != null) {
-        await Auth.login(
-          {'token': token},
-          userData != null
-              ? MagicStarter.createUser(userData)
-              : MagicStarterAuthUser.fromMap(nestedData ?? {}),
-        );
+      // 4. Conclude the sign-in through the path every token takes.
+      if (!await completeSignIn(response.data as Map<String, dynamic>?)) {
+        setError(trans('magic_starter.auth.guest_login_error'));
+        return;
       }
 
       setSuccess(true);
-
-      // 5. Navigate home.
-      navigateHome();
     } catch (e, stackTrace) {
       Log.error(
         '[MagicStarterGuestAuthController.doGuestLogin] $e\n$stackTrace',

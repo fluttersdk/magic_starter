@@ -952,7 +952,7 @@ flutter:
       );
 
       test(
-        'app service provider includes social login block when enabled',
+        'app service provider points at the social auth bridge when enabled',
         () async {
           setupMagicProjectFiles(tempDir);
 
@@ -962,7 +962,8 @@ flutter:
             '${tempDir.path}/lib/app/providers/app_service_provider.dart',
           ).readAsStringSync();
 
-          expect(content, contains('MagicStarter.useSocialLogin('));
+          expect(content, contains('//    MagicStarter.useSocialAuth('));
+          expect(content, isNot(contains('useSocialLogin')));
         },
       );
     });

@@ -135,6 +135,18 @@ class MockGuard implements Guard {
     };
   }
 
+  /// Sets a provider-created account: no password, two-factor enabled.
+  void setPasswordlessUserWithTwoFactor() {
+    _userData = <String, dynamic>{
+      'id': 1,
+      'name': 'Alice',
+      'email': 'alice@example.com',
+      'email_verified_at': '2025-01-15T10:00:00.000000Z',
+      'has_password': false,
+      'two_factor_enabled': true,
+    };
+  }
+
   @override
   Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
     _token = data['token'] as String?;
@@ -404,6 +416,32 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MagicStarterPasswordConfirmDialog), findsOneWidget);
+    });
+
+    testWidgets('a password-less account is offered the step-up dialog', (
+      WidgetTester tester,
+    ) async {
+      mockGuard.setPasswordlessUserWithTwoFactor();
+
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+      await tester.pump();
+
+      final btn = find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data == trans('profile.two_factor_disable'),
+      );
+      await tester.ensureVisible(btn);
+      await tester.tap(btn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
+      expect(find.byType(MagicStarterStepUpDialog), findsOneWidget);
     });
 
     testWidgets('Show Recovery Codes button shows PasswordConfirmDialog', (

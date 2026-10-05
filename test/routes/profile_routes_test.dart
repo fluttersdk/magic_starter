@@ -43,6 +43,34 @@ void enableAllSettingsFeatures() {
   Config.set('magic_starter.features.newsletter', true);
 }
 
+/// A bridge the route tests only need to see as present.
+class _SilentSocialAuth implements MagicStarterSocialAuth {
+  @override
+  List<String> providers() => const [];
+
+  @override
+  String label(String provider) => provider;
+
+  @override
+  Widget icon(String provider) => const SizedBox();
+
+  @override
+  Future<Map<String, dynamic>> signIn(String provider) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Future<Map<String, dynamic>> Function()> beginConnect(
+    String provider,
+    Map<String, String> proof,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<String> confirm(String provider) => throw UnimplementedError();
+
+  @override
+  Future<void> signOut() async {}
+}
+
 void main() {
   setUp(() {
     MagicApp.reset();
@@ -166,6 +194,45 @@ void main() {
       registerMagicStarterProfileRoutes();
 
       expect(routeFor(MagicStarterConfig.settingsTimezoneRoute()), isNotNull);
+    });
+
+    test('connected accounts is registered by the feature alone', () {
+      Config.set('magic_starter.features.social_login', true);
+
+      // Providers boot in list order, so the app's routes register before the
+      // bridge provider has set a bridge: the route cannot wait for one.
+      expect(MagicStarter.socialAuth, isNull);
+      registerMagicStarterProfileRoutes();
+
+      expect(
+        routeFor(MagicStarterConfig.settingsConnectedAccountsRoute()),
+        isNotNull,
+      );
+    });
+
+    test('connected accounts stays absent while social_login is off', () {
+      registerMagicStarterProfileRoutes();
+
+      expect(
+        routeFor(MagicStarterConfig.settingsConnectedAccountsRoute()),
+        isNull,
+      );
+    });
+
+    test('a bridge set after registration is found by the page it opens', () {
+      Config.set('magic_starter.features.social_login', true);
+      Magic.flush();
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      MagicStarter.view;
+      registerMagicStarterProfileRoutes();
+
+      MagicStarter.useSocialAuth(_SilentSocialAuth());
+
+      final route = routeFor(
+        MagicStarterConfig.settingsConnectedAccountsRoute(),
+      )!;
+      expect(route.buildWidget(const {}), isA<Widget>());
+      expect(MagicStarter.socialAuth, isNotNull);
     });
 
     test('newsletter sub-route appears when newsletter is on', () {

@@ -118,7 +118,7 @@ void main() {
 
         final bool result = await controller.doRevokeSession(
           tokenId: 'session-id-1',
-          password: 'my-secret-password',
+          proof: {'password': 'my-secret-password'},
         );
 
         expect(result, isTrue);
@@ -146,7 +146,7 @@ void main() {
 
         final bool result = await controller.doRevokeSession(
           tokenId: 'session-id-1',
-          password: 'wrong-password',
+          proof: {'password': 'wrong-password'},
         );
 
         expect(result, isFalse);
@@ -166,7 +166,7 @@ void main() {
 
         final bool result = await controller.doRevokeSession(
           tokenId: 'invalid-token',
-          password: 'my-secret-password',
+          proof: {'password': 'my-secret-password'},
         );
 
         expect(result, isFalse);
@@ -182,7 +182,7 @@ void main() {
         );
 
         final bool result = await controller.doRevokeOtherSessions(
-          password: 'my-secret-password',
+          proof: {'password': 'my-secret-password'},
         );
 
         expect(result, isTrue);
@@ -207,7 +207,7 @@ void main() {
         );
 
         final bool result = await controller.doRevokeOtherSessions(
-          password: 'wrong-password',
+          proof: {'password': 'wrong-password'},
         );
 
         expect(result, isFalse);
@@ -226,7 +226,7 @@ void main() {
         );
 
         final bool result = await controller.doRevokeOtherSessions(
-          password: '',
+          proof: {'password': ''},
         );
 
         expect(result, isFalse);

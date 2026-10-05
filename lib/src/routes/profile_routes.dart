@@ -119,6 +119,17 @@ void registerMagicStarterProfileRoutes() {
           () => _profileSettingsView('settings.security.sessions'),
         ).title('magic_starter.titles.sessions').stacked();
       }
+
+      // Security: Connected accounts sub-page. Keyed on the feature alone: the
+      // app's bridge is set by a provider that boots after the one that
+      // registers routes, so it cannot be read here. The hub row, built later,
+      // is the one gated on the bridge.
+      if (MagicStarterConfig.hasSocialLoginFeatures()) {
+        MagicRoute.page(
+          MagicStarterConfig.settingsConnectedAccountsRoute(),
+          () => _profileSettingsView('settings.security.connected_accounts'),
+        ).title('magic_starter.titles.connected_accounts').stacked();
+      }
     },
   );
 }

@@ -4,6 +4,7 @@ import 'package:magic_payments/magic_payments.dart';
 
 import 'configuration/magic_starter_config.dart';
 import 'configuration/magic_starter_theme.dart';
+import 'contracts/magic_starter_social_auth.dart';
 import 'facades/magic_starter.dart';
 import 'http/controllers/magic_starter_auth_controller.dart';
 import 'http/controllers/magic_starter_team_controller.dart';
@@ -29,6 +30,7 @@ import 'ui/views/settings/preferences/magic_starter_appearance_view.dart';
 import 'ui/views/settings/preferences/magic_starter_language_view.dart';
 import 'ui/views/settings/preferences/magic_starter_newsletter_view.dart';
 import 'ui/views/settings/preferences/magic_starter_timezone_view.dart';
+import 'ui/views/settings/security/magic_starter_connected_accounts_view.dart';
 import 'ui/views/settings/security/magic_starter_password_view.dart';
 import 'ui/views/settings/security/magic_starter_sessions_view.dart';
 import 'ui/views/settings/security/magic_starter_two_factor_view.dart';
@@ -36,10 +38,6 @@ import 'ui/views/teams/magic_starter_billing_view.dart';
 import 'ui/views/teams/magic_starter_team_create_view.dart';
 import 'ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 import 'ui/views/teams/magic_starter_team_settings_view.dart';
-
-/// Social login builder type.
-typedef SocialLoginBuilder =
-    Widget Function(BuildContext context, bool isLoading);
 
 typedef UserModelFactory = Authenticatable Function(Map<String, dynamic> data);
 
@@ -264,8 +262,9 @@ class MagicStarterManager {
   /// navigation and user menu in both the desktop sidebar and mobile drawer.
   Widget Function(BuildContext context)? sidebarFooterBuilder;
 
-  /// Social login builder. When set, renders custom social login buttons.
-  SocialLoginBuilder? socialLoginBuilder;
+  /// The app's social login bridge. While set and the `social_login` feature
+  /// is on, login and register offer its providers.
+  MagicStarterSocialAuth? socialAuth;
 
   /// Navigation theme configuration. Holds color/className overrides for the
   /// app layout navigation elements (active item, brand, bottom nav, avatar).
@@ -596,6 +595,14 @@ class MagicStarterManager {
       );
     }
 
+    // Security: Connected accounts.
+    if (MagicStarterConfig.hasSocialLoginFeatures()) {
+      _registerDefault(
+        'settings.security.connected_accounts',
+        () => const MagicStarterConnectedAccountsView(),
+      );
+    }
+
     // Teams — conditional on feature flag.
     if (MagicStarterConfig.hasTeamFeatures()) {
       _registerDefault(
@@ -705,7 +712,7 @@ class MagicStarterManager {
     onGuestClaimed = null;
     headerBuilder = null;
     sidebarFooterBuilder = null;
-    socialLoginBuilder = null;
+    socialAuth = null;
     navigationTheme = const MagicStarterNavigationTheme();
     modalTheme = const MagicStarterModalTheme();
     formTheme = const MagicStarterFormTheme();

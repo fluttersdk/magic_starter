@@ -266,11 +266,15 @@ void main() {
       mockDriver.mockResponse(statusCode: 200, data: {});
       await controller.sendOtp(phone: '+905301234567');
 
+      // The backend answers every token it issues as `{data: {user, token}}`.
       mockDriver.mockResponse(
         statusCode: 200,
         data: {
-          'token': 'otp-auth-token-123',
-          'user': {'id': 1, 'name': 'Test User', 'email': 'test@example.com'},
+          'data': {
+            'token': 'otp-auth-token-123',
+            'user': {'id': 1, 'name': 'Test User', 'email': 'test@example.com'},
+          },
+          'message': 'Login successful',
         },
       );
 
@@ -285,6 +289,19 @@ void main() {
       expect((mockDriver.lastData as Map<String, dynamic>)['code'], '123456');
       expect(mockGuard.lastLoginData?['token'], 'otp-auth-token-123');
       expect(controller.isError, isFalse);
+    });
+
+    test('verifyOtp: a body without a token is an error, not a '
+        'signed-out trip home', () async {
+      mockDriver.mockResponse(statusCode: 200, data: {});
+      await controller.sendOtp(phone: '+905301234567');
+
+      mockDriver.mockResponse(statusCode: 200, data: {'message': 'OK'});
+
+      await controller.verifyOtp(phone: '+905301234567', code: '123456');
+
+      expect(controller.isError, isTrue);
+      expect(mockGuard.check(), isFalse);
     });
 
     test(

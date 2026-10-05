@@ -5,9 +5,12 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
+import 'concerns/completes_sign_in.dart';
 import 'concerns/navigates_routes.dart';
 import '../../configuration/magic_starter_config.dart';
+import '../../contracts/magic_starter_social_auth.dart';
 import '../../facades/magic_starter.dart';
+import '../../support/social_failure_message.dart';
 
 /// Auth controller for Magic Starter plugin.
 ///
@@ -17,11 +20,23 @@ import '../../facades/magic_starter.dart';
 ///   - Both: `auth.email=true`, `auth.phone=true` — caller selects by passing the
 ///     populated field; phone takes precedence when non-empty.
 class MagicStarterAuthController extends MagicController
-    with MagicStateMixin<bool>, ValidatesRequests, NavigatesRoutes {
+    with
+        MagicStateMixin<bool>,
+        ValidatesRequests,
+        NavigatesRoutes,
+        CompletesSignIn {
   static MagicStarterAuthController get instance =>
       Magic.findOrPut(MagicStarterAuthController.new);
 
   bool _isSubmitting = false;
+  int _socialAttempt = 0;
+  String? _pendingSocialProvider;
+
+  /// The provider whose sign-in flow is open, or `null` when none is.
+  ///
+  /// Drives the busy state of the social buttons; the controller's own state
+  /// stays empty meanwhile so the form is not replaced by a spinner.
+  String? get pendingSocialProvider => _pendingSocialProvider;
 
   /// Render login view via registry key.
   Widget login() => MagicStarter.view.make('auth.login');
@@ -91,34 +106,13 @@ class MagicStarterAuthController extends MagicController
         return;
       }
 
-      // 2. Check if server requires 2FA — navigate to challenge without logging in.
-      final responseData = response.data as Map<String, dynamic>?;
-      final nestedData = responseData?['data'] as Map<String, dynamic>?;
-      if (responseData?['two_factor'] == true ||
-          nestedData?['two_factor'] == true) {
-        final twoFactorToken =
-            responseData?['two_factor_token'] as String? ??
-            nestedData?['two_factor_token'] as String?;
-        navigateTo(
-          MagicStarterConfig.twoFactorChallengeRoute(),
-          query: twoFactorToken != null
-              ? {'two_factor_token': twoFactorToken}
-              : null,
-        );
-        return;
-      }
-
-      final token = nestedData?['token'] as String?;
-      final userData = nestedData?['user'] as Map<String, dynamic>?;
-      if (token == null || userData == null) {
+      // 2. A challenge or a session; both conclude through one path.
+      if (!await completeSignIn(response.data as Map<String, dynamic>?)) {
         setError(trans('auth.invalid_response'));
         return;
       }
 
-      // 3. Authenticate the user and navigate home.
-      await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
-      navigateHome();
     } on TimeoutException catch (e, stackTrace) {
       Log.error(
         '[MagicStarterAuthController.doLogin] Timeout: $e\n$stackTrace',
@@ -135,6 +129,74 @@ class MagicStarterAuthController extends MagicController
     } finally {
       _isSubmitting = false;
     }
+  }
+
+  /// Signs in with [provider] through the registered social login bridge.
+  ///
+  /// The bridge is called before anything is awaited, since a web provider
+  /// popup only opens inside the user's tap, and a pending social flow does
+  /// not block a new tap: the newer one supersedes it. A cancelled flow shows
+  /// nothing; a refusal shows the `social.<code>` sentence, or the bridge's
+  /// message when the catalogue has none ([socialFailureMessage]).
+  ///
+  /// While the provider is open the state stays empty so the form remains
+  /// usable, and [pendingSocialProvider] names the provider for the buttons.
+  Future<void> doSocialSignIn(String provider) async {
+    if (_isSubmitting) return;
+
+    // 1. Open the provider first; the form stays usable while it is open.
+    final attempt = ++_socialAttempt;
+    _pendingSocialProvider = provider;
+    setEmpty();
+    clearErrors();
+
+    final Map<String, dynamic> body;
+    try {
+      body = await MagicStarter.socialAuth!.signIn(provider);
+    } on MagicStarterSocialException catch (e) {
+      if (attempt != _socialAttempt) return;
+      _endSocialAttempt();
+      if (!e.cancelled) {
+        setError(socialFailureMessage(e));
+      }
+      return;
+    } catch (e, stackTrace) {
+      Log.error('[MagicStarterAuthController.doSocialSignIn] $e\n$stackTrace');
+      if (attempt != _socialAttempt) return;
+      _endSocialAttempt();
+      setError(trans('errors.unexpected'));
+      return;
+    }
+
+    // 2. A newer tap owns the buttons now: drop what this flow returned.
+    if (attempt != _socialAttempt) return;
+    _endSocialAttempt();
+
+    // 3. Conclude like every other sign-in, unless another submission won.
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+    setLoading();
+
+    try {
+      if (!await completeSignIn(body)) {
+        setError(trans('auth.invalid_response'));
+        return;
+      }
+
+      setSuccess(true);
+    } catch (e, stackTrace) {
+      Log.error('[MagicStarterAuthController.doSocialSignIn] $e\n$stackTrace');
+      setError(trans('errors.unexpected'));
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
+  /// Clears the busy provider; callers have already checked their attempt is
+  /// still the newest.
+  void _endSocialAttempt() {
+    _pendingSocialProvider = null;
+    notifyListeners();
   }
 
   /// Register a new user.
@@ -308,20 +370,14 @@ class MagicStarterAuthController extends MagicController
         return;
       }
 
-      // 1. Extract auth data from successful challenge response.
-      final data = response.data?['data'] as Map<String, dynamic>?;
-      final token = data?['token'] as String?;
-      final userData = data?['user'] as Map<String, dynamic>?;
-
-      if (token == null || userData == null) {
+      // 1. The session concludes like any other sign-in, cancelled deletion
+      //    included.
+      if (!await completeSignIn(response.data as Map<String, dynamic>?)) {
         setError(trans('auth.challenge_failed'));
         return;
       }
 
-      // 2. Log the user in and navigate to home.
-      await Auth.login({'token': token}, MagicStarter.createUser(userData));
       setSuccess(true);
-      navigateHome();
     } catch (e, stackTrace) {
       Log.error(
         '[MagicStarterAuthController.doTwoFactorChallenge] $e\n$stackTrace',

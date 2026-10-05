@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import 'concerns/completes_sign_in.dart';
 import 'concerns/navigates_routes.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
@@ -23,11 +24,11 @@ enum OtpStep {
 ///   1. [sendOtp] — POSTs the phone number to `/auth/otp/send`. On success,
 ///      advances to [OtpStep.codeInput] and stores the phone for step 2.
 ///   2. [verifyOtp] — POSTs phone + code to `/auth/otp/verify`. On success,
-///      calls [Auth.login] with the returned token and navigates home.
+///      concludes the sign-in through [CompletesSignIn.completeSignIn].
 ///
 /// Gated by [MagicStarterConfig.hasPhoneOtpFeatures].
 class MagicStarterOtpController extends MagicController
-    with MagicStateMixin, ValidatesRequests, NavigatesRoutes {
+    with MagicStateMixin, ValidatesRequests, NavigatesRoutes, CompletesSignIn {
   /// Singleton accessor via IoC container.
   static MagicStarterOtpController get instance =>
       Magic.findOrPut(MagicStarterOtpController.new);
@@ -94,8 +95,8 @@ class MagicStarterOtpController extends MagicController
 
   /// Verifies the OTP [code] for [phone] via `POST /auth/otp/verify`.
   ///
-  /// On success: calls [Auth.login] with the returned token and navigates to
-  /// the configured home route.
+  /// On success: concludes the sign-in like every other one (session, home,
+  /// and the cancelled-deletion toast).
   /// On failure: sets error state; step remains [OtpStep.codeInput].
   ///
   /// @param phone  E.164-formatted phone number — may be omitted to fall back
@@ -124,18 +125,14 @@ class MagicStarterOtpController extends MagicController
         return;
       }
 
-      // 2. Extract token from response and authenticate the user.
-      final data = response.data as Map<String, dynamic>?;
-      final token = data?['token'] as String?;
-      final userData = data?['user'] as Map<String, dynamic>?;
-
-      if (token != null && userData != null) {
-        await Auth.login({'token': token}, MagicStarter.createUser(userData));
+      // 2. Conclude the sign-in through the path every token takes.
+      final body = response.data as Map<String, dynamic>?;
+      if (!await completeSignIn(body)) {
+        setError(trans('magic_starter.otp.verify_error'));
+        return;
       }
 
-      // 3. Navigate home on successful authentication.
-      setSuccess(data);
-      navigateHome();
+      setSuccess(body);
     } catch (e, stackTrace) {
       Log.error('[MagicStarterOtpController.verifyOtp] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
