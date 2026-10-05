@@ -231,7 +231,7 @@
         "guest_upgrade_description": "Convert your guest account to a full account to manage or delete your data.",
         "guest_upgrade_title": "Account Upgrade Required",
         "option_immediate": "Delete now, permanently",
-        "option_scheduled": "Delete in 30 days (cancel by signing in)",
+        "option_scheduled": "Delete after the grace period (cancel by signing in)",
         "title": "Delete Account"
       }
     },

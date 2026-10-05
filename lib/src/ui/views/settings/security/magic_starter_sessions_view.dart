@@ -14,8 +14,8 @@ import '../../../widgets/magic_starter_confirm_dialog.dart';
 import '../../../../support/confirms_identity.dart';
 import '../../../../support/session_device_title.dart';
 
-/// Asks whether the account goes in 30 days or now, then confirms identity and
-/// deletes it.
+/// Asks whether the account goes after the grace period or now, then confirms
+/// identity and deletes it.
 ///
 /// Shared by every screen that offers account deletion: the choice is a
 /// question about the account, so the screens ask it the same way. Dismissing

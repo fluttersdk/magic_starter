@@ -233,7 +233,7 @@ final success = await MagicStarterProfileController.instance.doDeleteAccount(
 );
 ```
 
-The starter's delete screens (the Security sessions page and the long-form profile settings view) first ask which one the user wants: "Delete in 30 days (cancel by signing in)" or "Delete now, permanently", the second styled as the modal theme's danger button. Dismissing the choice deletes nothing; either answer then goes through the identity confirmation above.
+The starter's delete screens (the Security sessions page and the long-form profile settings view) first ask which one the user wants: "Delete after the grace period (cancel by signing in)" or "Delete now, permanently", the second styled as the modal theme's danger button. Dismissing the choice deletes nothing; either answer then goes through the identity confirmation above.
 
 `proof` is `{'password': ...}` for an account with a password, `{'code': ...}` or `{'confirmation_token': ...}` for one without, and `{}` for a guest; see [Confirming Identity](identity-confirmation.md).
 
