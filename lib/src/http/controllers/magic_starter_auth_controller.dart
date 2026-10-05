@@ -154,20 +154,25 @@ class MagicStarterAuthController extends MagicController
     try {
       body = await MagicStarter.socialAuth!.signIn(provider);
     } on MagicStarterSocialException catch (e) {
-      _endSocialAttempt(attempt);
+      if (attempt != _socialAttempt) return;
+      _endSocialAttempt();
       if (!e.cancelled) {
         setError(socialFailureMessage(e));
       }
       return;
     } catch (e, stackTrace) {
       Log.error('[MagicStarterAuthController.doSocialSignIn] $e\n$stackTrace');
-      _endSocialAttempt(attempt);
+      if (attempt != _socialAttempt) return;
+      _endSocialAttempt();
       setError(trans('errors.unexpected'));
       return;
     }
 
-    // 2. Conclude like every other sign-in, unless another submission won.
-    _endSocialAttempt(attempt);
+    // 2. A newer tap owns the buttons now: drop what this flow returned.
+    if (attempt != _socialAttempt) return;
+    _endSocialAttempt();
+
+    // 3. Conclude like every other sign-in, unless another submission won.
     if (_isSubmitting) return;
     _isSubmitting = true;
     setLoading();
@@ -187,10 +192,9 @@ class MagicStarterAuthController extends MagicController
     }
   }
 
-  /// Clears the busy provider unless a newer tap has taken over.
-  void _endSocialAttempt(int attempt) {
-    if (attempt != _socialAttempt) return;
-
+  /// Clears the busy provider; callers have already checked their attempt is
+  /// still the newest.
+  void _endSocialAttempt() {
     _pendingSocialProvider = null;
     notifyListeners();
   }

@@ -70,6 +70,25 @@ class _FakeSocialAuth implements MagicStarterSocialAuth {
   Future<void> signOut() async {}
 }
 
+/// A bridge that hands every [signIn] call its own pending flow, in call order.
+class _QueuedSocialAuth extends _FakeSocialAuth {
+  _QueuedSocialAuth() : flows = [];
+
+  final List<Completer<Map<String, dynamic>>> flows;
+
+  @override
+  List<String> providers() => const ['google', 'apple'];
+
+  @override
+  Future<Map<String, dynamic>> signIn(String provider) {
+    signInCalls.add(provider);
+    final flow = Completer<Map<String, dynamic>>();
+    flows.add(flow);
+
+    return flow.future;
+  }
+}
+
 void main() {
   late MagicStarterAuthController controller;
 
@@ -247,6 +266,62 @@ void main() {
 
       expect(controller.isError, isTrue);
       expect(controller.rxStatus.message, 'Server sentence.');
+    });
+
+    testWidgets('a superseded flow that returns later is dropped', (
+      tester,
+    ) async {
+      await mountOnLogin(tester);
+      final bridge = _QueuedSocialAuth();
+      MagicStarter.useSocialAuth(bridge);
+
+      final first = controller.doSocialSignIn('google');
+      final second = controller.doSocialSignIn('apple');
+      bridge.flows[0].complete({
+        'data': {
+          'token': 'stale-token',
+          'user': {'id': 1, 'email': 'stale@example.com'},
+        },
+      });
+      await first;
+      await tester.pumpAndSettle();
+
+      expect(Auth.check(), isFalse);
+      expect(controller.pendingSocialProvider, 'apple');
+
+      bridge.flows[1].complete({
+        'data': {
+          'token': 'fresh-token',
+          'user': {'id': 2, 'email': 'fresh@example.com'},
+        },
+      });
+      await second;
+      await tester.pumpAndSettle();
+
+      expect(Auth.user<MagicStarterAuthUser>()?.email, 'fresh@example.com');
+    });
+
+    testWidgets('a superseded flow that fails later shows no error', (
+      tester,
+    ) async {
+      await mountOnLogin(tester);
+      final bridge = _QueuedSocialAuth();
+      MagicStarter.useSocialAuth(bridge);
+
+      final first = controller.doSocialSignIn('google');
+      final second = controller.doSocialSignIn('apple');
+      bridge.flows[0].completeError(
+        const MagicStarterSocialException(code: 'social_email_taken'),
+      );
+      await first;
+
+      expect(controller.isError, isFalse);
+      expect(controller.pendingSocialProvider, 'apple');
+
+      bridge.flows[1].completeError(
+        const MagicStarterSocialException(cancelled: true),
+      );
+      await second;
     });
 
     testWidgets('a cancelled deletion is announced on social sign-in', (
