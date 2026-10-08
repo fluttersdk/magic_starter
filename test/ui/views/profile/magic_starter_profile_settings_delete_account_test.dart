@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_payments/magic_payments.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 // ---------------------------------------------------------------------------
@@ -515,15 +519,200 @@ void main() {
 
         // No new proof fixes this refusal: the dialog closes and the
         // controller keeps the code's sentence (a key here: no catalogue is
-        // loaded) rather than the server's.
+        // loaded) rather than the server's, followed by the blocking teams.
         expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
         expect(
           Magic.find<MagicStarterProfileController>().rxStatus.message,
-          'social.owns_shared_teams',
+          'social.owns_shared_teams social.deletion_blocking_teams',
         );
+        // Nothing to do about it from here, so there is no action to offer.
+        expect(find.byType(MSDialog), findsNothing);
         expect(mockGuard.logoutCalled, isFalse);
         expect(Auth.check(), isTrue);
       },
     );
+
+    group('an actionable refusal', () {
+      late _RecordingLaunchAdapter launcher;
+      late _RecordingStoreRail storeRail;
+
+      setUp(() async {
+        Translator.instance.setLoader(const _ShippedCatalogueLoader());
+        await Translator.instance.setLocale(const Locale('en'));
+
+        launcher = _RecordingLaunchAdapter();
+        Magic.singleton('launch', () => LaunchService(adapter: launcher));
+
+        storeRail = _RecordingStoreRail();
+        Payments.manager.forgetDrivers();
+        Payments.extend(PaymentsManager.storeRole, () => storeRail);
+
+        Config.set('magic_starter.account.deletion_url', null);
+        MagicStarter.manager.teamResolver = MagicStarterTeamResolverConfig(
+          currentTeam: () => null,
+          allTeams: () => const [MagicStarterTeam(id: 't1', name: 'Acme')],
+          onSwitch: (_) async {},
+        );
+      });
+
+      tearDown(() async {
+        Payments.manager.forgetDrivers();
+        Translator.instance.setLoader(const _EmptyCatalogueLoader());
+        await Translator.instance.setLocale(const Locale('en'));
+      });
+
+      /// Runs the delete flow against a 422 `team_has_active_subscription`
+      /// whose only blocking team, `t1`, is billed by [provider].
+      Future<void> refuseWith(WidgetTester tester, String provider) async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The server wording.',
+            'code': 'team_has_active_subscription',
+            'team_ids': ['t1'],
+            'team_providers': {'t1': provider},
+          },
+        );
+
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await tapDelete(tester);
+        await confirmWithPassword(tester, 'mysecretpass');
+        await tester.pumpAndSettle();
+      }
+
+      Finder actionButton(String label) => find.byWidgetPredicate(
+        (widget) =>
+            widget is WButton &&
+            widget.child is WText &&
+            (widget.child as WText).data == label,
+      );
+
+      testWidgets(
+        'stripe with a deletion_url names the team and opens that url',
+        (tester) async {
+          Config.set(
+            'magic_starter.account.deletion_url',
+            'https://example.com/account/delete',
+          );
+
+          await refuseWith(tester, 'stripe');
+
+          expect(
+            find.descendant(
+              of: find.byType(MSDialog),
+              matching: find.textContaining('Acme'),
+            ),
+            findsOneWidget,
+          );
+          expect(mockGuard.logoutCalled, isFalse);
+
+          await tester.tap(actionButton('Open deletion page'));
+          await tester.pumpAndSettle();
+
+          expect(
+            launcher.launched,
+            equals([Uri.parse('https://example.com/account/delete')]),
+          );
+          expect(find.byType(MSDialog), findsNothing);
+        },
+      );
+
+      testWidgets('stripe with no deletion_url offers no action', (
+        tester,
+      ) async {
+        await refuseWith(tester, 'stripe');
+
+        expect(actionButton('Open deletion page'), findsNothing);
+        expect(find.byType(MSDialog), findsNothing);
+        expect(launcher.launched, isEmpty);
+      });
+
+      testWidgets('a play_store subscription offers store management', (
+        tester,
+      ) async {
+        await refuseWith(tester, 'play_store');
+
+        await tester.tap(actionButton('Manage subscription'));
+        await tester.pumpAndSettle();
+
+        expect(storeRail.managementOpened, equals(1));
+        expect(launcher.launched, isEmpty);
+        expect(find.byType(MSDialog), findsNothing);
+      });
+    });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Doubles for the actionable refusals
+// ---------------------------------------------------------------------------
+
+/// A launcher that records what it was asked to open instead of opening it.
+class _RecordingLaunchAdapter implements LaunchAdapter {
+  final List<Uri> launched = [];
+
+  @override
+  Future<bool> launch(
+    Uri url, {
+    LaunchMode mode = LaunchMode.externalApplication,
+  }) async {
+    launched.add(url);
+
+    return true;
+  }
+
+  @override
+  Future<bool> canLaunch(Uri url) async => true;
+}
+
+/// A store rail that counts how often the store's management screen opened.
+class _RecordingStoreRail implements StoreBillingService {
+  int managementOpened = 0;
+
+  @override
+  Future<void> identify(String appUserId) async {}
+
+  @override
+  Future<bool> purchase(String productKey, {PurchaseContext? context}) async =>
+      false;
+
+  @override
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async => const <String, StoreProductOffer>{};
+
+  @override
+  Future<bool> restore() async => false;
+
+  @override
+  Future<void> openStoreManagement() async => managementOpened++;
+
+  @override
+  ManageVia get store => ManageVia.appStore;
+}
+
+/// The package's shipped `social` copy, so an assertion on a sentence is about
+/// what a host installs rather than a literal typed here.
+class _ShippedCatalogueLoader implements TranslationLoader {
+  const _ShippedCatalogueLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(Locale _) async {
+    final stub =
+        jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
+            as Map<String, dynamic>;
+    final social = stub['social'] as Map<String, dynamic>;
+
+    return {
+      for (final entry in social.entries) 'social.${entry.key}': entry.value,
+    };
+  }
+}
+
+/// No catalogue at all: every key answers as itself, the suite's default.
+class _EmptyCatalogueLoader implements TranslationLoader {
+  const _EmptyCatalogueLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(Locale _) async => <String, dynamic>{};
 }

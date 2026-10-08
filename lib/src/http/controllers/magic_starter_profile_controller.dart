@@ -1,11 +1,20 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_payments/magic_payments.dart';
 
 import '../../configuration/magic_starter_config.dart';
 import '../../contracts/magic_starter_social_auth.dart';
 import '../../facades/magic_starter.dart';
 import '../../support/social_failure_message.dart';
 import 'concerns/navigates_routes.dart';
+
+/// The one thing a refused account deletion offers to clear what blocks it.
+///
+/// [run] reports its own failures: the caller only invokes it from a tap.
+typedef MagicStarterRefusalAction = ({
+  String label,
+  Future<void> Function() run,
+});
 
 /// Profile controller for Magic Starter plugin.
 class MagicStarterProfileController extends MagicController
@@ -31,9 +40,18 @@ class MagicStarterProfileController extends MagicController
   /// Cleared with the errors, so every gated call starts without it.
   List<String>? get stepUpAccepts => _stepUpAccepts;
 
+  MagicStarterRefusalAction? _refusalAction;
+
+  /// What the user can do to clear a refused account deletion, or `null` when
+  /// the last call was not refused that way or nothing in the app can clear it.
+  ///
+  /// Cleared with the errors, so every gated call starts without it.
+  MagicStarterRefusalAction? get refusalAction => _refusalAction;
+
   @override
   void clearErrors() {
     _stepUpAccepts = null;
+    _refusalAction = null;
     super.clearErrors();
   }
 
@@ -89,8 +107,12 @@ class MagicStarterProfileController extends MagicController
   /// `password_already_set` and `password_not_set` mean the cached user is
   /// stale, so it is restored first and the page that rebuilds shows the
   /// other password form. `last_login_method` and the account deletion
-  /// refusals show their own sentence. Anything else is a plain
-  /// [handleApiError].
+  /// refusals show their own sentence; the two that name blocking teams
+  /// (`owns_shared_teams`, `team_has_active_subscription`) say which, and a
+  /// subscription one keeps what clears it in [refusalAction]. Anything else
+  /// is a plain [handleApiError].
+  ///
+  /// The server still decides every refusal: this only explains it.
   Future<void> _reportRefusal(
     MagicResponse response, {
     String? fallback,
@@ -106,14 +128,115 @@ class MagicStarterProfileController extends MagicController
       case 'password_already_set' || 'password_not_set':
         await Auth.restore();
         setError(trans('social.$code'));
-      case 'last_login_method' ||
-          'owns_shared_teams' ||
-          'team_has_active_subscription' ||
-          'subscription_active':
+      case 'owns_shared_teams':
+        setError(
+          _namingBlockingTeams(
+            trans('social.owns_shared_teams'),
+            _blockingTeamIds(body as Map<String, dynamic>),
+          ),
+        );
+      case 'team_has_active_subscription':
+        _reportBlockingSubscription(body as Map<String, dynamic>);
+      case 'last_login_method' || 'subscription_active':
         setError(trans('social.$code'));
       default:
         handleApiError(response, fallback: fallback);
     }
+  }
+
+  /// The ids of the teams a deletion refusal names, empty when it names none.
+  List<String> _blockingTeamIds(Map<String, dynamic> refusal) {
+    final ids = refusal['team_ids'];
+    if (ids is! List) return const <String>[];
+
+    return [for (final id in ids) id.toString()];
+  }
+
+  /// Appends which teams block the deletion to [sentence].
+  ///
+  /// Names come from the host's team list; one that cannot name every blocking
+  /// team (no team resolver, or a team it does not hold) says how many instead,
+  /// since a partial list would hide the one that matters.
+  String _namingBlockingTeams(String sentence, List<String> teamIds) {
+    if (teamIds.isEmpty) return sentence;
+
+    final teams = MagicStarter.manager.teamResolver?.allTeams() ?? const [];
+    final namesById = {for (final team in teams) team.id.toString(): team.name};
+    final names = [for (final id in teamIds) namesById[id]];
+    final named = names.every((name) => name != null && name.isNotEmpty);
+
+    final blocking = trans('social.deletion_blocking_teams', {
+      'teams': named ? names.join(', ') : '${teamIds.length}',
+    });
+
+    return '$sentence $blocking';
+  }
+
+  /// Explains a `team_has_active_subscription` refusal and keeps the one action
+  /// that clears it, chosen by how the first blocking team is billed.
+  ///
+  /// `team_providers` maps a blocking team id to `app_store`, `play_store` or
+  /// `stripe`. A store subscription can only be cancelled in the store, so it
+  /// offers that screen; a card one offers the host's deletion page
+  /// ([MagicStarterConfig.accountDeletionUrl]) and nothing when the host has
+  /// none. A refusal that names no known provider keeps the generic sentence.
+  void _reportBlockingSubscription(Map<String, dynamic> refusal) {
+    final teamIds = _blockingTeamIds(refusal);
+    final providers = refusal['team_providers'];
+    final provider = providers is Map
+        ? [
+            for (final id in teamIds) providers[id],
+          ].whereType<String>().firstOrNull
+        : null;
+
+    final String sentence;
+    switch (provider) {
+      case 'app_store' || 'play_store':
+        sentence = trans('social.subscription_store');
+        _refusalAction = (
+          label: trans('social.subscription_store_action'),
+          run: _openStoreManagement,
+        );
+      case 'stripe':
+        sentence = trans('social.subscription_stripe');
+        final url = MagicStarterConfig.accountDeletionUrl();
+        if (url != null) {
+          _refusalAction = (
+            label: trans('social.subscription_stripe_action'),
+            run: () => _openDeletionPage(url),
+          );
+        }
+      default:
+        sentence = trans('social.team_has_active_subscription');
+    }
+
+    setError(_namingBlockingTeams(sentence, teamIds));
+  }
+
+  /// Opens the store's own subscription screen through the store rail.
+  ///
+  /// A build with no store rail has no such screen, so that is a no-op. A rail
+  /// that cannot open it throws [BillingException]: logged for whoever wired the
+  /// rail, and the user is told it failed rather than left with a dead tap.
+  Future<void> _openStoreManagement() async {
+    try {
+      await Payments.store?.openStoreManagement();
+    } on BillingException catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterProfileController._openStoreManagement] '
+        '$e\n$stackTrace',
+      );
+      Magic.toast(trans('errors.unexpected'));
+    }
+  }
+
+  /// Opens the host's account deletion [url]; `Launch.url` answers `false`
+  /// rather than throwing when nothing can handle it, which is told the same
+  /// way.
+  Future<void> _openDeletionPage(String url) async {
+    if (await Launch.url(url)) return;
+
+    Magic.toast(trans('errors.unexpected'));
   }
 
   /// Update profile information.

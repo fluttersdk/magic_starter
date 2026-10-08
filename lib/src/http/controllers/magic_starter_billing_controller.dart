@@ -71,6 +71,46 @@ typedef MagicStarterStoreFundedTeamReader = Future<String?> Function();
 /// can.
 typedef MagicStarterTeamOwnershipReader = bool? Function();
 
+/// The four entitlement facts a store purchase can move, read together.
+///
+/// A purchase is confirmed when the backend's answer DIFFERS from the one taken
+/// before the sheet opened, and no single field is enough to see that: an
+/// upgrade moves [plan] and [product], a move between two products of one tier
+/// moves only [product], and a store subscription replacing a web one moves
+/// [provider]. A record, so that `==` is the whole comparison.
+typedef MagicStarterEntitlementSnapshot = ({
+  String? plan,
+  String? product,
+  BillingProvider provider,
+  DateTime? currentPeriodEnd,
+});
+
+/// How a store purchase ended, for the screen to report.
+///
+/// An exception is NOT an outcome: a rail failure is thrown by
+/// [MagicStarterBillingController.purchaseInStoreAndWait] and reported by its
+/// code, and a store-pending purchase is one of them.
+enum MagicStarterStorePurchaseOutcome {
+  /// The customer closed the sheet. Nothing was bought and nothing is waiting.
+  dismissed,
+
+  /// The backend's entitlement moved, so the purchase is reflected.
+  confirmed,
+
+  /// The purchase will apply at the end of the current paid period (a
+  /// downgrade, or a shorter period inside one tier), so the entitlement is not
+  /// expected to move now and nothing was polled.
+  deferred,
+
+  /// The store reported the purchase and the backend had not reflected it by
+  /// the end of the wait. Not a failure: the webhook may still land.
+  processing,
+
+  /// The wait was cancelled (the screen closed, or the team switched) before it
+  /// reached an answer, so there is nothing left to report to.
+  abandoned,
+}
+
 /// Backs the billing screen: six independent reads of what a customer is
 /// entitled to, what they have spent, and where they manage it.
 ///
@@ -236,6 +276,7 @@ class MagicStarterBillingController extends MagicController
   static const String _invoicesKey = 'invoices';
   static const String _paymentMethodKey = 'paymentMethod';
   static const String _storeFundedTeamKey = 'storeFundedTeam';
+  static const String _storeProductsKey = 'storeProducts';
 
   String? _currentPlanId;
   bool _entitlementLoaded = false;
@@ -252,6 +293,39 @@ class MagicStarterBillingController extends MagicController
   bool _pmError = false;
   String? _storeFundedTeam;
   String? _awaitingProductKey;
+  Map<String, StoreProductOffer> _storeOffers =
+      const <String, StoreProductOffer>{};
+  MagicStarterEntitlementSnapshot _entitlementSnapshot = _emptySnapshot;
+
+  /// Bumped by [cancelWait], so a poll that was inside a read when it was
+  /// cancelled can tell on resuming that it no longer has anyone to answer to.
+  int _waitEpoch = 0;
+  Timer? _waitTimer;
+  Completer<bool>? _waitSleep;
+
+  /// The empty snapshot every session starts from, and the one a reset returns
+  /// to: a customer no rail has been asked about.
+  static const MagicStarterEntitlementSnapshot _emptySnapshot = (
+    plan: null,
+    product: null,
+    provider: BillingProvider.none,
+    currentPeriodEnd: null,
+  );
+
+  /// The gaps between the entitlement reads that follow a store purchase, which
+  /// sum to the 60 s the wait lasts.
+  ///
+  /// Geometric at first because the webhook usually lands within seconds, and
+  /// flat at the end because a late one is worth waiting for and not worth a
+  /// request every second.
+  static const List<Duration> _pollBackoff = <Duration>[
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+    Duration(seconds: 8),
+    Duration(seconds: 15),
+    Duration(seconds: 30),
+  ];
 
   /// The active plan id, or `null` while it is genuinely unknown: before
   /// [loadEntitlement] resolves, and permanently after a failed read.
@@ -413,6 +487,19 @@ class MagicStarterBillingController extends MagicController
   /// webhook is the authority, so between the two a second tap would be a
   /// second charge; [canPurchaseViaStore] refuses for as long as this is set.
   String? get awaitingProductKey => _awaitingProductKey;
+
+  /// What the store charges for each catalogue product, keyed by catalogue key.
+  ///
+  /// Empty on a build with no store rail, until [loadStoreProducts] resolves,
+  /// and after a failed read. A key the store has no product for is absent, and
+  /// the screen renders that card without a price rather than with a guessed
+  /// one.
+  Map<String, StoreProductOffer> get storeOffers => _storeOffers;
+
+  /// The entitlement as the last read answered it. See
+  /// [MagicStarterEntitlementSnapshot] for why it is read as a whole.
+  MagicStarterEntitlementSnapshot get entitlementSnapshot =>
+      _entitlementSnapshot;
 
   /// The catalogue facts a store purchase needs to tell an upgrade from a
   /// downgrade: the tiers in the catalogue's own order (cheapest first), and
@@ -618,6 +705,9 @@ class MagicStarterBillingController extends MagicController
     _pmError = false;
     _storeFundedTeam = null;
     _awaitingProductKey = null;
+    _storeOffers = const <String, StoreProductOffer>{};
+    _entitlementSnapshot = _emptySnapshot;
+    cancelWait();
     refreshUI();
 
     await load();
@@ -671,6 +761,12 @@ class MagicStarterBillingController extends MagicController
       _renews = entitlement.renews;
       _cycle = entitlement.cycle;
       _planStatus = entitlement.planStatus;
+      _entitlementSnapshot = (
+        plan: plan,
+        product: entitlement.productKey,
+        provider: entitlement.provider,
+        currentPeriodEnd: entitlement.currentPeriodEnd,
+      );
       if (_awaitingProductKey != null &&
           entitlement.productKey == _awaitingProductKey) {
         _awaitingProductKey = null;
@@ -696,6 +792,10 @@ class MagicStarterBillingController extends MagicController
   ///
   /// Deliberate degradation on failure: [plans] stays empty, so the plan grid
   /// renders its loading or empty state instead of crashing.
+  ///
+  /// On a store build it then prices that catalogue through
+  /// [loadStoreProducts], because the keys to ask the store about are the
+  /// catalogue's own.
   Future<void> loadPlans() async {
     final int session = _sessionGeneration;
     final int readToken = _latestRead.begin(_plansKey);
@@ -706,6 +806,7 @@ class MagicStarterBillingController extends MagicController
 
       _plans = rows.map(MagicStarterPlan.fromMap).toList();
       refreshUI();
+      await loadStoreProducts();
     } catch (error) {
       if (session != _sessionGeneration) return;
       if (!_latestRead.isCurrent(readToken, _plansKey)) return;
@@ -888,6 +989,48 @@ class MagicStarterBillingController extends MagicController
     }
   }
 
+  /// Asks the store what it charges for every product in [plans] and
+  /// republishes [storeOffers].
+  ///
+  /// A store build shows the store's own localised price and not the
+  /// catalogue's figure: the store decides currency, tax and rounding, and App
+  /// Review rejects a screen whose price disagrees with the purchase sheet. One
+  /// request for every key rather than one per card, because the answer is
+  /// needed by the whole grid at once.
+  ///
+  /// Skipped on a build with no store rail, and when the catalogue names no
+  /// product. Deliberate degradation on failure, and not a silent one:
+  /// [storeOffers] keeps what it held, the card falls back to saying the price
+  /// is shown in the store, and the reason goes to the log.
+  Future<void> loadStoreProducts() async {
+    final int session = _sessionGeneration;
+    final int readToken = _latestRead.begin(_storeProductsKey);
+
+    try {
+      // Inside the try for the reason [loadStoreFundedTeam] gives: resolving a
+      // rail can itself throw.
+      final StoreBillingService? store = storeRail;
+      if (store == null) return;
+
+      final List<String> keys = <String>[
+        for (final MagicStarterPlan plan in _plans)
+          for (final MagicStarterProduct product in plan.products) product.key,
+      ];
+      if (keys.isEmpty) return;
+
+      final Map<String, StoreProductOffer> offers = await store.products(keys);
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _storeProductsKey)) return;
+
+      _storeOffers = offers;
+      refreshUI();
+    } catch (error) {
+      if (session != _sessionGeneration) return;
+      if (!_latestRead.isCurrent(readToken, _storeProductsKey)) return;
+      _reportDegradation('storeProducts', error);
+    }
+  }
+
   /// Buys [product] through the STORE rail with this catalogue's
   /// [purchaseContext], and answers whether the store reported a completed
   /// transaction.
@@ -942,6 +1085,140 @@ class MagicStarterBillingController extends MagicController
       if (!pending) _clearAwaiting();
       rethrow;
     }
+  }
+
+  /// Buys [product] and then waits for the backend to reflect it, which is the
+  /// whole of what a customer needs from a purchase: a sheet that closed on
+  /// `true` is the STORE's word, and the plan they see is the backend's.
+  ///
+  /// 1. The entitlement is snapshotted, and the direction of the move decided,
+  ///    BEFORE the sheet opens: afterwards the answer may already have moved.
+  /// 2. A dismissed sheet ends it, and a thrown [BillingException] propagates
+  ///    exactly as [purchaseInStore] throws it.
+  /// 3. A downgrade, or a shorter period inside one tier, takes effect at the
+  ///    end of the current paid period, so the entitlement is NOT expected to
+  ///    move and polling would only run out the clock. The wait flag is
+  ///    released and the screen reports the date from [entitlementSnapshot].
+  /// 4. Anything else polls on [_pollBackoff] (60 s in all) until the snapshot
+  ///    differs, and the wait flag is released on a timeout too. A flag left
+  ///    set would hide the store call to action for the rest of the session.
+  Future<MagicStarterStorePurchaseOutcome> purchaseInStoreAndWait(
+    MagicStarterProduct product,
+  ) async {
+    // 1. Decide from what the backend said BEFORE the sheet.
+    final MagicStarterEntitlementSnapshot before = _entitlementSnapshot;
+    final bool deferred = _takesEffectAtPeriodEnd(product);
+
+    // 2. The sheet.
+    final bool bought = await purchaseInStore(product);
+    if (!bought) return MagicStarterStorePurchaseOutcome.dismissed;
+
+    // 3. Nothing to poll for.
+    if (deferred) {
+      _clearAwaiting();
+
+      return MagicStarterStorePurchaseOutcome.deferred;
+    }
+
+    // 4. Poll.
+    return _awaitEntitlementChange(before);
+  }
+
+  /// Stops a running wait and releases whoever is awaiting it with
+  /// [MagicStarterStorePurchaseOutcome.abandoned].
+  ///
+  /// Called when the screen closes and on a session switch, so that no timer
+  /// outlives the thing it would report to. It does NOT release
+  /// [awaitingProductKey]: a screen closing says nothing about whether the
+  /// store charged, and the gate stays shut until the entitlement names the
+  /// product or the session resets.
+  void cancelWait() {
+    _waitEpoch++;
+    _waitTimer?.cancel();
+    _waitTimer = null;
+
+    final Completer<bool>? sleeping = _waitSleep;
+    _waitSleep = null;
+    if (sleeping != null && !sleeping.isCompleted) sleeping.complete(false);
+  }
+
+  @override
+  void dispose() {
+    cancelWait();
+    super.dispose();
+  }
+
+  /// Re-reads the entitlement on [_pollBackoff] until it differs from [before].
+  Future<MagicStarterStorePurchaseOutcome> _awaitEntitlementChange(
+    MagicStarterEntitlementSnapshot before,
+  ) async {
+    final int epoch = _waitEpoch;
+
+    for (final Duration delay in _pollBackoff) {
+      final bool elapsed = await _sleep(delay);
+      if (!elapsed) return MagicStarterStorePurchaseOutcome.abandoned;
+
+      await loadEntitlement();
+      if (epoch != _waitEpoch) {
+        return MagicStarterStorePurchaseOutcome.abandoned;
+      }
+
+      if (_entitlementSnapshot != before) {
+        if (_awaitingProductKey != null) _clearAwaiting();
+
+        return MagicStarterStorePurchaseOutcome.confirmed;
+      }
+    }
+
+    _clearAwaiting();
+
+    return MagicStarterStorePurchaseOutcome.processing;
+  }
+
+  /// Waits [delay] on a timer [cancelWait] can stop, answering `true` when it
+  /// elapsed and `false` when it was cancelled.
+  ///
+  /// A `Future.delayed` would leave its timer behind when the screen closed.
+  Future<bool> _sleep(Duration delay) {
+    final Completer<bool> sleeping = Completer<bool>();
+    _waitSleep = sleeping;
+    _waitTimer = Timer(delay, () {
+      if (!sleeping.isCompleted) sleeping.complete(true);
+    });
+
+    return sleeping.future;
+  }
+
+  /// Whether buying [target] applies at the end of the current paid period
+  /// instead of now.
+  ///
+  /// True for a lower tier, and for the SAME tier on a shorter period (annual
+  /// to monthly), because both keep what the customer already paid for until it
+  /// runs out. False whenever the held product, or either tier's rank, cannot be
+  /// resolved from the catalogue: an unknown move is polled for, which costs a
+  /// minute, where a wrongly deferred one would tell a customer their plan
+  /// changes later when it changed now.
+  bool _takesEffectAtPeriodEnd(MagicStarterProduct target) {
+    final String? heldKey = _entitlementSnapshot.product;
+    if (heldKey == null) return false;
+
+    final MagicStarterProduct? held =
+        <MagicStarterProduct>[
+              for (final MagicStarterPlan plan in _plans) ...plan.products,
+            ]
+            .where((MagicStarterProduct product) => product.key == heldKey)
+            .firstOrNull;
+    if (held == null) return false;
+
+    final List<String> order = purchaseContext.tierOrder;
+    final int heldRank = order.indexOf(held.tier);
+    final int targetRank = order.indexOf(target.tier);
+    if (heldRank < 0 || targetRank < 0) return false;
+
+    return targetRank < heldRank ||
+        (targetRank == heldRank &&
+            held.cycle == BillingCycle.annual &&
+            target.cycle == BillingCycle.monthly);
   }
 
   /// Drops the purchase wait and repaints the gates that read it.

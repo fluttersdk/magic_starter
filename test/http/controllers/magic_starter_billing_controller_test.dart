@@ -1378,6 +1378,401 @@ void main() {
       controller.dispose();
     });
   });
+
+  group('MagicStarterBillingController, the store prices come from the '
+      'store', () {
+    test('every catalogue product is priced by one products() read after the '
+        'catalogue lands', () async {
+      final _WaitStoreBilling store = _WaitStoreBilling(
+        offers: const <String, StoreProductOffer>{
+          'pro_annual': StoreProductOffer(
+            priceString: r'$34.99',
+            currencyCode: 'USD',
+            price: 34.99,
+            subscriptionPeriod: 'P1Y',
+          ),
+        },
+      );
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+
+      expect(store.requestedKeys, <List<String>>[
+        <String>['pro_monthly', 'pro_annual', 'business_monthly'],
+      ]);
+      expect(controller.storeOffers.keys, <String>['pro_annual']);
+      expect(controller.storeOffers['pro_annual']?.priceString, r'$34.99');
+      controller.dispose();
+    });
+
+    test('a failed price read degrades: the catalogue stays, the offers stay '
+        'empty', () async {
+      final _WaitStoreBilling store = _WaitStoreBilling(
+        offersError: const BillingException(
+          'Store unreachable.',
+          code: BillingErrorCode.network,
+        ),
+      );
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+
+      expect(controller.plans, isNotEmpty);
+      expect(controller.storeOffers, isEmpty);
+      controller.dispose();
+    });
+
+    test('a session reset drops the previous team\'s offers', () async {
+      final _WaitStoreBilling store = _WaitStoreBilling(
+        offers: const <String, StoreProductOffer>{
+          'pro_annual': StoreProductOffer(
+            priceString: r'$34.99',
+            currencyCode: 'USD',
+            price: 34.99,
+          ),
+        },
+      );
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      store.offers = const <String, StoreProductOffer>{};
+
+      await controller.resetForSession();
+
+      expect(controller.storeOffers, isEmpty);
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, a store purchase waits for the '
+      'backend', () {
+    testWidgets('a dismissed sheet waits for nothing and reads nothing', (
+      tester,
+    ) async {
+      final _WaitStoreBilling store = _WaitStoreBilling(purchaseResult: false);
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      final int readsBefore = store.entitlementReads;
+
+      final MagicStarterStorePurchaseOutcome outcome = await controller
+          .purchaseInStoreAndWait(_product(controller, 'pro_annual'));
+
+      expect(outcome, MagicStarterStorePurchaseOutcome.dismissed);
+      expect(store.entitlementReads, readsBefore);
+      expect(controller.awaitingProductKey, isNull);
+      controller.dispose();
+    });
+
+    testWidgets('polls on 1, 2, 4 s and stops the moment the entitlement '
+        'differs from the pre-sheet snapshot', (tester) async {
+      // Read 1 is the mount's own, so reads 2, 3 and 4 are the three polls and
+      // the change lands on the third.
+      final _WaitStoreBilling store = _WaitStoreBilling(
+        changeOnRead: 4,
+        changeTo: 'pro_annual',
+      );
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      MagicStarterStorePurchaseOutcome? outcome;
+      unawaited(
+        controller
+            .purchaseInStoreAndWait(_product(controller, 'pro_annual'))
+            .then((MagicStarterStorePurchaseOutcome value) => outcome = value),
+      );
+      await tester.pump();
+
+      expect(controller.awaitingProductKey, 'pro_annual');
+      expect(store.entitlementReads, 1, reason: 'nothing is read before 1 s');
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(store.entitlementReads, 2);
+      await tester.pump(const Duration(seconds: 2));
+      expect(store.entitlementReads, 3);
+      expect(outcome, isNull);
+      await tester.pump(const Duration(seconds: 4));
+
+      expect(store.entitlementReads, 4);
+      expect(outcome, MagicStarterStorePurchaseOutcome.confirmed);
+      expect(controller.awaitingProductKey, isNull);
+      expect(controller.canPurchaseViaStore, isTrue);
+
+      // No fifth read: the wait ended, and a timer left behind would also fail
+      // the test on its own.
+      await tester.pump(const Duration(seconds: 120));
+      expect(store.entitlementReads, 4);
+      controller.dispose();
+    });
+
+    testWidgets('a backend that never confirms ends in processing after 60 s '
+        'and re-opens the store gate', (tester) async {
+      final _WaitStoreBilling store = _WaitStoreBilling();
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      MagicStarterStorePurchaseOutcome? outcome;
+      unawaited(
+        controller
+            .purchaseInStoreAndWait(_product(controller, 'pro_annual'))
+            .then((MagicStarterStorePurchaseOutcome value) => outcome = value),
+      );
+      await tester.pump();
+
+      await tester.pump(const Duration(seconds: 59));
+      expect(outcome, isNull);
+      expect(controller.canPurchaseViaStore, isFalse);
+
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(outcome, MagicStarterStorePurchaseOutcome.processing);
+      // The wait flag has to be released on a timeout, or the store CTA stays
+      // hidden for the rest of the session.
+      expect(controller.awaitingProductKey, isNull);
+      expect(controller.canPurchaseViaStore, isTrue);
+      expect(store.entitlementReads, 7, reason: 'the mount plus six polls');
+      controller.dispose();
+    });
+
+    testWidgets('a downgrade skips the poll and defers to the period end', (
+      tester,
+    ) async {
+      final _WaitStoreBilling store = _WaitStoreBilling(
+        heldProduct: 'business_monthly',
+      );
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      final int readsBefore = store.entitlementReads;
+
+      final MagicStarterStorePurchaseOutcome outcome = await controller
+          .purchaseInStoreAndWait(_product(controller, 'pro_annual'));
+
+      expect(outcome, MagicStarterStorePurchaseOutcome.deferred);
+      expect(store.entitlementReads, readsBefore);
+      expect(controller.entitlementSnapshot.currentPeriodEnd, store.periodEnd);
+      expect(controller.awaitingProductKey, isNull);
+      expect(controller.canPurchaseViaStore, isTrue);
+      controller.dispose();
+    });
+
+    testWidgets('annual to monthly inside one tier is deferred, monthly to '
+        'annual is not', (tester) async {
+      final _WaitStoreBilling annualHolder = _WaitStoreBilling(
+        heldProduct: 'pro_annual',
+      );
+      final MagicStarterBillingController shortening = await loaded(
+        annualHolder,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+
+      expect(
+        await shortening.purchaseInStoreAndWait(
+          _product(shortening, 'pro_monthly'),
+        ),
+        MagicStarterStorePurchaseOutcome.deferred,
+      );
+      shortening.dispose();
+
+      final _WaitStoreBilling monthlyHolder = _WaitStoreBilling(
+        heldProduct: 'pro_monthly',
+      );
+      final MagicStarterBillingController lengthening = await loaded(
+        monthlyHolder,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      MagicStarterStorePurchaseOutcome? outcome;
+      unawaited(
+        lengthening
+            .purchaseInStoreAndWait(_product(lengthening, 'pro_annual'))
+            .then((MagicStarterStorePurchaseOutcome value) => outcome = value),
+      );
+      await tester.pump();
+
+      expect(outcome, isNull, reason: 'a longer period is polled for');
+      lengthening.cancelWait();
+      await tester.pump();
+      expect(outcome, MagicStarterStorePurchaseOutcome.abandoned);
+      lengthening.dispose();
+    });
+
+    testWidgets('cancelling the wait stops every read and leaves no timer', (
+      tester,
+    ) async {
+      final _WaitStoreBilling store = _WaitStoreBilling();
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      MagicStarterStorePurchaseOutcome? outcome;
+      unawaited(
+        controller
+            .purchaseInStoreAndWait(_product(controller, 'pro_annual'))
+            .then((MagicStarterStorePurchaseOutcome value) => outcome = value),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      final int readsBefore = store.entitlementReads;
+
+      controller.cancelWait();
+      await tester.pump();
+
+      expect(outcome, MagicStarterStorePurchaseOutcome.abandoned);
+      await tester.pump(const Duration(seconds: 120));
+      expect(store.entitlementReads, readsBefore);
+      controller.dispose();
+    });
+
+    testWidgets('a session switch abandons the wait with the rest of the old '
+        'team\'s state', (tester) async {
+      final _WaitStoreBilling store = _WaitStoreBilling();
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      MagicStarterStorePurchaseOutcome? outcome;
+      unawaited(
+        controller
+            .purchaseInStoreAndWait(_product(controller, 'pro_annual'))
+            .then((MagicStarterStorePurchaseOutcome value) => outcome = value),
+      );
+      await tester.pump(const Duration(seconds: 1));
+
+      await controller.resetForSession();
+      await tester.pump();
+
+      expect(outcome, MagicStarterStorePurchaseOutcome.abandoned);
+      expect(controller.awaitingProductKey, isNull);
+      await tester.pump(const Duration(seconds: 120));
+      controller.dispose();
+    });
+
+    testWidgets('a pending purchase still throws for the screen to report and '
+        'starts no poll', (tester) async {
+      final _WaitStoreBilling store = _WaitStoreBilling(
+        purchaseError: const BillingException(
+          'Awaiting approval.',
+          code: BillingErrorCode.pending,
+        ),
+      );
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+      final int readsBefore = store.entitlementReads;
+
+      await expectLater(
+        controller.purchaseInStoreAndWait(_product(controller, 'pro_annual')),
+        throwsA(isA<BillingException>()),
+      );
+
+      await tester.pump(const Duration(seconds: 120));
+      expect(store.entitlementReads, readsBefore);
+      expect(controller.awaitingProductKey, 'pro_annual');
+      controller.dispose();
+    });
+  });
+}
+
+/// The catalogue product named [key], from what [controller] loaded.
+MagicStarterProduct _product(
+  MagicStarterBillingController controller,
+  String key,
+) {
+  return <MagicStarterProduct>[
+    for (final MagicStarterPlan plan in controller.plans) ...plan.products,
+  ].firstWhere((MagicStarterProduct product) => product.key == key);
+}
+
+/// A store build whose entitlement can MOVE between reads, so the wait has
+/// something to observe, and whose price read is scripted.
+///
+/// Counts every entitlement read, because "stops polling" and "skips the poll"
+/// are both claims about how many reads happened and not about what the screen
+/// shows.
+class _WaitStoreBilling extends _StorePurchaseBilling {
+  _WaitStoreBilling({
+    super.purchaseResult,
+    super.purchaseError,
+    this.heldProduct,
+    this.changeOnRead,
+    this.changeTo,
+    this.offers = const <String, StoreProductOffer>{},
+    this.offersError,
+  });
+
+  /// The catalogue key the entitlement reports, or `null` for a customer
+  /// holding nothing.
+  String? heldProduct;
+
+  /// The 1-based read number at which [heldProduct] becomes [changeTo], which
+  /// models the backend's webhook landing between two polls.
+  final int? changeOnRead;
+
+  /// The key the entitlement moves to on [changeOnRead].
+  final String? changeTo;
+
+  /// What the store answers for a price read.
+  Map<String, StoreProductOffer> offers;
+
+  /// A failure raised instead of [offers].
+  final BillingException? offersError;
+
+  /// The paid period's end, constant across reads so that a changed product,
+  /// not a changed date, is what a test observes.
+  final DateTime periodEnd = DateTime.utc(2026, 7, 1);
+
+  /// How many times the entitlement was read, the mount's own read included.
+  int entitlementReads = 0;
+
+  /// Every key list passed to [products], in call order.
+  final List<List<String>> requestedKeys = <List<String>>[];
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    entitlementReads++;
+    if (changeOnRead != null && entitlementReads >= changeOnRead!) {
+      heldProduct = changeTo;
+    }
+    final String? held = heldProduct;
+
+    return BillingEntitlement(
+      plan: held?.split('_').first ?? 'free',
+      productKey: held,
+      provider: held == null ? BillingProvider.none : BillingProvider.appStore,
+      currentPeriodEnd: held == null ? null : periodEnd,
+      raw: const <String, dynamic>{},
+    );
+  }
+
+  @override
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async {
+    requestedKeys.add(productKeys);
+    final BillingException? error = offersError;
+    if (error != null) throw error;
+
+    return offers;
+  }
 }
 
 /// A read contract that serves neither rail, modelling a build with no purchase

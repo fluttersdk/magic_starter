@@ -368,6 +368,28 @@ class MagicStarterConfig {
     return termsUrl() != null || privacyUrl() != null;
   }
 
+  // -- Account --
+
+  /// Returns the page where a card-billed subscription can be cancelled and
+  /// the account deleted (`magic_starter.account.deletion_url`), or `null` when
+  /// it is not set.
+  ///
+  /// A refused deletion whose blocking subscription is billed by Stripe has
+  /// nothing to cancel it with inside the app, so the refusal offers this page
+  /// as its one action. With no url there is no action to offer. An empty
+  /// string reads as unset: a half-filled `.env` produces `''`, and launching
+  /// `''` opens nothing.
+  static String? accountDeletionUrl() {
+    final String? url = Config.get<String?>(
+      'magic_starter.account.deletion_url',
+      null,
+    );
+
+    if (url == null || url.isEmpty) return null;
+
+    return url;
+  }
+
   // -- Computed route paths --
 
   /// Full path for team creation page.
