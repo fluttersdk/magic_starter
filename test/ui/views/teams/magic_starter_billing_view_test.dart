@@ -3419,6 +3419,50 @@ void main() {
       expect(store.entitlementReads, readsBefore);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'a screen that closed mid-wait re-reads the entitlement when it '
+      'opens again',
+      (tester) async {
+        final _StoreRailBillingService store = _StoreRailBillingService();
+
+        await mount(tester, store, isOwner: true, withToasts: true);
+        final MagicStarterBillingController controller =
+            Magic.find<MagicStarterBillingController>();
+
+        await tester.tap(
+          find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pumpWidget(const SizedBox.shrink());
+
+        expect(
+          controller.awaitingProductKey,
+          'business_annual',
+          reason: 'the store may have charged, so closing does not forget it',
+        );
+
+        // The webhook landed while the screen was closed.
+        store.heldProduct = 'business_annual';
+        final int closedReads = store.entitlementReads;
+
+        await tester.pumpWidget(
+          wrapWithSnackbar(MagicStarter.view.make('teams.billing')),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        expect(store.entitlementReads, closedReads + 1);
+        expect(controller.awaitingProductKey, isNull);
+        expect(
+          find.text(trans('magic_starter.billing.plan_button_upgrade')),
+          findsOneWidget,
+          reason: 'the entitlement names the product, so the buttons are back',
+        );
+        await tester.pumpAndSettle();
+      },
+    );
   });
 
   group('an unset web origin cannot sell', () {

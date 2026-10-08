@@ -398,6 +398,7 @@
     "deletion_scheduled": "Your account will be deleted in :days days. Sign in again before then to cancel the deletion.",
     "disconnect": "Disconnect",
     "deletion_blocking_teams": "These teams block the deletion: :teams.",
+    "deletion_blocking_teams_count": "The deletion is blocked by :count of your teams.",
     "flow_expired": "Your sign-in took too long. Try again.",
     "invalid_identity": "Could not verify your identity. Try again.",
     "last_login_method": "This is your only login method. Add a password or link another provider before removing this one.",
@@ -417,6 +418,7 @@
     "subscription_store_action": "Manage subscription",
     "subscription_stripe": "Your subscription is billed by card. Open the account deletion page to cancel it and delete your account.",
     "subscription_stripe_action": "Open deletion page",
+    "subscription_stripe_no_link": "One of your teams is billed by card. Cancel that subscription on the web, then delete your account.",
     "team_has_active_subscription": "One of your teams has an active subscription. Cancel it first."
   },
   "teams": {

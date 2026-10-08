@@ -156,7 +156,8 @@ class MagicStarterProfileController extends MagicController
   ///
   /// Names come from the host's team list; one that cannot name every blocking
   /// team (no team resolver, or a team it does not hold) says how many instead,
-  /// since a partial list would hide the one that matters.
+  /// in a sentence of its own, since a partial list would hide the one that
+  /// matters.
   String _namingBlockingTeams(String sentence, List<String> teamIds) {
     if (teamIds.isEmpty) return sentence;
 
@@ -165,9 +166,11 @@ class MagicStarterProfileController extends MagicController
     final names = [for (final id in teamIds) namesById[id]];
     final named = names.every((name) => name != null && name.isNotEmpty);
 
-    final blocking = trans('social.deletion_blocking_teams', {
-      'teams': named ? names.join(', ') : '${teamIds.length}',
-    });
+    final blocking = named
+        ? trans('social.deletion_blocking_teams', {'teams': names.join(', ')})
+        : trans('social.deletion_blocking_teams_count', {
+            'count': '${teamIds.length}',
+          });
 
     return '$sentence $blocking';
   }
@@ -178,8 +181,9 @@ class MagicStarterProfileController extends MagicController
   /// `team_providers` maps a blocking team id to `app_store`, `play_store` or
   /// `stripe`. A store subscription can only be cancelled in the store, so it
   /// offers that screen; a card one offers the host's deletion page
-  /// ([MagicStarterConfig.accountDeletionUrl]) and nothing when the host has
-  /// none. A refusal that names no known provider keeps the generic sentence.
+  /// ([MagicStarterConfig.accountDeletionUrl]), or, when the host has none, a
+  /// sentence that points at no page and offers no action. A refusal that names
+  /// no known provider keeps the generic sentence.
   void _reportBlockingSubscription(Map<String, dynamic> refusal) {
     final teamIds = _blockingTeamIds(refusal);
     final providers = refusal['team_providers'];
@@ -198,9 +202,11 @@ class MagicStarterProfileController extends MagicController
           run: _openStoreManagement,
         );
       case 'stripe':
-        sentence = trans('social.subscription_stripe');
         final url = MagicStarterConfig.accountDeletionUrl();
-        if (url != null) {
+        if (url == null) {
+          sentence = trans('social.subscription_stripe_no_link');
+        } else {
+          sentence = trans('social.subscription_stripe');
           _refusalAction = (
             label: trans('social.subscription_stripe_action'),
             run: () => _openDeletionPage(url),

@@ -523,7 +523,7 @@ void main() {
         expect(find.byType(MagicStarterPasswordConfirmDialog), findsNothing);
         expect(
           Magic.find<MagicStarterProfileController>().rxStatus.message,
-          'social.owns_shared_teams social.deletion_blocking_teams',
+          'social.owns_shared_teams social.deletion_blocking_teams_count',
         );
         // Nothing to do about it from here, so there is no action to offer.
         expect(find.byType(MSDialog), findsNothing);
@@ -625,6 +625,36 @@ void main() {
         expect(actionButton('Open deletion page'), findsNothing);
         expect(find.byType(MSDialog), findsNothing);
         expect(launcher.launched, isEmpty);
+        expect(
+          Magic.find<MagicStarterProfileController>().rxStatus.message,
+          startsWith(
+            'One of your teams is billed by card. Cancel that subscription on '
+            'the web, then delete your account.',
+          ),
+        );
+      });
+
+      testWidgets('a team no list resolves is counted, not named', (
+        tester,
+      ) async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The server wording.',
+            'code': 'team_has_active_subscription',
+            'team_ids': ['t9'],
+          },
+        );
+
+        await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+        await tapDelete(tester);
+        await confirmWithPassword(tester, 'mysecretpass');
+        await tester.pumpAndSettle();
+
+        final message =
+            Magic.find<MagicStarterProfileController>().rxStatus.message;
+        expect(message, endsWith('1 of your teams.'));
+        expect(message, isNot(contains('block the deletion')));
       });
 
       testWidgets('a play_store subscription offers store management', (

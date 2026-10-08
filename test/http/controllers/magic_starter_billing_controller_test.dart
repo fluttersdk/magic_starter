@@ -167,8 +167,9 @@ class _FakeBilling
       throw UnimplementedError();
 
   @override
-  Future<Map<String, StoreProductOffer>> products(List<String> productKeys) =>
-      throw UnimplementedError();
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async => const <String, StoreProductOffer>{};
 
   @override
   Future<bool> restore() => throw UnimplementedError();
@@ -1878,8 +1879,9 @@ mixin _StoreRailStubs implements StoreBillingService {
       throw UnimplementedError();
 
   @override
-  Future<Map<String, StoreProductOffer>> products(List<String> productKeys) =>
-      throw UnimplementedError();
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async => const <String, StoreProductOffer>{};
 
   @override
   Future<bool> restore() => throw UnimplementedError();

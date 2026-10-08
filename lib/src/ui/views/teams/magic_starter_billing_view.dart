@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
@@ -323,6 +325,15 @@ class _MagicStarterBillingViewState
     // entitlement, and running it from `build` would open a checkout session
     // from inside a paint.
     controller.addListener(_startRequestedUpgrade);
+
+    // The controller's own `onInit` ran once, for the lifetime of the session
+    // singleton, so a screen opened again after closing mid-wait would never
+    // read the entitlement the store purchase is waiting on and would keep the
+    // purchase buttons hidden. The read clears the wait when the entitlement
+    // now names the product.
+    if (controller.awaitingProductKey != null) {
+      unawaited(controller.loadEntitlement());
+    }
   }
 
   @override

@@ -666,6 +666,10 @@ void main() {
       String blockedBy(String teams) =>
           _shipped('deletion_blocking_teams').replaceAll(':teams', teams);
 
+      String blockedByCount(int count) => _shipped(
+        'deletion_blocking_teams_count',
+      ).replaceAll(':count', '$count');
+
       void knowTeams(Map<String, String> namesById) {
         MagicStarter.manager.teamResolver = MagicStarterTeamResolverConfig(
           currentTeam: () => null,
@@ -727,7 +731,7 @@ void main() {
 
         expect(
           controller.rxStatus.message,
-          equals('${_shipped('owns_shared_teams')} ${blockedBy('2')}'),
+          equals('${_shipped('owns_shared_teams')} ${blockedByCount(2)}'),
         );
       });
 
@@ -738,7 +742,7 @@ void main() {
 
         expect(
           controller.rxStatus.message,
-          equals('${_shipped('owns_shared_teams')} ${blockedBy('1')}'),
+          equals('${_shipped('owns_shared_teams')} ${blockedByCount(1)}'),
         );
       });
 
@@ -830,11 +834,30 @@ void main() {
 
           expect(
             controller.rxStatus.message,
-            startsWith(_shipped('subscription_stripe')),
+            startsWith(_shipped('subscription_stripe_no_link')),
+          );
+          expect(
+            controller.rxStatus.message,
+            isNot(contains(_shipped('subscription_stripe'))),
           );
           expect(controller.refusalAction, isNull);
         },
       );
+
+      test('a refusal naming no resolvable team says only how many', () async {
+        refuse('team_has_active_subscription', teamIds: ['t9']);
+
+        await deleteAccount();
+
+        expect(
+          controller.rxStatus.message,
+          equals(
+            '${_shipped('team_has_active_subscription')} '
+            '${blockedByCount(1)}',
+          ),
+        );
+        expect(controller.rxStatus.message, isNot(contains('block the')));
+      });
 
       test('the first blocking team with a known provider decides', () async {
         Config.set(
