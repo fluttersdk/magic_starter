@@ -302,8 +302,14 @@ class _MagicStarterBillingViewState
   /// sellable, monthly, and refusing it would hide a tier the vendor is selling
   /// because of a toggle position; naming its real cycle sells it at the figure
   /// its card shows.
+  ///
+  /// The tier's own product decides first, through
+  /// [MagicStarterPlan.productFor], because that product is what a purchase
+  /// names: the card has to show the cycle the key will charge. A row with no
+  /// product (a free or a custom tier) falls back to its price fields.
   BillingCycle _cycleFor(MagicStarterPlan plan) =>
-      plan.annual == null ? BillingCycle.monthly : _cycle;
+      plan.productFor(_cycle)?.cycle ??
+      (plan.annual == null ? BillingCycle.monthly : _cycle);
 
   /// Whether this mount has already acted on an upgrade deep link, so a second
   /// resolving read cannot reopen checkout.
@@ -649,10 +655,9 @@ class _MagicStarterBillingViewState
   /// not a write), it just stops offering to buy. A store account already
   /// funding another team gets its own notice beside it, naming that team.
   ///
-  /// The monthly/annual toggle is absent on a store build, and that absence is
-  /// correctness rather than tidiness: a store catalogue carries the MONTHLY
-  /// SKUs only, so a customer who picked "Annual" and tapped Upgrade would be
-  /// charged monthly by the sheet that opened.
+  /// The monthly/annual toggle renders on every build: both rails purchase by
+  /// the catalogue product key for the selected tier and cycle, so the store
+  /// sheet charges the cycle the customer picked, exactly as web checkout does.
   Widget _buildPlansSection() {
     final String? fundedTeam = controller.storeFundedTeam;
 
@@ -674,23 +679,21 @@ class _MagicStarterBillingViewState
               trans('magic_starter.billing.plans_heading'),
               className: 'text-lg font-semibold text-fg',
             ),
-            if (controller.storeRail == null)
-              ValueListenableBuilder<BillingCycle?>(
-                valueListenable: _cycleOverride,
-                builder: (_, _, _) => MSSegmentedControl<BillingCycle>(
-                  size: SegmentedControlSize.sm,
-                  options: <String>[
-                    trans('magic_starter.billing.plans_monthly'),
-                    trans('magic_starter.billing.plans_annual'),
-                  ],
-                  selectedIndex: _cycles.indexOf(_cycle),
-                  // Into the OVERRIDE, not into `_cycle`, which is derived. A
-                  // press is the customer's own choice and has to outrank the
-                  // entitlement default for the rest of the visit.
-                  onChanged: (int index) =>
-                      _cycleOverride.value = _cycles[index],
-                ),
+            ValueListenableBuilder<BillingCycle?>(
+              valueListenable: _cycleOverride,
+              builder: (_, _, _) => MSSegmentedControl<BillingCycle>(
+                size: SegmentedControlSize.sm,
+                options: <String>[
+                  trans('magic_starter.billing.plans_monthly'),
+                  trans('magic_starter.billing.plans_annual'),
+                ],
+                selectedIndex: _cycles.indexOf(_cycle),
+                // Into the OVERRIDE, not into `_cycle`, which is derived. A
+                // press is the customer's own choice and has to outrank the
+                // entitlement default for the rest of the visit.
+                onChanged: (int index) => _cycleOverride.value = _cycles[index],
               ),
+            ),
           ],
         ),
         if (controller.plans.isEmpty)
@@ -1500,11 +1503,15 @@ class _MagicStarterBillingViewState
 
   /// Selects [plan]: hands off to sales for a custom tier, buys through the
   /// STORE rail where this build has one, and otherwise starts a hosted checkout
-  /// session keyed by the plan id.
+  /// session, both keyed by the catalogue product the tier sells on the selected
+  /// cycle ([MagicStarterPlan.productFor]).
   ///
-  /// Both rails are keyed by that same plan id, never by a store product id: the
-  /// SKU a plan maps to belongs to the rail's catalogue, and a client naming one
-  /// would need a release to add or reprice a product.
+  /// Both rails are keyed by that same catalogue key (`pro_annual`), never by a
+  /// store SKU or a price id: what a key maps to belongs to the rail's catalogue,
+  /// and a client naming one would need a release to add or reprice a product.
+  /// One key names the tier AND the cycle, so a call cannot send half of the
+  /// pair. A priced tier with no product to name is reported as unavailable
+  /// rather than bought on a guess.
   ///
   /// The store is asked FIRST, and that is a routing decision rather than a
   /// preference: no build serves both rails, and a store build must never fall
@@ -1532,10 +1539,25 @@ class _MagicStarterBillingViewState
       return;
     }
 
-    // 2. A store build buys in the store.
-    if (controller.storeRail != null) return _purchaseInStore(plan);
+    // 2. Name the product the card is showing. Read through `_cycleFor` so
+    //    the key, the card's figure and the toast below all agree.
+    final MagicStarterProduct? product = plan.productFor(_cycleFor(plan));
+    if (product == null) {
+      _reportBillingFailure(
+        const BillingException(
+          'The catalogue names no product for this tier.',
+          code: BillingErrorCode.productUnavailable,
+        ),
+        where: 'selectPlan',
+      );
 
-    // 3. Priced tier: start checkout, redirecting the rail back to this screen
+      return;
+    }
+
+    // 3. A store build buys in the store.
+    if (controller.storeRail != null) return _purchaseInStore(product);
+
+    // 4. Priced tier: start checkout, redirecting the rail back to this screen
     //    on completion or abort.
     final WebBillingService? web = controller.webRail;
     final String? successUrl = _billingUrl('checkout=success');
@@ -1550,15 +1572,14 @@ class _MagicStarterBillingViewState
 
     try {
       await web.checkout(
-        plan: plan.id,
-        // The cycle the card's price was rendered for, so the customer is
-        // charged the figure they were shown. It used to reach nothing, and the
-        // toast two lines below already claimed it, so a customer taking the
-        // annual discount was billed monthly and told otherwise.
+        // The product for the cycle the card's price was rendered for, so the
+        // customer is charged the figure they were shown. The cycle used to
+        // reach nothing, and the toast below already claimed it, so a customer
+        // taking the annual discount was billed monthly and told otherwise.
         //
         // Per card rather than screen-wide: see [_cycleFor], and note the toast
         // below has to read the same value or the two disagree again.
-        cycle: _cycleFor(plan),
+        productKey: product.key,
         successUrl: successUrl,
         cancelUrl: cancelUrl,
       );
@@ -1579,8 +1600,8 @@ class _MagicStarterBillingViewState
     }
   }
 
-  /// Buys [plan] through the STORE rail: the platform's own purchase sheet, on
-  /// the SKU the rail's catalogue keys by the plan id.
+  /// Buys [product] through the STORE rail: the platform's own purchase sheet,
+  /// on the store product the rail's catalogue maps the catalogue key to.
   ///
   /// The one-team refusal is re-ASKED here rather than read off the mount-time
   /// answer, because this is the point where the money moves: a tap can arrive
@@ -1596,9 +1617,8 @@ class _MagicStarterBillingViewState
   /// plan updates when the store confirms it and the entitlement is re-read
   /// rather than assumed: the rail's webhook is the authority and it may not have
   /// arrived yet.
-  Future<void> _purchaseInStore(MagicStarterPlan plan) async {
-    final StoreBillingService? store = controller.storeRail;
-    if (store == null) return;
+  Future<void> _purchaseInStore(MagicStarterProduct product) async {
+    if (controller.storeRail == null) return;
 
     await controller.loadStoreFundedTeam();
     if (!mounted) return;
@@ -1616,7 +1636,9 @@ class _MagicStarterBillingViewState
     }
 
     try {
-      final bool bought = await store.purchase(plan: plan.id);
+      // Through the controller, which hands the rail the catalogue's tier
+      // order and holds the store gate shut until the entitlement confirms.
+      final bool bought = await controller.purchaseInStore(product);
       if (!bought || !mounted) return;
 
       Magic.success(

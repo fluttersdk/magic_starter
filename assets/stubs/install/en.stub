@@ -100,6 +100,19 @@
     },
     "billing": {
       "description": "Your plan, usage, and invoices.",
+      "errors": {
+        "already_owned": "You already have this plan. Restore purchases if it is not showing yet.",
+        "identity_mismatch": "This store account is signed in for a different team. Switch to that team or use another store account.",
+        "managed_elsewhere": "This subscription is managed in another store or on the web. Change it where you bought it.",
+        "network": "We could not reach the store. Check your connection and try again.",
+        "not_configured": "Purchases are not set up in this app yet.",
+        "not_identified": "We could not link this purchase to your team. Reopen this screen and try again.",
+        "pending": "Your purchase is waiting for approval. Your plan updates once the store completes it.",
+        "product_unavailable": "This plan is not available to buy here right now.",
+        "receipt_in_use": "This store purchase already belongs to another account.",
+        "store": "The store could not complete the purchase. Please try again.",
+        "unmapped_active_product": "Your current subscription cannot be changed from here. Manage it in your store's subscription settings."
+      },
       "invoice_receipt_button": "Receipt",
       "invoice_status": {
         "failed": "Failed",
@@ -148,6 +161,13 @@
       "renewal_unbilled": "No active subscription · nothing renews",
       "store_bound_text": "Your store account already funds :team, and a store account can fund only one team. Buying here would move that subscription off :team, so cancel it in the store first.",
       "store_bound_title": "Your store account is already in use",
+      "store_disclosure_auto_renew": "The subscription renews automatically unless you cancel it at least 24 hours before the current period ends.",
+      "store_disclosure_cancel": "Cancel any time in your store's subscription settings.",
+      "store_disclosure_period_month": "month",
+      "store_disclosure_period_year": "year",
+      "store_disclosure_price": ":price per :period",
+      "store_disclosure_privacy": "Privacy Policy",
+      "store_disclosure_terms": "Terms of Use",
       "store_purchase_text": "Your plan updates as soon as the store confirms the payment.",
       "store_purchase_title": "Purchase complete",
       "store_restore_button": "Restore purchases",
@@ -163,7 +183,9 @@
       "toast_deferred_title": "Billing coming soon",
       "toast_failed_text": "Something went wrong. Please try again, and contact support if it keeps happening.",
       "toast_switch_title": "Switching to :name",
-      "toast_upgrade_title": "Upgrading to :name"
+      "toast_upgrade_title": "Upgrading to :name",
+      "wait_processing": "Processing your purchase. Your plan updates as soon as the store confirms it.",
+      "wait_takes_effect_on": "Your new plan takes effect on :date."
     },
     "email_verification": {
       "resend_button": "Resend Verification Email",
@@ -375,10 +397,11 @@
     "deletion_cancelled": "Account deletion cancelled. Your account is active again.",
     "deletion_scheduled": "Your account will be deleted in :days days. Sign in again before then to cancel the deletion.",
     "disconnect": "Disconnect",
+    "deletion_blocking_teams": "These teams block the deletion: :teams.",
     "flow_expired": "Your sign-in took too long. Try again.",
     "invalid_identity": "Could not verify your identity. Try again.",
     "last_login_method": "This is your only login method. Add a password or link another provider before removing this one.",
-    "owns_shared_teams": "You own teams that you cannot delete. Transfer ownership or delete them before deleting your account.",
+    "owns_shared_teams": "You own teams that other people belong to. Remove their members or delete those teams before deleting your account.",
     "password_already_set": "Your account already has a password set.",
     "password_not_set": "This account has no password yet. Set one instead of changing it.",
     "platform_not_configured": "This provider is not configured on this platform. Try again later.",
@@ -390,6 +413,10 @@
     "social_email_taken": "An account with this email already exists. Sign in and link the provider from your profile.",
     "step_up_required": "Please confirm your identity to continue.",
     "subscription_active": "Your account has an active subscription. Cancel it before deleting your account.",
+    "subscription_store": "Your subscription was bought in the App Store or Google Play. Cancel it in your store's subscription settings before deleting your account.",
+    "subscription_store_action": "Manage subscription",
+    "subscription_stripe": "Your subscription is billed by card. Open the account deletion page to cancel it and delete your account.",
+    "subscription_stripe_action": "Open deletion page",
     "team_has_active_subscription": "One of your teams has an active subscription. Cancel it first."
   },
   "teams": {

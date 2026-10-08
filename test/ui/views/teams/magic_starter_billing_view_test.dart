@@ -221,6 +221,8 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': null,
     'recommended': false,
+    'cycles': <String>[],
+    'products': <Map<String, dynamic>>[],
     'limits': <String, dynamic>{
       'monitors': 1,
       'check_interval_sec': 180,
@@ -253,6 +255,37 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': r'+$9/mo per extra responder',
     'recommended': true,
+    'cycles': <String>['monthly', 'annual'],
+    'products': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'key': 'pro_monthly',
+        'type': 'subscription',
+        'tier': 'pro',
+        'cycle': 'monthly',
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 3400,
+              'display': '34.00 USD',
+            },
+          },
+        },
+      },
+      <String, dynamic>{
+        'key': 'pro_annual',
+        'type': 'subscription',
+        'tier': 'pro',
+        'cycle': 'annual',
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 34800,
+              'display': '348.00 USD',
+            },
+          },
+        },
+      },
+    ],
     'limits': <String, dynamic>{
       'monitors': 50,
       'check_interval_sec': 30,
@@ -282,6 +315,37 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': r'+$9/mo per extra responder',
     'recommended': false,
+    'cycles': <String>['monthly', 'annual'],
+    'products': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'key': 'business_monthly',
+        'type': 'subscription',
+        'tier': 'business',
+        'cycle': 'monthly',
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 11900,
+              'display': '119.00 USD',
+            },
+          },
+        },
+      },
+      <String, dynamic>{
+        'key': 'business_annual',
+        'type': 'subscription',
+        'tier': 'business',
+        'cycle': 'annual',
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 118800,
+              'display': '1188.00 USD',
+            },
+          },
+        },
+      },
+    ],
     'limits': <String, dynamic>{
       'monitors': 200,
       'check_interval_sec': 10,
@@ -311,6 +375,8 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': null,
     'recommended': false,
+    'cycles': <String>[],
+    'products': <Map<String, dynamic>>[],
     'limits': <String, dynamic>{
       'monitors': null,
       'check_interval_sec': 5,
@@ -624,7 +690,16 @@ class _MonthlyOnlyTierBillingService extends _RailBillingService {
     return _planWireRows.map((Map<String, dynamic> row) {
       if (row['id'] != 'business') return row;
 
-      return <String, dynamic>{...row, 'annual': null};
+      return <String, dynamic>{
+        ...row,
+        'annual': null,
+        'cycles': <String>['monthly'],
+        'products': (row['products'] as List<Map<String, dynamic>>).where((
+          Map<String, dynamic> product,
+        ) {
+          return product['cycle'] != 'annual';
+        }).toList(),
+      };
     }).toList();
   }
 }
@@ -692,33 +767,28 @@ class _RailBillingService extends _ReadsBillingService
     this.checkoutError,
   });
 
-  /// Every `plan` passed to [checkout], in call order.
-  final List<String> checkoutPlans = <String>[];
+  /// Every catalogue key passed to [checkout], in call order. One key names
+  /// the tier AND the cycle, so a test asserting it asserts both at once.
+  final List<String> checkoutKeys = <String>[];
 
   /// A rail failure to raise instead of answering, so [checkout]'s error
   /// paths (a generic [BillingException] and its [UnsupportedPlatformException]
   /// subtype) are reachable without a real rail.
   final BillingException? checkoutError;
 
-  /// Every cycle [checkout] was called with, so a test can assert the customer
-  /// is charged on the cycle whose figure they were shown.
-  final List<BillingCycle> checkoutCycles = <BillingCycle>[];
-
-  /// Every (plan, cycle) pair [swap] was called with.
-  final List<(String, BillingCycle)> swappedTo = <(String, BillingCycle)>[];
+  /// Every catalogue key [swap] was called with.
+  final List<String> swappedTo = <String>[];
 
   /// How many times [openPortal] was called.
   int portalCalls = 0;
 
   @override
   Future<BillingCheckoutSession> checkout({
-    required String plan,
-    required BillingCycle cycle,
+    required String productKey,
     required String successUrl,
     required String cancelUrl,
   }) async {
-    checkoutPlans.add(plan);
-    checkoutCycles.add(cycle);
+    checkoutKeys.add(productKey);
     final BillingException? error = checkoutError;
     if (error != null) throw error;
 
@@ -729,8 +799,8 @@ class _RailBillingService extends _ReadsBillingService
   }
 
   @override
-  Future<void> swap({required String plan, required BillingCycle cycle}) async {
-    swappedTo.add((plan, cycle));
+  Future<void> swap({required String productKey}) async {
+    swappedTo.add(productKey);
   }
 
   @override
@@ -926,7 +996,12 @@ class _StoreRailBillingService extends _ReadsBillingService
     this.purchaseResult = true,
     this.purchaseError,
     this.restoreResult = true,
+    this.rail = ManageVia.appStore,
   });
+
+  /// Which store this rail sells through. Independent of `manageVia`, because
+  /// the two disagreeing is the cross-store case the screen must refuse.
+  final ManageVia rail;
 
   /// What the store reports for a completed sheet: `true` is a transaction,
   /// `false` is the customer dismissing it (which is not a failure).
@@ -942,8 +1017,11 @@ class _StoreRailBillingService extends _ReadsBillingService
   /// Every `appUserId` passed to [identify], in call order.
   final List<String> identifiedIds = <String>[];
 
-  /// Every `plan` passed to [purchase], in call order.
-  final List<String> purchasedPlans = <String>[];
+  /// Every catalogue key passed to [purchase], in call order.
+  final List<String> purchasedKeys = <String>[];
+
+  /// Every [PurchaseContext] passed to [purchase], in call order.
+  final List<PurchaseContext?> purchaseContexts = <PurchaseContext?>[];
 
   /// How many times [restore] was called.
   int restoreCalls = 0;
@@ -954,8 +1032,9 @@ class _StoreRailBillingService extends _ReadsBillingService
   }
 
   @override
-  Future<bool> purchase({required String plan}) async {
-    purchasedPlans.add(plan);
+  Future<bool> purchase(String productKey, {PurchaseContext? context}) async {
+    purchasedKeys.add(productKey);
+    purchaseContexts.add(context);
     final BillingException? error = purchaseError;
     if (error != null) throw error;
 
@@ -970,7 +1049,15 @@ class _StoreRailBillingService extends _ReadsBillingService
   }
 
   @override
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async => const <String, StoreProductOffer>{};
+
+  @override
   Future<void> openStoreManagement() async {}
+
+  @override
+  ManageVia get store => rail;
 }
 
 void main() {
@@ -1214,7 +1301,7 @@ void main() {
         findsNothing,
       );
       expect(billing.portalCalls, 0);
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
 
       // Nothing rendered points at a web purchase or the hosted portal
       // (Apple's 3.1.3 steering rule), and the custom tier's contact-sales CTA
@@ -1357,7 +1444,7 @@ void main() {
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
         findsNothing,
       );
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
       // A sales handoff is not a purchase, and it is driven by the plan GRID
       // rather than by the entitlement, so it survives the owner gate.
       expect(
@@ -1497,13 +1584,13 @@ void main() {
 
       expect(tester.takeException(), isNull);
       // 'business' sits above the fixture's 'pro', so its CTA reads Upgrade.
-      expect(billing.checkoutPlans, <String>['business']);
-      // AND the cycle whose figure the card was rendering. The fixture is on
-      // annual, so the toggle opens there and the charge follows the price the
-      // customer read. Before the cycle travelled, this call carried the plan
-      // alone and the producer picked whichever price it found: a customer
-      // taking the annual discount was billed the monthly rate.
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.annual]);
+      // AND the cycle whose figure the card was rendering, in the one key. The
+      // fixture is on annual, so the toggle opens there and the charge follows
+      // the price the customer read. Before the cycle travelled, this call
+      // carried the plan alone and the producer picked whichever price it
+      // found: a customer taking the annual discount was billed the monthly
+      // rate.
+      expect(billing.checkoutKeys, <String>['business_annual']);
       // Flush the confirmation toast's auto-dismiss timer.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1530,7 +1617,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+      expect(billing.checkoutKeys, <String>['business_monthly']);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1540,7 +1627,7 @@ void main() {
       tester,
     ) async {
       // Every other toggle test reads state that a press updates whether or not
-      // anything repaints: `checkoutCycles` is filled from `_cycleOverride` at
+      // anything repaints: `checkoutKeys` is filled from `_cycleOverride` at
       // press time and never touches the plan cards. So an implementation where
       // the price region never rebuilt would pass all of them, which is exactly
       // the failure the scoped-rebuild change could introduce. This asserts the
@@ -1597,8 +1684,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutPlans, <String>['business']);
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+      expect(billing.checkoutKeys, <String>['business_monthly']);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1619,7 +1705,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+      expect(billing.checkoutKeys, <String>['business_monthly']);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1641,7 +1727,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutPlans, <String>['business']);
+      expect(billing.checkoutKeys, <String>['business_annual']);
       expect(
         find.text(trans('magic_starter.billing.toast_deferred_title')),
         findsOneWidget,
@@ -1721,10 +1807,63 @@ void main() {
 
       expect(tester.takeException(), isNull);
       // 'business' sits above the fixture's 'pro', so its CTA reads Upgrade.
-      expect(store.purchasedPlans, <String>['business']);
+      expect(store.purchasedKeys, <String>['business_annual']);
       // Flush the confirmation toast's auto-dismiss timer.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('the toggle picks the store product, and the rail is told the '
+        'catalogue\'s tier order', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(tester, store, isOwner: true);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(store.purchasedKeys, <String>['business_monthly']);
+      final PurchaseContext context = store.purchaseContexts.single!;
+      expect(context.tierOrder, <String>[
+        'free',
+        'pro',
+        'business',
+        'enterprise',
+      ]);
+      expect(context.tierOfProduct['business_annual'], 'business');
+      expect(context.tierOfProduct['pro_monthly'], 'pro');
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a subscription the OTHER store sold offers no purchase here', (
+      tester,
+    ) async {
+      // An App Store subscription seen from a Play build. Buying here would
+      // open a second subscription the first store cannot see: a double
+      // charge, decided from the rail's own store and never from the platform.
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        rail: ManageVia.playStore,
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_restore_button')),
+        findsNothing,
+      );
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('the one-team refusal is re-asked at the tap, not read off the '
@@ -1773,7 +1912,7 @@ void main() {
         reason: 'the tap is the one that guards the money, so it asks again',
       );
       expect(
-        store.purchasedPlans,
+        store.purchasedKeys,
         isEmpty,
         reason: 'the sheet must not open at all, not open and be undone',
       );
@@ -1803,7 +1942,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(store.purchasedPlans, <String>['business']);
+      expect(store.purchasedKeys, <String>['business_annual']);
       expect(
         find.text(trans('magic_starter.billing.store_purchase_title')),
         findsNothing,
@@ -1875,7 +2014,7 @@ void main() {
         findsNothing,
         reason: 'a restore would re-attribute a subscription to this team too',
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
       expect(
         find.text(trans('magic_starter.billing.owner_only_notice')),
         findsOneWidget,
@@ -1914,7 +2053,7 @@ void main() {
         find.text(trans('magic_starter.billing.store_restore_button')),
         findsNothing,
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('a build with NO store check registered refuses the store '
@@ -1950,7 +2089,7 @@ void main() {
         find.text(trans('magic_starter.billing.store_restore_button')),
         findsNothing,
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('a web-billed team gets no store purchase surface', (
@@ -1973,7 +2112,7 @@ void main() {
         find.text(trans('magic_starter.billing.store_restore_button')),
         findsNothing,
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('restoring hands the store purchase back and reports what the '
@@ -2766,11 +2905,12 @@ void main() {
         find.text(trans('magic_starter.billing.plan_price_custom')),
         findsOneWidget,
       );
-      // And no annual cadence anywhere: a store catalogue sells the monthly
-      // SKUs only, so the toggle is gone and no card claims an annual bill.
+      // The toggle is there: the store catalogue sells every product the
+      // producer's catalogue names, annual included, so the customer picks the
+      // cycle on a store build exactly as on the web.
       expect(
         find.text(trans('magic_starter.billing.plans_annual')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.text(trans('magic_starter.billing.plan_billing_annual')),
@@ -2804,7 +2944,7 @@ void main() {
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
         findsNothing,
       );
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
 
       // The two labels that are not purchases survive, because neither spends
       // anything: the active tier's read-out and the custom tier's sales
@@ -2982,7 +3122,7 @@ void main() {
       );
       expect(find.textContaining('Enterprise'), findsNothing);
       // A sales handoff spends nothing, so it reaches no rail.
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
       expect(billing.portalCalls, 0);
 
       await tester.pump(const Duration(seconds: 5));

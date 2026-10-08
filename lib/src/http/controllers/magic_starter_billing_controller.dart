@@ -251,6 +251,7 @@ class MagicStarterBillingController extends MagicController
   bool _pmLoading = true;
   bool _pmError = false;
   String? _storeFundedTeam;
+  String? _awaitingProductKey;
 
   /// The active plan id, or `null` while it is genuinely unknown: before
   /// [loadEntitlement] resolves, and permanently after a failed read.
@@ -402,6 +403,34 @@ class MagicStarterBillingController extends MagicController
   /// A resolved name is the third state and lives in [storeFundedTeam] itself.
   bool get storeCheckRegistered => storeFundedTeamReader != null;
 
+  /// The catalogue key of a store purchase the backend has not confirmed yet,
+  /// or `null` when nothing is waiting.
+  ///
+  /// Set when the store reports a completed transaction or a pending one
+  /// (parental approval, a deferred payment), and cleared by the first
+  /// entitlement read whose [BillingEntitlement.productKey] names it, or by a
+  /// session reset. The store's `true` is the store's word and the rail's
+  /// webhook is the authority, so between the two a second tap would be a
+  /// second charge; [canPurchaseViaStore] refuses for as long as this is set.
+  String? get awaitingProductKey => _awaitingProductKey;
+
+  /// The catalogue facts a store purchase needs to tell an upgrade from a
+  /// downgrade: the tiers in the catalogue's own order (cheapest first), and
+  /// the tier of every product key the catalogue sells.
+  ///
+  /// Built from [plans] on every read rather than cached, so it can never
+  /// describe a catalogue other than the one on screen.
+  PurchaseContext get purchaseContext {
+    return PurchaseContext(
+      tierOrder: <String>[for (final MagicStarterPlan plan in _plans) plan.id],
+      tierOfProduct: <String, String>{
+        for (final MagicStarterPlan plan in _plans)
+          for (final MagicStarterProduct product in plan.products)
+            product.key: product.tier,
+      },
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // The six gates: what this screen may offer, and to whom
   // ---------------------------------------------------------------------------
@@ -474,19 +503,25 @@ class MagicStarterBillingController extends MagicController
 
   /// Whether this screen may offer to buy through the STORE rail.
   ///
-  /// Five refusals. Four of them are the rail's own: no store rail in this build;
-  /// a member who is not the owner; the web rail already charging this customer,
-  /// which is the mirror image of the refusal above (whichever rail is second
-  /// must not open a parallel subscription, and unlike an upgrade WITHIN the
-  /// store's own subscription group that would be a second charge); and another
-  /// of the caller's teams already funded by a store account, which a second
-  /// purchase would transfer rather than duplicate.
+  /// Seven refusals. Six of them are the rail's own: no store rail in this
+  /// build; a member who is not the owner; the web rail already charging this
+  /// customer, which is the mirror image of the refusal above (whichever rail is
+  /// second must not open a parallel subscription, and unlike an upgrade WITHIN
+  /// the store's own subscription group that would be a second charge); the
+  /// OTHER store already charging this customer, for the same reason, because an
+  /// App Store subscription cannot be replaced from Google Play or the reverse;
+  /// a purchase still waiting for the backend to confirm it (see
+  /// [awaitingProductKey]); and another of the caller's teams already funded by
+  /// a store account, which a second purchase would transfer rather than
+  /// duplicate.
   ///
-  /// The two store [ManageVia] values are deliberately NOT refusals: the tiers
-  /// share one subscription group, so buying the other tier there IS the upgrade
-  /// path, and the store replaces rather than adds.
+  /// The store that sold the subscription is read off the rail's own
+  /// [StoreBillingService.store] against [manageVia], never off the running
+  /// platform. That store's own [ManageVia] value is deliberately NOT a refusal:
+  /// the tiers share one subscription group, so buying the other tier there IS
+  /// the upgrade path, and the store replaces rather than adds.
   ///
-  /// The fifth refusal is this package's own and it is the one place a gate here
+  /// The seventh refusal is this package's own and it is the one place a gate here
   /// is STRICT while unresolved. [storeFundedTeam] has two null sources with
   /// opposite meanings (see [storeCheckRegistered]), and reading them as one
   /// would make the transfer refusal unreachable in every app that registered no
@@ -503,12 +538,17 @@ class MagicStarterBillingController extends MagicController
   /// from a real owner who wants to pay, and the server would have refused a
   /// non-owner anyway, while an unasked transfer check hides nothing and permits
   /// a move the customer cannot undo.
-  bool get canPurchaseViaStore =>
-      storeRail != null &&
-      isOwner != false &&
-      _manageVia != ManageVia.portal &&
-      storeCheckRegistered &&
-      _storeFundedTeam == null;
+  bool get canPurchaseViaStore {
+    final StoreBillingService? store = storeRail;
+    if (store == null) return false;
+
+    return isOwner != false &&
+        _manageVia != ManageVia.portal &&
+        !(storeManaged && _manageVia != store.store) &&
+        _awaitingProductKey == null &&
+        storeCheckRegistered &&
+        _storeFundedTeam == null;
+  }
 
   /// Whether this screen may offer to start or change a paid plan on ANY rail.
   ///
@@ -577,6 +617,7 @@ class MagicStarterBillingController extends MagicController
     _pmLoading = true;
     _pmError = false;
     _storeFundedTeam = null;
+    _awaitingProductKey = null;
     refreshUI();
 
     await load();
@@ -630,6 +671,10 @@ class MagicStarterBillingController extends MagicController
       _renews = entitlement.renews;
       _cycle = entitlement.cycle;
       _planStatus = entitlement.planStatus;
+      if (_awaitingProductKey != null &&
+          entitlement.productKey == _awaitingProductKey) {
+        _awaitingProductKey = null;
+      }
       if (plan != null) {
         _currentPlanId = plan;
         _entitlementLoaded = true;
@@ -841,6 +886,68 @@ class MagicStarterBillingController extends MagicController
       if (!_latestRead.isCurrent(readToken, _storeFundedTeamKey)) return;
       _reportDegradation('storeFundedTeamReader', error);
     }
+  }
+
+  /// Buys [product] through the STORE rail with this catalogue's
+  /// [purchaseContext], and answers whether the store reported a completed
+  /// transaction.
+  ///
+  /// The caller gates on [canPurchaseViaStore] and re-asks
+  /// [loadStoreFundedTeam] before calling; this method owns the one refusal
+  /// the gate cannot see at render time, a purchase already waiting, which a
+  /// second tap can race. It throws [BillingException] with
+  /// [BillingErrorCode.pending] for that, and lets every rail failure
+  /// propagate for the screen to report.
+  ///
+  /// A completed or pending purchase is held in [awaitingProductKey] until the
+  /// entitlement names it. A dismissed sheet (`false`) or a failure leaves
+  /// nothing to wait for. The entitlement is NOT re-read here: the caller does
+  /// that after telling the customer, so the toast is not held up by a read.
+  ///
+  /// Throws [UnsupportedPlatformException] in a build with no store rail.
+  Future<bool> purchaseInStore(MagicStarterProduct product) async {
+    final StoreBillingService? store = storeRail;
+    if (store == null) {
+      throw const UnsupportedPlatformException(
+        'This build has no store rail to purchase through.',
+      );
+    }
+    if (_awaitingProductKey != null) {
+      throw const BillingException(
+        'A store purchase is already waiting for confirmation.',
+        code: BillingErrorCode.pending,
+      );
+    }
+
+    // 1. Hold the gate shut BEFORE the sheet opens, so a tap racing this one
+    //    cannot start a second purchase while the first is still in flight.
+    _awaitingProductKey = product.key;
+    refreshUI();
+
+    try {
+      final bool bought = await store.purchase(
+        product.key,
+        context: purchaseContext,
+      );
+
+      // 2. A dismissed sheet bought nothing, so there is nothing to wait for.
+      if (!bought) _clearAwaiting();
+
+      return bought;
+    } catch (error) {
+      // 3. A pending purchase may still settle into a charge, so it keeps
+      //    waiting; every other failure released the money path.
+      final bool pending =
+          error is BillingException && error.code == BillingErrorCode.pending;
+      if (!pending) _clearAwaiting();
+      rethrow;
+    }
+  }
+
+  /// Drops the purchase wait and repaints the gates that read it.
+  void _clearAwaiting() {
+    _awaitingProductKey = null;
+    refreshUI();
   }
 
   /// Records a read that failed and left its own field at last-known state.

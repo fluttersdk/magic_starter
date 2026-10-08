@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+Requires the `magic_payments` release whose rails purchase by catalogue product key, and `magic-starter-laravel` whose `GET /billing/plans` rows carry `products`.
+
+### Added
+
+- **`MagicStarterProduct` and `MagicStarterPlan.products`.** Each catalogue tier row's `products` decode to `key`, `type`, `tier`, `cycle` and `webPrices` (per currency, `amountMinor` and `display`); `MagicStarterPlan.productFor(cycle)` names the subscription a (tier, cycle) selection buys, falling back to the tier's only cycle. The producer's wire output is pinned byte for byte in `test/fixtures/wire/`. (`lib/src/models/magic_starter_product.dart`, `lib/src/models/magic_starter_plan.dart`)
+- **`MagicStarterBillingController.purchaseInStore(product)`, `purchaseContext` and `awaitingProductKey`.** A store purchase hands the rail a `PurchaseContext` built from the catalogue's tier order, and a completed or pending purchase holds the store gate shut until the entitlement names its product, so a second tap cannot charge twice. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+- **Copy for the billing store disclosure, one sentence per `BillingErrorCode`, the post-purchase wait, and the account-deletion refusals** (`social.deletion_blocking_teams`, `social.subscription_store`, `social.subscription_stripe` and their action labels) in `en.stub`. An existing app adds them to its language file. (`assets/stubs/install/en.stub`)
+
+### Changed
+
+- **BREAKING: both rails purchase by catalogue product key.** Web checkout sends `checkout(productKey:)` and a store build calls `purchase(productKey, context:)` for the product the selected tier sells on the selected cycle; nothing sends a plan id and a cycle separately any more. A host that implements `WebBillingService` or `StoreBillingService` (a test fake included) adopts the new signatures. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)
+- **The monthly/annual toggle renders on store builds too**, since the store sells every product the catalogue names. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)
+- **`canPurchaseViaStore` refuses a subscription the other store sold** (App Store billing seen from a Play build, or the reverse), read from `StoreBillingService.store` against the entitlement's `manageVia` and never from the platform, and refuses while a purchase waits for confirmation. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+- **`social.owns_shared_teams` no longer tells the user to transfer ownership**, which the starter does not offer. (`assets/stubs/install/en.stub`)
+
 ## [0.0.39] - 2026-10-05
 
 Requires `magic-starter-laravel` with its redesigned social login and scheduled account deletion. A host that does not use social login only meets the proof-map and deletion changes below.
