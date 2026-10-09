@@ -170,6 +170,45 @@ class MagicStarterPlan {
     );
   }
 
+  /// The sellable products of this tier that have an id in [store], in the
+  /// producer's order: the only ones that store can complete a purchase of.
+  ///
+  /// A sellable product the producer registered in the other store only, or in
+  /// none, is absent. Offering it would show a figure and a button whose
+  /// purchase fails with `productUnavailable` after the customer committed to
+  /// buy. Empty for a [store] that is no store ([ManageVia.portal],
+  /// [ManageVia.none]).
+  List<MagicStarterProduct> storeProducts(ManageVia store) {
+    return sellableProducts
+        .where(
+          (MagicStarterProduct product) => _storeId(product, store) != null,
+        )
+        .toList();
+  }
+
+  /// The product a customer selecting this tier on [cycle] buys in [store], on
+  /// the same terms as [productFor] but only among [storeProducts], or `null`
+  /// when the store carries nothing of this tier.
+  ///
+  /// A cycle the store cannot sell falls back to the tier's first product it
+  /// can, for the reason [productFor] gives, and never to a product the store
+  /// has no id for.
+  MagicStarterProduct? storeProductFor(BillingCycle cycle, ManageVia store) {
+    return _pick(storeProducts(store), cycle);
+  }
+
+  /// [product]'s id in [store], or `null` when that store does not carry it.
+  ///
+  /// Exhaustive with no `default`, so a new [ManageVia] is a compile error here
+  /// rather than a rail that silently sells nothing.
+  static String? _storeId(MagicStarterProduct product, ManageVia store) {
+    return switch (store) {
+      ManageVia.appStore => product.storeIds.appStore,
+      ManageVia.playStore => product.storeIds.play,
+      ManageVia.portal || ManageVia.none => null,
+    };
+  }
+
   /// The candidate on [cycle], else the first candidate, else `null`.
   static MagicStarterProduct? _pick(
     Iterable<MagicStarterProduct> candidates,

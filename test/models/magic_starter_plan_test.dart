@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:magic_payments/magic_payments.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 void main() {
@@ -138,6 +142,106 @@ void main() {
         });
 
         expect(plan.cycles, isEmpty);
+      });
+    });
+
+    // ---------------------------------------------------------------------
+    // Store products: the producer's own rows, verbatim. `pro_annual` is
+    // sellable but carries no store id, `business_monthly` is on the App Store
+    // only, and `pro_monthly_2025` has both ids but is no longer sold.
+    // ---------------------------------------------------------------------
+
+    group('storeProducts and storeProductFor', () {
+      late List<MagicStarterPlan> plans;
+
+      setUp(() {
+        final File file = File(
+          '${Directory.current.path}/test/fixtures/wire/billing-plans.json',
+        );
+        final Map<String, dynamic> body =
+            jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+
+        plans = (body['data'] as List<dynamic>)
+            .cast<Map<String, dynamic>>()
+            .map(MagicStarterPlan.fromMap)
+            .toList();
+      });
+
+      MagicStarterPlan tier(String id) =>
+          plans.firstWhere((MagicStarterPlan plan) => plan.id == id);
+
+      test('a sellable product with no id in this store is not a store product '
+          'there', () {
+        expect(
+          tier('pro')
+              .storeProducts(ManageVia.playStore)
+              .map((MagicStarterProduct product) => product.key),
+          <String>['pro_monthly'],
+        );
+        expect(
+          tier('pro')
+              .storeProducts(ManageVia.appStore)
+              .map((MagicStarterProduct product) => product.key),
+          <String>['pro_monthly'],
+          reason:
+              'pro_annual has no id in either store, and the '
+              'grandfathered pro_monthly_2025 is never offered',
+        );
+      });
+
+      test('the id is read from the asked store, not from the other one', () {
+        expect(
+          tier('business').storeProducts(ManageVia.appStore),
+          hasLength(1),
+        );
+        expect(tier('business').storeProducts(ManageVia.playStore), isEmpty);
+      });
+
+      test('a rail that is no store has no store products', () {
+        expect(tier('pro').storeProducts(ManageVia.portal), isEmpty);
+        expect(tier('pro').storeProducts(ManageVia.none), isEmpty);
+      });
+
+      test('storeProductFor never names a product the store cannot sell, '
+          'whatever cycle is asked', () {
+        expect(
+          tier('pro').storeProductFor(BillingCycle.annual, ManageVia.playStore),
+          isNotNull,
+        );
+        expect(
+          tier(
+            'pro',
+          ).storeProductFor(BillingCycle.annual, ManageVia.playStore)?.key,
+          'pro_monthly',
+          reason: 'pro_annual is sellable but has no Play id',
+        );
+        expect(
+          tier(
+            'pro',
+          ).storeProductFor(BillingCycle.monthly, ManageVia.appStore)?.key,
+          'pro_monthly',
+        );
+      });
+
+      test('a tier with no product that has an id in this store gets none', () {
+        expect(
+          tier(
+            'business',
+          ).storeProductFor(BillingCycle.monthly, ManageVia.playStore),
+          isNull,
+        );
+        expect(
+          tier(
+            'business',
+          ).storeProductFor(BillingCycle.annual, ManageVia.appStore)?.key,
+          'business_monthly',
+        );
+        expect(
+          tier(
+            'free',
+          ).storeProductFor(BillingCycle.monthly, ManageVia.appStore),
+          isNull,
+        );
       });
     });
 

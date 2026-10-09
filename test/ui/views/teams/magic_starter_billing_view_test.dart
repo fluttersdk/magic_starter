@@ -262,6 +262,10 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
         'type': 'subscription',
         'tier': 'pro',
         'cycle': 'monthly',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.pro.monthly',
+          'play': 'pro:monthly',
+        },
         'prices': <String, dynamic>{
           'web': <String, dynamic>{
             'USD': <String, dynamic>{
@@ -276,6 +280,10 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
         'type': 'subscription',
         'tier': 'pro',
         'cycle': 'annual',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.pro.annual',
+          'play': 'pro:annual',
+        },
         'prices': <String, dynamic>{
           'web': <String, dynamic>{
             'USD': <String, dynamic>{
@@ -322,6 +330,10 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
         'type': 'subscription',
         'tier': 'business',
         'cycle': 'monthly',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.business.monthly',
+          'play': 'business:monthly',
+        },
         'prices': <String, dynamic>{
           'web': <String, dynamic>{
             'USD': <String, dynamic>{
@@ -336,6 +348,10 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
         'type': 'subscription',
         'tier': 'business',
         'cycle': 'annual',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.business.annual',
+          'play': 'business:annual',
+        },
         'prices': <String, dynamic>{
           'web': <String, dynamic>{
             'USD': <String, dynamic>{
@@ -1152,7 +1168,8 @@ class _ProducerRowsWebBillingService extends _RailBillingService {
 /// A STORE build for a team on the producer's free tier, reading the
 /// producer's rows.
 class _ProducerRowsStoreBillingService extends _StoreRailBillingService {
-  _ProducerRowsStoreBillingService({super.offers}) : super(heldPlan: 'free');
+  _ProducerRowsStoreBillingService({super.offers, super.rail})
+    : super(heldPlan: 'free');
 
   @override
   Future<List<Map<String, dynamic>>> getPlans() async => _producerPlanRows();
@@ -3285,42 +3302,41 @@ void main() {
       await mount(tester, store, isOwner: true);
 
       expect(tester.takeException(), isNull);
+      // pro_annual is sellable but has no App Store id: the store is never
+      // asked about it and it is never offered.
       expect(store.requestedKeys, <List<String>>[
-        <String>['pro_monthly', 'pro_annual', 'business_monthly'],
+        <String>['pro_monthly', 'business_monthly'],
       ]);
       expect(
         find.text(trans('magic_starter.billing.plan_button_upgrade')),
         findsNWidgets(2),
       );
-      // Annual: business sells monthly only, so its card names its monthly
-      // price; pro_annual has no store product, so its card says so.
-      expect(find.text(r'$99.99'), findsOneWidget);
-      expect(
-        find.text(
-          disclosure(
-            r'$99.99',
-            'magic_starter.billing.store_disclosure_period_month',
+      // Annual is selected, but only monthly products can be bought in this
+      // store, so each card names its monthly price.
+      for (final String price in <String>[r'$99.99', r'$29.99']) {
+        expect(find.text(price), findsOneWidget);
+        expect(
+          find.text(
+            disclosure(
+              price,
+              'magic_starter.billing.store_disclosure_period_month',
+            ),
           ),
-        ),
-        findsOneWidget,
-      );
+          findsOneWidget,
+        );
+      }
       expect(
         find.text(trans('magic_starter.billing.plan_price_store')),
-        findsOneWidget,
+        findsNothing,
       );
-
-      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
-      await tester.pump();
-
-      expect(find.text(r'$29.99'), findsOneWidget);
+      // One purchasable cycle is not a choice, so there is no toggle.
       expect(
-        find.text(
-          disclosure(
-            r'$29.99',
-            'magic_starter.billing.store_disclosure_period_month',
-          ),
-        ),
-        findsOneWidget,
+        find.text(trans('magic_starter.billing.plans_monthly')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plans_annual')),
+        findsNothing,
       );
 
       await tester.tap(
@@ -3336,6 +3352,66 @@ void main() {
 
       // Let the wait run out, so no poll outlives the case.
       await tester.pump(const Duration(seconds: 60));
+    });
+
+    testWidgets('a Play build offers only what has a Play id: pro_annual has '
+        'none, and a tier sold on the App Store only gets no button', (
+      tester,
+    ) async {
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            rail: ManageVia.playStore,
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(store.requestedKeys, <List<String>>[
+        <String>['pro_monthly'],
+      ]);
+      // Pro has a button, Business (App Store id only) has none.
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_store')),
+        findsNothing,
+        reason: 'no card claims a store price it cannot sell',
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plans_monthly')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(store.purchasedKeys, <String>['pro_monthly']);
+
+      // Let the wait run out, so no poll outlives the case.
+      await tester.pump(const Duration(seconds: 60));
+    });
+
+    testWidgets('the cycle toggle is offered when both cycles can be bought in '
+        'this store', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(tester, store, isOwner: true);
+
+      expect(
+        find.text(trans('magic_starter.billing.plans_monthly')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plans_annual')),
+        findsOneWidget,
+      );
     });
   });
 

@@ -1027,9 +1027,10 @@ class MagicStarterBillingController extends MagicController
     }
   }
 
-  /// Asks the store what it charges for every SELLABLE product in [plans] and
-  /// republishes [storeOffers]. A grandfathered product is never offered, so
-  /// its price is never asked for.
+  /// Asks the store what it charges for every SELLABLE product in [plans] that
+  /// has an id in THIS store and republishes [storeOffers]. A grandfathered
+  /// product is never offered, and neither is one this store carries no id for,
+  /// so neither price is asked for.
   ///
   /// A store build shows the store's own localised price and not the
   /// catalogue's figure: the store decides currency, tax and rounding, and App
@@ -1051,9 +1052,13 @@ class MagicStarterBillingController extends MagicController
       final StoreBillingService? store = storeRail;
       if (store == null) return;
 
+      final ManageVia thisStore = store.store;
       final List<String> keys = <String>[
-        for (final MagicStarterProduct product in _catalogueProducts)
-          if (product.sellable) product.key,
+        for (final MagicStarterPlan plan in _plans)
+          for (final MagicStarterProduct product in plan.storeProducts(
+            thisStore,
+          ))
+            product.key,
       ];
       if (keys.isEmpty) return;
 

@@ -306,15 +306,40 @@ class _MagicStarterBillingViewState
   /// The product a tap on [plan]'s card buys on THIS build, or `null` when this
   /// build sells the tier nothing.
   ///
-  /// A store build offers any sellable product and prices it from the store; a
-  /// web build offers only a sellable product on one of the row's
-  /// [MagicStarterPlan.cycles], because a product with no card-rail price would
-  /// be refused by checkout after the customer committed to buy. A
-  /// grandfathered product is never the answer on either rail.
+  /// A store build offers only a sellable product with an id in ITS store and
+  /// prices it from that store; a web build offers only a sellable product on
+  /// one of the row's [MagicStarterPlan.cycles]. Either would otherwise be
+  /// refused after the customer committed to buy: a product with no id in the
+  /// store is `productUnavailable` at the sheet, and one with no card-rail
+  /// price is refused by checkout. A grandfathered product is never the answer
+  /// on either rail.
   MagicStarterProduct? _saleProduct(MagicStarterPlan plan) {
-    return controller.storeRail != null
-        ? plan.productFor(_cycle)
+    final StoreBillingService? store = controller.storeRail;
+
+    return store != null
+        ? plan.storeProductFor(_cycle, store.store)
         : plan.webProductFor(_cycle);
+  }
+
+  /// The cycles the toggle can choose between on THIS build.
+  ///
+  /// A web build offers both, since the row's own `cycles` decide per card what
+  /// is sold. A store build offers a cycle only when at least one tier has a
+  /// product on it that the store carries: a toggle position nothing can be
+  /// bought on is a choice with no outcome.
+  List<BillingCycle> get _offeredCycles {
+    final StoreBillingService? store = controller.storeRail;
+    if (store == null) return _cycles;
+
+    return <BillingCycle>[
+      for (final BillingCycle cycle in _cycles)
+        if (controller.plans.any(
+          (MagicStarterPlan plan) => plan
+              .storeProducts(store.store)
+              .any((MagicStarterProduct product) => product.cycle == cycle),
+        ))
+          cycle,
+    ];
   }
 
   /// Whether [plan] is the catalogue's floor: the FIRST row, which the
@@ -697,11 +722,14 @@ class _MagicStarterBillingViewState
   /// not a write), it just stops offering to buy. A store account already
   /// funding another team gets its own notice beside it, naming that team.
   ///
-  /// The monthly/annual toggle renders on every build: both rails purchase by
-  /// the catalogue product key for the selected tier and cycle, so the store
-  /// sheet charges the cycle the customer picked, exactly as web checkout does.
+  /// The monthly/annual toggle renders on every rail: both purchase by the
+  /// catalogue product key for the selected tier and cycle, so the store sheet
+  /// charges the cycle the customer picked, exactly as web checkout does. A
+  /// store build hides it when the store can sell only one cycle (see
+  /// [_offeredCycles]), since pressing it would change nothing.
   Widget _buildPlansSection() {
     final String? fundedTeam = controller.storeFundedTeam;
+    final bool offersCycleChoice = _offeredCycles.length > 1;
 
     return WDiv(
       className: 'flex flex-col gap-5',
@@ -721,21 +749,23 @@ class _MagicStarterBillingViewState
               trans('magic_starter.billing.plans_heading'),
               className: 'text-lg font-semibold text-fg',
             ),
-            ValueListenableBuilder<BillingCycle?>(
-              valueListenable: _cycleOverride,
-              builder: (_, _, _) => MSSegmentedControl<BillingCycle>(
-                size: SegmentedControlSize.sm,
-                options: <String>[
-                  trans('magic_starter.billing.plans_monthly'),
-                  trans('magic_starter.billing.plans_annual'),
-                ],
-                selectedIndex: _cycles.indexOf(_cycle),
-                // Into the OVERRIDE, not into `_cycle`, which is derived. A
-                // press is the customer's own choice and has to outrank the
-                // entitlement default for the rest of the visit.
-                onChanged: (int index) => _cycleOverride.value = _cycles[index],
+            if (offersCycleChoice)
+              ValueListenableBuilder<BillingCycle?>(
+                valueListenable: _cycleOverride,
+                builder: (_, _, _) => MSSegmentedControl<BillingCycle>(
+                  size: SegmentedControlSize.sm,
+                  options: <String>[
+                    trans('magic_starter.billing.plans_monthly'),
+                    trans('magic_starter.billing.plans_annual'),
+                  ],
+                  selectedIndex: _cycles.indexOf(_cycle),
+                  // Into the OVERRIDE, not into `_cycle`, which is derived. A
+                  // press is the customer's own choice and has to outrank the
+                  // entitlement default for the rest of the visit.
+                  onChanged: (int index) =>
+                      _cycleOverride.value = _cycles[index],
+                ),
               ),
-            ),
           ],
         ),
         if (controller.plans.isEmpty)
@@ -798,6 +828,12 @@ class _MagicStarterBillingViewState
     // The floor and the custom tier sell no product, so they keep their words.
     final bool storePriced =
         controller.storeRail != null && !isCustom && !isFloor;
+    // A tier this store carries no product of states no price at all: "shown in
+    // the store" would promise a sheet that cannot open, and the web figure is
+    // not for sale here. Like the button, the price block is left out rather
+    // than rendered empty, since a placeholder still takes a slot in the card's
+    // `gap-4` column.
+    final bool storeUnsold = storePriced && _saleProduct(plan) == null;
     // The disclosure belongs to a store PURCHASE button and to nothing else: not
     // to the held tier's marker, to the sales handoff, or to a tier with no
     // product to buy. It follows the same gate the button renders behind.
@@ -805,7 +841,7 @@ class _MagicStarterBillingViewState
         !isCurrent &&
         !isCustom &&
         controller.canPurchaseViaStore &&
-        plan.productFor(_cycle) != null;
+        _saleProduct(plan) != null;
     // A priced tier this build sells nothing on (a tier priced in a store only,
     // seen on the web) gets no button: checkout would refuse it after the tap.
     // The floor keeps its own, unchanged.
@@ -867,39 +903,40 @@ class _MagicStarterBillingViewState
         //    name, the badge, the tagline, the highlight, the feature list, the
         //    call to action) reads the catalogue row, not the cycle, so a press
         //    that rebuilt them was rebuilding them into an identical tree.
-        ValueListenableBuilder<BillingCycle?>(
-          valueListenable: _cycleOverride,
-          builder: (_, _, _) {
-            final StoreProductOffer? offer = storePriced
-                ? _storeOffer(plan)
-                : null;
-            final ({String text, bool sentence}) label = storePriced
-                ? (
-                    text: trans('magic_starter.billing.plan_price_store'),
-                    sentence: true,
-                  )
-                : _webPrice(plan, isFloor: isFloor, isCustom: isCustom);
+        if (!storeUnsold)
+          ValueListenableBuilder<BillingCycle?>(
+            valueListenable: _cycleOverride,
+            builder: (_, _, _) {
+              final StoreProductOffer? offer = storePriced
+                  ? _storeOffer(plan)
+                  : null;
+              final ({String text, bool sentence}) label = storePriced
+                  ? (
+                      text: trans('magic_starter.billing.plan_price_store'),
+                      sentence: true,
+                    )
+                  : _webPrice(plan, isFloor: isFloor, isCustom: isCustom);
 
-            return WDiv(
-              className: 'flex flex-col gap-0.5',
-              children: <Widget>[
-                if (offer != null)
-                  WText(
-                    offer.priceString,
-                    className: 'text-3xl font-semibold tabular-nums text-fg',
-                  )
-                else
-                  WText(
-                    label.text,
-                    className: label.sentence
-                        ? 'text-base font-medium text-fg'
-                        : 'text-3xl font-semibold tabular-nums text-fg',
-                  ),
-                WText(_billingNote(plan), className: 'text-xs text-fg-muted'),
-              ],
-            );
-          },
-        ),
+              return WDiv(
+                className: 'flex flex-col gap-0.5',
+                children: <Widget>[
+                  if (offer != null)
+                    WText(
+                      offer.priceString,
+                      className: 'text-3xl font-semibold tabular-nums text-fg',
+                    )
+                  else
+                    WText(
+                      label.text,
+                      className: label.sentence
+                          ? 'text-base font-medium text-fg'
+                          : 'text-3xl font-semibold tabular-nums text-fg',
+                    ),
+                  WText(_billingNote(plan), className: 'text-xs text-fg-muted'),
+                ],
+              );
+            },
+          ),
         // 3. The consumer's highlight, where one is registered. The null-aware
         //    element OMITS it rather than rendering a placeholder, which matters
         //    because a placeholder child still consumes a slot in this card's
@@ -963,7 +1000,7 @@ class _MagicStarterBillingViewState
   /// The store's own price for the product [plan] sells on the selected cycle,
   /// or `null` when the store priced none of it.
   StoreProductOffer? _storeOffer(MagicStarterPlan plan) {
-    final MagicStarterProduct? product = plan.productFor(_cycleFor(plan));
+    final MagicStarterProduct? product = _saleProduct(plan);
 
     return product == null ? null : controller.storeOffers[product.key];
   }

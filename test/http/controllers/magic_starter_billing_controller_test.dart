@@ -1395,8 +1395,8 @@ void main() {
 
   group('MagicStarterBillingController, the store prices come from the '
       'store', () {
-    test('every catalogue product is priced by one products() read after the '
-        'catalogue lands', () async {
+    test('every product this store can sell is priced by one products() read '
+        'after the catalogue lands', () async {
       final _WaitStoreBilling store = _WaitStoreBilling(
         offers: const <String, StoreProductOffer>{
           'pro_annual': StoreProductOffer(
@@ -1413,11 +1413,29 @@ void main() {
         storeFundedTeamReader: () async => null,
       );
 
+      // pro_annual is sellable but has no App Store id, so the store is never
+      // asked about it.
       expect(store.requestedKeys, <List<String>>[
-        <String>['pro_monthly', 'pro_annual', 'business_monthly'],
+        <String>['pro_monthly', 'business_monthly'],
       ]);
       expect(controller.storeOffers.keys, <String>['pro_annual']);
       expect(controller.storeOffers['pro_annual']?.priceString, r'$34.99');
+      controller.dispose();
+    });
+
+    test('a Play build asks only for the keys that have a Play id', () async {
+      final _WaitStoreBilling store = _WaitStoreBilling(
+        rail: ManageVia.playStore,
+      );
+      final MagicStarterBillingController controller = await loaded(
+        store,
+        isOwnerReader: () => true,
+        storeFundedTeamReader: () async => null,
+      );
+
+      expect(store.requestedKeys, <List<String>>[
+        <String>['pro_monthly'],
+      ]);
       controller.dispose();
     });
 
@@ -1839,6 +1857,7 @@ class _WaitStoreBilling extends _StorePurchaseBilling {
   _WaitStoreBilling({
     super.purchaseResult,
     super.purchaseError,
+    super.rail,
     this.heldProduct,
     this.changeOnRead,
     this.changeTo,
@@ -2033,7 +2052,14 @@ class _WebGateBilling extends _GateBilling with _WebRailStubs {
 /// purchase, so a case can assert the product key and the tier order that
 /// reach the rail.
 class _StorePurchaseBilling extends _GateBilling with _StoreRailStubs {
-  _StorePurchaseBilling({this.purchaseResult = true, this.purchaseError});
+  _StorePurchaseBilling({
+    this.purchaseResult = true,
+    this.purchaseError,
+    this.rail = ManageVia.appStore,
+  });
+
+  /// Which store this rail sells through.
+  final ManageVia rail;
 
   /// What the store reports for a completed sheet.
   final bool purchaseResult;
@@ -2058,7 +2084,7 @@ class _StorePurchaseBilling extends _GateBilling with _StoreRailStubs {
   StoreChangeTiming? get lastChangeTiming => changeTiming;
 
   @override
-  ManageVia get store => ManageVia.appStore;
+  ManageVia get store => rail;
 
   @override
   Future<BillingEntitlement> currentEntitlement() async {
