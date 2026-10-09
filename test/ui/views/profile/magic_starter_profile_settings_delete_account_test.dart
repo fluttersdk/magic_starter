@@ -628,8 +628,8 @@ void main() {
         expect(
           Magic.find<MagicStarterProfileController>().rxStatus.message,
           startsWith(
-            'One of your teams is billed by card. Cancel that subscription on '
-            'the web, then delete your account.',
+            'One of your teams is billed by card. Cancel that subscription '
+            'where you set it up, then delete your account.',
           ),
         );
       });

@@ -3781,9 +3781,10 @@ void main() {
       );
     });
 
-    test('no shipped billing error sentence names the web', () {
-      // Every one of these can reach a store build's toast, and pointing a
-      // store customer at the web is what App Store guideline 3.1.3 forbids.
+    test('no shipped billing error or subscription refusal names the web', () {
+      // Every one of these can reach a store build (a toast, or the account
+      // deletion refusal), and pointing a store customer at the web is what
+      // App Store guideline 3.1.3 forbids.
       final Map<String, dynamic> stub =
           jsonDecode(
                 File(
@@ -3795,9 +3796,18 @@ void main() {
           ((stub['magic_starter'] as Map<String, dynamic>)['billing']
                   as Map<String, dynamic>)['errors']
               as Map<String, dynamic>;
+      final Map<String, dynamic> refusals = <String, dynamic>{
+        for (final MapEntry<String, dynamic> entry
+            in (stub['social'] as Map<String, dynamic>).entries)
+          if (entry.key.startsWith('subscription_')) entry.key: entry.value,
+      };
 
       expect(errors, isNotEmpty);
-      for (final MapEntry<String, dynamic> entry in errors.entries) {
+      expect(refusals, contains('subscription_stripe_no_link'));
+      for (final MapEntry<String, dynamic> entry in <MapEntry<String, dynamic>>[
+        ...errors.entries,
+        ...refusals.entries,
+      ]) {
         final String sentence = (entry.value as String).toLowerCase();
         expect(
           sentence,
@@ -3806,7 +3816,7 @@ void main() {
             isNot(contains('site')),
             isNot(contains('browser')),
           ]),
-          reason: 'billing.errors.${entry.key}',
+          reason: entry.key,
         );
       }
     });
