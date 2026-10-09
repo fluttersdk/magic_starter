@@ -346,11 +346,17 @@ class _MagicStarterBillingViewState
   /// backend serves cheapest-first, so it is the free tier.
   ///
   /// Decided by position because a tier carries no price of its own any more:
-  /// a price belongs to a product, and the floor sells none.
+  /// a price belongs to a product, and the floor sells none. Both, not position
+  /// alone: a catalogue with no free tier starts at a paid one, and reading
+  /// that row as the floor labelled it "Free" with nothing to buy. The
+  /// producer refuses a floor with a sellable product, so on its rows the two
+  /// tests agree; this one holds for any app's catalogue.
   bool _isFloor(MagicStarterPlan plan) {
     final List<MagicStarterPlan> plans = controller.plans;
 
-    return plans.isNotEmpty && plans.first.id == plan.id;
+    return plans.isNotEmpty &&
+        plans.first.id == plan.id &&
+        plan.sellableProducts.isEmpty;
   }
 
   /// Whether [plan] is a custom tier: above the floor and selling no product,

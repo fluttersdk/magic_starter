@@ -1196,6 +1196,17 @@ class _ProducerRowsWebBillingService extends _RailBillingService {
   Future<List<Map<String, dynamic>>> getPlans() async => _producerPlanRows();
 }
 
+/// A WEB build whose catalogue has NO free tier: the producer's rows without
+/// their floor, so the first row is a paid tier with products to sell.
+class _NoFreeTierWebBillingService extends _RailBillingService {
+  @override
+  String get entitlementPlan => 'business';
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async =>
+      _producerPlanRows().skip(1).toList();
+}
+
 /// A STORE build reading the producer's rows, for a team on the free tier
 /// unless a case holds it on another.
 class _ProducerRowsStoreBillingService extends _StoreRailBillingService {
@@ -2669,6 +2680,27 @@ void main() {
         ),
         findsNWidgets(2),
         reason: 'Pro and Business, never the floor',
+      );
+    });
+
+    testWidgets('a paid first row is not the floor: it keeps its price and '
+        'its button', (tester) async {
+      // Position alone named the floor, so a catalogue with no free tier got
+      // its cheapest paid tier labelled "Free" with nothing to buy.
+      await mount(tester, _NoFreeTierWebBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_free')),
+        findsNothing,
+      );
+      expect(find.text('290.00 USD'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text(trans('magic_starter.billing.plan_button_downgrade')),
+          matching: find.byType(MSButton),
+        ),
+        findsOneWidget,
       );
     });
 
