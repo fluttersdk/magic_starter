@@ -67,5 +67,10 @@ Map<String, dynamic> get magicStarterConfig => {
       'terms_url': null,
       'privacy_url': null,
     },
+    // Where a card-billed subscription is cancelled and the account deleted.
+    // A refused account deletion offers it as its one action; null offers none.
+    'account': {
+      'deletion_url': null,
+    },
   },
 };

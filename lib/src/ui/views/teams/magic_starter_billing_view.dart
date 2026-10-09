@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
@@ -22,7 +24,7 @@ import '../../components/usage_meter/index.dart';
 /// A slot builder is a `Widget Function(BuildContext)`, so a context is the
 /// only channel a slot has. This scope wraps the slot subtree on every plan
 /// card and hands the whole [MagicStarterPlan] over, [MagicStarterPlan.raw]
-/// included. That map is the point: the package types the eight fields every
+/// included. That map is the point: the package types the fields every
 /// billing screen needs and leaves the vendor's own product fields (an
 /// `ai_line` sales pitch, a `responder_add_on` surcharge, a `limits` map)
 /// untouched inside it, and a consumer usually has to render MORE than one of
@@ -214,13 +216,6 @@ class _MagicStarterBillingViewState
   /// The glyph rendered on the store-managed and owner-only statements.
   static const IconData _infoIcon = Icons.info_outline;
 
-  /// The one currency code this package renders as a symbol.
-  ///
-  /// [MagicStarterPlan.currency] documents the rest of the rule: anything else
-  /// falls back to the raw wire code beside the amount, because a currency
-  /// formatting table is not a thing this package owns.
-  static const String _usdCurrency = 'usd';
-
   /// The short month names [_formatDate] indexes by `DateTime.month`.
   ///
   /// This table and the day-then-year order it feeds are DISPLAY COPY, and they
@@ -286,24 +281,141 @@ class _MagicStarterBillingViewState
       _cycleOverride.value ?? controller.cycle ?? BillingCycle.annual;
 
   /// The cycle [plan] is actually SOLD on, which is [_cycle] except where that
-  /// tier has no price for it.
+  /// tier has no product for it.
   ///
-  /// A catalogue row with a monthly price and no annual one is a state this
-  /// screen already expects (`_priceLabel` renders the custom label for it and
-  /// `_billingNote` guards on it), and [_cycle] is a screen-wide value that knows
-  /// nothing about the row it is being applied to. Left unqualified, such a tier
-  /// stayed purchasable while the toggle sat on Annual and handed the checkout a
-  /// (tier, annual) pair the producer has no price for: an unresolvable payload
-  /// on a live Upgrade button, and the same class of defect as charging the
-  /// monthly figure under an annual heading, since the customer is again offered
-  /// one thing and sold another.
+  /// A tier sold monthly only is ordinary (it is what a vendor has the day they
+  /// add a tier and have not priced its annual product yet), and [_cycle] is a
+  /// screen-wide value that knows nothing about the row it is being applied
+  /// to. Left unqualified, such a tier stayed purchasable while the toggle sat
+  /// on Annual and handed the checkout a (tier, annual) pair the producer has
+  /// no product for: the customer offered one thing and sold another.
   ///
   /// Deliberately per CARD rather than a refusal in [_selectPlan]. That row is
   /// sellable, monthly, and refusing it would hide a tier the vendor is selling
-  /// because of a toggle position; naming its real cycle sells it at the figure
-  /// its card shows.
+  /// because of a toggle position; naming its real cycle sells it at the
+  /// figure its card shows.
+  ///
+  /// The product this build would sell decides first ([_saleProduct]), because
+  /// that product is what a purchase names: the card has to show the cycle the
+  /// key will charge. A tier this build does not sell falls back to the cycle
+  /// of the product the tier sells anywhere, and a tier selling nothing (the
+  /// floor, a custom tier) to the toggle.
   BillingCycle _cycleFor(MagicStarterPlan plan) =>
-      plan.annual == null ? BillingCycle.monthly : _cycle;
+      (_saleProduct(plan) ?? plan.productFor(_cycle))?.cycle ?? _cycle;
+
+  /// The product a tap on [plan]'s card buys on THIS build, or `null` when this
+  /// build sells the tier nothing.
+  ///
+  /// A store build offers only a sellable product with an id in ITS store and
+  /// prices it from that store; a web build offers only a sellable product on
+  /// one of the row's [MagicStarterPlan.cycles]. Either would otherwise be
+  /// refused after the customer committed to buy: a product with no id in the
+  /// store is `productUnavailable` at the sheet, and one with no card-rail
+  /// price is refused by checkout. A grandfathered product is never the answer
+  /// on either rail.
+  MagicStarterProduct? _saleProduct(MagicStarterPlan plan) {
+    final StoreBillingService? store = controller.storeRail;
+
+    return store != null
+        ? plan.storeProductFor(_cycle, store.store)
+        : plan.webProductFor(_cycle);
+  }
+
+  /// The cycles the toggle can choose between on THIS build.
+  ///
+  /// A web build offers both, since the row's own `cycles` decide per card what
+  /// is sold. A store build offers a cycle only when at least one tier has a
+  /// product on it that the store carries: a toggle position nothing can be
+  /// bought on is a choice with no outcome.
+  List<BillingCycle> get _offeredCycles {
+    final StoreBillingService? store = controller.storeRail;
+    if (store == null) return _cycles;
+
+    return <BillingCycle>[
+      for (final BillingCycle cycle in _cycles)
+        if (controller.plans.any(
+          (MagicStarterPlan plan) => plan
+              .storeProducts(store.store)
+              .any((MagicStarterProduct product) => product.cycle == cycle),
+        ))
+          cycle,
+    ];
+  }
+
+  /// Whether [plan] is the catalogue's floor: the FIRST row, which the
+  /// backend serves cheapest-first, so it is the free tier.
+  ///
+  /// Decided by position because a tier carries no price of its own any more:
+  /// a price belongs to a product, and the floor sells none. Both, not position
+  /// alone: a catalogue with no free tier starts at a paid one, and reading
+  /// that row as the floor labelled it "Free" with nothing to buy. The
+  /// producer refuses a floor with a sellable product, so on its rows the two
+  /// tests agree; this one holds for any app's catalogue.
+  bool _isFloor(MagicStarterPlan plan) {
+    final List<MagicStarterPlan> plans = controller.plans;
+
+    return plans.isNotEmpty &&
+        plans.first.id == plan.id &&
+        plan.sellableProducts.isEmpty;
+  }
+
+  /// Whether [plan] is a custom tier: above the floor and selling no product,
+  /// so the only way onto it is talking to sales.
+  ///
+  /// A tier whose only products are grandfathered counts too, since nothing
+  /// left on it can be bought.
+  bool _isCustom(MagicStarterPlan plan) =>
+      !_isFloor(plan) && plan.sellableProducts.isEmpty;
+
+  /// What a tap on the floor's call to action does, or `null` when this screen
+  /// has nowhere to send the customer, in which case the floor renders no
+  /// button at all (not a disabled one).
+  ///
+  /// Moving onto the floor is not a purchase. The floor sells no product, so
+  /// sending the tap down the purchase path found nothing to buy and reported
+  /// `productUnavailable`: the grid's only way down was a button that always
+  /// failed. Leaving a paid plan means ending its subscription, and that
+  /// happens where the subscription is managed, so the tap opens that surface
+  /// and nothing here charges, swaps or cancels:
+  ///
+  /// - the hosted portal, behind [MagicStarterBillingController
+  ///   .portalAvailable], for a subscription the web rail sold;
+  /// - the store's own subscriptions page, for one a store sold, when the rail
+  ///   reported where that is, the caller is not a known non-owner, and this
+  ///   build is not the OTHER store's (an Android device cannot cancel an App
+  ///   Store subscription, which is the refusal the profile screen makes too).
+  ///
+  /// The portal arm is closed on every store build, because no build serves
+  /// both rails and `portalAvailable` needs a web rail. That is deliberate: a
+  /// web-billed customer on an iOS build gets no button rather than a web page,
+  /// which is the steering App Store rule 3.1.3 forbids.
+  ///
+  /// Never while the held tier is unresolved, since "Downgrade" is a claim
+  /// about a position nobody knows yet, and never on the held floor itself,
+  /// which carries the marker. Never once the subscription has stopped
+  /// renewing either: the move to the floor is already booked, and the surface
+  /// would offer nothing left to cancel. The floor is never the grid's filled
+  /// button: [_featuredUpgradeId] only picks a tier this build sells a product
+  /// of.
+  VoidCallback? _floorExit(MagicStarterPlan plan) {
+    final String? currentPlanId = controller.currentPlanId;
+    if (currentPlanId == null || currentPlanId == plan.id) return null;
+    if (controller.renews == false) return null;
+
+    if (controller.portalAvailable) return _openBillingPortal;
+
+    final String? manageUrl = controller.manageUrl;
+    final ManageVia? buildStore = controller.storeRail?.store;
+    if (controller.storeManaged &&
+        manageUrl != null &&
+        manageUrl.isNotEmpty &&
+        controller.isOwner != false &&
+        (buildStore == null || buildStore == controller.manageVia)) {
+      return () => _openStoreManagement(manageUrl);
+    }
+
+    return null;
+  }
 
   /// Whether this mount has already acted on an upgrade deep link, so a second
   /// resolving read cannot reopen checkout.
@@ -317,11 +429,24 @@ class _MagicStarterBillingViewState
     // entitlement, and running it from `build` would open a checkout session
     // from inside a paint.
     controller.addListener(_startRequestedUpgrade);
+
+    // The controller's own `onInit` ran once, for the lifetime of the session
+    // singleton, so a screen opened again after closing mid-wait would never
+    // read the entitlement the store purchase is waiting on and would keep the
+    // purchase buttons hidden. The read clears the wait when the entitlement
+    // now names the product.
+    if (controller.awaitingProductKey != null) {
+      unawaited(controller.loadEntitlement());
+    }
   }
 
   @override
   void onClose() {
     controller.removeListener(_startRequestedUpgrade);
+    // The controller is a session singleton and outlives this screen, so a
+    // purchase wait it is polling for would keep reading the entitlement, and
+    // keep its timer, after nobody is left to be told the answer.
+    controller.cancelWait();
     _cycleOverride.dispose();
   }
 
@@ -565,7 +690,7 @@ class _MagicStarterBillingViewState
   /// purpose: "pending" and "there is none" are different answers, and only the
   /// second one is settled.
   String _renewalLine(MagicStarterPlan current) {
-    if (current.monthly == 0 && current.annual == 0) {
+    if (_isFloor(current)) {
       return trans('magic_starter.billing.renewal_free');
     }
 
@@ -606,10 +731,14 @@ class _MagicStarterBillingViewState
     // A null cycle takes the sentence WITHOUT one rather than a guessed word.
     // The producer answers null for a store subscription and for a price whose
     // cycle its config never declared, and naming either one is the claim this
-    // whole change exists to stop making.
+    // whole change exists to stop making. A held product with no web price
+    // takes it too: a cycle word beside no figure says nothing a date does not.
     final BillingCycle? cycle = controller.cycle;
+    final MagicStarterWebPrice? price = cycle == null
+        ? null
+        : _heldWebPrice(current, cycle);
 
-    if (cycle == null) {
+    if (cycle == null || price == null) {
       return trans(
         ends
             ? 'magic_starter.billing.renewal_ends_cycleless'
@@ -627,7 +756,7 @@ class _MagicStarterBillingViewState
           ? 'magic_starter.billing.renewal_ends'
           : 'magic_starter.billing.renewal_text',
       <String, dynamic>{
-        'price': _priceLabel(current, cycle),
+        'price': price.display,
         'cycle': _cycleLabel(cycle),
         'date':
             _formatDate(controller.paymentMethod?.renewalDate) ??
@@ -649,12 +778,14 @@ class _MagicStarterBillingViewState
   /// not a write), it just stops offering to buy. A store account already
   /// funding another team gets its own notice beside it, naming that team.
   ///
-  /// The monthly/annual toggle is absent on a store build, and that absence is
-  /// correctness rather than tidiness: a store catalogue carries the MONTHLY
-  /// SKUs only, so a customer who picked "Annual" and tapped Upgrade would be
-  /// charged monthly by the sheet that opened.
+  /// The monthly/annual toggle renders on every rail: both purchase by the
+  /// catalogue product key for the selected tier and cycle, so the store sheet
+  /// charges the cycle the customer picked, exactly as web checkout does. A
+  /// store build hides it when the store can sell only one cycle (see
+  /// [_offeredCycles]), since pressing it would change nothing.
   Widget _buildPlansSection() {
     final String? fundedTeam = controller.storeFundedTeam;
+    final bool offersCycleChoice = _offeredCycles.length > 1;
 
     return WDiv(
       className: 'flex flex-col gap-5',
@@ -674,7 +805,7 @@ class _MagicStarterBillingViewState
               trans('magic_starter.billing.plans_heading'),
               className: 'text-lg font-semibold text-fg',
             ),
-            if (controller.storeRail == null)
+            if (offersCycleChoice)
               ValueListenableBuilder<BillingCycle?>(
                 valueListenable: _cycleOverride,
                 builder: (_, _, _) => MSSegmentedControl<BillingCycle>(
@@ -740,17 +871,41 @@ class _MagicStarterBillingViewState
   Widget _buildPlanCard(MagicStarterPlan plan) {
     final bool isCurrent =
         controller.currentPlanId != null && plan.id == controller.currentPlanId;
-    final bool isCustom = plan.monthly == null;
-    // The catalogue's price is a figure in the vendor's own currency, and a
-    // store charges a storefront-localised amount in the customer's, so on a
-    // store build that figure is not the price of anything. The rail's own
-    // localised string is the right source and the driver exposes none, so this
-    // states where the price comes from instead: the sheet shows the real one
-    // before anybody is charged, and showing a wrong price is worse than showing
-    // none. A zero price stays a zero price, which is true in every currency,
-    // and the custom tier keeps its own label.
+    final bool isFloor = _isFloor(plan);
+    final bool isCustom = _isCustom(plan);
+    // The web price is a figure in the vendor's own currency, and a store
+    // charges a storefront-localised amount in the customer's, so on a store
+    // build that figure is not the price of anything. The store's own
+    // localised string ([MagicStarterBillingController.storeOffers]) is the
+    // right source, and a card the store priced shows it. A card it did not
+    // price (the read failed, or the store has no product for the key) states
+    // where the price comes from instead: the sheet shows the real one before
+    // anybody is charged, and showing a wrong price is worse than showing none.
+    // The floor and the custom tier sell no product, so they keep their words.
     final bool storePriced =
-        controller.storeRail != null && !isCustom && plan.monthly != 0;
+        controller.storeRail != null && !isCustom && !isFloor;
+    // A tier this store carries no product of states no price at all: "shown in
+    // the store" would promise a sheet that cannot open, and the web figure is
+    // not for sale here. One muted sentence takes the price block's place, so
+    // the card does not end at a name and a feature list with no word on why
+    // nothing can be done with it. It names no other place to buy the tier,
+    // since pointing a store customer at one is what App Store guidelines 3.1.1
+    // and 3.1.3 forbid.
+    final bool storeUnsold = storePriced && _saleProduct(plan) == null;
+    // The disclosure belongs to a store PURCHASE button and to nothing else: not
+    // to the held tier's marker, to the sales handoff, or to a tier with no
+    // product to buy. It follows the same gate the button renders behind.
+    final bool showsStoreDisclosure =
+        !isCurrent &&
+        !isCustom &&
+        controller.canPurchaseViaStore &&
+        _saleProduct(plan) != null;
+    // A priced tier this build sells nothing on (a tier priced in a store only,
+    // seen on the web) gets no button: checkout would refuse it after the tap.
+    // The floor sells nothing anywhere, so it is never a purchase; its button
+    // leads to where the paid plan is cancelled, or does not render.
+    final bool offersPurchase = _canPurchase && _saleProduct(plan) != null;
+    final VoidCallback? floorExit = isFloor ? _floorExit(plan) : null;
     final Widget? highlight = _buildPlanHighlight(plan);
 
     return WDiv(
@@ -807,35 +962,49 @@ class _MagicStarterBillingViewState
         //    name, the badge, the tagline, the highlight, the feature list, the
         //    call to action) reads the catalogue row, not the cycle, so a press
         //    that rebuilt them was rebuilding them into an identical tree.
-        ValueListenableBuilder<BillingCycle?>(
-          valueListenable: _cycleOverride,
-          builder: (_, _, _) => WDiv(
-            className: 'flex flex-col gap-0.5',
-            children: <Widget>[
-              if (storePriced)
-                WText(
-                  trans('magic_starter.billing.plan_price_store'),
-                  className: 'text-base font-medium text-fg',
-                )
-              else
-                WDiv(
-                  className: 'flex flex-row items-baseline gap-1',
-                  children: <Widget>[
+        //
+        //    The held tier's own card keeps the bare omission instead: "Not
+        //    available in this app" above the "Current plan" marker reads as
+        //    though the plan a customer pays for does not work here.
+        if (storeUnsold && !isCurrent)
+          WText(
+            trans('magic_starter.billing.plan_store_unsold'),
+            className: 'text-sm text-fg-muted',
+          )
+        else if (!storeUnsold)
+          ValueListenableBuilder<BillingCycle?>(
+            valueListenable: _cycleOverride,
+            builder: (_, _, _) {
+              final StoreProductOffer? offer = storePriced
+                  ? _storeOffer(plan)
+                  : null;
+              final ({String text, bool sentence}) label = storePriced
+                  ? (
+                      text: trans('magic_starter.billing.plan_price_store'),
+                      sentence: true,
+                    )
+                  : _webPrice(plan, isFloor: isFloor, isCustom: isCustom);
+
+              return WDiv(
+                className: 'flex flex-col gap-0.5',
+                children: <Widget>[
+                  if (offer != null)
                     WText(
-                      _priceLabel(plan, _cycleFor(plan)),
+                      offer.priceString,
                       className: 'text-3xl font-semibold tabular-nums text-fg',
+                    )
+                  else
+                    WText(
+                      label.text,
+                      className: label.sentence
+                          ? 'text-base font-medium text-fg'
+                          : 'text-3xl font-semibold tabular-nums text-fg',
                     ),
-                    if (!isCustom)
-                      WText(
-                        trans('magic_starter.billing.plan_price_monthly'),
-                        className: 'text-sm text-fg-muted',
-                      ),
-                  ],
-                ),
-              WText(_billingNote(plan), className: 'text-xs text-fg-muted'),
-            ],
+                  WText(_billingNote(plan), className: 'text-xs text-fg-muted'),
+                ],
+              );
+            },
           ),
-        ),
         // 3. The consumer's highlight, where one is registered. The null-aware
         //    element OMITS it rather than rendering a placeholder, which matters
         //    because a placeholder child still consumes a slot in this card's
@@ -865,11 +1034,12 @@ class _MagicStarterBillingViewState
         //    was the customer's own plan, or where to look. A marker is not a
         //    control, so it stops pretending to be one.
         //
-        //    The button below therefore renders for two reasons, both of them
+        //    The button below therefore renders for three reasons, all of them
         //    live: a custom tier's sales handoff (driven by the GRID rather
         //    than by the entitlement, so it survives both gates and spends
-        //    nothing), and an actual purchase, which needs a rail and the
-        //    membership to allow it. Which of the four emphases it takes is
+        //    nothing), an actual purchase, which needs a rail and the
+        //    membership to allow it, and the floor's way out of the paid plan
+        //    ([_floorExit]). Which of the four emphases it takes is
         //    [_ctaIntent]'s decision, not this slot's.
         if (isCurrent)
           WDiv(
@@ -882,14 +1052,110 @@ class _MagicStarterBillingViewState
               WText(_ctaLabel(plan), className: 'text-sm font-medium text-fg'),
             ],
           )
-        else if (isCustom || _canPurchase)
-          MSButton(
-            intent: _ctaIntent(plan),
-            fullWidth: true,
-            onPressed: () => _selectPlan(plan),
-            child: WText(_ctaLabel(plan)),
-          ),
+        else ...<Widget>[
+          if (showsStoreDisclosure) _buildStoreDisclosure(plan),
+          if (isCustom || offersPurchase || floorExit != null)
+            MSButton(
+              intent: _ctaIntent(plan),
+              fullWidth: true,
+              onPressed: floorExit ?? () => _selectPlan(plan),
+              child: WText(_ctaLabel(plan)),
+            ),
+        ],
       ],
+    );
+  }
+
+  /// The store's own price for the product [plan] sells on the selected cycle,
+  /// or `null` when the store priced none of it.
+  StoreProductOffer? _storeOffer(MagicStarterPlan plan) {
+    final MagicStarterProduct? product = _saleProduct(plan);
+
+    return product == null ? null : controller.storeOffers[product.key];
+  }
+
+  /// The terms a store subscription is sold on, rendered beside its purchase
+  /// button as App Store guideline 3.1.2 requires: what it costs per period,
+  /// that it renews until cancelled and where to cancel it, and the Terms and
+  /// Privacy links.
+  ///
+  /// The price line is the STORE's string for the cycle the button will buy, so
+  /// it can never disagree with the sheet, and it is omitted when the store
+  /// priced nothing rather than filled from the catalogue's other currency. The
+  /// renewal and cancellation lines do not depend on a price, so they stay. A
+  /// link whose url is not configured is left out, not rendered dead.
+  ///
+  /// Subscribed to the cycle toggle for the same reason the price block is: the
+  /// period and the figure are the only parts a press changes.
+  Widget _buildStoreDisclosure(MagicStarterPlan plan) {
+    return ValueListenableBuilder<BillingCycle?>(
+      valueListenable: _cycleOverride,
+      builder: (_, _, _) {
+        final StoreProductOffer? offer = _storeOffer(plan);
+        final String? termsUrl = MagicStarterConfig.termsUrl();
+        final String? privacyUrl = MagicStarterConfig.privacyUrl();
+        final String period = switch (_cycleFor(plan)) {
+          BillingCycle.monthly => trans(
+            'magic_starter.billing.store_disclosure_period_month',
+          ),
+          BillingCycle.annual => trans(
+            'magic_starter.billing.store_disclosure_period_year',
+          ),
+        };
+
+        return WDiv(
+          className: 'flex flex-col gap-1',
+          children: <Widget>[
+            if (offer != null)
+              WText(
+                trans(
+                  'magic_starter.billing.store_disclosure_price',
+                  <String, dynamic>{
+                    'price': offer.priceString,
+                    'period': period,
+                  },
+                ),
+                className: 'text-xs font-medium text-fg',
+              ),
+            WText(
+              trans('magic_starter.billing.store_disclosure_auto_renew'),
+              className: 'text-xs text-fg-muted',
+            ),
+            WText(
+              trans('magic_starter.billing.store_disclosure_cancel'),
+              className: 'text-xs text-fg-muted',
+            ),
+            if (termsUrl != null || privacyUrl != null)
+              WDiv(
+                className: 'flex flex-row gap-3 wrap',
+                children: <Widget>[
+                  if (termsUrl != null)
+                    _buildLegalLink(
+                      trans('magic_starter.billing.store_disclosure_terms'),
+                      termsUrl,
+                    ),
+                  if (privacyUrl != null)
+                    _buildLegalLink(
+                      trans('magic_starter.billing.store_disclosure_privacy'),
+                      privacyUrl,
+                    ),
+                ],
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// One legal link of [_buildStoreDisclosure], styled as the register screen's
+  /// own are.
+  Widget _buildLegalLink(String label, String url) {
+    return WAnchor(
+      onTap: () => Launch.url(url),
+      child: WText(
+        label,
+        className: 'text-xs font-semibold text-primary dark:text-primary/80',
+      ),
     );
   }
 
@@ -1242,15 +1508,27 @@ class _MagicStarterBillingViewState
   /// text is still worth having, which is why it goes to the log rather than
   /// being dropped.
   ///
+  /// The sentence a customer is shown is chosen by [BillingException.code],
+  /// never by the message: the message is the developer's prose and the code is
+  /// the stable half of the failure. A code with its own copy
+  /// (`billing.errors.<code>`) says what actually happened, so "this store
+  /// account is signed in for a different team" is not flattened into "something
+  /// went wrong". [BillingErrorCode.unknown] has no cause to name and keeps the
+  /// generic sentence.
+  ///
   /// [UnsupportedPlatformException] keeps its own softer title and sentence,
   /// because it is not a failure: it is this build having no rail for the
   /// action, which reads as "not here yet" rather than "something broke". It
   /// extends [BillingException], so one catch covers both and the type test
   /// lives here.
   ///
-  /// Neither sentence names the web, deliberately. Steering a store customer to
-  /// a web purchase is App Store rule 3.1.3(a), and a message written for a
-  /// storeless build is exactly where that wording would creep back in.
+  /// [BillingErrorCode.pending] is not a failure either. The store accepted the
+  /// purchase and has not settled it, so it is told as information under the
+  /// screen's own title and not as a failed checkout.
+  ///
+  /// No sentence names the web, deliberately. Steering a store customer to a web
+  /// purchase is App Store rule 3.1.3(a), and a message written for a storeless
+  /// build is exactly where that wording would creep back in.
   void _reportBillingFailure(BillingException error, {required String where}) {
     Log.error('[MagicStarterBillingView.$where] ${error.message}');
 
@@ -1263,10 +1541,44 @@ class _MagicStarterBillingViewState
       return;
     }
 
+    final String? copyKey = _errorCopyKey(error.code);
+    final String text = copyKey == null
+        ? trans('magic_starter.billing.toast_failed_text')
+        : trans('magic_starter.billing.errors.$copyKey');
+
+    if (error.code == BillingErrorCode.pending) {
+      MagicFeedback.info(trans('magic_starter.billing.title'), text);
+
+      return;
+    }
+
     Magic.error(
       trans('magic_starter.billing.toast_checkout_failed_title'),
-      trans('magic_starter.billing.toast_failed_text'),
+      text,
     );
+  }
+
+  /// The `billing.errors` key that carries the customer's copy for [code], or
+  /// `null` for the code that names no cause.
+  ///
+  /// Exhaustive with no `default`, so a new [BillingErrorCode] is a compile
+  /// error here rather than a customer reading the generic sentence for a cause
+  /// the package already knows.
+  String? _errorCopyKey(BillingErrorCode code) {
+    return switch (code) {
+      BillingErrorCode.managedElsewhere => 'managed_elsewhere',
+      BillingErrorCode.identityMismatch => 'identity_mismatch',
+      BillingErrorCode.notIdentified => 'not_identified',
+      BillingErrorCode.pending => 'pending',
+      BillingErrorCode.receiptInUse => 'receipt_in_use',
+      BillingErrorCode.alreadyOwned => 'already_owned',
+      BillingErrorCode.productUnavailable => 'product_unavailable',
+      BillingErrorCode.network => 'network',
+      BillingErrorCode.store => 'store',
+      BillingErrorCode.unmappedActiveProduct => 'unmapped_active_product',
+      BillingErrorCode.notConfigured => 'not_configured',
+      BillingErrorCode.unknown => null,
+    };
   }
 
   /// Opens the hosted billing portal, shared by the payment card's "Update" and
@@ -1500,11 +1812,15 @@ class _MagicStarterBillingViewState
 
   /// Selects [plan]: hands off to sales for a custom tier, buys through the
   /// STORE rail where this build has one, and otherwise starts a hosted checkout
-  /// session keyed by the plan id.
+  /// session, both keyed by the catalogue product this build sells the tier as
+  /// on the selected cycle ([_saleProduct]).
   ///
-  /// Both rails are keyed by that same plan id, never by a store product id: the
-  /// SKU a plan maps to belongs to the rail's catalogue, and a client naming one
-  /// would need a release to add or reprice a product.
+  /// Both rails are keyed by that same catalogue key (`pro_annual`), never by a
+  /// store SKU or a price id: what a key maps to belongs to the rail's catalogue,
+  /// and a client naming one would need a release to add or reprice a product.
+  /// One key names the tier AND the cycle, so a call cannot send half of the
+  /// pair. A priced tier with no product to name is reported as unavailable
+  /// rather than bought on a guess.
   ///
   /// The store is asked FIRST, and that is a routing decision rather than a
   /// preference: no build serves both rails, and a store build must never fall
@@ -1520,7 +1836,7 @@ class _MagicStarterBillingViewState
   /// there is no button to explain a refusal to.
   Future<void> _selectPlan(MagicStarterPlan plan) async {
     // 1. Custom tier: hand off to sales, no live billing call.
-    if (plan.monthly == null) {
+    if (_isCustom(plan)) {
       Magic.success(
         trans('magic_starter.billing.toast_contact_title'),
         trans(
@@ -1532,10 +1848,26 @@ class _MagicStarterBillingViewState
       return;
     }
 
-    // 2. A store build buys in the store.
-    if (controller.storeRail != null) return _purchaseInStore(plan);
+    // 2. Name the product the card is showing. The same product the card was
+    //    priced from, so the key, the card's figure and the toast below all
+    //    agree, and never a grandfathered one.
+    final MagicStarterProduct? product = _saleProduct(plan);
+    if (product == null) {
+      _reportBillingFailure(
+        const BillingException(
+          'The catalogue names no product for this tier.',
+          code: BillingErrorCode.productUnavailable,
+        ),
+        where: 'selectPlan',
+      );
 
-    // 3. Priced tier: start checkout, redirecting the rail back to this screen
+      return;
+    }
+
+    // 3. A store build buys in the store.
+    if (controller.storeRail != null) return _purchaseInStore(product);
+
+    // 4. Priced tier: start checkout, redirecting the rail back to this screen
     //    on completion or abort.
     final WebBillingService? web = controller.webRail;
     final String? successUrl = _billingUrl('checkout=success');
@@ -1550,15 +1882,14 @@ class _MagicStarterBillingViewState
 
     try {
       await web.checkout(
-        plan: plan.id,
-        // The cycle the card's price was rendered for, so the customer is
-        // charged the figure they were shown. It used to reach nothing, and the
-        // toast two lines below already claimed it, so a customer taking the
-        // annual discount was billed monthly and told otherwise.
+        // The product for the cycle the card's price was rendered for, so the
+        // customer is charged the figure they were shown. The cycle used to
+        // reach nothing, and the toast below already claimed it, so a customer
+        // taking the annual discount was billed monthly and told otherwise.
         //
         // Per card rather than screen-wide: see [_cycleFor], and note the toast
         // below has to read the same value or the two disagree again.
-        cycle: _cycleFor(plan),
+        productKey: product.key,
         successUrl: successUrl,
         cancelUrl: cancelUrl,
       );
@@ -1579,8 +1910,8 @@ class _MagicStarterBillingViewState
     }
   }
 
-  /// Buys [plan] through the STORE rail: the platform's own purchase sheet, on
-  /// the SKU the rail's catalogue keys by the plan id.
+  /// Buys [product] through the STORE rail: the platform's own purchase sheet,
+  /// on the store product the rail's catalogue maps the catalogue key to.
   ///
   /// The one-team refusal is re-ASKED here rather than read off the mount-time
   /// answer, because this is the point where the money moves: a tap can arrive
@@ -1589,16 +1920,16 @@ class _MagicStarterBillingViewState
   /// extra request on a tap is cheaper than a transfer nobody asked for. It names
   /// the team, for the same reason the notice above the grid does.
   ///
-  /// `false` from the rail is the ordinary outcome of a customer closing the
-  /// sheet, so it reports nothing at all: an "it did not work" toast for a
-  /// deliberate dismissal would be this screen inventing a failure. `true` is the
-  /// STORE's word and not the producer's, which is why the confirmation says the
-  /// plan updates when the store confirms it and the entitlement is re-read
-  /// rather than assumed: the rail's webhook is the authority and it may not have
-  /// arrived yet.
-  Future<void> _purchaseInStore(MagicStarterPlan plan) async {
-    final StoreBillingService? store = controller.storeRail;
-    if (store == null) return;
+  /// A dismissed sheet is the ordinary outcome of a customer closing it, so it
+  /// reports nothing at all: an "it did not work" toast for a deliberate
+  /// dismissal would be this screen inventing a failure. A completed one is the
+  /// STORE's word and not the producer's, so the controller waits for the
+  /// entitlement to move before this screen says anything (see
+  /// [MagicStarterBillingController.purchaseInStoreAndWait]), and what it says
+  /// depends on how the wait ended: confirmed, applying at the end of the
+  /// current period, or still processing when the minute ran out.
+  Future<void> _purchaseInStore(MagicStarterProduct product) async {
+    if (controller.storeRail == null) return;
 
     await controller.loadStoreFundedTeam();
     if (!mounted) return;
@@ -1615,15 +1946,45 @@ class _MagicStarterBillingViewState
       return;
     }
 
-    try {
-      final bool bought = await store.purchase(plan: plan.id);
-      if (!bought || !mounted) return;
+    // The period the CURRENT subscription runs to, taken before the sheet
+    // opens: a change the store applies at renewal starts then, and a read
+    // that lands while the sheet is up must not move the date it names.
+    final DateTime? currentPeriodEnd =
+        controller.entitlementSnapshot.currentPeriodEnd;
 
-      Magic.success(
-        trans('magic_starter.billing.store_purchase_title'),
-        trans('magic_starter.billing.store_purchase_text'),
-      );
-      await controller.loadEntitlement();
+    try {
+      // Through the controller, which hands the rail the catalogue's tier
+      // order and holds the store gate shut until the entitlement confirms.
+      final MagicStarterStorePurchaseOutcome outcome = await controller
+          .purchaseInStoreAndWait(product);
+      if (!mounted) return;
+
+      switch (outcome) {
+        case MagicStarterStorePurchaseOutcome.dismissed:
+        case MagicStarterStorePurchaseOutcome.abandoned:
+          return;
+        case MagicStarterStorePurchaseOutcome.confirmed:
+          Magic.success(
+            trans('magic_starter.billing.store_purchase_title'),
+            trans('magic_starter.billing.store_purchase_text'),
+          );
+        case MagicStarterStorePurchaseOutcome.deferred:
+          Magic.success(
+            trans('magic_starter.billing.store_purchase_title'),
+            trans(
+              'magic_starter.billing.wait_takes_effect_on',
+              <String, dynamic>{
+                'date':
+                    _formatDate(currentPeriodEnd) ?? trans('common.unknown'),
+              },
+            ),
+          );
+        case MagicStarterStorePurchaseOutcome.processing:
+          MagicFeedback.info(
+            trans('magic_starter.billing.store_purchase_title'),
+            trans('magic_starter.billing.wait_processing'),
+          );
+      }
     } on BillingException catch (error) {
       _reportBillingFailure(error, where: 'purchaseInStore');
     }
@@ -1680,7 +2041,7 @@ class _MagicStarterBillingViewState
   /// unrankable, so every priced tier falls back to a second neutral label rather
   /// than claiming a direction against a tier with no known position.
   String _ctaLabel(MagicStarterPlan plan) {
-    if (plan.monthly == null) {
+    if (_isCustom(plan)) {
       return trans('magic_starter.billing.plan_button_contact');
     }
     if (controller.currentPlanId == null) {
@@ -1753,11 +2114,15 @@ class _MagicStarterBillingViewState
     // The cheapest tier above the held one, in catalogue order, that this build
     // can actually sell. A custom tier is skipped: its call to action is a
     // sales handoff, not a purchase, so filling it would promise a checkout
-    // that does not exist.
+    // that does not exist. So is a tier this build sells no product of, which
+    // renders no button at all.
     for (final MagicStarterPlan plan in plans) {
       final int? direction = _direction(plan);
 
-      if (direction != null && direction > 0 && plan.monthly != null) {
+      if (direction != null &&
+          direction > 0 &&
+          !_isCustom(plan) &&
+          _saleProduct(plan) != null) {
         return _canPurchase ? plan.id : null;
       }
     }
@@ -1790,48 +2155,98 @@ class _MagicStarterBillingViewState
     return planIndex - currentIndex;
   }
 
-  /// The big price label for [plan] at [cycle], or the "Custom" label when the
-  /// plan carries no numeric price.
+  /// What a card off the store rail shows where its price goes, and whether
+  /// that is a SENTENCE (rendered as one) rather than a figure or a one-word
+  /// label.
   ///
-  /// Rendered through the consumer's own [MagicStarterBillingController
-  /// .formatNumber], which is the third of this screen's three call sites: a
-  /// thousands separator is a comma in one language and a full stop in another,
-  /// and a package that picked one would re-ship a defect this ecosystem has
-  /// already shipped and fixed.
-  ///
-  /// The symbol follows [MagicStarterPlan.currency]'s own contract: `usd` renders
-  /// as a symbol and anything else keeps its raw wire code, because a currency
-  /// formatting table is not something this package owns.
-  String _priceLabel(MagicStarterPlan plan, BillingCycle cycle) {
-    final int? price = cycle == BillingCycle.annual
-        ? plan.annual
-        : plan.monthly;
-    if (price == null) {
-      return trans('magic_starter.billing.plan_price_custom');
+  /// 1. The floor and a custom tier sell no product, so each keeps its word.
+  /// 2. A tier the web sells nothing on (priced in a store only) says where it
+  ///    is sold instead of showing a price nobody here can pay.
+  /// 3. A web product the producer gave no displayable price says the hosted
+  ///    checkout shows it, which it does before anybody is charged.
+  /// 4. Otherwise the producer's own display string (`29.00 USD`), so no
+  ///    amount arithmetic or currency table lives here. Of the currencies a
+  ///    product is priced in, the first the producer lists is shown: the client
+  ///    cannot know which one the rail will charge, and that order is the
+  ///    vendor's own.
+  ({String text, bool sentence}) _webPrice(
+    MagicStarterPlan plan, {
+    required bool isFloor,
+    required bool isCustom,
+  }) {
+    // 1. No product to price.
+    if (isFloor) {
+      return (
+        text: trans('magic_starter.billing.plan_price_free'),
+        sentence: false,
+      );
+    }
+    if (isCustom) {
+      return (
+        text: trans('magic_starter.billing.plan_price_custom'),
+        sentence: false,
+      );
     }
 
-    final String amount = controller.formatNumber(price);
+    // 2. Sold, but not on the web.
+    final MagicStarterProduct? product = plan.webProductFor(_cycle);
+    if (product == null) {
+      return (
+        text: trans('magic_starter.billing.plan_price_app'),
+        sentence: true,
+      );
+    }
 
-    return plan.currency.toLowerCase() == _usdCurrency
-        ? '\$$amount'
-        : '${plan.currency} $amount';
+    // 3. and 4. Sold on the web, with or without a figure to show.
+    final MagicStarterWebPrice? price = product.webPrices.values.firstOrNull;
+
+    return price == null
+        ? (
+            text: trans('magic_starter.billing.plan_price_checkout'),
+            sentence: true,
+          )
+        : (text: price.display, sentence: false);
+  }
+
+  /// The web price of the product [current] is billed as on [cycle], or `null`
+  /// when none can be named.
+  ///
+  /// The product the entitlement names first, grandfathered or not, because
+  /// that is what the customer pays; otherwise the tier's sellable product on
+  /// [cycle], never one on another cycle, since the sentence names [cycle].
+  MagicStarterWebPrice? _heldWebPrice(
+    MagicStarterPlan current,
+    BillingCycle cycle,
+  ) {
+    final String? heldKey = controller.entitlementSnapshot.product;
+    final MagicStarterProduct? product =
+        current.products
+            .where((MagicStarterProduct product) => product.key == heldKey)
+            .firstOrNull ??
+        current.sellableProducts
+            .where((MagicStarterProduct product) => product.cycle == cycle)
+            .firstOrNull;
+
+    return product?.webPrices.values.firstOrNull;
   }
 
   /// The under-price billing note for [plan] at the selected cycle.
   String _billingNote(MagicStarterPlan plan) {
-    if (plan.monthly == null) {
+    if (_isCustom(plan)) {
       return trans('magic_starter.billing.plan_billing_custom');
     }
-    // Gated on the store RAIL and not on the price being suppressed: a store
-    // catalogue carries the monthly SKUs only, so an annual note on a store build
-    // would describe a cadence nothing there sells, including on the free tier
-    // whose price is not suppressed.
-    if (controller.storeRail == null &&
-        _cycleFor(plan) == BillingCycle.annual) {
-      return trans('magic_starter.billing.plan_billing_annual');
-    }
-    if (plan.monthly == 0) {
+    // The floor first: it has no cycle to name, and checked after the cycle it
+    // read "billed annually" under a free tier on any build whose toggle sat on
+    // Annual.
+    if (_isFloor(plan)) {
       return trans('magic_starter.billing.plan_billing_free');
+    }
+    // On every rail, the store included: both sell the product for the selected
+    // cycle, so the note follows it. It used to be gated on the store rail
+    // because the store catalogue was thought to carry monthly SKUs only, which
+    // printed "billed monthly" under an annual price.
+    if (_cycleFor(plan) == BillingCycle.annual) {
+      return trans('magic_starter.billing.plan_billing_annual');
     }
 
     return trans('magic_starter.billing.plan_billing_monthly');

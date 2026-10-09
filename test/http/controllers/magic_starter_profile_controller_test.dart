@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart' show SizedBox, Widget;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_payments/magic_payments.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 // ---------------------------------------------------------------------------
@@ -616,41 +617,352 @@ void main() {
     });
 
     group('doDeleteAccount refusals', () {
+      late _RecordingLaunchAdapter launcher;
+      late _RecordingStoreRail storeRail;
+
       setUp(() async {
         Translator.instance.setLoader(const _ShippedCatalogueLoader());
         await Translator.instance.setLocale(const Locale('en'));
+
+        launcher = _RecordingLaunchAdapter();
+        Magic.singleton('launch', () => LaunchService(adapter: launcher));
+
+        storeRail = _RecordingStoreRail();
+        Payments.manager.forgetDrivers();
+        Payments.extend(PaymentsManager.storeRole, () => storeRail);
+
+        Config.set('magic_starter.account.deletion_url', null);
       });
 
-      tearDown(() => Translator.instance.setLoader(_StubLangLoader()));
+      tearDown(() {
+        Payments.manager.forgetDrivers();
+        Translator.instance.setLoader(_StubLangLoader());
+      });
 
-      for (final code in [
-        'owns_shared_teams',
-        'team_has_active_subscription',
-        'subscription_active',
-      ]) {
-        test('$code shows its sentence and keeps the user signed in', () async {
-          mockDriver.mockResponse(
-            statusCode: 422,
-            data: {
-              'message': 'The server wording.',
-              'code': code,
-              'team_ids': ['9a8b7c6d'],
-              'errors': {
-                'user': ['The server wording.'],
-              },
+      /// Answers one 422 refusal, the way the backend's `ScheduleUserDeletion`
+      /// shapes it.
+      void refuse(
+        String code, {
+        List<String> teamIds = const [],
+        Map<String, String>? teamProviders,
+      }) {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message': 'The server wording.',
+            'code': code,
+            'team_ids': teamIds,
+            'team_providers': ?teamProviders,
+            'errors': {
+              'user': ['The server wording.'],
             },
+          },
+        );
+      }
+
+      Future<bool> deleteAccount() =>
+          controller.doDeleteAccount(proof: {'password': 'mysecretpass'});
+
+      String blockedBy(String teams) =>
+          _shipped('deletion_blocking_teams').replaceAll(':teams', teams);
+
+      String blockedByCount(int count) => _shipped(
+        'deletion_blocking_teams_count',
+      ).replaceAll(':count', '$count');
+
+      void knowTeams(Map<String, String> namesById) {
+        MagicStarter.manager.teamResolver = MagicStarterTeamResolverConfig(
+          currentTeam: () => null,
+          allTeams: () => [
+            for (final entry in namesById.entries)
+              MagicStarterTeam(id: entry.key, name: entry.value),
+          ],
+          onSwitch: (_) async {},
+        );
+      }
+
+      test('subscription_active shows its sentence and no action', () async {
+        refuse('subscription_active');
+
+        final result = await deleteAccount();
+
+        expect(result, isFalse);
+        expect(mockGuard.logoutCalled, isFalse);
+        expect(
+          controller.rxStatus.message,
+          equals(_shipped('subscription_active')),
+        );
+        expect(controller.refusalAction, isNull);
+      });
+
+      test('last_login_method shows its sentence and no action', () async {
+        refuse('last_login_method');
+
+        await deleteAccount();
+
+        expect(
+          controller.rxStatus.message,
+          equals(_shipped('last_login_method')),
+        );
+        expect(controller.refusalAction, isNull);
+      });
+
+      test('owns_shared_teams names the blocking teams', () async {
+        knowTeams({'t1': 'Acme', 't2': 'Beta', 't3': 'Other'});
+        refuse('owns_shared_teams', teamIds: ['t1', 't2']);
+
+        final result = await deleteAccount();
+
+        expect(result, isFalse);
+        expect(mockGuard.logoutCalled, isFalse);
+        expect(
+          controller.rxStatus.message,
+          equals('${_shipped('owns_shared_teams')} ${blockedBy('Acme, Beta')}'),
+        );
+        expect(controller.rxStatus.message, isNot(contains('The server')));
+        expect(controller.refusalAction, isNull);
+      });
+
+      test('a team the list does not know falls back to the count', () async {
+        knowTeams({'t1': 'Acme'});
+        refuse('owns_shared_teams', teamIds: ['t1', 'gone']);
+
+        await deleteAccount();
+
+        expect(
+          controller.rxStatus.message,
+          equals('${_shipped('owns_shared_teams')} ${blockedByCount(2)}'),
+        );
+      });
+
+      test('no team resolver falls back to the count', () async {
+        refuse('owns_shared_teams', teamIds: ['9a8b7c6d']);
+
+        await deleteAccount();
+
+        expect(
+          controller.rxStatus.message,
+          equals('${_shipped('owns_shared_teams')} ${blockedByCount(1)}'),
+        );
+      });
+
+      for (final (provider, rail) in [
+        ('app_store', ManageVia.appStore),
+        ('play_store', ManageVia.playStore),
+      ]) {
+        test('a $provider subscription offers store management', () async {
+          storeRail = _RecordingStoreRail(store: rail);
+          Payments.manager.forgetDrivers();
+          Payments.extend(PaymentsManager.storeRole, () => storeRail);
+          knowTeams({'t1': 'Acme'});
+          refuse(
+            'team_has_active_subscription',
+            teamIds: ['t1'],
+            teamProviders: {'t1': provider},
           );
 
-          final result = await controller.doDeleteAccount(
-            proof: {'password': 'mysecretpass'},
-          );
+          final result = await deleteAccount();
 
           expect(result, isFalse);
           expect(mockGuard.logoutCalled, isFalse);
-          expect(controller.rxStatus.message, equals(_shipped(code)));
-          expect(controller.rxStatus.message, isNot('The server wording.'));
+          expect(
+            controller.rxStatus.message,
+            equals('${_shipped('subscription_store')} ${blockedBy('Acme')}'),
+          );
+          final action = controller.refusalAction;
+          expect(action, isNotNull);
+          expect(action!.label, equals(_shipped('subscription_store_action')));
+
+          await action.run();
+
+          expect(storeRail.managementOpened, equals(1));
+          expect(launcher.launched, isEmpty);
         });
       }
+
+      for (final (provider, rail) in [
+        ('app_store', ManageVia.playStore),
+        ('play_store', ManageVia.appStore),
+      ]) {
+        test('a $provider subscription on the other store\'s device shows the '
+            'sentence alone', () async {
+          storeRail = _RecordingStoreRail(store: rail);
+          Payments.manager.forgetDrivers();
+          Payments.extend(PaymentsManager.storeRole, () => storeRail);
+          knowTeams({'t1': 'Acme'});
+          refuse(
+            'team_has_active_subscription',
+            teamIds: ['t1'],
+            teamProviders: {'t1': provider},
+          );
+
+          await deleteAccount();
+
+          expect(
+            controller.rxStatus.message,
+            equals('${_shipped('subscription_store')} ${blockedBy('Acme')}'),
+          );
+          expect(controller.refusalAction, isNull);
+        });
+      }
+
+      test(
+        'a store subscription on the web shows the sentence alone',
+        () async {
+          Payments.manager.forgetDrivers();
+          knowTeams({'t1': 'Acme'});
+          refuse(
+            'team_has_active_subscription',
+            teamIds: ['t1'],
+            teamProviders: {'t1': 'play_store'},
+          );
+
+          await deleteAccount();
+
+          expect(
+            controller.rxStatus.message,
+            equals('${_shipped('subscription_store')} ${blockedBy('Acme')}'),
+          );
+          expect(controller.refusalAction, isNull);
+        },
+      );
+
+      test('a store rail that throws is reported, not rethrown', () async {
+        Payments.extend(PaymentsManager.storeRole, _ThrowingStoreRail.new);
+        refuse(
+          'team_has_active_subscription',
+          teamIds: ['t1'],
+          teamProviders: {'t1': 'app_store'},
+        );
+
+        await deleteAccount();
+
+        await expectLater(controller.refusalAction!.run(), completes);
+      });
+
+      test(
+        'a stripe subscription opens the configured deletion page',
+        () async {
+          Config.set(
+            'magic_starter.account.deletion_url',
+            'https://example.com/account/delete',
+          );
+          knowTeams({'t1': 'Acme'});
+          refuse(
+            'team_has_active_subscription',
+            teamIds: ['t1'],
+            teamProviders: {'t1': 'stripe'},
+          );
+
+          await deleteAccount();
+
+          expect(
+            controller.rxStatus.message,
+            equals('${_shipped('subscription_stripe')} ${blockedBy('Acme')}'),
+          );
+          final action = controller.refusalAction;
+          expect(action, isNotNull);
+          expect(action!.label, equals(_shipped('subscription_stripe_action')));
+
+          await action.run();
+
+          expect(
+            launcher.launched,
+            equals([Uri.parse('https://example.com/account/delete')]),
+          );
+          expect(storeRail.managementOpened, equals(0));
+        },
+      );
+
+      test(
+        'a stripe subscription with no deletion_url offers no action',
+        () async {
+          refuse(
+            'team_has_active_subscription',
+            teamIds: ['t1'],
+            teamProviders: {'t1': 'stripe'},
+          );
+
+          await deleteAccount();
+
+          expect(
+            controller.rxStatus.message,
+            startsWith(_shipped('subscription_stripe_no_link')),
+          );
+          expect(
+            controller.rxStatus.message,
+            isNot(contains(_shipped('subscription_stripe'))),
+          );
+          expect(controller.refusalAction, isNull);
+        },
+      );
+
+      test('a refusal naming no resolvable team says only how many', () async {
+        refuse('team_has_active_subscription', teamIds: ['t9']);
+
+        await deleteAccount();
+
+        expect(
+          controller.rxStatus.message,
+          equals(
+            '${_shipped('team_has_active_subscription')} '
+            '${blockedByCount(1)}',
+          ),
+        );
+        expect(controller.rxStatus.message, isNot(contains('block the')));
+      });
+
+      test('the first blocking team with a known provider decides', () async {
+        Config.set(
+          'magic_starter.account.deletion_url',
+          'https://example.com/account/delete',
+        );
+        refuse(
+          'team_has_active_subscription',
+          teamIds: ['t1', 't2'],
+          teamProviders: {'t2': 'stripe'},
+        );
+
+        await deleteAccount();
+
+        expect(
+          controller.refusalAction!.label,
+          equals(_shipped('subscription_stripe_action')),
+        );
+      });
+
+      test(
+        'a subscription refusal with no provider shows the generic sentence',
+        () async {
+          refuse('team_has_active_subscription', teamIds: ['t1']);
+
+          await deleteAccount();
+
+          expect(
+            controller.rxStatus.message,
+            startsWith(_shipped('team_has_active_subscription')),
+          );
+          expect(controller.refusalAction, isNull);
+        },
+      );
+
+      test('the next call clears the action', () async {
+        refuse(
+          'team_has_active_subscription',
+          teamIds: ['t1'],
+          teamProviders: {'t1': 'app_store'},
+        );
+        await deleteAccount();
+        expect(controller.refusalAction, isNotNull);
+
+        mockDriver.mockResponse(
+          statusCode: 202,
+          data: {'message': 'Scheduled'},
+        );
+        await deleteAccount();
+
+        expect(controller.refusalAction, isNull);
+      });
     });
 
     // -----------------------------------------------------------------------
@@ -1821,6 +2133,62 @@ Map<String, dynamic> _shippedSocial() {
 }
 
 String _shipped(String code) => _shippedSocial()[code] as String;
+
+/// A launcher that records what it was asked to open instead of opening it.
+class _RecordingLaunchAdapter implements LaunchAdapter {
+  final List<Uri> launched = [];
+
+  @override
+  Future<bool> launch(
+    Uri url, {
+    LaunchMode mode = LaunchMode.externalApplication,
+  }) async {
+    launched.add(url);
+
+    return true;
+  }
+
+  @override
+  Future<bool> canLaunch(Uri url) async => true;
+}
+
+/// A store rail that counts how often the store's management screen opened.
+class _RecordingStoreRail implements StoreBillingService {
+  _RecordingStoreRail({this.store = ManageVia.appStore});
+
+  int managementOpened = 0;
+
+  @override
+  final ManageVia store;
+
+  @override
+  Future<void> identify(String appUserId) async {}
+
+  @override
+  Future<bool> purchase(String productKey, {PurchaseContext? context}) async =>
+      false;
+
+  @override
+  StoreChangeTiming? get lastChangeTiming => null;
+
+  @override
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async => const <String, StoreProductOffer>{};
+
+  @override
+  Future<bool> restore() async => false;
+
+  @override
+  Future<void> openStoreManagement() async => managementOpened++;
+}
+
+/// A store rail whose management screen cannot be opened.
+class _ThrowingStoreRail extends _RecordingStoreRail {
+  @override
+  Future<void> openStoreManagement() async =>
+      throw const BillingException('no store screen');
+}
 
 /// A bridge whose connect answers, or fails, as scripted.
 class _FakeSocialAuth implements MagicStarterSocialAuth {

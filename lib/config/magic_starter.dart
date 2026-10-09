@@ -48,5 +48,8 @@ Map<String, dynamic> get magicStarterConfig => {
     // changed that side too. OneSignal rejects a bare numeric id outright.
     'notifications': {'external_id_prefix': 'user_'},
     'legal': {'terms_url': null, 'privacy_url': null},
+    // Where a card-billed subscription is cancelled and the account deleted.
+    // A refused account deletion offers it as its one action; null offers none.
+    'account': {'deletion_url': null},
   },
 };

@@ -354,18 +354,46 @@ class MagicStarterConfig {
   // -- Legal links --
 
   /// Returns the configured Terms of Service URL, or `null` if not set.
-  static String? termsUrl() {
-    return Config.get<String?>('magic_starter.legal.terms_url', null);
-  }
+  ///
+  /// A blank value reads as unset: an app filling these from an env file gets
+  /// `''` for an empty variable, and a link to it opens nothing.
+  static String? termsUrl() => _filledUrl('magic_starter.legal.terms_url');
 
-  /// Returns the configured Privacy Policy URL, or `null` if not set.
-  static String? privacyUrl() {
-    return Config.get<String?>('magic_starter.legal.privacy_url', null);
+  /// Returns the configured Privacy Policy URL, or `null` if not set (blank
+  /// included, as for [termsUrl]).
+  static String? privacyUrl() => _filledUrl('magic_starter.legal.privacy_url');
+
+  static String? _filledUrl(String key) {
+    final String? value = Config.get<String?>(key, null);
+
+    return value == null || value.trim().isEmpty ? null : value;
   }
 
   /// Returns whether at least one legal link (terms or privacy) is configured.
   static bool hasLegalLinks() {
     return termsUrl() != null || privacyUrl() != null;
+  }
+
+  // -- Account --
+
+  /// Returns the page where a card-billed subscription can be cancelled and
+  /// the account deleted (`magic_starter.account.deletion_url`), or `null` when
+  /// it is not set.
+  ///
+  /// A refused deletion whose blocking subscription is billed by Stripe has
+  /// nothing to cancel it with inside the app, so the refusal offers this page
+  /// as its one action. With no url there is no action to offer. An empty
+  /// string reads as unset: a half-filled `.env` produces `''`, and launching
+  /// `''` opens nothing.
+  static String? accountDeletionUrl() {
+    final String? url = Config.get<String?>(
+      'magic_starter.account.deletion_url',
+      null,
+    );
+
+    if (url == null || url.isEmpty) return null;
+
+    return url;
   }
 
   // -- Computed route paths --

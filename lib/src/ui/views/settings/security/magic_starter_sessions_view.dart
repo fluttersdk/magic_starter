@@ -21,6 +21,10 @@ import '../../../../support/session_device_title.dart';
 /// question about the account, so the screens ask it the same way. Dismissing
 /// the choice, or the identity dialog, deletes nothing. The server applies the
 /// same refusals and step-up whichever is chosen.
+///
+/// A refusal that something in the app can clear (a store or card subscription
+/// blocking the deletion) is followed by a dialog that carries the refusal's
+/// sentence and that one action, so the user is never left with a dead end.
 Future<void> confirmAndDeleteAccount(
   BuildContext context,
   MagicStarterProfileController controller,
@@ -71,7 +75,7 @@ Future<void> confirmAndDeleteAccount(
   if (immediately == null || !context.mounted) return;
 
   // 2. Both answers are gated by the same proof.
-  await confirmAndRun(
+  final deleted = await confirmAndRun(
     context,
     controller,
     title: trans('magic_starter.profile.delete_account.title'),
@@ -79,6 +83,50 @@ Future<void> confirmAndDeleteAccount(
     variant: ConfirmDialogVariant.danger,
     action: (proof) =>
         controller.doDeleteAccount(proof: proof, immediately: immediately),
+  );
+
+  // 3. A refusal the user can clear stays on screen with its way out.
+  final action = controller.refusalAction;
+  if (deleted || action == null || !context.mounted) return;
+
+  await _showRefusalAction(context, controller.rxStatus.message, action);
+}
+
+/// Shows why the deletion was refused next to the [action] that clears it.
+///
+/// The action runs after the dialog closes, so its own feedback (a toast) is
+/// not hidden behind it.
+Future<void> _showRefusalAction(
+  BuildContext context,
+  String? message,
+  MagicStarterRefusalAction action,
+) {
+  return MSDialog.show<void>(
+    context,
+    title: trans('magic_starter.profile.delete_account.title'),
+    description: message,
+    body: Builder(
+      builder: (dialogContext) {
+        return WButton(
+          onTap: () async {
+            Navigator.of(dialogContext).pop();
+            await action.run();
+          },
+          className: MagicStarter.manager.modalTheme.primaryButtonClassName,
+          child: WText(action.label),
+        );
+      },
+    ),
+    footerBuilder: (dialogContext) => WDiv(
+      className: 'flex flex-row justify-end',
+      child: WAnchor(
+        onTap: () => Navigator.of(dialogContext).pop(),
+        child: WDiv(
+          className: MagicStarter.manager.modalTheme.secondaryButtonClassName,
+          child: WText(trans('common.cancel')),
+        ),
+      ),
+    ),
   );
 }
 

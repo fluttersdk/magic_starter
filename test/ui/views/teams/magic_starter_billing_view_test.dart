@@ -221,6 +221,8 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': null,
     'recommended': false,
+    'cycles': <String>[],
+    'products': <Map<String, dynamic>>[],
     'limits': <String, dynamic>{
       'monitors': 1,
       'check_interval_sec': 180,
@@ -253,6 +255,45 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': r'+$9/mo per extra responder',
     'recommended': true,
+    'cycles': <String>['monthly', 'annual'],
+    'products': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'key': 'pro_monthly',
+        'type': 'subscription',
+        'tier': 'pro',
+        'cycle': 'monthly',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.pro.monthly',
+          'play': 'pro:monthly',
+        },
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 3400,
+              'display': '34.00 USD',
+            },
+          },
+        },
+      },
+      <String, dynamic>{
+        'key': 'pro_annual',
+        'type': 'subscription',
+        'tier': 'pro',
+        'cycle': 'annual',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.pro.annual',
+          'play': 'pro:annual',
+        },
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 34800,
+              'display': '348.00 USD',
+            },
+          },
+        },
+      },
+    ],
     'limits': <String, dynamic>{
       'monitors': 50,
       'check_interval_sec': 30,
@@ -282,6 +323,45 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': r'+$9/mo per extra responder',
     'recommended': false,
+    'cycles': <String>['monthly', 'annual'],
+    'products': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'key': 'business_monthly',
+        'type': 'subscription',
+        'tier': 'business',
+        'cycle': 'monthly',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.business.monthly',
+          'play': 'business:monthly',
+        },
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 11900,
+              'display': '119.00 USD',
+            },
+          },
+        },
+      },
+      <String, dynamic>{
+        'key': 'business_annual',
+        'type': 'subscription',
+        'tier': 'business',
+        'cycle': 'annual',
+        'store_ids': <String, dynamic>{
+          'app_store': 'com.example.business.annual',
+          'play': 'business:annual',
+        },
+        'prices': <String, dynamic>{
+          'web': <String, dynamic>{
+            'USD': <String, dynamic>{
+              'amount_minor': 118800,
+              'display': '1188.00 USD',
+            },
+          },
+        },
+      },
+    ],
     'limits': <String, dynamic>{
       'monitors': 200,
       'check_interval_sec': 10,
@@ -311,6 +391,8 @@ const List<Map<String, dynamic>> _planWireRows = <Map<String, dynamic>>[
     ],
     'responder_add_on': null,
     'recommended': false,
+    'cycles': <String>[],
+    'products': <Map<String, dynamic>>[],
     'limits': <String, dynamic>{
       'monitors': null,
       'check_interval_sec': 5,
@@ -624,7 +706,16 @@ class _MonthlyOnlyTierBillingService extends _RailBillingService {
     return _planWireRows.map((Map<String, dynamic> row) {
       if (row['id'] != 'business') return row;
 
-      return <String, dynamic>{...row, 'annual': null};
+      return <String, dynamic>{
+        ...row,
+        'annual': null,
+        'cycles': <String>['monthly'],
+        'products': (row['products'] as List<Map<String, dynamic>>).where((
+          Map<String, dynamic> product,
+        ) {
+          return product['cycle'] != 'annual';
+        }).toList(),
+      };
     }).toList();
   }
 }
@@ -692,33 +783,28 @@ class _RailBillingService extends _ReadsBillingService
     this.checkoutError,
   });
 
-  /// Every `plan` passed to [checkout], in call order.
-  final List<String> checkoutPlans = <String>[];
+  /// Every catalogue key passed to [checkout], in call order. One key names
+  /// the tier AND the cycle, so a test asserting it asserts both at once.
+  final List<String> checkoutKeys = <String>[];
 
   /// A rail failure to raise instead of answering, so [checkout]'s error
   /// paths (a generic [BillingException] and its [UnsupportedPlatformException]
   /// subtype) are reachable without a real rail.
   final BillingException? checkoutError;
 
-  /// Every cycle [checkout] was called with, so a test can assert the customer
-  /// is charged on the cycle whose figure they were shown.
-  final List<BillingCycle> checkoutCycles = <BillingCycle>[];
-
-  /// Every (plan, cycle) pair [swap] was called with.
-  final List<(String, BillingCycle)> swappedTo = <(String, BillingCycle)>[];
+  /// Every catalogue key [swap] was called with.
+  final List<String> swappedTo = <String>[];
 
   /// How many times [openPortal] was called.
   int portalCalls = 0;
 
   @override
   Future<BillingCheckoutSession> checkout({
-    required String plan,
-    required BillingCycle cycle,
+    required String productKey,
     required String successUrl,
     required String cancelUrl,
   }) async {
-    checkoutPlans.add(plan);
-    checkoutCycles.add(cycle);
+    checkoutKeys.add(productKey);
     final BillingException? error = checkoutError;
     if (error != null) throw error;
 
@@ -729,8 +815,8 @@ class _RailBillingService extends _ReadsBillingService
   }
 
   @override
-  Future<void> swap({required String plan, required BillingCycle cycle}) async {
-    swappedTo.add((plan, cycle));
+  Future<void> swap({required String productKey}) async {
+    swappedTo.add(productKey);
   }
 
   @override
@@ -852,6 +938,36 @@ class _HeldRetiredTierBillingService extends _RailBillingService {
   String get entitlementPlan => 'legacy_grandfathered';
 }
 
+/// The grandfathered customer billed through the portal, so the floor has
+/// somewhere to send them.
+class _HeldRetiredPortalBillingService extends _HeldRetiredTierBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    final BillingEntitlement base = await super.currentEntitlement();
+
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      ...base.raw,
+      'manage_via': 'portal',
+    });
+  }
+}
+
+/// A web subscription cancelled at period end: still on its tier, no longer
+/// renewing.
+class _CancelledPortalBillingService extends _RailBillingService {
+  _CancelledPortalBillingService() : super(manageVia: 'portal');
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    final BillingEntitlement base = await super.currentEntitlement();
+
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      ...base.raw,
+      'renews': false,
+    });
+  }
+}
+
 /// The grandfathered customer, whose card has ALSO bounced.
 ///
 /// The two states are independent and both are ordinary: a tier the backend
@@ -923,10 +1039,44 @@ class _StoreRailBillingService extends _ReadsBillingService
     implements StoreBillingService {
   _StoreRailBillingService({
     super.manageVia = 'none',
+    super.manageUrl,
     this.purchaseResult = true,
     this.purchaseError,
     this.restoreResult = true,
+    this.rail = ManageVia.appStore,
+    this.offers = const <String, StoreProductOffer>{},
+    this.heldPlan,
+    this.heldProduct,
   });
+
+  /// What the store answers for a price read, keyed by catalogue key. Empty
+  /// models a store that has no product for any key.
+  final Map<String, StoreProductOffer> offers;
+
+  /// The tier the entitlement reports instead of the fixture's `pro`, so a case
+  /// can sit ABOVE a tier and press it as a downgrade.
+  final String? heldPlan;
+
+  /// The catalogue key the entitlement reports, or `null` for none.
+  String? heldProduct;
+
+  /// The 1-based entitlement read number from which [heldProduct] becomes
+  /// [changeTo], which models the backend's webhook landing between two polls.
+  /// Set after the mount, relative to [entitlementReads].
+  int? changeOnRead;
+
+  /// The key the entitlement moves to on [changeOnRead].
+  String? changeTo;
+
+  /// The paid period's end the entitlement reports.
+  final DateTime periodEnd = DateTime.utc(2026, 7, 1);
+
+  /// How many times the entitlement was read, the mount's own included.
+  int entitlementReads = 0;
+
+  /// Which store this rail sells through. Independent of `manageVia`, because
+  /// the two disagreeing is the cross-store case the screen must refuse.
+  final ManageVia rail;
 
   /// What the store reports for a completed sheet: `true` is a transaction,
   /// `false` is the customer dismissing it (which is not a failure).
@@ -942,11 +1092,23 @@ class _StoreRailBillingService extends _ReadsBillingService
   /// Every `appUserId` passed to [identify], in call order.
   final List<String> identifiedIds = <String>[];
 
-  /// Every `plan` passed to [purchase], in call order.
-  final List<String> purchasedPlans = <String>[];
+  /// Every catalogue key passed to [purchase], in call order.
+  final List<String> purchasedKeys = <String>[];
+
+  /// Every [PurchaseContext] passed to [purchase], in call order.
+  final List<PurchaseContext?> purchaseContexts = <PurchaseContext?>[];
 
   /// How many times [restore] was called.
   int restoreCalls = 0;
+
+  /// When the rail says the last purchase takes effect, set by a case.
+  StoreChangeTiming? changeTiming;
+
+  /// Every key list passed to [products], in call order.
+  final List<List<String>> requestedKeys = <List<String>>[];
+
+  @override
+  StoreChangeTiming? get lastChangeTiming => changeTiming;
 
   @override
   Future<void> identify(String appUserId) async {
@@ -954,8 +1116,9 @@ class _StoreRailBillingService extends _ReadsBillingService
   }
 
   @override
-  Future<bool> purchase({required String plan}) async {
-    purchasedPlans.add(plan);
+  Future<bool> purchase(String productKey, {PurchaseContext? context}) async {
+    purchasedKeys.add(productKey);
+    purchaseContexts.add(context);
     final BillingException? error = purchaseError;
     if (error != null) throw error;
 
@@ -970,7 +1133,120 @@ class _StoreRailBillingService extends _ReadsBillingService
   }
 
   @override
+  String get entitlementPlan => heldPlan ?? super.entitlementPlan;
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    entitlementReads++;
+    final int? changeAt = changeOnRead;
+    if (changeAt != null && entitlementReads >= changeAt) {
+      heldProduct = changeTo;
+    }
+    final BillingEntitlement base = await super.currentEntitlement();
+
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      ...base.raw,
+      'product': heldProduct,
+      'current_period_end': heldProduct == null
+          ? null
+          : periodEnd.toIso8601String(),
+    });
+  }
+
+  @override
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async {
+    requestedKeys.add(productKeys);
+
+    return offers;
+  }
+
+  @override
   Future<void> openStoreManagement() async {}
+
+  @override
+  ManageVia get store => rail;
+}
+
+/// The PRODUCER's own `GET /billing/plans` rows, read off the fixture the
+/// backend's suite writes from a real response.
+///
+/// Its rows carry no tier price at all: every figure lives on a product, `pro`
+/// lists a grandfathered `pro_monthly_2025` beside what it sells, and
+/// `business` is priced in a store only. [_planWireRows] is a hand-kept copy and
+/// could drift from that shape without a single case noticing; this cannot.
+List<Map<String, dynamic>> _producerPlanRows() {
+  final File file = File(
+    '${Directory.current.path}/test/fixtures/wire/billing-plans.json',
+  );
+  final Map<String, dynamic> body =
+      jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+
+  return (body['data'] as List<dynamic>).cast<Map<String, dynamic>>();
+}
+
+/// A WEB build for a team on the producer's free tier, reading the producer's
+/// rows.
+class _ProducerRowsWebBillingService extends _RailBillingService {
+  @override
+  String get entitlementPlan => 'free';
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async => _producerPlanRows();
+}
+
+/// A WEB build whose catalogue has NO free tier: the producer's rows without
+/// their floor, so the first row is a paid tier with products to sell.
+class _NoFreeTierWebBillingService extends _RailBillingService {
+  @override
+  String get entitlementPlan => 'business';
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async =>
+      _producerPlanRows().skip(1).toList();
+}
+
+/// A STORE build reading the producer's rows, for a team on the free tier
+/// unless a case holds it on another.
+class _ProducerRowsStoreBillingService extends _StoreRailBillingService {
+  _ProducerRowsStoreBillingService({
+    super.offers,
+    super.rail,
+    String heldPlan = 'free',
+  }) : super(heldPlan: heldPlan);
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async => _producerPlanRows();
+}
+
+/// A launcher that records what it was asked to open instead of opening it, so
+/// a case can tell the store's management page from the portal and checkout.
+class _RecordingLaunchAdapter implements LaunchAdapter {
+  /// Every url the screen asked to open, in call order.
+  final List<Uri> launched = <Uri>[];
+
+  @override
+  Future<bool> launch(
+    Uri url, {
+    LaunchMode mode = LaunchMode.externalApplication,
+  }) async {
+    launched.add(url);
+
+    return true;
+  }
+
+  @override
+  Future<bool> canLaunch(Uri url) async => true;
+}
+
+/// A store price as the store formats it, for the cases that render one.
+StoreProductOffer _offer(String priceString) {
+  return StoreProductOffer(
+    priceString: priceString,
+    currencyCode: 'USD',
+    price: 0,
+  );
 }
 
 void main() {
@@ -1209,12 +1485,14 @@ void main() {
         find.text(trans('magic_starter.billing.plan_button_upgrade')),
         findsNothing,
       );
+      // The floor's Downgrade stays, because it buys nothing: it opens the
+      // store's own subscriptions page, where this subscription is cancelled.
       expect(
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(billing.portalCalls, 0);
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
 
       // Nothing rendered points at a web purchase or the hosted portal
       // (Apple's 3.1.3 steering rule), and the custom tier's contact-sales CTA
@@ -1357,7 +1635,7 @@ void main() {
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
         findsNothing,
       );
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
       // A sales handoff is not a purchase, and it is driven by the plan GRID
       // rather than by the entitlement, so it survives the owner gate.
       expect(
@@ -1436,7 +1714,7 @@ void main() {
       //    renewal sentence carry that exact string.
       expect(find.text('Jun 1, 2026'), findsOneWidget);
       expect(
-        find.text(r'$29/mo billed annually · renews Jun 1, 2026'),
+        find.text('348.00 USD billed annually · renews Jun 1, 2026'),
         findsOneWidget,
       );
 
@@ -1497,13 +1775,13 @@ void main() {
 
       expect(tester.takeException(), isNull);
       // 'business' sits above the fixture's 'pro', so its CTA reads Upgrade.
-      expect(billing.checkoutPlans, <String>['business']);
-      // AND the cycle whose figure the card was rendering. The fixture is on
-      // annual, so the toggle opens there and the charge follows the price the
-      // customer read. Before the cycle travelled, this call carried the plan
-      // alone and the producer picked whichever price it found: a customer
-      // taking the annual discount was billed the monthly rate.
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.annual]);
+      // AND the cycle whose figure the card was rendering, in the one key. The
+      // fixture is on annual, so the toggle opens there and the charge follows
+      // the price the customer read. Before the cycle travelled, this call
+      // carried the plan alone and the producer picked whichever price it
+      // found: a customer taking the annual discount was billed the monthly
+      // rate.
+      expect(billing.checkoutKeys, <String>['business_annual']);
       // Flush the confirmation toast's auto-dismiss timer.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1530,7 +1808,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+      expect(billing.checkoutKeys, <String>['business_monthly']);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1540,7 +1818,7 @@ void main() {
       tester,
     ) async {
       // Every other toggle test reads state that a press updates whether or not
-      // anything repaints: `checkoutCycles` is filled from `_cycleOverride` at
+      // anything repaints: `checkoutKeys` is filled from `_cycleOverride` at
       // press time and never touches the plan cards. So an implementation where
       // the price region never rebuilt would pass all of them, which is exactly
       // the failure the scoped-rebuild change could introduce. This asserts the
@@ -1549,7 +1827,7 @@ void main() {
 
       await mount(tester, billing, isOwner: true);
 
-      expect(find.text(r'$29'), findsOneWidget);
+      expect(find.text('348.00 USD'), findsOneWidget);
       expect(
         find.text(trans('magic_starter.billing.plan_billing_annual')),
         findsWidgets,
@@ -1559,11 +1837,11 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text(r'$34'),
+        find.text('34.00 USD'),
         findsOneWidget,
         reason: 'the monthly figure has to reach the screen, not just checkout',
       );
-      expect(find.text(r'$29'), findsNothing);
+      expect(find.text('348.00 USD'), findsNothing);
       expect(
         find.text(trans('magic_starter.billing.plan_billing_monthly')),
         findsWidgets,
@@ -1597,8 +1875,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutPlans, <String>['business']);
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+      expect(billing.checkoutKeys, <String>['business_monthly']);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1619,7 +1896,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutCycles, <BillingCycle>[BillingCycle.monthly]);
+      expect(billing.checkoutKeys, <String>['business_monthly']);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -1641,7 +1918,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutPlans, <String>['business']);
+      expect(billing.checkoutKeys, <String>['business_annual']);
       expect(
         find.text(trans('magic_starter.billing.toast_deferred_title')),
         findsOneWidget,
@@ -1721,10 +1998,64 @@ void main() {
 
       expect(tester.takeException(), isNull);
       // 'business' sits above the fixture's 'pro', so its CTA reads Upgrade.
-      expect(store.purchasedPlans, <String>['business']);
-      // Flush the confirmation toast's auto-dismiss timer.
-      await tester.pump(const Duration(seconds: 5));
+      expect(store.purchasedKeys, <String>['business_annual']);
+      // Let the bounded wait run out, which also flushes the toast's timer.
+      await tester.pump(const Duration(seconds: 60));
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('the toggle picks the store product, and the rail is told the '
+        'catalogue\'s tier order', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(tester, store, isOwner: true);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(store.purchasedKeys, <String>['business_monthly']);
+      final PurchaseContext context = store.purchaseContexts.single!;
+      expect(context.tierOrder, <String>[
+        'free',
+        'pro',
+        'business',
+        'enterprise',
+      ]);
+      expect(context.tierOfProduct['business_annual'], 'business');
+      expect(context.tierOfProduct['pro_monthly'], 'pro');
+      // Let the bounded wait run out, which also flushes the toast's timer.
+      await tester.pump(const Duration(seconds: 60));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a subscription the OTHER store sold offers no purchase here', (
+      tester,
+    ) async {
+      // An App Store subscription seen from a Play build. Buying here would
+      // open a second subscription the first store cannot see: a double
+      // charge, decided from the rail's own store and never from the platform.
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        rail: ManageVia.playStore,
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_restore_button')),
+        findsNothing,
+      );
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('the one-team refusal is re-asked at the tap, not read off the '
@@ -1773,7 +2104,7 @@ void main() {
         reason: 'the tap is the one that guards the money, so it asks again',
       );
       expect(
-        store.purchasedPlans,
+        store.purchasedKeys,
         isEmpty,
         reason: 'the sheet must not open at all, not open and be undone',
       );
@@ -1803,7 +2134,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(store.purchasedPlans, <String>['business']);
+      expect(store.purchasedKeys, <String>['business_annual']);
       expect(
         find.text(trans('magic_starter.billing.store_purchase_title')),
         findsNothing,
@@ -1875,7 +2206,7 @@ void main() {
         findsNothing,
         reason: 'a restore would re-attribute a subscription to this team too',
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
       expect(
         find.text(trans('magic_starter.billing.owner_only_notice')),
         findsOneWidget,
@@ -1914,7 +2245,7 @@ void main() {
         find.text(trans('magic_starter.billing.store_restore_button')),
         findsNothing,
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('a build with NO store check registered refuses the store '
@@ -1950,7 +2281,7 @@ void main() {
         find.text(trans('magic_starter.billing.store_restore_button')),
         findsNothing,
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('a web-billed team gets no store purchase surface', (
@@ -1973,7 +2304,7 @@ void main() {
         find.text(trans('magic_starter.billing.store_restore_button')),
         findsNothing,
       );
-      expect(store.purchasedPlans, isEmpty);
+      expect(store.purchasedKeys, isEmpty);
     });
 
     testWidgets('restoring hands the store purchase back and reports what the '
@@ -2013,10 +2344,10 @@ void main() {
         find.text(trans('magic_starter.billing.renewal_store')),
         findsOneWidget,
       );
-      expect(
-        find.textContaining(trans('magic_starter.billing.plan_billing_annual')),
-        findsNothing,
-      );
+      // The catalogue's renewal sentence ("... billed annually · renews ...")
+      // is the thing that must not appear. The plan cards' own note now follows
+      // the selected cycle, so the bare phrase is no longer the signal.
+      expect(find.textContaining('· renews'), findsNothing);
     });
   });
 
@@ -2028,7 +2359,14 @@ void main() {
       // recommended AND not current. So on this exact screen nothing was filled:
       // four grey rectangles, and the disabled one indistinguishable from the
       // three live ones.
-      await mount(tester, _RailBillingService(), isOwner: true);
+      //
+      // Billed through the portal, so the floor's Downgrade renders (it leads
+      // to the portal) and the downgrade arm of the emphasis rule is covered.
+      await mount(
+        tester,
+        _RailBillingService(manageVia: 'portal'),
+        isOwner: true,
+      );
 
       expect(tester.takeException(), isNull);
 
@@ -2052,10 +2390,10 @@ void main() {
       // cards, and the rest of this screen has buttons of its own with
       // different contracts: the payment card's "Update card" is `secondary`,
       // `size: sm` and not full-width, and an invoice receipt is `ghost`. This
-      // fixture happens to render neither (`manage_via` is `none`, so the
-      // portal affordances are gone), so a view-wide loop passes today and
-      // fails the moment an unrelated fixture field changes. Collected by CTA
-      // label, which is what makes a button one of the grid's.
+      // fixture renders the first and no invoice, so a view-wide loop would
+      // have to know which of the screen's other buttons happen to be on it
+      // and would break the moment an unrelated fixture field changes.
+      // Collected by CTA label, which is what makes a button one of the grid's.
       final List<MSButton> gridButtons = <MSButton>[
         for (final String label in <String>[
           trans('magic_starter.billing.plan_button_upgrade'),
@@ -2114,6 +2452,278 @@ void main() {
     });
   });
 
+  group('the floor\'s call to action leads to where the paid plan ends', () {
+    // The fixture holds `pro`, so the floor (`free`) is the only tier below it
+    // and the only card that can read "Downgrade". The floor sells no product,
+    // so a tap that went through the purchase path found nothing to buy and
+    // reported `productUnavailable`: the one way down the grid offered was a
+    // button that always failed.
+    Finder downgradeButton() => find.ancestor(
+      of: find.text(trans('magic_starter.billing.plan_button_downgrade')),
+      matching: find.byType(MSButton),
+    );
+
+    late _RecordingLaunchAdapter launcher;
+
+    setUp(() {
+      launcher = _RecordingLaunchAdapter();
+      Magic.singleton('launch', () => LaunchService(adapter: launcher));
+    });
+
+    testWidgets('a web-billed team on a web build is sent to the portal, the '
+        'button stays quiet, and nothing is bought', (tester) async {
+      final _RailBillingService billing = _RailBillingService(
+        manageVia: 'portal',
+      );
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsOneWidget);
+      expect(
+        tester.widget<MSButton>(downgradeButton()).intent,
+        ButtonIntent.secondary,
+        reason: 'the floor is never the grid\'s one filled button',
+      );
+
+      await tester.tap(downgradeButton());
+      await tester.pump();
+
+      expect(billing.portalCalls, 1);
+      expect(billing.checkoutKeys, isEmpty);
+      expect(launcher.launched, isEmpty);
+      expect(
+        find.text(trans('magic_starter.billing.errors.product_unavailable')),
+        findsNothing,
+        reason: 'the floor sells no product, so it must never be bought',
+      );
+    });
+
+    testWidgets('a store-billed team is sent to the store\'s own management '
+        'page, never the portal', (tester) async {
+      const String manageUrl = 'https://apps.apple.com/account/subscriptions';
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        manageUrl: manageUrl,
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsOneWidget);
+
+      await tester.tap(downgradeButton());
+      await tester.pump();
+
+      expect(launcher.launched, <Uri>[Uri.parse(manageUrl)]);
+      expect(store.purchasedKeys, isEmpty);
+    });
+
+    testWidgets('a store-billed team seen on a web build is sent to the store '
+        'too, since the portal has no subscription to cancel', (tester) async {
+      const String manageUrl = 'https://apps.apple.com/account/subscriptions';
+      final _RailBillingService billing = _RailBillingService(
+        manageVia: 'app_store',
+        manageUrl: manageUrl,
+      );
+
+      await mount(tester, billing, isOwner: true);
+
+      await tester.tap(downgradeButton());
+      await tester.pump();
+
+      expect(launcher.launched, <Uri>[Uri.parse(manageUrl)]);
+      expect(billing.portalCalls, 0);
+      expect(billing.checkoutKeys, isEmpty);
+    });
+
+    testWidgets(
+      'a web-billed team on a store build gets no button: the store '
+      'build has no web rail, and steering to the web is what 3.1.3 forbids',
+      (tester) async {
+        final _StoreRailBillingService store = _StoreRailBillingService(
+          manageVia: 'portal',
+        );
+
+        await mount(tester, store, isOwner: true);
+
+        expect(tester.takeException(), isNull);
+        expect(downgradeButton(), findsNothing);
+        expect(
+          find.text(trans('magic_starter.billing.plan_button_downgrade')),
+          findsNothing,
+          reason: 'no card at all, not a disabled one',
+        );
+        expect(launcher.launched, isEmpty);
+        for (final String text in renderedText(tester)) {
+          expect(
+            text.toLowerCase(),
+            allOf(
+              isNot(contains('checkout')),
+              isNot(contains('billing.example.test')),
+            ),
+            reason: 'a store build must not steer to a web page',
+          );
+        }
+      },
+    );
+
+    testWidgets('a subscription that already stopped renewing gets no button: '
+        'the move to the floor is booked, and there is nothing to cancel', (
+      tester,
+    ) async {
+      final _CancelledPortalBillingService billing =
+          _CancelledPortalBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsNothing);
+      expect(billing.portalCalls, 0);
+    });
+
+    testWidgets('an App Store subscription seen on a Play build gets no '
+        'button, since that device cannot cancel it', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        manageUrl: 'https://apps.apple.com/account/subscriptions',
+        rail: ManageVia.playStore,
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsNothing);
+      expect(launcher.launched, isEmpty);
+    });
+
+    testWidgets('a held retired tier billed through the portal reaches the '
+        'portal from the floor', (tester) async {
+      // The held tier has no rank, so the floor reads the neutral "Change
+      // plan" rather than "Downgrade"; it still leads where the plan ends.
+      final _HeldRetiredPortalBillingService billing =
+          _HeldRetiredPortalBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      final Finder changePlan = find.ancestor(
+        of: find.text(trans('magic_starter.billing.plan_button_unranked')),
+        matching: find.byType(MSButton),
+      );
+      await tester.tap(changePlan.first);
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.portalCalls, 1);
+      expect(billing.checkoutKeys, isEmpty);
+    });
+
+    testWidgets('a store-billed team whose store reported no destination gets '
+        'no button', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a team with no billing account gets no button, since there '
+        'is no portal to cancel in', (tester) async {
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a known non-owner gets no button on either rail', (
+      tester,
+    ) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        manageUrl: 'https://apps.apple.com/account/subscriptions',
+      );
+
+      await mount(tester, store, isOwner: false);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the floor gets no button while the held tier is unresolved', (
+      tester,
+    ) async {
+      // `manage_via` is unresolved too, which keeps the portal gate open: the
+      // refusal has to come from the floor's own rule, not from the rail.
+      await mount(
+        tester,
+        _UnresolvedEntitlementRailBillingService(),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.ancestor(
+          of: find.text(trans('magic_starter.billing.plan_button_unresolved')),
+          matching: find.byType(MSButton),
+        ),
+        findsNWidgets(2),
+        reason: 'Pro and Business, never the floor',
+      );
+    });
+
+    testWidgets('a paid first row is not the floor: it keeps its price and '
+        'its button', (tester) async {
+      // Position alone named the floor, so a catalogue with no free tier got
+      // its cheapest paid tier labelled "Free" with nothing to buy.
+      await mount(tester, _NoFreeTierWebBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_free')),
+        findsNothing,
+      );
+      expect(find.text('290.00 USD'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text(trans('magic_starter.billing.plan_button_downgrade')),
+          matching: find.byType(MSButton),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the held floor keeps its marker and no button', (
+      tester,
+    ) async {
+      await mount(tester, _ProducerRowsWebBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+      expect(
+        find.ancestor(
+          of: find.text(trans('magic_starter.billing.plan_button_current')),
+          matching: find.byType(MSButton),
+        ),
+        findsNothing,
+      );
+    });
+  });
+
   group('a tier with no rail behind it says so', () {
     testWidgets('the renewal line does not promise a renewal it cannot have', (
       tester,
@@ -2146,7 +2756,7 @@ void main() {
       await mount(tester, _MonthlyBillingService(), isOwner: true);
 
       expect(
-        find.text(r'$34/mo billed monthly · renews Jun 1, 2026'),
+        find.text('34.00 USD billed monthly · renews Jun 1, 2026'),
         findsOneWidget,
       );
 
@@ -2154,7 +2764,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text(r'$34/mo billed monthly · renews Jun 1, 2026'),
+        find.text('34.00 USD billed monthly · renews Jun 1, 2026'),
         findsOneWidget,
         reason: 'the toggle changes catalogue figures, never the charge',
       );
@@ -2299,7 +2909,7 @@ void main() {
       // catalogue display copy for the column they are showing, and asserting
       // on that would fail against correct behaviour.
       expect(find.textContaining('· renews '), findsNothing);
-      expect(find.textContaining('/mo billed'), findsNothing);
+      expect(find.textContaining('USD billed'), findsNothing);
     });
 
     testWidgets('a cancelled subscription is told when it ends, not that it '
@@ -2313,7 +2923,7 @@ void main() {
       // have to survive the branch, and an arm that dropped either would still
       // pass a check for the word "ends".
       expect(
-        find.text(r'$29/mo billed annually · ends Jun 1, 2026'),
+        find.text('348.00 USD billed annually · ends Jun 1, 2026'),
         findsOneWidget,
       );
 
@@ -2384,10 +2994,11 @@ void main() {
         findsNothing,
       );
       // Every priced, non-custom card reads the neutral label; the custom tier
-      // keeps its own contact-sales copy.
+      // keeps its own contact-sales copy, and the floor, with no billing
+      // account behind this team to cancel in, renders no button at all.
       expect(
         find.text(trans('magic_starter.billing.plan_button_unranked')),
-        findsNWidgets(3),
+        findsNWidgets(2),
       );
     });
 
@@ -2412,7 +3023,7 @@ void main() {
       );
       expect(
         find.text(trans('magic_starter.billing.plan_button_unranked')),
-        findsNWidgets(3),
+        findsNWidgets(2),
       );
       expect(find.textContaining('magic_starter.billing.'), findsNothing);
     });
@@ -2669,7 +3280,7 @@ void main() {
       // the current-plan card above the grid names it too.
       expect(find.text('Pro'), findsNWidgets(2));
       expect(find.text('Startups and small teams that page.'), findsOneWidget);
-      expect(find.text(r'$29'), findsOneWidget);
+      expect(find.text('348.00 USD'), findsOneWidget);
       expect(
         find.text(trans('magic_starter.billing.plan_billing_annual')),
         findsWidgets,
@@ -2724,7 +3335,7 @@ void main() {
       // the slot is built per CARD, not once for the grid.
       expect(find.text(responderAddOn), findsNWidgets(2));
       // And the card the package builds is unchanged around it.
-      expect(find.text(r'$29'), findsOneWidget);
+      expect(find.text('348.00 USD'), findsOneWidget);
       expect(
         find.text(trans('magic_starter.billing.plan_button_upgrade')),
         findsOneWidget,
@@ -2747,7 +3358,7 @@ void main() {
       await mount(tester, store, isOwner: true);
 
       expect(tester.takeException(), isNull);
-      for (final String figure in <String>[r'$29', r'$34', r'$99', r'$119']) {
+      for (final String figure in <String>['USD', r'$']) {
         expect(
           find.textContaining(figure),
           findsNothing,
@@ -2759,24 +3370,837 @@ void main() {
         findsNWidgets(2),
         reason: 'both priced tiers say where the price comes from instead',
       );
-      // The free tier keeps its zero, which is true in every currency, and the
-      // custom tier keeps its own word.
-      expect(find.text(r'$0'), findsOneWidget);
+      // The floor keeps its word, beside its own name "Free" on the card, and
+      // the custom tier keeps its own.
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_free')),
+        findsNWidgets(2),
+      );
       expect(
         find.text(trans('magic_starter.billing.plan_price_custom')),
         findsOneWidget,
       );
-      // And no annual cadence anywhere: a store catalogue sells the monthly
-      // SKUs only, so the toggle is gone and no card claims an annual bill.
+      // The toggle is there: the store catalogue sells every product the
+      // producer's catalogue names, annual included, so the customer picks the
+      // cycle on a store build exactly as on the web.
+      expect(
+        find.text(trans('magic_starter.billing.plans_annual')),
+        findsOneWidget,
+      );
+      // The note follows the SELECTED cycle on a store build as on the web: the
+      // store sells the annual products, so a card on Annual says so, and it used
+      // to say "billed monthly" under an annual price.
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_annual')),
+        findsNWidgets(2),
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_monthly')),
+        findsNothing,
+      );
+    });
+  });
+
+  group('a store purchase shows the store price and the terms it is sold '
+      'on', () {
+    const Map<String, StoreProductOffer> storeOffers =
+        <String, StoreProductOffer>{};
+
+    Map<String, StoreProductOffer> offers() => <String, StoreProductOffer>{
+      'pro_monthly': _offer(r'$34.99'),
+      'pro_annual': _offer(r'$29.99'),
+      'business_monthly': _offer(r'$119.99'),
+      'business_annual': _offer(r'$99.99'),
+    };
+
+    setUp(() {
+      Config.set('magic_starter.legal.terms_url', 'https://example.test/terms');
+      Config.set(
+        'magic_starter.legal.privacy_url',
+        'https://example.test/privacy',
+      );
+    });
+
+    testWidgets('each card renders the store\'s own price for the selected '
+        'cycle, and the toggle moves it', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        offers: offers(),
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(r'$29.99'), findsOneWidget);
+      expect(find.text(r'$99.99'), findsOneWidget);
+      expect(find.text(r'$119.99'), findsNothing);
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_store')),
+        findsNothing,
+        reason: 'both priced cards have a store price to show instead',
+      );
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      expect(find.text(r'$34.99'), findsOneWidget);
+      expect(find.text(r'$119.99'), findsOneWidget);
+      expect(find.text(r'$99.99'), findsNothing);
+      expect(
+        find.text(trans('magic_starter.billing.plan_billing_monthly')),
+        findsNWidgets(2),
+        reason: 'the note under the price follows the cycle on a store build',
+      );
+    });
+
+    testWidgets('a card the store has no product for keeps the "priced in the '
+        'store" line', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        offers: <String, StoreProductOffer>{
+          'business_annual': _offer(r'$99.99'),
+        },
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(find.text(r'$99.99'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_store')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the purchase button carries the disclosure: price per period, '
+        'renewal, cancellation, and both legal links', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        offers: offers(),
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      // Only the card with a purchase button has one: the held tier, the free
+      // tier (no product) and the custom tier sell nothing through the store.
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.store_disclosure_price',
+            <String, dynamic>{
+              'price': r'$99.99',
+              'period': trans(
+                'magic_starter.billing.store_disclosure_period_year',
+              ),
+            },
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_auto_renew')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_cancel')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_terms')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_privacy')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.store_disclosure_price',
+            <String, dynamic>{
+              'price': r'$119.99',
+              'period': trans(
+                'magic_starter.billing.store_disclosure_period_month',
+              ),
+            },
+          ),
+        ),
+        findsOneWidget,
+        reason: 'the disclosure names the cycle the button will buy',
+      );
+    });
+
+    testWidgets('a link whose url is not configured is not rendered', (
+      tester,
+    ) async {
+      Config.set('magic_starter.legal.privacy_url', null);
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        offers: offers(),
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_terms')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_privacy')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('with no store price the disclosure still states the renewal '
+        'and names no price', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        offers: storeOffers,
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_auto_renew')),
+        findsOneWidget,
+      );
+      expect(find.textContaining(' per '), findsNothing);
+    });
+
+    testWidgets('a web build renders no store disclosure', (tester) async {
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_auto_renew')),
+        findsNothing,
+      );
+    });
+  });
+
+  group('the producer\'s own rows price every card from its products', () {
+    String disclosure(String price, String periodKey) {
+      return trans(
+        'magic_starter.billing.store_disclosure_price',
+        <String, dynamic>{'price': price, 'period': trans(periodKey)},
+      );
+    }
+
+    testWidgets('a web build prices and sells the sellable product, never the '
+        'grandfathered one, and offers nothing it cannot check out', (
+      tester,
+    ) async {
+      final _ProducerRowsWebBillingService billing =
+          _ProducerRowsWebBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      // The rows carry no tier price, so a screen reading one rendered every
+      // paid tier as "contact sales" with nothing to buy.
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_contact')),
+        findsNothing,
+      );
+      expect(find.text('290.00 USD'), findsOneWidget);
+      // The floor's price word, beside the producer's own "Free" as the tier
+      // name on its card and on the current-plan card.
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_free')),
+        findsNWidgets(3),
+      );
+      // Business is priced in a store only: the web says where it is sold and
+      // offers no button checkout would refuse.
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_app')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+      expect(billing.checkoutKeys, <String>['pro_annual']);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      expect(find.text('29.00 USD'), findsOneWidget);
+      expect(find.text('19.00 USD'), findsNothing);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+      expect(billing.checkoutKeys, <String>['pro_annual', 'pro_monthly']);
+    });
+
+    testWidgets('a store build shows the store price and the disclosure, and '
+        'ranks the grandfathered product without offering it', (tester) async {
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+              'business_monthly': _offer(r'$99.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      // pro_annual is sellable but has no App Store id: the store is never
+      // asked about it and it is never offered.
+      expect(store.requestedKeys, <List<String>>[
+        <String>['pro_monthly', 'business_monthly'],
+      ]);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNWidgets(2),
+      );
+      // Annual is selected, but only monthly products can be bought in this
+      // store, so each card names its monthly price.
+      for (final String price in <String>[r'$99.99', r'$29.99']) {
+        expect(find.text(price), findsOneWidget);
+        expect(
+          find.text(
+            disclosure(
+              price,
+              'magic_starter.billing.store_disclosure_period_month',
+            ),
+          ),
+          findsOneWidget,
+        );
+      }
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_store')),
+        findsNothing,
+      );
+      // One purchasable cycle is not a choice, so there is no toggle.
+      expect(
+        find.text(trans('magic_starter.billing.plans_monthly')),
+        findsNothing,
+      );
       expect(
         find.text(trans('magic_starter.billing.plans_annual')),
         findsNothing,
       );
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')).first,
+      );
+      await tester.pump();
+
+      expect(store.purchasedKeys, <String>['pro_monthly']);
+      final PurchaseContext context = store.purchaseContexts.single!;
+      expect(context.tierOfProduct['pro_monthly_2025'], 'pro');
+      expect(context.tierOfStoreProduct['com.example.pro.monthly.2025'], 'pro');
+      expect(context.tierOfStoreProduct['pro:monthly-2025'], 'pro');
+
+      // Let the wait run out, so no poll outlives the case.
+      await tester.pump(const Duration(seconds: 60));
+    });
+
+    testWidgets('a Play build offers only what has a Play id: pro_annual has '
+        'none, and a tier sold on the App Store only gets no button', (
+      tester,
+    ) async {
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            rail: ManageVia.playStore,
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(store.requestedKeys, <List<String>>[
+        <String>['pro_monthly'],
+      ]);
+      // Pro has a button, Business (App Store id only) has none.
       expect(
-        find.text(trans('magic_starter.billing.plan_billing_annual')),
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_price_store')),
+        findsNothing,
+        reason: 'no card claims a store price it cannot sell',
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plans_monthly')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(store.purchasedKeys, <String>['pro_monthly']);
+
+      // Let the wait run out, so no poll outlives the case.
+      await tester.pump(const Duration(seconds: 60));
+    });
+
+    testWidgets('a tier the store carries nothing of says so in one sentence '
+        'that names no other place to buy it', (tester) async {
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            rail: ManageVia.playStore,
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      // Business has an App Store id only. Its card used to end at its name and
+      // features, with no price, no button and no word on why.
+      final String unsold = trans('magic_starter.billing.plan_store_unsold');
+      expect(unsold, isNot('magic_starter.billing.plan_store_unsold'));
+      expect(find.text(unsold), findsOneWidget);
+
+      // App Store guideline 3.1.1 and 3.1.3: the sentence may not point at a
+      // web purchase, a price elsewhere, or a link. Asserted on the SHIPPED
+      // copy, which is what an adopter's app renders.
+      expect(
+        unsold.toLowerCase(),
+        allOf(<Matcher>[
+          isNot(contains('web')),
+          isNot(contains('site')),
+          isNot(contains('browser')),
+          isNot(contains('http')),
+          isNot(contains('www')),
+          isNot(contains(r'$')),
+          isNot(contains('price')),
+        ]),
+      );
+    });
+
+    test('no shipped billing error or subscription refusal names the web', () {
+      // Every one of these can reach a store build (a toast, or the account
+      // deletion refusal), and pointing a store customer at the web is what
+      // App Store guideline 3.1.3 forbids.
+      final Map<String, dynamic> stub =
+          jsonDecode(
+                File(
+                  '${Directory.current.path}/assets/stubs/install/en.stub',
+                ).readAsStringSync(),
+              )
+              as Map<String, dynamic>;
+      final Map<String, dynamic> errors =
+          ((stub['magic_starter'] as Map<String, dynamic>)['billing']
+                  as Map<String, dynamic>)['errors']
+              as Map<String, dynamic>;
+      final Map<String, dynamic> refusals = <String, dynamic>{
+        for (final MapEntry<String, dynamic> entry
+            in (stub['social'] as Map<String, dynamic>).entries)
+          if (entry.key.startsWith('subscription_')) entry.key: entry.value,
+      };
+
+      expect(errors, isNotEmpty);
+      expect(refusals, contains('subscription_stripe_no_link'));
+      for (final MapEntry<String, dynamic> entry in <MapEntry<String, dynamic>>[
+        ...errors.entries,
+        ...refusals.entries,
+      ]) {
+        final String sentence = (entry.value as String).toLowerCase();
+        expect(
+          sentence,
+          allOf(<Matcher>[
+            isNot(contains('web')),
+            isNot(contains('site')),
+            isNot(contains('browser')),
+          ]),
+          reason: entry.key,
+        );
+      }
+    });
+
+    testWidgets('the held tier never reads as unavailable on its own card', (
+      tester,
+    ) async {
+      // A team billed for Business on the web, opening the Play build: Business
+      // has no Play id, and "Not available in this app" above its "Current
+      // plan" marker would read as though the plan they pay for is broken here.
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            rail: ManageVia.playStore,
+            heldPlan: 'business',
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_store_unsold')),
         findsNothing,
       );
     });
+
+    testWidgets('a tier the store does carry renders no unsold sentence', (
+      tester,
+    ) async {
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+              'business_monthly': _offer(r'$99.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_store_unsold')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the cycle toggle is offered when both cycles can be bought in '
+        'this store', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(tester, store, isOwner: true);
+
+      expect(
+        find.text(trans('magic_starter.billing.plans_monthly')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plans_annual')),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('a store purchase reports each failure by its code', () {
+    Future<void> purchaseFailing(
+      WidgetTester tester,
+      BillingException error,
+    ) async {
+      await mount(
+        tester,
+        _StoreRailBillingService(purchaseError: error),
+        isOwner: true,
+        withToasts: true,
+      );
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('managedElsewhere has its own copy, not the generic one', (
+      tester,
+    ) async {
+      await purchaseFailing(
+        tester,
+        const BillingException(
+          'The subscription is on the web.',
+          code: BillingErrorCode.managedElsewhere,
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.errors.managed_elsewhere')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_failed_text')),
+        findsNothing,
+      );
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    for (final (BillingErrorCode code, String key)
+        in <(BillingErrorCode, String)>[
+          (BillingErrorCode.identityMismatch, 'identity_mismatch'),
+          (BillingErrorCode.notIdentified, 'not_identified'),
+          (BillingErrorCode.receiptInUse, 'receipt_in_use'),
+          (BillingErrorCode.alreadyOwned, 'already_owned'),
+          (BillingErrorCode.productUnavailable, 'product_unavailable'),
+          (BillingErrorCode.network, 'network'),
+          (BillingErrorCode.store, 'store'),
+          (BillingErrorCode.unmappedActiveProduct, 'unmapped_active_product'),
+          (BillingErrorCode.notConfigured, 'not_configured'),
+        ]) {
+      testWidgets('${code.name} reads billing.errors.$key', (tester) async {
+        await purchaseFailing(
+          tester,
+          BillingException('developer text', code: code),
+        );
+
+        expect(
+          find.text(trans('magic_starter.billing.errors.$key')),
+          findsOneWidget,
+        );
+        expect(find.text('developer text'), findsNothing);
+        await tester.pump(const Duration(seconds: 5));
+        await tester.pumpAndSettle();
+      });
+    }
+
+    testWidgets('pending is told as pending and not as a failed checkout', (
+      tester,
+    ) async {
+      await purchaseFailing(
+        tester,
+        const BillingException(
+          'Awaiting approval.',
+          code: BillingErrorCode.pending,
+        ),
+      );
+
+      expect(
+        find.text(trans('magic_starter.billing.errors.pending')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_checkout_failed_title')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_failed_text')),
+        findsNothing,
+      );
+      // A pending purchase waits on the same bounded terms as a completed one:
+      // the poll reads on, and the gate reopens when the window runs out.
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNothing,
+      );
+      await tester.pump(const Duration(seconds: 60));
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a dismissed sheet stays silent', (tester) async {
+      await mount(
+        tester,
+        _StoreRailBillingService(purchaseResult: false),
+        isOwner: true,
+        withToasts: true,
+      );
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(
+        find.text(trans('magic_starter.billing.toast_checkout_failed_title')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.store_purchase_title')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+        reason: 'nothing is waiting, so the button is back',
+      );
+    });
+  });
+
+  group('a store purchase waits for the entitlement before it says '
+      'anything', () {
+    testWidgets('polls until the entitlement moves, then re-enables the '
+        'buttons', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(tester, store, isOwner: true, withToasts: true);
+      store
+        ..changeOnRead = store.entitlementReads + 3
+        ..changeTo = 'business_annual';
+      final int mountReads = store.entitlementReads;
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNothing,
+        reason: 'no second purchase while the first is being confirmed',
+      );
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
+      expect(store.entitlementReads, mountReads + 2);
+      expect(
+        find.text(trans('magic_starter.billing.store_purchase_title')),
+        findsNothing,
+        reason: 'the backend has not confirmed it yet',
+      );
+
+      await tester.pump(const Duration(seconds: 4));
+
+      expect(store.entitlementReads, mountReads + 3);
+      expect(
+        find.text(trans('magic_starter.billing.store_purchase_title')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+        reason: 'the wait is over, so the buttons are back',
+      );
+
+      await tester.pump(const Duration(seconds: 120));
+      expect(store.entitlementReads, mountReads + 3, reason: 'polling stopped');
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a change the rail times at renewal reads nothing and says '
+        'when it takes effect', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        heldPlan: 'business',
+        heldProduct: 'business_annual',
+      )..changeTiming = StoreChangeTiming.atRenewal;
+
+      await mount(tester, store, isOwner: true, withToasts: true);
+      final int mountReads = store.entitlementReads;
+
+      // Pro is the only Downgrade: the free tier sells nothing, and this team
+      // reports no billing rail (`manage_via: none`) on a store build, which
+      // has no portal, so the floor has nowhere to send the tap.
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+      );
+      await tester.pump();
+
+      expect(store.purchasedKeys, <String>['pro_annual']);
+      expect(store.entitlementReads, mountReads, reason: 'nothing to poll for');
+      expect(
+        find.text(
+          trans('magic_starter.billing.wait_takes_effect_on', <String, dynamic>{
+            'date': 'Jul 1, 2026',
+          }),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 120));
+      expect(store.entitlementReads, mountReads);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsOneWidget,
+        reason: 'the deferred path releases the wait, so the CTA is back',
+      );
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a backend that never confirms ends in the processing message '
+        'after 60 s and gives the buttons back', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(tester, store, isOwner: true, withToasts: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 59));
+
+      expect(
+        find.text(trans('magic_starter.billing.wait_processing')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(
+        find.text(trans('magic_starter.billing.wait_processing')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('removing the screen mid-wait stops the poll and leaves no '
+        'timer behind', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(tester, store, isOwner: true, withToasts: true);
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      final int readsBefore = store.entitlementReads;
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 120));
+
+      expect(store.entitlementReads, readsBefore);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'a screen that closed mid-wait re-reads the entitlement when it '
+      'opens again',
+      (tester) async {
+        final _StoreRailBillingService store = _StoreRailBillingService();
+
+        await mount(tester, store, isOwner: true, withToasts: true);
+        final MagicStarterBillingController controller =
+            Magic.find<MagicStarterBillingController>();
+
+        await tester.tap(
+          find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pumpWidget(const SizedBox.shrink());
+
+        expect(
+          controller.awaitingProductKey,
+          'business_annual',
+          reason: 'the store may have charged, so closing does not forget it',
+        );
+
+        // The webhook landed while the screen was closed.
+        store.heldProduct = 'business_annual';
+        final int closedReads = store.entitlementReads;
+
+        await tester.pumpWidget(
+          wrapWithSnackbar(MagicStarter.view.make('teams.billing')),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        expect(store.entitlementReads, closedReads + 1);
+        expect(controller.awaitingProductKey, isNull);
+        expect(
+          find.text(trans('magic_starter.billing.plan_button_upgrade')),
+          findsOneWidget,
+          reason: 'the entitlement names the product, so the buttons are back',
+        );
+        await tester.pumpAndSettle();
+      },
+    );
   });
 
   group('an unset web origin cannot sell', () {
@@ -2804,7 +4228,7 @@ void main() {
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
         findsNothing,
       );
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
 
       // The two labels that are not purchases survive, because neither spends
       // anything: the active tier's read-out and the custom tier's sales
@@ -2982,7 +4406,7 @@ void main() {
       );
       expect(find.textContaining('Enterprise'), findsNothing);
       // A sales handoff spends nothing, so it reaches no rail.
-      expect(billing.checkoutPlans, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
       expect(billing.portalCalls, 0);
 
       await tester.pump(const Duration(seconds: 5));

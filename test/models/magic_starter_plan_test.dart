@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:magic_payments/magic_payments.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 void main() {
@@ -47,15 +51,12 @@ void main() {
     };
 
     group('fromMap — typed fields', () {
-      test('decodes all eight typed fields from the real pro tier', () {
+      test('decodes the typed display fields from the real pro tier', () {
         final plan = MagicStarterPlan.fromMap(uptizmProTier);
 
         expect(plan.id, equals('pro'));
         expect(plan.name, equals('Pro'));
         expect(plan.tagline, equals('Startups and small teams that page.'));
-        expect(plan.monthly, equals(34));
-        expect(plan.annual, equals(29));
-        expect(plan.currency, equals('usd'));
         expect(
           plan.features,
           equals(<String>[
@@ -121,32 +122,127 @@ void main() {
         expect(plan.recommended, isFalse);
       });
 
-      test('monthly arriving as a JSON double still decodes to an int', () {
+      test('an unknown cycle word is dropped from cycles, not guessed', () {
         final plan = MagicStarterPlan.fromMap(<String, dynamic>{
           'id': 'pro',
           'name': 'Pro',
-          'monthly': 34.0,
-          'annual': 29.0,
+          'cycles': <dynamic>['monthly', 'weekly', 7, 'annual'],
         });
 
-        expect(plan.monthly, equals(34));
-        expect(plan.annual, equals(29));
+        expect(
+          plan.cycles,
+          equals(<BillingCycle>[BillingCycle.monthly, BillingCycle.annual]),
+        );
       });
 
-      test(
-        'a null monthly/annual (the enterprise "contact us" case) stays null',
-        () {
-          final plan = MagicStarterPlan.fromMap(<String, dynamic>{
-            'id': 'enterprise',
-            'name': 'Enterprise',
-            'monthly': null,
-            'annual': null,
-          });
+      test('a missing cycles key sells nothing on the web', () {
+        final plan = MagicStarterPlan.fromMap(<String, dynamic>{
+          'id': 'pro',
+          'name': 'Pro',
+        });
 
-          expect(plan.monthly, isNull);
-          expect(plan.annual, isNull);
-        },
-      );
+        expect(plan.cycles, isEmpty);
+      });
+    });
+
+    // ---------------------------------------------------------------------
+    // Store products: the producer's own rows, verbatim. `pro_annual` is
+    // sellable but carries no store id, `business_monthly` is on the App Store
+    // only, and `pro_monthly_2025` has both ids but is no longer sold.
+    // ---------------------------------------------------------------------
+
+    group('storeProducts and storeProductFor', () {
+      late List<MagicStarterPlan> plans;
+
+      setUp(() {
+        final File file = File(
+          '${Directory.current.path}/test/fixtures/wire/billing-plans.json',
+        );
+        final Map<String, dynamic> body =
+            jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+
+        plans = (body['data'] as List<dynamic>)
+            .cast<Map<String, dynamic>>()
+            .map(MagicStarterPlan.fromMap)
+            .toList();
+      });
+
+      MagicStarterPlan tier(String id) =>
+          plans.firstWhere((MagicStarterPlan plan) => plan.id == id);
+
+      test('a sellable product with no id in this store is not a store product '
+          'there', () {
+        expect(
+          tier('pro')
+              .storeProducts(ManageVia.playStore)
+              .map((MagicStarterProduct product) => product.key),
+          <String>['pro_monthly'],
+        );
+        expect(
+          tier('pro')
+              .storeProducts(ManageVia.appStore)
+              .map((MagicStarterProduct product) => product.key),
+          <String>['pro_monthly'],
+          reason:
+              'pro_annual has no id in either store, and the '
+              'grandfathered pro_monthly_2025 is never offered',
+        );
+      });
+
+      test('the id is read from the asked store, not from the other one', () {
+        expect(
+          tier('business').storeProducts(ManageVia.appStore),
+          hasLength(1),
+        );
+        expect(tier('business').storeProducts(ManageVia.playStore), isEmpty);
+      });
+
+      test('a rail that is no store has no store products', () {
+        expect(tier('pro').storeProducts(ManageVia.portal), isEmpty);
+        expect(tier('pro').storeProducts(ManageVia.none), isEmpty);
+      });
+
+      test('storeProductFor never names a product the store cannot sell, '
+          'whatever cycle is asked', () {
+        expect(
+          tier('pro').storeProductFor(BillingCycle.annual, ManageVia.playStore),
+          isNotNull,
+        );
+        expect(
+          tier(
+            'pro',
+          ).storeProductFor(BillingCycle.annual, ManageVia.playStore)?.key,
+          'pro_monthly',
+          reason: 'pro_annual is sellable but has no Play id',
+        );
+        expect(
+          tier(
+            'pro',
+          ).storeProductFor(BillingCycle.monthly, ManageVia.appStore)?.key,
+          'pro_monthly',
+        );
+      });
+
+      test('a tier with no product that has an id in this store gets none', () {
+        expect(
+          tier(
+            'business',
+          ).storeProductFor(BillingCycle.monthly, ManageVia.playStore),
+          isNull,
+        );
+        expect(
+          tier(
+            'business',
+          ).storeProductFor(BillingCycle.annual, ManageVia.appStore)?.key,
+          'business_monthly',
+        );
+        expect(
+          tier(
+            'free',
+          ).storeProductFor(BillingCycle.monthly, ManageVia.appStore),
+          isNull,
+        );
+      });
     });
 
     // ---------------------------------------------------------------------
@@ -159,9 +255,6 @@ void main() {
           id: 'free',
           name: 'Free',
           tagline: 'Kick the tires.',
-          monthly: 0,
-          annual: 0,
-          currency: 'usd',
           features: <String>['1 monitor'],
           recommended: false,
           raw: <String, dynamic>{'id': 'free'},
@@ -170,9 +263,6 @@ void main() {
         expect(plan.id, equals('free'));
         expect(plan.name, equals('Free'));
         expect(plan.tagline, equals('Kick the tires.'));
-        expect(plan.monthly, equals(0));
-        expect(plan.annual, equals(0));
-        expect(plan.currency, equals('usd'));
         expect(plan.features, equals(<String>['1 monitor']));
         expect(plan.recommended, isFalse);
         expect(plan.raw, equals(<String, dynamic>{'id': 'free'}));

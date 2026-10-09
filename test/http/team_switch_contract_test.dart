@@ -11,13 +11,25 @@ class _RecordingStoreRail implements StoreBillingService {
   Future<void> identify(String appUserId) async => identifiedIds.add(appUserId);
 
   @override
-  Future<bool> purchase({required String plan}) async => false;
+  Future<bool> purchase(String productKey, {PurchaseContext? context}) async =>
+      false;
+
+  @override
+  StoreChangeTiming? get lastChangeTiming => null;
+
+  @override
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async => const <String, StoreProductOffer>{};
 
   @override
   Future<bool> restore() async => false;
 
   @override
   Future<void> openStoreManagement() async {}
+
+  @override
+  ManageVia get store => ManageVia.appStore;
 }
 
 /// A store rail whose `identify` throws a plain (non-[BillingException])
@@ -29,13 +41,25 @@ class _ThrowingStoreRail implements StoreBillingService {
       throw StateError('rail unreachable');
 
   @override
-  Future<bool> purchase({required String plan}) async => false;
+  Future<bool> purchase(String productKey, {PurchaseContext? context}) async =>
+      false;
+
+  @override
+  StoreChangeTiming? get lastChangeTiming => null;
+
+  @override
+  Future<Map<String, StoreProductOffer>> products(
+    List<String> productKeys,
+  ) async => const <String, StoreProductOffer>{};
 
   @override
   Future<bool> restore() async => false;
 
   @override
   Future<void> openStoreManagement() async {}
+
+  @override
+  ManageVia get store => ManageVia.appStore;
 }
 
 void main() {

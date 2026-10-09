@@ -451,6 +451,17 @@ void main() {
         expect(MagicStarterConfig.hasLegalLinks(), isFalse);
       });
 
+      test('a blank url reads as unset, so no dead link renders', () {
+        // An app reading these from an env file gets `''` for an empty
+        // variable, and a link to `''` is a tap that opens nothing.
+        Config.set('magic_starter.legal.terms_url', '');
+        Config.set('magic_starter.legal.privacy_url', '  ');
+
+        expect(MagicStarterConfig.termsUrl(), isNull);
+        expect(MagicStarterConfig.privacyUrl(), isNull);
+        expect(MagicStarterConfig.hasLegalLinks(), isFalse);
+      });
+
       test('termsUrl() returns configured value', () {
         Config.set(
           'magic_starter.legal.terms_url',
