@@ -746,8 +746,14 @@ void main() {
         );
       });
 
-      for (final provider in ['app_store', 'play_store']) {
+      for (final (provider, rail) in [
+        ('app_store', ManageVia.appStore),
+        ('play_store', ManageVia.playStore),
+      ]) {
         test('a $provider subscription offers store management', () async {
+          storeRail = _RecordingStoreRail(store: rail);
+          Payments.manager.forgetDrivers();
+          Payments.extend(PaymentsManager.storeRole, () => storeRail);
           knowTeams({'t1': 'Acme'});
           refuse(
             'team_has_active_subscription',
@@ -773,6 +779,53 @@ void main() {
           expect(launcher.launched, isEmpty);
         });
       }
+
+      for (final (provider, rail) in [
+        ('app_store', ManageVia.playStore),
+        ('play_store', ManageVia.appStore),
+      ]) {
+        test('a $provider subscription on the other store\'s device shows the '
+            'sentence alone', () async {
+          storeRail = _RecordingStoreRail(store: rail);
+          Payments.manager.forgetDrivers();
+          Payments.extend(PaymentsManager.storeRole, () => storeRail);
+          knowTeams({'t1': 'Acme'});
+          refuse(
+            'team_has_active_subscription',
+            teamIds: ['t1'],
+            teamProviders: {'t1': provider},
+          );
+
+          await deleteAccount();
+
+          expect(
+            controller.rxStatus.message,
+            equals('${_shipped('subscription_store')} ${blockedBy('Acme')}'),
+          );
+          expect(controller.refusalAction, isNull);
+        });
+      }
+
+      test(
+        'a store subscription on the web shows the sentence alone',
+        () async {
+          Payments.manager.forgetDrivers();
+          knowTeams({'t1': 'Acme'});
+          refuse(
+            'team_has_active_subscription',
+            teamIds: ['t1'],
+            teamProviders: {'t1': 'play_store'},
+          );
+
+          await deleteAccount();
+
+          expect(
+            controller.rxStatus.message,
+            equals('${_shipped('subscription_store')} ${blockedBy('Acme')}'),
+          );
+          expect(controller.refusalAction, isNull);
+        },
+      );
 
       test('a store rail that throws is reported, not rethrown', () async {
         Payments.extend(PaymentsManager.storeRole, _ThrowingStoreRail.new);
@@ -2101,7 +2154,12 @@ class _RecordingLaunchAdapter implements LaunchAdapter {
 
 /// A store rail that counts how often the store's management screen opened.
 class _RecordingStoreRail implements StoreBillingService {
+  _RecordingStoreRail({this.store = ManageVia.appStore});
+
   int managementOpened = 0;
+
+  @override
+  final ManageVia store;
 
   @override
   Future<void> identify(String appUserId) async {}
@@ -2109,6 +2167,9 @@ class _RecordingStoreRail implements StoreBillingService {
   @override
   Future<bool> purchase(String productKey, {PurchaseContext? context}) async =>
       false;
+
+  @override
+  StoreChangeTiming? get lastChangeTiming => null;
 
   @override
   Future<Map<String, StoreProductOffer>> products(
@@ -2120,9 +2181,6 @@ class _RecordingStoreRail implements StoreBillingService {
 
   @override
   Future<void> openStoreManagement() async => managementOpened++;
-
-  @override
-  ManageVia get store => ManageVia.appStore;
 }
 
 /// A store rail whose management screen cannot be opened.

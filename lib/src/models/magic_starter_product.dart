@@ -7,7 +7,15 @@ import 'package:magic_payments/magic_payments.dart';
 /// arithmetic; [display] is the producer's own formatted string, for rendering.
 typedef MagicStarterWebPrice = ({int amountMinor, String display});
 
-/// One sellable product in a catalogue tier row: the thing a purchase names.
+/// The store product ids a catalogue product is sold as, one per store, each
+/// `null` when that store does not carry it.
+///
+/// [play] is Google Play's `subscriptionId:basePlanId`. These are what a store
+/// receipt names, so they are how a held store subscription is placed on a tier;
+/// a purchase still names the catalogue key, never one of these.
+typedef MagicStarterStoreIds = ({String? appStore, String? play});
+
+/// One product in a catalogue tier row: the thing a purchase names.
 ///
 /// A tier is not a price. `pro` sold monthly and again at a discounted annual
 /// rate is ONE tier and TWO products, and both rails purchase by the product's
@@ -18,6 +26,10 @@ typedef MagicStarterWebPrice = ({int amountMinor, String display});
 /// [type] and [cycle] decode to `null` for a word this build does not know,
 /// never to a guessed member: reading an unknown cycle as monthly is a claim
 /// about what a customer is charged.
+///
+/// A row lists every subscription product of its tier, including ones no
+/// longer sold ([sellable] `false`): a customer may still HOLD a grandfathered
+/// product, and the client has to be able to rank it. Nothing may offer one.
 @immutable
 class MagicStarterProduct {
   /// The vendor's catalogue key (e.g. `'pro_annual'`), the value a purchase,
@@ -34,8 +46,17 @@ class MagicStarterProduct {
   /// product and for a cycle this build does not know.
   final BillingCycle? cycle;
 
-  /// The web rail's prices, keyed by ISO 4217 currency code (`'USD'`). Empty
-  /// when the producer prices the product for no web currency.
+  /// Whether the product is still for sale. `false` is a grandfathered
+  /// product, kept in the row only so a customer holding it can be ranked;
+  /// no purchase, checkout or price read may name it.
+  final bool sellable;
+
+  /// The store product ids this product is sold as.
+  final MagicStarterStoreIds storeIds;
+
+  /// The web rail's prices, keyed by ISO 4217 currency code (`'USD'`), in the
+  /// producer's order. Empty when the producer prices the product for no web
+  /// currency.
   final Map<String, MagicStarterWebPrice> webPrices;
 
   const MagicStarterProduct({
@@ -43,6 +64,8 @@ class MagicStarterProduct {
     required this.type,
     required this.tier,
     required this.cycle,
+    this.sellable = true,
+    this.storeIds = (appStore: null, play: null),
     this.webPrices = const {},
   });
 
@@ -51,8 +74,13 @@ class MagicStarterProduct {
   /// Tolerant for the same reason [MagicStarterPlan.fromMap] is: a malformed
   /// price entry is dropped and its siblings survive, and a `prices.web` sent
   /// as a JSON `[]` (PHP's encoding of an empty object) decodes empty.
+  ///
+  /// An absent `sellable` reads as `true`, because a producer that predates the
+  /// flag listed only what it sold. A store id that is not a non-empty string
+  /// names no store product.
   factory MagicStarterProduct.fromMap(Map<String, dynamic> map) {
     final Object? prices = map['prices'];
+    final Object? storeIds = map['store_ids'];
     final BillingCycle? cycle = BillingCycle.fromWire(map['cycle'] as String?);
 
     return MagicStarterProduct(
@@ -60,8 +88,18 @@ class MagicStarterProduct {
       type: ProductType.fromWire(map['type'] as String?),
       tier: (map['tier'] as String?) ?? '',
       cycle: cycle,
+      sellable: map['sellable'] != false,
+      storeIds: (
+        appStore: _storeId(storeIds is Map ? storeIds['app_store'] : null),
+        play: _storeId(storeIds is Map ? storeIds['play'] : null),
+      ),
       webPrices: _webPricesFromWire(prices is Map ? prices['web'] : null),
     );
+  }
+
+  /// A store id from the wire, or `null` for anything that cannot name one.
+  static String? _storeId(Object? raw) {
+    return raw is String && raw.isNotEmpty ? raw : null;
   }
 
   /// Decodes `prices.web`, keeping only entries that carry both an integer

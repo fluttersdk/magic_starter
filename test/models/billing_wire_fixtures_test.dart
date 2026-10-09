@@ -65,25 +65,47 @@ void main() {
       ]);
     });
 
-    test('decodes every product a tier row carries', () {
+    test('decodes every product a tier row carries, sellable or not', () {
       final MagicStarterPlan pro = plans[1];
 
-      expect(pro.products, hasLength(2));
+      expect(pro.products, hasLength(3));
 
-      final MagicStarterProduct monthly = pro.products.first;
+      final MagicStarterProduct monthly = pro.products[0];
       expect(monthly.key, 'pro_monthly');
       expect(monthly.type, ProductType.subscription);
       expect(monthly.tier, 'pro');
       expect(monthly.cycle, BillingCycle.monthly);
+      expect(monthly.sellable, isTrue);
+      expect(monthly.storeIds.appStore, 'com.example.pro.monthly');
+      expect(monthly.storeIds.play, 'pro:monthly');
       expect(monthly.webPrices['USD']?.amountMinor, 2900);
       expect(monthly.webPrices['USD']?.display, '29.00 USD');
       expect(monthly.webPrices['TRY']?.amountMinor, 99900);
       expect(monthly.webPrices['TRY']?.display, '999.00 TRY');
 
-      final MagicStarterProduct annual = pro.products.last;
+      final MagicStarterProduct annual = pro.products[1];
       expect(annual.key, 'pro_annual');
       expect(annual.cycle, BillingCycle.annual);
+      expect(annual.sellable, isTrue);
+      expect(annual.storeIds.appStore, isNull);
+      expect(annual.storeIds.play, isNull);
       expect(annual.webPrices.keys, <String>['USD']);
+
+      final MagicStarterProduct grandfathered = pro.products[2];
+      expect(grandfathered.key, 'pro_monthly_2025');
+      expect(grandfathered.sellable, isFalse);
+      expect(grandfathered.storeIds.appStore, 'com.example.pro.monthly.2025');
+      expect(grandfathered.storeIds.play, 'pro:monthly-2025');
+    });
+
+    test('decodes the cycles the web rail sells each tier on', () {
+      expect(plans[0].cycles, isEmpty);
+      expect(plans[1].cycles, <BillingCycle>[
+        BillingCycle.monthly,
+        BillingCycle.annual,
+      ]);
+      // Business is priced in a store only, so the web rail sells it on nothing.
+      expect(plans[2].cycles, isEmpty);
     });
 
     test('a tier with no products and a product with no web price both '
@@ -93,6 +115,8 @@ void main() {
       final MagicStarterProduct business = plans[2].products.single;
       expect(business.key, 'business_monthly');
       expect(business.webPrices, isEmpty);
+      expect(business.storeIds.appStore, 'com.example.business.monthly');
+      expect(business.storeIds.play, isNull);
     });
 
     test('resolves the product a (tier, cycle) selection buys', () {
@@ -102,6 +126,24 @@ void main() {
       // product the tier has rather than nothing at all.
       expect(plans[2].productFor(BillingCycle.annual)?.key, 'business_monthly');
       expect(plans.first.productFor(BillingCycle.annual), isNull);
+    });
+
+    test('the web rail sells only the cycles the row lists', () {
+      expect(plans[1].webProductFor(BillingCycle.annual)?.key, 'pro_annual');
+      expect(plans[1].webProductFor(BillingCycle.monthly)?.key, 'pro_monthly');
+      // A store-only product has no web cycle, so the web sells nothing.
+      expect(plans[2].webProductFor(BillingCycle.monthly), isNull);
+      expect(plans.first.webProductFor(BillingCycle.monthly), isNull);
+    });
+
+    test('a grandfathered product is never the one a selection buys', () {
+      final MagicStarterPlan pro = plans[1];
+
+      expect(
+        pro.sellableProducts.map((MagicStarterProduct product) => product.key),
+        <String>['pro_monthly', 'pro_annual'],
+      );
+      expect(pro.productFor(BillingCycle.monthly)?.key, 'pro_monthly');
     });
   });
 }

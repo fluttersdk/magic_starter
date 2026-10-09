@@ -660,6 +660,10 @@ void main() {
       testWidgets('a play_store subscription offers store management', (
         tester,
       ) async {
+        storeRail = _RecordingStoreRail(store: ManageVia.playStore);
+        Payments.manager.forgetDrivers();
+        Payments.extend(PaymentsManager.storeRole, () => storeRail);
+
         await refuseWith(tester, 'play_store');
 
         await tester.tap(actionButton('Manage subscription'));
@@ -668,6 +672,24 @@ void main() {
         expect(storeRail.managementOpened, equals(1));
         expect(launcher.launched, isEmpty);
         expect(find.byType(MSDialog), findsNothing);
+      });
+
+      testWidgets('a web build shows a play_store refusal as the sentence '
+          'alone', (tester) async {
+        // No store rail on the web: a "Manage subscription" button there would
+        // open nothing at all.
+        Payments.manager.forgetDrivers();
+
+        await refuseWith(tester, 'play_store');
+
+        expect(actionButton('Manage subscription'), findsNothing);
+        expect(find.byType(MSDialog), findsNothing);
+        expect(
+          Magic.find<MagicStarterProfileController>().rxStatus.message,
+          startsWith(
+            'Your subscription was bought in the App Store or Google Play.',
+          ),
+        );
       });
     });
   });
@@ -697,7 +719,12 @@ class _RecordingLaunchAdapter implements LaunchAdapter {
 
 /// A store rail that counts how often the store's management screen opened.
 class _RecordingStoreRail implements StoreBillingService {
+  _RecordingStoreRail({this.store = ManageVia.appStore});
+
   int managementOpened = 0;
+
+  @override
+  final ManageVia store;
 
   @override
   Future<void> identify(String appUserId) async {}
@@ -705,6 +732,9 @@ class _RecordingStoreRail implements StoreBillingService {
   @override
   Future<bool> purchase(String productKey, {PurchaseContext? context}) async =>
       false;
+
+  @override
+  StoreChangeTiming? get lastChangeTiming => null;
 
   @override
   Future<Map<String, StoreProductOffer>> products(
@@ -716,9 +746,6 @@ class _RecordingStoreRail implements StoreBillingService {
 
   @override
   Future<void> openStoreManagement() async => managementOpened++;
-
-  @override
-  ManageVia get store => ManageVia.appStore;
 }
 
 /// The package's shipped `social` copy, so an assertion on a sentence is about

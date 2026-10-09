@@ -47,15 +47,12 @@ void main() {
     };
 
     group('fromMap — typed fields', () {
-      test('decodes all eight typed fields from the real pro tier', () {
+      test('decodes the typed display fields from the real pro tier', () {
         final plan = MagicStarterPlan.fromMap(uptizmProTier);
 
         expect(plan.id, equals('pro'));
         expect(plan.name, equals('Pro'));
         expect(plan.tagline, equals('Startups and small teams that page.'));
-        expect(plan.monthly, equals(34));
-        expect(plan.annual, equals(29));
-        expect(plan.currency, equals('usd'));
         expect(
           plan.features,
           equals(<String>[
@@ -121,32 +118,27 @@ void main() {
         expect(plan.recommended, isFalse);
       });
 
-      test('monthly arriving as a JSON double still decodes to an int', () {
+      test('an unknown cycle word is dropped from cycles, not guessed', () {
         final plan = MagicStarterPlan.fromMap(<String, dynamic>{
           'id': 'pro',
           'name': 'Pro',
-          'monthly': 34.0,
-          'annual': 29.0,
+          'cycles': <dynamic>['monthly', 'weekly', 7, 'annual'],
         });
 
-        expect(plan.monthly, equals(34));
-        expect(plan.annual, equals(29));
+        expect(
+          plan.cycles,
+          equals(<BillingCycle>[BillingCycle.monthly, BillingCycle.annual]),
+        );
       });
 
-      test(
-        'a null monthly/annual (the enterprise "contact us" case) stays null',
-        () {
-          final plan = MagicStarterPlan.fromMap(<String, dynamic>{
-            'id': 'enterprise',
-            'name': 'Enterprise',
-            'monthly': null,
-            'annual': null,
-          });
+      test('a missing cycles key sells nothing on the web', () {
+        final plan = MagicStarterPlan.fromMap(<String, dynamic>{
+          'id': 'pro',
+          'name': 'Pro',
+        });
 
-          expect(plan.monthly, isNull);
-          expect(plan.annual, isNull);
-        },
-      );
+        expect(plan.cycles, isEmpty);
+      });
     });
 
     // ---------------------------------------------------------------------
@@ -159,9 +151,6 @@ void main() {
           id: 'free',
           name: 'Free',
           tagline: 'Kick the tires.',
-          monthly: 0,
-          annual: 0,
-          currency: 'usd',
           features: <String>['1 monitor'],
           recommended: false,
           raw: <String, dynamic>{'id': 'free'},
@@ -170,9 +159,6 @@ void main() {
         expect(plan.id, equals('free'));
         expect(plan.name, equals('Free'));
         expect(plan.tagline, equals('Kick the tires.'));
-        expect(plan.monthly, equals(0));
-        expect(plan.annual, equals(0));
-        expect(plan.currency, equals('usd'));
         expect(plan.features, equals(<String>['1 monitor']));
         expect(plan.recommended, isFalse);
         expect(plan.raw, equals(<String, dynamic>{'id': 'free'}));

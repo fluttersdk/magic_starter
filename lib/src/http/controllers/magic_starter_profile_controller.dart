@@ -179,8 +179,12 @@ class MagicStarterProfileController extends MagicController
   /// that clears it, chosen by how the first blocking team is billed.
   ///
   /// `team_providers` maps a blocking team id to `app_store`, `play_store` or
-  /// `stripe`. A store subscription can only be cancelled in the store, so it
-  /// offers that screen; a card one offers the host's deletion page
+  /// `stripe`. A store subscription can only be cancelled in the store that
+  /// sold it, so it offers that store's screen, and only where this build's
+  /// store rail IS that store, read off the rail's own
+  /// [StoreBillingService.store] and never off the running platform: on the
+  /// web, or on the other store's device, the button would open nothing or the
+  /// wrong store, so the sentence stands alone. A card one offers the host's deletion page
   /// ([MagicStarterConfig.accountDeletionUrl]), or, when the host has none, a
   /// sentence that points at no page and offers no action. A refusal that names
   /// no known provider keeps the generic sentence.
@@ -197,10 +201,15 @@ class MagicStarterProfileController extends MagicController
     switch (provider) {
       case 'app_store' || 'play_store':
         sentence = trans('social.subscription_store');
-        _refusalAction = (
-          label: trans('social.subscription_store_action'),
-          run: _openStoreManagement,
-        );
+        final soldBy = provider == 'app_store'
+            ? ManageVia.appStore
+            : ManageVia.playStore;
+        if (Payments.store?.store == soldBy) {
+          _refusalAction = (
+            label: trans('social.subscription_store_action'),
+            run: _openStoreManagement,
+          );
+        }
       case 'stripe':
         final url = MagicStarterConfig.accountDeletionUrl();
         if (url == null) {

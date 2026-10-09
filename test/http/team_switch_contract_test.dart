@@ -15,6 +15,9 @@ class _RecordingStoreRail implements StoreBillingService {
       false;
 
   @override
+  StoreChangeTiming? get lastChangeTiming => null;
+
+  @override
   Future<Map<String, StoreProductOffer>> products(
     List<String> productKeys,
   ) async => const <String, StoreProductOffer>{};
@@ -40,6 +43,9 @@ class _ThrowingStoreRail implements StoreBillingService {
   @override
   Future<bool> purchase(String productKey, {PurchaseContext? context}) async =>
       false;
+
+  @override
+  StoreChangeTiming? get lastChangeTiming => null;
 
   @override
   Future<Map<String, StoreProductOffer>> products(

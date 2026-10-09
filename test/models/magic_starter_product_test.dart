@@ -54,6 +54,38 @@ void main() {
 
       expect(product.webPrices.keys, <String>['USD']);
     });
+
+    test('a product without a sellable flag is sellable, and without store ids '
+        'names none', () {
+      final MagicStarterProduct product =
+          MagicStarterProduct.fromMap(<String, dynamic>{
+            'key': 'pro_monthly',
+            'type': 'subscription',
+            'tier': 'pro',
+            'cycle': 'monthly',
+          });
+
+      expect(product.sellable, isTrue);
+      expect(product.storeIds.appStore, isNull);
+      expect(product.storeIds.play, isNull);
+    });
+
+    test('an empty or non-string store id names no store product', () {
+      final MagicStarterProduct product = MagicStarterProduct.fromMap(
+        <String, dynamic>{
+          'key': 'pro_monthly',
+          'type': 'subscription',
+          'tier': 'pro',
+          'cycle': 'monthly',
+          'sellable': false,
+          'store_ids': <String, dynamic>{'app_store': '', 'play': 42},
+        },
+      );
+
+      expect(product.sellable, isFalse);
+      expect(product.storeIds.appStore, isNull);
+      expect(product.storeIds.play, isNull);
+    });
   });
 
   group('MagicStarterPlan.products', () {
@@ -112,6 +144,54 @@ void main() {
       });
 
       expect(plan.productFor(BillingCycle.annual)?.key, 'pro_monthly');
+    });
+
+    test('productFor never names a product the tier no longer sells', () {
+      // The grandfathered product comes FIRST and matches the cycle, so a
+      // resolver that read every product would hand it to a purchase.
+      final MagicStarterPlan plan = MagicStarterPlan.fromMap(<String, dynamic>{
+        'id': 'pro',
+        'name': 'Pro',
+        'cycles': <String>['monthly'],
+        'products': <dynamic>[
+          <String, dynamic>{
+            'key': 'pro_monthly_2025',
+            'type': 'subscription',
+            'tier': 'pro',
+            'cycle': 'monthly',
+            'sellable': false,
+          },
+          <String, dynamic>{
+            'key': 'pro_annual',
+            'type': 'subscription',
+            'tier': 'pro',
+            'cycle': 'annual',
+          },
+        ],
+      });
+
+      expect(plan.productFor(BillingCycle.monthly)?.key, 'pro_annual');
+      expect(plan.webProductFor(BillingCycle.monthly), isNull);
+      expect(plan.products, hasLength(2));
+    });
+
+    test('a tier selling nothing any more resolves no product at all', () {
+      final MagicStarterPlan plan = MagicStarterPlan.fromMap(<String, dynamic>{
+        'id': 'legacy',
+        'name': 'Legacy',
+        'products': <dynamic>[
+          <String, dynamic>{
+            'key': 'legacy_monthly',
+            'type': 'subscription',
+            'tier': 'legacy',
+            'cycle': 'monthly',
+            'sellable': false,
+          },
+        ],
+      });
+
+      expect(plan.sellableProducts, isEmpty);
+      expect(plan.productFor(BillingCycle.monthly), isNull);
     });
   });
 }
