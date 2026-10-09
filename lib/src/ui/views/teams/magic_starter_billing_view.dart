@@ -375,7 +375,9 @@ class _MagicStarterBillingViewState
   /// - the hosted portal, behind [MagicStarterBillingController
   ///   .portalAvailable], for a subscription the web rail sold;
   /// - the store's own subscriptions page, for one a store sold, when the rail
-  ///   reported where that is and the caller is not a known non-owner.
+  ///   reported where that is, the caller is not a known non-owner, and this
+  ///   build is not the OTHER store's (an Android device cannot cancel an App
+  ///   Store subscription, which is the refusal the profile screen makes too).
   ///
   /// The portal arm is closed on every store build, because no build serves
   /// both rails and `portalAvailable` needs a web rail. That is deliberate: a
@@ -384,20 +386,25 @@ class _MagicStarterBillingViewState
   ///
   /// Never while the held tier is unresolved, since "Downgrade" is a claim
   /// about a position nobody knows yet, and never on the held floor itself,
-  /// which carries the marker. The floor is never the grid's filled button
-  /// either: [_featuredUpgradeId] only picks a tier this build sells a product
+  /// which carries the marker. Never once the subscription has stopped
+  /// renewing either: the move to the floor is already booked, and the surface
+  /// would offer nothing left to cancel. The floor is never the grid's filled
+  /// button: [_featuredUpgradeId] only picks a tier this build sells a product
   /// of.
   VoidCallback? _floorExit(MagicStarterPlan plan) {
     final String? currentPlanId = controller.currentPlanId;
     if (currentPlanId == null || currentPlanId == plan.id) return null;
+    if (controller.renews == false) return null;
 
     if (controller.portalAvailable) return _openBillingPortal;
 
     final String? manageUrl = controller.manageUrl;
+    final ManageVia? buildStore = controller.storeRail?.store;
     if (controller.storeManaged &&
         manageUrl != null &&
         manageUrl.isNotEmpty &&
-        controller.isOwner != false) {
+        controller.isOwner != false &&
+        (buildStore == null || buildStore == controller.manageVia)) {
       return () => _openStoreManagement(manageUrl);
     }
 
@@ -949,12 +956,16 @@ class _MagicStarterBillingViewState
         //    name, the badge, the tagline, the highlight, the feature list, the
         //    call to action) reads the catalogue row, not the cycle, so a press
         //    that rebuilt them was rebuilding them into an identical tree.
-        if (storeUnsold)
+        //
+        //    The held tier's own card keeps the bare omission instead: "Not
+        //    available in this app" above the "Current plan" marker reads as
+        //    though the plan a customer pays for does not work here.
+        if (storeUnsold && !isCurrent)
           WText(
             trans('magic_starter.billing.plan_store_unsold'),
             className: 'text-sm text-fg-muted',
           )
-        else
+        else if (!storeUnsold)
           ValueListenableBuilder<BillingCycle?>(
             valueListenable: _cycleOverride,
             builder: (_, _, _) {

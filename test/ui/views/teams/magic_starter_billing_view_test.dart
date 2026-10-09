@@ -938,6 +938,36 @@ class _HeldRetiredTierBillingService extends _RailBillingService {
   String get entitlementPlan => 'legacy_grandfathered';
 }
 
+/// The grandfathered customer billed through the portal, so the floor has
+/// somewhere to send them.
+class _HeldRetiredPortalBillingService extends _HeldRetiredTierBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    final BillingEntitlement base = await super.currentEntitlement();
+
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      ...base.raw,
+      'manage_via': 'portal',
+    });
+  }
+}
+
+/// A web subscription cancelled at period end: still on its tier, no longer
+/// renewing.
+class _CancelledPortalBillingService extends _RailBillingService {
+  _CancelledPortalBillingService() : super(manageVia: 'portal');
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    final BillingEntitlement base = await super.currentEntitlement();
+
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      ...base.raw,
+      'renews': false,
+    });
+  }
+}
+
 /// The grandfathered customer, whose card has ALSO bounced.
 ///
 /// The two states are independent and both are ordinary: a tier the backend
@@ -1166,11 +1196,14 @@ class _ProducerRowsWebBillingService extends _RailBillingService {
   Future<List<Map<String, dynamic>>> getPlans() async => _producerPlanRows();
 }
 
-/// A STORE build for a team on the producer's free tier, reading the
-/// producer's rows.
+/// A STORE build reading the producer's rows, for a team on the free tier
+/// unless a case holds it on another.
 class _ProducerRowsStoreBillingService extends _StoreRailBillingService {
-  _ProducerRowsStoreBillingService({super.offers, super.rail})
-    : super(heldPlan: 'free');
+  _ProducerRowsStoreBillingService({
+    super.offers,
+    super.rail,
+    String heldPlan = 'free',
+  }) : super(heldPlan: heldPlan);
 
   @override
   Future<List<Map<String, dynamic>>> getPlans() async => _producerPlanRows();
@@ -2524,6 +2557,56 @@ void main() {
       },
     );
 
+    testWidgets('a subscription that already stopped renewing gets no button: '
+        'the move to the floor is booked, and there is nothing to cancel', (
+      tester,
+    ) async {
+      final _CancelledPortalBillingService billing =
+          _CancelledPortalBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsNothing);
+      expect(billing.portalCalls, 0);
+    });
+
+    testWidgets('an App Store subscription seen on a Play build gets no '
+        'button, since that device cannot cancel it', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        manageUrl: 'https://apps.apple.com/account/subscriptions',
+        rail: ManageVia.playStore,
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsNothing);
+      expect(launcher.launched, isEmpty);
+    });
+
+    testWidgets('a held retired tier billed through the portal reaches the '
+        'portal from the floor', (tester) async {
+      // The held tier has no rank, so the floor reads the neutral "Change
+      // plan" rather than "Downgrade"; it still leads where the plan ends.
+      final _HeldRetiredPortalBillingService billing =
+          _HeldRetiredPortalBillingService();
+
+      await mount(tester, billing, isOwner: true);
+
+      final Finder changePlan = find.ancestor(
+        of: find.text(trans('magic_starter.billing.plan_button_unranked')),
+        matching: find.byType(MSButton),
+      );
+      await tester.tap(changePlan.first);
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.portalCalls, 1);
+      expect(billing.checkoutKeys, isEmpty);
+    });
+
     testWidgets('a store-billed team whose store reported no destination gets '
         'no button', (tester) async {
       final _StoreRailBillingService store = _StoreRailBillingService(
@@ -3666,6 +3749,34 @@ void main() {
       );
     });
 
+    testWidgets('the held tier never reads as unavailable on its own card', (
+      tester,
+    ) async {
+      // A team billed for Business on the web, opening the Play build: Business
+      // has no Play id, and "Not available in this app" above its "Current
+      // plan" marker would read as though the plan they pay for is broken here.
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            rail: ManageVia.playStore,
+            heldPlan: 'business',
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_store_unsold')),
+        findsNothing,
+      );
+    });
+
     testWidgets('a tier the store does carry renders no unsold sentence', (
       tester,
     ) async {
@@ -3898,7 +4009,8 @@ void main() {
       final int mountReads = store.entitlementReads;
 
       // Pro is the only Downgrade: the free tier sells nothing, and this team
-      // reports no store page to cancel at, so the floor renders no button.
+      // reports no billing rail (`manage_via: none`) on a store build, which
+      // has no portal, so the floor has nowhere to send the tap.
       await tester.tap(
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
       );
