@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Requires the `magic_payments` release whose rails purchase by catalogue product key and report `StoreBillingService.lastChangeTiming`, and `magic-starter-laravel` whose `GET /billing/plans` rows carry `products` with `sellable` and `store_ids`.
+## [0.0.40] - 2026-10-09
+
+Requires `magic_payments` 0.0.8, whose rails purchase by catalogue product key and report `StoreBillingService.lastChangeTiming`, and `magic-starter-laravel` whose `GET /billing/plans` rows carry `products` with `sellable` and `store_ids`.
 
 ### Added
 
@@ -30,6 +32,7 @@ Requires the `magic_payments` release whose rails purchase by catalogue product 
 - **The account-deletion refusal offers "Manage subscription" only where it works**: when the build's store rail sells through the store that billed the blocking team. On the web, or on the other store's device, the sentence stands alone. (`lib/src/http/controllers/magic_starter_profile_controller.dart`)
 - **`billing.errors.managed_elsewhere` and `social.subscription_stripe_no_link` name no web**: "This subscription is managed elsewhere. Change it where you bought it." and "Cancel that subscription where you set it up". Both reach a store build's toast, where pointing at the web is what App Store guideline 3.1.3 forbids; a test now holds every shipped billing error and subscription refusal sentence to it. An existing app updates its own copy. (`assets/stubs/install/en.stub`)
 - **A blank `legal.terms_url` or `legal.privacy_url` reads as unset**, so an empty env variable no longer renders a link that opens nothing on the register and billing screens. (`lib/src/configuration/magic_starter_config.dart`)
+- **Every sibling floor names this batch's release.** `magic_payments` moves `^0.0.7` to `^0.0.8`, a real requirement: the billing screen purchases by catalogue product key and reads `PurchaseContext` and `StoreBillingService.lastChangeTiming`, which magic_payments 0.0.8 introduces, so this package does not compile below it. `magic` moves `^0.0.24` to `^0.0.27`, `magic_notifications` `^0.3.6` to `^0.3.8`, `fluttersdk_wind` `^1.8.0` to `^1.8.1` and `fluttersdk_artisan` `^0.0.17` to `^0.0.19`; those old ranges already admitted the new versions, so for them a fresh `pub get` resolves nothing differently. `magic_starter:install` writes `magic_notifications: ^0.3.8` to match. magic_payments 0.0.8 is BREAKING (purchase by product key, `products()`, `store` and `lastChangeTiming` on `StoreBillingService`, a typed `BillingException.code`, `BillingEntitlement.aiAnalysisTrialsRemaining` removed): this package adopts it in this release, and a host that implements `WebBillingService` or `StoreBillingService` meets it as the BREAKING entry above says. None of magic 0.0.25 to 0.0.27, magic_notifications 0.3.7 and 0.3.8, wind 1.8.1 or artisan 0.0.18 and 0.0.19 is breaking. (`pubspec.yaml`, `lib/src/cli/commands/magic_starter_install_command.dart`)
 
 ## [0.0.39] - 2026-10-05
 
