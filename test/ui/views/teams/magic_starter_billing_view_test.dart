@@ -1009,6 +1009,7 @@ class _StoreRailBillingService extends _ReadsBillingService
     implements StoreBillingService {
   _StoreRailBillingService({
     super.manageVia = 'none',
+    super.manageUrl,
     this.purchaseResult = true,
     this.purchaseError,
     this.restoreResult = true,
@@ -1173,6 +1174,26 @@ class _ProducerRowsStoreBillingService extends _StoreRailBillingService {
 
   @override
   Future<List<Map<String, dynamic>>> getPlans() async => _producerPlanRows();
+}
+
+/// A launcher that records what it was asked to open instead of opening it, so
+/// a case can tell the store's management page from the portal and checkout.
+class _RecordingLaunchAdapter implements LaunchAdapter {
+  /// Every url the screen asked to open, in call order.
+  final List<Uri> launched = <Uri>[];
+
+  @override
+  Future<bool> launch(
+    Uri url, {
+    LaunchMode mode = LaunchMode.externalApplication,
+  }) async {
+    launched.add(url);
+
+    return true;
+  }
+
+  @override
+  Future<bool> canLaunch(Uri url) async => true;
 }
 
 /// A store price as the store formats it, for the cases that render one.
@@ -1420,9 +1441,11 @@ void main() {
         find.text(trans('magic_starter.billing.plan_button_upgrade')),
         findsNothing,
       );
+      // The floor's Downgrade stays, because it buys nothing: it opens the
+      // store's own subscriptions page, where this subscription is cancelled.
       expect(
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(billing.portalCalls, 0);
       expect(billing.checkoutKeys, isEmpty);
@@ -2292,7 +2315,14 @@ void main() {
       // recommended AND not current. So on this exact screen nothing was filled:
       // four grey rectangles, and the disabled one indistinguishable from the
       // three live ones.
-      await mount(tester, _RailBillingService(), isOwner: true);
+      //
+      // Billed through the portal, so the floor's Downgrade renders (it leads
+      // to the portal) and the downgrade arm of the emphasis rule is covered.
+      await mount(
+        tester,
+        _RailBillingService(manageVia: 'portal'),
+        isOwner: true,
+      );
 
       expect(tester.takeException(), isNull);
 
@@ -2316,10 +2346,10 @@ void main() {
       // cards, and the rest of this screen has buttons of its own with
       // different contracts: the payment card's "Update card" is `secondary`,
       // `size: sm` and not full-width, and an invoice receipt is `ghost`. This
-      // fixture happens to render neither (`manage_via` is `none`, so the
-      // portal affordances are gone), so a view-wide loop passes today and
-      // fails the moment an unrelated fixture field changes. Collected by CTA
-      // label, which is what makes a button one of the grid's.
+      // fixture renders the first and no invoice, so a view-wide loop would
+      // have to know which of the screen's other buttons happen to be on it
+      // and would break the moment an unrelated fixture field changes.
+      // Collected by CTA label, which is what makes a button one of the grid's.
       final List<MSButton> gridButtons = <MSButton>[
         for (final String label in <String>[
           trans('magic_starter.billing.plan_button_upgrade'),
@@ -2375,6 +2405,207 @@ void main() {
         // put "Upgrade" and "Contact sales" in the corner of a centred card.
         expect(button.fullWidth, isTrue);
       }
+    });
+  });
+
+  group('the floor\'s call to action leads to where the paid plan ends', () {
+    // The fixture holds `pro`, so the floor (`free`) is the only tier below it
+    // and the only card that can read "Downgrade". The floor sells no product,
+    // so a tap that went through the purchase path found nothing to buy and
+    // reported `productUnavailable`: the one way down the grid offered was a
+    // button that always failed.
+    Finder downgradeButton() => find.ancestor(
+      of: find.text(trans('magic_starter.billing.plan_button_downgrade')),
+      matching: find.byType(MSButton),
+    );
+
+    late _RecordingLaunchAdapter launcher;
+
+    setUp(() {
+      launcher = _RecordingLaunchAdapter();
+      Magic.singleton('launch', () => LaunchService(adapter: launcher));
+    });
+
+    testWidgets('a web-billed team on a web build is sent to the portal, the '
+        'button stays quiet, and nothing is bought', (tester) async {
+      final _RailBillingService billing = _RailBillingService(
+        manageVia: 'portal',
+      );
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsOneWidget);
+      expect(
+        tester.widget<MSButton>(downgradeButton()).intent,
+        ButtonIntent.secondary,
+        reason: 'the floor is never the grid\'s one filled button',
+      );
+
+      await tester.tap(downgradeButton());
+      await tester.pump();
+
+      expect(billing.portalCalls, 1);
+      expect(billing.checkoutKeys, isEmpty);
+      expect(launcher.launched, isEmpty);
+      expect(
+        find.text(trans('magic_starter.billing.errors.product_unavailable')),
+        findsNothing,
+        reason: 'the floor sells no product, so it must never be bought',
+      );
+    });
+
+    testWidgets('a store-billed team is sent to the store\'s own management '
+        'page, never the portal', (tester) async {
+      const String manageUrl = 'https://apps.apple.com/account/subscriptions';
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        manageUrl: manageUrl,
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(downgradeButton(), findsOneWidget);
+
+      await tester.tap(downgradeButton());
+      await tester.pump();
+
+      expect(launcher.launched, <Uri>[Uri.parse(manageUrl)]);
+      expect(store.purchasedKeys, isEmpty);
+    });
+
+    testWidgets('a store-billed team seen on a web build is sent to the store '
+        'too, since the portal has no subscription to cancel', (tester) async {
+      const String manageUrl = 'https://apps.apple.com/account/subscriptions';
+      final _RailBillingService billing = _RailBillingService(
+        manageVia: 'app_store',
+        manageUrl: manageUrl,
+      );
+
+      await mount(tester, billing, isOwner: true);
+
+      await tester.tap(downgradeButton());
+      await tester.pump();
+
+      expect(launcher.launched, <Uri>[Uri.parse(manageUrl)]);
+      expect(billing.portalCalls, 0);
+      expect(billing.checkoutKeys, isEmpty);
+    });
+
+    testWidgets(
+      'a web-billed team on a store build gets no button: the store '
+      'build has no web rail, and steering to the web is what 3.1.3 forbids',
+      (tester) async {
+        final _StoreRailBillingService store = _StoreRailBillingService(
+          manageVia: 'portal',
+        );
+
+        await mount(tester, store, isOwner: true);
+
+        expect(tester.takeException(), isNull);
+        expect(downgradeButton(), findsNothing);
+        expect(
+          find.text(trans('magic_starter.billing.plan_button_downgrade')),
+          findsNothing,
+          reason: 'no card at all, not a disabled one',
+        );
+        expect(launcher.launched, isEmpty);
+        for (final String text in renderedText(tester)) {
+          expect(
+            text.toLowerCase(),
+            allOf(
+              isNot(contains('checkout')),
+              isNot(contains('billing.example.test')),
+            ),
+            reason: 'a store build must not steer to a web page',
+          );
+        }
+      },
+    );
+
+    testWidgets('a store-billed team whose store reported no destination gets '
+        'no button', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+      );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a team with no billing account gets no button, since there '
+        'is no portal to cancel in', (tester) async {
+      await mount(tester, _RailBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a known non-owner gets no button on either rail', (
+      tester,
+    ) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        manageVia: 'app_store',
+        manageUrl: 'https://apps.apple.com/account/subscriptions',
+      );
+
+      await mount(tester, store, isOwner: false);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the floor gets no button while the held tier is unresolved', (
+      tester,
+    ) async {
+      // `manage_via` is unresolved too, which keeps the portal gate open: the
+      // refusal has to come from the floor's own rule, not from the rail.
+      await mount(
+        tester,
+        _UnresolvedEntitlementRailBillingService(),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.ancestor(
+          of: find.text(trans('magic_starter.billing.plan_button_unresolved')),
+          matching: find.byType(MSButton),
+        ),
+        findsNWidgets(2),
+        reason: 'Pro and Business, never the floor',
+      );
+    });
+
+    testWidgets('the held floor keeps its marker and no button', (
+      tester,
+    ) async {
+      await mount(tester, _ProducerRowsWebBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+      expect(
+        find.ancestor(
+          of: find.text(trans('magic_starter.billing.plan_button_current')),
+          matching: find.byType(MSButton),
+        ),
+        findsNothing,
+      );
     });
   });
 
@@ -2648,10 +2879,11 @@ void main() {
         findsNothing,
       );
       // Every priced, non-custom card reads the neutral label; the custom tier
-      // keeps its own contact-sales copy.
+      // keeps its own contact-sales copy, and the floor, with no billing
+      // account behind this team to cancel in, renders no button at all.
       expect(
         find.text(trans('magic_starter.billing.plan_button_unranked')),
-        findsNWidgets(3),
+        findsNWidgets(2),
       );
     });
 
@@ -2676,7 +2908,7 @@ void main() {
       );
       expect(
         find.text(trans('magic_starter.billing.plan_button_unranked')),
-        findsNWidgets(3),
+        findsNWidgets(2),
       );
       expect(find.textContaining('magic_starter.billing.'), findsNothing);
     });
@@ -3398,6 +3630,62 @@ void main() {
       await tester.pump(const Duration(seconds: 60));
     });
 
+    testWidgets('a tier the store carries nothing of says so in one sentence '
+        'that names no other place to buy it', (tester) async {
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            rail: ManageVia.playStore,
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      // Business has an App Store id only. Its card used to end at its name and
+      // features, with no price, no button and no word on why.
+      final String unsold = trans('magic_starter.billing.plan_store_unsold');
+      expect(unsold, isNot('magic_starter.billing.plan_store_unsold'));
+      expect(find.text(unsold), findsOneWidget);
+
+      // App Store guideline 3.1.1 and 3.1.3: the sentence may not point at a
+      // web purchase, a price elsewhere, or a link. Asserted on the SHIPPED
+      // copy, which is what an adopter's app renders.
+      expect(
+        unsold.toLowerCase(),
+        allOf(<Matcher>[
+          isNot(contains('web')),
+          isNot(contains('site')),
+          isNot(contains('browser')),
+          isNot(contains('http')),
+          isNot(contains('www')),
+          isNot(contains(r'$')),
+          isNot(contains('price')),
+        ]),
+      );
+    });
+
+    testWidgets('a tier the store does carry renders no unsold sentence', (
+      tester,
+    ) async {
+      final _ProducerRowsStoreBillingService store =
+          _ProducerRowsStoreBillingService(
+            offers: <String, StoreProductOffer>{
+              'pro_monthly': _offer(r'$29.99'),
+              'business_monthly': _offer(r'$99.99'),
+            },
+          );
+
+      await mount(tester, store, isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_store_unsold')),
+        findsNothing,
+      );
+    });
+
     testWidgets('the cycle toggle is offered when both cycles can be bought in '
         'this store', (tester) async {
       final _StoreRailBillingService store = _StoreRailBillingService();
@@ -3609,10 +3897,10 @@ void main() {
       await mount(tester, store, isOwner: true, withToasts: true);
       final int mountReads = store.entitlementReads;
 
-      // The free tier is a Downgrade too and sells nothing, so Pro is the
-      // second of the two.
+      // Pro is the only Downgrade: the free tier sells nothing, and this team
+      // reports no store page to cancel at, so the floor renders no button.
       await tester.tap(
-        find.text(trans('magic_starter.billing.plan_button_downgrade')).at(1),
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
       );
       await tester.pump();
 
@@ -3631,7 +3919,7 @@ void main() {
       expect(store.entitlementReads, mountReads);
       expect(
         find.text(trans('magic_starter.billing.plan_button_downgrade')),
-        findsNWidgets(2),
+        findsOneWidget,
         reason: 'the deferred path releases the wait, so the CTA is back',
       );
       await tester.pumpAndSettle();

@@ -361,6 +361,49 @@ class _MagicStarterBillingViewState
   bool _isCustom(MagicStarterPlan plan) =>
       !_isFloor(plan) && plan.sellableProducts.isEmpty;
 
+  /// What a tap on the floor's call to action does, or `null` when this screen
+  /// has nowhere to send the customer, in which case the floor renders no
+  /// button at all (not a disabled one).
+  ///
+  /// Moving onto the floor is not a purchase. The floor sells no product, so
+  /// sending the tap down the purchase path found nothing to buy and reported
+  /// `productUnavailable`: the grid's only way down was a button that always
+  /// failed. Leaving a paid plan means ending its subscription, and that
+  /// happens where the subscription is managed, so the tap opens that surface
+  /// and nothing here charges, swaps or cancels:
+  ///
+  /// - the hosted portal, behind [MagicStarterBillingController
+  ///   .portalAvailable], for a subscription the web rail sold;
+  /// - the store's own subscriptions page, for one a store sold, when the rail
+  ///   reported where that is and the caller is not a known non-owner.
+  ///
+  /// The portal arm is closed on every store build, because no build serves
+  /// both rails and `portalAvailable` needs a web rail. That is deliberate: a
+  /// web-billed customer on an iOS build gets no button rather than a web page,
+  /// which is the steering App Store rule 3.1.3 forbids.
+  ///
+  /// Never while the held tier is unresolved, since "Downgrade" is a claim
+  /// about a position nobody knows yet, and never on the held floor itself,
+  /// which carries the marker. The floor is never the grid's filled button
+  /// either: [_featuredUpgradeId] only picks a tier this build sells a product
+  /// of.
+  VoidCallback? _floorExit(MagicStarterPlan plan) {
+    final String? currentPlanId = controller.currentPlanId;
+    if (currentPlanId == null || currentPlanId == plan.id) return null;
+
+    if (controller.portalAvailable) return _openBillingPortal;
+
+    final String? manageUrl = controller.manageUrl;
+    if (controller.storeManaged &&
+        manageUrl != null &&
+        manageUrl.isNotEmpty &&
+        controller.isOwner != false) {
+      return () => _openStoreManagement(manageUrl);
+    }
+
+    return null;
+  }
+
   /// Whether this mount has already acted on an upgrade deep link, so a second
   /// resolving read cannot reopen checkout.
   bool _upgradeRequestHandled = false;
@@ -830,9 +873,11 @@ class _MagicStarterBillingViewState
         controller.storeRail != null && !isCustom && !isFloor;
     // A tier this store carries no product of states no price at all: "shown in
     // the store" would promise a sheet that cannot open, and the web figure is
-    // not for sale here. Like the button, the price block is left out rather
-    // than rendered empty, since a placeholder still takes a slot in the card's
-    // `gap-4` column.
+    // not for sale here. One muted sentence takes the price block's place, so
+    // the card does not end at a name and a feature list with no word on why
+    // nothing can be done with it. It names no other place to buy the tier,
+    // since pointing a store customer at one is what App Store guidelines 3.1.1
+    // and 3.1.3 forbid.
     final bool storeUnsold = storePriced && _saleProduct(plan) == null;
     // The disclosure belongs to a store PURCHASE button and to nothing else: not
     // to the held tier's marker, to the sales handoff, or to a tier with no
@@ -844,9 +889,10 @@ class _MagicStarterBillingViewState
         _saleProduct(plan) != null;
     // A priced tier this build sells nothing on (a tier priced in a store only,
     // seen on the web) gets no button: checkout would refuse it after the tap.
-    // The floor keeps its own, unchanged.
-    final bool offersPurchase =
-        _canPurchase && (isFloor || _saleProduct(plan) != null);
+    // The floor sells nothing anywhere, so it is never a purchase; its button
+    // leads to where the paid plan is cancelled, or does not render.
+    final bool offersPurchase = _canPurchase && _saleProduct(plan) != null;
+    final VoidCallback? floorExit = isFloor ? _floorExit(plan) : null;
     final Widget? highlight = _buildPlanHighlight(plan);
 
     return WDiv(
@@ -903,7 +949,12 @@ class _MagicStarterBillingViewState
         //    name, the badge, the tagline, the highlight, the feature list, the
         //    call to action) reads the catalogue row, not the cycle, so a press
         //    that rebuilt them was rebuilding them into an identical tree.
-        if (!storeUnsold)
+        if (storeUnsold)
+          WText(
+            trans('magic_starter.billing.plan_store_unsold'),
+            className: 'text-sm text-fg-muted',
+          )
+        else
           ValueListenableBuilder<BillingCycle?>(
             valueListenable: _cycleOverride,
             builder: (_, _, _) {
@@ -966,11 +1017,12 @@ class _MagicStarterBillingViewState
         //    was the customer's own plan, or where to look. A marker is not a
         //    control, so it stops pretending to be one.
         //
-        //    The button below therefore renders for two reasons, both of them
+        //    The button below therefore renders for three reasons, all of them
         //    live: a custom tier's sales handoff (driven by the GRID rather
         //    than by the entitlement, so it survives both gates and spends
-        //    nothing), and an actual purchase, which needs a rail and the
-        //    membership to allow it. Which of the four emphases it takes is
+        //    nothing), an actual purchase, which needs a rail and the
+        //    membership to allow it, and the floor's way out of the paid plan
+        //    ([_floorExit]). Which of the four emphases it takes is
         //    [_ctaIntent]'s decision, not this slot's.
         if (isCurrent)
           WDiv(
@@ -985,11 +1037,11 @@ class _MagicStarterBillingViewState
           )
         else ...<Widget>[
           if (showsStoreDisclosure) _buildStoreDisclosure(plan),
-          if (isCustom || offersPurchase)
+          if (isCustom || offersPurchase || floorExit != null)
             MSButton(
               intent: _ctaIntent(plan),
               fullWidth: true,
-              onPressed: () => _selectPlan(plan),
+              onPressed: floorExit ?? () => _selectPlan(plan),
               child: WText(_ctaLabel(plan)),
             ),
         ],

@@ -825,6 +825,7 @@ class AppServiceProvider extends ServiceProvider {
         'plan_price_free',
         'plan_price_store',
         'plan_recommended_badge',
+        'plan_store_unsold',
         'plan_unavailable_text',
         'plans_annual',
         'plans_heading',

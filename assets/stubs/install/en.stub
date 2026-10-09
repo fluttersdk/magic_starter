@@ -148,6 +148,7 @@
       "plan_price_free": "Free",
       "plan_price_store": "Price shown in the store",
       "plan_recommended_badge": "Recommended",
+      "plan_store_unsold": "Not available in this app.",
       "plan_unavailable_text": "Plan :id, details unavailable",
       "plans_annual": "Annual · save ~15%",
       "plans_heading": "Plans",
