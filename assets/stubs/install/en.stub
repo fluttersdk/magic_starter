@@ -103,7 +103,7 @@
       "errors": {
         "already_owned": "You already have this plan. Restore purchases if it is not showing yet.",
         "identity_mismatch": "This store account is signed in for a different team. Switch to that team or use another store account.",
-        "managed_elsewhere": "This subscription is managed in another store or on the web. Change it where you bought it.",
+        "managed_elsewhere": "This subscription is managed elsewhere. Change it where you bought it.",
         "network": "We could not reach the store. Check your connection and try again.",
         "not_configured": "Purchases are not set up in this app yet.",
         "not_identified": "We could not link this purchase to your team. Reopen this screen and try again.",

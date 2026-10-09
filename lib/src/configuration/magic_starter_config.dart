@@ -354,13 +354,19 @@ class MagicStarterConfig {
   // -- Legal links --
 
   /// Returns the configured Terms of Service URL, or `null` if not set.
-  static String? termsUrl() {
-    return Config.get<String?>('magic_starter.legal.terms_url', null);
-  }
+  ///
+  /// A blank value reads as unset: an app filling these from an env file gets
+  /// `''` for an empty variable, and a link to it opens nothing.
+  static String? termsUrl() => _filledUrl('magic_starter.legal.terms_url');
 
-  /// Returns the configured Privacy Policy URL, or `null` if not set.
-  static String? privacyUrl() {
-    return Config.get<String?>('magic_starter.legal.privacy_url', null);
+  /// Returns the configured Privacy Policy URL, or `null` if not set (blank
+  /// included, as for [termsUrl]).
+  static String? privacyUrl() => _filledUrl('magic_starter.legal.privacy_url');
+
+  static String? _filledUrl(String key) {
+    final String? value = Config.get<String?>(key, null);
+
+    return value == null || value.trim().isEmpty ? null : value;
   }
 
   /// Returns whether at least one legal link (terms or privacy) is configured.
