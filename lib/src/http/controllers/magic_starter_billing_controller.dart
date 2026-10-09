@@ -78,7 +78,11 @@ typedef MagicStarterTeamOwnershipReader = bool? Function();
 /// before the sheet opened, and no single field is enough to see that: an
 /// upgrade moves [plan] and [product], a move between two products of one tier
 /// moves only [product], and a store subscription replacing a web one moves
-/// [provider]. A record, so that `==` is the whole comparison.
+/// [provider]. A Play base-plan switch the backend names by its bare
+/// subscription id moves none of those (its [product] is null on both sides),
+/// so [currentPeriodEnd] is the only field that sees it. The price is that a
+/// renewal landing inside the wait confirms it early, which the wait's cap
+/// already bounds. A record, so that `==` is the whole comparison.
 typedef MagicStarterEntitlementSnapshot = ({
   String? plan,
   String? product,
