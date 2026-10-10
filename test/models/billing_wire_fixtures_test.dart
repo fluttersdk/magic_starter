@@ -98,6 +98,15 @@ void main() {
       expect(grandfathered.storeIds.play, 'pro:monthly-2025');
     });
 
+    test('decodes the trial_days every product row carries', () {
+      final Iterable<int> trialDays = plans
+          .expand((MagicStarterPlan plan) => plan.products)
+          .map((MagicStarterProduct product) => product.trialDays);
+
+      expect(trialDays, isNotEmpty);
+      expect(trialDays, everyElement(0));
+    });
+
     test('decodes the cycles the web rail sells each tier on', () {
       expect(plans[0].cycles, isEmpty);
       expect(plans[1].cycles, <BillingCycle>[

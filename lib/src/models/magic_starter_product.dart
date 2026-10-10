@@ -59,6 +59,15 @@ class MagicStarterProduct {
   /// currency.
   final Map<String, MagicStarterWebPrice> webPrices;
 
+  /// The free days a purchase of this product starts with, `0` for none.
+  ///
+  /// The producer answers it for THIS caller: `0` also means a trial this
+  /// customer has already used, so a positive value is an offer that can be
+  /// advertised and `0` is never a claim that the product has no trial at all.
+  /// A web (Stripe) trial takes a card up front. An absent, negative or
+  /// non-integer `trial_days` decodes to `0`.
+  final int trialDays;
+
   const MagicStarterProduct({
     required this.key,
     required this.type,
@@ -67,6 +76,7 @@ class MagicStarterProduct {
     this.sellable = true,
     this.storeIds = (appStore: null, play: null),
     this.webPrices = const {},
+    this.trialDays = 0,
   });
 
   /// Decodes one `products` entry of a catalogue tier row.
@@ -77,10 +87,12 @@ class MagicStarterProduct {
   ///
   /// An absent `sellable` reads as `true`, because a producer that predates the
   /// flag listed only what it sold. A store id that is not a non-empty string
-  /// names no store product.
+  /// names no store product. `trial_days` is read only as a non-negative
+  /// integer; anything else is no trial rather than a guessed number of days.
   factory MagicStarterProduct.fromMap(Map<String, dynamic> map) {
     final Object? prices = map['prices'];
     final Object? storeIds = map['store_ids'];
+    final Object? trialDays = map['trial_days'];
     final BillingCycle? cycle = BillingCycle.fromWire(map['cycle'] as String?);
 
     return MagicStarterProduct(
@@ -94,6 +106,7 @@ class MagicStarterProduct {
         play: _storeId(storeIds is Map ? storeIds['play'] : null),
       ),
       webPrices: _webPricesFromWire(prices is Map ? prices['web'] : null),
+      trialDays: trialDays is int && trialDays > 0 ? trialDays : 0,
     );
   }
 

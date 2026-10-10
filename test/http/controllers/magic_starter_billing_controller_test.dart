@@ -59,6 +59,12 @@ class _FakeBilling
   /// actually asked about.
   String entitlementPlan = 'tier-b';
 
+  /// The lifecycle status, trial end and period end [currentEntitlement]
+  /// answers with, for the trial cases.
+  PlanStatus entitlementStatus = PlanStatus.none;
+  DateTime? entitlementTrialEndsAt;
+  DateTime? entitlementPeriodEnd;
+
   /// Every read that has STARTED, in dispatch order.
   final List<String> started = <String>[];
 
@@ -80,8 +86,11 @@ class _FakeBilling
 
     return BillingEntitlement(
       plan: plan,
+      planStatus: entitlementStatus,
       manageVia: ManageVia.portal,
       manageUrl: 'https://example.test/manage',
+      currentPeriodEnd: entitlementPeriodEnd,
+      trialEndsAt: entitlementTrialEndsAt,
       raw: <String, dynamic>{'plan': plan},
     );
   }
@@ -1171,6 +1180,79 @@ void main() {
       // block a purchase the check has nothing to say about.
       expect(controller.storeCheckRegistered, isFalse);
       expect(controller.canPurchaseViaWeb, isTrue);
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, the trial end', () {
+    test('a web trial ends at trial_ends_at, not at the period end', () async {
+      billing.entitlementStatus = PlanStatus.trialing;
+      billing.entitlementTrialEndsAt = DateTime.utc(2026, 11, 1);
+      billing.entitlementPeriodEnd = DateTime.utc(2026, 12, 1);
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.trialEnd, DateTime.utc(2026, 11, 1));
+      controller.dispose();
+    });
+
+    test(
+      'a store trial has no trial_ends_at and ends at the period end',
+      () async {
+        billing.entitlementStatus = PlanStatus.trialing;
+        billing.entitlementPeriodEnd = DateTime.utc(2026, 12, 1);
+        final MagicStarterBillingController controller = build();
+
+        await controller.load();
+
+        expect(controller.trialEnd, DateTime.utc(2026, 12, 1));
+        controller.dispose();
+      },
+    );
+
+    test('a trialing customer with no date at all has no trial end', () async {
+      billing.entitlementStatus = PlanStatus.trialing;
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.trialEnd, isNull);
+      controller.dispose();
+    });
+
+    test('a customer who is not trialing has no trial end, whatever dates '
+        'the entitlement carries', () async {
+      billing.entitlementStatus = PlanStatus.active;
+      billing.entitlementTrialEndsAt = DateTime.utc(2026, 11, 1);
+      billing.entitlementPeriodEnd = DateTime.utc(2026, 12, 1);
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.trialEnd, isNull);
+      controller.dispose();
+    });
+
+    test('a session change clears the trial end before the refetch refills '
+        'it', () async {
+      billing.entitlementStatus = PlanStatus.trialing;
+      billing.entitlementTrialEndsAt = DateTime.utc(2026, 11, 1);
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+      expect(controller.trialEnd, DateTime.utc(2026, 11, 1));
+
+      final Completer<void> gate = Completer<void>();
+      billing.gate = gate;
+      final Future<void> resetting = controller.resetForSession();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.trialEnd, isNull);
+
+      gate.complete();
+      await resetting;
+
+      expect(controller.trialEnd, DateTime.utc(2026, 11, 1));
       controller.dispose();
     });
   });

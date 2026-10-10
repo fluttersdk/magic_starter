@@ -110,8 +110,9 @@ dependencies:
   # product key on both rails (`checkout(productKey:)`,
   # `purchase(productKey, context:)`) and reads `PurchaseContext` and
   # `StoreBillingService.lastChangeTiming`, which first ship there; below it
-  # this package does not compile.
-  magic_payments: ^0.0.8
+  # this package does not compile. 0.0.9 is where `introEligible` first ships,
+  # which the trial copy on the billing screen depends on.
+  magic_payments: ^0.0.9
   args: ^2.7.0
   path: ^1.9.0
 
