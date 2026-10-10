@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.41] - 2026-10-10
+
 ### Added
 
 - **`MagicStarterProduct.trialDays` and `MagicStarterBillingController.trialEnd`.** A catalogue product decodes `trial_days` (the free days a purchase starts with, `0` for none, an absent, negative or non-integer value reading `0`), and the controller publishes the date a running trial ends, `null` unless the plan status is `trialing`. A store trial has no `trial_ends_at`, so the entitlement's period end stands in. (`lib/src/models/magic_starter_product.dart`, `lib/src/http/controllers/magic_starter_billing_controller.dart`)
