@@ -175,7 +175,6 @@
       "store_disclosure_auto_renew": "The subscription renews automatically unless you cancel it at least 24 hours before the current period ends.",
       "store_disclosure_cancel": "Cancel any time in your store's subscription settings.",
       "store_disclosure_intro_free": "Free for :intro_period, then :price per :period",
-      "store_disclosure_intro_paid": "First :intro_period at :intro_price, then :price per :period",
       "store_disclosure_period_month": "month",
       "store_disclosure_period_year": "year",
       "store_disclosure_price": ":price per :period",

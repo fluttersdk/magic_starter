@@ -567,18 +567,27 @@ class _MagicStarterBillingViewState
                 WDiv(
                   className: 'flex flex-row items-center gap-2',
                   children: <Widget>[
+                    // `flex-1` on the name and `shrink-0` on each badge, as the
+                    // plan cards' name row does: a long plan name gives way and
+                    // the badges never wrap or clip at phone width.
                     WText(
                       current.name,
-                      className: 'text-sm font-semibold text-fg',
+                      className: 'flex-1 text-sm font-semibold text-fg',
                     ),
-                    MSBadge(
-                      trans('magic_starter.billing.plan_current_badge'),
-                      tone: BadgeTone.primary,
+                    WDiv(
+                      className: 'shrink-0',
+                      child: MSBadge(
+                        trans('magic_starter.billing.plan_current_badge'),
+                        tone: BadgeTone.primary,
+                      ),
                     ),
                     if (trialEnd != null)
-                      MSBadge(
-                        trans('magic_starter.billing.trial_badge'),
-                        tone: BadgeTone.accent,
+                      WDiv(
+                        className: 'shrink-0',
+                        child: MSBadge(
+                          trans('magic_starter.billing.trial_badge'),
+                          tone: BadgeTone.accent,
+                        ),
                       ),
                   ],
                 ),
@@ -1254,7 +1263,7 @@ class _MagicStarterBillingViewState
     final MagicStarterProduct? product = _saleProduct(plan);
     if (product == null || product.trialDays < 1) return null;
 
-    final MagicStarterWebPrice? price = product.webPrices.values.firstOrNull;
+    final MagicStarterWebPrice? price = _firstWebPrice(product);
     if (price == null) return null;
 
     return (
@@ -1262,6 +1271,15 @@ class _MagicStarterBillingViewState
       price: price.display,
       cycle: _periodWord(_cycleFor(plan)),
     );
+  }
+
+  /// The web price a [product] is shown and billed at, or `null` when it has
+  /// none to display.
+  ///
+  /// The first one the catalogue lists: the price card, the held-plan sentence
+  /// and the trial line all name the same figure, so they all read it here.
+  MagicStarterWebPrice? _firstWebPrice(MagicStarterProduct? product) {
+    return product?.webPrices.values.firstOrNull;
   }
 
   /// The store's own price for the product [plan] sells on the selected cycle,
@@ -1342,13 +1360,16 @@ class _MagicStarterBillingViewState
   /// trial there would advertise something the sheet will not give.
   ///
   /// - A free intro (price `0`) reads "Free for :intro_period, then :price per
-  ///   :period".
-  /// - A paid intro reads "First :intro_period at :intro_price, then :price per
-  ///   :period", and only when the store supplied the intro price's own string,
-  ///   since a figure built from the number would disagree with the sheet.
+  ///   :period". A free trial's period is its whole length, so the sentence is
+  ///   true as it stands.
+  /// - A PAID intro states no intro line and keeps the plain "per period" line,
+  ///   eligible or not. The wire carries one billing period of the offer and no
+  ///   cycle count, so "First 1 month at 0.99" would read as the whole offer
+  ///   when it can be 0.99 a month for three: a period alone understates a
+  ///   multi-period offer, and the store sheet states the real terms.
   /// - Everything else, including an eligible offer whose period is not one
-  ///   whole ISO unit ([_isoPeriodLabel]), keeps the plain "per period" line: a
-  ///   promise with no length is worse than no promise.
+  ///   whole ISO unit ([_isoPeriodLabel]), keeps the plain line: a promise with
+  ///   no length is worse than no promise.
   ///
   /// The billed [StoreProductOffer.priceString] is the figure of every arm and
   /// stays the card's large price in the block above, which is where Apple's
@@ -1357,32 +1378,16 @@ class _MagicStarterBillingViewState
     final String? introPeriod = offer.introEligible
         ? _isoPeriodLabel(offer.introPeriod)
         : null;
-    final double? introPrice = offer.introPrice;
-    final String? introPriceString = offer.introPriceString;
 
-    if (introPeriod != null && introPrice != null) {
-      if (introPrice == 0) {
-        return trans(
-          'magic_starter.billing.store_disclosure_intro_free',
-          <String, dynamic>{
-            'intro_period': introPeriod,
-            'price': offer.priceString,
-            'period': period,
-          },
-        );
-      }
-
-      if (introPrice > 0 && introPriceString != null) {
-        return trans(
-          'magic_starter.billing.store_disclosure_intro_paid',
-          <String, dynamic>{
-            'intro_period': introPeriod,
-            'intro_price': introPriceString,
-            'price': offer.priceString,
-            'period': period,
-          },
-        );
-      }
+    if (introPeriod != null && offer.introPrice == 0) {
+      return trans(
+        'magic_starter.billing.store_disclosure_intro_free',
+        <String, dynamic>{
+          'intro_period': introPeriod,
+          'price': offer.priceString,
+          'period': period,
+        },
+      );
     }
 
     return trans(
@@ -2442,7 +2447,7 @@ class _MagicStarterBillingViewState
     }
 
     // 3. and 4. Sold on the web, with or without a figure to show.
-    final MagicStarterWebPrice? price = product.webPrices.values.firstOrNull;
+    final MagicStarterWebPrice? price = _firstWebPrice(product);
 
     return price == null
         ? (
@@ -2471,7 +2476,7 @@ class _MagicStarterBillingViewState
             .where((MagicStarterProduct product) => product.cycle == cycle)
             .firstOrNull;
 
-    return product?.webPrices.values.firstOrNull;
+    return _firstWebPrice(product);
   }
 
   /// The under-price billing note for [plan] at the selected cycle.

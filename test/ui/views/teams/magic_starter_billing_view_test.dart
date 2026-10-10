@@ -1316,6 +1316,7 @@ class _TrialWebBillingService extends _RailBillingService {
     this.renews = true,
     this.cycle = 'annual',
     this.trialDaysByKey = const <String, int>{},
+    this.heldPlanName,
   }) : super(manageVia: 'portal');
 
   /// When the trial ends, or `null` for a team that is not trialing.
@@ -1331,9 +1332,19 @@ class _TrialWebBillingService extends _RailBillingService {
   /// The `trial_days` each catalogue product advertises, by key.
   final Map<String, int> trialDaysByKey;
 
+  /// A name to give the tier the team holds, or `null` to keep the catalogue's.
+  final String? heldPlanName;
+
   @override
-  Future<List<Map<String, dynamic>>> getPlans() async =>
-      _planRowsWithTrials(trialDaysByKey);
+  Future<List<Map<String, dynamic>>> getPlans() async {
+    final String? name = heldPlanName;
+
+    return _planRowsWithTrials(trialDaysByKey).map((Map<String, dynamic> row) {
+      if (name == null || row['id'] != entitlementPlan) return row;
+
+      return <String, dynamic>{...row, 'name': name};
+    }).toList();
+  }
 
   @override
   Future<BillingEntitlement> currentEntitlement() async {
@@ -4957,26 +4968,26 @@ void main() {
       });
     }
 
-    testWidgets('an eligible paid intro reads "First ... at ..., then ..."', (
+    testWidgets('an eligible paid intro keeps today\'s line: the store sends '
+        'no cycle count, so a period alone would understate it', (
       tester,
     ) async {
       await mountWithOffer(
         tester,
         _introOffer(
           r'$99.99',
-          introPrice: 1.99,
-          introPriceString: r'$1.99',
+          introPrice: 0.99,
+          introPriceString: r'$0.99',
           introPeriod: 'P1M',
           introEligible: true,
         ),
       );
 
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(r'First 1 month at $1.99, then $99.99 per year'),
-        findsOneWidget,
-      );
+      expect(find.text(r'$99.99 per year'), findsOneWidget);
+      expect(find.textContaining('First '), findsNothing);
       expect(find.textContaining('Free for'), findsNothing);
+      expect(find.textContaining(r'$0.99'), findsNothing);
       expect(windText(tester, r'$99.99').className, contains('text-3xl'));
     });
 
@@ -5025,6 +5036,34 @@ void main() {
   });
 
   group('the trial copy fits a phone and a desktop', () {
+    testWidgets('a long plan name with both badges fits a 390 px phone', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(
+          trialEnd: DateTime.utc(2099, 6, 1),
+          heldPlanName: 'Professional Operations Command Centre Premium Plan',
+        ),
+        isOwner: true,
+        surface: const Size(390, 12000),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_current_badge')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.trial_badge')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Professional Operations Command Centre Premium Plan'),
+        findsWidgets,
+      );
+    });
+
     for (final Size surface in <Size>[
       const Size(390, 12000),
       const Size(1440, 12000),

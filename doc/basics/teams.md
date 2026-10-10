@@ -123,7 +123,7 @@ The billing screen (`teams.billing`) shows a trial and a store introductory offe
 |---|---|
 | Current plan card | A "Trial" badge beside the plan name, and one line in place of the renewal line: "Free trial ends :date (:left), then :price per :cycle" (a web trial with a known price and cycle), the same without the price and cycle, the same with the store sentence (a store trial), or "Free trial ends :date. It will not renew." once the trial is cancelled |
 | Web plan card | Above the call to action, "Free for :period. Card required, then :price per :cycle.", and the call to action reads "Start free trial". Only on a web build, only for a product with `trialDays` above zero, and the billed price stays the large figure |
-| Store plan card (disclosure) | "Free for :intro_period, then :price per :period" for a free introductory offer, or "First :intro_period at :intro_price, then :price per :period" for a paid one. Only when the store says this customer is eligible (`StoreProductOffer.introEligible`); otherwise the plain "per period" line |
+| Store plan card (disclosure) | "Free for :intro_period, then :price per :period" for a free introductory offer. Only when the store says this customer is eligible (`StoreProductOffer.introEligible`); otherwise the plain "per period" line |
 
 The translator has no plural API, so each count is chosen in Dart: `:count == 1` reads the `_one` key and any other count the `_other` key. The keys, all under `magic_starter.billing` in `en.stub`:
 
@@ -138,7 +138,6 @@ The translator has no plural API, so each count is chosen in Dart: `:count == 1`
 | `trial_card_required` | `Free for :period. Card required, then :price per :cycle.` |
 | `trial_cta` | `Start free trial` |
 | `store_disclosure_intro_free` | `Free for :intro_period, then :price per :period` |
-| `store_disclosure_intro_paid` | `First :intro_period at :intro_price, then :price per :period` |
 | `period_day_*`, `period_week_*`, `period_month_*`, `period_year_*` (each `_one` and `_other`) | `:count day`, `:count days`, and so on |
 
 An app that publishes its own `en.json` adds these keys by hand. A store introductory period is read from its ISO 8601 form when it is one whole unit (`P14D`, `P2W`, `P1M`, `P1Y`); anything else (`P1Y2M`) states no offer and keeps the plain line.
