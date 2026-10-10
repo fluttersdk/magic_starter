@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MagicStarterProduct.trialDays` and `MagicStarterBillingController.trialEnd`.** A catalogue product decodes `trial_days` (the free days a purchase starts with, `0` for none, an absent, negative or non-integer value reading `0`), and the controller publishes the date a running trial ends, `null` unless the plan status is `trialing`. A store trial has no `trial_ends_at`, so the entitlement's period end stands in. (`lib/src/models/magic_starter_product.dart`, `lib/src/http/controllers/magic_starter_billing_controller.dart`)
+- **The billing screen shows a free trial and the store's introductory offer.** While the customer is trialing, the current plan card gains a "Trial" badge and a trial line that replaces the renewal line: the end date, the days left, and what is billed after (a cancelled trial says it will not renew). A web plan card whose sale product has `trialDays` above zero states "Free for N days. Card required, then ... per ..." above a "Start free trial" button. A store card's disclosure states a free or paid introductory offer only when the store confirms the customer is eligible (`StoreProductOffer.introEligible`), reading the period from its ISO 8601 form; an ineligible customer, a product with no offer or a period that is not one whole unit keeps the plain "per period" line. The billed price stays the large figure on every card, and purchase and checkout calls are unchanged. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)
+- **`magic_starter.billing.trial_badge`, `trial_line_renews`, `trial_line_cycleless`, `trial_line_store`, `trial_line_ends`, `trial_days_left_one`, `trial_days_left_other`, `trial_card_required`, `trial_cta`, `store_disclosure_intro_free`, `store_disclosure_intro_paid` and `period_day`, `period_week`, `period_month`, `period_year` (each `_one` and `_other`)** in `en.stub`. A host that publishes `en.json` adds them to its language file. (`assets/stubs/install/en.stub`, `doc/basics/teams.md`)
+
+### Changed
+
+- **Requires `magic_payments` ^0.0.9 and `magic-starter-laravel` 0.0.23.** `magic_payments` 0.0.9 carries `StoreProductOffer.introEligible`, and the backend's 0.0.23 sends each product row's `trial_days` for the caller. Against an older backend every product reads `trialDays` `0` and no web trial is advertised. (`pubspec.yaml`)
+
 ## [0.0.40] - 2026-10-09
 
 Requires `magic_payments` 0.0.8, whose rails purchase by catalogue product key and report `StoreBillingService.lastChangeTiming`, and `magic-starter-laravel` whose `GET /billing/plans` rows carry `products` with `sellable` and `store_ids`.
