@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:math' show max;
 
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
@@ -190,6 +191,22 @@ class _MagicStarterBillingViewState
 
   /// The one slot a plan card carries. See [MagicStarterPlanCardScope].
   static const String _planHighlightSlot = 'plan_card_highlight';
+
+  /// An ISO 8601 duration made of ONE whole unit: `P14D`, `P2W`, `P1M`, `P1Y`.
+  ///
+  /// That is the whole shape a store reports an introductory period in. A
+  /// compound duration (`P1Y2M`) or a time part (`PT36H`) does not match, and
+  /// [_isoPeriodLabel] then answers `null` rather than a length it had to guess.
+  static final RegExp _isoPeriod = RegExp(r'^P(\d+)([DWMY])$');
+
+  /// The `billing.period_<unit>_one` / `_other` key stem of each unit
+  /// [_isoPeriod] accepts.
+  static const Map<String, String> _isoPeriodUnits = <String, String>{
+    'D': 'day',
+    'W': 'week',
+    'M': 'month',
+    'Y': 'year',
+  };
 
   /// The cycle-toggle options, in [BillingCycle] order.
   static const List<BillingCycle> _cycles = <BillingCycle>[
@@ -518,10 +535,16 @@ class _MagicStarterBillingViewState
   /// the subscription whatever the catalogue can say about the tier. The notice
   /// began inside the resolved arm and so missed the grandfathered customer
   /// above, who is exactly the one a retired tier makes hardest to reason about.
+  ///
+  /// While the customer is on a free trial the name row gains a "Trial" badge
+  /// beside the "Current" one, and the trial line takes the renewal line's
+  /// place ([_trialLine]): a trial is not yet a renewal, so the renewal
+  /// sentence would claim a charge and a date that are not the next event.
   Widget _buildCurrentPlanCard() {
     final String? planId = controller.currentPlanId;
     final bool resolving = controller.plans.isEmpty || planId == null;
     final MagicStarterPlan? current = _current;
+    final DateTime? trialEnd = controller.trialEnd;
 
     return MSCard(
       child: WDiv(
@@ -544,18 +567,34 @@ class _MagicStarterBillingViewState
                 WDiv(
                   className: 'flex flex-row items-center gap-2',
                   children: <Widget>[
+                    // `flex-1` on the name and `shrink-0` on each badge, as the
+                    // plan cards' name row does: a long plan name gives way and
+                    // the badges never wrap or clip at phone width.
                     WText(
                       current.name,
-                      className: 'text-sm font-semibold text-fg',
+                      className: 'flex-1 text-sm font-semibold text-fg',
                     ),
-                    MSBadge(
-                      trans('magic_starter.billing.plan_current_badge'),
-                      tone: BadgeTone.primary,
+                    WDiv(
+                      className: 'shrink-0',
+                      child: MSBadge(
+                        trans('magic_starter.billing.plan_current_badge'),
+                        tone: BadgeTone.primary,
+                      ),
                     ),
+                    if (trialEnd != null)
+                      WDiv(
+                        className: 'shrink-0',
+                        child: MSBadge(
+                          trans('magic_starter.billing.trial_badge'),
+                          tone: BadgeTone.accent,
+                        ),
+                      ),
                   ],
                 ),
                 WText(
-                  _renewalLine(current),
+                  trialEnd == null
+                      ? _renewalLine(current)
+                      : _trialLine(current, trialEnd),
                   className: 'text-sm text-fg-muted',
                 ),
               ],
@@ -763,6 +802,88 @@ class _MagicStarterBillingViewState
             trans('common.unknown'),
       },
     );
+  }
+
+  /// The one line under the current plan's name while the customer is on a free
+  /// trial, in its four states. It REPLACES [_renewalLine] for the length of the
+  /// trial.
+  ///
+  /// The date is [MagicStarterBillingController.trialEnd], which is the trial's
+  /// own end on either rail (a store trial ends at the period end, and the
+  /// controller already resolves that), never the payment-method read's renewal
+  /// date: that one is a web-rail read and answers nothing for a store trial.
+  ///
+  /// A trial that has been CANCELLED comes first, and on both rails: it keeps
+  /// its tier to the end date and then simply stops, so naming a price it will
+  /// not be charged, or the store sentence that says it bills, is the confident
+  /// wrong sentence [_renewalLine] was rewritten to stop saying. It carries no
+  /// days-left figure either, because there is nothing left to count down to
+  /// except an end.
+  ///
+  /// Otherwise a store trial gets the store sentence and the end date, for the
+  /// reason [_renewalLine] gives: a catalogue price in its own currency on this
+  /// screen's own cadence is not what the store will charge.
+  ///
+  /// A web trial names the held product's price and cycle when both are known,
+  /// and takes the sentence WITHOUT them otherwise, never a guessed word, for
+  /// the reason [_renewalLine] gives too.
+  String _trialLine(MagicStarterPlan current, DateTime trialEnd) {
+    final String date = _formatDate(trialEnd) ?? trans('common.unknown');
+
+    // 1. A cancelled trial ends rather than converts, on any rail.
+    if (controller.renews == false) {
+      return trans('magic_starter.billing.trial_line_ends', <String, dynamic>{
+        'date': date,
+      });
+    }
+
+    final String left = _trialDaysLeft(trialEnd);
+
+    // 2. A store trial: the store bills it, and says how.
+    if (controller.storeManaged) {
+      return trans('magic_starter.billing.trial_line_store', <String, dynamic>{
+        'date': date,
+        'left': left,
+      });
+    }
+
+    // 3. A web trial, with what it converts to when that is known.
+    final BillingCycle? cycle = controller.cycle;
+    final MagicStarterWebPrice? price = cycle == null
+        ? null
+        : _heldWebPrice(current, cycle);
+
+    if (cycle == null || price == null) {
+      return trans(
+        'magic_starter.billing.trial_line_cycleless',
+        <String, dynamic>{'date': date, 'left': left},
+      );
+    }
+
+    return trans('magic_starter.billing.trial_line_renews', <String, dynamic>{
+      'date': date,
+      'left': left,
+      'price': price.display,
+      'cycle': _periodWord(cycle),
+    });
+  }
+
+  /// The whole days until [trialEnd], as the "N days left" phrase.
+  ///
+  /// Rounded UP, so a trial with twelve hours left reads "1 day left" and not
+  /// "0 days left" while it still grants, and clamped at zero so a date that has
+  /// already passed (the read has not caught up with the conversion yet) never
+  /// prints a negative count. Zero takes the plural, as the form for any count
+  /// other than one.
+  String _trialDaysLeft(DateTime trialEnd) {
+    final int days = max(
+      0,
+      (trialEnd.difference(DateTime.now()).inMicroseconds /
+              Duration.microsecondsPerDay)
+          .ceil(),
+    );
+
+    return _counted('magic_starter.billing.trial_days_left', days);
   }
 
   // ---------------------------------------------------------------------------
@@ -1055,15 +1176,110 @@ class _MagicStarterBillingViewState
         else ...<Widget>[
           if (showsStoreDisclosure) _buildStoreDisclosure(plan),
           if (isCustom || offersPurchase || floorExit != null)
+            _buildPlanAction(plan, floorExit: floorExit),
+        ],
+      ],
+    );
+  }
+
+  /// The card's call to action, with the web trial line above it when the
+  /// product a tap buys carries one.
+  ///
+  /// Subscribed to the cycle toggle, because a trial belongs to a PRODUCT and
+  /// the toggle picks the product: `business_monthly` can offer seven days where
+  /// `business_annual` offers fourteen, or none. The line and the label are the
+  /// only parts a press changes here, and they sit in the one builder so that a
+  /// cycle with no trial takes the line away without leaving the card's `gap-4`
+  /// column a hole where it was.
+  ///
+  /// What the button DOES is unchanged: [_selectPlan] buys the same product the
+  /// card was priced from, and only the words on it move.
+  Widget _buildPlanAction(MagicStarterPlan plan, {VoidCallback? floorExit}) {
+    return ValueListenableBuilder<BillingCycle?>(
+      valueListenable: _cycleOverride,
+      builder: (_, _, _) {
+        final ({String period, String price, String cycle})? trial = _webTrial(
+          plan,
+        );
+
+        return WDiv(
+          className: 'flex flex-col gap-2',
+          children: <Widget>[
+            // Small and muted on purpose: Apple's rule is that the billed
+            // amount stays the most prominent pricing element, and that is the
+            // figure in the price block. This line says how long the trial is
+            // and what follows it, and nothing more.
+            if (trial != null)
+              WText(
+                trans(
+                  'magic_starter.billing.trial_card_required',
+                  <String, dynamic>{
+                    'period': trial.period,
+                    'price': trial.price,
+                    'cycle': trial.cycle,
+                  },
+                ),
+                className: 'text-xs text-fg-muted',
+              ),
             MSButton(
               intent: _ctaIntent(plan),
               fullWidth: true,
               onPressed: floorExit ?? () => _selectPlan(plan),
-              child: WText(_ctaLabel(plan)),
+              child: WText(
+                trial == null
+                    ? _ctaLabel(plan)
+                    : trans('magic_starter.billing.trial_cta'),
+              ),
             ),
-        ],
-      ],
+          ],
+        );
+      },
     );
+  }
+
+  /// The free trial a tap on [plan]'s card starts on the WEB rail, as the three
+  /// words its line is made of, or `null` when the card advertises none.
+  ///
+  /// Decided the way [_selectPlan] decides a web checkout: this build has no
+  /// store rail, and [_canPurchaseViaWeb] holds (a web rail, a configured
+  /// origin, an owner, a subscription not managed in a store). Never on a store
+  /// build, where the store's own intro offer is the only trial there is and
+  /// [_buildStoreDisclosure] states it.
+  ///
+  /// The product is the one [_saleProduct] names, so the days are those of the
+  /// product the button will buy on the selected cycle. A positive
+  /// [MagicStarterProduct.trialDays] is already this caller's own answer (the
+  /// producer sends `0` for a trial they have used), which is what makes it safe
+  /// to advertise.
+  ///
+  /// A product with no displayable web price states no trial line at all: the
+  /// line's whole job is to say what is billed after the trial, and "Price shown
+  /// at checkout" has no place in a sentence that has to name it.
+  ({String period, String price, String cycle})? _webTrial(
+    MagicStarterPlan plan,
+  ) {
+    if (controller.storeRail != null || !_canPurchaseViaWeb) return null;
+
+    final MagicStarterProduct? product = _saleProduct(plan);
+    if (product == null || product.trialDays < 1) return null;
+
+    final MagicStarterWebPrice? price = _firstWebPrice(product);
+    if (price == null) return null;
+
+    return (
+      period: _periodLabel(product.trialDays, 'day'),
+      price: price.display,
+      cycle: _periodWord(_cycleFor(plan)),
+    );
+  }
+
+  /// The web price a [product] is shown and billed at, or `null` when it has
+  /// none to display.
+  ///
+  /// The first one the catalogue lists: the price card, the held-plan sentence
+  /// and the trial line all name the same figure, so they all read it here.
+  MagicStarterWebPrice? _firstWebPrice(MagicStarterProduct? product) {
+    return product?.webPrices.values.firstOrNull;
   }
 
   /// The store's own price for the product [plan] sells on the selected cycle,
@@ -1094,27 +1310,14 @@ class _MagicStarterBillingViewState
         final StoreProductOffer? offer = _storeOffer(plan);
         final String? termsUrl = MagicStarterConfig.termsUrl();
         final String? privacyUrl = MagicStarterConfig.privacyUrl();
-        final String period = switch (_cycleFor(plan)) {
-          BillingCycle.monthly => trans(
-            'magic_starter.billing.store_disclosure_period_month',
-          ),
-          BillingCycle.annual => trans(
-            'magic_starter.billing.store_disclosure_period_year',
-          ),
-        };
+        final String period = _periodWord(_cycleFor(plan));
 
         return WDiv(
           className: 'flex flex-col gap-1',
           children: <Widget>[
             if (offer != null)
               WText(
-                trans(
-                  'magic_starter.billing.store_disclosure_price',
-                  <String, dynamic>{
-                    'price': offer.priceString,
-                    'period': period,
-                  },
-                ),
+                _storePriceLine(offer, period),
                 className: 'text-xs font-medium text-fg',
               ),
             WText(
@@ -1144,6 +1347,52 @@ class _MagicStarterBillingViewState
           ],
         );
       },
+    );
+  }
+
+  /// The price line of [_buildStoreDisclosure] for [offer], with [period] as the
+  /// word the recurring price is stated per (`month`, `year`).
+  ///
+  /// The introductory offer is stated ONLY when the store confirmed that this
+  /// customer may take it ([StoreProductOffer.introEligible]): a product HAVING
+  /// an offer says nothing about this customer, and an unknown answer, a failed
+  /// read and an ineligible customer all arrive as `false`, so promising the
+  /// trial there would advertise something the sheet will not give.
+  ///
+  /// - A free intro (price `0`) reads "Free for :intro_period, then :price per
+  ///   :period". A free trial's period is its whole length, so the sentence is
+  ///   true as it stands.
+  /// - A PAID intro states no intro line and keeps the plain "per period" line,
+  ///   eligible or not. The wire carries one billing period of the offer and no
+  ///   cycle count, so "First 1 month at 0.99" would read as the whole offer
+  ///   when it can be 0.99 a month for three: a period alone understates a
+  ///   multi-period offer, and the store sheet states the real terms.
+  /// - Everything else, including an eligible offer whose period is not one
+  ///   whole ISO unit ([_isoPeriodLabel]), keeps the plain line: a promise with
+  ///   no length is worse than no promise.
+  ///
+  /// The billed [StoreProductOffer.priceString] is the figure of every arm and
+  /// stays the card's large price in the block above, which is where Apple's
+  /// rule wants the most prominent pricing element to be.
+  String _storePriceLine(StoreProductOffer offer, String period) {
+    final String? introPeriod = offer.introEligible
+        ? _isoPeriodLabel(offer.introPeriod)
+        : null;
+
+    if (introPeriod != null && offer.introPrice == 0) {
+      return trans(
+        'magic_starter.billing.store_disclosure_intro_free',
+        <String, dynamic>{
+          'intro_period': introPeriod,
+          'price': offer.priceString,
+          'period': period,
+        },
+      );
+    }
+
+    return trans(
+      'magic_starter.billing.store_disclosure_price',
+      <String, dynamic>{'price': offer.priceString, 'period': period},
     );
   }
 
@@ -2198,7 +2447,7 @@ class _MagicStarterBillingViewState
     }
 
     // 3. and 4. Sold on the web, with or without a figure to show.
-    final MagicStarterWebPrice? price = product.webPrices.values.firstOrNull;
+    final MagicStarterWebPrice? price = _firstWebPrice(product);
 
     return price == null
         ? (
@@ -2227,7 +2476,7 @@ class _MagicStarterBillingViewState
             .where((MagicStarterProduct product) => product.cycle == cycle)
             .firstOrNull;
 
-    return product?.webPrices.values.firstOrNull;
+    return _firstWebPrice(product);
   }
 
   /// The under-price billing note for [plan] at the selected cycle.
@@ -2262,6 +2511,57 @@ class _MagicStarterBillingViewState
         'magic_starter.billing.renewal_cycle_annual',
       ),
     };
+  }
+
+  /// The word a recurring price is stated per on [cycle]: `month` or `year`.
+  ///
+  /// Not [_cycleLabel]: that one is the adverb of "billed annually", and "per
+  /// annually" is not a phrase. The words are the store disclosure's own.
+  String _periodWord(BillingCycle cycle) {
+    return switch (cycle) {
+      BillingCycle.monthly => trans(
+        'magic_starter.billing.store_disclosure_period_month',
+      ),
+      BillingCycle.annual => trans(
+        'magic_starter.billing.store_disclosure_period_year',
+      ),
+    };
+  }
+
+  /// [count] of [unit] (`day`, `week`, `month`, `year`) as a phrase: `1 day`,
+  /// `14 days`.
+  String _periodLabel(int count, String unit) =>
+      _counted('magic_starter.billing.period_$unit', count);
+
+  /// The length of an ISO 8601 [period] (`P14D`, `P2W`, `P1M`, `P1Y`) as a
+  /// phrase, or `null` when it is absent or not one whole unit.
+  ///
+  /// `null` is an answer the caller acts on: a store period this cannot read
+  /// states no trial at all, since the alternative is a free offer of a length
+  /// the screen made up.
+  String? _isoPeriodLabel(String? period) {
+    if (period == null) return null;
+
+    final RegExpMatch? match = _isoPeriod.firstMatch(period);
+    if (match == null) return null;
+
+    final int? count = int.tryParse(match.group(1)!);
+    final String? unit = _isoPeriodUnits[match.group(2)];
+    if (count == null || count < 1 || unit == null) return null;
+
+    return _periodLabel(count, unit);
+  }
+
+  /// Picks the `_one` or `_other` form of [key] for [count], and passes the
+  /// number through as `:count`.
+  ///
+  /// The translator has no plural API, so the choice lives here. English has
+  /// exactly two forms, and a catalogue in a language with more can still put
+  /// whatever it needs behind the two keys.
+  String _counted(String key, int count) {
+    return trans('${key}_${count == 1 ? 'one' : 'other'}', <String, dynamic>{
+      'count': count,
+    });
   }
 
   /// Formats [instant] as `"Jun 1, 2026"`, or `null` when there is no date.

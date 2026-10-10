@@ -5,6 +5,7 @@
 - [Creating Teams](#creating-teams)
 - [Team Switching](#team-switching)
     - [The Billable Subject](#billable-subject)
+    - [Free Trials](#free-trials)
 - [Invitation](#invitation)
     - [Sending Invitations](#sending-invitations)
     - [Accepting Invitations](#accepting-invitations)
@@ -110,6 +111,36 @@ The team selector dropdown (see [Widget: MSTeamSelector](#widget-msteamselector)
 ```
 
 `MagicStarterServiceProvider` reads it at boot and sets `StoreIdentitySync.billableId`; any other value refuses the boot with a `StateError`, because a typo that fell back to `'user'` would bind every purchase to the wrong subject. Identifying on login and restore as well stays your call: add `StoreIdentitySync.attach()` to your provider's `boot()`.
+
+<a name="free-trials"></a>
+### Free Trials
+
+The billing screen (`teams.billing`) shows a trial and a store introductory offer without any setup beyond the right versions: `magic_payments` ^0.0.9 and `magic-starter-laravel` 0.0.23, whose catalogue rows carry `trial_days` per product.
+
+`MagicStarterProduct.trialDays` is the free days a purchase of that product starts with, and `0` for none. The backend answers it for the signed-in caller, so `0` also means a trial already used, and a positive value is safe to advertise. `MagicStarterBillingController.trialEnd` is the date a running trial ends (`null` unless the plan status is `trialing`); a store trial has no `trial_ends_at`, so it falls back to the entitlement's current period end.
+
+| Where | What it shows |
+|---|---|
+| Current plan card | A "Trial" badge beside the plan name, and one line in place of the renewal line: "Free trial ends :date (:left), then :price per :cycle" (a web trial with a known price and cycle), the same without the price and cycle, the same with the store sentence (a store trial), or "Free trial ends :date. It will not renew." once the trial is cancelled |
+| Web plan card | Above the call to action, "Free for :period. Card required, then :price per :cycle.", and the call to action reads "Start free trial". Only on a web build, only for a product with `trialDays` above zero, and the billed price stays the large figure |
+| Store plan card (disclosure) | "Free for :intro_period, then :price per :period" for a free introductory offer. Only when the store says this customer is eligible (`StoreProductOffer.introEligible`); otherwise the plain "per period" line |
+
+The translator has no plural API, so each count is chosen in Dart: `:count == 1` reads the `_one` key and any other count the `_other` key. The keys, all under `magic_starter.billing` in `en.stub`:
+
+| Key | Default |
+|---|---|
+| `trial_badge` | `Trial` |
+| `trial_line_renews` | `Free trial ends :date (:left), then :price per :cycle` |
+| `trial_line_cycleless` | `Free trial ends :date (:left)` |
+| `trial_line_store` | `Free trial ends :date (:left), then billed through the store that sold this plan.` |
+| `trial_line_ends` | `Free trial ends :date. It will not renew.` |
+| `trial_days_left_one`, `trial_days_left_other` | `1 day left`, `:count days left` |
+| `trial_card_required` | `Free for :period. Card required, then :price per :cycle.` |
+| `trial_cta` | `Start free trial` |
+| `store_disclosure_intro_free` | `Free for :intro_period, then :price per :period` |
+| `period_day_*`, `period_week_*`, `period_month_*`, `period_year_*` (each `_one` and `_other`) | `:count day`, `:count days`, and so on |
+
+An app that publishes its own `en.json` adds these keys by hand. A store introductory period is read from its ISO 8601 form when it is one whole unit (`P14D`, `P2W`, `P1M`, `P1Y`); anything else (`P1Y2M`) states no offer and keeps the plain line.
 
 <a name="invitation"></a>
 ## Invitation

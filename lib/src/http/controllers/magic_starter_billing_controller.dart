@@ -290,6 +290,7 @@ class MagicStarterBillingController extends MagicController
   bool? _renews;
   BillingCycle? _cycle;
   PlanStatus _planStatus = PlanStatus.none;
+  DateTime? _trialEndsAt;
   List<MagicStarterPlan> _plans = const <MagicStarterPlan>[];
   List<UsageStat> _usage = const <UsageStat>[];
   MagicPaginator<Invoice>? _invoicePages;
@@ -414,6 +415,22 @@ class MagicStarterBillingController extends MagicController
   /// through `subscribed`; a second definition here could disagree with the one
   /// that actually decides access.
   PlanStatus get planStatus => _planStatus;
+
+  /// When the free trial ends, or `null` when the customer is not on one.
+  ///
+  /// Non-null only while [planStatus] is [PlanStatus.trialing], so a date the
+  /// producer left on an entitlement that has since converted is never shown as
+  /// a trial. A web trial reads `trial_ends_at`; a store trial carries no such
+  /// field and ends at the current period end, which is why the entitlement's
+  /// period end is the fallback (see `BillingEntitlement.trialEndsAt`).
+  ///
+  /// `null` while trialing is a real answer too: the producer named no date, and
+  /// the screen must say nothing about one rather than invent it.
+  DateTime? get trialEnd {
+    if (_planStatus != PlanStatus.trialing) return null;
+
+    return _trialEndsAt ?? _entitlementSnapshot.currentPeriodEnd;
+  }
 
   /// The plan catalogue, in the order the backend served it (cheapest first).
   ///
@@ -736,6 +753,7 @@ class MagicStarterBillingController extends MagicController
     _renews = null;
     _cycle = null;
     _planStatus = PlanStatus.none;
+    _trialEndsAt = null;
     _plans = const <MagicStarterPlan>[];
     _usage = const <UsageStat>[];
     _invoicePages?.dispose();
@@ -801,6 +819,7 @@ class MagicStarterBillingController extends MagicController
       _renews = entitlement.renews;
       _cycle = entitlement.cycle;
       _planStatus = entitlement.planStatus;
+      _trialEndsAt = entitlement.trialEndsAt;
       _entitlementSnapshot = (
         plan: plan,
         product: entitlement.productKey,

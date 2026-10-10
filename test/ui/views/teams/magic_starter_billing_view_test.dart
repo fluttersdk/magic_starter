@@ -1249,6 +1249,161 @@ StoreProductOffer _offer(String priceString) {
   );
 }
 
+/// A store price that carries an introductory offer, in the store's own terms.
+///
+/// [introEligible] is the store's confirmation that THIS customer may take the
+/// offer, and it defaults to `false` exactly as the contract does: the cases
+/// that want intro copy have to say so, which keeps "an offer exists" and "the
+/// customer may take it" from being written as one fact.
+StoreProductOffer _introOffer(
+  String priceString, {
+  double? introPrice,
+  String? introPriceString,
+  String? introPeriod,
+  bool introEligible = false,
+}) {
+  return StoreProductOffer(
+    priceString: priceString,
+    currencyCode: 'USD',
+    price: 0,
+    introPrice: introPrice,
+    introPriceString: introPriceString,
+    introPeriod: introPeriod,
+    introEligible: introEligible,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The trial fixtures
+// ---------------------------------------------------------------------------
+
+/// [_planWireRows] with `trial_days` stamped onto the products named in
+/// [trialDaysByKey].
+///
+/// Rewrites the shipping rows rather than hand-writing new ones, for the reason
+/// [_MonthlyOnlyTierBillingService] does: every other field stays the one the
+/// producer sends, so a case cannot pass because the row was simplified.
+List<Map<String, dynamic>> _planRowsWithTrials(
+  Map<String, int> trialDaysByKey,
+) {
+  return _planWireRows.map((Map<String, dynamic> row) {
+    final List<Map<String, dynamic>> products = (row['products'] as List)
+        .cast<Map<String, dynamic>>();
+
+    return <String, dynamic>{
+      ...row,
+      'products': products.map((Map<String, dynamic> product) {
+        final int? days = trialDaysByKey[product['key']];
+
+        return days == null
+            ? product
+            : <String, dynamic>{...product, 'trial_days': days};
+      }).toList(),
+    };
+  }).toList();
+}
+
+/// The WEB rail for a team on `pro`, with the two things a trial changes under
+/// the test's control: whether the team is IN one, and which products advertise
+/// one.
+///
+/// [trialEnd] `null` is an ordinary active subscription. A trial on the web
+/// carries its own `trial_ends_at`, which is what the controller reads first.
+/// [cycle] `null` models a subscription whose cycle nothing reported.
+class _TrialWebBillingService extends _RailBillingService {
+  _TrialWebBillingService({
+    this.trialEnd,
+    this.renews = true,
+    this.cycle = 'annual',
+    this.trialDaysByKey = const <String, int>{},
+    this.heldPlanName,
+  }) : super(manageVia: 'portal');
+
+  /// When the trial ends, or `null` for a team that is not trialing.
+  final DateTime? trialEnd;
+
+  /// The wire value for `renews`: `false` is a trial cancelled before it
+  /// converted.
+  final bool renews;
+
+  /// The wire word for the held `cycle`.
+  final String? cycle;
+
+  /// The `trial_days` each catalogue product advertises, by key.
+  final Map<String, int> trialDaysByKey;
+
+  /// A name to give the tier the team holds, or `null` to keep the catalogue's.
+  final String? heldPlanName;
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async {
+    final String? name = heldPlanName;
+
+    return _planRowsWithTrials(trialDaysByKey).map((Map<String, dynamic> row) {
+      if (name == null || row['id'] != entitlementPlan) return row;
+
+      return <String, dynamic>{...row, 'name': name};
+    }).toList();
+  }
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': trialEnd == null ? 'active' : 'trialing',
+      'subscribed': true,
+      'renews': renews,
+      'cycle': cycle,
+      'provider': 'stripe',
+      'manage_via': manageVia,
+      'manage_url': manageUrl,
+      'trial_ends_at': trialEnd?.toUtc().toIso8601String(),
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
+/// The STORE rail with the same two trial axes as [_TrialWebBillingService].
+///
+/// A store trial carries NO `trial_ends_at`: it arrives as `trialing` plus the
+/// current period end, which is what the controller falls back to, so this
+/// fixture sends exactly that and nothing else.
+class _TrialStoreBillingService extends _StoreRailBillingService {
+  _TrialStoreBillingService({
+    this.trialEnd,
+    this.renews = true,
+    this.trialDaysByKey = const <String, int>{},
+    super.offers,
+  }) : super(manageVia: 'app_store');
+
+  /// When the store trial ends, or `null` for a team that is not trialing.
+  final DateTime? trialEnd;
+
+  /// The wire value for `renews`.
+  final bool renews;
+
+  /// The `trial_days` each catalogue product advertises, by key.
+  final Map<String, int> trialDaysByKey;
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async =>
+      _planRowsWithTrials(trialDaysByKey);
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    final BillingEntitlement base = await super.currentEntitlement();
+    final DateTime? end = trialEnd;
+    if (end == null) return base;
+
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      ...base.raw,
+      'plan_status': 'trialing',
+      'renews': renews,
+      'current_period_end': end.toUtc().toIso8601String(),
+    });
+  }
+}
+
 void main() {
   /// The one invoice the billing-history assertions need, so the receipt
   /// affordance has a row to live on.
@@ -1326,10 +1481,15 @@ void main() {
   /// No scroll view of its own, unlike the source harness: the page scaffold
   /// owns one, and nesting a second unbounded vertical scroll would fail the
   /// layout for a reason no case here is about.
-  Widget wrap(Widget widget) {
+  ///
+  /// [size] is the width the breakpoints see as well as the surface the case
+  /// sets (see [mount]), because Wind reads the breakpoint off the MediaQuery
+  /// and the layout off the surface: moving one without the other renders a
+  /// desktop grid into a phone-wide box, which is an overflow no customer has.
+  Widget wrap(Widget widget, {Size size = const Size(1280, 12000)}) {
     return MaterialApp(
       home: MediaQuery(
-        data: const MediaQueryData(size: Size(1280, 12000)),
+        data: MediaQueryData(size: size),
         child: WindTheme(
           data: WindThemeData(),
           child: Scaffold(body: widget),
@@ -1379,6 +1539,7 @@ void main() {
     bool? isOwner,
     MagicStarterStoreFundedTeamReader? storeFundedTeam,
     bool withToasts = false,
+    Size surface = const Size(1280, 12000),
   }) async {
     Magic.put(
       MagicStarterBillingController(
@@ -1390,12 +1551,14 @@ void main() {
       ),
     );
 
-    await tester.binding.setSurfaceSize(const Size(1280, 12000));
+    await tester.binding.setSurfaceSize(surface);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final Widget view = MagicStarter.view.make('teams.billing');
 
-    await tester.pumpWidget(withToasts ? wrapWithSnackbar(view) : wrap(view));
+    await tester.pumpWidget(
+      withToasts ? wrapWithSnackbar(view) : wrap(view, size: surface),
+    );
     await tester.pump();
     await tester.pump();
   }
@@ -1409,6 +1572,19 @@ void main() {
         .widgetList<Text>(find.byType(Text))
         .map((Text text) => text.data ?? '')
         .toList();
+  }
+
+  /// The [WText] that rendered [data], for an assertion on the className it
+  /// carries.
+  ///
+  /// `find.text` answers the [Text] a [WText] builds, which has no className,
+  /// so the Wind widget is found by its own `data` instead.
+  WText windText(WidgetTester tester, String data) {
+    return tester.widget<WText>(
+      find.byWidgetPredicate((Widget widget) {
+        return widget is WText && widget.data == data;
+      }),
+    );
   }
 
   group('MagicStarterBillingView manage_via: portal', () {
@@ -4412,5 +4588,532 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
     });
+  });
+
+  group('the current plan card says when a trial ends', () {
+    /// Far enough out that the days-left figure is large and "other" whatever
+    /// the clock says, so the cases that are not ABOUT the count can still pin
+    /// the whole sentence around it.
+    final DateTime farTrialEnd = DateTime.utc(2099, 6, 1);
+
+    testWidgets('a renewing web trial names its end, the days left and what '
+        'follows, in place of the renewal line', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(trialEnd: farTrialEnd),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.textContaining(
+          RegExp(
+            r'^Free trial ends Jun 1, 2099 \(\d+ days left\), '
+            r'then 348\.00 USD per year$',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.trial_badge')),
+        findsOneWidget,
+      );
+      // The held tier's own marker stays beside it.
+      expect(
+        find.text(trans('magic_starter.billing.plan_current_badge')),
+        findsOneWidget,
+      );
+      // REPLACES the renewal line: neither its sentence nor its date (the
+      // payment-method read says Jun 1, 2026) survives under a trial.
+      expect(find.textContaining('· renews '), findsNothing);
+      expect(find.textContaining('billed annually · '), findsNothing);
+      expect(find.textContaining('Jun 1, 2026'), findsNothing);
+    });
+
+    testWidgets('a trial with no cycle reported drops the price and the cycle '
+        'rather than guessing them', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(trialEnd: farTrialEnd, cycle: null),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.textContaining(
+          RegExp(r'^Free trial ends Jun 1, 2099 \(\d+ days left\)$'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining(' per year'), findsNothing);
+    });
+
+    testWidgets('a cancelled trial is told it will not renew, and is not '
+        'handed a price to be billed', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(trialEnd: farTrialEnd, renews: false),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Free trial ends Jun 1, 2099. It will not renew.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining(' per year'), findsNothing);
+      expect(find.textContaining('days left'), findsNothing);
+      expect(
+        find.text(trans('magic_starter.billing.trial_badge')),
+        findsOneWidget,
+        reason: 'it is still a trial until the end date',
+      );
+    });
+
+    testWidgets('a store trial uses the store sentence and the trial end', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialStoreBillingService(trialEnd: farTrialEnd),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.textContaining(
+          RegExp(
+            r'^Free trial ends Jun 1, 2099 \(\d+ days left\), then billed '
+            r'through the store that sold this plan\.$',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.renewal_store')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.trial_badge')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a cancelled store trial is told it will not renew either', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialStoreBillingService(trialEnd: farTrialEnd, renews: false),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Free trial ends Jun 1, 2099. It will not renew.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('through the store'), findsNothing);
+    });
+
+    testWidgets('one day left reads in the singular', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(
+          trialEnd: DateTime.now().add(const Duration(hours: 12)),
+        ),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('(1 day left)'), findsOneWidget);
+    });
+
+    testWidgets('any other count reads in the plural', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(
+          trialEnd: DateTime.now().add(const Duration(days: 3)),
+        ),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('(3 days left)'), findsOneWidget);
+    });
+
+    testWidgets('a lapsed date is clamped to zero, never a negative count', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(
+          trialEnd: DateTime.now().subtract(const Duration(days: 2)),
+        ),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('(0 days left)'), findsOneWidget);
+    });
+
+    testWidgets('a subscription that is not trialing shows no trial badge and '
+        'keeps its renewal line', (tester) async {
+      await mount(tester, _TrialWebBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.trial_badge')),
+        findsNothing,
+      );
+      expect(
+        find.text('348.00 USD billed annually · renews Jun 1, 2026'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('a web plan card advertises the trial its product carries', () {
+    final Map<String, int> trials = <String, int>{
+      'business_monthly': 1,
+      'business_annual': 14,
+      // The held tier's own product: its card is the "Current plan" marker and
+      // sells nothing, so this must never surface.
+      'pro_annual': 30,
+    };
+
+    testWidgets('the line sits above the call to action, the CTA changes its '
+        'word, and the billed price stays the large figure', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(trialDaysByKey: trials),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      const String line =
+          'Free for 14 days. Card required, then 1188.00 USD per year.';
+      expect(find.text(line), findsOneWidget);
+      expect(windText(tester, line).className, contains('text-xs'));
+      expect(
+        find.text(trans('magic_starter.billing.trial_cta')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNothing,
+        reason: 'the trial CTA replaces the Upgrade label on that card',
+      );
+      // The held tier's trial is advertised nowhere.
+      expect(find.textContaining('Free for '), findsOneWidget);
+      // The billed price is still the prominent figure.
+      expect(windText(tester, '1188.00 USD').className, contains('text-3xl'));
+    });
+
+    testWidgets('the line and the CTA follow the cycle toggle', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(trialDaysByKey: trials),
+        isOwner: true,
+      );
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Free for 1 day. Card required, then 119.00 USD per month.'),
+        findsOneWidget,
+        reason: 'one day reads in the singular, on the monthly product',
+      );
+      expect(find.textContaining('Free for 14 days'), findsNothing);
+    });
+
+    testWidgets('the trial CTA still buys the same product', (tester) async {
+      final _TrialWebBillingService billing = _TrialWebBillingService(
+        trialDaysByKey: trials,
+      );
+
+      await mount(tester, billing, isOwner: true);
+
+      await tester.tap(find.text(trans('magic_starter.billing.trial_cta')));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.checkoutKeys, <String>['business_annual']);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a product with no trial days keeps the plain card', (
+      tester,
+    ) async {
+      await mount(tester, _TrialWebBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Card required'), findsNothing);
+      expect(find.text(trans('magic_starter.billing.trial_cta')), findsNothing);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a known non-owner is shown no trial offer it cannot take', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(trialDaysByKey: trials),
+        isOwner: false,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Card required'), findsNothing);
+      expect(find.text(trans('magic_starter.billing.trial_cta')), findsNothing);
+    });
+
+    testWidgets('a store build never shows the web trial copy, whatever the '
+        'catalogue says', (tester) async {
+      await mount(
+        tester,
+        _TrialStoreBillingService(
+          trialDaysByKey: trials,
+          offers: <String, StoreProductOffer>{
+            'business_annual': _offer(r'$99.99'),
+          },
+        ),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Card required'), findsNothing);
+      expect(find.textContaining('Free for '), findsNothing);
+      expect(find.text(trans('magic_starter.billing.trial_cta')), findsNothing);
+    });
+  });
+
+  group('the store disclosure states the intro offer only to a customer who '
+      'may take it', () {
+    /// A store build with one priced card (`business`, annual), carrying
+    /// [offer] on it.
+    Future<void> mountWithOffer(WidgetTester tester, StoreProductOffer offer) {
+      return mount(
+        tester,
+        _TrialStoreBillingService(
+          offers: <String, StoreProductOffer>{'business_annual': offer},
+        ),
+        isOwner: true,
+      );
+    }
+
+    testWidgets('an eligible free intro reads "Free for ..., then ..."', (
+      tester,
+    ) async {
+      await mountWithOffer(
+        tester,
+        _introOffer(
+          r'$99.99',
+          introPrice: 0,
+          introPriceString: r'$0.00',
+          introPeriod: 'P14D',
+          introEligible: true,
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      const String line = r'Free for 14 days, then $99.99 per year';
+      expect(find.text(line), findsOneWidget);
+      expect(windText(tester, line).className, contains('text-xs'));
+      expect(
+        find.text(r'$99.99'),
+        findsOneWidget,
+        reason:
+            'the billed price stays the one large figure in the price block',
+      );
+      expect(windText(tester, r'$99.99').className, contains('text-3xl'));
+      expect(
+        find.text(trans('magic_starter.billing.store_disclosure_auto_renew')),
+        findsOneWidget,
+        reason: 'the renewal and cancellation lines stay',
+      );
+    });
+
+    for (final MapEntry<String, String> unit in <String, String>{
+      'P1D': '1 day',
+      'P14D': '14 days',
+      'P1W': '1 week',
+      'P2W': '2 weeks',
+      'P1M': '1 month',
+      'P3M': '3 months',
+      'P1Y': '1 year',
+    }.entries) {
+      testWidgets('${unit.key} renders as ${unit.value}', (tester) async {
+        await mountWithOffer(
+          tester,
+          _introOffer(
+            r'$99.99',
+            introPrice: 0,
+            introPeriod: unit.key,
+            introEligible: true,
+          ),
+        );
+
+        expect(tester.takeException(), isNull);
+        expect(
+          find.text('Free for ${unit.value}, then \$99.99 per year'),
+          findsOneWidget,
+        );
+      });
+    }
+
+    testWidgets('an eligible paid intro keeps today\'s line: the store sends '
+        'no cycle count, so a period alone would understate it', (
+      tester,
+    ) async {
+      await mountWithOffer(
+        tester,
+        _introOffer(
+          r'$99.99',
+          introPrice: 0.99,
+          introPriceString: r'$0.99',
+          introPeriod: 'P1M',
+          introEligible: true,
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(r'$99.99 per year'), findsOneWidget);
+      expect(find.textContaining('First '), findsNothing);
+      expect(find.textContaining('Free for'), findsNothing);
+      expect(find.textContaining(r'$0.99'), findsNothing);
+      expect(windText(tester, r'$99.99').className, contains('text-3xl'));
+    });
+
+    testWidgets('an ineligible customer keeps today\'s line, whatever the '
+        'store says the product has', (tester) async {
+      await mountWithOffer(
+        tester,
+        _introOffer(
+          r'$99.99',
+          introPrice: 0,
+          introPriceString: r'$0.00',
+          introPeriod: 'P14D',
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(r'$99.99 per year'), findsOneWidget);
+      expect(find.textContaining('Free for'), findsNothing);
+      expect(find.textContaining('First '), findsNothing);
+    });
+
+    testWidgets('a product with no intro keeps today\'s line', (tester) async {
+      await mountWithOffer(tester, _offer(r'$99.99'));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(r'$99.99 per year'), findsOneWidget);
+      expect(find.textContaining('Free for'), findsNothing);
+    });
+
+    testWidgets('an eligible offer whose period cannot be read keeps today\'s '
+        'line rather than a promise with no length', (tester) async {
+      await mountWithOffer(
+        tester,
+        _introOffer(
+          r'$99.99',
+          introPrice: 0,
+          introPeriod: 'P1Y2M',
+          introEligible: true,
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(r'$99.99 per year'), findsOneWidget);
+      expect(find.textContaining('Free for'), findsNothing);
+    });
+  });
+
+  group('the trial copy fits a phone and a desktop', () {
+    testWidgets('a long plan name with both badges fits a 390 px phone', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(
+          trialEnd: DateTime.utc(2099, 6, 1),
+          heldPlanName: 'Professional Operations Command Centre Premium Plan',
+        ),
+        isOwner: true,
+        surface: const Size(390, 12000),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_current_badge')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.trial_badge')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Professional Operations Command Centre Premium Plan'),
+        findsWidgets,
+      );
+    });
+
+    for (final Size surface in <Size>[
+      const Size(390, 12000),
+      const Size(1440, 12000),
+    ]) {
+      testWidgets('web, trialing with a trial on offer, at ${surface.width}', (
+        tester,
+      ) async {
+        await mount(
+          tester,
+          _TrialWebBillingService(
+            trialEnd: DateTime.utc(2099, 6, 1),
+            trialDaysByKey: <String, int>{
+              'business_monthly': 1,
+              'business_annual': 14,
+            },
+          ),
+          isOwner: true,
+          surface: surface,
+        );
+
+        expect(tester.takeException(), isNull);
+        expect(find.textContaining('Free trial ends'), findsOneWidget);
+        expect(find.textContaining('Card required'), findsOneWidget);
+      });
+
+      testWidgets(
+        'store, trialing with an intro on offer, at ${surface.width}',
+        (tester) async {
+          await mount(
+            tester,
+            _TrialStoreBillingService(
+              trialEnd: DateTime.utc(2099, 6, 1),
+              offers: <String, StoreProductOffer>{
+                'business_annual': _introOffer(
+                  r'$99.99',
+                  introPrice: 0,
+                  introPeriod: 'P14D',
+                  introEligible: true,
+                ),
+              },
+            ),
+            isOwner: true,
+            surface: surface,
+          );
+
+          expect(tester.takeException(), isNull);
+          expect(find.textContaining('Free trial ends'), findsOneWidget);
+          expect(find.textContaining('Free for 14 days'), findsOneWidget);
+        },
+      );
+    }
   });
 }

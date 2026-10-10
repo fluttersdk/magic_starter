@@ -88,6 +88,34 @@ void main() {
     });
   });
 
+  group('MagicStarterProduct.trialDays', () {
+    MagicStarterProduct decode(Object? trialDays, {bool present = true}) {
+      return MagicStarterProduct.fromMap(<String, dynamic>{
+        'key': 'pro_monthly',
+        'type': 'subscription',
+        'tier': 'pro',
+        'cycle': 'monthly',
+        if (present) 'trial_days': trialDays,
+      });
+    }
+
+    test('a whole number of days decodes as sent', () {
+      expect(decode(14).trialDays, 14);
+    });
+
+    test('an absent trial_days is no trial', () {
+      expect(decode(null, present: false).trialDays, 0);
+    });
+
+    test('a negative, fractional or non-numeric value is no trial', () {
+      expect(decode(-7).trialDays, 0);
+      expect(decode(7.5).trialDays, 0);
+      expect(decode('14').trialDays, 0);
+      expect(decode(null).trialDays, 0);
+      expect(decode(true).trialDays, 0);
+    });
+  });
+
   group('MagicStarterPlan.products', () {
     test('a row without a products key decodes to no products', () {
       final MagicStarterPlan plan = MagicStarterPlan.fromMap(<String, dynamic>{
