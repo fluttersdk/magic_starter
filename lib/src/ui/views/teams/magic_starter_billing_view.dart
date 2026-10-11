@@ -14,6 +14,7 @@ import '../../../support/plan_upgrade.dart';
 import '../../components/badge/index.dart';
 import '../../components/button/index.dart';
 import '../../components/card/index.dart';
+import '../../components/confirm_dialog/index.dart';
 import '../../components/page_scaffold/page_scaffold.dart';
 import '../../components/segmented_control/index.dart';
 import '../../components/skeleton/index.dart';
@@ -2118,12 +2119,20 @@ class _MagicStarterBillingViewState
     // 3. A store build buys in the store.
     if (controller.storeRail != null) return _purchaseInStore(product);
 
-    // 4. Priced tier: start checkout, redirecting the rail back to this screen
-    //    on completion or abort.
     final WebBillingService? web = controller.webRail;
+    if (web == null) return;
+
+    // 4. A held web subscription is MOVED, never bought a second time: the
+    //    checkout endpoint refuses that with a 409 `subscription_exists`.
+    if (controller.holdsWebSubscription) {
+      return _swapPlan(web, plan, product);
+    }
+
+    // 5. Priced tier: start checkout, redirecting the rail back to this screen
+    //    on completion or abort.
     final String? successUrl = _billingUrl('checkout=success');
     final String? cancelUrl = _billingUrl('checkout=cancel');
-    if (web == null || successUrl == null || cancelUrl == null) return;
+    if (successUrl == null || cancelUrl == null) return;
 
     // An unrankable direction (the held tier is absent from the catalogue) reads
     // as a plan switch rather than an upgrade: the toast is copy on an
@@ -2159,6 +2168,133 @@ class _MagicStarterBillingViewState
     } on BillingException catch (error) {
       _reportBillingFailure(error, where: 'startWebCheckout');
     }
+  }
+
+  /// Moves the customer's held WEB subscription onto [product], [plan]'s
+  /// catalogue product on the card's cycle, once they have confirmed what the
+  /// move costs.
+  ///
+  /// The confirmation is the point of this path. A checkout shows its price on
+  /// the rail's own page before anybody is charged; a swap has no such page and
+  /// settles with the card on file the moment it lands, so the sentence the
+  /// customer agrees to has to be the one the rail will act on. Which one is
+  /// [_swapCostKey]'s decision.
+  ///
+  /// The swap runs INSIDE the dialog's confirm action, so the button shows its
+  /// busy state and a second tap cannot send a second swap. A refusal is held
+  /// and reported once the dialog has closed: a declined card or a payment the
+  /// bank wants confirmed means nothing moved, and its copy says so. The
+  /// entitlement is re-read after any refusal but [UnsupportedPlatformException]
+  /// (which carries no server state), because a refusal the client cannot name
+  /// may still have moved the plan.
+  ///
+  /// A swap the rail accepted is reported at once, and the tier follows when
+  /// the backend reflects it: the swap answers before the rail's webhook writes
+  /// the new tier, so a single read straight after it would still name the old
+  /// one. [MagicStarterBillingController.awaitEntitlementChange] polls on the
+  /// store purchase's bounded backoff and stops when the screen closes.
+  Future<void> _swapPlan(
+    WebBillingService web,
+    MagicStarterPlan plan,
+    MagicStarterProduct product,
+  ) async {
+    // 1. Name what the move costs, on the cycle the card was priced for.
+    final BillingCycle cycle = _cycleFor(plan);
+    final String cycleLabel = _cycleLabel(cycle);
+    final int? direction = _direction(plan);
+    final bool isUpgrade = direction != null && direction > 0;
+
+    // 2. Ask, and move the subscription only on a yes. The baseline is taken
+    //    before the swap, while the answer cannot have moved yet.
+    final MagicStarterEntitlementSnapshot before =
+        controller.entitlementSnapshot;
+    BillingException? refusal;
+    final bool confirmed = await MSConfirmDialog.show(
+      context,
+      title: trans(
+        'magic_starter.billing.swap_confirm_title',
+        <String, dynamic>{'name': plan.name},
+      ),
+      description: trans(
+        'magic_starter.billing.${_swapCostKey(plan, cycle)}',
+        <String, dynamic>{'cycle': cycleLabel},
+      ),
+      confirmLabel: trans('magic_starter.billing.swap_confirm_button'),
+      cancelLabel: trans('magic_starter.billing.swap_cancel_button'),
+      onConfirm: () async {
+        try {
+          await web.swap(productKey: product.key);
+        } on BillingException catch (error) {
+          refusal = error;
+        }
+      },
+    );
+    if (!confirmed) return;
+
+    final BillingException? refused = refusal;
+    if (refused != null) {
+      _reportBillingFailure(refused, where: 'swapPlan');
+      if (refused is! UnsupportedPlatformException) {
+        await controller.loadEntitlement();
+      }
+
+      return;
+    }
+
+    // 3. Re-read the card's next charge and the prorated invoice the rail may
+    //    have just issued, then say what happened.
+    unawaited(controller.awaitEntitlementChange(before));
+    await Future.wait<void>(<Future<void>>[
+      controller.loadPaymentMethod(),
+      controller.loadInvoices(),
+    ]);
+
+    Magic.success(
+      trans(
+        isUpgrade
+            ? 'magic_starter.billing.toast_upgrade_title'
+            : 'magic_starter.billing.toast_switch_title',
+        <String, dynamic>{'name': plan.name},
+      ),
+      trans('magic_starter.billing.toast_swap_description', <String, dynamic>{
+        'cycle': cycleLabel,
+      }),
+    );
+  }
+
+  /// The `billing` copy key that states what a swap onto [plan] on [cycle]
+  /// costs, mirroring the backend's `swapChargesNow` (magic-starter-laravel
+  /// 0.0.28) plus what Stripe does on a change of billing period.
+  ///
+  /// 1. A running trial charges nothing until it ends. Running means a trial end
+  ///    still ahead, as the backend reads it: a trial Stripe ended early keeps
+  ///    its status until the webhook lands, and is charged.
+  /// 2. A tier the catalogue cannot rank, or a held tier nobody has named yet,
+  ///    is told the costlier truth, which is also what the backend does.
+  /// 3. An upgrade is charged the prorated difference now.
+  /// 4. A downgrade onto another cycle starts a new billing period, which
+  ///    Stripe bills at once, less the unused time; the difference may be a
+  ///    charge or a credit, so the sentence promises neither.
+  /// 5. A downgrade on the same cycle is credited to the next invoice.
+  String _swapCostKey(MagicStarterPlan plan, BillingCycle cycle) {
+    // 1. A running trial.
+    final DateTime? trialEnd = controller.trialEnd;
+    if (trialEnd != null && trialEnd.isAfter(DateTime.now())) {
+      return 'swap_confirm_trial';
+    }
+
+    // 2. and 3. Unrankable, or up.
+    final int? direction = _direction(plan);
+    if (controller.currentPlanId == null ||
+        direction == null ||
+        direction > 0) {
+      return 'swap_confirm_charge_now';
+    }
+
+    // 4. and 5. Down, onto another cycle or the same one.
+    return cycle != controller.cycle
+        ? 'swap_confirm_period_now'
+        : 'swap_confirm_credit';
   }
 
   /// Buys [product] through the STORE rail: the platform's own purchase sheet,

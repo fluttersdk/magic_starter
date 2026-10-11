@@ -545,6 +545,42 @@ class MagicStarterBillingController extends MagicController
   MagicStarterEntitlementSnapshot get entitlementSnapshot =>
       _entitlementSnapshot;
 
+  /// Whether the customer holds a WEB subscription that still grants, so a
+  /// change of paid plan has to move that subscription rather than open a new
+  /// one.
+  ///
+  /// The backend refuses a checkout with a 409 `subscription_exists` while a
+  /// Stripe subscription grants, and points at `POST /billing/swap` instead:
+  /// a second checkout would open a parallel subscription and bill the card
+  /// twice. So the plan grid asks this before it spends money, and a `true`
+  /// routes a priced tier through [WebBillingService.swap].
+  ///
+  /// The statuses are the ones that still grant (trialing, active and both
+  /// dunning states), matching the backend's own `PlanStatus::grants()`. A
+  /// cancelled, expired or paused subscription is not held: there is nothing
+  /// left to swap, and a checkout is what starts the next one.
+  ///
+  /// Read off the rail and the status, never off [entitlementLoaded]: the
+  /// producer leaves `plan` null for a Stripe price its catalogue cannot name,
+  /// and the backend's guard reads the subscription row, not the tier, so that
+  /// customer is refused a checkout all the same. False until an entitlement
+  /// read answers, and after a session reset, because the empty snapshot names
+  /// no rail.
+  bool get holdsWebSubscription {
+    if (_entitlementSnapshot.provider != BillingProvider.stripe) return false;
+
+    return switch (_planStatus) {
+      PlanStatus.trialing ||
+      PlanStatus.active ||
+      PlanStatus.pastDue ||
+      PlanStatus.grace => true,
+      PlanStatus.none ||
+      PlanStatus.canceled ||
+      PlanStatus.expired ||
+      PlanStatus.paused => false,
+    };
+  }
+
   /// The catalogue facts a store purchase needs to tell an upgrade from a
   /// downgrade: the tiers in the catalogue's own order (cheapest first), the
   /// tier of every product key the rows list, and the tier of every store
@@ -1238,6 +1274,23 @@ class MagicStarterBillingController extends MagicController
     cancelWait();
     _awaitingWindow?.cancel();
     super.dispose();
+  }
+
+  /// Re-reads the entitlement until it differs from [before], on the same
+  /// bounded backoff a store purchase waits on, and answers whether it moved.
+  ///
+  /// A web plan change needs it for the reason a store purchase does: the
+  /// backend answers `POST /billing/swap` before the rail's webhook writes the
+  /// new tier, so the read straight after a swap still names the old one.
+  /// `false` when [_waitWindow] ran out first, or when [cancelWait] stopped
+  /// the wait because the screen closed or the session changed.
+  Future<bool> awaitEntitlementChange(
+    MagicStarterEntitlementSnapshot before,
+  ) async {
+    final MagicStarterStorePurchaseOutcome outcome =
+        await _awaitEntitlementChange(before);
+
+    return outcome == MagicStarterStorePurchaseOutcome.confirmed;
   }
 
   /// Re-reads the entitlement on [_pollBackoff] until it differs from [before].
