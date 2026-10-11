@@ -2420,6 +2420,15 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.text(trans('magic_starter.billing.toast_swap_failed_title')),
+        findsOneWidget,
+        reason: 'a plan change that failed is not a checkout that failed',
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_checkout_failed_title')),
+        findsNothing,
+      );
+      expect(
         find.text(trans('magic_starter.billing.toast_failed_text')),
         findsNothing,
         reason: 'the cause is named, not flattened into the generic sentence',

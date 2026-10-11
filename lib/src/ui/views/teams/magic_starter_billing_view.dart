@@ -1802,8 +1802,14 @@ class _MagicStarterBillingViewState
       return;
     }
 
+    // A plan change that failed is not a checkout that failed: the swap path
+    // charges the card on file and never shows a checkout page.
     Magic.error(
-      trans('magic_starter.billing.toast_checkout_failed_title'),
+      trans(
+        where == 'swapPlan'
+            ? 'magic_starter.billing.toast_swap_failed_title'
+            : 'magic_starter.billing.toast_checkout_failed_title',
+      ),
       text,
     );
   }

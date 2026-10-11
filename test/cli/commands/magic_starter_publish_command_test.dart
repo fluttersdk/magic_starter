@@ -862,6 +862,7 @@ class AppServiceProvider extends ServiceProvider {
         'toast_deferred_title',
         'toast_failed_text',
         'toast_swap_description',
+        'toast_swap_failed_title',
         'toast_switch_title',
         'toast_upgrade_title',
       ];

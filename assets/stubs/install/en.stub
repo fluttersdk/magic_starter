@@ -198,6 +198,7 @@
       "title": "Plan & billing",
       "toast_change_description": "Billed :cycle. Change takes effect at your next renewal.",
       "toast_checkout_failed_title": "Checkout failed",
+      "toast_swap_failed_title": "Plan change failed",
       "toast_contact_description": "Our team will reach out about :name.",
       "toast_contact_title": "We'll be in touch",
       "toast_deferred_text": "Billing is not available in this app yet.",
