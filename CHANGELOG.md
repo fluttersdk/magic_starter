@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.42] - 2026-10-11
+
 ### Fixed
 
 - **A web subscriber can change paid plan.** The billing screen opened a hosted checkout for every priced tier, and the backend refuses a checkout with a 409 `subscription_exists` while a Stripe subscription still grants, so a web subscriber could never move between paid tiers or cycles and saw only the generic failure toast. While `MagicStarterBillingController.holdsWebSubscription` is `true` (the entitlement names `BillingProvider.stripe` with a `trialing`, `active`, `pastDue` or `grace` status), a tap on another paid tier opens an `MSConfirmDialog` that states the cost (nothing until a running trial ends; the prorated difference now for an upgrade; a new period billed at once, less the unused time, for a downgrade onto another cycle; a credit on the next invoice for a same-cycle downgrade), then calls `WebBillingService.swap(productKey:)`, re-reads the payment method and the invoices, and polls the entitlement through the new `MagicStarterBillingController.awaitEntitlementChange(before)` until the backend reflects the new tier (the swap answers before the rail's webhook writes it). Cancelling calls nothing. A team with no web subscription still checks out, and the move to the free tier still opens the portal. (`lib/src/http/controllers/magic_starter_billing_controller.dart`, `lib/src/ui/views/teams/magic_starter_billing_view.dart`, `doc/basics/teams.md`)
