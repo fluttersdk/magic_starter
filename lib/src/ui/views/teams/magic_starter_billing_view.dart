@@ -1826,6 +1826,8 @@ class _MagicStarterBillingViewState
       BillingErrorCode.store => 'store',
       BillingErrorCode.unmappedActiveProduct => 'unmapped_active_product',
       BillingErrorCode.notConfigured => 'not_configured',
+      BillingErrorCode.paymentDeclined => 'payment_declined',
+      BillingErrorCode.paymentRequiresAction => 'payment_requires_action',
       BillingErrorCode.unknown => null,
     };
   }

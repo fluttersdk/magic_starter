@@ -793,6 +793,8 @@ class AppServiceProvider extends ServiceProvider {
       /// the `uptizm.teams.billing_` / `uptizm.enums.` prefixes stripped.
       const expectedKeys = <String>[
         'description',
+        'errors.payment_declined',
+        'errors.payment_requires_action',
         'invoice_receipt_button',
         'invoice_status.failed',
         'invoice_status.paid',

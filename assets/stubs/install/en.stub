@@ -107,6 +107,8 @@
         "network": "We could not reach the store. Check your connection and try again.",
         "not_configured": "Purchases are not set up in this app yet.",
         "not_identified": "We could not link this purchase to your team. Reopen this screen and try again.",
+        "payment_declined": "Your card was declined, so your plan has not changed. Update your payment method and try again.",
+        "payment_requires_action": "Your bank asked to confirm this payment, which a plan change cannot do here, so your plan has not changed. Try a card that does not ask for confirmation, or contact us.",
         "pending": "Your purchase is waiting for approval. Your plan updates once the store completes it.",
         "product_unavailable": "This plan is not available to buy here right now.",
         "receipt_in_use": "This store purchase already belongs to another account.",
