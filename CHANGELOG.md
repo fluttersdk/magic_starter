@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A web subscriber can change paid plan.** The billing screen opened a hosted checkout for every priced tier, and the backend refuses a checkout with a 409 `subscription_exists` while a Stripe subscription still grants, so a web subscriber could never move between paid tiers or cycles and saw only the generic failure toast. While `MagicStarterBillingController.holdsWebSubscription` is `true` (the entitlement names `BillingProvider.stripe` with a `trialing`, `active`, `pastDue` or `grace` status), a tap on another paid tier opens an `MSConfirmDialog` that states the cost (nothing until a running trial ends; the prorated difference now for an upgrade; a new period billed at once, less the unused time, for a downgrade onto another cycle; a credit on the next invoice for a same-cycle downgrade), then calls `WebBillingService.swap(productKey:)`, re-reads the payment method and the invoices, and polls the entitlement through the new `MagicStarterBillingController.awaitEntitlementChange(before)` until the backend reflects the new tier (the swap answers before the rail's webhook writes it). Cancelling calls nothing. A team with no web subscription still checks out, and the move to the free tier still opens the portal. (`lib/src/http/controllers/magic_starter_billing_controller.dart`, `lib/src/ui/views/teams/magic_starter_billing_view.dart`, `doc/basics/teams.md`)
+- **A declined swap names its cause.** `BillingErrorCode.paymentDeclined` and `paymentRequiresAction` (the backend's 402 `payment_failed` and `payment_requires_action`) read `billing.errors.payment_declined` and `payment_requires_action`, which say the plan has not changed and what to try next, instead of the generic sentence. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)
+
+### Added
+
+- **`magic_starter.billing.swap_confirm_title`, `swap_confirm_charge_now`, `swap_confirm_credit`, `swap_confirm_period_now`, `swap_confirm_trial`, `swap_confirm_button`, `swap_cancel_button`, `toast_swap_description`, `errors.payment_declined` and `errors.payment_requires_action`** in `en.stub`. A host that publishes `en.json` adds them to its language file. (`assets/stubs/install/en.stub`)
+
+### Changed
+
+- **Requires `magic_payments` ^0.0.10 and `magic-starter-laravel` 0.0.28.** `magic_payments` 0.0.10 carries the two payment refusal codes, and the backend's 0.0.28 charges an upgrade or a cycle change at once and refuses a declined one with a 402. (`pubspec.yaml`)
+
 ## [0.0.41] - 2026-10-10
 
 ### Added

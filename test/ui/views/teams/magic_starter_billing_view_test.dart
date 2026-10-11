@@ -781,6 +781,7 @@ class _RailBillingService extends _ReadsBillingService
     super.invoices = const <Invoice>[],
     super.usage = const <UsageStat>[],
     this.checkoutError,
+    this.swapError,
   });
 
   /// Every catalogue key passed to [checkout], in call order. One key names
@@ -794,6 +795,10 @@ class _RailBillingService extends _ReadsBillingService
 
   /// Every catalogue key [swap] was called with.
   final List<String> swappedTo = <String>[];
+
+  /// A rail refusal to raise from [swap] instead of answering, such as the
+  /// declined card a prorated charge meets.
+  final BillingException? swapError;
 
   /// How many times [openPortal] was called.
   int portalCalls = 0;
@@ -817,6 +822,8 @@ class _RailBillingService extends _ReadsBillingService
   @override
   Future<void> swap({required String productKey}) async {
     swappedTo.add(productKey);
+    final BillingException? error = swapError;
+    if (error != null) throw error;
   }
 
   @override
@@ -828,6 +835,95 @@ class _RailBillingService extends _ReadsBillingService
 
     return 'https://portal.example.test/session/test';
   }
+}
+
+/// The WEB rail for a team that holds NO web subscription, the customer a
+/// checkout is for.
+///
+/// Every other fixture on this rail is a Stripe subscriber, and a held
+/// subscription is MOVED through `swap` rather than bought a second time (the
+/// checkout endpoint refuses that with a 409), so the cases about checkout
+/// itself need a customer who has nothing to move.
+///
+/// [granted] is the shape the backend writes for a tier granted by hand
+/// (`manual`, `active`), which keeps the provider check in play: an active
+/// status alone must not read as a web subscription. `false` is a team no rail
+/// bills at all (`none`, `none`), which is what a free team reads.
+class _UnsubscribedRailBillingService extends _RailBillingService {
+  _UnsubscribedRailBillingService({super.checkoutError, this.granted = true});
+
+  /// Whether the tier was granted by hand rather than held with no rail.
+  final bool granted;
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': entitlementPlan,
+      'plan_status': granted ? 'active' : 'none',
+      'subscribed': granted,
+      'renews': null,
+      'cycle': null,
+      'provider': granted ? 'manual' : 'none',
+      'manage_via': 'none',
+      'manage_url': null,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
+/// A Stripe subscriber on `pro` whose tier MOVES to `business` after a swap
+/// succeeds, once the rail's webhook lands, counting the three reads a plan
+/// change has to refresh.
+///
+/// The FIRST entitlement read after the swap still answers `pro`, because the
+/// backend answers the swap before the webhook writes the new tier. A screen
+/// that read once and stopped would keep showing the old tier, and the move
+/// is what makes the follow-up reads observable on screen rather than only as
+/// a counter.
+class _SwappingRailBillingService extends _RailBillingService {
+  _SwappingRailBillingService({super.swapError});
+
+  /// How many times each read ran, the mount's own included.
+  int entitlementReads = 0;
+  int paymentMethodReads = 0;
+  int invoiceReads = 0;
+
+  /// Entitlement reads since a successful swap.
+  int _readsSinceSwap = 0;
+
+  bool get _swapped => swappedTo.isNotEmpty && swapError == null;
+
+  @override
+  String get entitlementPlan =>
+      _swapped && _readsSinceSwap > 1 ? 'business' : 'pro';
+
+  @override
+  Future<BillingEntitlement> currentEntitlement() {
+    entitlementReads++;
+    if (_swapped) _readsSinceSwap++;
+
+    return super.currentEntitlement();
+  }
+
+  @override
+  Future<PaymentMethod> getPaymentMethod() {
+    paymentMethodReads++;
+
+    return super.getPaymentMethod();
+  }
+
+  @override
+  Future<BillingInvoicesPage> getInvoices({String? cursor}) {
+    invoiceReads++;
+
+    return super.getInvoices(cursor: cursor);
+  }
+}
+
+/// A Stripe subscriber on `business`, so `pro` is a DOWNGRADE they can press.
+class _HeldBusinessRailBillingService extends _RailBillingService {
+  @override
+  String get entitlementPlan => 'business';
 }
 
 /// A rail whose invoice endpoint actually PAGES, so the cursor the client sends
@@ -1188,7 +1284,9 @@ List<Map<String, dynamic>> _producerPlanRows() {
 
 /// A WEB build for a team on the producer's free tier, reading the producer's
 /// rows.
-class _ProducerRowsWebBillingService extends _RailBillingService {
+class _ProducerRowsWebBillingService extends _UnsubscribedRailBillingService {
+  _ProducerRowsWebBillingService() : super(granted: false);
+
   @override
   String get entitlementPlan => 'free';
 
@@ -1317,6 +1415,7 @@ class _TrialWebBillingService extends _RailBillingService {
     this.cycle = 'annual',
     this.trialDaysByKey = const <String, int>{},
     this.heldPlanName,
+    this.subscribed = true,
   }) : super(manageVia: 'portal');
 
   /// When the trial ends, or `null` for a team that is not trialing.
@@ -1334,6 +1433,11 @@ class _TrialWebBillingService extends _RailBillingService {
 
   /// A name to give the tier the team holds, or `null` to keep the catalogue's.
   final String? heldPlanName;
+
+  /// Whether a Stripe subscription bills the team. `false` is a tier granted
+  /// by hand (`manual`), a customer a checkout (and a trial) is for: the
+  /// producer never offers a trial to a subscriber, whose tap is a swap.
+  final bool subscribed;
 
   @override
   Future<List<Map<String, dynamic>>> getPlans() async {
@@ -1354,7 +1458,7 @@ class _TrialWebBillingService extends _RailBillingService {
       'subscribed': true,
       'renews': renews,
       'cycle': cycle,
-      'provider': 'stripe',
+      'provider': subscribed ? 'stripe' : 'manual',
       'manage_via': manageVia,
       'manage_url': manageUrl,
       'trial_ends_at': trialEnd?.toUtc().toIso8601String(),
@@ -1585,6 +1689,19 @@ void main() {
         return widget is WText && widget.data == data;
       }),
     );
+  }
+
+  /// Confirms the plan-change dialog a web subscriber's tap opens, so the
+  /// swap behind it runs and its follow-up reads land.
+  ///
+  /// The dialog sits on the Navigator's overlay, so the case has to mount with
+  /// `withToasts`, which puts the WindTheme above the MaterialApp.
+  Future<void> confirmSwap(WidgetTester tester) async {
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.text(trans('magic_starter.billing.swap_confirm_button')),
+    );
+    await tester.pumpAndSettle();
   }
 
   group('MagicStarterBillingView manage_via: portal', () {
@@ -1940,7 +2057,10 @@ void main() {
   group('MagicStarterBillingView web checkout', () {
     testWidgets('tapping the Upgrade CTA starts a checkout for the tapped '
         'plan', (tester) async {
-      final _RailBillingService billing = _RailBillingService();
+      // A team with no web subscription: the customer a checkout is for. A
+      // subscriber's tap is a swap, which the group below covers.
+      final _UnsubscribedRailBillingService billing =
+          _UnsubscribedRailBillingService();
 
       await mount(tester, billing, isOwner: true);
 
@@ -1952,8 +2072,8 @@ void main() {
       expect(tester.takeException(), isNull);
       // 'business' sits above the fixture's 'pro', so its CTA reads Upgrade.
       // AND the cycle whose figure the card was rendering, in the one key. The
-      // fixture is on annual, so the toggle opens there and the charge follows
-      // the price the customer read. Before the cycle travelled, this call
+      // fixture names no cycle, so the toggle opens on annual and the charge
+      // follows the price the customer read. Before the cycle travelled, this call
       // carried the plan alone and the producer picked whichever price it
       // found: a customer taking the annual discount was billed the monthly
       // rate.
@@ -1970,10 +2090,10 @@ void main() {
       // these two and fail the other. The fixture bills annually, so pressing
       // Monthly is a real divergence between what the customer holds and what
       // they are choosing, which is exactly the case a screen must not get
-      // wrong.
+      // wrong. The fixture is a web subscriber, so the key reaches a swap.
       final _RailBillingService billing = _RailBillingService();
 
-      await mount(tester, billing, isOwner: true);
+      await mount(tester, billing, isOwner: true, withToasts: true);
 
       await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
       await tester.pump();
@@ -1981,10 +2101,11 @@ void main() {
       await tester.tap(
         find.text(trans('magic_starter.billing.plan_button_upgrade')),
       );
-      await tester.pump();
+      await confirmSwap(tester);
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutKeys, <String>['business_monthly']);
+      expect(billing.swappedTo, <String>['business_monthly']);
+      expect(billing.checkoutKeys, isEmpty);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -2036,7 +2157,7 @@ void main() {
       final _MonthlyOnlyTierBillingService billing =
           _MonthlyOnlyTierBillingService();
 
-      await mount(tester, billing, isOwner: true);
+      await mount(tester, billing, isOwner: true, withToasts: true);
 
       // The premise, asserted rather than assumed: the toggle really is on
       // annual, so a monthly charge here can only come from the row.
@@ -2048,10 +2169,11 @@ void main() {
       await tester.tap(
         find.text(trans('magic_starter.billing.plan_button_upgrade')),
       );
-      await tester.pump();
+      await confirmSwap(tester);
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutKeys, <String>['business_monthly']);
+      expect(billing.swappedTo, <String>['business_monthly']);
+      expect(billing.checkoutKeys, isEmpty);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -2064,15 +2186,16 @@ void main() {
       // was moved to that tier ANNUALLY without ever choosing annual.
       final _MonthlyBillingService billing = _MonthlyBillingService();
 
-      await mount(tester, billing, isOwner: true);
+      await mount(tester, billing, isOwner: true, withToasts: true);
 
       await tester.tap(
         find.text(trans('magic_starter.billing.plan_button_upgrade')),
       );
-      await tester.pump();
+      await confirmSwap(tester);
 
       expect(tester.takeException(), isNull);
-      expect(billing.checkoutKeys, <String>['business_monthly']);
+      expect(billing.swappedTo, <String>['business_monthly']);
+      expect(billing.checkoutKeys, isEmpty);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -2080,11 +2203,12 @@ void main() {
 
     testWidgets('an UnsupportedPlatformException renders the deferred info '
         'toast instead of the generic failure one', (tester) async {
-      final _RailBillingService billing = _RailBillingService(
-        checkoutError: const UnsupportedPlatformException(
-          'Web checkout is not available on this platform.',
-        ),
-      );
+      final _UnsubscribedRailBillingService billing =
+          _UnsubscribedRailBillingService(
+            checkoutError: const UnsupportedPlatformException(
+              'Web checkout is not available on this platform.',
+            ),
+          );
 
       await mount(tester, billing, isOwner: true, withToasts: true);
 
@@ -2115,6 +2239,359 @@ void main() {
         findsNothing,
       );
 
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('MagicStarterBillingView web plan swap', () {
+    // The defect: a web subscriber's tap on another paid tier opened a hosted
+    // CHECKOUT, which the backend refuses with a 409 `subscription_exists`
+    // ("change your plan instead"), so a subscriber could never move between
+    // paid tiers here. A held subscription is moved through `swap`, after the
+    // customer has read what the move costs.
+
+    // Every case mounts with `withToasts`, which puts the WindTheme ABOVE the
+    // MaterialApp: the confirmation is a dialog on the Navigator's overlay, a
+    // sibling of `home`, and a Wind-built dialog under `home` finds no theme.
+
+    /// Taps the one Upgrade CTA and lets the confirmation open.
+    Future<void> tapUpgrade(WidgetTester tester) async {
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a subscriber tapping a higher tier confirms, then swaps to '
+        'the catalogue product and re-reads what the move changed', (
+      tester,
+    ) async {
+      final _SwappingRailBillingService billing = _SwappingRailBillingService();
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+      expect(billing.entitlementReads, 1);
+
+      await tapUpgrade(tester);
+
+      // 1. Nothing has moved yet, and the customer is told what will.
+      expect(billing.swappedTo, isEmpty);
+      expect(
+        find.text(
+          trans('magic_starter.billing.swap_confirm_title', <String, dynamic>{
+            'name': 'Business',
+          }),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.swap_confirm_charge_now',
+            <String, dynamic>{
+              'cycle': trans('magic_starter.billing.renewal_cycle_annual'),
+            },
+          ),
+        ),
+        findsOneWidget,
+        reason: 'an upgrade is charged the prorated difference at once',
+      );
+
+      // 2. Confirming moves the held subscription and never opens checkout.
+      await confirmSwap(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(billing.swappedTo, <String>['business_annual']);
+      expect(billing.checkoutKeys, isEmpty);
+
+      // 3. The card and the prorated invoice are read again, and the rail's
+      //    word is reported at once.
+      expect(billing.paymentMethodReads, 2);
+      expect(billing.invoiceReads, 2);
+      expect(
+        find.text(
+          trans('magic_starter.billing.toast_upgrade_title', <String, dynamic>{
+            'name': 'Business',
+          }),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.toast_swap_description',
+            <String, dynamic>{
+              'cycle': trans('magic_starter.billing.renewal_cycle_annual'),
+            },
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      // 4. The tier follows the backend, not the swap's answer: the first
+      //    poll still reads the old tier, and the screen keeps polling until
+      //    the webhook has landed.
+      await tester.pump(const Duration(seconds: 1));
+      expect(billing.entitlementReads, 2);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+        reason: 'the webhook has not landed, so pro is still the held tier',
+      );
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(billing.entitlementReads, 3);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsNothing,
+        reason: 'business is now the held tier, so nothing above it is sold',
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('cancelling the confirmation calls nothing', (tester) async {
+      final _SwappingRailBillingService billing = _SwappingRailBillingService();
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tapUpgrade(tester);
+      await tester.tap(
+        find.text(trans('magic_starter.billing.swap_cancel_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.swappedTo, isEmpty);
+      expect(billing.checkoutKeys, isEmpty);
+      expect(billing.entitlementReads, 1);
+      expect(
+        find.text(trans('magic_starter.billing.swap_confirm_button')),
+        findsNothing,
+        reason: 'the dialog closed',
+      );
+    });
+
+    testWidgets('a customer with no web subscription still checks out, with '
+        'no confirmation in the way', (tester) async {
+      final _UnsubscribedRailBillingService billing =
+          _UnsubscribedRailBillingService();
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.checkoutKeys, <String>['business_annual']);
+      expect(billing.swappedTo, isEmpty);
+      expect(
+        find.text(trans('magic_starter.billing.swap_confirm_button')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a declined card says the plan has not changed', (
+      tester,
+    ) async {
+      final _SwappingRailBillingService billing = _SwappingRailBillingService(
+        swapError: const BillingException(
+          'The card was declined.',
+          code: BillingErrorCode.paymentDeclined,
+        ),
+      );
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tapUpgrade(tester);
+      await confirmSwap(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(billing.swappedTo, <String>['business_annual']);
+      expect(
+        find.text(trans('magic_starter.billing.errors.payment_declined')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_swap_failed_title')),
+        findsOneWidget,
+        reason: 'a plan change that failed is not a checkout that failed',
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_checkout_failed_title')),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.toast_failed_text')),
+        findsNothing,
+        reason: 'the cause is named, not flattened into the generic sentence',
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+        reason: 'the plan did not move, so business is still an upgrade',
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a payment the bank wants confirmed names that cause', (
+      tester,
+    ) async {
+      final _SwappingRailBillingService billing = _SwappingRailBillingService(
+        swapError: const BillingException(
+          'The payment requires action.',
+          code: BillingErrorCode.paymentRequiresAction,
+        ),
+      );
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tapUpgrade(tester);
+      await confirmSwap(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(
+          trans('magic_starter.billing.errors.payment_requires_action'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a downgrade on the same cycle is credited, not charged', (
+      tester,
+    ) async {
+      final _HeldBusinessRailBillingService billing =
+          _HeldBusinessRailBillingService();
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          trans('magic_starter.billing.swap_confirm_credit', <String, dynamic>{
+            'cycle': trans('magic_starter.billing.renewal_cycle_annual'),
+          }),
+        ),
+        findsOneWidget,
+      );
+
+      await confirmSwap(tester);
+
+      expect(billing.swappedTo, <String>['pro_annual']);
+      expect(billing.checkoutKeys, isEmpty);
+
+      // Flush the success toast's auto-dismiss timer.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a downgrade onto another cycle promises neither a charge '
+        'nor a credit', (tester) async {
+      // Stripe bills a new billing period at once, less the unused time, so
+      // only a downgrade that keeps the cycle can promise a credit, and an
+      // annual Business moving to a monthly Pro may owe nothing at all.
+      final _HeldBusinessRailBillingService billing =
+          _HeldBusinessRailBillingService();
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_downgrade')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.swap_confirm_period_now',
+            <String, dynamic>{
+              'cycle': trans('magic_starter.billing.renewal_cycle_monthly'),
+            },
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      await confirmSwap(tester);
+
+      expect(billing.swappedTo, <String>['pro_monthly']);
+
+      // Flush the success toast's auto-dismiss timer.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a trial whose end has passed is charged like any upgrade', (
+      tester,
+    ) async {
+      // Stripe can end a trial before the webhook moves the status, and the
+      // backend charges a swap unless the trial end is still ahead.
+      final _TrialWebBillingService billing = _TrialWebBillingService(
+        trialEnd: DateTime.now().subtract(const Duration(hours: 1)),
+      );
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tapUpgrade(tester);
+
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.swap_confirm_charge_now',
+            <String, dynamic>{
+              'cycle': trans('magic_starter.billing.renewal_cycle_annual'),
+            },
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Your trial continues'), findsNothing);
+    });
+
+    testWidgets('a trialing subscriber is told nothing is charged until the '
+        'trial ends', (tester) async {
+      final _TrialWebBillingService billing = _TrialWebBillingService(
+        trialEnd: DateTime.now().add(const Duration(days: 10)),
+      );
+
+      await mount(tester, billing, isOwner: true, withToasts: true);
+
+      await tapUpgrade(tester);
+
+      expect(
+        find.text(
+          trans('magic_starter.billing.swap_confirm_trial', <String, dynamic>{
+            'cycle': trans('magic_starter.billing.renewal_cycle_annual'),
+          }),
+        ),
+        findsOneWidget,
+      );
+
+      await confirmSwap(tester);
+
+      expect(billing.swappedTo, <String>['business_annual']);
+      expect(billing.checkoutKeys, isEmpty);
+
+      // Flush the success toast's auto-dismiss timer.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
     });
@@ -4832,6 +5309,7 @@ void main() {
     testWidgets('the trial CTA still buys the same product', (tester) async {
       final _TrialWebBillingService billing = _TrialWebBillingService(
         trialDaysByKey: trials,
+        subscribed: false,
       );
 
       await mount(tester, billing, isOwner: true);

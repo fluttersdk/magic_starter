@@ -793,6 +793,8 @@ class AppServiceProvider extends ServiceProvider {
       /// the `uptizm.teams.billing_` / `uptizm.enums.` prefixes stripped.
       const expectedKeys = <String>[
         'description',
+        'errors.payment_declined',
+        'errors.payment_requires_action',
         'invoice_receipt_button',
         'invoice_status.failed',
         'invoice_status.paid',
@@ -844,6 +846,13 @@ class AppServiceProvider extends ServiceProvider {
         'store_restore_found_title',
         'store_restore_none_text',
         'store_restore_none_title',
+        'swap_cancel_button',
+        'swap_confirm_button',
+        'swap_confirm_charge_now',
+        'swap_confirm_credit',
+        'swap_confirm_period_now',
+        'swap_confirm_title',
+        'swap_confirm_trial',
         'title',
         'toast_change_description',
         'toast_checkout_failed_title',
@@ -852,6 +861,8 @@ class AppServiceProvider extends ServiceProvider {
         'toast_deferred_text',
         'toast_deferred_title',
         'toast_failed_text',
+        'toast_swap_description',
+        'toast_swap_failed_title',
         'toast_switch_title',
         'toast_upgrade_title',
       ];

@@ -57,11 +57,15 @@ class _FakeBilling
   /// session change arriving while that earlier call's answer is still in
   /// flight, and the earlier call must keep answering for the session it was
   /// actually asked about.
-  String entitlementPlan = 'tier-b';
+  String? entitlementPlan = 'tier-b';
 
   /// The lifecycle status, trial end and period end [currentEntitlement]
   /// answers with, for the trial cases.
   PlanStatus entitlementStatus = PlanStatus.none;
+
+  /// The rail [currentEntitlement] names as billing the customer, for the
+  /// cases that ask whether a web subscription is held.
+  BillingProvider entitlementProvider = BillingProvider.none;
   DateTime? entitlementTrialEndsAt;
   DateTime? entitlementPeriodEnd;
 
@@ -76,7 +80,7 @@ class _FakeBilling
 
   @override
   Future<BillingEntitlement> currentEntitlement() async {
-    final String plan = entitlementPlan;
+    final String? plan = entitlementPlan;
     await _enter(_entitlementRead);
     final Completer<void>? heldEntitlement = entitlementGate;
     if (heldEntitlement != null) await heldEntitlement.future;
@@ -87,6 +91,7 @@ class _FakeBilling
     return BillingEntitlement(
       plan: plan,
       planStatus: entitlementStatus,
+      provider: entitlementProvider,
       manageVia: ManageVia.portal,
       manageUrl: 'https://example.test/manage',
       currentPeriodEnd: entitlementPeriodEnd,
@@ -1253,6 +1258,156 @@ void main() {
       await resetting;
 
       expect(controller.trialEnd, DateTime.utc(2026, 11, 1));
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, a held web subscription', () {
+    // The question the plan grid asks before it spends money: a checkout is
+    // refused with a 409 while a Stripe subscription still grants, so a held
+    // one has to be changed through a swap instead.
+    for (final PlanStatus status in <PlanStatus>[
+      PlanStatus.trialing,
+      PlanStatus.active,
+      PlanStatus.pastDue,
+      PlanStatus.grace,
+    ]) {
+      test('a Stripe subscription that is ${status.name} is held', () async {
+        billing.entitlementProvider = BillingProvider.stripe;
+        billing.entitlementStatus = status;
+        final MagicStarterBillingController controller = build();
+
+        await controller.load();
+
+        expect(controller.holdsWebSubscription, isTrue);
+        controller.dispose();
+      });
+    }
+
+    for (final PlanStatus status in <PlanStatus>[
+      PlanStatus.none,
+      PlanStatus.canceled,
+      PlanStatus.expired,
+      PlanStatus.paused,
+    ]) {
+      test(
+        'a Stripe subscription that is ${status.name} is not held',
+        () async {
+          billing.entitlementProvider = BillingProvider.stripe;
+          billing.entitlementStatus = status;
+          final MagicStarterBillingController controller = build();
+
+          await controller.load();
+
+          expect(controller.holdsWebSubscription, isFalse);
+          controller.dispose();
+        },
+      );
+    }
+
+    test('an active store subscription is not a web one', () async {
+      billing.entitlementProvider = BillingProvider.appStore;
+      billing.entitlementStatus = PlanStatus.active;
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.holdsWebSubscription, isFalse);
+      controller.dispose();
+    });
+
+    test('a Stripe subscriber whose price the catalogue cannot name still '
+        'holds it', () async {
+      // The producer leaves `plan` null for a price it cannot map, and the
+      // backend's checkout guard reads the subscription row, not the tier: a
+      // checkout here would still be refused with a 409.
+      billing.entitlementPlan = null;
+      billing.entitlementProvider = BillingProvider.stripe;
+      billing.entitlementStatus = PlanStatus.active;
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.entitlementLoaded, isFalse);
+      expect(controller.holdsWebSubscription, isTrue);
+      controller.dispose();
+    });
+
+    test('a customer no rail bills holds nothing', () async {
+      billing.entitlementProvider = BillingProvider.none;
+      billing.entitlementStatus = PlanStatus.active;
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.holdsWebSubscription, isFalse);
+      controller.dispose();
+    });
+
+    test('nothing is held before the entitlement read resolves, nor after it '
+        'fails', () async {
+      billing.entitlementProvider = BillingProvider.stripe;
+      billing.entitlementStatus = PlanStatus.active;
+      billing.failEntitlement = true;
+      final MagicStarterBillingController controller = build();
+
+      expect(controller.holdsWebSubscription, isFalse);
+
+      await controller.load();
+
+      expect(controller.holdsWebSubscription, isFalse);
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, waiting for a web plan change', () {
+    // A swap answers before the rail's webhook writes the new tier, so the
+    // read straight after it still names the old one. The wait re-reads on
+    // the store purchase's own backoff until the answer moves.
+    testWidgets('answers true on the first read that differs from the '
+        'baseline', (tester) async {
+      billing.entitlementProvider = BillingProvider.stripe;
+      billing.entitlementStatus = PlanStatus.active;
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+      final MagicStarterEntitlementSnapshot before =
+          controller.entitlementSnapshot;
+
+      bool? moved;
+      unawaited(
+        controller
+            .awaitEntitlementChange(before)
+            .then((bool value) => moved = value),
+      );
+
+      // 1. The webhook has not landed: the first read still matches.
+      await tester.pump(const Duration(seconds: 1));
+      expect(moved, isNull);
+
+      // 2. It lands, and the next read ends the wait.
+      billing.entitlementPlan = 'tier-a';
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(moved, isTrue);
+      expect(controller.currentPlanId, 'tier-a');
+      controller.dispose();
+    });
+
+    testWidgets('answers false when the window runs out with nothing moved', (
+      tester,
+    ) async {
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+
+      bool? moved;
+      unawaited(
+        controller
+            .awaitEntitlementChange(controller.entitlementSnapshot)
+            .then((bool value) => moved = value),
+      );
+      await tester.pump(const Duration(seconds: 60));
+
+      expect(moved, isFalse);
       controller.dispose();
     });
   });

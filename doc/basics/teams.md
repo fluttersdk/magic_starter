@@ -6,6 +6,7 @@
 - [Team Switching](#team-switching)
     - [The Billable Subject](#billable-subject)
     - [Free Trials](#free-trials)
+    - [Changing a Web Plan](#changing-a-web-plan)
 - [Invitation](#invitation)
     - [Sending Invitations](#sending-invitations)
     - [Accepting Invitations](#accepting-invitations)
@@ -141,6 +142,36 @@ The translator has no plural API, so each count is chosen in Dart: `:count == 1`
 | `period_day_*`, `period_week_*`, `period_month_*`, `period_year_*` (each `_one` and `_other`) | `:count day`, `:count days`, and so on |
 
 An app that publishes its own `en.json` adds these keys by hand. A store introductory period is read from its ISO 8601 form when it is one whole unit (`P14D`, `P2W`, `P1M`, `P1Y`); anything else (`P1Y2M`) states no offer and keeps the plain line.
+
+<a name="changing-a-web-plan"></a>
+### Changing a Web Plan
+
+A team that already holds a web (Stripe) subscription changes tier or cycle by moving that subscription, never by buying a second one: magic-starter-laravel refuses a checkout with a 409 `subscription_exists` while one still grants. `MagicStarterBillingController.holdsWebSubscription` is `true` once the entitlement names `BillingProvider.stripe` with a plan status that still grants (`trialing`, `active`, `pastDue`, `grace`), and while it is, a tap on another paid tier opens a confirmation instead of a checkout. On confirm the screen calls `WebBillingService.swap(productKey:)` (`POST /billing/swap`) with the card's catalogue product, re-reads the payment method and the invoices, and polls the entitlement with `MagicStarterBillingController.awaitEntitlementChange(before)` (the store purchase's backoff, 60 seconds in all), because the backend answers the swap before Stripe's webhook writes the new tier. A team with no web subscription still goes through the hosted checkout, and the move to the free tier still opens the billing portal.
+
+The confirmation states what the backend (0.0.28 or later) does with the money:
+
+| Move | The sentence |
+|---|---|
+| During a running trial (a trial end still ahead) | Nothing is charged until the trial ends |
+| A higher tier, or a held tier the catalogue cannot rank | The card on file is charged the prorated difference now |
+| A lower tier on another cycle | The new billing period is billed at once, less the unused time on the current plan |
+| A lower tier on the same cycle | The change applies now and the unused time is credited to the next invoice |
+
+An upgrade is refused with a 402 when the card declines or the bank asks for 3D Secure, which `magic_payments` 0.0.10 reports as `BillingErrorCode.paymentDeclined` and `paymentRequiresAction`; the toast says the plan has not changed and why. The keys, all under `magic_starter.billing` in `en.stub`:
+
+| Key | Default |
+|---|---|
+| `swap_confirm_title` | `Change to :name?` |
+| `swap_confirm_charge_now` | `Billed :cycle from now on. Your card on file is charged the prorated difference now.` |
+| `swap_confirm_credit` | `Billed :cycle from now on. The change applies now and the unused time is credited to your next invoice.` |
+| `swap_confirm_period_now` | `Billed :cycle from now on. The change applies now, and the new billing period is billed to your card at once, less the unused time on your current plan.` |
+| `swap_confirm_trial` | `Billed :cycle from now on. Your trial continues; you are charged when it ends.` |
+| `swap_confirm_button`, `swap_cancel_button` | `Change plan`, `Keep current plan` |
+| `toast_swap_description` | `Billed :cycle. The change applies now.` |
+| `errors.payment_declined` | `Your card was declined, so your plan has not changed. Update your payment method and try again.` |
+| `errors.payment_requires_action` | `Your bank asked to confirm this payment, which a plan change cannot do here, so your plan has not changed. Try a card that does not ask for confirmation, or contact us.` |
+
+An app that publishes its own `en.json` adds these keys by hand.
 
 <a name="invitation"></a>
 ## Invitation
