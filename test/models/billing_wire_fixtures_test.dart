@@ -80,8 +80,8 @@ void main() {
       expect(monthly.storeIds.play, 'pro:monthly');
       expect(monthly.webPrices['USD']?.amountMinor, 2900);
       expect(monthly.webPrices['USD']?.display, '29.00 USD');
-      expect(monthly.webPrices['TRY']?.amountMinor, 99900);
-      expect(monthly.webPrices['TRY']?.display, '999.00 TRY');
+      // The producer serves one price per product, in the caller's currency.
+      expect(monthly.webPrices.keys, <String>['USD']);
 
       final MagicStarterProduct annual = pro.products[1];
       expect(annual.key, 'pro_annual');
