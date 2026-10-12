@@ -37,6 +37,16 @@ typedef MagicStarterUsageCopy = List<UsageStat> Function(List<UsageStat> stats);
 /// one.
 typedef MagicStarterNumberFormat = String Function(int value);
 
+/// Renders a web catalogue price the way the consumer writes money.
+///
+/// Optional, unlike [MagicStarterNumberFormat], because the producer's own
+/// `display` (`'379.00 TRY'`) is a correct if plain answer in every locale: it
+/// carries no separator to get wrong. A consumer that wants a symbol, its own
+/// decimal mark or no `.00` on a whole amount (`'379 TL'`) supplies this; it
+/// sees the minor amount and the ISO code, and can fall back to
+/// `price.display` for a currency it does not sell.
+typedef MagicStarterPriceFormat = String Function(MagicStarterWebPrice price);
+
 /// Reads the NAME of another of the caller's teams that a store account already
 /// funds, or `null` when none does.
 ///
@@ -185,6 +195,7 @@ class MagicStarterBillingController extends MagicController
   MagicStarterBillingController({
     required this.usageCopy,
     required this.formatNumber,
+    this.formatPrice,
     this.storeFundedTeamReader,
     this.isOwnerReader,
     @visibleForTesting BillingService? billingService,
@@ -201,6 +212,16 @@ class MagicStarterBillingController extends MagicController
   /// default at the registration site and every default available there is a
   /// wrong answer shipped silently. See [MagicStarterNumberFormat].
   final MagicStarterNumberFormat formatNumber;
+
+  /// The consumer's money format, or `null` to show the producer's `display`.
+  /// Read through [priceText]. See [MagicStarterPriceFormat].
+  final MagicStarterPriceFormat? formatPrice;
+
+  /// The text this screen shows for [price]: the consumer's [formatPrice]
+  /// when it registered one, the producer's `display` otherwise.
+  String priceText(MagicStarterWebPrice price) {
+    return formatPrice?.call(price) ?? price.display;
+  }
 
   /// The consumer's cross-team store check, or `null` when the consumer
   /// registered none.

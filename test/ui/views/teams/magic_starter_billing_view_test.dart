@@ -1467,6 +1467,16 @@ class _TrialWebBillingService extends _RailBillingService {
   }
 }
 
+/// [_TrialWebBillingService] for a team on the free tier, so every paid card is
+/// an upgrade and the grid has more than one to give its filled button to.
+class _FreeTierTrialWebBillingService extends _TrialWebBillingService {
+  _FreeTierTrialWebBillingService({super.trialDaysByKey})
+    : super(subscribed: false, cycle: null);
+
+  @override
+  String get entitlementPlan => 'free';
+}
+
 /// The STORE rail with the same two trial axes as [_TrialWebBillingService].
 ///
 /// A store trial carries NO `trial_ends_at`: it arrives as `trialing` plus the
@@ -1590,10 +1600,14 @@ void main() {
   /// sets (see [mount]), because Wind reads the breakpoint off the MediaQuery
   /// and the layout off the surface: moving one without the other renders a
   /// desktop grid into a phone-wide box, which is an overflow no customer has.
-  Widget wrap(Widget widget, {Size size = const Size(1280, 12000)}) {
+  Widget wrap(
+    Widget widget, {
+    Size size = const Size(1280, 12000),
+    bool disableAnimations = false,
+  }) {
     return MaterialApp(
       home: MediaQuery(
-        data: MediaQueryData(size: size),
+        data: MediaQueryData(size: size, disableAnimations: disableAnimations),
         child: WindTheme(
           data: WindThemeData(),
           child: Scaffold(body: widget),
@@ -1644,11 +1658,14 @@ void main() {
     MagicStarterStoreFundedTeamReader? storeFundedTeam,
     bool withToasts = false,
     Size surface = const Size(1280, 12000),
+    bool disableAnimations = false,
+    MagicStarterPriceFormat? formatPrice,
   }) async {
     Magic.put(
       MagicStarterBillingController(
         usageCopy: _usageCopy,
         formatNumber: _formatNumber,
+        formatPrice: formatPrice,
         isOwnerReader: isOwner == null ? null : () => isOwner,
         storeFundedTeamReader: storeFundedTeam ?? () async => null,
         billingService: billing,
@@ -1661,7 +1678,9 @@ void main() {
     final Widget view = MagicStarter.view.make('teams.billing');
 
     await tester.pumpWidget(
-      withToasts ? wrapWithSnackbar(view) : wrap(view, size: surface),
+      withToasts
+          ? wrapWithSnackbar(view)
+          : wrap(view, size: surface, disableAnimations: disableAnimations),
     );
     await tester.pump();
     await tester.pump();
@@ -1988,6 +2007,33 @@ void main() {
       // A resource this app has no word for. It must reach the gates (they look
       // a resource up by key) and must NOT reach the screen as a raw wire key.
       'widgets_provisioned': <String, dynamic>{'used': 3, 'limit': 9},
+    });
+
+    testWidgets('a usage read the copy names nothing in draws no meter grid', (
+      tester,
+    ) async {
+      // An app that meters only capped resources leaves every stat of an
+      // unlimited tier unnamed; an empty grid would still take the column's
+      // `gap-5` and leave a hole under the plan line.
+      await mount(
+        tester,
+        _RailBillingService(
+          manageVia: 'portal',
+          usage: UsageStat.fromWireMap(<String, dynamic>{
+            'widgets_provisioned': <String, dynamic>{'used': 3, 'limit': 9},
+          }),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WDiv &&
+              (widget.className ?? '').contains('grid grid-cols-1 gap-x-8'),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('renders the date, the expiry, the usage label and the status '
@@ -5369,6 +5415,270 @@ void main() {
       expect(find.textContaining('Card required'), findsNothing);
       expect(find.textContaining('Free for '), findsNothing);
       expect(find.text(trans('magic_starter.billing.trial_cta')), findsNothing);
+    });
+  });
+
+  group('a consumer\'s price format renders every web price', () {
+    /// Names the currency and the minor amount, so a test can tell the
+    /// formatter ran and read the right price.
+    String format(MagicStarterWebPrice price) =>
+        '${price.currency}:${price.amountMinor}';
+
+    testWidgets('the plan card and the trial line read the consumer format', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(
+          trialDaysByKey: <String, int>{'business_annual': 14},
+        ),
+        isOwner: true,
+        formatPrice: format,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('USD:118800'), findsOneWidget);
+      expect(
+        find.text('Free for 14 days. Card required, then USD:118800 per year.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('1188.00 USD'), findsNothing);
+    });
+
+    testWidgets('the renewal line reads it too', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(),
+        isOwner: true,
+        formatPrice: format,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('USD:34800 billed annually'), findsOneWidget);
+    });
+
+    testWidgets('without one the producer\'s display string stands', (
+      tester,
+    ) async {
+      await mount(tester, _TrialWebBillingService(), isOwner: true);
+
+      expect(find.text('1188.00 USD'), findsOneWidget);
+    });
+  });
+
+  group('a trial is the grid\'s featured call to action', () {
+    final Map<String, int> businessTrials = <String, int>{
+      'business_monthly': 14,
+      'business_annual': 14,
+    };
+
+    /// The first [MSButton] in catalogue order whose label is [label], which
+    /// for the upgrade label is the cheapest tier above `free`.
+    MSButton buttonLabelled(WidgetTester tester, String label) {
+      return tester.widget<MSButton>(
+        find
+            .ancestor(of: find.text(label), matching: find.byType(MSButton))
+            .first,
+      );
+    }
+
+    /// The glow around the trial button: a [DecoratedBox] above it that casts
+    /// a shadow, and nothing else on the grid does.
+    Finder trialGlow() {
+      return find.ancestor(
+        of: find.text(trans('magic_starter.billing.trial_cta')),
+        matching: find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is DecoratedBox &&
+              widget.decoration is BoxDecoration &&
+              ((widget.decoration as BoxDecoration).boxShadow?.isNotEmpty ??
+                  false),
+        ),
+      );
+    }
+
+    List<BoxShadow> glowShadows(WidgetTester tester) {
+      final DecoratedBox box = tester.widget<DecoratedBox>(trialGlow().first);
+
+      return (box.decoration as BoxDecoration).boxShadow!;
+    }
+
+    testWidgets('the trial card takes the one filled button from a cheaper '
+        'upgrade that offers none', (tester) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+
+      // The premise: `pro` is the cheapest tier above `free` and sells no
+      // trial, so the old rule would have filled it.
+      expect(
+        buttonLabelled(
+          tester,
+          trans('magic_starter.billing.plan_button_upgrade'),
+        ).intent,
+        ButtonIntent.secondary,
+      );
+      expect(
+        buttonLabelled(tester, trans('magic_starter.billing.trial_cta')).intent,
+        ButtonIntent.primary,
+      );
+      expect(
+        tester
+            .widgetList<MSButton>(find.byType(MSButton))
+            .where((MSButton b) => b.intent == ButtonIntent.primary),
+        hasLength(1),
+        reason: 'the grid still carries exactly one filled button',
+      );
+    });
+
+    testWidgets('a call to action that wraps keeps its lines centred', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+
+      for (final String label in <String>[
+        trans('magic_starter.billing.trial_cta'),
+        trans('magic_starter.billing.plan_button_upgrade'),
+      ]) {
+        expect(
+          tester.widget<Text>(find.text(label)).textAlign,
+          TextAlign.center,
+          reason: '"$label" wraps inside a narrow card',
+        );
+      }
+    });
+
+    testWidgets('the trial button pulses a few times and then rests', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+
+      expect(trialGlow(), findsOneWidget);
+      final double start = glowShadows(tester).single.blurRadius;
+
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(
+        glowShadows(tester).single.blurRadius,
+        isNot(start),
+        reason: 'the glow is animating',
+      );
+
+      // A pulse that never stops would keep a ticker alive for as long as the
+      // page is open, and pumpAndSettle would time out here.
+      await tester.pumpAndSettle();
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(glowShadows(tester).single.blurRadius, closeTo(start, 0.01));
+    });
+
+    testWidgets('reduced motion keeps the glow and drops the pulse', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+        disableAnimations: true,
+      );
+
+      expect(trialGlow(), findsOneWidget);
+      final double resting = glowShadows(tester).single.blurRadius;
+
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(glowShadows(tester).single.blurRadius, resting);
+    });
+
+    testWidgets('only the filled trial button glows', (tester) async {
+      // Both paid tiers offer a trial: `pro` is the first, so it takes the
+      // fill, and a glow on `business` too would point at two offers at once.
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(
+          trialDaysByKey: <String, int>{
+            'pro_annual': 14,
+            'business_annual': 14,
+          },
+        ),
+        isOwner: true,
+      );
+
+      expect(
+        find.text(trans('magic_starter.billing.trial_cta')),
+        findsNWidgets(2),
+      );
+      expect(trialGlow(), findsOneWidget);
+      expect(
+        tester
+            .widget<MSButton>(
+              find.descendant(of: trialGlow(), matching: find.byType(MSButton)),
+            )
+            .intent,
+        ButtonIntent.primary,
+      );
+    });
+
+    testWidgets('reduced motion switched on mid-pulse stops the pulse', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+      final double resting = glowShadows(tester).single.blurRadius;
+
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(glowShadows(tester).single.blurRadius, isNot(resting));
+
+      await tester.pumpWidget(
+        wrap(MagicStarter.view.make('teams.billing'), disableAnimations: true),
+      );
+      await tester.pump();
+
+      expect(glowShadows(tester).single.blurRadius, resting);
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(glowShadows(tester).single.blurRadius, resting);
+    });
+
+    testWidgets('a card without a trial casts no glow', (tester) async {
+      await mount(tester, _FreeTierTrialWebBillingService(), isOwner: true);
+
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is DecoratedBox &&
+              widget.decoration is BoxDecoration &&
+              ((widget.decoration as BoxDecoration).boxShadow?.isNotEmpty ??
+                  false) &&
+              find
+                  .descendant(
+                    of: find.byWidget(widget),
+                    matching: find.byType(MSButton),
+                  )
+                  .evaluate()
+                  .isNotEmpty,
+        ),
+        findsNothing,
+      );
+      expect(
+        buttonLabelled(
+          tester,
+          trans('magic_starter.billing.plan_button_upgrade'),
+        ).intent,
+        ButtonIntent.primary,
+        reason: 'without a trial the cheapest upgrade keeps the fill',
+      );
     });
   });
 

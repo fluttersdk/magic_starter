@@ -624,27 +624,29 @@ class _MagicStarterBillingViewState
               trans('magic_starter.billing.payment_failed_notice'),
               className: 'text-sm text-destructive',
             ),
-          WDiv(
-            className: 'grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2',
-            children: <Widget>[
-              // A stat the consumer's copy could not name gets NO meter, rather
-              // than one labelled with its raw wire key. The producer reports
-              // every resource it meters and an app names the ones it sells, so
-              // a new resource arriving early would otherwise put
-              // `checks_this_month` on a customer's screen. A gate still reads
-              // it by key either way, which is why the controller carries it all
-              // the way here instead of dropping it.
-              for (final UsageStat stat in controller.usage)
-                if (stat.label != null)
-                  MSUsageMeter(
-                    label: stat.label!,
-                    used: stat.used,
-                    limit: stat.limit,
-                    unit: stat.unit.isEmpty ? null : stat.unit,
-                    formatNumber: controller.formatNumber,
-                  ),
-            ],
-          ),
+          // A stat the consumer's copy could not name gets NO meter, rather
+          // than one labelled with its raw wire key. The producer reports every
+          // resource it meters and an app names the ones it sells, so a new
+          // resource arriving early would otherwise put `checks_this_month` on
+          // a customer's screen. A gate still reads it by key either way, which
+          // is why the controller carries it all the way here instead of
+          // dropping it. With nothing named there is no grid at all: an empty
+          // one still takes the column's `gap-5`.
+          if (controller.usage.any((UsageStat stat) => stat.label != null))
+            WDiv(
+              className: 'grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2',
+              children: <Widget>[
+                for (final UsageStat stat in controller.usage)
+                  if (stat.label != null)
+                    MSUsageMeter(
+                      label: stat.label!,
+                      used: stat.used,
+                      limit: stat.limit,
+                      unit: stat.unit.isEmpty ? null : stat.unit,
+                      formatNumber: controller.formatNumber,
+                    ),
+              ],
+            ),
         ],
       ),
     );
@@ -796,7 +798,7 @@ class _MagicStarterBillingViewState
           ? 'magic_starter.billing.renewal_ends'
           : 'magic_starter.billing.renewal_text',
       <String, dynamic>{
-        'price': price.display,
+        'price': controller.priceText(price),
         'cycle': _cycleLabel(cycle),
         'date':
             _formatDate(controller.paymentMethod?.renewalDate) ??
@@ -864,7 +866,7 @@ class _MagicStarterBillingViewState
     return trans('magic_starter.billing.trial_line_renews', <String, dynamic>{
       'date': date,
       'left': left,
-      'price': price.display,
+      'price': controller.priceText(price),
       'cycle': _periodWord(cycle),
     });
   }
@@ -1222,14 +1224,24 @@ class _MagicStarterBillingViewState
                 ),
                 className: 'text-xs text-fg-muted',
               ),
-            MSButton(
-              intent: _ctaIntent(plan),
-              fullWidth: true,
-              onPressed: floorExit ?? () => _selectPlan(plan),
-              child: WText(
-                trial == null
-                    ? _ctaLabel(plan)
-                    : trans('magic_starter.billing.trial_cta'),
+            _TrialGlow(
+              // Only on the grid's one filled button: a second trial tier, or
+              // a grid whose entitlement has not resolved, glows nowhere.
+              enabled: trial != null && plan.id == _featuredUpgradeId,
+              child: MSButton(
+                intent: _ctaIntent(plan),
+                fullWidth: true,
+                onPressed: floorExit ?? () => _selectPlan(plan),
+                // `text-center` because the stretched button centres the
+                // label BOX, not its lines: in a four-column grid "Start free
+                // trial" (and longer translations) wraps, and the second line
+                // sat flush left under a centred first one.
+                child: WText(
+                  trial == null
+                      ? _ctaLabel(plan)
+                      : trans('magic_starter.billing.trial_cta'),
+                  className: 'text-center',
+                ),
               ),
             ),
           ],
@@ -1269,7 +1281,7 @@ class _MagicStarterBillingViewState
 
     return (
       period: _periodLabel(product.trialDays, 'day'),
-      price: price.display,
+      price: controller.priceText(price),
       cycle: _periodWord(_cycleFor(plan)),
     );
   }
@@ -2462,9 +2474,10 @@ class _MagicStarterBillingViewState
   /// four identical grey rectangles, no focal point, and no way to tell the
   /// disabled one from the live ones.
   ///
-  /// The filled one is the cheapest tier ABOVE what the customer holds, because
-  /// that is the move a grid should make easy, and there is none at all until
-  /// the entitlement says what they hold.
+  /// The filled one is [_featuredUpgradeId]: the first tier above what the
+  /// customer holds that starts with a web trial, otherwise the cheapest tier
+  /// above it, because that is the move a grid should make easy, and there is
+  /// none at all until the entitlement says what they hold.
   ///
   /// TWO treatments, not three. A downgrade was `ghost` for one revision, on the
   /// reasoning that a grid should not invite it, and `ghost` in this package is
@@ -2499,28 +2512,44 @@ class _MagicStarterBillingViewState
   /// `plan_button_unresolved` for the very card the fill was pointing at. The
   /// label refuses to claim a direction there on purpose; a filled button makes
   /// the same claim in colour, and after a failed read it never goes away.
+  ///
+  /// An upgrade that starts with a free web trial outranks a cheaper one that
+  /// does not. Trying the higher tier for nothing is the lower-friction move,
+  /// and its button already reads as the offer ("Start free trial"); leaving it
+  /// grey beside a filled "Upgrade" on the cheaper card pointed the customer
+  /// away from the one purchase that costs them nothing today. The trial is
+  /// read per cycle, like the line above the button, so the fill follows the
+  /// toggle when only one cycle carries a trial.
   String? get _featuredUpgradeId {
     final List<MagicStarterPlan> plans = controller.plans;
 
     if (controller.currentPlanId == null) return null;
 
-    // The cheapest tier above the held one, in catalogue order, that this build
-    // can actually sell. A custom tier is skipped: its call to action is a
-    // sales handoff, not a purchase, so filling it would promise a checkout
-    // that does not exist. So is a tier this build sells no product of, which
-    // renders no button at all.
+    String? cheapest;
+
+    // 1. Every tier above the held one, in catalogue order, that this build can
+    //    actually sell. A custom tier is skipped: its call to action is a sales
+    //    handoff, not a purchase, so filling it would promise a checkout that
+    //    does not exist. So is a tier this build sells no product of, which
+    //    renders no button at all.
     for (final MagicStarterPlan plan in plans) {
       final int? direction = _direction(plan);
 
-      if (direction != null &&
-          direction > 0 &&
-          !_isCustom(plan) &&
-          _saleProduct(plan) != null) {
-        return _canPurchase ? plan.id : null;
+      if (direction == null ||
+          direction <= 0 ||
+          _isCustom(plan) ||
+          _saleProduct(plan) == null) {
+        continue;
       }
+
+      // 2. The first one with a trial takes the fill outright.
+      if (_webTrial(plan) != null) return _canPurchase ? plan.id : null;
+
+      cheapest ??= plan.id;
     }
 
-    return null;
+    // 3. Otherwise the cheapest upgrade keeps it.
+    return _canPurchase ? cheapest : null;
   }
 
   /// The tier distance of [plan] from the current plan: positive when [plan] is
@@ -2557,8 +2586,10 @@ class _MagicStarterBillingViewState
   ///    is sold instead of showing a price nobody here can pay.
   /// 3. A web product the producer gave no displayable price says the hosted
   ///    checkout shows it, which it does before anybody is charged.
-  /// 4. Otherwise the producer's own display string (`29.00 USD`), so no
-  ///    amount arithmetic or currency table lives here. Of the currencies a
+  /// 4. Otherwise the price through [MagicStarterBillingController.priceText]:
+  ///    the consumer's format, or the producer's own display string
+  ///    (`29.00 USD`), so no amount arithmetic or currency table lives here.
+  ///    Of the currencies a
   ///    product is priced in, the first the producer lists is shown: the client
   ///    cannot know which one the rail will charge, and that order is the
   ///    vendor's own.
@@ -2598,7 +2629,7 @@ class _MagicStarterBillingViewState
             text: trans('magic_starter.billing.plan_price_checkout'),
             sentence: true,
           )
-        : (text: price.display, sentence: false);
+        : (text: controller.priceText(price), sentence: false);
   }
 
   /// The web price of the product [current] is billed as on [cycle], or `null`
@@ -2775,5 +2806,123 @@ class _MagicStarterBillingViewState
     final int? index = _planIndex(id);
 
     return index == null ? null : controller.plans[index];
+  }
+}
+
+/// A soft glow in the button's own fill colour around the grid's featured trial
+/// button, which pulses a few times when the card first paints and then rests.
+///
+/// Finite on purpose. A pulse that never stops keeps a ticker alive for as long
+/// as the billing page is open, which is a distraction the customer cannot turn
+/// off and a frame cost on every device, so it draws the eye once and settles
+/// into a static glow that still marks the offer. Reduced motion skips the
+/// pulse, or stops one already running, and keeps the resting glow, so the
+/// emphasis does not depend on motion.
+///
+/// The colour is whatever `bg-primary` paints in the current brightness, read
+/// through the same parser the button's fill goes through, so the halo matches
+/// the fill in dark mode too (a palette lookup returns the light shade there).
+///
+/// The [child] is always wrapped, with no shadow while [enabled] is false: a
+/// wrapper that came and went with the cycle toggle would remount the button
+/// and drop its hover and focus state.
+class _TrialGlow extends StatefulWidget {
+  const _TrialGlow({required this.enabled, required this.child});
+
+  /// Whether this is the grid's featured trial button, and so whether to glow.
+  final bool enabled;
+
+  final Widget child;
+
+  @override
+  State<_TrialGlow> createState() => _TrialGlowState();
+}
+
+class _TrialGlowState extends State<_TrialGlow>
+    with SingleTickerProviderStateMixin {
+  /// One way of a pulse; a full pulse is twice this.
+  static const Duration _halfPulse = Duration(milliseconds: 700);
+
+  /// Three pulses out and back, ending where they started.
+  static const int _runs = 6;
+
+  /// Matches the button recipe's `rounded-lg`, so the glow follows its corners.
+  static const BorderRadius _radius = BorderRadius.all(Radius.circular(8));
+
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: _halfPulse,
+  );
+
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Reduced motion can be switched on while the pulse runs.
+    if (MediaQuery.disableAnimationsOf(context) && _pulse.isAnimating) {
+      _pulse
+        ..stop()
+        ..value = 0;
+    }
+
+    _pulseOnce();
+  }
+
+  @override
+  void didUpdateWidget(_TrialGlow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The cycle toggle can bring a trial to a card that had none.
+    _pulseOnce();
+  }
+
+  /// Runs the pulse the first time this card advertises a trial, and never
+  /// again for the life of the card.
+  void _pulseOnce() {
+    if (_started || !widget.enabled) return;
+    _started = true;
+
+    if (MediaQuery.disableAnimationsOf(context)) return;
+
+    unawaited(_pulse.repeat(reverse: true, count: _runs));
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color? fill = widget.enabled
+        ? WindParser.parse('bg-primary', context).decoration?.color
+        : null;
+
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (BuildContext context, Widget? child) {
+        final double t = Curves.easeInOut.transform(_pulse.value);
+
+        // The peak stays inside the `gap-2` above the button, so the pulse
+        // never tints the trial line it sits under.
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: _radius,
+            boxShadow: <BoxShadow>[
+              if (fill != null)
+                BoxShadow(
+                  color: fill.withValues(alpha: 0.25 + 0.25 * t),
+                  blurRadius: 8 + 8 * t,
+                  spreadRadius: 2 * t,
+                ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
   }
 }
