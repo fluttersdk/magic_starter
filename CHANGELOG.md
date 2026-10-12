@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Requires `fluttersdk_wind ^1.8.3`,** the first release whose `WInput` and `WFormInput` take the `autofillHints` the auth forms now pass. (`pubspec.yaml`)
 - **A trial is the plan grid's featured call to action.** The grid's one filled button went to the cheapest upgrade, so a free customer saw a filled "Upgrade" on a tier with no trial and a grey "Start free trial" on the tier that costs nothing today. The first upgrade whose product carries a web trial on the selected cycle now takes the fill; with no trial on the grid the cheapest upgrade keeps it. That button also glows in its own `bg-primary` fill colour (the dark-mode one in dark mode), pulsing three times when the card first paints and then resting; reduced motion, including reduced motion switched on mid-pulse, keeps the glow and drops the pulse. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`, `doc/basics/teams.md`)
 - **Breaking: `MagicStarterWebPrice` gains `currency`,** the ISO 4217 code it is priced in, so the record is now `({int amountMinor, String currency, String display})`. Code that builds the record itself (a test fixture passing `MagicStarterProduct(webPrices: ...)`) adds the field; code that only reads it is unaffected. (`lib/src/models/magic_starter_product.dart`)
 

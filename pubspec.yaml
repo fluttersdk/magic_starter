@@ -83,9 +83,9 @@ dependencies:
   # `pubspec.lock` already pins 1.5.3 and upgrades this package would otherwise
   # get `undefined_named_parameter` inside a package they do not own, with
   # nothing saying why; with the floor they get a version-solve message naming
-  # wind. The floor itself names 1.8.1, the release the 2026-10-09 batch
-  # verified this package against.
-  fluttersdk_wind: ^1.8.1
+  # wind. The floor itself names 1.8.3, the first release whose `WInput` and
+  # `WFormInput` take the `autofillHints` the auth forms pass.
+  fluttersdk_wind: ^1.8.3
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
