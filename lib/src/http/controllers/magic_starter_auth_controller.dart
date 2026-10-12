@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/services.dart' show TextInput;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
@@ -107,7 +108,10 @@ class MagicStarterAuthController extends MagicController
       }
 
       // 2. A challenge or a session; both conclude through one path.
-      if (!await completeSignIn(response.data as Map<String, dynamic>?)) {
+      if (!await completeSignIn(
+        response.data as Map<String, dynamic>?,
+        saveCredentials: true,
+      )) {
         setError(trans('auth.invalid_response'));
         return;
       }
@@ -248,6 +252,9 @@ class MagicStarterAuthController extends MagicController
         // 3. Auto-login when the server returns credentials immediately.
         await Auth.login({'token': token}, MagicStarter.createUser(userData));
         setSuccess(true);
+        // The new credentials just worked: offer them for saving before the
+        // route swap cancels the form's autofill group.
+        TextInput.finishAutofillContext(shouldSave: true);
         navigateHome();
         return;
       }

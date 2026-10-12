@@ -18,21 +18,25 @@ mixin CompletesSignIn on NavigatesRoutes {
   /// A two-factor answer (`two_factor: true`, at the top level or under
   /// `data`) opens the challenge with its `two_factor_token`. A session
   /// (`data.token` and `data.user`) is logged in, announced with a toast when
-  /// `data.deletion_cancelled` is true, and sent home. Before it is sent home
-  /// the platform is told the credentials worked, so a password manager or the
-  /// OS keychain offers to save them.
+  /// `data.deletion_cancelled` is true, and sent home. With [saveCredentials]
+  /// true, which only the email and password sign-in passes, the platform is
+  /// told before that the typed credentials worked, so a password manager or
+  /// the OS keychain offers to save them. A provider or a one-time code leaves
+  /// it false: the login form's group may still hold a half-typed password that
+  /// never signed anyone in.
   ///
   /// With [navigate] false a session is logged in and the viewer stays where
   /// they are, so a host can open one in the background; the intended url is
   /// left for the next sign-in that does navigate, and nothing is offered for
-  /// saving, since no credentials were typed. A two-factor answer carries no
-  /// session and opens its challenge either way.
+  /// saving. A two-factor answer carries no session and opens its challenge
+  /// either way.
   ///
   /// Returns `false` when [body] is neither, leaving the caller to report it;
   /// the caller also owns its controller state.
   Future<bool> completeSignIn(
     Map<String, dynamic>? body, {
     bool navigate = true,
+    bool saveCredentials = false,
   }) async {
     final data = body?['data'] as Map<String, dynamic>?;
 
@@ -67,7 +71,7 @@ mixin CompletesSignIn on NavigatesRoutes {
     //    before the route swaps, because the form's autofill group is cancelled
     //    when it leaves the tree.
     if (navigate) {
-      TextInput.finishAutofillContext(shouldSave: true);
+      if (saveCredentials) TextInput.finishAutofillContext(shouldSave: true);
 
       // 4. Home, or wherever the user was headed before login.
       navigateHome();

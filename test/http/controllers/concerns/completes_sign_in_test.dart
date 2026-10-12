@@ -137,10 +137,27 @@ void main() {
       final events = <String>[];
       recordAutofillCalls(events);
 
-      await _TestHost(events).completeSignIn(_sessionBody());
+      await _TestHost(
+        events,
+      ).completeSignIn(_sessionBody(), saveCredentials: true);
       await tester.pumpAndSettle();
 
       expect(events, ['finishAutofillContext(true)', 'home']);
+    });
+
+    testWidgets('a sign-in without typed credentials saves nothing', (
+      tester,
+    ) async {
+      // A provider or a one-time code signs in while the login form's group
+      // may still hold a half-typed password that never worked.
+      await pumpRouterAwayFromHome(tester);
+      final events = <String>[];
+      recordAutofillCalls(events);
+
+      await _TestHost(events).completeSignIn(_sessionBody());
+      await tester.pumpAndSettle();
+
+      expect(events, ['home']);
     });
 
     testWidgets('a background session never saves credentials', (tester) async {

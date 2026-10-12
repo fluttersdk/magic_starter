@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
@@ -163,6 +164,26 @@ class MockGuard implements Guard {
   ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
+/// Records the `shouldSave` of every `TextInput.finishAutofillContext` call
+/// until the test ends.
+List<bool> _recordAutofillSaves() {
+  final saves = <bool>[];
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.textInput, (call) async {
+    if (call.method == 'TextInput.finishAutofillContext') {
+      saves.add(call.arguments as bool);
+    }
+
+    return null;
+  });
+  addTearDown(
+    () => messenger.setMockMethodCallHandler(SystemChannels.textInput, null),
+  );
+
+  return saves;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -247,6 +268,26 @@ void main() {
         expect(mockGuard.check(), isTrue);
         expect(mockGuard.lastLoginData?['token'], equals('test-token-123'));
         expect(mockDriver.lastUrl, equals('/auth/login'));
+      });
+
+      test('success — offers the typed credentials for saving', () async {
+        final saves = _recordAutofillSaves();
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'test-token-123',
+              'user': {'id': 1, 'name': 'Alice'},
+            },
+          },
+        );
+
+        await controller.doLogin(
+          email: 'alice@example.com',
+          password: 'secret123',
+        );
+
+        expect(saves, [true]);
       });
 
       test('failure (422) — sets error state', () async {
@@ -455,6 +496,31 @@ void main() {
         expect(mockGuard.check(), isTrue);
         expect(mockDriver.lastUrl, equals('/auth/register'));
       });
+
+      test(
+        'success with token — offers the new credentials for saving',
+        () async {
+          final saves = _recordAutofillSaves();
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {
+              'data': {
+                'token': 'reg-token',
+                'user': {'id': 2, 'name': 'Bob'},
+              },
+            },
+          );
+
+          await controller.doRegister(
+            name: 'Bob',
+            email: 'bob@example.com',
+            password: 'secret123',
+            passwordConfirmation: 'secret123',
+          );
+
+          expect(saves, [true]);
+        },
+      );
 
       test('success without token — sets success without login', () async {
         mockDriver.mockResponse(
