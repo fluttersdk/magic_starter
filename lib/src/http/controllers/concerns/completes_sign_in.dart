@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show TextInput;
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
@@ -17,12 +18,15 @@ mixin CompletesSignIn on NavigatesRoutes {
   /// A two-factor answer (`two_factor: true`, at the top level or under
   /// `data`) opens the challenge with its `two_factor_token`. A session
   /// (`data.token` and `data.user`) is logged in, announced with a toast when
-  /// `data.deletion_cancelled` is true, and sent home.
+  /// `data.deletion_cancelled` is true, and sent home. Before it is sent home
+  /// the platform is told the credentials worked, so a password manager or the
+  /// OS keychain offers to save them.
   ///
   /// With [navigate] false a session is logged in and the viewer stays where
   /// they are, so a host can open one in the background; the intended url is
-  /// left for the next sign-in that does navigate. A two-factor answer carries
-  /// no session and opens its challenge either way.
+  /// left for the next sign-in that does navigate, and nothing is offered for
+  /// saving, since no credentials were typed. A two-factor answer carries no
+  /// session and opens its challenge either way.
   ///
   /// Returns `false` when [body] is neither, leaving the caller to report it;
   /// the caller also owns its controller state.
@@ -59,8 +63,13 @@ mixin CompletesSignIn on NavigatesRoutes {
       Magic.toast(trans('social.deletion_cancelled'));
     }
 
-    // 3. Home, or wherever the user was headed before login.
+    // 3. Credentials that just worked are worth saving. This has to run
+    //    before the route swaps, because the form's autofill group is cancelled
+    //    when it leaves the tree.
     if (navigate) {
+      TextInput.finishAutofillContext(shouldSave: true);
+
+      // 4. Home, or wherever the user was headed before login.
       navigateHome();
     }
 

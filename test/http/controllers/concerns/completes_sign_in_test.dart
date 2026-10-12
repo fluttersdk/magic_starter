@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -6,7 +7,20 @@ import 'package:magic_starter/src/http/controllers/concerns/completes_sign_in.da
 import 'package:magic_starter/src/http/controllers/concerns/navigates_routes.dart';
 
 /// Bare host exercising [CompletesSignIn] without a controller's state.
-class _TestHost with NavigatesRoutes, CompletesSignIn {}
+///
+/// Logs `home` into [events] so a test can order the navigation against the
+/// platform calls recorded beside it.
+class _TestHost with NavigatesRoutes, CompletesSignIn {
+  _TestHost([this.events]);
+
+  final List<String>? events;
+
+  @override
+  void navigateHome() {
+    events?.add('home');
+    super.navigateHome();
+  }
+}
 
 /// A session answer the way `POST /auth/login` and `POST /auth/guest` send it.
 Map<String, dynamic> _sessionBody() {
@@ -31,7 +45,22 @@ void main() {
 
   tearDown(() {
     Auth.unfake();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.textInput, null);
   });
+
+  /// Records every `TextInput.finishAutofillContext` call into [events] as
+  /// `finishAutofillContext(<shouldSave>)`.
+  void recordAutofillCalls(List<String> events) {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.textInput, (call) async {
+          if (call.method == 'TextInput.finishAutofillContext') {
+            events.add('finishAutofillContext(${call.arguments})');
+          }
+
+          return null;
+        });
+  }
 
   /// Mounts a router sitting on `/monitors`, away from the home route, so a
   /// navigation home is observable.
@@ -86,6 +115,57 @@ void main() {
 
       expect(concluded, isFalse);
       expect(Auth.check(), isFalse);
+    });
+
+    test('a two-factor answer saves no credentials', () async {
+      final events = <String>[];
+      recordAutofillCalls(events);
+
+      await _TestHost(
+        events,
+      ).completeSignIn({'two_factor': true, 'two_factor_token': 'challenge'});
+
+      expect(events, isEmpty);
+    });
+  });
+
+  group('CompletesSignIn.completeSignIn autofill', () {
+    testWidgets('commits the autofill context once, before going home', (
+      tester,
+    ) async {
+      await pumpRouterAwayFromHome(tester);
+      final events = <String>[];
+      recordAutofillCalls(events);
+
+      await _TestHost(events).completeSignIn(_sessionBody());
+      await tester.pumpAndSettle();
+
+      expect(events, ['finishAutofillContext(true)', 'home']);
+    });
+
+    testWidgets('a background session never saves credentials', (tester) async {
+      await pumpRouterAwayFromHome(tester);
+      final events = <String>[];
+      recordAutofillCalls(events);
+
+      await _TestHost(events).completeSignIn(_sessionBody(), navigate: false);
+      await tester.pumpAndSettle();
+
+      expect(events, isEmpty);
+    });
+
+    test('a body without a session saves no credentials', () async {
+      final events = <String>[];
+      recordAutofillCalls(events);
+
+      final concluded = await _TestHost(events).completeSignIn({
+        'data': {
+          'user': {'id': 7},
+        },
+      });
+
+      expect(concluded, isFalse);
+      expect(events, isEmpty);
     });
   });
 }

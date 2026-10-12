@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -482,6 +483,29 @@ void main() {
 
         expect(opened, isTrue);
         expect(MagicRouter.instance.currentPath, '/monitors');
+      });
+
+      test('never offers the guest credentials to the keychain', () async {
+        // A guest opened in the background is not a sign-in the viewer typed
+        // credentials for, so the save prompt must not follow it.
+        final calls = <String>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.textInput, (call) async {
+              calls.add(call.method);
+
+              return null;
+            });
+        addTearDown(
+          () => TestDefaultBinaryMessengerBinding
+              .instance
+              .defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.textInput, null),
+        );
+        answerWithGuestSession();
+
+        expect(await controller.openGuestSession(), isTrue);
+
+        expect(calls, isNot(contains('TextInput.finishAutofillContext')));
       });
 
       test('a transport failure resolves false and signs nobody in', () async {
