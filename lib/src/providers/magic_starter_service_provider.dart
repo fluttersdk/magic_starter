@@ -182,6 +182,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
     _declarePushIdentityOnSignIn();
     _applySavedLocaleOnSignIn();
     _releasePushDeviceBeforeLogout();
+    _revokeTokenBeforeLogout();
   }
 
   /// Tells magic's [SessionScope] that a session is the user AND the active
@@ -229,6 +230,42 @@ class MagicStarterServiceProvider extends ServiceProvider {
     if (!Notify.pushState.isConfigured) return;
 
     MagicStarter.manager.beforeLogout(Notify.pushState.release);
+  }
+
+  /// Revokes the session's token on the server before every sign-out that
+  /// runs the before-logout hooks: the starter controller, the profile
+  /// dropdown ahead of a custom `onLogout`, and a host that calls
+  /// `runBeforeLogoutHooks` itself.
+  ///
+  /// Without it a sign-out only forgot the token on the device, and the server
+  /// kept honouring it until it expired. Registered after the push release,
+  /// which needs the same token, so the revoke runs last among the starter's
+  /// own hooks; a host hook registered after this provider boots runs after
+  /// it, on a revoked token.
+  void _revokeTokenBeforeLogout() {
+    if (!Magic.bound('auth')) return;
+
+    MagicStarter.manager.beforeLogout(_revokeToken);
+  }
+
+  /// The hook itself, a named static so a second boot registers nothing new
+  /// (`MagicStarterManager.beforeLogout` drops a hook it already holds).
+  ///
+  /// `POST /auth/logout` deletes the token the request presents, which magic's
+  /// `AuthInterceptor` attaches. A refusal is logged and the sign-out goes on;
+  /// a throw is logged by `runBeforeLogoutHooks`, which never rethrows. A 401
+  /// does not loop: the interceptor refreshes at most once per request, and
+  /// the `Auth.logout()` it falls back to does not run these hooks.
+  static Future<void> _revokeToken() async {
+    if (!await Auth.hasToken()) return;
+
+    final MagicResponse response = await Http.post('/auth/logout');
+    if (response.successful) return;
+
+    Log.warning(
+      '[MagicStarter] server-side logout answered ${response.statusCode}; '
+      'the token may stay valid until it expires.',
+    );
   }
 
   /// The notifier [_declarePushIdentityOnSignIn] is currently subscribed to.

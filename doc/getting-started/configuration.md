@@ -115,7 +115,7 @@ Every feature defaults to `false` and must be explicitly enabled. Each toggle co
 | `newsletter` | `false` | Newsletter subscribe/unsubscribe toggle in the profile. |
 | `notifications` | `false` | In-app notification list, unread badge, and preferences screen. |
 | `email_verification` | `false` | Email verification banner and resend verification flow. |
-| `guest_auth` | `false` | Guest-mode authentication screens (login, register, forgot password, reset). |
+| `guest_auth` | `false` | The login screen's "Continue as guest" button, plus the listeners that record a guest sign-in and claim that guest's data when an account signs in. It adds no routes or screens, and `MagicStarterGuestAuthController` works without it. |
 | `timezones` | `false` | Timezone selection with debounced async API search. |
 
 To enable features, set their values to `true` in `lib/config/magic_starter.dart`:

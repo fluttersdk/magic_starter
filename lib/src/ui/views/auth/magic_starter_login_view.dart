@@ -72,6 +72,9 @@ class _MagicStarterLoginViewState
     return controller.renderState(
       (_) => _buildForm(),
       onEmpty: _buildForm(),
+      // The group must outlive the request: leaving the tree cancels it, and a
+      // save after the response would find no credentials to commit.
+      onLoading: _buildForm(),
       onError: (message) => _buildForm(errorMessage: message),
     );
   }
@@ -102,105 +105,116 @@ class _MagicStarterLoginViewState
       errorMessage: errorMessage,
       child: MagicForm(
         formData: form,
-        child: WDiv(
-          className: 'flex flex-col items-stretch',
-          children: [
-            ?headerSlot,
-            _buildIdentityField(),
-            const WSpacer(className: 'h-4'),
-            WFormInput(
-              label: trans('attributes.password'),
-              controller: form['password'],
-              placeholder: trans('fields.password_placeholder'),
-              type: _obscurePassword ? InputType.password : InputType.text,
-              validator: rules([Required()], field: 'password'),
-              suffix: WAnchor(
-                onTap: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                child: WIcon(
-                  _obscurePassword ? _iconVisible : _iconHidden,
-                  className: 'text-fg-muted text-xl',
-                ),
-              ),
-              className: MagicStarter.formTheme.inputClassName,
-              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
-              labelClassName: MagicStarter.formTheme.labelClassName,
-            ),
-            const WSpacer(className: 'h-5'),
-            WDiv(
-              className: 'flex flex-row items-center justify-between',
-              children: [
-                WFormCheckbox(
-                  value: form.value<bool>('remember_me'),
-                  onChanged: (value) => form.setValue('remember_me', value),
-                  label: WText(
-                    trans('auth.remember_me'),
-                    className: MagicStarter.formTheme.checkboxLabelClassName,
-                  ),
-                ),
-                WAnchor(
-                  onTap: () => MagicRoute.to('/auth/forgot-password'),
-                  child: WText(
-                    trans('auth.forgot_password'),
-                    className: MagicStarter.formTheme.linkClassName,
-                  ),
-                ),
-              ],
-            ),
-            const WSpacer(className: 'h-6'),
-            MSButton(
-              isLoading: isLoading,
-              onPressed: _submit,
-              className: MagicStarter.formTheme.primaryButtonClassName,
-              child: WText(trans('auth.login_title'), className: 'text-center'),
-            ),
-            if (MagicStarterConfig.hasGuestAuthFeatures()) ...[
+        child: AutofillGroup(
+          // Cancel, never commit: the default commit offers to save a wrong
+          // password when the viewer leaves after a failed attempt.
+          onDisposeAction: AutofillContextAction.cancel,
+          child: WDiv(
+            className: 'flex flex-col items-stretch',
+            children: [
+              ?headerSlot,
+              _buildIdentityField(),
               const WSpacer(className: 'h-4'),
+              WFormInput(
+                label: trans('attributes.password'),
+                controller: form['password'],
+                placeholder: trans('fields.password_placeholder'),
+                type: _obscurePassword ? InputType.password : InputType.text,
+                autofillHints: const [AutofillHints.password],
+                validator: rules([Required()], field: 'password'),
+                suffix: WAnchor(
+                  onTap: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  child: WIcon(
+                    _obscurePassword ? _iconVisible : _iconHidden,
+                    className: 'text-fg-muted text-xl',
+                  ),
+                ),
+                className: MagicStarter.formTheme.inputClassName,
+                placeholderClassName:
+                    MagicStarter.formTheme.placeholderClassName,
+                labelClassName: MagicStarter.formTheme.labelClassName,
+              ),
+              const WSpacer(className: 'h-5'),
+              WDiv(
+                className: 'flex flex-row items-center justify-between',
+                children: [
+                  WFormCheckbox(
+                    value: form.value<bool>('remember_me'),
+                    onChanged: (value) => form.setValue('remember_me', value),
+                    label: WText(
+                      trans('auth.remember_me'),
+                      className: MagicStarter.formTheme.checkboxLabelClassName,
+                    ),
+                  ),
+                  WAnchor(
+                    onTap: () => MagicRoute.to('/auth/forgot-password'),
+                    child: WText(
+                      trans('auth.forgot_password'),
+                      className: MagicStarter.formTheme.linkClassName,
+                    ),
+                  ),
+                ],
+              ),
+              const WSpacer(className: 'h-6'),
               MSButton(
-                onPressed:
-                    MagicStarterGuestAuthController.instance.doGuestLogin,
                 isLoading: isLoading,
-                className: MagicStarter.authTheme.guestButtonClassName,
+                onPressed: _submit,
+                className: MagicStarter.formTheme.primaryButtonClassName,
                 child: WText(
-                  trans('magic_starter.auth.continue_as_guest'),
+                  trans('auth.login_title'),
                   className: 'text-center',
                 ),
               ),
-            ],
-            ?formFooterSlot,
-            if (MagicStarterConfig.hasSocialLoginFeatures() &&
-                socialAuth != null) ...[
-              const MSSocialDivider(),
-              MagicStarterSocialButtons(
-                socialAuth: socialAuth,
-                onSelected: controller.doSocialSignIn,
-                isLoading: isLoading,
-                busyProvider: controller.pendingSocialProvider,
-              ),
-            ],
-            if (MagicStarterConfig.hasRegistrationFeatures()) ...[
-              const WSpacer(className: 'h-6'),
-              WAnchor(
-                onTap: () => MagicRoute.to('/auth/register'),
-                child: WDiv(
-                  className: 'flex flex-row justify-center gap-1',
-                  children: [
-                    WText(
-                      trans('auth.dont_have_account'),
-                      className:
-                          MagicStarter.authTheme.registrationLinkClassName,
-                    ),
-                    WText(
-                      trans('auth.sign_up'),
-                      className:
-                          MagicStarter.authTheme.registrationLinkTextClassName,
-                    ),
-                  ],
+              if (MagicStarterConfig.hasGuestAuthFeatures()) ...[
+                const WSpacer(className: 'h-4'),
+                MSButton(
+                  onPressed:
+                      MagicStarterGuestAuthController.instance.doGuestLogin,
+                  isLoading: isLoading,
+                  className: MagicStarter.authTheme.guestButtonClassName,
+                  child: WText(
+                    trans('magic_starter.auth.continue_as_guest'),
+                    className: 'text-center',
+                  ),
                 ),
-              ),
+              ],
+              ?formFooterSlot,
+              if (MagicStarterConfig.hasSocialLoginFeatures() &&
+                  socialAuth != null) ...[
+                const MSSocialDivider(),
+                MagicStarterSocialButtons(
+                  socialAuth: socialAuth,
+                  onSelected: controller.doSocialSignIn,
+                  isLoading: isLoading,
+                  busyProvider: controller.pendingSocialProvider,
+                ),
+              ],
+              if (MagicStarterConfig.hasRegistrationFeatures()) ...[
+                const WSpacer(className: 'h-6'),
+                WAnchor(
+                  onTap: () => MagicRoute.to('/auth/register'),
+                  child: WDiv(
+                    className: 'flex flex-row justify-center gap-1',
+                    children: [
+                      WText(
+                        trans('auth.dont_have_account'),
+                        className:
+                            MagicStarter.authTheme.registrationLinkClassName,
+                      ),
+                      WText(
+                        trans('auth.sign_up'),
+                        className: MagicStarter
+                            .authTheme
+                            .registrationLinkTextClassName,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              ?footerSlot,
             ],
-            ?footerSlot,
-          ],
+          ),
         ),
       ),
     );
@@ -236,6 +250,7 @@ class _MagicStarterLoginViewState
       controller: form['email'],
       placeholder: trans('fields.email_placeholder'),
       type: InputType.email,
+      autofillHints: const [AutofillHints.username, AutofillHints.email],
       validator: rules([Required(), Email()], field: 'email'),
       className: formTheme.inputClassName,
       placeholderClassName: formTheme.placeholderClassName,
@@ -252,6 +267,7 @@ class _MagicStarterLoginViewState
       controller: form['phone'],
       placeholder: trans('fields.phone_placeholder'),
       type: InputType.text,
+      autofillHints: const [AutofillHints.telephoneNumber],
       validator: rules([Required()], field: 'phone'),
       className: formTheme.inputClassName,
       placeholderClassName: formTheme.placeholderClassName,

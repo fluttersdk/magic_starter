@@ -75,6 +75,9 @@ class _MagicStarterRegisterViewState
     return controller.renderState(
       (_) => _buildForm(),
       onEmpty: _buildForm(),
+      // The group must outlive the request: leaving the tree cancels it, and a
+      // save after the response would find no credentials to commit.
+      onLoading: _buildForm(),
       onError: (message) => _buildForm(errorMessage: message),
     );
   }
@@ -105,138 +108,152 @@ class _MagicStarterRegisterViewState
       errorMessage: errorMessage,
       child: MagicForm(
         formData: form,
-        child: WDiv(
-          className: 'flex flex-col items-stretch',
-          children: [
-            ?headerSlot,
+        child: AutofillGroup(
+          // Cancel, never commit: the default commit offers to save a wrong
+          // password when the viewer leaves after a failed attempt.
+          onDisposeAction: AutofillContextAction.cancel,
+          child: WDiv(
+            className: 'flex flex-col items-stretch',
+            children: [
+              ?headerSlot,
 
-            // Name
-            WFormInput(
-              label: trans('attributes.name'),
-              controller: form['name'],
-              placeholder: trans('fields.name_placeholder'),
-              validator: rules([Required(), Min(2)], field: 'name'),
-              className: MagicStarter.formTheme.inputClassName,
-              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
-              labelClassName: MagicStarter.formTheme.labelClassName,
-            ),
-            const WSpacer(className: 'h-4'),
-
-            // Identity field — dynamic based on mode.
-            _buildIdentityField(),
-            const WSpacer(className: 'h-4'),
-
-            // Password
-            WFormInput(
-              label: trans('attributes.password'),
-              controller: form['password'],
-              placeholder: trans('fields.password_placeholder'),
-              type: _obscurePassword ? InputType.password : InputType.text,
-              validator: rules([Required(), Min(8)], field: 'password'),
-              suffix: WAnchor(
-                onTap: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                child: WIcon(
-                  _obscurePassword ? _iconVisible : _iconHidden,
-                  className: 'text-fg-muted text-xl',
-                ),
+              // Name
+              WFormInput(
+                label: trans('attributes.name'),
+                controller: form['name'],
+                autofillHints: const [AutofillHints.name],
+                placeholder: trans('fields.name_placeholder'),
+                validator: rules([Required(), Min(2)], field: 'name'),
+                className: MagicStarter.formTheme.inputClassName,
+                placeholderClassName:
+                    MagicStarter.formTheme.placeholderClassName,
+                labelClassName: MagicStarter.formTheme.labelClassName,
               ),
-              className: MagicStarter.formTheme.inputClassName,
-              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
-              labelClassName: MagicStarter.formTheme.labelClassName,
-            ),
-            const WSpacer(className: 'h-4'),
+              const WSpacer(className: 'h-4'),
 
-            // Password Confirmation
-            WFormInput(
-              label: trans('attributes.password_confirmation'),
-              controller: form['password_confirmation'],
-              placeholder: trans('fields.password_confirmation_placeholder'),
-              type: _obscureConfirmation ? InputType.password : InputType.text,
-              validator: rules([Required()], field: 'password_confirmation'),
-              suffix: WAnchor(
-                onTap: () => setState(
-                  () => _obscureConfirmation = !_obscureConfirmation,
+              // Identity field — dynamic based on mode.
+              _buildIdentityField(),
+              const WSpacer(className: 'h-4'),
+
+              // Password
+              WFormInput(
+                label: trans('attributes.password'),
+                controller: form['password'],
+                placeholder: trans('fields.password_placeholder'),
+                type: _obscurePassword ? InputType.password : InputType.text,
+                autofillHints: const [AutofillHints.newPassword],
+                validator: rules([Required(), Min(8)], field: 'password'),
+                suffix: WAnchor(
+                  onTap: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  child: WIcon(
+                    _obscurePassword ? _iconVisible : _iconHidden,
+                    className: 'text-fg-muted text-xl',
+                  ),
                 ),
-                child: WIcon(
-                  _obscureConfirmation ? _iconVisible : _iconHidden,
-                  className: 'text-fg-muted text-xl',
-                ),
+                className: MagicStarter.formTheme.inputClassName,
+                placeholderClassName:
+                    MagicStarter.formTheme.placeholderClassName,
+                labelClassName: MagicStarter.formTheme.labelClassName,
               ),
-              className: MagicStarter.formTheme.inputClassName,
-              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
-              labelClassName: MagicStarter.formTheme.labelClassName,
-            ),
-            const WSpacer(className: 'h-6'),
+              const WSpacer(className: 'h-4'),
 
-            if (MagicStarterConfig.hasNewsletterFeatures()) ...[
-              WDiv(
-                className: 'flex flex-row items-center gap-2 mb-6',
-                children: [
-                  WFormCheckbox(
-                    value: _subscribeNewsletter,
-                    onChanged: (value) =>
-                        setState(() => _subscribeNewsletter = value),
-                    label: WText(
-                      MagicStarter.manager.newsletterLabel ??
-                          trans('magic_starter.newsletter.subscribe_label'),
-                      className: 'text-sm text-fg-muted ml-1',
+              // Password Confirmation
+              WFormInput(
+                label: trans('attributes.password_confirmation'),
+                controller: form['password_confirmation'],
+                placeholder: trans('fields.password_confirmation_placeholder'),
+                type: _obscureConfirmation
+                    ? InputType.password
+                    : InputType.text,
+                autofillHints: const [AutofillHints.newPassword],
+                validator: rules([Required()], field: 'password_confirmation'),
+                suffix: WAnchor(
+                  onTap: () => setState(
+                    () => _obscureConfirmation = !_obscureConfirmation,
+                  ),
+                  child: WIcon(
+                    _obscureConfirmation ? _iconVisible : _iconHidden,
+                    className: 'text-fg-muted text-xl',
+                  ),
+                ),
+                className: MagicStarter.formTheme.inputClassName,
+                placeholderClassName:
+                    MagicStarter.formTheme.placeholderClassName,
+                labelClassName: MagicStarter.formTheme.labelClassName,
+              ),
+              const WSpacer(className: 'h-6'),
+
+              if (MagicStarterConfig.hasNewsletterFeatures()) ...[
+                WDiv(
+                  className: 'flex flex-row items-center gap-2 mb-6',
+                  children: [
+                    WFormCheckbox(
+                      value: _subscribeNewsletter,
+                      onChanged: (value) =>
+                          setState(() => _subscribeNewsletter = value),
+                      label: WText(
+                        MagicStarter.manager.newsletterLabel ??
+                            trans('magic_starter.newsletter.subscribe_label'),
+                        className: 'text-sm text-fg-muted ml-1',
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
 
-            // Legal links (Terms / Privacy)
-            _buildLegalLinks(),
-            const WSpacer(className: 'h-6'),
+              // Legal links (Terms / Privacy)
+              _buildLegalLinks(),
+              const WSpacer(className: 'h-6'),
 
-            // Submit
-            MSButton(
-              isLoading: isLoading,
-              onPressed: _submit,
-              className: MagicStarter.formTheme.primaryButtonClassName,
-              child: WText(
-                trans('auth.register_title'),
-                className: 'text-center',
-              ),
-            ),
-
-            ?formFooterSlot,
-
-            // Social login slot
-            if (MagicStarterConfig.hasSocialLoginFeatures() &&
-                socialAuth != null) ...[
-              const MSSocialDivider(),
-              MagicStarterSocialButtons(
-                socialAuth: socialAuth,
-                onSelected: controller.doSocialSignIn,
+              // Submit
+              MSButton(
                 isLoading: isLoading,
-                busyProvider: controller.pendingSocialProvider,
+                onPressed: _submit,
+                className: MagicStarter.formTheme.primaryButtonClassName,
+                child: WText(
+                  trans('auth.register_title'),
+                  className: 'text-center',
+                ),
               ),
-            ],
 
-            // Login link
-            const WSpacer(className: 'h-6'),
-            WAnchor(
-              onTap: () => MagicRoute.to('/auth/login'),
-              child: WDiv(
-                className: 'flex flex-row justify-center gap-1',
-                children: [
-                  WText(
-                    trans('auth.already_have_account'),
-                    className: MagicStarter.authTheme.registrationLinkClassName,
-                  ),
-                  WText(
-                    trans('auth.sign_in'),
-                    className:
-                        MagicStarter.authTheme.registrationLinkTextClassName,
-                  ),
-                ],
+              ?formFooterSlot,
+
+              // Social login slot
+              if (MagicStarterConfig.hasSocialLoginFeatures() &&
+                  socialAuth != null) ...[
+                const MSSocialDivider(),
+                MagicStarterSocialButtons(
+                  socialAuth: socialAuth,
+                  onSelected: controller.doSocialSignIn,
+                  isLoading: isLoading,
+                  busyProvider: controller.pendingSocialProvider,
+                ),
+              ],
+
+              // Login link
+              const WSpacer(className: 'h-6'),
+              WAnchor(
+                onTap: () => MagicRoute.to('/auth/login'),
+                child: WDiv(
+                  className: 'flex flex-row justify-center gap-1',
+                  children: [
+                    WText(
+                      trans('auth.already_have_account'),
+                      className:
+                          MagicStarter.authTheme.registrationLinkClassName,
+                    ),
+                    WText(
+                      trans('auth.sign_in'),
+                      className:
+                          MagicStarter.authTheme.registrationLinkTextClassName,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            ?footerSlot,
-          ],
+              ?footerSlot,
+            ],
+          ),
         ),
       ),
     );
@@ -277,6 +294,7 @@ class _MagicStarterRegisterViewState
       controller: form['email'],
       placeholder: trans('fields.email_placeholder'),
       type: InputType.email,
+      autofillHints: const [AutofillHints.email],
       validator: rules(
         required ? [Required(), Email()] : [Email()],
         field: 'email',
@@ -294,6 +312,7 @@ class _MagicStarterRegisterViewState
       controller: form['phone'],
       placeholder: trans('fields.phone_placeholder'),
       type: InputType.text,
+      autofillHints: const [AutofillHints.telephoneNumber],
       validator: rules(required ? [Required()] : [], field: 'phone'),
       className: MagicStarter.formTheme.inputClassName,
       placeholderClassName: MagicStarter.formTheme.placeholderClassName,

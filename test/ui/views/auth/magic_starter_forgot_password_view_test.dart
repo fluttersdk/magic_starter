@@ -48,4 +48,23 @@ void main() {
       expect(find.text('Custom Footer'), findsOneWidget);
     });
   });
+
+  group('MagicStarterForgotPasswordView autofill', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.put(MagicStarterAuthController());
+    });
+
+    testWidgets('hints the email field', (tester) async {
+      await tester.pumpWidget(wrap(const MagicStarterForgotPasswordView()));
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<EditableText>(find.byType(EditableText));
+
+      expect(field.autofillHints, [AutofillHints.email]);
+    });
+  });
 }

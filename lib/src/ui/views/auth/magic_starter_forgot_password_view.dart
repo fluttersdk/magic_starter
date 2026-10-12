@@ -122,6 +122,7 @@ class _MagicStarterForgotPasswordViewState
               controller: form['email'],
               placeholder: trans('fields.email_placeholder'),
               type: InputType.email,
+              autofillHints: const [AutofillHints.email],
               validator: rules([Required(), Email()], field: 'email'),
               className: MagicStarter.formTheme.inputClassName,
               placeholderClassName: MagicStarter.formTheme.placeholderClassName,

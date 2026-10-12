@@ -143,9 +143,14 @@ void main() {
       await bootProvider();
       await bootProvider();
 
-      expect(MagicStarter.manager.beforeLogoutHooks, [
-        Notify.pushState.release,
-      ]);
+      // Only the push release is under test; the starter's revoke hook sits
+      // beside it whenever auth is bound.
+      expect(
+        MagicStarter.manager.beforeLogoutHooks.where(
+          (hook) => hook == Notify.pushState.release,
+        ),
+        hasLength(1),
+      );
     });
 
     test('is not registered while push-state reporting is off', () async {
@@ -153,7 +158,12 @@ void main() {
 
       await bootProvider();
 
-      expect(MagicStarter.manager.beforeLogoutHooks, isEmpty);
+      expect(
+        MagicStarter.manager.beforeLogoutHooks.where(
+          (hook) => hook == Notify.pushState.release,
+        ),
+        isEmpty,
+      );
     });
 
     test('is not registered without the notifications package bound', () async {
@@ -161,7 +171,12 @@ void main() {
 
       await bootProvider();
 
-      expect(MagicStarter.manager.beforeLogoutHooks, isEmpty);
+      expect(
+        MagicStarter.manager.beforeLogoutHooks.where(
+          (hook) => hook == Notify.pushState.release,
+        ),
+        isEmpty,
+      );
     });
   });
 }

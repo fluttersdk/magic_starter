@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
@@ -109,7 +110,10 @@ class MockGuard implements Guard {
   Authenticatable? _user;
   bool logoutCalled = false;
   Map<String, dynamic>? lastLoginData;
-  String? mockToken = 'mock-token';
+
+  /// Null until a login, so a fresh guard is signed out on both halves: no
+  /// user and no stored token.
+  String? mockToken;
 
   @override
   Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
@@ -158,6 +162,26 @@ class MockGuard implements Guard {
 
   @override
   ValueNotifier<int> get stateNotifier => ValueNotifier(0);
+}
+
+/// Records the `shouldSave` of every `TextInput.finishAutofillContext` call
+/// until the test ends.
+List<bool> _recordAutofillSaves() {
+  final saves = <bool>[];
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.textInput, (call) async {
+    if (call.method == 'TextInput.finishAutofillContext') {
+      saves.add(call.arguments as bool);
+    }
+
+    return null;
+  });
+  addTearDown(
+    () => messenger.setMockMethodCallHandler(SystemChannels.textInput, null),
+  );
+
+  return saves;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +268,26 @@ void main() {
         expect(mockGuard.check(), isTrue);
         expect(mockGuard.lastLoginData?['token'], equals('test-token-123'));
         expect(mockDriver.lastUrl, equals('/auth/login'));
+      });
+
+      test('success — offers the typed credentials for saving', () async {
+        final saves = _recordAutofillSaves();
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'test-token-123',
+              'user': {'id': 1, 'name': 'Alice'},
+            },
+          },
+        );
+
+        await controller.doLogin(
+          email: 'alice@example.com',
+          password: 'secret123',
+        );
+
+        expect(saves, [true]);
       });
 
       test('failure (422) — sets error state', () async {
@@ -453,6 +497,31 @@ void main() {
         expect(mockDriver.lastUrl, equals('/auth/register'));
       });
 
+      test(
+        'success with token — offers the new credentials for saving',
+        () async {
+          final saves = _recordAutofillSaves();
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {
+              'data': {
+                'token': 'reg-token',
+                'user': {'id': 2, 'name': 'Bob'},
+              },
+            },
+          );
+
+          await controller.doRegister(
+            name: 'Bob',
+            email: 'bob@example.com',
+            password: 'secret123',
+            passwordConfirmation: 'secret123',
+          );
+
+          expect(saves, [true]);
+        },
+      );
+
       test('success without token — sets success without login', () async {
         mockDriver.mockResponse(
           statusCode: 200,
@@ -634,6 +703,30 @@ void main() {
         await controller.logout();
 
         expect(mockGuard.logoutCalled, isTrue);
+      });
+
+      test('revokes the token server-side before clearing it', () async {
+        // Booted for real: the provider is what registers the revoke hook.
+        final provider = MagicStarterServiceProvider(MagicApp.instance);
+        provider.register();
+        await provider.boot();
+
+        mockGuard.mockToken = 'account-token';
+        final tokensAtRequest = <String, String?>{};
+        final fake = Http.fake((MagicRequest request) {
+          tokensAtRequest['${request.method} ${request.url}'] =
+              mockGuard.mockToken;
+          return Http.response();
+        });
+
+        await controller.logout();
+
+        // The AuthInterceptor attaches the guard's token to every request, so
+        // the token the guard held when the POST went out is its bearer.
+        expect(tokensAtRequest, {'POST /auth/logout': 'account-token'});
+        fake.assertSentCount(1);
+        expect(mockGuard.logoutCalled, isTrue);
+        expect(mockGuard.mockToken, isNull);
       });
     });
 

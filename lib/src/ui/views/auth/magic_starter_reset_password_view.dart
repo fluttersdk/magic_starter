@@ -130,84 +130,96 @@ class _MagicStarterResetPasswordViewState
       errorMessage: errorMessage,
       child: MagicForm(
         formData: form,
-        child: WDiv(
-          className: 'flex flex-col items-stretch',
-          children: [
-            if (headerSlot != null) ...[
-              headerSlot,
+        child: AutofillGroup(
+          // Cancel, never commit: the default commit offers to save a wrong
+          // password when the viewer leaves after a failed attempt.
+          onDisposeAction: AutofillContextAction.cancel,
+          child: WDiv(
+            className: 'flex flex-col items-stretch',
+            children: [
+              if (headerSlot != null) ...[
+                headerSlot,
+                const WSpacer(className: 'h-4'),
+              ],
+              // Email
+              WFormInput(
+                label: trans('attributes.email'),
+                controller: form['email'],
+                placeholder: trans('fields.email_placeholder'),
+                type: InputType.email,
+                validator: rules([Required(), Email()], field: 'email'),
+                className: MagicStarter.formTheme.inputClassName,
+                placeholderClassName:
+                    MagicStarter.formTheme.placeholderClassName,
+                labelClassName: MagicStarter.formTheme.labelClassName,
+              ),
               const WSpacer(className: 'h-4'),
-            ],
-            // Email
-            WFormInput(
-              label: trans('attributes.email'),
-              controller: form['email'],
-              placeholder: trans('fields.email_placeholder'),
-              type: InputType.email,
-              validator: rules([Required(), Email()], field: 'email'),
-              className: MagicStarter.formTheme.inputClassName,
-              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
-              labelClassName: MagicStarter.formTheme.labelClassName,
-            ),
-            const WSpacer(className: 'h-4'),
 
-            // Password
-            WFormInput(
-              label: trans('attributes.password'),
-              controller: form['password'],
-              placeholder: trans('fields.password_placeholder'),
-              type: _obscurePassword ? InputType.password : InputType.text,
-              validator: rules([Required(), Min(8)], field: 'password'),
-              suffix: WAnchor(
-                onTap: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                child: WIcon(
-                  _obscurePassword ? _iconVisible : _iconHidden,
-                  className: 'text-fg-muted text-xl',
+              // Password
+              WFormInput(
+                label: trans('attributes.password'),
+                controller: form['password'],
+                placeholder: trans('fields.password_placeholder'),
+                type: _obscurePassword ? InputType.password : InputType.text,
+                autofillHints: const [AutofillHints.newPassword],
+                validator: rules([Required(), Min(8)], field: 'password'),
+                suffix: WAnchor(
+                  onTap: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  child: WIcon(
+                    _obscurePassword ? _iconVisible : _iconHidden,
+                    className: 'text-fg-muted text-xl',
+                  ),
                 ),
+                className: MagicStarter.formTheme.inputClassName,
+                placeholderClassName:
+                    MagicStarter.formTheme.placeholderClassName,
+                labelClassName: MagicStarter.formTheme.labelClassName,
               ),
-              className: MagicStarter.formTheme.inputClassName,
-              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
-              labelClassName: MagicStarter.formTheme.labelClassName,
-            ),
-            const WSpacer(className: 'h-4'),
-
-            // Password Confirmation
-            WFormInput(
-              label: trans('attributes.password_confirmation'),
-              controller: form['password_confirmation'],
-              placeholder: trans('fields.password_confirmation_placeholder'),
-              type: _obscureConfirmation ? InputType.password : InputType.text,
-              validator: rules([Required()], field: 'password_confirmation'),
-              suffix: WAnchor(
-                onTap: () => setState(
-                  () => _obscureConfirmation = !_obscureConfirmation,
-                ),
-                child: WIcon(
-                  _obscureConfirmation ? _iconVisible : _iconHidden,
-                  className: 'text-fg-muted text-xl',
-                ),
-              ),
-              className: MagicStarter.formTheme.inputClassName,
-              placeholderClassName: MagicStarter.formTheme.placeholderClassName,
-              labelClassName: MagicStarter.formTheme.labelClassName,
-            ),
-            const WSpacer(className: 'h-6'),
-
-            // Submit
-            MSButton(
-              isLoading: isLoading,
-              onPressed: _submit,
-              className: MagicStarter.formTheme.primaryButtonClassName,
-              child: WText(
-                trans('auth.reset_password_button'),
-                className: 'text-center',
-              ),
-            ),
-            if (footerSlot != null) ...[
               const WSpacer(className: 'h-4'),
-              footerSlot,
+
+              // Password Confirmation
+              WFormInput(
+                label: trans('attributes.password_confirmation'),
+                controller: form['password_confirmation'],
+                placeholder: trans('fields.password_confirmation_placeholder'),
+                type: _obscureConfirmation
+                    ? InputType.password
+                    : InputType.text,
+                autofillHints: const [AutofillHints.newPassword],
+                validator: rules([Required()], field: 'password_confirmation'),
+                suffix: WAnchor(
+                  onTap: () => setState(
+                    () => _obscureConfirmation = !_obscureConfirmation,
+                  ),
+                  child: WIcon(
+                    _obscureConfirmation ? _iconVisible : _iconHidden,
+                    className: 'text-fg-muted text-xl',
+                  ),
+                ),
+                className: MagicStarter.formTheme.inputClassName,
+                placeholderClassName:
+                    MagicStarter.formTheme.placeholderClassName,
+                labelClassName: MagicStarter.formTheme.labelClassName,
+              ),
+              const WSpacer(className: 'h-6'),
+
+              // Submit
+              MSButton(
+                isLoading: isLoading,
+                onPressed: _submit,
+                className: MagicStarter.formTheme.primaryButtonClassName,
+                child: WText(
+                  trans('auth.reset_password_button'),
+                  className: 'text-center',
+                ),
+              ),
+              if (footerSlot != null) ...[
+                const WSpacer(className: 'h-4'),
+                footerSlot,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

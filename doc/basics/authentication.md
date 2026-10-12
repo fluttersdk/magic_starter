@@ -14,6 +14,7 @@
 - [OTP Flow](#otp-flow)
     - [Sending an OTP](#sending-an-otp)
     - [Verifying an OTP](#verifying-an-otp)
+- [Guest Sessions](#guest-sessions)
 - [Guest Claim](#guest-claim)
 - [Logout](#logout)
     - [Before-Logout Hooks](#before-logout-hooks)
@@ -65,6 +66,8 @@ The login flow has three possible outcomes:
 > Two-factor detection checks **both** `response['two_factor']` and `response['data']['two_factor']`. Some backends nest the flag differently, and the controller handles both variants.
 
 A `_isSubmitting` guard prevents double-submit — concurrent calls to `doLogin()` are silently discarded.
+
+The login, register, forgot-password and reset-password views hint their fields (`username`/`email`, `password`, `newPassword`, `telephoneNumber`) so a password manager or the OS keychain can fill them. The login, register and reset-password forms sit in an `AutofillGroup` that cancels on dispose, and the login and register forms stay mounted while the request is in flight; the context is committed (`TextInput.finishAutofillContext(shouldSave: true)`) only after an email and password sign-in or a registration has logged a session in and is about to navigate (`completeSignIn(saveCredentials: true)`), so a failed attempt, a provider or one-time-code sign-in, and a background guest session are never offered for saving.
 
 `Auth.login()` dispatches magic's `AuthLogin` event, which `MagicStarterServiceProvider` listens for to call the host's `MagicStarter.useLogin()` hook (see [Login Callback](../architecture/manager.md#login-callback)), unawaited and logged on failure. It fires for every sign-in path this package ships: password (above), [two-factor challenge](#two-factor-challenge), [social login](#social-login), guest login (`MagicStarterGuestAuthController.doGuestLogin()`) and [OTP verification](#verifying-an-otp), and never for a cold-boot restore of a stored session.
 
@@ -262,6 +265,20 @@ On success, the controller calls `Auth.login()` with the returned token and navi
 > [!NOTE]
 > The `OtpStep` enum drives the view state. Check `controller.step` to determine which input (phone or code) to display.
 
+<a name="guest-sessions"></a>
+## Guest Sessions
+
+`MagicStarterGuestAuthController` signs a visitor in as a guest with `POST /auth/guest`, sending a device id it keeps in `Vault` under `guest_device_id`, so the backend recognises a returning guest. Two entry points share the request:
+
+- `doGuestLogin()` is the login screen's "Continue as guest": it opens the session, then goes home.
+- `openGuestSession()` opens one in the background and leaves the viewer where they are, for a host that needs a session before anyone asks for one. It resolves `true` when a session exists afterwards and `false` when none could be opened (the reason is in the controller's error state); it never throws.
+
+```dart
+final bool hasSession = await MagicStarterGuestAuthController.instance.openGuestSession();
+```
+
+A session already held is kept and no request goes out: a guest's, because a second `POST /auth/guest` revokes every token that guest holds, and an account's, signed in or only stored, because a guest never replaces an account. Concurrent callers share the request in flight and its result; once it settles, the next call tries again.
+
 <a name="guest-claim"></a>
 ## Guest Claim
 
@@ -309,6 +326,8 @@ The contract:
 - A sign-out button of your own calls `await MagicStarter.manager.runBeforeLogoutHooks()` before its own `Auth.logout()`.
 
 When the `magic_notifications` package is bound and its push-state reporting is configured (`notifications.push_state.report_path`), `MagicStarterServiceProvider` registers `Notify.pushState.release` as a default hook, so the backend stops treating this device as reachable for the person who just left it. Nothing to wire.
+
+It also registers a hook that revokes the token on the server, `POST /auth/logout` with the still-valid bearer, so a sign-out ends the session on the backend rather than only forgetting the token on the device. It runs after the push release, sends nothing when no token is held, and logs a refused or failed request without holding up the sign-out. A hook you register after `MagicStarterServiceProvider` boots runs after the revoke, on a dead token.
 
 > [!WARNING]
 > Hooks do not run for a sign-out the app performs on its own. Magic's `AuthInterceptor` calls `Auth.logout()` when a token refresh fails, and by then the token is already dead: an authenticated hook could only answer `401`. Server-side state that must not outlive a session (a push-device row, for one) needs its own expiry on the backend.
@@ -386,7 +405,7 @@ Authentication features are controlled by these configuration toggles. All defau
 | Controller | Singleton | Key Methods |
 |-----------|----------|-------------|
 | `MagicStarterAuthController` | `.instance` | `doLogin()`, `doRegister()`, `doForgotPassword()`, `doResetPassword()`, `doTwoFactorChallenge()`, `logout()` |
-| `MagicStarterGuestAuthController` | `.instance` | `doGuestLogin()`, `isGuestUser`, `getStoredDeviceId()` |
+| `MagicStarterGuestAuthController` | `.instance` | `doGuestLogin()`, `openGuestSession()`, `isGuestUser`, `getStoredDeviceId()` |
 | `MagicStarterOtpController` | `.instance` | `sendOtp()`, `verifyOtp()`, `resetToPhoneInput()`, `step`, `phoneNumber` |
 
 All controllers use the `NavigatesRoutes` mixin for safe navigation. Never call `context.go()` directly in a controller — the navigator context may not be mounted. The mixin checks `MagicRouter.instance.navigatorKey.currentContext` and no-ops when unavailable.
@@ -407,7 +426,7 @@ All views extend `MagicStatefulView<ControllerType>` and are registered in the v
 | `auth.two_factor_challenge` | `TwoFactorChallengeView` | `GuestLayout` |
 | `auth.otp_verify` | `OtpVerifyView` | `GuestLayout` |
 
-Views are instantiated through the registry (`MagicStarter.view.make('auth.login')`) and wrapped in the appropriate layout (`MagicStarter.view.makeLayout('guest', child: view)`). The host app can override any view by registering a custom builder under the same key.
+Views are instantiated through the registry (`MagicStarter.view.make('auth.login')`) and wrapped in the appropriate layout (`MagicStarter.view.makeLayout('layout.guest', child: view)`). The host app can override any view by registering a custom builder under the same key.
 
 Views contain zero business logic — all async operations, state management, and navigation decisions live in the controllers.
 
