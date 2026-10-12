@@ -1,6 +1,6 @@
 name: magic_starter
 description: Starter kit for Magic Framework. Auth, Profile, Teams, Notifications — 14 opt-in features with overridable views.
-version: 0.0.42
+version: 0.0.43
 homepage: https://magic.fluttersdk.com/starter
 documentation: https://magic.fluttersdk.com/packages/starter/getting-started/installation
 repository: https://github.com/fluttersdk/magic_starter
@@ -33,10 +33,10 @@ dependencies:
   # magic. `SessionScope`, `SessionScoped`, the keyed `LatestRead` and
   # `BaseGuard.cacheUser`, which the team switch and the billing reads call,
   # first ship in 0.0.22, and the restore listener reads `AuthRestored.changed`,
-  # which first ships in 0.0.24. The floor itself names 0.0.27, the release the
-  # 2026-10-09 batch verified this package against.
-  magic: ^0.0.27
-  fluttersdk_artisan: ^0.0.19
+  # which first ships in 0.0.24. The floor itself names 0.0.28, the release the
+  # 2026-10-13 batch verified this package against.
+  magic: ^0.0.28
+  fluttersdk_artisan: ^0.0.20
   # This is a FLOOR for an API, not an upper-bound fix, and the API is
   # `Notify.view`: the notification screens, the bell dropdown and the
   # preferences controller live in that package now, and this package's routes
@@ -71,9 +71,9 @@ dependencies:
   # error at `notification_routes.dart` instead of a version-solve message
   # naming the package. Raising it is the difference between a readable refusal
   # and a broken build. `Notify.pushState`, which the provider registers as a
-  # before-logout hook, first ships in 0.3.5. The floor itself names 0.3.8, the
-  # release the 2026-10-09 batch verified this package against.
-  magic_notifications: ^0.3.8
+  # before-logout hook, first ships in 0.3.5. The floor itself names 0.3.9, the
+  # release the 2026-10-13 batch verified this package against.
+  magic_notifications: ^0.3.9
   # Direct rather than transitive, and this is the point of declaring it:
   # `fluttersdk_wind` reaches this package through `magic`, so without an entry
   # here there is no floor to raise when this package starts calling a new Wind
@@ -83,9 +83,11 @@ dependencies:
   # `pubspec.lock` already pins 1.5.3 and upgrades this package would otherwise
   # get `undefined_named_parameter` inside a package they do not own, with
   # nothing saying why; with the floor they get a version-solve message naming
-  # wind. The floor itself names 1.8.3, the first release whose `WInput` and
-  # `WFormInput` take the `autofillHints` the auth forms pass.
-  fluttersdk_wind: ^1.8.3
+  # wind. 1.8.3 is the first release whose `WInput` and `WFormInput` take the
+  # `autofillHints` the auth forms pass, and it also switched platform autofill
+  # off on every field that passes none; 1.8.4 restores that. The floor names
+  # 1.8.4, the release the 2026-10-13 batch verified this package against.
+  fluttersdk_wind: ^1.8.4
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
@@ -113,8 +115,10 @@ dependencies:
   # this package does not compile. 0.0.9 is where `introEligible` first ships,
   # which the trial copy on the billing screen depends on. 0.0.10 is where
   # `BillingErrorCode.paymentDeclined` and `paymentRequiresAction` first ship;
-  # the billing screen's exhaustive error copy switch names both.
-  magic_payments: ^0.0.10
+  # the billing screen's exhaustive error copy switch names both. The floor
+  # itself names 0.0.11, the release the 2026-10-13 batch verified this
+  # package against.
+  magic_payments: ^0.0.11
   args: ^2.7.0
   path: ^1.9.0
 
