@@ -5,6 +5,7 @@
 - [Creating Teams](#creating-teams)
 - [Team Switching](#team-switching)
     - [The Billable Subject](#billable-subject)
+    - [Price Format](#price-format)
     - [Free Trials](#free-trials)
     - [Changing a Web Plan](#changing-a-web-plan)
 - [Invitation](#invitation)
@@ -113,6 +114,26 @@ The team selector dropdown (see [Widget: MSTeamSelector](#widget-msteamselector)
 
 `MagicStarterServiceProvider` reads it at boot and sets `StoreIdentitySync.billableId`; any other value refuses the boot with a `StateError`, because a typo that fell back to `'user'` would bind every purchase to the wrong subject. Identifying on login and restore as well stays your call: add `StoreIdentitySync.attach()` to your provider's `boot()`.
 
+<a name="price-format"></a>
+### Price Format
+
+Every web price the billing screen shows (the plan card, the trial line, the renewal line and the trialing line) reads the producer's `display` string, `379.00 TRY`, which carries no separator and no symbol. An app that writes money its own way registers a `MagicStarterPriceFormat` on the controller:
+
+```dart
+Magic.put(
+  MagicStarterBillingController(
+    usageCopy: withUsageCopy,
+    formatNumber: Number.format,
+    formatPrice: (MagicStarterWebPrice price) => switch (price.currency) {
+      'TRY' => '${Number.format(price.amountMinor / 100)} TL',
+      _ => price.display,
+    },
+  ),
+);
+```
+
+`MagicStarterWebPrice` carries `amountMinor` (in the currency's minor unit), `currency` (the ISO 4217 code) and `display`. Return `price.display` for any currency the app does not format itself. `MagicStarterBillingController.priceText(price)` is what the screen calls.
+
 <a name="free-trials"></a>
 ### Free Trials
 
@@ -123,7 +144,7 @@ The billing screen (`teams.billing`) shows a trial and a store introductory offe
 | Where | What it shows |
 |---|---|
 | Current plan card | A "Trial" badge beside the plan name, and one line in place of the renewal line: "Free trial ends :date (:left), then :price per :cycle" (a web trial with a known price and cycle), the same without the price and cycle, the same with the store sentence (a store trial), or "Free trial ends :date. It will not renew." once the trial is cancelled |
-| Web plan card | Above the call to action, "Free for :period. Card required, then :price per :cycle.", and the call to action reads "Start free trial". Only on a web build, only for a product with `trialDays` above zero, and the billed price stays the large figure |
+| Web plan card | Above the call to action, "Free for :period. Card required, then :price per :cycle.", and the call to action reads "Start free trial". Only on a web build, only for a product with `trialDays` above zero, and the billed price stays the large figure. The first upgrade with a trial takes the grid's one filled button (otherwise the cheapest upgrade keeps it), and that button glows in its own fill colour, pulsing three times when the card first paints; reduced motion keeps the glow and drops the pulse |
 | Store plan card (disclosure) | "Free for :intro_period, then :price per :period" for a free introductory offer. Only when the store says this customer is eligible (`StoreProductOffer.introEligible`); otherwise the plain "per period" line |
 
 The translator has no plural API, so each count is chosen in Dart: `:count == 1` reads the `_one` key and any other count the `_other` key. The keys, all under `magic_starter.billing` in `en.stub`:

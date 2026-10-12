@@ -624,27 +624,29 @@ class _MagicStarterBillingViewState
               trans('magic_starter.billing.payment_failed_notice'),
               className: 'text-sm text-destructive',
             ),
-          WDiv(
-            className: 'grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2',
-            children: <Widget>[
-              // A stat the consumer's copy could not name gets NO meter, rather
-              // than one labelled with its raw wire key. The producer reports
-              // every resource it meters and an app names the ones it sells, so
-              // a new resource arriving early would otherwise put
-              // `checks_this_month` on a customer's screen. A gate still reads
-              // it by key either way, which is why the controller carries it all
-              // the way here instead of dropping it.
-              for (final UsageStat stat in controller.usage)
-                if (stat.label != null)
-                  MSUsageMeter(
-                    label: stat.label!,
-                    used: stat.used,
-                    limit: stat.limit,
-                    unit: stat.unit.isEmpty ? null : stat.unit,
-                    formatNumber: controller.formatNumber,
-                  ),
-            ],
-          ),
+          // A stat the consumer's copy could not name gets NO meter, rather
+          // than one labelled with its raw wire key. The producer reports every
+          // resource it meters and an app names the ones it sells, so a new
+          // resource arriving early would otherwise put `checks_this_month` on
+          // a customer's screen. A gate still reads it by key either way, which
+          // is why the controller carries it all the way here instead of
+          // dropping it. With nothing named there is no grid at all: an empty
+          // one still takes the column's `gap-5`.
+          if (controller.usage.any((UsageStat stat) => stat.label != null))
+            WDiv(
+              className: 'grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2',
+              children: <Widget>[
+                for (final UsageStat stat in controller.usage)
+                  if (stat.label != null)
+                    MSUsageMeter(
+                      label: stat.label!,
+                      used: stat.used,
+                      limit: stat.limit,
+                      unit: stat.unit.isEmpty ? null : stat.unit,
+                      formatNumber: controller.formatNumber,
+                    ),
+              ],
+            ),
         ],
       ),
     );
@@ -1223,7 +1225,9 @@ class _MagicStarterBillingViewState
                 className: 'text-xs text-fg-muted',
               ),
             _TrialGlow(
-              enabled: trial != null,
+              // Only on the grid's one filled button: a second trial tier, or
+              // a grid whose entitlement has not resolved, glows nowhere.
+              enabled: trial != null && plan.id == _featuredUpgradeId,
               child: MSButton(
                 intent: _ctaIntent(plan),
                 fullWidth: true,
@@ -2470,9 +2474,10 @@ class _MagicStarterBillingViewState
   /// four identical grey rectangles, no focal point, and no way to tell the
   /// disabled one from the live ones.
   ///
-  /// The filled one is the cheapest tier ABOVE what the customer holds, because
-  /// that is the move a grid should make easy, and there is none at all until
-  /// the entitlement says what they hold.
+  /// The filled one is [_featuredUpgradeId]: the first tier above what the
+  /// customer holds that starts with a web trial, otherwise the cheapest tier
+  /// above it, because that is the move a grid should make easy, and there is
+  /// none at all until the entitlement says what they hold.
   ///
   /// TWO treatments, not three. A downgrade was `ghost` for one revision, on the
   /// reasoning that a grid should not invite it, and `ghost` in this package is
@@ -2804,21 +2809,27 @@ class _MagicStarterBillingViewState
   }
 }
 
-/// A soft glow in the theme's primary colour around a plan card's trial
+/// A soft glow in the button's own fill colour around the grid's featured trial
 /// button, which pulses a few times when the card first paints and then rests.
 ///
 /// Finite on purpose. A pulse that never stops keeps a ticker alive for as long
 /// as the billing page is open, which is a distraction the customer cannot turn
 /// off and a frame cost on every device, so it draws the eye once and settles
 /// into a static glow that still marks the offer. Reduced motion skips the
-/// pulse and keeps the resting glow, so the emphasis does not depend on motion.
+/// pulse, or stops one already running, and keeps the resting glow, so the
+/// emphasis does not depend on motion.
 ///
-/// With [enabled] false, or a theme that defines no `primary` colour, the
-/// [child] is returned untouched: no wrapper, no ticker.
+/// The colour is whatever `bg-primary` paints in the current brightness, read
+/// through the same parser the button's fill goes through, so the halo matches
+/// the fill in dark mode too (a palette lookup returns the light shade there).
+///
+/// The [child] is always wrapped, with no shadow while [enabled] is false: a
+/// wrapper that came and went with the cycle toggle would remount the button
+/// and drop its hover and focus state.
 class _TrialGlow extends StatefulWidget {
   const _TrialGlow({required this.enabled, required this.child});
 
-  /// Whether the card advertises a trial, and so whether to glow at all.
+  /// Whether this is the grid's featured trial button, and so whether to glow.
   final bool enabled;
 
   final Widget child;
@@ -2848,6 +2859,14 @@ class _TrialGlowState extends State<_TrialGlow>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // Reduced motion can be switched on while the pulse runs.
+    if (MediaQuery.disableAnimationsOf(context) && _pulse.isAnimating) {
+      _pulse
+        ..stop()
+        ..value = 0;
+    }
+
     _pulseOnce();
   }
 
@@ -2877,23 +2896,27 @@ class _TrialGlowState extends State<_TrialGlow>
 
   @override
   Widget build(BuildContext context) {
-    final Color? primary = widget.enabled ? wColor(context, 'primary') : null;
-    if (primary == null) return widget.child;
+    final Color? fill = widget.enabled
+        ? WindParser.parse('bg-primary', context).decoration?.color
+        : null;
 
     return AnimatedBuilder(
       animation: _pulse,
       builder: (BuildContext context, Widget? child) {
         final double t = Curves.easeInOut.transform(_pulse.value);
 
+        // The peak stays inside the `gap-2` above the button, so the pulse
+        // never tints the trial line it sits under.
         return DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: _radius,
             boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: primary.withValues(alpha: 0.25 + 0.3 * t),
-                blurRadius: 8 + 14 * t,
-                spreadRadius: 3 * t,
-              ),
+              if (fill != null)
+                BoxShadow(
+                  color: fill.withValues(alpha: 0.25 + 0.25 * t),
+                  blurRadius: 8 + 8 * t,
+                  spreadRadius: 2 * t,
+                ),
             ],
           ),
           child: child,

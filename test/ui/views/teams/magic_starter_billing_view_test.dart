@@ -2009,6 +2009,33 @@ void main() {
       'widgets_provisioned': <String, dynamic>{'used': 3, 'limit': 9},
     });
 
+    testWidgets('a usage read the copy names nothing in draws no meter grid', (
+      tester,
+    ) async {
+      // An app that meters only capped resources leaves every stat of an
+      // unlimited tier unnamed; an empty grid would still take the column's
+      // `gap-5` and leave a hole under the plan line.
+      await mount(
+        tester,
+        _RailBillingService(
+          manageVia: 'portal',
+          usage: UsageStat.fromWireMap(<String, dynamic>{
+            'widgets_provisioned': <String, dynamic>{'used': 3, 'limit': 9},
+          }),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is WDiv &&
+              (widget.className ?? '').contains('grid grid-cols-1 gap-x-8'),
+        ),
+        findsNothing,
+      );
+    });
+
     testWidgets('renders the date, the expiry, the usage label and the status '
         'pill from the instants and numbers the rail reported', (tester) async {
       final _RailBillingService billing = _RailBillingService(
@@ -5568,6 +5595,58 @@ void main() {
       expect(trialGlow(), findsOneWidget);
       final double resting = glowShadows(tester).single.blurRadius;
 
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(glowShadows(tester).single.blurRadius, resting);
+    });
+
+    testWidgets('only the filled trial button glows', (tester) async {
+      // Both paid tiers offer a trial: `pro` is the first, so it takes the
+      // fill, and a glow on `business` too would point at two offers at once.
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(
+          trialDaysByKey: <String, int>{
+            'pro_annual': 14,
+            'business_annual': 14,
+          },
+        ),
+        isOwner: true,
+      );
+
+      expect(
+        find.text(trans('magic_starter.billing.trial_cta')),
+        findsNWidgets(2),
+      );
+      expect(trialGlow(), findsOneWidget);
+      expect(
+        tester
+            .widget<MSButton>(
+              find.descendant(of: trialGlow(), matching: find.byType(MSButton)),
+            )
+            .intent,
+        ButtonIntent.primary,
+      );
+    });
+
+    testWidgets('reduced motion switched on mid-pulse stops the pulse', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+      final double resting = glowShadows(tester).single.blurRadius;
+
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(glowShadows(tester).single.blurRadius, isNot(resting));
+
+      await tester.pumpWidget(
+        wrap(MagicStarter.view.make('teams.billing'), disableAnimations: true),
+      );
+      await tester.pump();
+
+      expect(glowShadows(tester).single.blurRadius, resting);
       await tester.pump(const Duration(milliseconds: 700));
       expect(glowShadows(tester).single.blurRadius, resting);
     });
