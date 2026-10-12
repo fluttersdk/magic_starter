@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 - **A trial is the plan grid's featured call to action.** The grid's one filled button went to the cheapest upgrade, so a free customer saw a filled "Upgrade" on a tier with no trial and a grey "Start free trial" on the tier that costs nothing today. The first upgrade whose product carries a web trial on the selected cycle now takes the fill; with no trial on the grid the cheapest upgrade keeps it. The trial button also carries a glow in the theme's `primary` colour that pulses three times when the card first paints and then rests, with no pulse under reduced motion. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)
 
+### Added
+
+- **`MagicStarterBillingController(formatPrice:)`, a consumer money format.** Every web price the billing screen shows (the plan card, the trial line, the renewal line and the trialing line) goes through `MagicStarterBillingController.priceText`, which calls the consumer's `MagicStarterPriceFormat` when one is registered and shows the producer's `display` (`379.00 TRY`) otherwise, so an app can write `379 TL` without the package carrying a currency table. `MagicStarterWebPrice` gains `currency`, the ISO 4217 code it is priced in. (`lib/src/http/controllers/magic_starter_billing_controller.dart`, `lib/src/models/magic_starter_product.dart`, `lib/src/ui/views/teams/magic_starter_billing_view.dart`)
+
 ### Fixed
 
 - **A plan card's call to action centres a wrapped label.** The stretched button centred the label box, not its lines, so a label that wrapped in a narrow column ("Start free trial", and longer translations) set its second line flush left. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)

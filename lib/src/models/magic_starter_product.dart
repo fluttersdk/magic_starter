@@ -4,8 +4,14 @@ import 'package:magic_payments/magic_payments.dart';
 /// One price the web rail charges for a product, in one currency.
 ///
 /// [amountMinor] is in the currency's minor unit (cents, kurus), for
-/// arithmetic; [display] is the producer's own formatted string, for rendering.
-typedef MagicStarterWebPrice = ({int amountMinor, String display});
+/// arithmetic; [currency] is its ISO 4217 code (`'TRY'`); [display] is the
+/// producer's own locale-free string (`'379.00 TRY'`), which the screen shows
+/// unless the consumer registered a `MagicStarterPriceFormat`.
+typedef MagicStarterWebPrice = ({
+  int amountMinor,
+  String currency,
+  String display,
+});
 
 /// The store product ids a catalogue product is sold as, one per store, each
 /// `null` when that store does not carry it.
@@ -128,7 +134,11 @@ class MagicStarterProduct {
       final Object? display = value['display'];
       if (amount is! num || display is! String) continue;
 
-      prices[key] = (amountMinor: amount.toInt(), display: display);
+      prices[key] = (
+        amountMinor: amount.toInt(),
+        currency: key,
+        display: display,
+      );
     }
 
     return prices;

@@ -1659,11 +1659,13 @@ void main() {
     bool withToasts = false,
     Size surface = const Size(1280, 12000),
     bool disableAnimations = false,
+    MagicStarterPriceFormat? formatPrice,
   }) async {
     Magic.put(
       MagicStarterBillingController(
         usageCopy: _usageCopy,
         formatNumber: _formatNumber,
+        formatPrice: formatPrice,
         isOwnerReader: isOwner == null ? null : () => isOwner,
         storeFundedTeamReader: storeFundedTeam ?? () async => null,
         billingService: billing,
@@ -5386,6 +5388,54 @@ void main() {
       expect(find.textContaining('Card required'), findsNothing);
       expect(find.textContaining('Free for '), findsNothing);
       expect(find.text(trans('magic_starter.billing.trial_cta')), findsNothing);
+    });
+  });
+
+  group('a consumer\'s price format renders every web price', () {
+    /// Names the currency and the minor amount, so a test can tell the
+    /// formatter ran and read the right price.
+    String format(MagicStarterWebPrice price) =>
+        '${price.currency}:${price.amountMinor}';
+
+    testWidgets('the plan card and the trial line read the consumer format', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(
+          trialDaysByKey: <String, int>{'business_annual': 14},
+        ),
+        isOwner: true,
+        formatPrice: format,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('USD:118800'), findsOneWidget);
+      expect(
+        find.text('Free for 14 days. Card required, then USD:118800 per year.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('1188.00 USD'), findsNothing);
+    });
+
+    testWidgets('the renewal line reads it too', (tester) async {
+      await mount(
+        tester,
+        _TrialWebBillingService(),
+        isOwner: true,
+        formatPrice: format,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('USD:34800 billed annually'), findsOneWidget);
+    });
+
+    testWidgets('without one the producer\'s display string stands', (
+      tester,
+    ) async {
+      await mount(tester, _TrialWebBillingService(), isOwner: true);
+
+      expect(find.text('1188.00 USD'), findsOneWidget);
     });
   });
 

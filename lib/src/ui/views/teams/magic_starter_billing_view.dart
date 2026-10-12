@@ -796,7 +796,7 @@ class _MagicStarterBillingViewState
           ? 'magic_starter.billing.renewal_ends'
           : 'magic_starter.billing.renewal_text',
       <String, dynamic>{
-        'price': price.display,
+        'price': controller.priceText(price),
         'cycle': _cycleLabel(cycle),
         'date':
             _formatDate(controller.paymentMethod?.renewalDate) ??
@@ -864,7 +864,7 @@ class _MagicStarterBillingViewState
     return trans('magic_starter.billing.trial_line_renews', <String, dynamic>{
       'date': date,
       'left': left,
-      'price': price.display,
+      'price': controller.priceText(price),
       'cycle': _periodWord(cycle),
     });
   }
@@ -1277,7 +1277,7 @@ class _MagicStarterBillingViewState
 
     return (
       period: _periodLabel(product.trialDays, 'day'),
-      price: price.display,
+      price: controller.priceText(price),
       cycle: _periodWord(_cycleFor(plan)),
     );
   }
@@ -2581,8 +2581,10 @@ class _MagicStarterBillingViewState
   ///    is sold instead of showing a price nobody here can pay.
   /// 3. A web product the producer gave no displayable price says the hosted
   ///    checkout shows it, which it does before anybody is charged.
-  /// 4. Otherwise the producer's own display string (`29.00 USD`), so no
-  ///    amount arithmetic or currency table lives here. Of the currencies a
+  /// 4. Otherwise the price through [MagicStarterBillingController.priceText]:
+  ///    the consumer's format, or the producer's own display string
+  ///    (`29.00 USD`), so no amount arithmetic or currency table lives here.
+  ///    Of the currencies a
   ///    product is priced in, the first the producer lists is shown: the client
   ///    cannot know which one the rail will charge, and that order is the
   ///    vendor's own.
@@ -2622,7 +2624,7 @@ class _MagicStarterBillingViewState
             text: trans('magic_starter.billing.plan_price_checkout'),
             sentence: true,
           )
-        : (text: price.display, sentence: false);
+        : (text: controller.priceText(price), sentence: false);
   }
 
   /// The web price of the product [current] is billed as on [cycle], or `null`
