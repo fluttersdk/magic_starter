@@ -101,7 +101,15 @@ class MagicStarterGuestAuthController extends MagicController
         return false;
       }
 
-      // 4. Conclude the sign-in through the path every token takes, leaving
+      // 4. A session that arrived while the request was in flight wins: the
+      //    viewer signed in meanwhile, and a guest never replaces an account.
+      if (Auth.check()) {
+        setSuccess(true);
+
+        return true;
+      }
+
+      // 5. Conclude the sign-in through the path every token takes, leaving
       //    navigation to the caller.
       final concluded = await completeSignIn(
         response.data as Map<String, dynamic>?,

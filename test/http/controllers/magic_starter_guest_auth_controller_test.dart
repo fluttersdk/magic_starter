@@ -23,12 +23,19 @@ class MockNetworkDriver implements NetworkDriver {
   /// surfaces through the driver.
   Object? failWith;
 
+  /// Runs while the next request is in flight, before it answers, so a test
+  /// can change the session underneath it.
+  void Function()? duringRequest;
+
   void mockResponse({required int statusCode, dynamic data}) {
     nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
     requestCount++;
+    final inFlight = duringRequest;
+    duringRequest = null;
+    inFlight?.call();
     final failure = failWith;
     if (failure != null) {
       failWith = null;
@@ -559,6 +566,21 @@ void main() {
 
         expect(await controller.openGuestSession(), isTrue);
         expect(mockDriver.requestCount, 0);
+        expect(Auth.user()?.get<String>('name'), 'Alice');
+      });
+
+      test('an account signed in while the request flies is kept', () async {
+        // The viewer reaches the login screen and signs in before a slow
+        // background open answers: the guest it brings back must not replace
+        // the account that now holds the session.
+        mockDriver.duringRequest = () => mockGuard.setUser(
+          MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Alice'}),
+        );
+        answerWithGuestSession();
+
+        expect(await controller.openGuestSession(), isTrue);
+        expect(mockDriver.requestCount, 1);
+        expect(mockGuard.lastLoginData, isNull);
         expect(Auth.user()?.get<String>('name'), 'Alice');
       });
 
