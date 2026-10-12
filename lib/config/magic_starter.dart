@@ -22,6 +22,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'notifications': true,
       'timezones': false,
       'billing': false,
+      'support': false,
     },
     'auth': {'email': true, 'phone': false},
     'defaults': {'locale': 'en', 'timezone': 'UTC'},

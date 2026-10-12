@@ -37,6 +37,7 @@ class MagicStarterConfig {
   static const bool _defaultEmailVerification = false;
   static const bool _defaultTimezones = false;
   static const bool _defaultBilling = false;
+  static const bool _defaultSupport = false;
   static const bool _defaultEmailIdentity = true;
   static const bool _defaultPhoneIdentity = false;
 
@@ -197,6 +198,15 @@ class MagicStarterConfig {
           _defaultBilling,
         ) ??
         _defaultBilling;
+  }
+
+  /// Returns whether the support desk starter features are enabled.
+  static bool hasSupportFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.support',
+          _defaultSupport,
+        ) ??
+        _defaultSupport;
   }
 
   /// Returns whether email-based identity is enabled.
@@ -397,6 +407,15 @@ class MagicStarterConfig {
   }
 
   // -- Computed route paths --
+
+  /// Full path for the support conversation list.
+  static String supportRoute() => '/support';
+
+  /// Full path for the new support conversation page.
+  static String supportCreateRoute() => '${supportRoute()}/new';
+
+  /// Full path pattern for one support conversation thread.
+  static String supportThreadRoute() => '${supportRoute()}/:id';
 
   /// Full path for team creation page.
   static String teamCreateRoute() => '${teamsPrefix()}/create';

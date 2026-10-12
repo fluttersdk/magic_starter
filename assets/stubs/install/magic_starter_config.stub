@@ -20,6 +20,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'guest_auth': {{ feature_guest_auth }},
       'timezones': {{ feature_timezones }},
       'billing': {{ feature_billing }},
+      'support': {{ feature_support }},
     },
     'auth': {
       'email': true,
