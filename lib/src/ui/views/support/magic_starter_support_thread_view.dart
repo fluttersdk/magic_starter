@@ -99,8 +99,13 @@ class _MagicStarterSupportThreadViewState
     if (id == null) return;
 
     await controller.loadConversation(id);
+
+    // A read dropped as stale leaves the controller describing whichever
+    // thread is on screen now, so its unread state says nothing about this one.
+    final MagicStarterSupportConversation? loaded = controller.conversation;
+    if (!mounted || loaded == null || loaded.id.toString() != id) return;
     if (controller.threadStatus != MagicStarterSupportReadStatus.loaded) return;
-    if (!(controller.conversation?.hasUnread ?? false)) return;
+    if (!loaded.hasUnread) return;
 
     final bool seen = await controller.markSeen(id);
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -469,6 +470,50 @@ void main() {
         findsOneWidget,
       );
       expect(count(sent, 'POST', '/support/conversations/7/seen'), 1);
+    });
+
+    testWidgets('a thread left before it loaded sends no receipt for it', (
+      tester,
+    ) async {
+      // Open A, go back before it answers, open B with an unread reply. When A
+      // finally answers, its read is dropped as stale; the receipt that
+      // followed it must not read B's unread state and clear A's dot.
+      final answerA = Completer<MagicResponse>();
+      final List<String> sent = <String>[];
+      Http.fake((MagicRequest request) async {
+        sent.add('${request.method} ${request.url}');
+        if (request.url == '/support/conversations/1') return answerA.future;
+        if (request.url == '/support/conversations/2') {
+          return ok(conversationJson(id: 2, hasUnread: true));
+        }
+        if (request.url == '/support/conversations') {
+          return ok(<Map<String, dynamic>>[]);
+        }
+
+        return Http.response(<String, dynamic>{});
+      });
+
+      await mount(tester, at: '/support');
+      // A's skeleton animates while its read is pending, so these pumps run a
+      // fixed transition length instead of settling.
+      MagicRoute.to('/support/1');
+      for (var frame = 0; frame < 5; frame++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      expect(sent, contains('GET /support/conversations/1'));
+      MagicRoute.back();
+      await tester.pump(const Duration(seconds: 1));
+      MagicRoute.to('/support/2');
+      await tester.pumpAndSettle();
+
+      answerA.complete(ok(conversationJson(id: 1)));
+      await tester.pumpAndSettle();
+
+      expect(sent, isNot(contains('POST /support/conversations/1/seen')));
+      expect(
+        sent.where((s) => s == 'POST /support/conversations/2/seen'),
+        hasLength(1),
+      );
     });
 
     testWidgets('sends no seen receipt when nothing is unread', (tester) async {
