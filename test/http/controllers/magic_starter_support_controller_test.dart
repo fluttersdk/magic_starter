@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -143,6 +145,54 @@ void main() {
       expect(controller.conversation!.messages, hasLength(2));
       expect(controller.conversation!.messages.last.senderType, 'staff');
       expect(controller.conversation!.messages.last.body, 'On it');
+    });
+
+    test(
+      'a slower answer for an earlier thread never replaces a newer one',
+      () async {
+        // Open A, go back before it loads, open B. A answering last must not
+        // put A's messages on B's page, where the composer posts to B.
+        final answerA = Completer<MagicResponse>();
+        // `async`, so the handler's type is a FakeRequestHandler: `Http.fake`
+        // takes `dynamic`, and a closure returning a Future on one branch and a
+        // response on the other infers as returning Object and is ignored.
+        Http.fake((MagicRequest request) async {
+          if (request.url == '/support/conversations/1') return answerA.future;
+
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(id: 2),
+          });
+        });
+
+        final readA = controller.loadConversation(1);
+        await controller.loadConversation(2);
+        answerA.complete(
+          Http.response(<String, dynamic>{'data': conversationJson(id: 1)}),
+        );
+        await readA;
+
+        expect(controller.threadStatus, MagicStarterSupportReadStatus.loaded);
+        expect(controller.conversation!.id, 2);
+      },
+    );
+
+    test('a 404 for an earlier thread leaves the newer one standing', () async {
+      final answerA = Completer<MagicResponse>();
+      Http.fake((MagicRequest request) async {
+        if (request.url == '/support/conversations/1') return answerA.future;
+
+        return Http.response(<String, dynamic>{
+          'data': conversationJson(id: 2),
+        });
+      });
+
+      final readA = controller.loadConversation(1);
+      await controller.loadConversation(2);
+      answerA.complete(Http.response(<String, dynamic>{}, 404));
+      await readA;
+
+      expect(controller.threadStatus, MagicStarterSupportReadStatus.loaded);
+      expect(controller.conversation!.id, 2);
     });
 
     test('createConversation sends subject, body and source only', () async {

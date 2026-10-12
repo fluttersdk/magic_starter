@@ -35,6 +35,9 @@ class _MagicStarterSupportCreateViewState
   final TextEditingController _body = TextEditingController();
 
   @override
+  void onInit() => controller.forgetWriteError();
+
+  @override
   void onClose() {
     _subject.dispose();
     _body.dispose();

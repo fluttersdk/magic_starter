@@ -44,6 +44,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'guest_auth': false,
       'timezones': false,
       'billing': false,
+      'support': false,
     },
     'auth': {
       'email': true,
@@ -117,6 +118,7 @@ Every feature defaults to `false` and must be explicitly enabled. Each toggle co
 | `email_verification` | `false` | Email verification banner and resend verification flow. |
 | `guest_auth` | `false` | Guest-mode authentication screens (login, register, forgot password, reset). |
 | `timezones` | `false` | Timezone selection with debounced async API search. |
+| `support` | `false` | Support desk screens (`/support`, `/support/new`, `/support/:id`), the Support profile-menu item and the Contact sales conversation. The host registers the routes with `registerMagicStarterSupportRoutes()`; see [Support](../basics/support.md). |
 
 To enable features, set their values to `true` in `lib/config/magic_starter.dart`:
 

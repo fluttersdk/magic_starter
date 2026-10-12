@@ -382,6 +382,35 @@ void main() {
       expect(find.text('Please help'), findsOneWidget);
     });
 
+    testWidgets('opens clean after a refused reply elsewhere', (tester) async {
+      // The controller is one singleton across the support screens. magic's
+      // view clears field errors on init, but the write error is this
+      // controller's own, so a refusal on a reply would greet a reader who
+      // has not typed anything yet.
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(conversationJson(id: 7)),
+        'POST /support/conversations/7/messages': (_) => Http.response(
+          <String, dynamic>{'message': 'Support is resting.'},
+          503,
+        ),
+      });
+
+      await mount(tester, at: '/support/7');
+      await tester.enterText(find.byType(EditableText).last, 'Still there?');
+      await tester.tap(find.text(trans('magic_starter.support.reply_submit')));
+      await tester.pumpAndSettle();
+      expect(find.text('Support is resting.'), findsOneWidget);
+
+      MagicRoute.to(MagicStarterConfig.supportCreateRoute());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('magic_starter.support.create_submit')),
+        findsOneWidget,
+      );
+      expect(find.text('Support is resting.'), findsNothing);
+    });
+
     testWidgets('a refused field shows its error and stays on the page', (
       tester,
     ) async {

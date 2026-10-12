@@ -54,6 +54,7 @@ class _MagicStarterSupportThreadViewState
 
   @override
   void onInit() {
+    controller.forgetWriteError();
     startLiveRefresh();
   }
 

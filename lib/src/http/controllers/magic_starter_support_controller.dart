@@ -47,6 +47,11 @@ class MagicStarterSupportController extends MagicController
   /// belongs to the previous session and publishes nothing.
   int _sessionGeneration = 0;
 
+  /// Bumped by every [loadConversation]; only the newest thread read
+  /// publishes, so a slow answer for a thread the reader already left cannot
+  /// replace the one on screen, whose composer posts to the newer thread.
+  int _threadRead = 0;
+
   bool _isSubmitting = false;
 
   MagicStarterSupportReadStatus _listStatus =
@@ -121,6 +126,7 @@ class MagicStarterSupportController extends MagicController
   /// one does, and a retry would only repeat the refusal.
   Future<void> loadConversation(Object id) async {
     final generation = _sessionGeneration;
+    final read = ++_threadRead;
 
     // A different thread must not show the previous one while it loads; the
     // same thread keeps its messages so a refresh does not blink.
@@ -130,7 +136,7 @@ class MagicStarterSupportController extends MagicController
 
     try {
       final response = await Http.get('/support/conversations/$id');
-      if (generation != _sessionGeneration) return;
+      if (generation != _sessionGeneration || read != _threadRead) return;
 
       if (response.notFound) {
         _markThreadNotFound();
@@ -151,7 +157,7 @@ class MagicStarterSupportController extends MagicController
       Log.error(
         '[MagicStarterSupportController.loadConversation] $e\n$stackTrace',
       );
-      if (generation != _sessionGeneration) return;
+      if (generation != _sessionGeneration || read != _threadRead) return;
       _threadStatus = MagicStarterSupportReadStatus.failed;
     }
 
@@ -212,7 +218,11 @@ class MagicStarterSupportController extends MagicController
       final response = await Http.post('/support/conversations/$id/seen');
 
       if (response.notFound) {
-        _markThreadNotFound();
+        // Only the thread on screen turns into not-found; a late receipt for
+        // a thread the reader already left says nothing about this one.
+        if (_conversation?.id.toString() == id.toString()) {
+          _markThreadNotFound();
+        }
         return false;
       }
 
@@ -229,6 +239,12 @@ class MagicStarterSupportController extends MagicController
       return false;
     }
   }
+
+  /// Forgets the last write refusal without notifying, for a screen's
+  /// `onInit`: magic's view clears field errors there itself, but
+  /// [writeError] is this controller's own and would otherwise greet the next
+  /// screen. Silent because it runs while the screen is being built.
+  void forgetWriteError() => _writeError = null;
 
   /// Drops every row of the previous session, then refetches the list when one
   /// had been read (see [SessionScoped]).
