@@ -14,6 +14,10 @@ import 'concerns/navigates_routes.dart';
 /// ### Typical usage
 /// ```dart
 /// await MagicStarterGuestAuthController.instance.doGuestLogin();
+///
+/// // A host opening one in the background, the viewer left where they are:
+/// final hasSession =
+///     await MagicStarterGuestAuthController.instance.openGuestSession();
 /// ```
 class MagicStarterGuestAuthController extends MagicController
     with
@@ -24,45 +28,63 @@ class MagicStarterGuestAuthController extends MagicController
   /// Singleton accessor — follows the Magic Framework controller pattern.
   static MagicStarterGuestAuthController get instance =>
       Magic.findOrPut(MagicStarterGuestAuthController.new);
-  bool _isSubmitting = false;
 
   /// Vault key used to persist the guest device identifier across sessions.
   static const String _deviceIdKey = 'guest_device_id';
+
+  /// The open in flight, shared by every caller until it settles.
+  Future<bool>? _opening;
 
   // -------------------------------------------------------------------------
   // Public actions
   // -------------------------------------------------------------------------
 
-  /// Authenticates the user as a guest using a persistent UUID v4 device ID.
-  ///
-  /// Steps:
-  ///   1. Load existing device ID from Vault or generate a new UUID v4.
-  ///   2. Persist the device ID in Vault for future app starts.
-  ///   3. Send `POST /auth/guest` with the device ID.
-  ///   4. Conclude the sign-in through [CompletesSignIn.completeSignIn].
+  /// The login screen's "Continue as guest": opens a guest session through
+  /// [openGuestSession], then goes home, or wherever the visitor was headed.
   ///
   /// A user who is already a guest goes home without a request. The login
   /// page lets a guest in (it is where a guest signs in to an account), so
-  /// "Continue as guest" is that guest's way back, and a second
-  /// `POST /auth/guest` would revoke every token the returning guest holds,
-  /// including one a host keeps to claim the guest's data at sign-in.
+  /// "Continue as guest" is that guest's way back.
   Future<void> doGuestLogin() async {
-    if (isGuestUser) {
-      navigateHome();
-      return;
-    }
+    if (!await openGuestSession()) return;
 
-    if (_isSubmitting) return;
-    _isSubmitting = true;
-    setLoading();
-    clearErrors();
+    navigateHome();
+  }
 
+  /// Opens a guest session in the background, without moving the viewer.
+  ///
+  /// For a host that needs a session before anyone asks for one, at launch
+  /// for example. Resolves `true` when a session exists afterwards and
+  /// `false` when none could be opened, with the reason in the controller's
+  /// error state; never throws.
+  ///
+  /// A session already held is kept and no request is sent: a guest's,
+  /// because a second `POST /auth/guest` revokes every token the returning
+  /// guest holds, including one a host keeps to claim the guest's data at
+  /// sign-in; and an account's, signed in or only stored (a cold boot on a
+  /// dead link keeps the token without loading its user), because a guest
+  /// never replaces an account.
+  ///
+  /// Concurrent callers share the one request in flight and its result. The
+  /// share ends when it settles, so a call after a failure tries again.
+  Future<bool> openGuestSession() {
+    return _opening ??= _openGuestSession().whenComplete(() {
+      _opening = null;
+    });
+  }
+
+  /// The single attempt [openGuestSession] shares between its callers.
+  Future<bool> _openGuestSession() async {
     try {
-      // 1. Load or generate a persistent UUID v4 device identifier.
-      final existing = await Vault.get(_deviceIdKey);
-      final deviceId = existing ?? _generateUuidV4();
+      // 1. Keep any session already held; see [openGuestSession].
+      if (Auth.check() || await Auth.hasToken()) return true;
 
-      // 2. Persist the device ID for subsequent app launches.
+      setLoading();
+      clearErrors();
+
+      // 2. Load or generate a persistent UUID v4 device identifier, and
+      //    persist it so the backend recognises a returning guest.
+      final deviceId = await Vault.get(_deviceIdKey) ?? _generateUuidV4();
       await Vault.put(_deviceIdKey, deviceId);
 
       // 3. Authenticate as a guest against the API.
@@ -76,23 +98,30 @@ class MagicStarterGuestAuthController extends MagicController
           response,
           fallback: trans('magic_starter.auth.guest_login_error'),
         );
-        return;
+        return false;
       }
 
-      // 4. Conclude the sign-in through the path every token takes.
-      if (!await completeSignIn(response.data as Map<String, dynamic>?)) {
+      // 4. Conclude the sign-in through the path every token takes, leaving
+      //    navigation to the caller.
+      final concluded = await completeSignIn(
+        response.data as Map<String, dynamic>?,
+        navigate: false,
+      );
+      if (!concluded) {
         setError(trans('magic_starter.auth.guest_login_error'));
-        return;
+        return false;
       }
 
       setSuccess(true);
+
+      return true;
     } catch (e, stackTrace) {
       Log.error(
-        '[MagicStarterGuestAuthController.doGuestLogin] $e\n$stackTrace',
+        '[MagicStarterGuestAuthController.openGuestSession] $e\n$stackTrace',
       );
       setError(trans('errors.unexpected'));
-    } finally {
-      _isSubmitting = false;
+
+      return false;
     }
   }
 

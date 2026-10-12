@@ -19,9 +19,17 @@ mixin CompletesSignIn on NavigatesRoutes {
   /// (`data.token` and `data.user`) is logged in, announced with a toast when
   /// `data.deletion_cancelled` is true, and sent home.
   ///
+  /// With [navigate] false a session is logged in and the viewer stays where
+  /// they are, so a host can open one in the background; the intended url is
+  /// left for the next sign-in that does navigate. A two-factor answer carries
+  /// no session and opens its challenge either way.
+  ///
   /// Returns `false` when [body] is neither, leaving the caller to report it;
   /// the caller also owns its controller state.
-  Future<bool> completeSignIn(Map<String, dynamic>? body) async {
+  Future<bool> completeSignIn(
+    Map<String, dynamic>? body, {
+    bool navigate = true,
+  }) async {
     final data = body?['data'] as Map<String, dynamic>?;
 
     // 1. A confirmed second factor: the challenge, never a session.
@@ -52,7 +60,9 @@ mixin CompletesSignIn on NavigatesRoutes {
     }
 
     // 3. Home, or wherever the user was headed before login.
-    navigateHome();
+    if (navigate) {
+      navigateHome();
+    }
 
     return true;
   }

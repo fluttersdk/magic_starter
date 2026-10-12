@@ -150,7 +150,7 @@ All 14 features default to `false` (opt-in). Enable only what your app needs:
 | `registration` | User registration screen and flow |
 | `two_factor` | Two-factor authentication with QR code, OTP, and recovery codes |
 | `sessions` | Active session listing and revocation |
-| `guest_auth` | Guest-only authentication routes (login without account) |
+| `guest_auth` | "Continue as guest" on the login screen, plus guest record and claim on a later sign-in; no routes of its own |
 | `phone_otp` | Phone-based OTP send/verify login flow |
 | `newsletter` | Newsletter subscribe/unsubscribe toggle |
 | `email_verification` | Email verification notice and resend flow |

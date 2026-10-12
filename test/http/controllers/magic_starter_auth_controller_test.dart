@@ -109,7 +109,10 @@ class MockGuard implements Guard {
   Authenticatable? _user;
   bool logoutCalled = false;
   Map<String, dynamic>? lastLoginData;
-  String? mockToken = 'mock-token';
+
+  /// Null until a login, so a fresh guard is signed out on both halves: no
+  /// user and no stored token.
+  String? mockToken;
 
   @override
   Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
@@ -634,6 +637,30 @@ void main() {
         await controller.logout();
 
         expect(mockGuard.logoutCalled, isTrue);
+      });
+
+      test('revokes the token server-side before clearing it', () async {
+        // Booted for real: the provider is what registers the revoke hook.
+        final provider = MagicStarterServiceProvider(MagicApp.instance);
+        provider.register();
+        await provider.boot();
+
+        mockGuard.mockToken = 'account-token';
+        final tokensAtRequest = <String, String?>{};
+        final fake = Http.fake((MagicRequest request) {
+          tokensAtRequest['${request.method} ${request.url}'] =
+              mockGuard.mockToken;
+          return Http.response();
+        });
+
+        await controller.logout();
+
+        // The AuthInterceptor attaches the guard's token to every request, so
+        // the token the guard held when the POST went out is its bearer.
+        expect(tokensAtRequest, {'POST /auth/logout': 'account-token'});
+        fake.assertSentCount(1);
+        expect(mockGuard.logoutCalled, isTrue);
+        expect(mockGuard.mockToken, isNull);
       });
     });
 
