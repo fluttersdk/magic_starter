@@ -25,9 +25,11 @@ Widget _supportView(String key) {
 /// commonly gives the list a nav destination, and the create and thread pages
 /// are places a reader drills into and needs the back gesture out of.
 ///
-/// This package registers no default builder for the three view keys
-/// (`support.index`, `support.create`, `support.thread`); an app mounts them
-/// through `MagicStarter.view.register(...)`.
+/// The host calls this from its route provider, as it does the other
+/// `registerMagicStarter*Routes()`: the profile dropdown shows its Support item
+/// whenever the feature is on, and without this call that item leads nowhere.
+/// The three view keys (`support.index`, `support.create`, `support.thread`)
+/// have default builders; `MagicStarter.view.register(...)` replaces one.
 void registerMagicStarterSupportRoutes() {
   if (!MagicStarterConfig.hasSupportFeatures()) return;
 

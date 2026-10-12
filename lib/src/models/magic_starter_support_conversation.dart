@@ -48,8 +48,9 @@ class MagicStarterSupportConversation {
 
   final String subject;
 
-  /// Where the customer opened it from (`help_page`, ...). Stays the wire
-  /// string for the same reason as [MagicStarterSupportMessage.senderType].
+  /// Where the customer opened it from (`in_app`, `contact_sales`, ...).
+  /// Stays the wire string for the same reason as
+  /// [MagicStarterSupportMessage.senderType].
   final String source;
 
   final String status;

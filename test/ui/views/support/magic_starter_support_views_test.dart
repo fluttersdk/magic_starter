@@ -442,6 +442,20 @@ void main() {
       expect(count(sent, 'POST', '/support/conversations/7/seen'), 1);
     });
 
+    testWidgets('sends no seen receipt when nothing is unread', (tester) async {
+      // The thread rereads on every poll and broadcast; a receipt that changes
+      // nothing would still be a write, and an audit row on the backend.
+      final sent = fakeBackend({
+        'GET /support/conversations/7': (_) => ok(conversationJson(id: 7)),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+      });
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.text('Cannot add a monitor'), findsOneWidget);
+      expect(count(sent, 'POST', '/support/conversations/7/seen'), 0);
+    });
+
     testWidgets('opened from an unrelated page it still loads its own id', (
       tester,
     ) async {
@@ -456,13 +470,22 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1280, 2000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      // Both pages share one layout shell, as the billing page and the support
-      // routes do in a host app.
+      // Two shells, as in uptizm: its billing page sits in the app's own layout
+      // group and the support routes in the package's `app` group. go_router
+      // builds the pushed thread's page at the root first and the shell
+      // underneath after it, so a read of the router's last-built state named
+      // the billing page. One shared shell builds them in stack order and
+      // never showed the defect.
       MagicRoute.group(
-        layoutId: 'shell',
         layout: (child) => Column(children: [Expanded(child: child)]),
         routes: () {
           MagicRoute.page('/elsewhere', () => const Text('Elsewhere'));
+        },
+      );
+      MagicRoute.group(
+        layoutId: 'app',
+        layout: (child) => Column(children: [Expanded(child: child)]),
+        routes: () {
           MagicRoute.page(
             MagicStarterConfig.supportThreadRoute(),
             () => MagicStarter.view.make('support.thread'),

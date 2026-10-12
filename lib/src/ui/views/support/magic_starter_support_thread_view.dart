@@ -66,12 +66,15 @@ class _MagicStarterSupportThreadViewState
     unawaited(refreshSupport());
   }
 
-  /// The `:id` of the route this view was built for; the router's current
-  /// state is the fallback for a view pumped without a go_router ancestor.
+  /// The `:id` of the route this view was built for.
+  ///
+  /// [GoRouterState.of] throws a [GoError] only when no go_router page sits
+  /// above this view (a view pumped on its own); the router's current state is
+  /// right there, because nothing else was built after it.
   String _routeId(BuildContext context) {
     try {
       return GoRouterState.of(context).pathParameters['id'] ?? '';
-    } on Object {
+    } on GoError {
       return MagicRouter.instance.pathParameter('id') ?? '';
     }
   }
@@ -82,12 +85,13 @@ class _MagicStarterSupportThreadViewState
     _reply.dispose();
   }
 
-  /// Rereads the thread and marks it seen.
+  /// Rereads the thread and, when staff wrote since the last read, marks it
+  /// seen.
   ///
-  /// The list is reread only when this thread was unread, because that is the
-  /// one case where marking it seen changes what the list shows: the index
-  /// stays mounted under this route, and its dot would otherwise outlive the
-  /// read.
+  /// A thread with nothing unread sends no receipt: this runs on every poll
+  /// and broadcast, and a receipt that changes nothing is still a write. The
+  /// list is reread after a receipt because the index stays mounted under this
+  /// route, and its dot would otherwise outlive the read.
   @override
   Future<void> refreshSupport() async {
     final String? id = _id;
@@ -95,11 +99,11 @@ class _MagicStarterSupportThreadViewState
 
     await controller.loadConversation(id);
     if (controller.threadStatus != MagicStarterSupportReadStatus.loaded) return;
+    if (!(controller.conversation?.hasUnread ?? false)) return;
 
-    final bool wasUnread = controller.conversation?.hasUnread ?? false;
     final bool seen = await controller.markSeen(id);
 
-    if (seen && wasUnread && mounted) await controller.loadConversations();
+    if (seen && mounted) await controller.loadConversations();
   }
 
   Future<void> _send() async {
