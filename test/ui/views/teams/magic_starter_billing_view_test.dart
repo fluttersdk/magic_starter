@@ -1467,6 +1467,16 @@ class _TrialWebBillingService extends _RailBillingService {
   }
 }
 
+/// [_TrialWebBillingService] for a team on the free tier, so every paid card is
+/// an upgrade and the grid has more than one to give its filled button to.
+class _FreeTierTrialWebBillingService extends _TrialWebBillingService {
+  _FreeTierTrialWebBillingService({super.trialDaysByKey})
+    : super(subscribed: false, cycle: null);
+
+  @override
+  String get entitlementPlan => 'free';
+}
+
 /// The STORE rail with the same two trial axes as [_TrialWebBillingService].
 ///
 /// A store trial carries NO `trial_ends_at`: it arrives as `trialing` plus the
@@ -1590,10 +1600,14 @@ void main() {
   /// sets (see [mount]), because Wind reads the breakpoint off the MediaQuery
   /// and the layout off the surface: moving one without the other renders a
   /// desktop grid into a phone-wide box, which is an overflow no customer has.
-  Widget wrap(Widget widget, {Size size = const Size(1280, 12000)}) {
+  Widget wrap(
+    Widget widget, {
+    Size size = const Size(1280, 12000),
+    bool disableAnimations = false,
+  }) {
     return MaterialApp(
       home: MediaQuery(
-        data: MediaQueryData(size: size),
+        data: MediaQueryData(size: size, disableAnimations: disableAnimations),
         child: WindTheme(
           data: WindThemeData(),
           child: Scaffold(body: widget),
@@ -1644,6 +1658,7 @@ void main() {
     MagicStarterStoreFundedTeamReader? storeFundedTeam,
     bool withToasts = false,
     Size surface = const Size(1280, 12000),
+    bool disableAnimations = false,
   }) async {
     Magic.put(
       MagicStarterBillingController(
@@ -1661,7 +1676,9 @@ void main() {
     final Widget view = MagicStarter.view.make('teams.billing');
 
     await tester.pumpWidget(
-      withToasts ? wrapWithSnackbar(view) : wrap(view, size: surface),
+      withToasts
+          ? wrapWithSnackbar(view)
+          : wrap(view, size: surface, disableAnimations: disableAnimations),
     );
     await tester.pump();
     await tester.pump();
@@ -5369,6 +5386,170 @@ void main() {
       expect(find.textContaining('Card required'), findsNothing);
       expect(find.textContaining('Free for '), findsNothing);
       expect(find.text(trans('magic_starter.billing.trial_cta')), findsNothing);
+    });
+  });
+
+  group('a trial is the grid\'s featured call to action', () {
+    final Map<String, int> businessTrials = <String, int>{
+      'business_monthly': 14,
+      'business_annual': 14,
+    };
+
+    /// The first [MSButton] in catalogue order whose label is [label], which
+    /// for the upgrade label is the cheapest tier above `free`.
+    MSButton buttonLabelled(WidgetTester tester, String label) {
+      return tester.widget<MSButton>(
+        find
+            .ancestor(of: find.text(label), matching: find.byType(MSButton))
+            .first,
+      );
+    }
+
+    /// The glow around the trial button: a [DecoratedBox] above it that casts
+    /// a shadow, and nothing else on the grid does.
+    Finder trialGlow() {
+      return find.ancestor(
+        of: find.text(trans('magic_starter.billing.trial_cta')),
+        matching: find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is DecoratedBox &&
+              widget.decoration is BoxDecoration &&
+              ((widget.decoration as BoxDecoration).boxShadow?.isNotEmpty ??
+                  false),
+        ),
+      );
+    }
+
+    List<BoxShadow> glowShadows(WidgetTester tester) {
+      final DecoratedBox box = tester.widget<DecoratedBox>(trialGlow().first);
+
+      return (box.decoration as BoxDecoration).boxShadow!;
+    }
+
+    testWidgets('the trial card takes the one filled button from a cheaper '
+        'upgrade that offers none', (tester) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+
+      expect(tester.takeException(), isNull);
+
+      // The premise: `pro` is the cheapest tier above `free` and sells no
+      // trial, so the old rule would have filled it.
+      expect(
+        buttonLabelled(
+          tester,
+          trans('magic_starter.billing.plan_button_upgrade'),
+        ).intent,
+        ButtonIntent.secondary,
+      );
+      expect(
+        buttonLabelled(tester, trans('magic_starter.billing.trial_cta')).intent,
+        ButtonIntent.primary,
+      );
+      expect(
+        tester
+            .widgetList<MSButton>(find.byType(MSButton))
+            .where((MSButton b) => b.intent == ButtonIntent.primary),
+        hasLength(1),
+        reason: 'the grid still carries exactly one filled button',
+      );
+    });
+
+    testWidgets('a call to action that wraps keeps its lines centred', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+
+      for (final String label in <String>[
+        trans('magic_starter.billing.trial_cta'),
+        trans('magic_starter.billing.plan_button_upgrade'),
+      ]) {
+        expect(
+          tester.widget<Text>(find.text(label)).textAlign,
+          TextAlign.center,
+          reason: '"$label" wraps inside a narrow card',
+        );
+      }
+    });
+
+    testWidgets('the trial button pulses a few times and then rests', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+      );
+
+      expect(trialGlow(), findsOneWidget);
+      final double start = glowShadows(tester).single.blurRadius;
+
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(
+        glowShadows(tester).single.blurRadius,
+        isNot(start),
+        reason: 'the glow is animating',
+      );
+
+      // A pulse that never stops would keep a ticker alive for as long as the
+      // page is open, and pumpAndSettle would time out here.
+      await tester.pumpAndSettle();
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(glowShadows(tester).single.blurRadius, closeTo(start, 0.01));
+    });
+
+    testWidgets('reduced motion keeps the glow and drops the pulse', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _FreeTierTrialWebBillingService(trialDaysByKey: businessTrials),
+        isOwner: true,
+        disableAnimations: true,
+      );
+
+      expect(trialGlow(), findsOneWidget);
+      final double resting = glowShadows(tester).single.blurRadius;
+
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(glowShadows(tester).single.blurRadius, resting);
+    });
+
+    testWidgets('a card without a trial casts no glow', (tester) async {
+      await mount(tester, _FreeTierTrialWebBillingService(), isOwner: true);
+
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is DecoratedBox &&
+              widget.decoration is BoxDecoration &&
+              ((widget.decoration as BoxDecoration).boxShadow?.isNotEmpty ??
+                  false) &&
+              find
+                  .descendant(
+                    of: find.byWidget(widget),
+                    matching: find.byType(MSButton),
+                  )
+                  .evaluate()
+                  .isNotEmpty,
+        ),
+        findsNothing,
+      );
+      expect(
+        buttonLabelled(
+          tester,
+          trans('magic_starter.billing.plan_button_upgrade'),
+        ).intent,
+        ButtonIntent.primary,
+        reason: 'without a trial the cheapest upgrade keeps the fill',
+      );
     });
   });
 
