@@ -442,6 +442,52 @@ void main() {
       expect(count(sent, 'POST', '/support/conversations/7/seen'), 1);
     });
 
+    testWidgets('opened from an unrelated page it still loads its own id', (
+      tester,
+    ) async {
+      // The Contact sales button opens a thread from the billing page. The
+      // router rebuilds the page underneath during that push, so an id read
+      // from the router's "current" state instead of this page's own route
+      // came back empty and the thread fetched `support/conversations/`.
+      final sent = fakeBackend({
+        'GET /support/conversations/7': (_) => ok(conversationJson(id: 7)),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+      });
+      await tester.binding.setSurfaceSize(const Size(1280, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      // Both pages share one layout shell, as the billing page and the support
+      // routes do in a host app.
+      MagicRoute.group(
+        layoutId: 'shell',
+        layout: (child) => Column(children: [Expanded(child: child)]),
+        routes: () {
+          MagicRoute.page('/elsewhere', () => const Text('Elsewhere'));
+          MagicRoute.page(
+            MagicStarterConfig.supportThreadRoute(),
+            () => MagicStarter.view.make('support.thread'),
+          ).stacked();
+        },
+      );
+      Magic.put(MagicStarterSupportController());
+      MagicRouter.instance.setInitialLocation('/elsewhere');
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (context, child) =>
+              WindTheme(data: WindThemeData(), child: child!),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      MagicRoute.to('/support/7');
+      await tester.pumpAndSettle();
+
+      expect(count(sent, 'GET', '/support/conversations/7'), 1);
+      expect(count(sent, 'GET', '/support/conversations/'), 0);
+      expect(find.text('Cannot add a monitor'), findsOneWidget);
+    });
+
     testWidgets('a reply posts its body and appears in the thread', (
       tester,
     ) async {

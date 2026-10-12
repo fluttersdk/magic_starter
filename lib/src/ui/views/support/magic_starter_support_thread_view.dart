@@ -40,14 +40,40 @@ class _MagicStarterSupportThreadViewState
     with MagicStarterSupportLiveRefresh<MagicStarterSupportThreadView> {
   static const _iconError = Icons.error_outline;
 
-  late final String _id = MagicRouter.instance.pathParameter('id') ?? '';
+  /// The conversation id from THIS page's own route.
+  ///
+  /// Not `MagicRouter.instance.pathParameter`: that reads whichever page the
+  /// router built last, and a push from another page (Contact sales on the
+  /// billing screen) rebuilds the page underneath after this one, so the id
+  /// came back empty and the thread fetched `support/conversations/`. Resolved
+  /// in [didChangeDependencies], the first point where an inherited route
+  /// state can be read, and the first resolution starts the load.
+  String? _id;
 
   final TextEditingController _reply = TextEditingController();
 
   @override
   void onInit() {
-    unawaited(refreshSupport());
     startLiveRefresh();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_id != null) return;
+
+    _id = _routeId(context);
+    unawaited(refreshSupport());
+  }
+
+  /// The `:id` of the route this view was built for; the router's current
+  /// state is the fallback for a view pumped without a go_router ancestor.
+  String _routeId(BuildContext context) {
+    try {
+      return GoRouterState.of(context).pathParameters['id'] ?? '';
+    } on Object {
+      return MagicRouter.instance.pathParameter('id') ?? '';
+    }
   }
 
   @override
@@ -64,17 +90,23 @@ class _MagicStarterSupportThreadViewState
   /// read.
   @override
   Future<void> refreshSupport() async {
-    await controller.loadConversation(_id);
+    final String? id = _id;
+    if (id == null) return;
+
+    await controller.loadConversation(id);
     if (controller.threadStatus != MagicStarterSupportReadStatus.loaded) return;
 
     final bool wasUnread = controller.conversation?.hasUnread ?? false;
-    final bool seen = await controller.markSeen(_id);
+    final bool seen = await controller.markSeen(id);
 
     if (seen && wasUnread && mounted) await controller.loadConversations();
   }
 
   Future<void> _send() async {
-    final bool sent = await controller.sendMessage(_id, _reply.text.trim());
+    final String? id = _id;
+    if (id == null) return;
+
+    final bool sent = await controller.sendMessage(id, _reply.text.trim());
 
     if (sent) _reply.clear();
   }
