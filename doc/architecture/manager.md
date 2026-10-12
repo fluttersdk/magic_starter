@@ -616,7 +616,7 @@ Default layouts:
 | `MagicStarter.useGuestClaimed(callback)` | `manager.onGuestClaimed = callback` |
 | `MagicStarter.useSocialAuth(socialAuth)` | `manager.socialAuth = socialAuth` |
 | `MagicStarter.useLocaleOptions(locales)` | `manager.localeOptions = options` |
-| `MagicStarter.useGuestAuthEntry(builder)` | `manager.guestAuthEntryBuilder = builder` |
+| `MagicStarter.useGuestAuthEntry(builder)` | `manager.guestAuthEntryBuilder = builder` (stored only: no starter screen reads it yet) |
 | `MagicStarter.useNewsletterLabel(label)` | `manager.newsletterLabel = label` |
 | `MagicStarter.view` | `manager.view` |
 | `MagicStarter.isReady` | `manager.isReady` |

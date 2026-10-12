@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -15,11 +16,32 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastUrl;
   dynamic lastData;
 
+  /// Every request sent, so a test can count them.
+  int requestCount = 0;
+
+  /// Thrown from the next request instead of answering, the way a dead link
+  /// surfaces through the driver.
+  Object? failWith;
+
+  /// Runs while the next request is in flight, before it answers, so a test
+  /// can change the session underneath it.
+  void Function()? duringRequest;
+
   void mockResponse({required int statusCode, dynamic data}) {
     nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
   }
 
   MagicResponse _respond(String method, String url, {dynamic data}) {
+    requestCount++;
+    final inFlight = duringRequest;
+    duringRequest = null;
+    inFlight?.call();
+    final failure = failWith;
+    if (failure != null) {
+      failWith = null;
+      throw failure;
+    }
+
     lastMethod = method;
     lastUrl = url;
     lastData = data;
@@ -109,7 +131,7 @@ class MockGuard implements Guard {
   Authenticatable? _user;
   bool logoutCalled = false;
   Map<String, dynamic>? lastLoginData;
-  String? mockToken = 'mock-token';
+  String? mockToken;
 
   @override
   Future<void> login(Map<String, dynamic> data, Authenticatable user) async {
@@ -205,6 +227,7 @@ void main() {
       // 1. Reset IoC container.
       MagicApp.reset();
       Magic.flush();
+      MagicRouter.reset();
 
       // 2. Bind mock network driver for Http facade.
       Magic.singleton('network', () => MockNetworkDriver());
@@ -268,6 +291,31 @@ void main() {
         await controller.doGuestLogin();
 
         expect(mockDriver.lastUrl, isNull);
+      });
+
+      testWidgets('success goes home', (tester) async {
+        MagicRoute.page('/', () => const Text('home'));
+        MagicRoute.page('/login', () => const Text('login'));
+        MagicRouter.instance.setInitialLocation('/login');
+        await tester.pumpWidget(
+          MaterialApp.router(routerConfig: MagicRouter.instance.routerConfig),
+        );
+        await tester.pumpAndSettle();
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'guest-token-abc',
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
+            },
+          },
+        );
+
+        await controller.doGuestLogin();
+        await tester.pumpAndSettle();
+
+        expect(MagicRouter.instance.currentPath, '/');
+        expect(controller.isSuccess, isTrue);
       });
 
       test('success — generates UUID and calls POST /auth/guest', () async {
@@ -393,6 +441,157 @@ void main() {
 
         expect(controller.isError, isTrue);
         expect(mockGuard.check(), isFalse);
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // openGuestSession
+    // -----------------------------------------------------------------------
+
+    group('openGuestSession', () {
+      void answerWithGuestSession() {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {
+            'data': {
+              'token': 'guest-token-abc',
+              'user': {'id': 99, 'name': 'Guest User', 'is_guest': true},
+            },
+          },
+        );
+      }
+
+      test('two concurrent callers share one POST /auth/guest', () async {
+        answerWithGuestSession();
+
+        final results = await Future.wait([
+          controller.openGuestSession(),
+          controller.openGuestSession(),
+        ]);
+
+        expect(results, [isTrue, isTrue]);
+        expect(mockDriver.requestCount, 1);
+        expect(mockDriver.lastUrl, '/auth/guest');
+        expect(mockGuard.check(), isTrue);
+      });
+
+      testWidgets('leaves the router where it is', (tester) async {
+        MagicRoute.page('/', () => const Text('home'));
+        MagicRoute.page('/monitors', () => const Text('monitors'));
+        MagicRouter.instance.setInitialLocation('/monitors');
+        await tester.pumpWidget(
+          MaterialApp.router(routerConfig: MagicRouter.instance.routerConfig),
+        );
+        await tester.pumpAndSettle();
+        answerWithGuestSession();
+
+        final opened = await controller.openGuestSession();
+        await tester.pumpAndSettle();
+
+        expect(opened, isTrue);
+        expect(MagicRouter.instance.currentPath, '/monitors');
+      });
+
+      test('never offers the guest credentials to the keychain', () async {
+        // A guest opened in the background is not a sign-in the viewer typed
+        // credentials for, so the save prompt must not follow it.
+        final calls = <String>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.textInput, (call) async {
+              calls.add(call.method);
+
+              return null;
+            });
+        addTearDown(
+          () => TestDefaultBinaryMessengerBinding
+              .instance
+              .defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.textInput, null),
+        );
+        answerWithGuestSession();
+
+        expect(await controller.openGuestSession(), isTrue);
+
+        expect(calls, isNot(contains('TextInput.finishAutofillContext')));
+      });
+
+      test('a transport failure resolves false and signs nobody in', () async {
+        mockDriver.failWith = Exception('connection refused');
+
+        final opened = await controller.openGuestSession();
+
+        expect(opened, isFalse);
+        expect(Auth.check(), isFalse);
+        expect(controller.isError, isTrue);
+      });
+
+      test('a call after a failure sends a fresh request', () async {
+        mockDriver.failWith = Exception('connection refused');
+        expect(await controller.openGuestSession(), isFalse);
+
+        answerWithGuestSession();
+        final opened = await controller.openGuestSession();
+
+        expect(opened, isTrue);
+        expect(mockDriver.requestCount, 2);
+      });
+
+      test('a rejected request resolves false', () async {
+        mockDriver.mockResponse(
+          statusCode: 403,
+          data: {'message': 'Guest login is disabled'},
+        );
+
+        expect(await controller.openGuestSession(), isFalse);
+        expect(mockGuard.check(), isFalse);
+      });
+
+      test('a signed-in guest resolves true without a request', () async {
+        mockGuard.setUser(
+          MagicStarterAuthUser.fromMap({
+            'id': 99,
+            'name': 'Guest',
+            'is_guest': true,
+          }),
+        );
+
+        expect(await controller.openGuestSession(), isTrue);
+        expect(mockDriver.requestCount, 0);
+      });
+
+      test('a signed-in account is never replaced by a guest', () async {
+        mockGuard.setUser(
+          MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Alice'}),
+        );
+
+        expect(await controller.openGuestSession(), isTrue);
+        expect(mockDriver.requestCount, 0);
+        expect(Auth.user()?.get<String>('name'), 'Alice');
+      });
+
+      test('an account signed in while the request flies is kept', () async {
+        // The viewer reaches the login screen and signs in before a slow
+        // background open answers: the guest it brings back must not replace
+        // the account that now holds the session.
+        mockDriver.duringRequest = () => mockGuard.setUser(
+          MagicStarterAuthUser.fromMap({'id': 1, 'name': 'Alice'}),
+        );
+        answerWithGuestSession();
+
+        expect(await controller.openGuestSession(), isTrue);
+        expect(mockDriver.requestCount, 1);
+        expect(mockGuard.lastLoginData, isNull);
+        expect(Auth.user()?.get<String>('name'), 'Alice');
+      });
+
+      test('a stored token whose user is not loaded yet is kept', () async {
+        // A cold boot on a dead link: `Auth.restore()` keeps the token and
+        // loads no user, so `Auth.check()` is false over a real session.
+        mockGuard.mockToken = 'stored-account-token';
+
+        expect(await controller.openGuestSession(), isTrue);
+        expect(mockDriver.requestCount, 0);
+        expect(mockGuard.mockToken, 'stored-account-token');
       });
     });
 

@@ -166,4 +166,86 @@ void main() {
       expect(find.byType(MagicStarterLoginView), findsOneWidget);
     });
   });
+
+  group('MagicStarterLoginView autofill', () {
+    late MagicStarterAuthController controller;
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      controller = MagicStarterAuthController();
+      Magic.put(controller);
+    });
+
+    tearDown(() => controller.dispose());
+
+    List<List<String>?> hintsOf(WidgetTester tester) {
+      return tester
+          .widgetList<EditableText>(find.byType(EditableText))
+          .map((field) => field.autofillHints?.toList())
+          .toList();
+    }
+
+    testWidgets('hints the email and password fields', (tester) async {
+      Config.set('magic_starter.auth.email', true);
+      Config.set('magic_starter.auth.phone', false);
+
+      await tester.pumpWidget(wrap(const MagicStarterLoginView()));
+      await tester.pumpAndSettle();
+
+      expect(hintsOf(tester), [
+        [AutofillHints.username, AutofillHints.email],
+        [AutofillHints.password],
+      ]);
+    });
+
+    testWidgets('hints the phone field as a telephone number', (tester) async {
+      Config.set('magic_starter.auth.email', false);
+      Config.set('magic_starter.auth.phone', true);
+
+      await tester.pumpWidget(wrap(const MagicStarterLoginView()));
+      await tester.pumpAndSettle();
+
+      expect(hintsOf(tester), [
+        [AutofillHints.telephoneNumber],
+        [AutofillHints.password],
+      ]);
+    });
+
+    testWidgets('groups both fields and cancels the context on dispose', (
+      tester,
+    ) async {
+      Config.set('magic_starter.auth.email', true);
+      Config.set('magic_starter.auth.phone', false);
+
+      await tester.pumpWidget(wrap(const MagicStarterLoginView()));
+      await tester.pumpAndSettle();
+
+      final group = tester.widget<AutofillGroup>(find.byType(AutofillGroup));
+      expect(group.onDisposeAction, AutofillContextAction.cancel);
+      expect(
+        find.descendant(
+          of: find.byType(AutofillGroup),
+          matching: find.byType(EditableText),
+        ),
+        findsNWidgets(2),
+      );
+    });
+
+    testWidgets('keeps the fields mounted while the sign-in is in flight', (
+      tester,
+    ) async {
+      // An unmounted group is a cancelled one, so a save after the response
+      // would find no context left to commit.
+      await tester.pumpWidget(wrap(const MagicStarterLoginView()));
+      await tester.pumpAndSettle();
+
+      controller.setLoading();
+      await tester.pump();
+
+      expect(find.byType(EditableText), findsNWidgets(2));
+    });
+  });
 }

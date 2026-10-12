@@ -50,6 +50,8 @@ MagicRoute.group(
 
 Redirects an already authenticated visitor to `MagicStarterConfig.homeRoute()`. It guards the home route itself for the same reason: a signed-in visitor landing back on home must not be redirected to home again.
 
+A guest session (`is_guest: true`) is exempt and stays on the auth pages, because login and registration are where a guest becomes an account.
+
 ```dart
 MagicRoute.group(
   middleware: ['guest'],

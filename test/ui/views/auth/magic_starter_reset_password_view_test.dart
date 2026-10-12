@@ -48,4 +48,48 @@ void main() {
       expect(find.text('Custom Footer'), findsOneWidget);
     });
   });
+
+  group('MagicStarterResetPasswordView autofill', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.put(MagicStarterAuthController());
+    });
+
+    testWidgets('offers a new password on both password fields', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(const MagicStarterResetPasswordView()));
+      await tester.pumpAndSettle();
+
+      final hints = tester
+          .widgetList<EditableText>(find.byType(EditableText))
+          .map((field) => field.autofillHints?.toList())
+          .toList();
+
+      expect(hints.sublist(1), [
+        [AutofillHints.newPassword],
+        [AutofillHints.newPassword],
+      ]);
+    });
+
+    testWidgets('groups the fields and cancels the context on dispose', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(const MagicStarterResetPasswordView()));
+      await tester.pumpAndSettle();
+
+      final group = tester.widget<AutofillGroup>(find.byType(AutofillGroup));
+      expect(group.onDisposeAction, AutofillContextAction.cancel);
+      expect(
+        find.descendant(
+          of: find.byType(AutofillGroup),
+          matching: find.byType(EditableText),
+        ),
+        findsNWidgets(3),
+      );
+    });
+  });
 }
