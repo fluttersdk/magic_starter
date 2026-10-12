@@ -32,6 +32,7 @@ abstract class MagicStarterConfigHelper {
     'guest_auth',
     'timezones',
     'billing',
+    'support',
   ];
 
   /// Parses feature toggles from config content.

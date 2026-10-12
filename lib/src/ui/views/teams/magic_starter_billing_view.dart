@@ -9,6 +9,7 @@ import 'package:magic_payments/magic_payments.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_billing_controller.dart';
+import '../../../http/controllers/magic_starter_support_controller.dart';
 import '../../../models/magic_starter_plan.dart';
 import '../../../support/plan_upgrade.dart';
 import '../../components/badge/index.dart';
@@ -2080,6 +2081,40 @@ class _MagicStarterBillingViewState
     _selectPlan(target);
   }
 
+  /// Records the sales request as a support conversation and opens its thread.
+  ///
+  /// A refusal toasts the backend's own message instead of navigating, and a
+  /// second tap while the first is in flight is ignored: the controller refuses
+  /// it without saying why, which would otherwise read as a failure.
+  Future<void> _openSalesConversation(MagicStarterPlan plan) async {
+    final MagicStarterSupportController support =
+        MagicStarterSupportController.instance;
+    if (support.isSubmitting) return;
+
+    final Map<String, dynamic> replace = <String, dynamic>{'plan': plan.name};
+    final conversation = await support.createConversation(
+      subject: trans('magic_starter.support.contact_sales_subject', replace),
+      body: trans('magic_starter.support.contact_sales_body', replace),
+      source: 'contact_sales',
+    );
+
+    if (conversation == null) {
+      Magic.error(
+        trans('magic_starter.support.contact_sales_failed_title'),
+        support.writeError ?? trans('magic_starter.support.create_error'),
+      );
+
+      return;
+    }
+
+    MagicRoute.to(
+      MagicStarterConfig.supportThreadRoute().replaceFirst(
+        ':id',
+        '${conversation.id}',
+      ),
+    );
+  }
+
   /// Selects [plan]: hands off to sales for a custom tier, buys through the
   /// STORE rail where this build has one, and otherwise starts a hosted checkout
   /// session, both keyed by the catalogue product this build sells the tier as
@@ -2097,9 +2132,11 @@ class _MagicStarterBillingViewState
   /// through to the web checkout the store forbids steering to.
   ///
   /// The custom tier's sales handoff runs on a build with no rail at all, because
-  /// it spends nothing and calls nothing. Its toast names the tier from the
-  /// CATALOGUE rather than from a literal, because a framework package cannot
-  /// know what an adopter calls its top tier.
+  /// it spends nothing and calls no billing rail. With the support desk on it
+  /// opens a `contact_sales` conversation and lands on its thread, so the
+  /// request is recorded and answered; without it a toast promises the follow-up.
+  /// Either way the tier is named from the CATALOGUE rather than from a literal,
+  /// because a framework package cannot know what an adopter calls its top tier.
   ///
   /// A priced tier with neither rail, or with no configured origin, returns
   /// silently: [_canPurchase] gates every call to action that reaches here, so
@@ -2107,6 +2144,10 @@ class _MagicStarterBillingViewState
   Future<void> _selectPlan(MagicStarterPlan plan) async {
     // 1. Custom tier: hand off to sales, no live billing call.
     if (_isCustom(plan)) {
+      if (MagicStarterConfig.hasSupportFeatures()) {
+        return _openSalesConversation(plan);
+      }
+
       Magic.success(
         trans('magic_starter.billing.toast_contact_title'),
         trans(

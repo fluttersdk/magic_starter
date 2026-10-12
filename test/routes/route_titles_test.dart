@@ -51,6 +51,7 @@ void enableEveryRoutedFeature() {
   Config.set('magic_starter.features.sessions', true);
   Config.set('magic_starter.features.social_login', true);
   Config.set('magic_starter.features.teams', true);
+  Config.set('magic_starter.features.support', true);
 }
 
 /// The `magic_starter.titles` block shipped by the install stub.
@@ -78,6 +79,7 @@ void main() {
     registerMagicStarterProfileRoutes();
     registerMagicStarterNotificationRoutes();
     registerMagicStarterTeamRoutes();
+    registerMagicStarterSupportRoutes();
   });
 
   tearDown(() {

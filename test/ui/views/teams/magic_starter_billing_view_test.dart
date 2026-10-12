@@ -5113,6 +5113,149 @@ void main() {
     });
   });
 
+  group('the custom tier hands off to the support desk', () {
+    /// Mounts the billing screen on a real router, because the handoff ends in
+    /// a navigation, with a stand-in for the thread page it lands on.
+    Future<void> mountRouted(WidgetTester tester) async {
+      Magic.put(
+        MagicStarterBillingController(
+          usageCopy: _usageCopy,
+          formatNumber: _formatNumber,
+          isOwnerReader: () => true,
+          storeFundedTeamReader: () async => null,
+          billingService: _RailBillingService(),
+        ),
+      );
+
+      Auth.fake();
+      addTearDown(Auth.unfake);
+      MagicRouter.reset();
+      addTearDown(MagicRouter.reset);
+      MagicRoute.page(
+        MagicStarterConfig.billingRoute(),
+        () => MagicStarter.view.make('teams.billing'),
+      );
+      MagicRoute.page(
+        MagicStarterConfig.supportThreadRoute(),
+        () => Text('thread ${MagicRouter.instance.pathParameter('id')}'),
+      );
+      MagicRouter.instance.setInitialLocation(
+        MagicStarterConfig.billingRoute(),
+      );
+
+      await tester.binding.setSurfaceSize(const Size(1280, 12000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (BuildContext context, Widget? child) =>
+              WindTheme(data: WindThemeData(), child: child!),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('with support on it opens a contact_sales conversation named '
+        'for the tier and lands on its thread', (tester) async {
+      Config.set('magic_starter.features.support', true);
+      final List<({String method, String url, Object? data})> sent =
+          <({String method, String url, Object? data})>[];
+      Http.fake((request) {
+        sent.add((
+          method: request.method,
+          url: request.url,
+          data: request.data,
+        ));
+
+        return Http.response(<String, dynamic>{
+          'data': <String, dynamic>{
+            'id': 21,
+            'number': 21,
+            'subject': 'Contact sales: Enterprise',
+            'source': 'contact_sales',
+            'status': 'open',
+            'priority': 'normal',
+            'last_activity_at': null,
+            'has_unread': false,
+            'created_at': '2026-10-12T09:00:00+00:00',
+          },
+        });
+      });
+
+      await mountRouted(tester);
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_contact')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(sent, hasLength(1));
+      expect(sent.single.method, 'POST');
+      expect(sent.single.url, '/support/conversations');
+      expect(sent.single.data, <String, dynamic>{
+        'subject': 'Contact sales: Enterprise',
+        'body': 'I would like to talk to sales about the Enterprise plan.',
+        'source': 'contact_sales',
+      });
+      expect(find.text('thread 21'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.billing.toast_contact_title')),
+        findsNothing,
+        reason: 'the conversation is the follow-up; the promise toast is not',
+      );
+    });
+
+    testWidgets('a refused conversation toasts the reason and stays put', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.support', true);
+      Http.fake(
+        (request) => Http.response(<String, dynamic>{
+          'message': 'The desk is closed.',
+        }, 500),
+      );
+
+      await mountRouted(tester);
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_contact')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('The desk is closed.'), findsOneWidget);
+      expect(find.textContaining('thread '), findsNothing);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('with support off it still toasts and records nothing', (
+      tester,
+    ) async {
+      final List<String> urls = <String>[];
+      Http.fake((request) {
+        urls.add(request.url);
+
+        return Http.response(<String, dynamic>{});
+      });
+
+      await mountRouted(tester);
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_contact')),
+      );
+      await tester.pump();
+
+      expect(
+        find.text(trans('magic_starter.billing.toast_contact_title')),
+        findsOneWidget,
+      );
+      expect(urls.where((String url) => url.startsWith('/support')), isEmpty);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+  });
+
   group('the current plan card says when a trial ends', () {
     /// Far enough out that the days-left figure is large and "other" whatever
     /// the clock says, so the cases that are not ABOUT the count can still pin

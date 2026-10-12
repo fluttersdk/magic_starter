@@ -231,6 +231,15 @@ class MSUserProfileDropdown extends StatelessWidget {
                   );
                 },
               ),
+            if (MagicStarterConfig.hasSupportFeatures())
+              _buildMenuItem(
+                icon: Icons.support_agent_outlined,
+                label: trans('magic_starter.nav.support'),
+                onTap: () {
+                  close();
+                  MagicRoute.to(MagicStarterConfig.supportRoute());
+                },
+              ),
             _buildMenuItem(
               icon: context.windIsDark ? _iconLightMode : _iconDarkMode,
               label: trans('common.toggle_theme'),

@@ -234,7 +234,8 @@
       "title": "Upgrade Your Guest Account"
     },
     "nav": {
-      "settings": "Settings"
+      "settings": "Settings",
+      "support": "Support"
     },
     "notifications": {
       "fetch_error": "Failed to load notification preferences.",
@@ -294,6 +295,38 @@
       "preferences_section": "Preferences",
       "security_section": "Security"
     },
+    "support": {
+      "back_to_list": "Back to conversations",
+      "contact_sales_body": "I would like to talk to sales about the :plan plan.",
+      "contact_sales_failed_title": "We could not reach sales",
+      "contact_sales_subject": "Contact sales: :plan",
+      "create_error": "We could not start the conversation. Please try again.",
+      "create_submit": "Start conversation",
+      "create_subtitle": "Tell us what you need and our team will reply here.",
+      "empty_description": "Start a conversation and our team will reply here.",
+      "empty_title": "No conversations yet",
+      "index_subtitle": "Your conversations with our team.",
+      "index_title": "Support",
+      "load_error": "We could not load your conversations.",
+      "message_label": "Message",
+      "message_placeholder": "Describe the problem or question",
+      "new_button": "New conversation",
+      "not_found_title": "Conversation not found",
+      "reply_error": "We could not send your reply. Please try again.",
+      "reply_placeholder": "Write a reply",
+      "reply_submit": "Send",
+      "sender": {
+        "customer": "You",
+        "staff": "Support team"
+      },
+      "status": {
+        "open": "Open",
+        "resolved": "Resolved"
+      },
+      "subject_label": "Subject",
+      "subject_placeholder": "What do you need help with?",
+      "thread_load_error": "We could not load this conversation."
+    },
     "timezone": {
       "subtitle": "Set the timezone used for displaying dates and times."
     },
@@ -313,6 +346,9 @@
       "reset_password": "Reset Password",
       "sessions": "Active Sessions",
       "settings": "Settings",
+      "support": "Support",
+      "support_create": "New conversation",
+      "support_thread": "Conversation",
       "team_create": "Create Team",
       "team_invitation": "Team Invitation",
       "team_settings": "Team Settings",

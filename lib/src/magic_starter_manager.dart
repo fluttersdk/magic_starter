@@ -34,6 +34,9 @@ import 'ui/views/settings/security/magic_starter_connected_accounts_view.dart';
 import 'ui/views/settings/security/magic_starter_password_view.dart';
 import 'ui/views/settings/security/magic_starter_sessions_view.dart';
 import 'ui/views/settings/security/magic_starter_two_factor_view.dart';
+import 'ui/views/support/magic_starter_support_create_view.dart';
+import 'ui/views/support/magic_starter_support_index_view.dart';
+import 'ui/views/support/magic_starter_support_thread_view.dart';
 import 'ui/views/teams/magic_starter_billing_view.dart';
 import 'ui/views/teams/magic_starter_team_create_view.dart';
 import 'ui/views/teams/magic_starter_team_invitation_accept_view.dart';
@@ -628,6 +631,23 @@ class MagicStarterManager {
     // above would make the billing toggle silently depend on a second one.
     if (MagicStarterConfig.hasBillingFeatures()) {
       _registerDefault('teams.billing', () => const MagicStarterBillingView());
+    }
+
+    // Support desk, conditional on its own feature flag. The routes resolve
+    // these keys (see `registerMagicStarterSupportRoutes`).
+    if (MagicStarterConfig.hasSupportFeatures()) {
+      _registerDefault(
+        'support.index',
+        () => const MagicStarterSupportIndexView(),
+      );
+      _registerDefault(
+        'support.create',
+        () => const MagicStarterSupportCreateView(),
+      );
+      _registerDefault(
+        'support.thread',
+        () => const MagicStarterSupportThreadView(),
+      );
     }
 
     // Notification screens are NOT registered here. They belong to
