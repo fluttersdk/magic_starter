@@ -43,8 +43,8 @@ class MagicStarterSupportConversation {
   /// Backend key. Untyped for the same reason as [MagicStarterSupportMessage.id].
   final dynamic id;
 
-  /// The human-facing reference (`SUP-12`), never the key.
-  final String number;
+  /// The human-facing display number (`12`, shown as `#12`), never the key.
+  final int number;
 
   final String subject;
 
@@ -85,7 +85,7 @@ class MagicStarterSupportConversation {
 
     return MagicStarterSupportConversation(
       id: map['id'],
-      number: map['number'] as String,
+      number: (map['number'] as num).toInt(),
       subject: map['subject'] as String,
       source: map['source'] as String,
       status: map['status'] as String,

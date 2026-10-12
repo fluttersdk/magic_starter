@@ -5171,7 +5171,7 @@ void main() {
         return Http.response(<String, dynamic>{
           'data': <String, dynamic>{
             'id': 21,
-            'number': 'SUP-21',
+            'number': 21,
             'subject': 'Contact sales: Enterprise',
             'source': 'contact_sales',
             'status': 'open',

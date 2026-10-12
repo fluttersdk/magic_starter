@@ -87,7 +87,7 @@ class _MagicStarterSupportThreadViewState
     return MSPageScaffold(
       title:
           conversation?.subject ?? trans('magic_starter.titles.support_thread'),
-      subtitle: conversation?.number,
+      subtitle: conversation == null ? null : '#${conversation.number}',
       actions: [
         if (conversation != null)
           MagicStarterSupportStatusBadge(conversation.status),

@@ -250,7 +250,7 @@ class _MagicStarterSupportIndexViewState
                       : 'text-sm font-medium text-fg truncate',
                 ),
                 WText(
-                  '${conversation.number} · '
+                  '#${conversation.number} · '
                   '${activity.toCarbon().shortDiffForHumans()}',
                   className: 'text-xs text-fg-muted',
                 ),

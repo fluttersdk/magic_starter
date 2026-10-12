@@ -14,7 +14,8 @@ Map<String, dynamic> conversationJson({
 }) {
   return <String, dynamic>{
     'id': id,
-    'number': 'SUP-$id',
+    // The backend sends the display number as an integer.
+    'number': id + 100,
     'subject': 'Cannot add a monitor',
     'source': 'help_page',
     'status': 'open',
@@ -98,7 +99,7 @@ void main() {
 
       final first = controller.conversations.first;
       expect(first.id, 7);
-      expect(first.number, 'SUP-7');
+      expect(first.number, 107);
       expect(first.subject, 'Cannot add a monitor');
       expect(first.source, 'help_page');
       expect(first.status, 'open');

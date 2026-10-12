@@ -57,7 +57,8 @@ Map<String, dynamic> conversationJson({
 }) {
   return <String, dynamic>{
     'id': id,
-    'number': 'SUP-$id',
+    // The backend sends the display number as an integer.
+    'number': id + 100,
     'subject': subject,
     'source': 'in_app',
     'status': status,
