@@ -164,5 +164,17 @@ final class MagicStarterTokens {
 
     /// Warning / caution background.
     'bg-warning': 'bg-amber-600 dark:bg-amber-500',
+
+    // -- AI content roles ---------------------------------------------------
+    //
+    // Mark content an assistant wrote. Shared views may use these without a
+    // host-only token; a host theme that defines the same keys (uptizm does)
+    // supplies its own map and wins.
+
+    /// Soft violet container for AI-authored content: replies, summaries.
+    'bg-ai-soft': 'bg-violet-100 dark:bg-violet-900',
+
+    /// Text / icon on top of the `bg-ai-soft` container.
+    'text-ai-soft-foreground': 'text-violet-700 dark:text-violet-200',
   };
 }

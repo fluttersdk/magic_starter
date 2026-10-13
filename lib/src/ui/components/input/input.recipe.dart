@@ -23,7 +23,7 @@ enum InputState {
 /// baked-in `w-full` token, so the default renders at content width.
 const WindRecipe inputRecipe = WindRecipe(
   base:
-      'rounded-lg border text-fg text-sm '
+      'rounded-lg border py-2.5 text-fg text-sm leading-5 '
       'focus:ring-2 '
       'disabled:opacity-50 disabled:cursor-not-allowed',
   variants: {

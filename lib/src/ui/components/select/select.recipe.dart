@@ -16,7 +16,7 @@ Map<String, String> selectRecipe({
   const recipe = WindSlotRecipe(
     slots: {
       'trigger':
-          'w-full px-3 py-2 rounded-lg bg-surface-container-high border border-color-border text-fg flex items-center justify-between gap-2',
+          'w-full px-3 py-[9px] rounded-lg bg-surface-container-high border border-color-border text-fg flex items-center justify-between gap-2',
       'popup':
           'bg-surface border border-color-border rounded-lg shadow-md overflow-hidden',
       'item':

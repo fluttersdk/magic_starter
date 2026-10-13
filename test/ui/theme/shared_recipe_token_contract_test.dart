@@ -148,11 +148,11 @@ void main() {
 
   test('the guard itself rejects a token that resolves to nothing', () {
     // Without this, a bug in `resolves` would make every case above vacuous.
-    expect(colourTokensIn('bg-ai-soft text-ai p-4').toList(), <String>[
-      'bg-ai-soft',
+    expect(colourTokensIn('bg-ai-glow text-ai p-4').toList(), <String>[
+      'bg-ai-glow',
       'text-ai',
     ]);
-    expect(resolves('bg-ai-soft'), isFalse);
+    expect(resolves('bg-ai-glow'), isFalse);
     expect(resolves('text-ai'), isFalse);
     expect(resolves('text-destructive'), isFalse);
 

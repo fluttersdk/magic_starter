@@ -94,4 +94,24 @@ void main() {
       expect(selected, equals('a'));
     });
   });
+
+  testWidgets('MSSelect trigger measures at least 40 logical px tall', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        MSSelect<String>(
+          value: null,
+          options: const [SelectOption(value: 'a', label: 'Option A')],
+          onChange: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byType(WSelect<String>)).height,
+      greaterThanOrEqualTo(40),
+    );
+  });
 }
