@@ -297,6 +297,7 @@
     },
     "support": {
       "back_to_list": "Back to conversations",
+      "composer_hint": "Enter to send, Shift+Enter for a new line",
       "contact_sales_body": "I would like to talk to sales about the :plan plan.",
       "contact_sales_failed_title": "We could not reach sales",
       "contact_sales_subject": "Contact sales: :plan",
@@ -304,28 +305,52 @@
       "create_submit": "Start conversation",
       "create_subtitle": "Tell us what you need and our team will reply here.",
       "empty_description": "Start a conversation and our team will reply here.",
+      "empty_open_title": "No open conversations",
+      "empty_resolved_title": "No resolved conversations",
       "empty_title": "No conversations yet",
+      "expect_ai": "Our AI answers right away and hands off to the team when needed.",
+      "expect_team": "Our team usually replies within a few hours.",
+      "how_short": "Our AI answers right away and hands off to the team when needed.",
+      "how_step_1": "Our AI reads your account and answers right away.",
+      "how_step_2": "Billing, security or anything complex opens a request for the team.",
+      "how_step_3": "The team replies in the same conversation and you get a notification.",
+      "how_title": "How it works",
       "index_subtitle": "Your conversations with our team.",
       "index_title": "Support",
       "load_error": "We could not load your conversations.",
+      "load_more": "Load more",
+      "loading_more": "Loading",
       "message_label": "Message",
       "message_placeholder": "Describe the problem or question",
       "new_button": "New conversation",
       "not_found_title": "Conversation not found",
+      "opened": "opened :date",
+      "privacy_note": "Please do not include passwords or card numbers.",
       "reply_error": "We could not send your reply. Please try again.",
       "reply_placeholder": "Write a reply",
       "reply_submit": "Send",
       "sender": {
+        "ai": "AI assistant",
         "customer": "You",
         "staff": "Support team"
       },
       "status": {
+        "ai_answering": "AI answering",
         "open": "Open",
-        "resolved": "Resolved"
+        "resolved": "Resolved",
+        "team_answering": "Team answering"
       },
-      "subject_label": "Subject",
-      "subject_placeholder": "What do you need help with?",
-      "thread_load_error": "We could not load this conversation."
+      "taking_longer": "This is taking longer than usual. If the AI cannot answer, our team will take over.",
+      "thread_load_error": "We could not load this conversation.",
+      "topic": {
+        "account": "Account",
+        "billing": "Billing",
+        "other": "Other",
+        "sales": "Sales",
+        "technical": "Technical issue"
+      },
+      "topic_label": "Topic",
+      "typing": "typing"
     },
     "timezone": {
       "subtitle": "Set the timezone used for displaying dates and times."

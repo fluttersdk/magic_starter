@@ -13,7 +13,9 @@ import '../../components/card/index.dart';
 import '../../components/empty_state/index.dart';
 import '../../components/error_state/index.dart';
 import '../../components/page_scaffold/index.dart';
+import '../../components/segmented_control/index.dart';
 import '../../components/skeleton/index.dart';
+import 'magic_starter_support_message_bubble.dart';
 
 /// Keeps a support screen current without the customer reloading it.
 ///
@@ -97,34 +99,78 @@ mixin MagicStarterSupportLiveRefresh<T extends StatefulWidget> on State<T> {
   }
 }
 
+/// The display label of a conversation topic.
+///
+/// `magic_starter.support.topic.<topic>` when the catalogue carries it, the
+/// wire value itself for a topic a host added without translating it.
+String magicStarterSupportTopicLabel(String topic) {
+  final String key = 'magic_starter.support.topic.$topic';
+
+  return Lang.has(key) ? trans(key) : topic;
+}
+
 /// A conversation's status as the customer reads it.
 ///
-/// Only two states matter to the customer: finished, or still open. `pending`
-/// and `snoozed` are the desk's own bookkeeping and read as open, and so does a
-/// status a newer backend adds.
+/// Resolved reads as finished. An open conversation reads as who owes the next
+/// answer when the backend says so (the AI while [awaitingAi], the team while
+/// [waitingOnTeam]) and as plain open otherwise. `pending` and `snoozed` are the
+/// desk's own bookkeeping and read as open, and so does a status a newer backend
+/// adds.
 class MagicStarterSupportStatusBadge extends StatelessWidget {
-  const MagicStarterSupportStatusBadge(this.status, {super.key});
+  const MagicStarterSupportStatusBadge(
+    this.status, {
+    super.key,
+    this.awaitingAi = false,
+    this.waitingOnTeam = false,
+  });
 
   /// The wire status of the conversation.
   final String status;
 
+  /// Whether the AI still owes the conversation an answer.
+  final bool awaitingAi;
+
+  /// Whether the conversation is waiting for a teammate.
+  final bool waitingOnTeam;
+
   @override
   Widget build(BuildContext context) {
-    final bool resolved = status == 'resolved';
+    if (status == 'resolved') {
+      return MSBadge(
+        trans('magic_starter.support.status.resolved'),
+        tone: BadgeTone.success,
+      );
+    }
+
+    if (awaitingAi) {
+      return WDiv(
+        className:
+            'inline-flex flex-row items-center rounded-full px-2 py-0.5 '
+            'bg-ai-soft',
+        child: WText(
+          trans('magic_starter.support.status.ai_answering'),
+          className: 'text-xs font-medium text-ai-soft-foreground',
+        ),
+      );
+    }
+
+    if (waitingOnTeam) {
+      return MSBadge(
+        trans('magic_starter.support.status.team_answering'),
+        tone: BadgeTone.warning,
+      );
+    }
 
     return MSBadge(
-      trans(
-        resolved
-            ? 'magic_starter.support.status.resolved'
-            : 'magic_starter.support.status.open',
-      ),
-      tone: resolved ? BadgeTone.success : BadgeTone.primary,
+      trans('magic_starter.support.status.open'),
+      tone: BadgeTone.primary,
     );
   }
 }
 
-/// The signed-in user's support conversations: newest activity first, an unread
-/// dot on a thread staff answered since it was last opened, and a way to start
+/// The signed-in user's support conversations: newest activity first, split into
+/// Open and Resolved, each row previewing the last message behind its sender, an
+/// unread dot on a thread answered since it was last opened, and a way to start
 /// a new one.
 class MagicStarterSupportIndexView
     extends MagicStatefulView<MagicStarterSupportController> {
@@ -144,6 +190,9 @@ class _MagicStarterSupportIndexViewState
     with MagicStarterSupportLiveRefresh<MagicStarterSupportIndexView> {
   static const _iconEmpty = Icons.forum_outlined;
   static const _iconError = Icons.error_outline;
+
+  /// 0 is the Open tab, 1 the Resolved one.
+  int _tab = 0;
 
   @override
   void onInit() {
@@ -217,47 +266,177 @@ class _MagicStarterSupportIndexViewState
   }
 
   Widget _buildList(List<MagicStarterSupportConversation> conversations) {
+    final open = [
+      for (final c in conversations)
+        if (c.status != 'resolved') c,
+    ];
+    final resolved = [
+      for (final c in conversations)
+        if (c.status == 'resolved') c,
+    ];
+    final shown = _tab == 0 ? open : resolved;
+
+    // A count over the rows loaded so far would undercount while pages remain.
+    final bool counted = !controller.hasMoreConversations;
+    String label(String key, int n) =>
+        counted ? '${trans(key)} · $n' : trans(key);
+
     return WDiv(
-      className: 'flex flex-col gap-3',
+      className: 'flex flex-col gap-4',
       children: [
-        for (final conversation in conversations) _buildRow(conversation),
+        MSSegmentedControl<int>(
+          options: [
+            label('magic_starter.support.status.open', open.length),
+            label('magic_starter.support.status.resolved', resolved.length),
+          ],
+          selectedIndex: _tab,
+          onChanged: (index) => setState(() => _tab = index),
+        ),
+        MSCard(
+          noPadding: true,
+          child: WDiv(
+            className: 'flex flex-col',
+            children: [
+              if (shown.isEmpty)
+                MSEmptyState(
+                  icon: _iconEmpty,
+                  title: trans(
+                    _tab == 0
+                        ? 'magic_starter.support.empty_open_title'
+                        : 'magic_starter.support.empty_resolved_title',
+                  ),
+                ),
+              for (var i = 0; i < shown.length; i++) _buildRow(shown[i], i),
+              if (controller.hasMoreConversations) _buildLoadMore(),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildRow(MagicStarterSupportConversation conversation) {
+  Widget _buildRow(MagicStarterSupportConversation conversation, int index) {
+    final MagicStarterSupportLastMessage? last = conversation.lastMessage;
     final DateTime activity =
-        conversation.lastActivityAt ?? conversation.createdAt;
+        last?.createdAt ??
+        conversation.lastActivityAt ??
+        conversation.createdAt;
+    final String? topic = conversation.topic;
 
     return WAnchor(
       onTap: () => _openThread(conversation),
-      child: MSCard(
-        child: WDiv(
-          className: 'flex flex-row items-center gap-3',
-          children: [
-            if (conversation.hasUnread)
+      child: WDiv(
+        className:
+            'flex flex-row items-center gap-3 p-3.5 lg:p-4 '
+            '${index == 0 ? '' : 'border-t border-color-border-subtle'}',
+        children: [
+          _buildAvatar(last),
+          WDiv(
+            className: 'flex-1 min-w-0 flex flex-col gap-1',
+            children: [
               WDiv(
-                key: ValueKey<String>('support-unread-${conversation.id}'),
-                className: 'w-2 h-2 rounded-full bg-primary',
+                className: 'flex flex-row items-center gap-2',
+                children: [
+                  Flexible(
+                    child: WText(
+                      conversation.subject,
+                      className: conversation.hasUnread
+                          ? 'text-sm font-bold text-fg truncate'
+                          : 'text-sm font-medium text-fg truncate',
+                    ),
+                  ),
+                  if (topic != null)
+                    WDiv(
+                      className:
+                          'shrink-0 px-1.5 rounded-md border '
+                          'border-color-border',
+                      child: WText(
+                        magicStarterSupportTopicLabel(topic),
+                        className: 'text-xs text-fg-muted',
+                      ),
+                    ),
+                ],
               ),
-            WDiv(
-              className: 'flex-1 min-w-0 flex flex-col gap-1',
-              children: [
+              if (last != null)
                 WText(
-                  conversation.subject,
+                  _preview(last),
                   className: conversation.hasUnread
-                      ? 'text-sm font-bold text-fg truncate'
-                      : 'text-sm font-medium text-fg truncate',
+                      ? 'text-sm text-fg truncate'
+                      : 'text-sm text-fg-muted truncate',
                 ),
-                WText(
-                  '#${conversation.number} · '
-                  '${activity.toCarbon().shortDiffForHumans()}',
-                  className: 'text-xs text-fg-muted',
+            ],
+          ),
+          WDiv(
+            className: 'shrink-0 flex flex-col items-end gap-1.5',
+            children: [
+              WDiv(
+                className: 'flex flex-row items-center gap-2',
+                children: [
+                  WText(
+                    activity.toCarbon().shortDiffForHumans(),
+                    className: 'text-xs text-fg-muted',
+                  ),
+                  if (conversation.hasUnread)
+                    WDiv(
+                      key: ValueKey<String>(
+                        'support-unread-${conversation.id}',
+                      ),
+                      className: 'w-2 h-2 rounded-full bg-primary',
+                    ),
+                ],
+              ),
+              WDiv(
+                className: 'hidden lg:flex',
+                child: MagicStarterSupportStatusBadge(
+                  conversation.status,
+                  awaitingAi: conversation.awaitingAi,
+                  waitingOnTeam: conversation.waitingOnTeam,
                 ),
-              ],
-            ),
-            MagicStarterSupportStatusBadge(conversation.status),
-          ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The face of whoever wrote the row's last message; the viewer's own
+  /// initials while nothing has been written.
+  Widget _buildAvatar(MagicStarterSupportLastMessage? last) {
+    final String senderType = last?.senderType ?? 'customer';
+    final String? name = senderType == 'customer'
+        ? Auth.user()?.get<String>('name')
+        : last?.senderName;
+
+    return MagicStarterSupportSenderAvatar(senderType: senderType, name: name);
+  }
+
+  /// `Ayse: body`, with the viewer's own lines prefixed "You".
+  String _preview(MagicStarterSupportLastMessage last) {
+    final String? author = switch (last.senderType) {
+      'customer' => trans('magic_starter.support.sender.customer'),
+      'ai' => last.senderName ?? trans('magic_starter.support.sender.ai'),
+      'staff' => last.senderName ?? trans('magic_starter.support.sender.staff'),
+      _ => null,
+    };
+
+    return author == null ? last.bodyPreview : '$author: ${last.bodyPreview}';
+  }
+
+  Widget _buildLoadMore() {
+    return WAnchor(
+      onTap: () => unawaited(controller.loadMoreConversations()),
+      child: WDiv(
+        className:
+            'flex items-center justify-center p-3.5 '
+            'border-t border-color-border-subtle',
+        child: WText(
+          trans(
+            controller.isLoadingMoreConversations
+                ? 'magic_starter.support.loading_more'
+                : 'magic_starter.support.load_more',
+          ),
+          className: 'text-sm text-fg-muted',
         ),
       ),
     );
