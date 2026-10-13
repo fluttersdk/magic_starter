@@ -1570,6 +1570,12 @@ void main() {
             'bg-ai-soft',
             'text-ai-soft-foreground',
           ),
+          (
+            'a plain open conversation',
+            const MagicStarterSupportStatusBadge('open'),
+            'bg-surface-container-high',
+            'text-fg-muted',
+          ),
         ]) {
       testWidgets('the status pill for $label is a soft tint with a leading '
           'dot', (tester) async {
@@ -1579,10 +1585,26 @@ void main() {
         expect(pill, contains(bg));
         expect(pill, contains('rounded-full'));
 
-        final WIcon dot = tester.widget<WIcon>(
-          find.byKey(const ValueKey<String>('support-status-dot')),
+        final Finder dotFinder = find.byKey(
+          const ValueKey<String>('support-status-dot'),
         );
+        final WIcon dot = tester.widget<WIcon>(dotFinder);
         expect(dot.className, contains(fg));
+
+        // The dot leads the label on one line: `inline-flex` is inert in Wind,
+        // and a pill without a row axis stacks the dot above its label.
+        final Rect dotRect = tester.getRect(dotFinder);
+        final Rect labelRect = tester.getRect(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('support-status-pill')),
+            matching: find.byType(WText),
+          ),
+        );
+        expect(dotRect.right, lessThanOrEqualTo(labelRect.left));
+        expect(
+          (dotRect.center.dy - labelRect.center.dy).abs(),
+          lessThan(2),
+        );
       });
     }
 

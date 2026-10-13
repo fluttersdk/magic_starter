@@ -7,7 +7,6 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/magic_starter_support_controller.dart';
 import '../../../models/magic_starter_support_conversation.dart';
-import '../../components/badge/index.dart';
 import '../../components/button/index.dart';
 import '../../components/card/index.dart';
 import '../../components/empty_state/index.dart';
@@ -110,8 +109,8 @@ String magicStarterSupportTopicLabel(String topic) {
 /// and reads as the AI's, answered or not. An open conversation reads as who
 /// owes the next answer when the backend says so (the AI while [awaitingAi],
 /// the team while [waitingOnTeam]) and as plain open otherwise; `snoozed` and a
-/// status a newer backend adds read as open. Resolved, the AI and the team are
-/// soft tinted pills with a leading dot; plain open stays a solid badge.
+/// status a newer backend adds read as open. Every status is a soft tinted
+/// pill with a leading dot; plain open takes the neutral tint.
 class MagicStarterSupportStatusBadge extends StatelessWidget {
   const MagicStarterSupportStatusBadge(
     this.status, {
@@ -155,14 +154,18 @@ class MagicStarterSupportStatusBadge extends StatelessWidget {
       );
     }
 
-    return MSBadge(
+    return _softPill(
       trans('magic_starter.support.status.open'),
-      tone: BadgeTone.primary,
+      background: 'bg-surface-container-high',
+      foreground: 'text-fg-muted',
     );
   }
 
-  /// A soft tint with a leading dot, the quiet pill the design gives a
-  /// conversation that has an owner or an ending.
+  /// A soft tint with a leading dot, the one pill shape every status shares;
+  /// a solid badge beside the tints read as an alarm.
+  ///
+  /// `flex flex-row`, not `inline-flex`: Wind treats `inline-flex` as inert,
+  /// and a pill without a row axis stacks the dot above its label.
   static Widget _softPill(
     String label, {
     required String background,
@@ -171,7 +174,7 @@ class MagicStarterSupportStatusBadge extends StatelessWidget {
     return WDiv(
       key: const ValueKey<String>('support-status-pill'),
       className:
-          'inline-flex flex-row items-center gap-1.5 rounded-full px-2.5 py-1 '
+          'flex flex-row items-center gap-1.5 rounded-full px-2.5 py-1 '
           '$background',
       children: [
         WIcon(
