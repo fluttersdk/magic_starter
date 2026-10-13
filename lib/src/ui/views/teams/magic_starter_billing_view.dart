@@ -440,6 +440,31 @@ class _MagicStarterBillingViewState
   /// resolving read cannot reopen checkout.
   bool _upgradeRequestHandled = false;
 
+  /// The upgrade link's plan and intent token, read from this page's own route.
+  /// Null until [didChangeDependencies] has read them; empty when absent.
+  String? _requestedPlan;
+  String? _requestedIntent;
+
+  // The route state cannot be read in initState, and the listener below fires
+  // from a controller read, long after a frame, so the link is read here once
+  // and the listener reads the cache. The static reader names the page the
+  // router built last, which is another page's once routes sit in two layout
+  // shells.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_requestedPlan != null) return;
+
+    final MagicRouter router = MagicRouter.instance;
+    _requestedPlan =
+        router.queryParameterOf(context, PlanUpgradeRequirement.planQueryKey) ??
+        '';
+    _requestedIntent = router.queryParameterOf(
+      context,
+      PlanUpgradeRequirement.intentQueryKey,
+    );
+  }
+
   @override
   void onInit() {
     // A second listener beside the one [MagicStatefulViewState] installs for
@@ -2056,12 +2081,10 @@ class _MagicStarterBillingViewState
     // purchase the server is about to refuse.
     if (!_canPurchase) return;
 
-    final Map<String, String> query = MagicRouter.instance.queryParameters;
-    final String? requested = query[PlanUpgradeRequirement.planQueryKey];
+    final String? requested = _requestedPlan;
     if (requested == null || requested.isEmpty) return;
 
-    final String token =
-        query[PlanUpgradeRequirement.intentQueryKey] ?? requested;
+    final String token = _requestedIntent ?? requested;
     if (_consumedUpgradeIntent == token) return;
 
     final MagicStarterPlan? target = controller.plans
