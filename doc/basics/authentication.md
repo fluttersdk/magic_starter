@@ -113,15 +113,21 @@ On success, the controller sets success state. The view should display a confirm
 <a name="reset-password"></a>
 ## Reset Password
 
-Completes the password reset using the token from the email link. The view extracts the token and email from query parameters via `MagicRouter.instance.queryParameter()`:
+Completes the password reset using the token from the email link, `/auth/reset-password?token=...&email=...`. Both values are query parameters, not path segments. The view reads them once in `didChangeDependencies` through `MagicRouter.instance.queryParameterOf(context, ...)`, which answers for the page the view sits in; `initState` cannot read route state, and the static `queryParameter()` answers for whichever page was built last:
 
 ```dart
-final token = MagicRouter.instance.queryParameter('token') ?? '';
-final email = MagicRouter.instance.queryParameter('email') ?? '';
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  if (_token != null) return;
+
+  _token = MagicRouter.instance.queryParameterOf(context, 'token') ?? '';
+  _email = MagicRouter.instance.queryParameterOf(context, 'email') ?? '';
+}
 
 await MagicStarterAuthController.instance.doResetPassword(
-  token: token,
-  email: email,
+  token: _token!,
+  email: _email!,
   password: form['password'],
   passwordConfirmation: form['password_confirmation'],
 );
