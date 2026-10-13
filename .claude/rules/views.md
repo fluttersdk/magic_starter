@@ -43,6 +43,6 @@ paths:
 - Section-level loading: multiple local `ValueNotifier<bool>` fields (_photoLoading, _emailVerificationLoading) for independent section spinners
 - Multi-form: complex views hold multiple `MagicFormData` instances — field names MUST NOT collide across forms
 - Type-safe form extraction: `form.value<bool>('remember_me')` — not `form.get()` for non-string fields
-- Query param extraction in view (before calling controller): `MagicRouter.instance.queryParameter('token') ?? ''`
+- Route value extraction in view (before calling controller): read once in `didChangeDependencies` with `MagicRouter.instance.queryParameterOf(context, 'token')` or `pathParameterOf(context, ...)`; never the static `queryParameter`/`pathParameter`, which answer for the page built last and break across layout shells
 - Feature-gated spreads at build time: `if (MagicStarterConfig.hasGuestAuthFeatures()) ...[...]`
 - Zero business logic in views — all async/state decisions live in controllers
