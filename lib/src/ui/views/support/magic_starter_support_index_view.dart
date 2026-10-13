@@ -20,9 +20,10 @@ import 'magic_starter_support_message_bubble.dart';
 /// Keeps a support screen current without the customer reloading it.
 ///
 /// The backend broadcasts `support.conversation.updated` on the private user
-/// channel `App.Models.User.{id}`; the screen refetches when it arrives. With no
-/// broadcast driver configured, or while the socket is down, a 30 second poll
-/// does the same job, so the screen never depends on a socket to be correct.
+/// channel `App.Models.User.{id}`; the screen refetches when it arrives. A 30
+/// second poll runs beside it whatever the socket says, so the screen never
+/// depends on a socket to be correct: a connected socket is not a subscribed
+/// one, and a socket that pings with no channel joined reports itself healthy.
 ///
 /// Shared by the index and the thread view and defined here rather than
 /// duplicated in both. It subscribes through [BroadcastListeners] and not
@@ -30,7 +31,7 @@ import 'magic_starter_support_message_bubble.dart';
 /// with the notification bell, and `listen` replaces a same-event handler, so a
 /// second owner of the channel would silently deafen the first.
 mixin MagicStarterSupportLiveRefresh<T extends StatefulWidget> on State<T> {
-  /// How often a screen without a live socket rereads.
+  /// How often a screen rereads, socket or not.
   static const Duration pollInterval = Duration(seconds: 30);
 
   static const String _alias = 'magic_starter_support';
@@ -45,13 +46,7 @@ mixin MagicStarterSupportLiveRefresh<T extends StatefulWidget> on State<T> {
   /// Starts the poll and, when a broadcast driver is configured, the channel
   /// listener. Call from `onInit`.
   void startLiveRefresh() {
-    _pollTimer = Timer.periodic(pollInterval, (_) {
-      // A live socket delivers the event, so polling on top of it only repeats
-      // the read; the null driver reports itself disconnected and keeps polling.
-      if (_broadcastToken != null && Echo.connection.isConnected) return;
-
-      _refresh();
-    });
+    _pollTimer = Timer.periodic(pollInterval, (_) => _refresh());
 
     if (!_broadcastingEnabled()) return;
 
@@ -111,11 +106,11 @@ String magicStarterSupportTopicLabel(String topic) {
 
 /// A conversation's status as the customer reads it.
 ///
-/// Resolved reads as finished. An open conversation reads as who owes the next
-/// answer when the backend says so (the AI while [awaitingAi], the team while
-/// [waitingOnTeam]) and as plain open otherwise. `pending` and `snoozed` are the
-/// desk's own bookkeeping and read as open, and so does a status a newer backend
-/// adds.
+/// Resolved reads as finished. A `pending` conversation belongs to the AI desk
+/// and reads as the AI's, answered or not. An open conversation reads as who
+/// owes the next answer when the backend says so (the AI while [awaitingAi],
+/// the team while [waitingOnTeam]) and as plain open otherwise; `snoozed` and a
+/// status a newer backend adds read as open.
 class MagicStarterSupportStatusBadge extends StatelessWidget {
   const MagicStarterSupportStatusBadge(
     this.status, {
@@ -142,7 +137,7 @@ class MagicStarterSupportStatusBadge extends StatelessWidget {
       );
     }
 
-    if (awaitingAi) {
+    if (awaitingAi || status == 'pending') {
       return WDiv(
         className:
             'inline-flex flex-row items-center rounded-full px-2 py-0.5 '
@@ -243,10 +238,15 @@ class _MagicStarterSupportIndexViewState
     if (conversations.isNotEmpty) return _buildList(conversations);
 
     return switch (controller.listStatus) {
-      MagicStarterSupportReadStatus.loaded => MSEmptyState(
-        icon: _iconEmpty,
-        title: trans('magic_starter.support.empty_title'),
-        description: trans('magic_starter.support.empty_description'),
+      // The empty state sizes to its text; the page column would otherwise park
+      // it against the left edge.
+      MagicStarterSupportReadStatus.loaded => WDiv(
+        className: 'w-full flex flex-col items-center',
+        child: MSEmptyState(
+          icon: _iconEmpty,
+          title: trans('magic_starter.support.empty_title'),
+          description: trans('magic_starter.support.empty_description'),
+        ),
       ),
       MagicStarterSupportReadStatus.failed ||
       MagicStarterSupportReadStatus.notFound => MSErrorState(

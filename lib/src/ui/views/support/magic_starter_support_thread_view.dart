@@ -276,8 +276,10 @@ class _MagicStarterSupportThreadViewState
           : const MSSkeleton(height: 160);
     }
 
+    // A conversation reads best in a column of its own, centred and capped like
+    // the composer below it, rather than stretched across a wide page.
     return WDiv(
-      className: 'flex flex-col gap-3.5 lg:gap-4 pb-4',
+      className: 'w-full max-w-3xl mx-auto flex flex-col gap-3.5 lg:gap-4 pb-4',
       children: [
         for (final message in conversation.messages) _buildMessage(message),
         if (conversation.awaitingAi)
@@ -314,7 +316,7 @@ class _MagicStarterSupportThreadViewState
   Widget _buildComposer(MagicStarterSupportConversation conversation) {
     return WDiv(
       key: const ValueKey<String>('support-composer'),
-      className: 'flex flex-col gap-2 pt-3 pb-4 lg:pb-5',
+      className: 'w-full max-w-3xl mx-auto flex flex-col gap-2 pt-3 pb-4 lg:pb-5',
       children: [
         ?_buildExpectation(conversation),
         MSFormField(
@@ -330,10 +332,10 @@ class _MagicStarterSupportThreadViewState
     );
   }
 
-  /// What to expect next: the AI while it owes an answer, the team while the
-  /// conversation waits on it, and nothing otherwise.
+  /// What to expect next: the AI while the conversation is the AI desk's, the
+  /// team while it waits on a person, and nothing otherwise.
   Widget? _buildExpectation(MagicStarterSupportConversation conversation) {
-    if (conversation.awaitingAi) {
+    if (conversation.awaitingAi || conversation.status == 'pending') {
       return WDiv(
         className: 'flex flex-row items-center gap-2',
         children: [

@@ -241,6 +241,22 @@ void main() {
   }
 
   group('the index view', () {
+    testWidgets('centres the empty state in the page at desktop width', (
+      tester,
+    ) async {
+      fakeBackend({
+        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[]),
+      });
+
+      await mount(tester, at: '/support', size: const Size(1440, 900));
+
+      final double title = tester
+          .getCenter(find.text(trans('magic_starter.support.empty_title')))
+          .dx;
+      final double page = tester.getCenter(find.byType(MSPageScaffold)).dx;
+      expect((title - page).abs(), lessThan(24));
+    });
+
     testWidgets('shows the empty state and a New button when there are none', (
       tester,
     ) async {
@@ -935,11 +951,13 @@ void main() {
       bool awaitingAi = false,
       bool waitingOnTeam = false,
       String? topic,
+      String status = 'open',
     }) {
       return fakeBackend({
         'GET /support/conversations/7': (_) => ok(
           conversationJson(
             id: 7,
+            status: status,
             topic: topic,
             awaitingAi: awaitingAi,
             waitingOnTeam: waitingOnTeam,
@@ -1159,6 +1177,45 @@ void main() {
       expect(find.text(trans('magic_starter.support.expect_ai')), findsNothing);
     });
 
+    testWidgets('keeps the AI pill and line on an AI-owned thread it answered', (
+      tester,
+    ) async {
+      // Pending with nothing owed: the AI has answered and still owns the
+      // conversation, so it reads as the AI's, not as a plain open thread.
+      backend(status: 'pending');
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+      expect(
+        find.text(trans('magic_starter.support.status.ai_answering')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.support.expect_ai')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.support.status.open')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('reads the thread in a centred column at desktop width', (
+      tester,
+    ) async {
+      backend();
+      await mount(tester, at: '/support/7', size: const Size(1440, 900));
+      // The keyed box is the full-width slot `mx-auto` centres inside; the
+      // field it holds is what the eye reads, so that is what is measured.
+      final double field = tester
+          .getSize(
+            find.descendant(
+              of: find.byKey(const ValueKey<String>('support-composer')),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .width;
+      expect(field, lessThanOrEqualTo(768));
+    });
+
     testWidgets('says nothing when neither is pending', (tester) async {
       backend();
       await mount(tester, at: '/support/7', size: const Size(1200, 800));
@@ -1273,7 +1330,7 @@ void main() {
       expect(count(sent, 'GET', '/support/conversations'), 2);
     });
 
-    testWidgets('refreshes on the private user channel event, not the poll', (
+    testWidgets('refreshes on the private user channel event and keeps polling', (
       tester,
     ) async {
       final fake = Echo.fake();
@@ -1292,12 +1349,15 @@ void main() {
       await tester.pump();
       expect(count(sent, 'GET', '/support/conversations'), 2);
 
+      // A connected socket is not a subscribed one: the live walk caught a
+      // socket that pinged for minutes with no channel joined, and a screen
+      // that trusted it never refreshed. The poll is the floor either way.
       await tester.pump(const Duration(seconds: 30));
       await tester.pump();
       expect(
         count(sent, 'GET', '/support/conversations'),
-        2,
-        reason: 'a live socket makes the poll redundant',
+        3,
+        reason: 'the poll still runs beside a connected socket',
       );
     });
 
