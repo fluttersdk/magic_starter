@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MagicStarterConfig.supportThreadPath(Object id)`**, the route to one support conversation, beside `supportThreadRoute()` (the `:id` pattern). The support index, the create screen and the billing screen's Contact sales navigate through it. (`lib/src/configuration/magic_starter_config.dart`)
+
+### Fixed
+
+- **Password reset works from the mailed link.** The reset view read the token from a `:token` path segment the route does not have, so it posted an empty token and the backend answered 422. It now reads `token` and `email` from the link's query string (`?token=...&email=...`) through `MagicRouter.instance.queryParameterOf`, once, in `didChangeDependencies`. Needs a `magic` with `queryParameterOf` and `pathParameterOf`. (`lib/src/ui/views/auth/magic_starter_reset_password_view.dart`)
+- **The invitation and thread views read their route values from their own page.** `MagicRouter.instance.pathParameter` names whichever page the router built last, which differs from the view's own once routes sit in two layout shells; both now use `pathParameterOf(context, ...)`, and the thread view drops its `GoError` fallback, so a view mounted outside a router throws. (`lib/src/ui/views/teams/magic_starter_team_invitation_accept_view.dart`, `lib/src/ui/views/support/magic_starter_support_thread_view.dart`)
+
 ## [0.0.44] - 2026-10-13
 
 ### Added

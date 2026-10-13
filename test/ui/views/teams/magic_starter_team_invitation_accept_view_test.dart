@@ -4,13 +4,26 @@ import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 void main() {
-  Widget wrap(Widget widget) {
-    return MaterialApp(
-      home: WindTheme(
-        data: WindThemeData(),
-        child: Scaffold(body: SingleChildScrollView(child: widget)),
+  Future<void> mount(
+    WidgetTester tester, {
+    Widget view = const MagicStarterTeamInvitationAcceptView(),
+    Widget Function(Widget child)? frame,
+  }) async {
+    MagicRoute.page('/invitations/:token/accept', () => view);
+    MagicRouter.instance.setInitialLocation('/invitations/tok1/accept');
+
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: MagicRouter.instance.routerConfig,
+        builder: (context, child) => WindTheme(
+          data: WindThemeData(),
+          child: frame == null
+              ? Scaffold(body: SingleChildScrollView(child: child))
+              : frame(child!),
+        ),
       ),
     );
+    await tester.pumpAndSettle();
   }
 
   group('MagicStarterTeamInvitationAcceptView — slot injection', () {
@@ -19,6 +32,7 @@ void main() {
     setUp(() {
       MagicApp.reset();
       Magic.flush();
+      MagicRouter.reset();
       Magic.singleton('log', () => LogManager());
       Magic.singleton('magic_starter', () => MagicStarterManager());
       Config.set('magic_starter.features.teams', true);
@@ -29,6 +43,7 @@ void main() {
       controller.members.dispose();
       controller.invitations.dispose();
       controller.currentTeamId.dispose();
+      MagicRouter.reset();
     });
 
     testWidgets('renders header slot when registered', (tester) async {
@@ -38,10 +53,7 @@ void main() {
         (ctx) => const Text('Custom Header'),
       );
 
-      await tester.pumpWidget(
-        wrap(const MagicStarterTeamInvitationAcceptView()),
-      );
-      await tester.pumpAndSettle();
+      await mount(tester);
 
       expect(find.text('Custom Header'), findsOneWidget);
     });
@@ -53,10 +65,7 @@ void main() {
         (ctx) => const Text('Custom Footer'),
       );
 
-      await tester.pumpWidget(
-        wrap(const MagicStarterTeamInvitationAcceptView()),
-      );
-      await tester.pumpAndSettle();
+      await mount(tester);
 
       expect(find.text('Custom Footer'), findsOneWidget);
     });
@@ -68,6 +77,7 @@ void main() {
     setUp(() {
       MagicApp.reset();
       Magic.flush();
+      MagicRouter.reset();
       Magic.singleton('log', () => LogManager());
       Magic.singleton('magic_starter', () => MagicStarterManager());
       Config.set('magic_starter.features.teams', true);
@@ -78,6 +88,7 @@ void main() {
       controller.members.dispose();
       controller.invitations.dispose();
       controller.currentTeamId.dispose();
+      MagicRouter.reset();
     });
 
     testWidgets('scrolls itself instead of overflowing a bounded height', (
@@ -90,17 +101,80 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(390, 300));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
+      await mount(tester, frame: (child) => Scaffold(body: child));
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('MagicStarterTeamInvitationAcceptView — the invitation token', () {
+    late MagicStarterTeamController controller;
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      MagicRouter.reset();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Config.set('magic_starter.features.teams', true);
+      controller = MagicStarterTeamController.instance;
+    });
+
+    tearDown(() {
+      Http.unfake();
+      controller.members.dispose();
+      controller.invitations.dispose();
+      controller.currentTeamId.dispose();
+      MagicRouter.reset();
+    });
+
+    testWidgets('accepts the token of its own route across two shells', (
+      tester,
+    ) async {
+      // The invitation route is not stacked, so a push over a page in another
+      // shell makes the router build the page underneath after this one; a read
+      // of the router's last-built state named that page's token.
+      final List<String> posted = <String>[];
+      Http.fake((request) {
+        posted.add('${request.method} ${request.url}');
+
+        return Http.response(<String, dynamic>{});
+      });
+
+      MagicRoute.group(
+        layout: (child) => Column(children: [Expanded(child: child)]),
+        routes: () {
+          MagicRoute.page('/elsewhere/:token', () => const Text('Elsewhere'));
+        },
+      );
+      MagicRoute.group(
+        layoutId: 'app',
+        layout: (child) => Column(children: [Expanded(child: child)]),
+        routes: () {
+          MagicRoute.page(
+            '/invitations/:token/accept',
+            () => const MagicStarterTeamInvitationAcceptView(),
+          );
+        },
+      );
+      MagicRouter.instance.setInitialLocation('/elsewhere/tok1');
       await tester.pumpWidget(
-        MaterialApp(
-          home: WindTheme(
-            data: WindThemeData(),
-            child: const Scaffold(body: MagicStarterTeamInvitationAcceptView()),
-          ),
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (context, child) =>
+              WindTheme(data: WindThemeData(), child: child!),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
+      MagicRouter.instance.routerConfig.push('/invitations/tok2/accept');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(WButton));
+      await tester.pumpAndSettle();
+
+      expect(posted, contains('POST /invitations/tok2/accept'));
+      expect(posted, isNot(contains('POST /invitations/tok1/accept')));
     });
   });
 }

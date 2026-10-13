@@ -570,6 +570,16 @@ void main() {
       });
     });
 
+    group('supportThreadPath()', () {
+      test('fills the id into the thread route', () {
+        expect(MagicStarterConfig.supportThreadPath(7), equals('/support/7'));
+        expect(
+          MagicStarterConfig.supportThreadPath('abc'),
+          equals('/support/abc'),
+        );
+      });
+    });
+
     group('supportMessageMaxLength()', () {
       test('returns 2000 by default', () {
         expect(MagicStarterConfig.supportMessageMaxLength(), equals(2000));

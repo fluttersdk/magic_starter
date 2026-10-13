@@ -227,12 +227,7 @@ class _MagicStarterSupportIndexViewState
   Future<void> refreshSupport() => controller.loadConversations();
 
   void _openThread(MagicStarterSupportConversation conversation) {
-    MagicRoute.to(
-      MagicStarterConfig.supportThreadRoute().replaceFirst(
-        ':id',
-        '${conversation.id}',
-      ),
-    );
+    MagicRoute.to(MagicStarterConfig.supportThreadPath(conversation.id));
   }
 
   @override

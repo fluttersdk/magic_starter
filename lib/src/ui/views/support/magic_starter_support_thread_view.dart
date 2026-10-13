@@ -84,21 +84,8 @@ class _MagicStarterSupportThreadViewState
     super.didChangeDependencies();
     if (_id != null) return;
 
-    _id = _routeId(context);
+    _id = MagicRouter.instance.pathParameterOf(context, 'id') ?? '';
     unawaited(refreshSupport());
-  }
-
-  /// The `:id` of the route this view was built for.
-  ///
-  /// [GoRouterState.of] throws a [GoError] only when no go_router page sits
-  /// above this view (a view pumped on its own); the router's current state is
-  /// right there, because nothing else was built after it.
-  String _routeId(BuildContext context) {
-    try {
-      return GoRouterState.of(context).pathParameters['id'] ?? '';
-    } on GoError {
-      return MagicRouter.instance.pathParameter('id') ?? '';
-    }
   }
 
   @override
