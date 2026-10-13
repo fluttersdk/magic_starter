@@ -57,6 +57,14 @@ class MagicStarterConfig {
 
   static const List<String> _defaultSupportedLocales = ['en', 'tr'];
 
+  static const List<String> _defaultSupportTopics = [
+    'billing',
+    'technical',
+    'account',
+    'sales',
+    'other',
+  ];
+
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
 
@@ -207,6 +215,19 @@ class MagicStarterConfig {
           _defaultSupport,
         ) ??
         _defaultSupport;
+  }
+
+  /// Returns the topics a customer can open a support conversation under
+  /// (`magic_starter.support.topics`).
+  ///
+  /// The keys are wire values the backend validates against its own topic list,
+  /// so a key added here has to exist there as well.
+  static List<String> supportTopics() {
+    return Config.get<List<String>>(
+          'magic_starter.support.topics',
+          _defaultSupportTopics,
+        ) ??
+        _defaultSupportTopics;
   }
 
   /// Returns whether email-based identity is enabled.

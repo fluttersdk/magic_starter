@@ -344,6 +344,11 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
       '',
     );
 
+    content = content.replaceAll(
+      RegExp(r'\s*registerMagicStarterSupportRoutes\([^)]*\);\n?'),
+      '',
+    );
+
     FileHelper.writeFile(providerPath, content);
     ctx.output.success(
       'Removed Magic Starter route registrations from '

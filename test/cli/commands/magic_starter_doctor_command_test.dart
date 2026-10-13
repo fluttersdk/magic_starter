@@ -418,6 +418,90 @@ void main() {
     });
   });
 
+  group('checkSupportRoutes', () {
+    // The support screens only exist once registerMagicStarterSupportRoutes()
+    // runs. Enabling the feature without the call leaves every /support link
+    // dead with no error, which is why it earns a line of its own.
+
+    void writeConfig(Directory dir, {required bool support}) {
+      _writeFile(
+        dir,
+        'lib/config/magic_starter.dart',
+        'Map<String, dynamic> get magicStarterConfig => {\n'
+            "  'magic_starter': {\n"
+            "    'features': {'support': $support},\n"
+            '  },\n'
+            '};\n',
+      );
+    }
+
+    test('passes when the support feature is off', () {
+      _setupFullInstall(tempDir);
+      writeConfig(tempDir, support: false);
+
+      expect(command.checkSupportRoutes(tempDir.path), isTrue);
+    });
+
+    test('fails when support is on and the call is absent', () {
+      _setupFullInstall(tempDir);
+      writeConfig(tempDir, support: true);
+
+      expect(command.checkSupportRoutes(tempDir.path), isFalse);
+    });
+
+    test('passes when support is on and the call is present', () {
+      _setupFullInstall(tempDir);
+      writeConfig(tempDir, support: true);
+      _writeFile(
+        tempDir,
+        'lib/app/providers/route_service_provider.dart',
+        'void boot() {\n'
+            '  registerMagicStarterAuthRoutes();\n'
+            '  registerMagicStarterSupportRoutes();\n'
+            '}\n',
+      );
+
+      expect(command.checkSupportRoutes(tempDir.path), isTrue);
+    });
+
+    test('fails when the only call is commented out', () {
+      _setupFullInstall(tempDir);
+      writeConfig(tempDir, support: true);
+      _writeFile(
+        tempDir,
+        'lib/app/providers/route_service_provider.dart',
+        'void boot() {\n'
+            '  registerMagicStarterAuthRoutes();\n'
+            '  // registerMagicStarterSupportRoutes();\n'
+            '}\n',
+      );
+
+      expect(command.checkSupportRoutes(tempDir.path), isFalse);
+    });
+
+    test('passes when the config file is absent', () {
+      expect(command.checkSupportRoutes(tempDir.path), isTrue);
+    });
+
+    test('reports the missing call as a warning, not a failed check', () {
+      _setupFullInstall(tempDir);
+      writeConfig(tempDir, support: true);
+
+      final String report = command.generateReport();
+
+      expect(report, contains('Support routes: WARN'));
+      expect(report, contains('registerMagicStarterSupportRoutes()'));
+      expect(command.getMissingRequirements(), isEmpty);
+    });
+
+    test('says nothing about support routes when the feature is off', () {
+      _setupFullInstall(tempDir);
+      writeConfig(tempDir, support: false);
+
+      expect(command.generateReport(), isNot(contains('Support routes')));
+    });
+  });
+
   group('pushExternalIdPrefix', () {
     // Reported rather than checked, because what can be wrong about a prefix
     // lives in the other repository: `HasNotifications`, `OneSignalChannel`

@@ -156,6 +156,45 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
     ).readAsStringSync().contains('registerMagicStarterAuthRoutes');
   }
 
+  /// Check that an app with the support feature on calls
+  /// `registerMagicStarterSupportRoutes()` from `route_service_provider.dart`.
+  ///
+  /// The feature flag alone mounts nothing: the three `/support` pages exist
+  /// only once the registration runs, so an adopter who flipped the flag sees
+  /// dead links and no error.
+  ///
+  /// Returns `true` when the config file is absent (reported by
+  /// [checkConfigExists]) and when the feature is off. Commented-out lines are
+  /// ignored on both sides, so a commented example neither enables the feature
+  /// nor counts as the call.
+  bool checkSupportRoutes(String root) {
+    final String configPath = '$root/lib/config/magic_starter.dart';
+
+    if (!FileHelper.fileExists(configPath)) {
+      return true;
+    }
+
+    final bool supportEnabled = RegExp(
+      r"'support'\s*:\s*true",
+    ).hasMatch(_withoutCommentedLines(File(configPath).readAsStringSync()));
+
+    if (!supportEnabled) {
+      return true;
+    }
+
+    final String providerPath =
+        '$root/lib/app/providers/route_service_provider.dart';
+
+    if (!FileHelper.fileExists(providerPath)) {
+      return false;
+    }
+
+    return RegExp(
+      r'^\s*registerMagicStarterSupportRoutes\(',
+      multiLine: true,
+    ).hasMatch(File(providerPath).readAsStringSync());
+  }
+
   /// Check that the identity contract is configured in
   /// `app_service_provider.dart`.
   ///
@@ -520,7 +559,24 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       }
     }
 
-    // 10. Push external id prefix, reported rather than checked: any value is
+    // 10. Support routes, a warning rather than a failed check: the rest of the
+    //     install works, only the support pages are unreachable. Printed only
+    //     when the feature is on and the call is missing.
+    if (!checkSupportRoutes(root)) {
+      buffer.writeln(
+        'Support routes: WARN registerMagicStarterSupportRoutes() not called '
+        'in route_service_provider.dart',
+      );
+      if (verbose) {
+        buffer.writeln('    Key: magic_starter.features.support');
+        buffer.writeln(
+          '    Fix: add registerMagicStarterSupportRoutes(); to boot(), or run '
+          '`artisan starter:install --features=support`',
+        );
+      }
+    }
+
+    // 11. Push external id prefix, reported rather than checked: any value is
     //     valid, and the only thing that can be wrong about it lives in the
     //     other repository.
     final prefix = pushExternalIdPrefix(root);
@@ -545,7 +601,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       }
     }
 
-    // 11. Published views section.
+    // 12. Published views section.
     final List<String> publishedViews = getPublishedViews(root);
     if (publishedViews.isNotEmpty) {
       buffer.writeln();
@@ -563,7 +619,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
 
     buffer.writeln();
 
-    // 12. Summary section.
+    // 13. Summary section.
     final List<String> missing = getMissingRequirements();
     if (missing.isEmpty) {
       buffer.writeln('All requirements met!');

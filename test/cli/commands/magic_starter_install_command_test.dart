@@ -435,6 +435,28 @@ void main() {
       expect(content, contains('registerMagicStarterTeamRoutes();'));
     });
 
+    test('injects support routes only when support feature enabled', () async {
+      setupMagicProjectFiles(tempDir);
+
+      await runInstall(command, features: 'teams');
+
+      final String without = File(
+        '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+      ).readAsStringSync();
+      expect(without, isNot(contains('registerMagicStarterSupportRoutes();')));
+
+      await runInstall(command, force: true, features: 'support');
+
+      final String content = File(
+        '${tempDir.path}/lib/app/providers/route_service_provider.dart',
+      ).readAsStringSync();
+      expect(content, contains('registerMagicStarterSupportRoutes();'));
+      expect(
+        RegExp('registerMagicStarterSupportRoutes').allMatches(content).length,
+        1,
+      );
+    });
+
     test('does not inject team routes when teams feature disabled', () async {
       setupMagicProjectFiles(tempDir);
 

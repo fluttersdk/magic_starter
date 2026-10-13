@@ -164,6 +164,10 @@ void main() {
         );
         expect(
           content,
+          isNot(contains('registerMagicStarterSupportRoutes();')),
+        );
+        expect(
+          content,
           isNot(contains("import 'package:magic_starter/magic_starter.dart';")),
         );
       },
@@ -308,6 +312,7 @@ class RouteServiceProvider extends ServiceProvider {
     registerMagicStarterProfileRoutes();
     registerMagicStarterTeamRoutes();
     registerMagicStarterNotificationRoutes();
+    registerMagicStarterSupportRoutes();
     registerAppRoutes();
   }
 }
