@@ -91,6 +91,10 @@ Components that reference a semantic role (e.g. `bg-surface`, `text-fg`, `bg-pri
 | `destructive-container` | Tinted danger area | `bg-red-50 dark:bg-red-950` |
 | `success` | Positive / confirmed | `bg-green-600 dark:bg-green-500` |
 | `warning` | Caution / review | `bg-amber-500 dark:bg-amber-400` |
+| `bg-ai-soft` | Soft container for AI-authored content (replies, summaries) | `bg-violet-100 dark:bg-violet-900` |
+| `text-ai-soft-foreground` | Text or icon on top of `bg-ai-soft` | `text-violet-700 dark:text-violet-200` |
+
+The two AI content keys are written as the full class they replace (`bg-ai-soft`, `text-ai-soft-foreground`), not as a bare role, and the support screens use them for the assistant's avatar, its status badge and its bubble label. A host theme that defines the same keys supplies its own map and wins.
 
 To override individual roles, spread `defaultAliases` and replace specific keys:
 
@@ -128,13 +132,13 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
 | `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`) |
-| `MSInput` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`) |
+| `MSInput` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`). A single-line field is at least 40px tall (`py-2.5` over a `leading-5` line) |
 | `MSTextarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `MSInput`; `fullWidth: true` fills the parent width (defaults `false`). On iOS a focused field carries a Done toolbar above the keyboard, since a multiline field's Return key inserts a newline and would otherwise leave the keyboard with no way out. One consequence for consumer TESTS: while that toolbar is up it schedules a frame callback every frame, so `pumpAndSettle` under `debugDefaultTargetPlatformOverride = TargetPlatform.iOS` never settles; pump explicitly instead |
 | `MSCheckbox` | | Boolean toggle; Wind-only, no Material dependency |
 | `MSSwitch` | | Toggle; replaces Flutter's `MSSwitch` in Wind layouts |
 | `MSRadio` | | Single-select option |
-| `MSSelect` | `selectRecipe` | Dropdown single-select backed by an item list |
-| `MSCombobox` | `comboboxRecipe` | Searchable single-select with filter input |
+| `MSSelect` | `selectRecipe` | Dropdown single-select backed by an item list; the trigger is at least 40px tall, the same height as `MSInput` |
+| `MSCombobox` | `comboboxRecipe` | Searchable single-select with filter input; the trigger is at least 40px tall, the same height as `MSInput` |
 | `MSSwitchRow` | `switchRowRecipe` | An `MSSwitch` with its `label` beside it; the label doubles as the switch's accessibility name |
 | `MSKeyValueEditor` | `MSKeyValueRow`, `keyValueEditorRecipe` | Controlled editor for an ordered list of key/value pairs (e.g. HTTP headers); every mutation emits a fresh list |
 | `MSStringValueList` | `StringValueListTone`, `stringValueListRecipe` | Controlled editor for a short list of distinct strings rendered as chips; commits on Enter/IME-done, trims and de-duplicates |
@@ -184,7 +188,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 | `MSUserProfileDropdown` | Avatar menu with profile links, theme toggle and logout |
 | `MSTeamSelector` | Current-team switcher; requires a registered team resolver |
 | `MSPageContainer` | Shared page geometry: width cap, edge margins, vertical rhythm, horizontal safe area. Reads `MagicStarter.manager.pageContainerClassName` |
-| `MSPageScaffold` | Full page treatment: page surface + own scroll + `MSPageContainer` + `MSPageHeader` + `gap-6` sections column |
+| `MSPageScaffold` | Full page treatment: page surface + own scroll + `MSPageContainer` + `MSPageHeader` + `gap-6` sections column. `footer` docks a widget below the scroll area, outside it, in the same width and edge margins; it clears the bottom safe area and rides above the on-screen keyboard (a chat composer is the use). A docked layout needs a bounded height, as the app shell provides. `scrollController` hands the scroll area to the page, to keep a thread on its newest message |
 | `MSFormActions` | Cancel/submit footer row for a form; `cancelLabel`/`onCancel` are optional (omitting both renders no cancel button) |
 | `MSHeaderAction` | Page-header action that collapses to an icon-only glyph below `lg` and a labelled `MSButton` at `lg` and up; `label` becomes the icon form's accessibility label |
 
