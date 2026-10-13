@@ -1601,10 +1601,7 @@ void main() {
           ),
         );
         expect(dotRect.right, lessThanOrEqualTo(labelRect.left));
-        expect(
-          (dotRect.center.dy - labelRect.center.dy).abs(),
-          lessThan(2),
-        );
+        expect((dotRect.center.dy - labelRect.center.dy).abs(), lessThan(2));
       });
     }
 
