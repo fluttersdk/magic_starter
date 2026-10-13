@@ -287,6 +287,38 @@ void main() {
       expect(controller.hasMoreConversations, isFalse);
     });
 
+    test('more pages stay announced while a refresh is in flight', () async {
+      // The 30 second poll rereads with the rows on screen; reading "no more
+      // pages" off the read status hid Load more and let an empty tab claim
+      // "no conversations" every 30 seconds.
+      Http.fake((request) {
+        final page = request.queryParameters?['page'];
+
+        return Http.response(
+          pageJson(
+            <Map<String, dynamic>>[conversationJson(id: page == 1 ? 1 : 2)],
+            page: page == 1 ? 1 : 2,
+            lastPage: 3,
+          ),
+        );
+      });
+
+      await controller.loadConversations();
+      await controller.loadMoreConversations();
+
+      final Future<void> refresh = controller.loadConversations();
+
+      expect(controller.listStatus, MagicStarterSupportReadStatus.loading);
+      expect(controller.hasMoreConversations, isTrue);
+
+      // A tap landing mid-reread waits for the next one instead of racing it.
+      await controller.loadMoreConversations();
+      await refresh;
+
+      expect(controller.conversations.map((c) => c.id), <dynamic>[1, 2]);
+      expect(controller.hasMoreConversations, isTrue);
+    });
+
     test(
       'a refresh stops at the last page the backend still reports',
       () async {

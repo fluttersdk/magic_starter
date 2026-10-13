@@ -86,9 +86,10 @@ class MagicStarterSupportController extends MagicController
   List<MagicStarterSupportConversation> get conversations => _conversations;
 
   /// Whether the backend has a page beyond the last one loaded.
-  bool get hasMoreConversations =>
-      _listStatus == MagicStarterSupportReadStatus.loaded &&
-      _listPage < _listLastPage;
+  ///
+  /// Independent of [listStatus]: a refresh rereads with the rows on screen,
+  /// and the pages behind them still exist while it runs.
+  bool get hasMoreConversations => _listPage < _listLastPage;
 
   /// Whether [loadMoreConversations] has a page in flight.
   bool get isLoadingMoreConversations => _isLoadingMore;
@@ -106,6 +107,9 @@ class MagicStarterSupportController extends MagicController
   /// Whether the AI still owes the open thread an answer, for the typing
   /// indicator. False when no thread is loaded.
   bool get isAwaitingAi => _conversation?.awaitingAi ?? false;
+
+  /// The signed-in customer's display name, for the avatar of their own rows.
+  String? get viewerName => Auth.user()?.get<String>('name');
 
   /// Whether a create, reply or seen write is in flight.
   bool get isSubmitting => _isSubmitting;
@@ -175,15 +179,20 @@ class MagicStarterSupportController extends MagicController
     refreshUI();
   }
 
-  /// Appends the page after the last one loaded. Does nothing while a page is
-  /// already in flight or when [hasMoreConversations] is false.
+  /// Appends the page after the last one loaded. Does nothing while a page or
+  /// a full reread is already in flight, or when [hasMoreConversations] is
+  /// false.
   ///
   /// A failed page keeps every row and leaves [hasMoreConversations] true, so
   /// the next call retries the same page. A row already held is skipped: new
   /// activity moves conversations up the order between two page reads, and the
   /// same row would otherwise appear twice.
   Future<void> loadMoreConversations() async {
-    if (!hasMoreConversations || _isLoadingMore) return;
+    if (!hasMoreConversations ||
+        _isLoadingMore ||
+        _listStatus == MagicStarterSupportReadStatus.loading) {
+      return;
+    }
 
     final generation = _sessionGeneration;
     final read = _listRead;

@@ -432,7 +432,7 @@ class _MagicStarterSupportIndexViewState
   Widget _buildAvatar(MagicStarterSupportLastMessage? last) {
     final String senderType = last?.senderType ?? 'customer';
     final String? name = senderType == 'customer'
-        ? Auth.user()?.get<String>('name')
+        ? controller.viewerName
         : last?.senderName;
 
     return MagicStarterSupportSenderAvatar(senderType: senderType, name: name);
