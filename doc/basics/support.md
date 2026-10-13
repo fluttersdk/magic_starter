@@ -83,7 +83,7 @@ A new conversation is filed under a topic. The chips come from `magic_starter.su
 },
 ```
 
-The backend derives the subject from the topic and the first line of the message, so the create form asks for none; `createConversation` still accepts an optional `subject`.
+The backend derives the subject from the first line of the message (the topic is shown beside it as a tag), so the create form asks for none; `createConversation` still accepts an optional `subject`.
 
 The counter under the message field reads `magic_starter.support.message_max_length` (`MagicStarterConfig.supportMessageMaxLength()`, default 2000). It is display only: set it to the backend's `support.message_max_length`, which is what refuses a longer message.
 
