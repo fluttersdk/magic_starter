@@ -569,5 +569,17 @@ void main() {
         );
       });
     });
+
+    group('supportMessageMaxLength()', () {
+      test('returns 2000 by default', () {
+        expect(MagicStarterConfig.supportMessageMaxLength(), equals(2000));
+      });
+
+      test('follows magic_starter.support.message_max_length', () {
+        Config.set('magic_starter.support.message_max_length', 500);
+
+        expect(MagicStarterConfig.supportMessageMaxLength(), equals(500));
+      });
+    });
   });
 }

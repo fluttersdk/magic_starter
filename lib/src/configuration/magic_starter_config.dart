@@ -57,6 +57,16 @@ class MagicStarterConfig {
 
   static const List<String> _defaultSupportedLocales = ['en', 'tr'];
 
+  static const List<String> _defaultSupportTopics = [
+    'billing',
+    'technical',
+    'account',
+    'sales',
+    'other',
+  ];
+
+  static const int _defaultSupportMessageMaxLength = 2000;
+
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
 
@@ -207,6 +217,32 @@ class MagicStarterConfig {
           _defaultSupport,
         ) ??
         _defaultSupport;
+  }
+
+  /// Returns the topics a customer can open a support conversation under
+  /// (`magic_starter.support.topics`).
+  ///
+  /// The keys are wire values the backend validates against its own topic list,
+  /// so a key added here has to exist there as well.
+  static List<String> supportTopics() {
+    return Config.get<List<String>>(
+          'magic_starter.support.topics',
+          _defaultSupportTopics,
+        ) ??
+        _defaultSupportTopics;
+  }
+
+  /// Returns the longest message the support composer counts against
+  /// (`magic_starter.support.message_max_length`).
+  ///
+  /// Display only: the backend's own `support.message_max_length` is what
+  /// refuses a longer message, so a host that changes one changes the other.
+  static int supportMessageMaxLength() {
+    return Config.get<int>(
+          'magic_starter.support.message_max_length',
+          _defaultSupportMessageMaxLength,
+        ) ??
+        _defaultSupportMessageMaxLength;
   }
 
   /// Returns whether email-based identity is enabled.

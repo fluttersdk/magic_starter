@@ -40,6 +40,26 @@ void main() {
       }
     });
 
+    test('ships the soft state tints and the AI accent edge', () {
+      const keys = [
+        'bg-warning-soft',
+        'text-warning-soft-foreground',
+        'bg-success-soft',
+        'text-success-soft-foreground',
+        'bg-ai-soft',
+        'text-ai-soft-foreground',
+        'border-ai',
+      ];
+
+      for (final key in keys) {
+        expect(
+          MagicStarterTokens.defaultAliases,
+          containsPair(key, isA<String>()),
+          reason: 'missing key: $key',
+        );
+      }
+    });
+
     test('every role value contains a light token and a dark: token', () {
       for (final entry in MagicStarterTokens.defaultAliases.entries) {
         final value = entry.value;

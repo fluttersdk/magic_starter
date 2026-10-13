@@ -557,6 +557,14 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
         marker: 'registerMagicStarterNotificationRoutes();',
       );
     }
+
+    if (features['support'] ?? false) {
+      _insertCallIfMissing(
+        filePath: providerPath,
+        callCode: '    registerMagicStarterSupportRoutes();\n',
+        marker: 'registerMagicStarterSupportRoutes();',
+      );
+    }
   }
 
   void _insertCallIfMissing({

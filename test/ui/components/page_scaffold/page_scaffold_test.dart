@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/src/facades/magic_starter.dart';
 import 'package:magic_starter/src/magic_starter_manager.dart';
+import 'package:magic_starter/src/ui/components/page_container/page_container.dart';
 import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.dart';
 import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.recipe.dart';
 import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.preview.dart';
@@ -250,6 +251,163 @@ void main() {
     );
 
     expect(find.text('Mark all read'), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
+  // Docked footer slot
+  // -------------------------------------------------------------------------
+
+  group('PageScaffold footer', () {
+    const footerKey = Key('composer');
+    const phone = Size(390, 844);
+
+    // A bounded page, as the app shell hands one over. The Scaffold must not
+    // resize for the keyboard itself, otherwise it would absorb the inset
+    // before the scaffold under test ever sees it.
+    Widget docked(Widget widget) {
+      return MaterialApp(
+        home: WindTheme(
+          data: WindThemeData(),
+          child: Scaffold(resizeToAvoidBottomInset: false, body: widget),
+        ),
+      );
+    }
+
+    List<Widget> messages() => List<Widget>.generate(
+      40,
+      (int i) => SizedBox(height: 60, child: Text('Message $i')),
+    );
+
+    void setViewport(WidgetTester tester, {double keyboard = 0}) {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = phone;
+      tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
+      addTearDown(tester.view.reset);
+    }
+
+    testWidgets('footer stays at the viewport bottom with long content', (
+      tester,
+    ) async {
+      setViewport(tester);
+
+      await tester.pumpWidget(
+        docked(
+          MSPageScaffold(
+            title: 'Thread',
+            footer: const SizedBox(key: footerKey, height: 56),
+            children: messages(),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(tester.getBottomLeft(find.byKey(footerKey)).dy, phone.height);
+    });
+
+    testWidgets('footer sits inside the same width container as the page', (
+      tester,
+    ) async {
+      setViewport(tester);
+
+      await tester.pumpWidget(
+        docked(
+          MSPageScaffold(
+            title: 'Thread',
+            footer: const SizedBox(key: footerKey, height: 56),
+            children: messages(),
+          ),
+        ),
+      );
+
+      final containers = find.ancestor(
+        of: find.byKey(footerKey),
+        matching: find.byType(MSPageContainer),
+      );
+      expect(containers, findsOneWidget);
+    });
+
+    testWidgets('footer rises above the keyboard inset', (tester) async {
+      setViewport(tester, keyboard: 300);
+
+      await tester.pumpWidget(
+        docked(
+          MSPageScaffold(
+            title: 'Thread',
+            footer: const SizedBox(key: footerKey, height: 56),
+            children: messages(),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getBottomLeft(find.byKey(footerKey)).dy,
+        lessThanOrEqualTo(phone.height - 300),
+      );
+    });
+
+    testWidgets('footer is outside the scroll view', (tester) async {
+      setViewport(tester);
+
+      await tester.pumpWidget(
+        docked(
+          MSPageScaffold(
+            title: 'Thread',
+            footer: const SizedBox(key: footerKey, height: 56),
+            children: messages(),
+          ),
+        ),
+      );
+
+      expect(
+        find.descendant(
+          of: find.byType(SingleChildScrollView),
+          matching: find.byKey(footerKey),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('scrollController drives the scrolling area', (tester) async {
+      setViewport(tester);
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        docked(
+          MSPageScaffold(
+            title: 'Thread',
+            scrollController: controller,
+            footer: const SizedBox(key: footerKey, height: 56),
+            children: messages(),
+          ),
+        ),
+      );
+
+      expect(controller.hasClients, isTrue);
+      controller.jumpTo(controller.position.maxScrollExtent);
+      await tester.pump();
+      expect(controller.offset, greaterThan(0));
+    });
+
+    testWidgets('no footer leaves no docked layout in the tree', (
+      tester,
+    ) async {
+      setViewport(tester);
+
+      await tester.pumpWidget(
+        wrap(const MSPageScaffold(title: 'Thread', children: [Text('Body')])),
+      );
+
+      expect(find.byKey(footerKey), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(MSPageScaffold),
+          matching: find.byType(Expanded),
+        ),
+        findsNothing,
+      );
+    });
   });
 
   testWidgets('PageScaffoldPreview renders without error', (tester) async {

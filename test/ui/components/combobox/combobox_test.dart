@@ -73,4 +73,24 @@ void main() {
       expect(select.searchable, isTrue);
     });
   });
+
+  testWidgets('MSCombobox trigger measures at least 40 logical px tall', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        MSCombobox<String>(
+          value: null,
+          options: const [SelectOption(value: 'a', label: 'Option A')],
+          onChange: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byType(WSelect<String>)).height,
+      greaterThanOrEqualTo(40),
+    );
+  });
 }

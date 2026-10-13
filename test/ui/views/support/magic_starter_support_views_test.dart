@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/views/support/magic_starter_support_message_bubble.dart';
 
 // ---------------------------------------------------------------------------
 // The shipped catalogue
@@ -54,6 +57,10 @@ Map<String, dynamic> conversationJson({
   String subject = 'Cannot add a monitor',
   String status = 'open',
   bool hasUnread = false,
+  String? topic,
+  bool awaitingAi = false,
+  bool waitingOnTeam = false,
+  Map<String, dynamic>? lastMessage,
   List<Map<String, dynamic>>? messages,
 }) {
   return <String, dynamic>{
@@ -67,7 +74,35 @@ Map<String, dynamic> conversationJson({
     'last_activity_at': '2026-10-12T09:30:00+00:00',
     'created_at': '2026-10-12T09:00:00+00:00',
     'has_unread': hasUnread,
+    'topic': ?topic,
+    'awaiting_ai': awaitingAi,
+    'waiting_on_team': waitingOnTeam,
+    'last_message': ?lastMessage,
     'messages': ?messages,
+  };
+}
+
+Map<String, dynamic> lastMessageJson({
+  String senderType = 'staff',
+  String? senderName = 'Ayse',
+  String bodyPreview = 'On it',
+}) {
+  return <String, dynamic>{
+    'sender_type': senderType,
+    'sender_name': senderName,
+    'body_preview': bodyPreview,
+    'created_at': '2026-10-12T09:30:00+00:00',
+  };
+}
+
+Map<String, dynamic> pageJson(
+  List<Map<String, dynamic>> rows, {
+  required int page,
+  required int lastPage,
+}) {
+  return <String, dynamic>{
+    'data': rows,
+    'meta': <String, dynamic>{'current_page': page, 'last_page': lastPage},
   };
 }
 
@@ -75,12 +110,21 @@ Map<String, dynamic> messageJson({
   int id = 1,
   String senderType = 'customer',
   String body = 'Hello',
+  String kind = 'message',
+  String? senderName,
+  String? senderAvatarUrl,
 }) {
   return <String, dynamic>{
     'id': id,
     'sender_type': senderType,
+    'kind': kind,
     'body': body,
     'created_at': '2026-10-12T09:00:00+00:00',
+    if (senderName != null || senderAvatarUrl != null)
+      'sender': <String, dynamic>{
+        'name': senderName,
+        'avatar_url': senderAvatarUrl,
+      },
   };
 }
 
@@ -160,9 +204,16 @@ void main() {
 
   /// Mounts the three support views THROUGH THE REGISTRY on a real router, so
   /// navigation between them is the router's, not a stub.
-  Future<void> mount(WidgetTester tester, {required String at}) async {
-    await tester.binding.setSurfaceSize(const Size(1280, 2000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  Future<void> mount(
+    WidgetTester tester, {
+    required String at,
+    Size size = const Size(1280, 2000),
+  }) async {
+    // A logical size: flutter_test's default pixel ratio is 3, which would turn
+    // a 1280 surface into a 427 px phone.
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = size;
+    addTearDown(tester.view.reset);
 
     Magic.put(MagicStarterSupportController());
 
@@ -191,6 +242,22 @@ void main() {
   }
 
   group('the index view', () {
+    testWidgets('centres the empty state in the page at desktop width', (
+      tester,
+    ) async {
+      fakeBackend({
+        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[]),
+      });
+
+      await mount(tester, at: '/support', size: const Size(1440, 900));
+
+      final double title = tester
+          .getCenter(find.text(trans('magic_starter.support.empty_title')))
+          .dx;
+      final double page = tester.getCenter(find.byType(MSPageScaffold)).dx;
+      expect((title - page).abs(), lessThan(24));
+    });
+
     testWidgets('shows the empty state and a New button when there are none', (
       tester,
     ) async {
@@ -211,44 +278,322 @@ void main() {
       );
     });
 
-    testWidgets('lists conversations with a status badge and an unread dot', (
+    testWidgets(
+      'lists open conversations with a status pill and an unread dot',
+      (tester) async {
+        fakeBackend({
+          'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[
+            conversationJson(id: 7, hasUnread: true),
+            conversationJson(id: 9, subject: 'Slow dashboard'),
+            conversationJson(
+              id: 8,
+              subject: 'Invoice question',
+              status: 'resolved',
+            ),
+          ]),
+        });
+
+        await mount(tester, at: '/support');
+
+        expect(find.text('Cannot add a monitor'), findsOneWidget);
+        expect(find.text('Slow dashboard'), findsOneWidget);
+        expect(find.text('Invoice question'), findsNothing);
+        expect(
+          find.text(trans('magic_starter.support.status.open')),
+          findsNWidgets(2),
+        );
+        expect(
+          find.byKey(const ValueKey<String>('support-unread-7')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('support-unread-9')),
+          findsNothing,
+        );
+        expect(
+          find.text(trans('magic_starter.support.empty_title')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets('the Resolved tab swaps the rows and carries the counts', (
       tester,
     ) async {
       fakeBackend({
         'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[
-          conversationJson(id: 7, hasUnread: true),
+          conversationJson(id: 7),
           conversationJson(
             id: 8,
             subject: 'Invoice question',
             status: 'resolved',
           ),
+          conversationJson(id: 9, subject: 'Old one', status: 'resolved'),
         ]),
       });
 
       await mount(tester, at: '/support');
 
       expect(find.text('Cannot add a monitor'), findsOneWidget);
-      expect(find.text('Invoice question'), findsOneWidget);
       expect(
-        find.text(trans('magic_starter.support.status.open')),
+        find.text('${trans('magic_starter.support.status.open')} · 1'),
         findsOneWidget,
       );
+
+      await tester.tap(
+        find.text('${trans('magic_starter.support.status.resolved')} · 2'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cannot add a monitor'), findsNothing);
+      expect(find.text('Invoice question'), findsOneWidget);
+      expect(find.text('Old one'), findsOneWidget);
       expect(
         find.text(trans('magic_starter.support.status.resolved')),
+        findsNWidgets(2),
+        reason: 'one status pill per resolved row',
+      );
+    });
+
+    testWidgets('a row previews the last message behind its sender name', (
+      tester,
+    ) async {
+      fakeBackend({
+        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[
+          conversationJson(
+            id: 7,
+            topic: 'sales',
+            lastMessage: lastMessageJson(
+              senderName: 'Ayse',
+              bodyPreview: 'Is 14:00 tomorrow fine?',
+            ),
+          ),
+          conversationJson(
+            id: 8,
+            subject: 'SSL warning',
+            lastMessage: lastMessageJson(
+              senderType: 'ai',
+              senderName: 'Uptizm AI',
+              bodyPreview: 'The last check ran at 14:02',
+            ),
+          ),
+          conversationJson(
+            id: 9,
+            subject: 'Billing address',
+            lastMessage: lastMessageJson(
+              senderType: 'customer',
+              senderName: null,
+              bodyPreview: 'Can you update the tax number?',
+            ),
+          ),
+        ]),
+      });
+
+      await mount(tester, at: '/support');
+
+      expect(find.text('Ayse: Is 14:00 tomorrow fine?'), findsOneWidget);
+      expect(
+        find.text('Uptizm AI: The last check ran at 14:02'),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('support-unread-7')),
+        find.text(
+          '${trans('magic_starter.support.sender.customer')}: '
+          'Can you update the tax number?',
+        ),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('support-unread-8')),
-        findsNothing,
+        find.text(trans('magic_starter.support.topic.sales')),
+        findsOneWidget,
+        reason: 'the topic tag sits beside the subject',
+      );
+    });
+
+    testWidgets('the status pill names who is answering, on wide screens', (
+      tester,
+    ) async {
+      fakeBackend({
+        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[
+          conversationJson(id: 7, awaitingAi: true),
+          conversationJson(
+            id: 8,
+            subject: 'Needs a human',
+            waitingOnTeam: true,
+          ),
+        ]),
+      });
+
+      await mount(tester, at: '/support', size: const Size(1200, 800));
+
+      expect(
+        find.text(trans('magic_starter.support.status.ai_answering')),
+        findsOneWidget,
       );
       expect(
-        find.text(trans('magic_starter.support.empty_title')),
+        find.text(trans('magic_starter.support.status.team_answering')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the status pill gives way on a phone', (tester) async {
+      fakeBackend({
+        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[
+          conversationJson(id: 7, awaitingAi: true),
+        ]),
+      });
+
+      await mount(tester, at: '/support', size: const Size(390, 800));
+
+      expect(find.text('Cannot add a monitor'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.support.status.ai_answering')),
         findsNothing,
       );
+    });
+
+    testWidgets('Load more fetches page 2 and drops the control on the last', (
+      tester,
+    ) async {
+      final List<Object?> pages = <Object?>[];
+      Http.fake((MagicRequest request) async {
+        final Object? page = request.queryParameters?['page'];
+        if (request.url == '/support/conversations') pages.add(page);
+
+        return Http.response(switch (page) {
+          1 => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 1, subject: 'First page'),
+            ],
+            page: 1,
+            lastPage: 2,
+          ),
+          _ => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 2, subject: 'Second page'),
+            ],
+            page: 2,
+            lastPage: 2,
+          ),
+        });
+      });
+
+      await mount(tester, at: '/support');
+
+      expect(find.text('First page'), findsOneWidget);
+      expect(find.text('Second page'), findsNothing);
+      expect(
+        find.text(trans('magic_starter.support.status.open')),
+        findsNWidgets(2),
+        reason: 'with more pages to come the tab shows no count, the pill does',
+      );
+
+      await tester.tap(find.text(trans('magic_starter.support.load_more')));
+      await tester.pumpAndSettle();
+
+      expect(pages, <Object?>[1, 2]);
+      expect(find.text('First page'), findsOneWidget);
+      expect(find.text('Second page'), findsOneWidget);
+      expect(find.text(trans('magic_starter.support.load_more')), findsNothing);
+    });
+
+    testWidgets('the Resolved tab offers Load more instead of claiming there '
+        'is nothing while pages remain', (tester) async {
+      Http.fake((MagicRequest request) async {
+        return Http.response(switch (request.queryParameters?['page']) {
+          1 => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 1, subject: 'Open one'),
+            ],
+            page: 1,
+            lastPage: 2,
+          ),
+          _ => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(
+                id: 2,
+                subject: 'Closed long ago',
+                status: 'resolved',
+              ),
+            ],
+            page: 2,
+            lastPage: 2,
+          ),
+        });
+      });
+
+      await mount(tester, at: '/support');
+      await tester.tap(
+        find.text(trans('magic_starter.support.status.resolved')).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('magic_starter.support.empty_resolved_title')),
+        findsNothing,
+        reason: 'an unloaded page may still hold resolved conversations',
+      );
+      expect(
+        find.text(trans('magic_starter.support.load_more')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(trans('magic_starter.support.load_more')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Closed long ago'), findsOneWidget);
+    });
+
+    testWidgets('the Resolved tab says so once every page is read', (
+      tester,
+    ) async {
+      fakeBackend({
+        'GET /support/conversations': (_) =>
+            ok(<Map<String, dynamic>>[conversationJson(id: 1)]),
+      });
+
+      await mount(tester, at: '/support');
+      await tester.tap(
+        find.text('${trans('magic_starter.support.status.resolved')} · 0'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('magic_starter.support.empty_resolved_title')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a poll after Load more keeps the second page', (tester) async {
+      Http.fake((MagicRequest request) async {
+        return Http.response(switch (request.queryParameters?['page']) {
+          1 => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 1, subject: 'First page'),
+            ],
+            page: 1,
+            lastPage: 2,
+          ),
+          _ => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 2, subject: 'Second page'),
+            ],
+            page: 2,
+            lastPage: 2,
+          ),
+        });
+      });
+
+      await mount(tester, at: '/support');
+      await tester.tap(find.text(trans('magic_starter.support.load_more')));
+      await tester.pumpAndSettle();
+      expect(find.text('Second page'), findsOneWidget);
+
+      await tester.pump(MagicStarterSupportLiveRefresh.pollInterval);
+      await tester.pumpAndSettle();
+
+      expect(find.text('First page'), findsOneWidget);
+      expect(find.text('Second page'), findsOneWidget);
     });
 
     testWidgets('tapping a row opens its thread', (tester) async {
@@ -336,7 +681,21 @@ void main() {
   });
 
   group('the create view', () {
-    testWidgets('posts subject and message as in_app and opens the thread', (
+    testWidgets('offers the configured topics as chips', (tester) async {
+      fakeBackend({});
+
+      await mount(tester, at: '/support/new');
+
+      for (final String topic in MagicStarterConfig.supportTopics()) {
+        expect(
+          find.text(trans('magic_starter.support.topic.$topic')),
+          findsOneWidget,
+          reason: 'a chip for $topic',
+        );
+      }
+    });
+
+    testWidgets('posts the chosen topic and the message, with no subject', (
       tester,
     ) async {
       final sent = fakeBackend({
@@ -344,14 +703,14 @@ void main() {
         'POST /support/conversations': (_) => ok(
           conversationJson(
             id: 9,
-            subject: 'Billing help',
+            subject: 'Please help',
             messages: <Map<String, dynamic>>[messageJson(body: 'Please help')],
           ),
         ),
         'GET /support/conversations/9': (_) => ok(
           conversationJson(
             id: 9,
-            subject: 'Billing help',
+            subject: 'Please help',
             messages: <Map<String, dynamic>>[messageJson(body: 'Please help')],
           ),
         ),
@@ -360,9 +719,12 @@ void main() {
 
       await mount(tester, at: '/support/new');
 
-      final fields = find.byType(EditableText);
-      await tester.enterText(fields.at(0), 'Billing help');
-      await tester.enterText(fields.at(1), 'Please help');
+      await tester.tap(
+        find.text(trans('magic_starter.support.topic.technical')),
+      );
+      await tester.pump();
+      await tester.enterText(find.byType(EditableText), 'Please help');
+      await tester.pump();
       await tester.tap(find.text(trans('magic_starter.support.create_submit')));
       await tester.pumpAndSettle();
 
@@ -370,7 +732,7 @@ void main() {
         (s) => s.method == 'POST' && s.url == '/support/conversations',
       );
       expect(post.data, <String, dynamic>{
-        'subject': 'Billing help',
+        'topic': 'technical',
         'body': 'Please help',
         'source': 'in_app',
       });
@@ -380,7 +742,65 @@ void main() {
         reason: 'the backend scopes to the opener; the client sends no owner',
       );
       expect(count(sent, 'GET', '/support/conversations/9'), 1);
-      expect(find.text('Please help'), findsOneWidget);
+      expect(find.text('Please help'), findsWidgets);
+    });
+
+    testWidgets('counts the message against the limit', (tester) async {
+      fakeBackend({});
+
+      await mount(tester, at: '/support/new');
+      expect(find.text('0 / 2000'), findsOneWidget);
+
+      await tester.enterText(find.byType(EditableText), 'Hello');
+      await tester.pump();
+
+      expect(find.text('5 / 2000'), findsOneWidget);
+    });
+
+    testWidgets('counts against the configured message limit', (tester) async {
+      Config.set('magic_starter.support.message_max_length', 500);
+      fakeBackend({});
+
+      await mount(tester, at: '/support/new');
+
+      expect(find.text('0 / 500'), findsOneWidget);
+      expect(find.text('0 / 2000'), findsNothing);
+    });
+
+    testWidgets('explains how it works beside the form on a wide screen', (
+      tester,
+    ) async {
+      fakeBackend({});
+
+      await mount(tester, at: '/support/new', size: const Size(1200, 800));
+
+      expect(
+        find.text(trans('magic_starter.support.how_title')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.support.how_step_1')),
+        findsOneWidget,
+      );
+      expect(find.text(trans('magic_starter.support.how_short')), findsNothing);
+    });
+
+    testWidgets('folds the explanation into one line on a phone', (
+      tester,
+    ) async {
+      fakeBackend({});
+
+      await mount(tester, at: '/support/new', size: const Size(390, 800));
+
+      expect(
+        find.text(trans('magic_starter.support.how_short')),
+        findsOneWidget,
+      );
+      expect(find.text(trans('magic_starter.support.how_title')), findsNothing);
+      expect(
+        find.text(trans('magic_starter.support.how_step_1')),
+        findsNothing,
+      );
     });
 
     testWidgets('opens clean after a refused reply elsewhere', (tester) async {
@@ -398,7 +818,7 @@ void main() {
 
       await mount(tester, at: '/support/7');
       await tester.enterText(find.byType(EditableText).last, 'Still there?');
-      await tester.tap(find.text(trans('magic_starter.support.reply_submit')));
+      await tester.tap(find.byKey(const ValueKey<String>('support-send')));
       await tester.pumpAndSettle();
       expect(find.text('Support is resting.'), findsOneWidget);
 
@@ -419,7 +839,7 @@ void main() {
         'POST /support/conversations': (_) => Http.response(<String, dynamic>{
           'message': 'The given data was invalid.',
           'errors': <String, dynamic>{
-            'subject': <String>['The subject field is required.'],
+            'topic': <String>['The topic field is required.'],
           },
         }, 422),
       });
@@ -428,7 +848,7 @@ void main() {
       await tester.tap(find.text(trans('magic_starter.support.create_submit')));
       await tester.pumpAndSettle();
 
-      expect(find.text('The subject field is required.'), findsOneWidget);
+      expect(find.text('The topic field is required.'), findsOneWidget);
       expect(
         find.text(trans('magic_starter.support.create_submit')),
         findsOneWidget,
@@ -602,7 +1022,7 @@ void main() {
 
       await mount(tester, at: '/support/7');
       await tester.enterText(find.byType(EditableText), 'A second line');
-      await tester.tap(find.text(trans('magic_starter.support.reply_submit')));
+      await tester.tap(find.byKey(const ValueKey<String>('support-send')));
       await tester.pumpAndSettle();
 
       final post = sent.singleWhere(
@@ -632,6 +1052,411 @@ void main() {
     });
   });
 
+  group('the thread as a chat', () {
+    Rect rectOf(WidgetTester tester, String key) =>
+        tester.getRect(find.byKey(ValueKey<String>(key)));
+
+    List<SentRequest> backend({
+      List<Map<String, dynamic>>? messages,
+      bool awaitingAi = false,
+      bool waitingOnTeam = false,
+      String? topic,
+      String status = 'open',
+    }) {
+      return fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            status: status,
+            topic: topic,
+            awaitingAi: awaitingAi,
+            waitingOnTeam: waitingOnTeam,
+            messages: messages ?? <Map<String, dynamic>>[messageJson()],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+        'POST /support/conversations/7/messages': (request) => ok(
+          messageJson(id: 99, body: (request.data as Map)['body'] as String),
+        ),
+      });
+    }
+
+    for (final double width in <double>[1200, 390]) {
+      testWidgets('keeps the composer docked at ${width.toInt()}px with 30 '
+          'messages and the newest in view', (tester) async {
+        backend(
+          messages: <Map<String, dynamic>>[
+            for (var i = 1; i <= 30; i++)
+              messageJson(
+                id: i,
+                senderType: i.isEven ? 'staff' : 'customer',
+                body: 'Line $i',
+              ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7', size: Size(width, 800));
+
+        final Rect composer = rectOf(tester, 'support-composer');
+        expect(composer.bottom, closeTo(800, 1));
+
+        final Rect newest = tester.getRect(find.text('Line 30'));
+        expect(newest.bottom, lessThanOrEqualTo(composer.top));
+        expect(newest.top, greaterThanOrEqualTo(0));
+      });
+    }
+
+    testWidgets(
+      'an AI reply wears the AI chip and its avatar tops the bubble',
+      (tester) async {
+        backend(
+          messages: <Map<String, dynamic>>[
+            messageJson(id: 1, body: 'Is my SSL fine?'),
+            messageJson(
+              id: 2,
+              senderType: 'ai',
+              senderName: 'Uptizm AI',
+              body: 'The last check passed.',
+            ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+        expect(find.text('Uptizm AI'), findsOneWidget);
+        final Rect avatar = rectOf(tester, 'support-avatar-2');
+        final Rect bubble = rectOf(tester, 'support-bubble-2');
+        final Rect label = rectOf(tester, 'support-label-2');
+
+        expect(avatar.top, bubble.top);
+        expect(label.top, greaterThanOrEqualTo(bubble.bottom));
+        expect(avatar.right, lessThanOrEqualTo(bubble.left));
+      },
+    );
+
+    testWidgets('a staff reply names the teammate under the bubble', (
+      tester,
+    ) async {
+      backend(
+        messages: <Map<String, dynamic>>[
+          messageJson(
+            id: 2,
+            senderType: 'staff',
+            senderName: 'Ayse Yilmaz',
+            body: 'Tomorrow at 14:00?',
+          ),
+        ],
+      );
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(
+        find.textContaining(
+          'Ayse · ${trans('magic_starter.support.sender.staff')}',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        rectOf(tester, 'support-avatar-2').top,
+        rectOf(tester, 'support-bubble-2').top,
+      );
+      expect(
+        rectOf(tester, 'support-label-2').top,
+        greaterThanOrEqualTo(rectOf(tester, 'support-bubble-2').bottom),
+      );
+    });
+
+    testWidgets('the customer sits on the right, labelled You', (tester) async {
+      backend(
+        messages: <Map<String, dynamic>>[
+          messageJson(id: 1, body: 'Please help'),
+        ],
+      );
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(
+        find.textContaining(trans('magic_starter.support.sender.customer')),
+        findsOneWidget,
+      );
+      expect(rectOf(tester, 'support-bubble-1').center.dx, greaterThan(600));
+      expect(
+        find.byKey(const ValueKey<String>('support-avatar-1')),
+        findsNothing,
+      );
+    });
+
+    for (final double width in <double>[1200, 390]) {
+      testWidgets('a system handoff line is centred with no bubble at '
+          '${width.toInt()}px', (tester) async {
+        backend(
+          messages: <Map<String, dynamic>>[
+            messageJson(id: 1, body: 'Is it billing?'),
+            messageJson(
+              id: 2,
+              senderType: 'system',
+              kind: 'activity',
+              body: 'Handed over to the team',
+            ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7', size: Size(width, 800));
+
+        final Finder line = find.text('Handed over to the team');
+        expect(line, findsOneWidget);
+        expect(tester.getCenter(line).dx, closeTo(width / 2, 2));
+        expect(
+          find.byKey(const ValueKey<String>('support-bubble-2')),
+          findsNothing,
+        );
+      });
+    }
+
+    testWidgets('shows the typing bubble while the AI owes an answer, then '
+        'the taking-longer note after 45 seconds', (tester) async {
+      backend(awaitingAi: true);
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(
+        find.byKey(const ValueKey<String>('support-typing')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.support.taking_longer')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(seconds: 44));
+      expect(
+        find.byKey(const ValueKey<String>('support-typing')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.support.taking_longer')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.text(trans('magic_starter.support.taking_longer')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('support-typing')),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+      'a follow-up on a pending thread shows the typing bubble before '
+      'any refetch',
+      (tester) async {
+        // The AI answered an earlier turn: pending, nothing owed.
+        final sent = backend(
+          status: 'pending',
+          messages: <Map<String, dynamic>>[
+            messageJson(id: 1, body: 'Is my SSL fine?'),
+            messageJson(
+              id: 2,
+              senderType: 'ai',
+              senderName: 'Uptizm AI',
+              body: 'The last check passed.',
+            ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7', size: const Size(1200, 800));
+        expect(
+          find.byKey(const ValueKey<String>('support-typing')),
+          findsNothing,
+        );
+
+        await tester.enterText(find.byType(EditableText), 'Can I mute it?');
+        await tester.tap(find.byKey(const ValueKey<String>('support-send')));
+        await tester.pump();
+        await tester.pump();
+
+        expect(count(sent, 'GET', '/support/conversations/7'), 1);
+        expect(
+          find.byKey(const ValueKey<String>('support-typing')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('shows no typing bubble once the AI is not pending', (
+      tester,
+    ) async {
+      backend();
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(
+        find.byKey(const ValueKey<String>('support-typing')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('sets the expectation above the composer', (tester) async {
+      backend(awaitingAi: true);
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+      expect(
+        find.text(trans('magic_starter.support.expect_ai')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.support.expect_team')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('names the team while the conversation waits on it', (
+      tester,
+    ) async {
+      backend(waitingOnTeam: true);
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+      expect(
+        find.text(trans('magic_starter.support.expect_team')),
+        findsOneWidget,
+      );
+      expect(find.text(trans('magic_starter.support.expect_ai')), findsNothing);
+    });
+
+    testWidgets(
+      'keeps the AI pill and line on an AI-owned thread it answered',
+      (tester) async {
+        // Pending with nothing owed: the AI has answered and still owns the
+        // conversation, so it reads as the AI's, not as a plain open thread.
+        backend(status: 'pending');
+        await mount(tester, at: '/support/7', size: const Size(1200, 800));
+        expect(
+          find.text(trans('magic_starter.support.status.ai_answering')),
+          findsOneWidget,
+        );
+        expect(
+          find.text(trans('magic_starter.support.expect_ai')),
+          findsOneWidget,
+        );
+        expect(
+          find.text(trans('magic_starter.support.status.open')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets('reads the thread in a centred column at desktop width', (
+      tester,
+    ) async {
+      backend();
+      await mount(tester, at: '/support/7', size: const Size(1440, 900));
+      // The keyed box is the full-width slot `mx-auto` centres inside; the
+      // field it holds is what the eye reads, so that is what is measured.
+      final double field = tester
+          .getSize(
+            find.descendant(
+              of: find.byKey(const ValueKey<String>('support-composer')),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .width;
+      expect(field, lessThanOrEqualTo(768));
+    });
+
+    testWidgets('says nothing when neither is pending', (tester) async {
+      backend();
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+      expect(find.text(trans('magic_starter.support.expect_ai')), findsNothing);
+      expect(
+        find.text(trans('magic_starter.support.expect_team')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the header carries the number, topic and open date', (
+      tester,
+    ) async {
+      backend(topic: 'billing');
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(
+        find.textContaining(
+          '#107 · ${trans('magic_starter.support.topic.billing')} · ',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Enter sends and Shift+Enter does not, on a desktop', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      try {
+        final sent = backend();
+        await mount(tester, at: '/support/7', size: const Size(1200, 800));
+        const String url = '/support/conversations/7/messages';
+
+        await tester.tap(find.byType(EditableText));
+        await tester.enterText(find.byType(EditableText), 'First line');
+        await tester.pump();
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.pumpAndSettle();
+        expect(
+          count(sent, 'POST', url),
+          0,
+          reason: 'Shift+Enter breaks a line',
+        );
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+
+        expect(count(sent, 'POST', url), 1);
+        expect(
+          sent.singleWhere((s) => s.method == 'POST' && s.url == url).data,
+          <String, dynamic>{'body': 'First line'},
+        );
+        expect(
+          tester
+              .widget<EditableText>(find.byType(EditableText))
+              .controller
+              .text,
+          isEmpty,
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    testWidgets('a sent message scrolls to the newest', (tester) async {
+      backend(
+        messages: <Map<String, dynamic>>[
+          for (var i = 1; i <= 30; i++)
+            messageJson(
+              id: i,
+              senderType: i.isEven ? 'staff' : 'customer',
+              body: 'Line $i',
+            ),
+        ],
+      );
+
+      await mount(tester, at: '/support/7', size: const Size(390, 800));
+      await tester.enterText(find.byType(EditableText), 'One more');
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey<String>('support-send')));
+      await tester.pumpAndSettle();
+
+      final Rect composer = rectOf(tester, 'support-composer');
+      final Rect sent = tester.getRect(find.text('One more').last);
+      expect(sent.bottom, lessThanOrEqualTo(composer.top));
+      expect(sent.top, greaterThanOrEqualTo(0));
+    });
+  });
+
   group('live refresh', () {
     const event = 'support.conversation.updated';
 
@@ -653,33 +1478,37 @@ void main() {
       expect(count(sent, 'GET', '/support/conversations'), 2);
     });
 
-    testWidgets('refreshes on the private user channel event, not the poll', (
-      tester,
-    ) async {
-      final fake = Echo.fake();
-      Config.set('broadcasting.default', 'reverb');
-      final sent = fakeBackend({
-        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[]),
-      });
+    testWidgets(
+      'refreshes on the private user channel event and keeps polling',
+      (tester) async {
+        final fake = Echo.fake();
+        Config.set('broadcasting.default', 'reverb');
+        final sent = fakeBackend({
+          'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[]),
+        });
 
-      await mount(tester, at: '/support');
-      await tester.pump();
+        await mount(tester, at: '/support');
+        await tester.pump();
 
-      fake.assertSubscribed('private-App.Models.User.5');
-      expect(count(sent, 'GET', '/support/conversations'), 1);
+        fake.assertSubscribed('private-App.Models.User.5');
+        expect(count(sent, 'GET', '/support/conversations'), 1);
 
-      fake.dispatch('private-App.Models.User.5', event, <String, dynamic>{});
-      await tester.pump();
-      expect(count(sent, 'GET', '/support/conversations'), 2);
+        fake.dispatch('private-App.Models.User.5', event, <String, dynamic>{});
+        await tester.pump();
+        expect(count(sent, 'GET', '/support/conversations'), 2);
 
-      await tester.pump(const Duration(seconds: 30));
-      await tester.pump();
-      expect(
-        count(sent, 'GET', '/support/conversations'),
-        2,
-        reason: 'a live socket makes the poll redundant',
-      );
-    });
+        // A connected socket is not a subscribed one: the live walk caught a
+        // socket that pinged for minutes with no channel joined, and a screen
+        // that trusted it never refreshed. The poll is the floor either way.
+        await tester.pump(const Duration(seconds: 30));
+        await tester.pump();
+        expect(
+          count(sent, 'GET', '/support/conversations'),
+          3,
+          reason: 'the poll still runs beside a connected socket',
+        );
+      },
+    );
 
     testWidgets('stops listening when the view goes away', (tester) async {
       final fake = Echo.fake();
@@ -696,6 +1525,314 @@ void main() {
       await tester.pump();
 
       fake.assertNotListening('private-App.Models.User.5', event);
+    });
+  });
+
+  group('the design tokens on the support screens', () {
+    Widget themed(Widget child, {Brightness brightness = Brightness.light}) {
+      return MaterialApp(
+        home: WindTheme(
+          data: WindThemeData(
+            brightness: brightness,
+            aliases: MagicStarterTokens.defaultAliases,
+          ),
+          child: Scaffold(body: Center(child: child)),
+        ),
+      );
+    }
+
+    String classOf(WidgetTester tester, String key) {
+      return tester.widget<WDiv>(find.byKey(ValueKey<String>(key))).className!;
+    }
+
+    for (final (
+          String label,
+          MagicStarterSupportStatusBadge badge,
+          String bg,
+          String fg,
+        )
+        in <(String, MagicStarterSupportStatusBadge, String, String)>[
+          (
+            'the team',
+            const MagicStarterSupportStatusBadge('open', waitingOnTeam: true),
+            'bg-warning-soft',
+            'text-warning-soft-foreground',
+          ),
+          (
+            'a resolved conversation',
+            const MagicStarterSupportStatusBadge('resolved'),
+            'bg-success-soft',
+            'text-success-soft-foreground',
+          ),
+          (
+            'the AI',
+            const MagicStarterSupportStatusBadge('open', awaitingAi: true),
+            'bg-ai-soft',
+            'text-ai-soft-foreground',
+          ),
+          (
+            'a plain open conversation',
+            const MagicStarterSupportStatusBadge('open'),
+            'bg-surface-container-high',
+            'text-fg-muted',
+          ),
+        ]) {
+      testWidgets('the status pill for $label is a soft tint with a leading '
+          'dot', (tester) async {
+        await tester.pumpWidget(themed(badge));
+
+        final String pill = classOf(tester, 'support-status-pill');
+        expect(pill, contains(bg));
+        expect(pill, contains('rounded-full'));
+
+        final Finder dotFinder = find.byKey(
+          const ValueKey<String>('support-status-dot'),
+        );
+        final WIcon dot = tester.widget<WIcon>(dotFinder);
+        expect(dot.className, contains(fg));
+
+        // The dot leads the label on one line: `inline-flex` is inert in Wind,
+        // and a pill without a row axis stacks the dot above its label.
+        final Rect dotRect = tester.getRect(dotFinder);
+        final Rect labelRect = tester.getRect(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('support-status-pill')),
+            matching: find.byType(WText),
+          ),
+        );
+        expect(dotRect.right, lessThanOrEqualTo(labelRect.left));
+        expect((dotRect.center.dy - labelRect.center.dy).abs(), lessThan(2));
+      });
+    }
+
+    testWidgets('a team pill resolves to a tint, not the solid warning fill', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        themed(
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              MagicStarterSupportStatusBadge('open', waitingOnTeam: true),
+              WDiv(
+                key: ValueKey<String>('solid'),
+                className: 'w-4 h-4 bg-warning',
+              ),
+            ],
+          ),
+        ),
+      );
+
+      Color? fillOf(Finder owner) {
+        final Finder box = find.descendant(
+          of: owner,
+          matching: find.byType(DecoratedBox),
+        );
+
+        return (tester.widget<DecoratedBox>(box.first).decoration
+                as BoxDecoration)
+            .color;
+      }
+
+      final Color? tint = fillOf(
+        find.byKey(const ValueKey<String>('support-status-pill')),
+      );
+      final Color? solid = fillOf(find.byKey(const ValueKey<String>('solid')));
+
+      expect(tint, isNotNull, reason: 'bg-warning-soft was dropped');
+      expect(solid, isNotNull);
+      expect(tint, isNot(solid));
+    });
+
+    testWidgets('the AI bubble carries a 2px violet left edge', (tester) async {
+      await tester.pumpWidget(
+        themed(
+          MagicStarterSupportMessageBubble(
+            MagicStarterSupportMessage(
+              id: 2,
+              senderType: 'ai',
+              senderName: 'Uptizm AI',
+              body: 'The last check passed.',
+              createdAt: DateTime.utc(2026, 10, 12, 9),
+            ),
+          ),
+        ),
+      );
+
+      final String bubble = classOf(tester, 'support-bubble-2');
+      expect(bubble, contains('border-l-2'));
+      expect(bubble, contains('border-ai'));
+
+      final Finder box = find
+          .descendant(
+            of: find.byKey(const ValueKey<String>('support-bubble-2')),
+            matching: find.byType(DecoratedBox),
+          )
+          .first;
+      final BoxDecoration decoration =
+          tester.widget<DecoratedBox>(box).decoration as BoxDecoration;
+      final Border border = decoration.border! as Border;
+
+      expect(border.left.width, 2);
+      expect(
+        border.left.color,
+        isNot(const Color(0x00000000)),
+        reason: 'border-ai was dropped',
+      );
+      expect(border.right.width, 0);
+    });
+
+    testWidgets('a customer bubble has no accent edge', (tester) async {
+      await tester.pumpWidget(
+        themed(
+          MagicStarterSupportMessageBubble(
+            MagicStarterSupportMessage(
+              id: 1,
+              senderType: 'customer',
+              body: 'Hello',
+              createdAt: DateTime.utc(2026, 10, 12, 9),
+            ),
+          ),
+        ),
+      );
+
+      expect(classOf(tester, 'support-bubble-1'), isNot(contains('border-ai')));
+    });
+  });
+
+  group('avatar initials', () {
+    test('two words give their first letters', () {
+      expect(MagicStarterSupportSenderAvatar.initials('Ayse Yilmaz'), 'AY');
+      expect(MagicStarterSupportSenderAvatar.initials('Anılcan Çakır'), 'AÇ');
+    });
+
+    test('more than two words stop at the second', () {
+      expect(
+        MagicStarterSupportSenderAvatar.initials('Ada King Lovelace'),
+        'AK',
+      );
+    });
+
+    test('a single word gives its first two letters', () {
+      expect(MagicStarterSupportSenderAvatar.initials('Ayse'), 'AY');
+      expect(MagicStarterSupportSenderAvatar.initials('A'), 'A');
+    });
+
+    test('no name gives nothing', () {
+      expect(MagicStarterSupportSenderAvatar.initials(null), '');
+      expect(MagicStarterSupportSenderAvatar.initials('   '), '');
+    });
+
+    testWidgets('a teammate with one name wears two letters in the thread', (
+      tester,
+    ) async {
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            messages: <Map<String, dynamic>>[
+              messageJson(
+                id: 2,
+                senderType: 'staff',
+                senderName: 'Ayse',
+                body: 'Tomorrow?',
+              ),
+            ],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+      });
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(find.text('AY'), findsOneWidget);
+    });
+
+    testWidgets('the list row shows the viewer own two letters', (
+      tester,
+    ) async {
+      fakeBackend({
+        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[
+          conversationJson(
+            id: 7,
+            lastMessage: lastMessageJson(
+              senderType: 'customer',
+              senderName: null,
+            ),
+          ),
+        ]),
+      });
+
+      await mount(tester, at: '/support');
+
+      expect(find.text('AL'), findsOneWidget, reason: 'Ada Lovelace');
+    });
+  });
+
+  group('the support routes on a phone', () {
+    const String bottomNavLabel = 'Overview';
+
+    Future<void> mountRoutes(WidgetTester tester, {required String at}) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.reset);
+
+      Magic.put(MagicStarterSupportController());
+      Kernel.register('auth', AllowAllMiddleware.new);
+      addTearDown(Kernel.flush);
+      MagicStarter.useNavigation(
+        mainItems: const [],
+        bottomItems: const [
+          MagicStarterNavItem(
+            icon: Icons.dashboard_outlined,
+            labelKey: bottomNavLabel,
+            path: '/',
+          ),
+        ],
+      );
+
+      registerMagicStarterSupportRoutes();
+      MagicRouter.instance.setInitialLocation(at);
+
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (context, child) =>
+              WindTheme(data: WindThemeData(), child: child!),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the list keeps the bottom navigation', (tester) async {
+      fakeBackend({
+        'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[]),
+      });
+
+      await mountRoutes(tester, at: '/support');
+
+      expect(find.text(bottomNavLabel), findsOneWidget);
+    });
+
+    testWidgets('the thread hides it, like a chat screen', (tester) async {
+      fakeBackend({
+        'GET /support/conversations/7': (_) =>
+            ok(conversationJson(id: 7, messages: <Map<String, dynamic>>[])),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+      });
+
+      await mountRoutes(tester, at: '/support/7');
+
+      expect(find.byKey(const ValueKey<String>('support-composer')), findsOne);
+      expect(find.text(bottomNavLabel), findsNothing);
+    });
+
+    testWidgets('the create screen keeps it', (tester) async {
+      fakeBackend({});
+
+      await mountRoutes(tester, at: '/support/new');
+
+      expect(find.text(bottomNavLabel), findsOneWidget);
     });
   });
 

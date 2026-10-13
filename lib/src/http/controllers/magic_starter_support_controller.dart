@@ -1,5 +1,6 @@
 import 'package:magic/magic.dart';
 
+import '../../configuration/magic_starter_config.dart';
 import '../../models/magic_starter_support_conversation.dart';
 
 /// How a support read ended, for the screen to branch on.
@@ -43,6 +44,9 @@ class MagicStarterSupportController extends MagicController
   static MagicStarterSupportController get instance =>
       Magic.findOrPut(MagicStarterSupportController.new);
 
+  /// Rows requested per page of the conversation list.
+  static const int _perPage = 20;
+
   /// Bumped by [resetForSession]; a read that started under an older value
   /// belongs to the previous session and publishes nothing.
   int _sessionGeneration = 0;
@@ -52,7 +56,18 @@ class MagicStarterSupportController extends MagicController
   /// replace the one on screen, whose composer posts to the newer thread.
   int _threadRead = 0;
 
+  /// Bumped by every [loadConversations]; a page read that started under an
+  /// older value belongs to a list that has since been replaced and appends
+  /// nothing, so a slow page 2 cannot land on a freshly reloaded page 1.
+  int _listRead = 0;
+
   bool _isSubmitting = false;
+  bool _isLoadingMore = false;
+
+  /// The newest page held in [_conversations], and the last page the backend
+  /// reported. Both zero until the first page lands.
+  int _listPage = 0;
+  int _listLastPage = 0;
 
   MagicStarterSupportReadStatus _listStatus =
       MagicStarterSupportReadStatus.idle;
@@ -67,14 +82,34 @@ class MagicStarterSupportController extends MagicController
   MagicStarterSupportReadStatus get listStatus => _listStatus;
 
   /// The signed-in user's own conversations, newest activity first as the
-  /// backend orders them.
+  /// backend orders them. Every page loaded so far, concatenated.
   List<MagicStarterSupportConversation> get conversations => _conversations;
+
+  /// Whether the backend has a page beyond the last one loaded.
+  ///
+  /// Independent of [listStatus]: a refresh rereads with the rows on screen,
+  /// and the pages behind them still exist while it runs.
+  bool get hasMoreConversations => _listPage < _listLastPage;
+
+  /// Whether [loadMoreConversations] has a page in flight.
+  bool get isLoadingMoreConversations => _isLoadingMore;
+
+  /// The topics a new conversation can be filed under, in display order
+  /// (`magic_starter.support.topics`).
+  List<String> get topics => MagicStarterConfig.supportTopics();
 
   MagicStarterSupportReadStatus get threadStatus => _threadStatus;
 
   /// The thread last read, with its messages. Null before the first read and
   /// whenever [threadStatus] is not loaded.
   MagicStarterSupportConversation? get conversation => _conversation;
+
+  /// Whether the AI still owes the open thread an answer, for the typing
+  /// indicator. False when no thread is loaded.
+  bool get isAwaitingAi => _conversation?.awaitingAi ?? false;
+
+  /// The signed-in customer's display name, for the avatar of their own rows.
+  String? get viewerName => Auth.user()?.get<String>('name');
 
   /// Whether a create, reply or seen write is in flight.
   bool get isSubmitting => _isSubmitting;
@@ -83,39 +118,116 @@ class MagicStarterSupportController extends MagicController
   /// validation (field errors live in [getError]). Cleared by the next write.
   String? get writeError => _writeError;
 
-  /// Reads the signed-in user's conversations.
+  /// Reads the signed-in user's conversations from page 1, and arms
+  /// [loadMoreConversations] for the pages behind them.
+  ///
+  /// The first read holds page 1. A read made while further pages are already
+  /// held (the 30 second poll, a broadcast, the thread's own refresh) rereads
+  /// every page held so far, one request each, so a refresh never collapses what
+  /// "Load more" showed. The pages are read one by one at the normal page size
+  /// rather than as one oversized page: the backend caps `per_page`, and that
+  /// cap is not this client's to know. A page the backend no longer has (a
+  /// conversation was removed) ends the read early.
   ///
   /// A failure keeps the rows already loaded, so a blip does not blank the
   /// list; [resetForSession] is the path that clears.
   Future<void> loadConversations() async {
     final generation = _sessionGeneration;
+    final read = ++_listRead;
+    final pagesHeld = _listPage < 1 ? 1 : _listPage;
+    _isLoadingMore = false;
     _listStatus = MagicStarterSupportReadStatus.loading;
     refreshUI();
 
     try {
-      final response = await Http.get('/support/conversations');
-      if (generation != _sessionGeneration) return;
+      final rows = <MagicStarterSupportConversation>[];
+      final held = <String>{};
+      var lastPage = 1;
+      var page = 1;
 
-      if (!response.successful) {
-        _listStatus = MagicStarterSupportReadStatus.failed;
-        refreshUI();
-        return;
-      }
+      do {
+        final response = await _getPage(page);
+        if (generation != _sessionGeneration || read != _listRead) return;
 
-      final rows = _payload(response) as List<dynamic>;
-      _conversations = [
-        for (final row in rows)
-          MagicStarterSupportConversation.fromMap(row as Map<String, dynamic>),
-      ];
+        if (!response.successful) {
+          _listStatus = MagicStarterSupportReadStatus.failed;
+          refreshUI();
+          return;
+        }
+
+        // New activity moves a conversation up the order between two page
+        // reads, so the same row can arrive twice.
+        for (final row in _rows(response)) {
+          if (held.add(row.id.toString())) rows.add(row);
+        }
+        lastPage = _lastPage(response, fallback: page);
+        page++;
+      } while (page <= pagesHeld && page <= lastPage);
+
+      _conversations = rows;
+      _listPage = page - 1;
+      _listLastPage = lastPage;
       _listStatus = MagicStarterSupportReadStatus.loaded;
     } catch (e, stackTrace) {
       Log.error(
         '[MagicStarterSupportController.loadConversations] $e\n$stackTrace',
       );
-      if (generation != _sessionGeneration) return;
+      if (generation != _sessionGeneration || read != _listRead) return;
       _listStatus = MagicStarterSupportReadStatus.failed;
     }
 
+    refreshUI();
+  }
+
+  /// Appends the page after the last one loaded. Does nothing while a page or
+  /// a full reread is already in flight, or when [hasMoreConversations] is
+  /// false.
+  ///
+  /// A failed page keeps every row and leaves [hasMoreConversations] true, so
+  /// the next call retries the same page. A row already held is skipped: new
+  /// activity moves conversations up the order between two page reads, and the
+  /// same row would otherwise appear twice.
+  Future<void> loadMoreConversations() async {
+    if (!hasMoreConversations ||
+        _isLoadingMore ||
+        _listStatus == MagicStarterSupportReadStatus.loading) {
+      return;
+    }
+
+    final generation = _sessionGeneration;
+    final read = _listRead;
+    final page = _listPage + 1;
+    _isLoadingMore = true;
+    refreshUI();
+
+    try {
+      final response = await _getPage(page);
+      if (generation != _sessionGeneration || read != _listRead) return;
+
+      if (response.successful) {
+        final held = {for (final row in _conversations) row.id.toString()};
+        _conversations = [
+          ..._conversations,
+          for (final row in _rows(response))
+            if (!held.contains(row.id.toString())) row,
+        ];
+        _listPage = page;
+        _listLastPage = _lastPage(response, fallback: page);
+      } else {
+        Log.warning(
+          '[MagicStarterSupportController.loadMoreConversations] '
+          '${response.statusCode}',
+        );
+      }
+    } catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterSupportController.loadMoreConversations] '
+        '$e\n$stackTrace',
+      );
+      if (generation != _sessionGeneration || read != _listRead) return;
+    }
+
+    _isLoadingMore = false;
     refreshUI();
   }
 
@@ -167,16 +279,25 @@ class MagicStarterSupportController extends MagicController
   /// Opens a conversation and answers it, or null when the backend refused
   /// (field errors are in [getError], anything else in [writeError]).
   ///
+  /// [topic] is one of [topics]. [subject] is optional: left out, the backend
+  /// derives one from the body. Either is sent only when given.
+  ///
   /// [source] names the surface the customer opened it from; the backend
   /// records it, it does not infer it.
   Future<MagicStarterSupportConversation?> createConversation({
-    required String subject,
     required String body,
     required String source,
+    String? topic,
+    String? subject,
   }) async {
     final response = await _submit(
       '/support/conversations',
-      data: {'subject': subject, 'body': body, 'source': source},
+      data: {
+        'topic': ?topic,
+        'subject': ?subject,
+        'body': body,
+        'source': source,
+      },
       action: 'createConversation',
       fallbackKey: 'magic_starter.support.create_error',
     );
@@ -261,8 +382,11 @@ class MagicStarterSupportController extends MagicController
     _conversation = null;
     _listStatus = MagicStarterSupportReadStatus.idle;
     _threadStatus = MagicStarterSupportReadStatus.idle;
+    _listPage = 0;
+    _listLastPage = 0;
     _writeError = null;
     _isSubmitting = false;
+    _isLoadingMore = false;
     clearErrors();
     refreshUI();
 
@@ -312,6 +436,29 @@ class MagicStarterSupportController extends MagicController
     _conversation = null;
     _threadStatus = MagicStarterSupportReadStatus.notFound;
     refreshUI();
+  }
+
+  Future<MagicResponse> _getPage(int page) {
+    return Http.get(
+      '/support/conversations',
+      query: {'page': page, 'per_page': _perPage},
+    );
+  }
+
+  List<MagicStarterSupportConversation> _rows(MagicResponse response) {
+    return [
+      for (final row in _payload(response) as List<dynamic>)
+        MagicStarterSupportConversation.fromMap(row as Map<String, dynamic>),
+    ];
+  }
+
+  /// The last page the paginator reports, or [fallback] when the answer carries
+  /// no `meta`, which reads as "nothing further".
+  int _lastPage(MagicResponse response, {required int fallback}) {
+    final meta = (response.data as Map<String, dynamic>)['meta'];
+
+    return ((meta as Map<String, dynamic>?)?['last_page'] as num?)?.toInt() ??
+        fallback;
   }
 
   /// The resource under the `data` envelope every endpoint answers with.
