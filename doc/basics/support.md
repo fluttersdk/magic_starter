@@ -45,7 +45,7 @@ The backend has to enable the same feature (`Features::support()` in `config/mag
 
 | Path | View key | What it shows |
 |------|----------|---------------|
-| `/support` | `support.index` | The user's conversations in an Open and a Resolved tab, newest activity first. Each row shows the sender and a preview of the last message, a status badge and an unread dot when staff or the AI wrote since the last read. A "Load more" button reads the next page (20 a page) |
+| `/support` | `support.index` | The user's conversations in an Open and a Resolved tab, newest activity first. Each row shows the sender and a preview of the last message, a status badge and an unread dot when staff or the AI wrote since the last read. A "Load more" button reads the next page (20 a page); a refresh rereads every page already loaded, so the poll never collapses them, and the Resolved tab offers "Load more" instead of an empty claim while pages remain |
 | `/support/new` | `support.create` | Topic chips and a message with a character counter, posted with source `in_app`. A "How it works" card sits beside the form on a wide screen and collapses to one line above it on a phone |
 | `/support/:id` | `support.thread` | Chat bubbles by who wrote them, activity lines for handoffs, and a composer docked at the bottom |
 
@@ -60,9 +60,11 @@ When the backend has an AI responder bound, a verified customer's conversation s
 
 | Field | Meaning | What the screen shows |
 |-------|---------|-----------------------|
-| `awaiting_ai` | Pending, and the newest customer message has no AI answer yet | An "AI answering" badge, a typing bubble in the thread and the line "Our AI answers right away and hands off to the team when needed" above the composer |
-| `waiting_on_team` | Open and waiting on a person | A "Team answering" badge and the line "Our team usually replies within a few hours" above the composer |
-| neither | Answered, or finished | The plain "Open" or "Resolved" badge |
+| `awaiting_ai` | Pending, and the newest customer message has no AI answer yet | An "AI answering" pill, a typing bubble in the thread and the line "Our AI answers right away and hands off to the team when needed" above the composer |
+| `waiting_on_team` | Open and waiting on a person | A "Team answering" pill and the line "Our team usually replies within a few hours" above the composer |
+| neither | Answered, or finished | The plain "Open" badge, or the "Resolved" pill |
+
+"AI answering", "Team answering" and "Resolved" are soft tinted pills with a leading dot (`bg-ai-soft`, `bg-warning-soft`, `bg-success-soft`); the assistant's bubble carries a 2px `border-ai` left edge. A customer message sent on a `pending` conversation flips the local copy to `awaiting_ai` at once, so the typing bubble shows before the next refetch.
 
 `pending` and `snoozed` are the desk's own bookkeeping and read as open. A message from the assistant carries `sender_type` `ai` and its name; it renders on the left with a sparkle avatar on `bg-ai-soft` and a chip under the bubble, a teammate shows their first name and photo or initials, and the customer sits on the right. A message with `kind` `activity` (the handoff line, a status change) renders as a centred divider line, not a bubble.
 
@@ -82,6 +84,10 @@ A new conversation is filed under a topic. The chips come from `magic_starter.su
 ```
 
 The backend derives the subject from the topic and the first line of the message, so the create form asks for none; `createConversation` still accepts an optional `subject`.
+
+The counter under the message field reads `magic_starter.support.message_max_length` (`MagicStarterConfig.supportMessageMaxLength()`, default 2000). It is display only: set it to the backend's `support.message_max_length`, which is what refuses a longer message.
+
+On a phone the thread hides the bottom navigation, like a chat screen: `registerMagicStarterSupportRoutes()` registers it in its own route group (`layoutId: 'app.chat'`) wrapped in `MagicStarterHideBottomNav`. The list and the create page keep it.
 
 <a name="live-updates"></a>
 ## Live Updates

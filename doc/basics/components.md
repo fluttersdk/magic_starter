@@ -93,8 +93,13 @@ Components that reference a semantic role (e.g. `bg-surface`, `text-fg`, `bg-pri
 | `warning` | Caution / review | `bg-amber-500 dark:bg-amber-400` |
 | `bg-ai-soft` | Soft container for AI-authored content (replies, summaries) | `bg-violet-100 dark:bg-violet-900` |
 | `text-ai-soft-foreground` | Text or icon on top of `bg-ai-soft` | `text-violet-700 dark:text-violet-200` |
+| `border-ai` | Accent edge of AI-authored content | `border-violet-500 dark:border-violet-400` |
+| `bg-warning-soft` | Soft amber container for a quiet status pill | `bg-amber-100 dark:bg-amber-900` |
+| `text-warning-soft-foreground` | Text or icon on top of `bg-warning-soft` | `text-amber-800 dark:text-amber-200` |
+| `bg-success-soft` | Soft green container for a quiet status pill | `bg-green-100 dark:bg-green-900` |
+| `text-success-soft-foreground` | Text or icon on top of `bg-success-soft` | `text-green-800 dark:text-green-200` |
 
-The two AI content keys are written as the full class they replace (`bg-ai-soft`, `text-ai-soft-foreground`), not as a bare role, and the support screens use them for the assistant's avatar, its status badge and its bubble label. A host theme that defines the same keys supplies its own map and wins.
+These keys are written as the full class they replace (`bg-ai-soft`, `border-ai`), not as a bare role. The support screens use the AI pair and `border-ai` for the assistant's avatar, its bubble (a 2px left edge) and its chip, and the soft warning and success pairs for the "Team answering" and "Resolved" pills. A host theme that defines the same keys supplies its own map and wins.
 
 To override individual roles, spread `defaultAliases` and replace specific keys:
 

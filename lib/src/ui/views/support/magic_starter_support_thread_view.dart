@@ -316,7 +316,8 @@ class _MagicStarterSupportThreadViewState
   Widget _buildComposer(MagicStarterSupportConversation conversation) {
     return WDiv(
       key: const ValueKey<String>('support-composer'),
-      className: 'w-full max-w-3xl mx-auto flex flex-col gap-2 pt-3 pb-4 lg:pb-5',
+      className:
+          'w-full max-w-3xl mx-auto flex flex-col gap-2 pt-3 pb-4 lg:pb-5',
       children: [
         ?_buildExpectation(conversation),
         MSFormField(

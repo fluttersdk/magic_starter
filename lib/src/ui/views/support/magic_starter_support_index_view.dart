@@ -110,7 +110,8 @@ String magicStarterSupportTopicLabel(String topic) {
 /// and reads as the AI's, answered or not. An open conversation reads as who
 /// owes the next answer when the backend says so (the AI while [awaitingAi],
 /// the team while [waitingOnTeam]) and as plain open otherwise; `snoozed` and a
-/// status a newer backend adds read as open.
+/// status a newer backend adds read as open. Resolved, the AI and the team are
+/// soft tinted pills with a leading dot; plain open stays a solid badge.
 class MagicStarterSupportStatusBadge extends StatelessWidget {
   const MagicStarterSupportStatusBadge(
     this.status, {
@@ -131,34 +132,55 @@ class MagicStarterSupportStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (status == 'resolved') {
-      return MSBadge(
+      return _softPill(
         trans('magic_starter.support.status.resolved'),
-        tone: BadgeTone.success,
+        background: 'bg-success-soft',
+        foreground: 'text-success-soft-foreground',
       );
     }
 
     if (awaitingAi || status == 'pending') {
-      return WDiv(
-        className:
-            'inline-flex flex-row items-center rounded-full px-2 py-0.5 '
-            'bg-ai-soft',
-        child: WText(
-          trans('magic_starter.support.status.ai_answering'),
-          className: 'text-xs font-medium text-ai-soft-foreground',
-        ),
+      return _softPill(
+        trans('magic_starter.support.status.ai_answering'),
+        background: 'bg-ai-soft',
+        foreground: 'text-ai-soft-foreground',
       );
     }
 
     if (waitingOnTeam) {
-      return MSBadge(
+      return _softPill(
         trans('magic_starter.support.status.team_answering'),
-        tone: BadgeTone.warning,
+        background: 'bg-warning-soft',
+        foreground: 'text-warning-soft-foreground',
       );
     }
 
     return MSBadge(
       trans('magic_starter.support.status.open'),
       tone: BadgeTone.primary,
+    );
+  }
+
+  /// A soft tint with a leading dot, the quiet pill the design gives a
+  /// conversation that has an owner or an ending.
+  static Widget _softPill(
+    String label, {
+    required String background,
+    required String foreground,
+  }) {
+    return WDiv(
+      key: const ValueKey<String>('support-status-pill'),
+      className:
+          'inline-flex flex-row items-center gap-1.5 rounded-full px-2.5 py-1 '
+          '$background',
+      children: [
+        WIcon(
+          Icons.circle,
+          key: const ValueKey<String>('support-status-dot'),
+          className: 'text-[6px] $foreground',
+        ),
+        WText(label, className: 'text-xs font-medium $foreground'),
+      ],
     );
   }
 }
@@ -297,7 +319,9 @@ class _MagicStarterSupportIndexViewState
           child: WDiv(
             className: 'flex flex-col',
             children: [
-              if (shown.isEmpty)
+              // An unloaded page may still hold rows for this tab, so the empty
+              // claim waits until every page has been read.
+              if (shown.isEmpty && !controller.hasMoreConversations)
                 MSEmptyState(
                   icon: _iconEmpty,
                   title: trans(

@@ -11,6 +11,7 @@ import 'package:magic_starter/magic_starter.dart';
 
 Map<String, dynamic> conversationJson({
   int id = 7,
+  String status = 'open',
   bool hasUnread = false,
   bool awaitingAi = false,
   Map<String, dynamic>? lastMessage,
@@ -22,7 +23,7 @@ Map<String, dynamic> conversationJson({
     'number': id + 100,
     'subject': 'Cannot add a monitor',
     'source': 'help_page',
-    'status': 'open',
+    'status': status,
     'priority': 'normal',
     'last_activity_at': '2026-10-12T09:30:00+00:00',
     'created_at': '2026-10-12T09:00:00+00:00',
@@ -115,19 +116,23 @@ void main() {
         expect(request.queryParameters, contains('per_page'));
 
         return Http.response(
-          pageJson(<Map<String, dynamic>>[
-            conversationJson(
-              id: 7,
-              hasUnread: true,
-              lastMessage: <String, dynamic>{
-                'sender_type': 'staff',
-                'sender_name': 'Ayse',
-                'body_preview': 'On it',
-                'created_at': '2026-10-12T09:30:00+00:00',
-              },
-            ),
-            conversationJson(id: 8),
-          ], page: 1, lastPage: 1),
+          pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(
+                id: 7,
+                hasUnread: true,
+                lastMessage: <String, dynamic>{
+                  'sender_type': 'staff',
+                  'sender_name': 'Ayse',
+                  'body_preview': 'On it',
+                  'created_at': '2026-10-12T09:30:00+00:00',
+                },
+              ),
+              conversationJson(id: 8),
+            ],
+            page: 1,
+            lastPage: 1,
+          ),
         );
       });
 
@@ -156,60 +161,199 @@ void main() {
       expect(controller.hasMoreConversations, isFalse);
     });
 
-    test('loadMoreConversations appends page 2 and stops at last_page', () async {
-      final fake = Http.fake((request) {
-        final page = request.queryParameters?['page'];
+    test(
+      'loadMoreConversations appends page 2 and stops at last_page',
+      () async {
+        final fake = Http.fake((request) {
+          final page = request.queryParameters?['page'];
 
-        return Http.response(switch (page) {
-          1 => pageJson(<Map<String, dynamic>>[
-            conversationJson(id: 1),
-            conversationJson(id: 2),
-          ], page: 1, lastPage: 2),
-          _ => pageJson(<Map<String, dynamic>>[
-            conversationJson(id: 3),
-          ], page: 2, lastPage: 2),
+          return Http.response(switch (page) {
+            1 => pageJson(
+              <Map<String, dynamic>>[
+                conversationJson(id: 1),
+                conversationJson(id: 2),
+              ],
+              page: 1,
+              lastPage: 2,
+            ),
+            _ => pageJson(
+              <Map<String, dynamic>>[conversationJson(id: 3)],
+              page: 2,
+              lastPage: 2,
+            ),
+          });
         });
-      });
 
-      await controller.loadConversations();
-      expect(controller.hasMoreConversations, isTrue);
+        await controller.loadConversations();
+        expect(controller.hasMoreConversations, isTrue);
 
-      await controller.loadMoreConversations();
+        await controller.loadMoreConversations();
 
-      expect(
-        controller.conversations.map((c) => c.id),
-        <dynamic>[1, 2, 3],
-      );
-      expect(controller.hasMoreConversations, isFalse);
+        expect(controller.conversations.map((c) => c.id), <dynamic>[1, 2, 3]);
+        expect(controller.hasMoreConversations, isFalse);
 
-      await controller.loadMoreConversations();
+        await controller.loadMoreConversations();
 
-      fake.assertSentCount(2);
-      expect(controller.conversations, hasLength(3));
-    });
+        fake.assertSentCount(2);
+        expect(controller.conversations, hasLength(3));
+      },
+    );
 
     test('loadMoreConversations skips a row it already holds', () async {
       Http.fake((request) {
         return Http.response(switch (request.queryParameters?['page']) {
-          1 => pageJson(<Map<String, dynamic>>[
-            conversationJson(id: 1),
-            conversationJson(id: 2),
-          ], page: 1, lastPage: 2),
-          _ => pageJson(<Map<String, dynamic>>[
-            // New activity pushed id 2 onto the next page too.
-            conversationJson(id: 2),
-            conversationJson(id: 3),
-          ], page: 2, lastPage: 2),
+          1 => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 1),
+              conversationJson(id: 2),
+            ],
+            page: 1,
+            lastPage: 2,
+          ),
+          _ => pageJson(
+            <Map<String, dynamic>>[
+              // New activity pushed id 2 onto the next page too.
+              conversationJson(id: 2),
+              conversationJson(id: 3),
+            ],
+            page: 2,
+            lastPage: 2,
+          ),
         });
       });
 
       await controller.loadConversations();
       await controller.loadMoreConversations();
 
-      expect(
-        controller.conversations.map((c) => c.id),
-        <dynamic>[1, 2, 3],
-      );
+      expect(controller.conversations.map((c) => c.id), <dynamic>[1, 2, 3]);
+    });
+
+    test('a refresh keeps the pages Load more already read', () async {
+      final requested = <Object?>[];
+      Http.fake((request) {
+        final page = request.queryParameters?['page'];
+        requested.add(page);
+
+        return Http.response(switch (page) {
+          1 => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 1),
+              conversationJson(id: 2),
+            ],
+            page: 1,
+            lastPage: 3,
+          ),
+          2 => pageJson(
+            <Map<String, dynamic>>[
+              conversationJson(id: 3),
+              conversationJson(id: 4),
+            ],
+            page: 2,
+            lastPage: 3,
+          ),
+          _ => pageJson(
+            <Map<String, dynamic>>[conversationJson(id: 5)],
+            page: 3,
+            lastPage: 3,
+          ),
+        });
+      });
+
+      await controller.loadConversations();
+      await controller.loadMoreConversations();
+      requested.clear();
+
+      // The 30 second poll and the thread's own refresh both land here.
+      await controller.loadConversations();
+
+      expect(controller.conversations.map((c) => c.id), <dynamic>[
+        1,
+        2,
+        3,
+        4,
+      ], reason: 'page 2 must survive a refresh');
+      expect(requested, <Object?>[1, 2]);
+      expect(controller.hasMoreConversations, isTrue);
+
+      await controller.loadMoreConversations();
+
+      expect(controller.conversations.map((c) => c.id), <dynamic>[
+        1,
+        2,
+        3,
+        4,
+        5,
+      ]);
+      expect(controller.hasMoreConversations, isFalse);
+    });
+
+    test(
+      'a refresh stops at the last page the backend still reports',
+      () async {
+        var lastPage = 2;
+        final requested = <Object?>[];
+        Http.fake((request) {
+          final page = request.queryParameters?['page'];
+          requested.add(page);
+
+          return Http.response(switch (page) {
+            1 => pageJson(
+              <Map<String, dynamic>>[conversationJson(id: 1)],
+              page: 1,
+              lastPage: lastPage,
+            ),
+            _ => pageJson(
+              <Map<String, dynamic>>[conversationJson(id: 2)],
+              page: 2,
+              lastPage: lastPage,
+            ),
+          });
+        });
+
+        await controller.loadConversations();
+        await controller.loadMoreConversations();
+
+        // A conversation was deleted: page 2 no longer exists.
+        lastPage = 1;
+        requested.clear();
+        await controller.loadConversations();
+
+        expect(requested, <Object?>[1]);
+        expect(controller.conversations.map((c) => c.id), <dynamic>[1]);
+        expect(controller.hasMoreConversations, isFalse);
+      },
+    );
+
+    test('a refresh that fails on a later page keeps every row', () async {
+      var failPage2 = false;
+      Http.fake((request) {
+        final page = request.queryParameters?['page'];
+        if (page == 2 && failPage2) {
+          return Http.response(<String, dynamic>{}, 500);
+        }
+
+        return Http.response(switch (page) {
+          1 => pageJson(
+            <Map<String, dynamic>>[conversationJson(id: 1)],
+            page: 1,
+            lastPage: 2,
+          ),
+          _ => pageJson(
+            <Map<String, dynamic>>[conversationJson(id: 2)],
+            page: 2,
+            lastPage: 2,
+          ),
+        });
+      });
+
+      await controller.loadConversations();
+      await controller.loadMoreConversations();
+
+      failPage2 = true;
+      await controller.loadConversations();
+
+      expect(controller.listStatus, MagicStarterSupportReadStatus.failed);
+      expect(controller.conversations.map((c) => c.id), <dynamic>[1, 2]);
     });
 
     test('loadMoreConversations keeps the rows when the page fails', () async {
@@ -218,9 +362,11 @@ void main() {
       Http.fake((request) {
         if (request.queryParameters?['page'] == 1) {
           return Http.response(
-            pageJson(<Map<String, dynamic>>[
-              conversationJson(id: 1),
-            ], page: 1, lastPage: 2),
+            pageJson(
+              <Map<String, dynamic>>[conversationJson(id: 1)],
+              page: 1,
+              lastPage: 2,
+            ),
           );
         }
 
@@ -252,9 +398,11 @@ void main() {
           if (request.queryParameters?['page'] == 2) return page2.future;
 
           return Http.response(
-            pageJson(<Map<String, dynamic>>[
-              conversationJson(id: 1),
-            ], page: 1, lastPage: 2),
+            pageJson(
+              <Map<String, dynamic>>[conversationJson(id: 1)],
+              page: 1,
+              lastPage: 2,
+            ),
           );
         });
 
@@ -263,9 +411,11 @@ void main() {
         await controller.loadConversations();
         page2.complete(
           Http.response(
-            pageJson(<Map<String, dynamic>>[
-              conversationJson(id: 9),
-            ], page: 2, lastPage: 2),
+            pageJson(
+              <Map<String, dynamic>>[conversationJson(id: 9)],
+              page: 2,
+              lastPage: 2,
+            ),
           ),
         );
         await more;
@@ -281,9 +431,11 @@ void main() {
         if (request.queryParameters?['page'] == 2) return page2.future;
 
         return Http.response(
-          pageJson(<Map<String, dynamic>>[
-            conversationJson(id: 1),
-          ], page: 1, lastPage: 2),
+          pageJson(
+            <Map<String, dynamic>>[conversationJson(id: 1)],
+            page: 1,
+            lastPage: 2,
+          ),
         );
       });
 
@@ -294,9 +446,11 @@ void main() {
       await controller.resetForSession();
       page2.complete(
         Http.response(
-          pageJson(<Map<String, dynamic>>[
-            conversationJson(id: 9),
-          ], page: 2, lastPage: 2),
+          pageJson(
+            <Map<String, dynamic>>[conversationJson(id: 9)],
+            page: 2,
+            lastPage: 2,
+          ),
         ),
       );
       await more;
@@ -371,9 +525,7 @@ void main() {
       expect(controller.isAwaitingAi, isTrue);
 
       Http.fake((request) {
-        return Http.response(<String, dynamic>{
-          'data': conversationJson(),
-        });
+        return Http.response(<String, dynamic>{'data': conversationJson()});
       });
 
       await controller.loadConversation(7);
@@ -445,55 +597,61 @@ void main() {
       expect(controller.conversation!.id, 2);
     });
 
-    test('createConversation sends topic, body and source, no subject', () async {
-      final fake = Http.fake((request) {
-        expect(request.method, 'POST');
-        expect(request.url, '/support/conversations');
-        expect(request.data, <String, dynamic>{
-          'topic': 'technical',
-          'body': 'It says the limit is reached',
-          'source': 'help_page',
+    test(
+      'createConversation sends topic, body and source, no subject',
+      () async {
+        final fake = Http.fake((request) {
+          expect(request.method, 'POST');
+          expect(request.url, '/support/conversations');
+          expect(request.data, <String, dynamic>{
+            'topic': 'technical',
+            'body': 'It says the limit is reached',
+            'source': 'help_page',
+          });
+
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(
+              messages: <Map<String, dynamic>>[messageJson()],
+            ),
+          }, 201);
         });
 
-        return Http.response(<String, dynamic>{
-          'data': conversationJson(
-            messages: <Map<String, dynamic>>[messageJson()],
-          ),
-        }, 201);
-      });
+        final created = await controller.createConversation(
+          topic: 'technical',
+          body: 'It says the limit is reached',
+          source: 'help_page',
+        );
 
-      final created = await controller.createConversation(
-        topic: 'technical',
-        body: 'It says the limit is reached',
-        source: 'help_page',
-      );
+        fake.assertSentCount(1);
+        expect(created, isNotNull);
+        expect(created!.id, 7);
+      },
+    );
 
-      fake.assertSentCount(1);
-      expect(created, isNotNull);
-      expect(created!.id, 7);
-    });
+    test(
+      'createConversation sends an explicit subject when given one',
+      () async {
+        Http.fake((request) {
+          expect(request.data, <String, dynamic>{
+            'subject': 'Contact sales: Enterprise',
+            'body': 'Hello',
+            'source': 'contact_sales',
+          });
 
-    test('createConversation sends an explicit subject when given one', () async {
-      Http.fake((request) {
-        expect(request.data, <String, dynamic>{
-          'subject': 'Contact sales: Enterprise',
-          'body': 'Hello',
-          'source': 'contact_sales',
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(),
+          }, 201);
         });
 
-        return Http.response(<String, dynamic>{
-          'data': conversationJson(),
-        }, 201);
-      });
+        final created = await controller.createConversation(
+          subject: 'Contact sales: Enterprise',
+          body: 'Hello',
+          source: 'contact_sales',
+        );
 
-      final created = await controller.createConversation(
-        subject: 'Contact sales: Enterprise',
-        body: 'Hello',
-        source: 'contact_sales',
-      );
-
-      expect(created, isNotNull);
-    });
+        expect(created, isNotNull);
+      },
+    );
 
     test(
       'createConversation answers null and keeps the field errors',
@@ -543,6 +701,58 @@ void main() {
       expect(sent, isTrue);
       expect(controller.conversation!.messages, hasLength(2));
       expect(controller.conversation!.messages.last.body, 'Any update?');
+    });
+
+    test('a reply on a pending thread puts the AI back on the clock', () async {
+      Http.fake((request) {
+        if (request.method == 'GET') {
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(
+              status: 'pending',
+              messages: <Map<String, dynamic>>[
+                messageJson(id: 1),
+                messageJson(id: 2, senderType: 'ai', body: 'First answer'),
+              ],
+            ),
+          });
+        }
+
+        return Http.response(<String, dynamic>{
+          'data': messageJson(id: 3, body: 'And another thing'),
+        }, 201);
+      });
+
+      await controller.loadConversation(7);
+      expect(controller.isAwaitingAi, isFalse);
+
+      await controller.sendMessage(7, 'And another thing');
+
+      expect(
+        controller.isAwaitingAi,
+        isTrue,
+        reason: 'the typing bubble must not wait for the next refetch',
+      );
+    });
+
+    test('a reply on an open thread leaves the AI out of it', () async {
+      Http.fake((request) {
+        if (request.method == 'GET') {
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(
+              messages: <Map<String, dynamic>>[messageJson(id: 1)],
+            ),
+          });
+        }
+
+        return Http.response(<String, dynamic>{
+          'data': messageJson(id: 2, body: 'Any update?'),
+        }, 201);
+      });
+
+      await controller.loadConversation(7);
+      await controller.sendMessage(7, 'Any update?');
+
+      expect(controller.isAwaitingAi, isFalse);
     });
 
     test('markSeen posts to the seen endpoint with no body', () async {

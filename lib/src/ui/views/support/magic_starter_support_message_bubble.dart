@@ -31,8 +31,9 @@ class MagicStarterSupportSenderAvatar extends StatelessWidget {
   static const _iconAssistant = Icons.auto_awesome;
   static const _iconPerson = Icons.person_outline;
 
-  /// The first letters of the first and last word of [name], upper-cased, or an
-  /// empty string when there is no name.
+  /// Two letters for [name], upper-cased: the first letters of its first two
+  /// words, or the first two letters of a single word. An empty string when
+  /// there is no name.
   static String initials(String? name) {
     final List<String> words = (name ?? '')
         .trim()
@@ -41,10 +42,11 @@ class MagicStarterSupportSenderAvatar extends StatelessWidget {
         .toList();
     if (words.isEmpty) return '';
 
-    final String first = words.first.characters.first;
-    final String last = words.length > 1 ? words.last.characters.first : '';
+    final String letters = words.length > 1
+        ? '${words[0].characters.first}${words[1].characters.first}'
+        : words.first.characters.take(2).toString();
 
-    return '$first$last'.toUpperCase();
+    return letters.toUpperCase();
   }
 
   @override
@@ -83,7 +85,8 @@ class MagicStarterSupportSenderAvatar extends StatelessWidget {
 /// "You" under the bubble. The assistant and staff sit on the left; their
 /// avatar is aligned to the TOP of the bubble and the sender label sits UNDER
 /// it: the assistant as a `bg-ai-soft` chip, a teammate as
-/// "First name · Support team · time".
+/// "First name · Support team · time". The assistant's bubble also carries a 2px
+/// `border-ai` rule down its left edge.
 ///
 /// Activity lines (a handoff, a status change) are not a person speaking and
 /// render through [MagicStarterSupportActivityLine], not here.
@@ -101,7 +104,7 @@ class MagicStarterSupportMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (message.senderType) {
       'customer' => _buildCustomer(),
-      'ai' => _buildOther(label: _assistantLabel()),
+      'ai' => _buildOther(label: _assistantLabel(), accent: true),
       _ => _buildOther(label: _staffLabel()),
     };
   }
@@ -128,7 +131,7 @@ class MagicStarterSupportMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildOther({required Widget label}) {
+  Widget _buildOther({required Widget label, bool accent = false}) {
     return WDiv(
       className: 'flex flex-row items-start gap-2.5',
       children: [
@@ -144,7 +147,8 @@ class MagicStarterSupportMessageBubble extends StatelessWidget {
             WDiv(
               key: ValueKey<String>('support-bubble-${message.id}'),
               className:
-                  'max-w-xl px-3.5 py-2.5 rounded-2xl bg-surface-container-high',
+                  'max-w-xl px-3.5 py-2.5 rounded-2xl bg-surface-container-high'
+                  '${accent ? ' border-l-2 border-ai' : ''}',
               child: WText(message.body, className: 'text-sm text-fg'),
             ),
             label,

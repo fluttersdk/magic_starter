@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/magic_starter_support_controller.dart';
+import '../ui/widgets/magic_starter_hide_bottom_nav.dart';
 
 /// Resolves a support screen, registering the shared controller first.
 ///
@@ -24,6 +25,12 @@ Widget _supportView(String key) {
 /// `.stacked()`, the hub-and-spoke shape the settings routes use: a host
 /// commonly gives the list a nav destination, and the create and thread pages
 /// are places a reader drills into and needs the back gesture out of.
+///
+/// The thread is a chat screen, so it sits in its own route group
+/// (`layoutId: 'app.chat'`) whose layout is wrapped in
+/// [MagicStarterHideBottomNav]: the phone's bottom navigation is gone under the
+/// composer, and stays on the list and the create page. The group needs its own
+/// id because two groups sharing one share one layout element.
 ///
 /// The host calls this from its route provider, as it does the other
 /// `registerMagicStarter*Routes()`: the profile dropdown shows its Support item
@@ -47,7 +54,16 @@ void registerMagicStarterSupportRoutes() {
         MagicStarterConfig.supportCreateRoute(),
         () => _supportView('support.create'),
       ).title('magic_starter.titles.support_create').stacked();
+    },
+  );
 
+  MagicRoute.group(
+    middleware: ['auth'],
+    layoutId: 'app.chat',
+    layout: (child) => MagicStarterHideBottomNav(
+      child: MagicStarter.view.makeLayout('layout.app', child: child),
+    ),
+    routes: () {
       MagicRoute.page(
         MagicStarterConfig.supportThreadRoute(),
         () => _supportView('support.thread'),

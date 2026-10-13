@@ -132,6 +132,9 @@ void main() {
   testWidgets('Input measures at least 40 logical px tall', (tester) async {
     await tester.pumpWidget(wrap(const MSInput(placeholder: 'Enter text')));
 
-    expect(tester.getSize(find.byType(MSInput)).height, greaterThanOrEqualTo(40));
+    expect(
+      tester.getSize(find.byType(MSInput)).height,
+      greaterThanOrEqualTo(40),
+    );
   });
 }

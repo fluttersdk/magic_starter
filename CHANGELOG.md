@@ -12,8 +12,18 @@ All notable changes to this project will be documented in this file.
 - **`bg-ai-soft` and `text-ai-soft-foreground` in `MagicStarterTokens.defaultAliases`**, a soft violet container and its text for AI-authored content. A host theme that defines the same keys wins. (`lib/src/ui/theme/magic_starter_tokens.dart`)
 - **`starter:install`, `starter:uninstall` and `starter:doctor` know the support routes.** Installing with the support feature on adds `registerMagicStarterSupportRoutes();` to `route_service_provider.dart`, uninstalling removes it, and the doctor prints a warning when the feature is on and the call is missing. (`lib/src/cli/commands/`)
 
+- **`MagicStarterConfig.supportMessageMaxLength()`** reads `magic_starter.support.message_max_length` (default 2000) for the create screen's counter. (`lib/src/configuration/magic_starter_config.dart`)
+- **Soft state tints and an AI accent edge in `MagicStarterTokens.defaultAliases`**: `bg-warning-soft`, `text-warning-soft-foreground`, `bg-success-soft`, `text-success-soft-foreground` and `border-ai`, each with a dark peer. A host theme that defines the same keys wins. (`lib/src/ui/theme/magic_starter_tokens.dart`)
+
+### Fixed
+
+- **A refresh no longer collapses the pages "Load more" read.** `loadConversations()` rereads every page held so far (one request each), so the 30 second poll, a broadcast and the thread's refresh keep page 2 onward. (`lib/src/http/controllers/magic_starter_support_controller.dart`)
+- **A follow-up on a pending conversation shows the typing bubble at once.** `withMessage` reads `awaiting_ai` true for a customer message on a `pending` conversation. (`lib/src/models/magic_starter_support_conversation.dart`)
+- **The Resolved tab no longer claims "no resolved conversations" while unloaded pages remain;** it offers "Load more" instead. (`lib/src/ui/views/support/magic_starter_support_index_view.dart`)
+
 ### Changed
 
+- **The support screens match the approved design.** "AI answering", "Team answering" and "Resolved" are soft pills with a leading dot, the assistant's bubble has a 2px `border-ai` left edge, avatars show two initials (first letters of the first two words, or the first two letters of one word), and the thread route sits in its own group (`app.chat`) wrapped in `MagicStarterHideBottomNav`, so a phone shows no bottom navigation under the composer. (`lib/src/ui/views/support/`, `lib/src/routes/support_routes.dart`)
 - **A single-line `MSInput`, `MSSelect` and `MSCombobox` are 40px tall.** The input gained `py-2.5` over a `leading-5` line, the select and combobox triggers use `py-[9px]`, so the three sit on one height. A host layout that counted on the old height reflows by a few pixels. (`lib/src/ui/components/input/input.recipe.dart`, `lib/src/ui/components/select/select.recipe.dart`, `lib/src/ui/components/combobox/combobox.recipe.dart`)
 - **The create form no longer sends a subject.** The backend derives it from the topic and the message. Contact sales still sends its subject and the backend files it under `sales`. A backend older than the AI desk release still requires a subject. (`lib/src/ui/views/support/magic_starter_support_create_view.dart`)
 

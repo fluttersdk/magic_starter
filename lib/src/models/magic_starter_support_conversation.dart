@@ -182,6 +182,10 @@ class MagicStarterSupportConversation {
 
   /// This conversation with [message] appended, for a reply the backend has
   /// just accepted.
+  ///
+  /// A customer message on a `pending` conversation is one the AI now owes an
+  /// answer to, so the copy reads [awaitingAi] true: the answer is queued, not
+  /// yet written, and the typing bubble has to show before the next refetch.
   MagicStarterSupportConversation withMessage(
     MagicStarterSupportMessage message,
   ) {
@@ -196,7 +200,9 @@ class MagicStarterSupportConversation {
       hasUnread: hasUnread,
       createdAt: createdAt,
       topic: topic,
-      awaitingAi: awaitingAi,
+      awaitingAi:
+          awaitingAi ||
+          (status == 'pending' && message.senderType == 'customer'),
       waitingOnTeam: waitingOnTeam,
       lastMessage: lastMessage,
       messages: [...messages, message],

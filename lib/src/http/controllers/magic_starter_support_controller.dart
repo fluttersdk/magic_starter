@@ -114,31 +114,55 @@ class MagicStarterSupportController extends MagicController
   /// validation (field errors live in [getError]). Cleared by the next write.
   String? get writeError => _writeError;
 
-  /// Reads page 1 of the signed-in user's conversations, replacing every row
-  /// held, and arms [loadMoreConversations] for the pages behind it.
+  /// Reads the signed-in user's conversations from page 1, and arms
+  /// [loadMoreConversations] for the pages behind them.
+  ///
+  /// The first read holds page 1. A read made while further pages are already
+  /// held (the 30 second poll, a broadcast, the thread's own refresh) rereads
+  /// every page held so far, one request each, so a refresh never collapses what
+  /// "Load more" showed. The pages are read one by one at the normal page size
+  /// rather than as one oversized page: the backend caps `per_page`, and that
+  /// cap is not this client's to know. A page the backend no longer has (a
+  /// conversation was removed) ends the read early.
   ///
   /// A failure keeps the rows already loaded, so a blip does not blank the
   /// list; [resetForSession] is the path that clears.
   Future<void> loadConversations() async {
     final generation = _sessionGeneration;
     final read = ++_listRead;
+    final pagesHeld = _listPage < 1 ? 1 : _listPage;
     _isLoadingMore = false;
     _listStatus = MagicStarterSupportReadStatus.loading;
     refreshUI();
 
     try {
-      final response = await _getPage(1);
-      if (generation != _sessionGeneration || read != _listRead) return;
+      final rows = <MagicStarterSupportConversation>[];
+      final held = <String>{};
+      var lastPage = 1;
+      var page = 1;
 
-      if (!response.successful) {
-        _listStatus = MagicStarterSupportReadStatus.failed;
-        refreshUI();
-        return;
-      }
+      do {
+        final response = await _getPage(page);
+        if (generation != _sessionGeneration || read != _listRead) return;
 
-      _conversations = _rows(response);
-      _listPage = 1;
-      _listLastPage = _lastPage(response, fallback: 1);
+        if (!response.successful) {
+          _listStatus = MagicStarterSupportReadStatus.failed;
+          refreshUI();
+          return;
+        }
+
+        // New activity moves a conversation up the order between two page
+        // reads, so the same row can arrive twice.
+        for (final row in _rows(response)) {
+          if (held.add(row.id.toString())) rows.add(row);
+        }
+        lastPage = _lastPage(response, fallback: page);
+        page++;
+      } while (page <= pagesHeld && page <= lastPage);
+
+      _conversations = rows;
+      _listPage = page - 1;
+      _listLastPage = lastPage;
       _listStatus = MagicStarterSupportReadStatus.loaded;
     } catch (e, stackTrace) {
       Log.error(

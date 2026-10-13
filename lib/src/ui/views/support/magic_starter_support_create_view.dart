@@ -43,10 +43,6 @@ class _MagicStarterSupportCreateViewState
   };
   static const _iconSend = Icons.send;
 
-  /// The backend's default `support.message_max_length`. Display only: the
-  /// backend is what refuses a longer message.
-  static const int _bodyLimit = 2000;
-
   /// Width of the "How it works" column beside the form on a wide screen.
   static const double _sideWidth = 300;
 
@@ -145,13 +141,17 @@ class _MagicStarterSupportCreateViewState
     final bool selected = topic == _topic;
     final IconData? icon = _topicIcons[topic];
 
+    final String tone = selected
+        ? 'border-primary-600 dark:border-primary-500 bg-primary-container'
+        : 'border-color-border bg-surface-container-high';
+
     return WAnchor(
       key: ValueKey<String>('support-topic-$topic'),
       onTap: () => setState(() => _topic = topic),
       child: WDiv(
         className:
-            'flex flex-row items-center gap-2 h-[38px] px-3.5 rounded-xl border '
-            '${selected ? 'border-primary-600 dark:border-primary-500 bg-primary-container' : 'border-color-border bg-surface-container-high'}',
+            'flex flex-row items-center gap-2 h-[38px] px-3.5 rounded-xl '
+            'border $tone',
         children: [
           if (icon != null) WIcon(icon, className: 'text-sm text-fg'),
           WText(
@@ -169,7 +169,7 @@ class _MagicStarterSupportCreateViewState
       builder: (context, _) => WDiv(
         className: 'flex flex-row justify-end',
         child: WText(
-          '${_body.text.runes.length} / $_bodyLimit',
+          '${_body.text.runes.length} / ${MagicStarterConfig.supportMessageMaxLength()}',
           className: 'text-xs text-fg-disabled',
         ),
       ),

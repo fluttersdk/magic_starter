@@ -65,6 +65,10 @@
 /// | success | `bg-success` |
 /// | warning | `bg-warning` |
 ///
+/// Beside them sit the soft tints the support screens use: `bg-warning-soft`,
+/// `bg-success-soft`, `bg-ai-soft` (each with its `text-*-soft-foreground`) and
+/// the `border-ai` accent edge.
+///
 /// ## Usage
 ///
 /// ```dart
@@ -176,5 +180,26 @@ final class MagicStarterTokens {
 
     /// Text / icon on top of the `bg-ai-soft` container.
     'text-ai-soft-foreground': 'text-violet-700 dark:text-violet-200',
+
+    /// Accent edge of AI-authored content: the left rule of an AI bubble.
+    'border-ai': 'border-violet-500 dark:border-violet-400',
+
+    // -- Soft state tints ---------------------------------------------------
+    //
+    // The quiet counterpart of `bg-warning` / `bg-success`: a tinted fill with
+    // its own text, for status pills that sit in a list and must not shout.
+    // A host map that defines the same keys wins.
+
+    /// Soft amber container: "a teammate is answering".
+    'bg-warning-soft': 'bg-amber-100 dark:bg-amber-900',
+
+    /// Text / icon on top of the `bg-warning-soft` container.
+    'text-warning-soft-foreground': 'text-amber-800 dark:text-amber-200',
+
+    /// Soft green container: "resolved".
+    'bg-success-soft': 'bg-green-100 dark:bg-green-900',
+
+    /// Text / icon on top of the `bg-success-soft` container.
+    'text-success-soft-foreground': 'text-green-800 dark:text-green-200',
   };
 }

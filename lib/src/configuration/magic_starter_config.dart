@@ -65,6 +65,8 @@ class MagicStarterConfig {
     'other',
   ];
 
+  static const int _defaultSupportMessageMaxLength = 2000;
+
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
 
@@ -228,6 +230,19 @@ class MagicStarterConfig {
           _defaultSupportTopics,
         ) ??
         _defaultSupportTopics;
+  }
+
+  /// Returns the longest message the support composer counts against
+  /// (`magic_starter.support.message_max_length`).
+  ///
+  /// Display only: the backend's own `support.message_max_length` is what
+  /// refuses a longer message, so a host that changes one changes the other.
+  static int supportMessageMaxLength() {
+    return Config.get<int>(
+          'magic_starter.support.message_max_length',
+          _defaultSupportMessageMaxLength,
+        ) ??
+        _defaultSupportMessageMaxLength;
   }
 
   /// Returns whether email-based identity is enabled.
