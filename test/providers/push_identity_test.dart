@@ -16,12 +16,12 @@ class _FakeUser extends Model with Authenticatable {
   String get resource => 'users';
 
   @override
-  List<String> get fillable => ['id', 'name'];
+  List<String> get fillable => ['id', 'name', 'is_guest'];
 }
 
-_FakeUser _fakeUser({Object id = 42}) {
+_FakeUser _fakeUser({Object id = 42, bool guest = false}) {
   final user = _FakeUser();
-  user.fill({'id': id, 'name': 'Alice'});
+  user.fill({'id': id, 'name': 'Alice', 'is_guest': guest});
   user.exists = true;
   return user;
 }
@@ -455,6 +455,39 @@ void main() {
 
       expect(Notify.manager.pushIntent, isNull);
     });
+
+    test('is not declared for a guest session', () async {
+      // A guest is sent nothing, and an app that opens one in the background
+      // on every launch would otherwise subscribe every install under a
+      // throwaway id that nothing ever deletes.
+      Auth.fake(user: _fakeUser(id: 7, guest: true));
+      await bootProvider();
+
+      Auth.stateNotifier.value++;
+      await pumpEventQueue();
+
+      expect(Notify.manager.pushIntent, isNull);
+    });
+
+    test(
+      'is released when a guest takes over from a declared person',
+      () async {
+        // The intent is persisted, so a guest that follows a declared person
+        // with no sign-out between (a restored guest token, an upgrade from a
+        // release that declared guests) must not inherit that subscription.
+        Auth.fake(user: _fakeUser());
+        await bootProvider();
+        Auth.stateNotifier.value++;
+        await pumpEventQueue();
+        expect(Notify.manager.pushIntent, 'user_42');
+
+        // On the same guard, so the bump reaches the listener boot attached.
+        await Auth.login({'token': 'g'}, _fakeUser(id: 7, guest: true));
+        await pumpEventQueue();
+
+        expect(Notify.manager.pushIntent, isNull);
+      },
+    );
 
     test('is released by a sign-out the auth controller never saw', () async {
       // Account deletion (`magic_starter_profile_controller.dart:193`) and a

@@ -373,6 +373,18 @@ class MagicStarterServiceProvider extends ServiceProvider {
       return;
     }
 
+    // A guest is declared as nobody. Nothing is ever sent to one, and an app
+    // that opens a guest in the background on every launch would otherwise
+    // subscribe every install under a throwaway id that is never deleted.
+    // Released rather than skipped, because the intent is persisted: a guest
+    // that follows a declared person with no sign-out between must not inherit
+    // that person's subscription. A guest's promotion bumps the notifier with
+    // the full account, which declares it here.
+    if (Auth.user()?.get<bool>('is_guest') == true) {
+      unawaited(_releaseForGuest());
+      return;
+    }
+
     final String? id = Auth.id()?.toString();
     if (id == null || id.isEmpty) return;
 
@@ -445,6 +457,23 @@ class MagicStarterServiceProvider extends ServiceProvider {
     } catch (error, stackTrace) {
       Log.error(
         '[MagicStarter] push identity release failed: $error\n$stackTrace',
+      );
+    }
+  }
+
+  /// Declares nobody on this device while a guest holds the session.
+  ///
+  /// `Notify.logoutPush()` is the one call that both clears the intent and
+  /// takes the device's subscription back, and it is a no-op for a device that
+  /// declared nobody, so every bump of a guest session costs one vault read.
+  /// Logged rather than rethrown for the reason [_declarePushIdentity] gives.
+  static Future<void> _releaseForGuest() async {
+    try {
+      await Notify.logoutPush();
+    } catch (error, stackTrace) {
+      Log.error(
+        '[MagicStarter] guest push identity release failed: '
+        '$error\n$stackTrace',
       );
     }
   }

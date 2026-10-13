@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **A guest session declares no push identity.** The sign-in listener declared `user_<id>` for every session `Auth.check()` accepted, guests included, so an app that opens a guest in the background on every launch subscribed every install to OneSignal under a throwaway id that nothing ever deletes, and the backend recorded a push device for each. A guest is now declared as nobody through `Notify.logoutPush()`, which also takes back a subscription a previous person left on the device when a guest follows them with no sign-out between. A guest's promotion bumps the notifier with the full account and declares it as before. (`lib/src/providers/magic_starter_service_provider.dart`)
+
 ## [0.0.43] - 2026-10-13
 
 ### Added
