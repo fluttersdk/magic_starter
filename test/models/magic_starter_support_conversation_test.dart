@@ -28,6 +28,20 @@ Map<String, dynamic> messageMap({Map<String, dynamic>? extra}) {
   };
 }
 
+Map<String, dynamic> attachmentMap({Map<String, dynamic>? extra}) {
+  return <String, dynamic>{
+    'id': 'a1',
+    'name': 'error.png',
+    'mime': 'image/png',
+    'size': 20480,
+    'width': 640,
+    'height': 480,
+    'kind': 'image',
+    'url': 'support/conversations/7/attachments/a1',
+    ...?extra,
+  };
+}
+
 void main() {
   group('MagicStarterSupportConversation.fromMap', () {
     test('decodes the AI flags and the topic', () {
@@ -112,6 +126,108 @@ void main() {
       expect(conversation.status, 'escalated');
     });
 
+    test('decodes the rating and can_rate of a resolved conversation', () {
+      final conversation = MagicStarterSupportConversation.fromMap(
+        conversationMap(
+          extra: <String, dynamic>{
+            'status': 'resolved',
+            'can_rate': false,
+            'rating': <String, dynamic>{
+              'value': 'down',
+              'comment': 'Still broken',
+              'rated_at': '2026-10-12T10:00:00+00:00',
+            },
+          },
+        ),
+      );
+
+      expect(conversation.canRate, isFalse);
+      expect(conversation.rating!.value, 'down');
+      expect(conversation.rating!.comment, 'Still broken');
+      expect(conversation.rating!.ratedAt, DateTime.utc(2026, 10, 12, 10));
+    });
+
+    test('an unrated resolved conversation can be rated', () {
+      final conversation = MagicStarterSupportConversation.fromMap(
+        conversationMap(
+          extra: <String, dynamic>{
+            'status': 'resolved',
+            'can_rate': true,
+            'rating': null,
+          },
+        ),
+      );
+
+      expect(conversation.canRate, isTrue);
+      expect(conversation.rating, isNull);
+    });
+
+    test('a rating without a comment reads a null comment', () {
+      final conversation = MagicStarterSupportConversation.fromMap(
+        conversationMap(
+          extra: <String, dynamic>{
+            'rating': <String, dynamic>{
+              'value': 'up',
+              'comment': null,
+              'rated_at': '2026-10-12T10:00:00+00:00',
+            },
+          },
+        ),
+      );
+
+      expect(conversation.rating!.value, 'up');
+      expect(conversation.rating!.comment, isNull);
+    });
+
+    test('an older backend that omits rating and can_rate reads unrated', () {
+      final conversation = MagicStarterSupportConversation.fromMap(
+        conversationMap(),
+      );
+
+      expect(conversation.rating, isNull);
+      expect(conversation.canRate, isFalse);
+    });
+
+    test('withMessage keeps the rating fields', () {
+      final conversation = MagicStarterSupportConversation.fromMap(
+        conversationMap(
+          extra: <String, dynamic>{
+            'can_rate': true,
+            'rating': <String, dynamic>{
+              'value': 'up',
+              'comment': null,
+              'rated_at': '2026-10-12T10:00:00+00:00',
+            },
+          },
+        ),
+      );
+
+      final next = conversation.withMessage(
+        MagicStarterSupportMessage.fromMap(messageMap()),
+      );
+
+      expect(next.canRate, isTrue);
+      expect(next.rating!.value, 'up');
+    });
+
+    test('withRating records the rating and closes the rating prompt', () {
+      final conversation = MagicStarterSupportConversation.fromMap(
+        conversationMap(extra: <String, dynamic>{'can_rate': true}),
+      );
+
+      final rated = conversation.withRating(
+        MagicStarterSupportRating(
+          value: 'down',
+          comment: 'Slow',
+          ratedAt: DateTime.utc(2026, 10, 12, 11),
+        ),
+      );
+
+      expect(rated.rating!.value, 'down');
+      expect(rated.canRate, isFalse);
+      expect(rated.id, conversation.id);
+    });
+
     test('withMessage keeps the new fields', () {
       final conversation = MagicStarterSupportConversation.fromMap(
         conversationMap(
@@ -176,6 +292,60 @@ void main() {
 
       expect(message.senderType, 'system');
       expect(message.kind, 'activity');
+    });
+
+    test('decodes an attachment payload', () {
+      final message = MagicStarterSupportMessage.fromMap(
+        messageMap(
+          extra: <String, dynamic>{
+            'attachments': <Map<String, dynamic>>[
+              attachmentMap(),
+              attachmentMap(
+                extra: <String, dynamic>{
+                  'id': 'a2',
+                  'name': 'invoice.pdf',
+                  'mime': 'application/pdf',
+                  'size': 90210,
+                  'width': null,
+                  'height': null,
+                  'kind': 'pdf',
+                  'url': 'support/conversations/7/attachments/a2',
+                },
+              ),
+            ],
+          },
+        ),
+      );
+
+      expect(message.attachments, hasLength(2));
+
+      final image = message.attachments.first;
+      expect(image.id, 'a1');
+      expect(image.name, 'error.png');
+      expect(image.mime, 'image/png');
+      expect(image.size, 20480);
+      expect(image.width, 640);
+      expect(image.height, 480);
+      expect(image.kind, 'image');
+      expect(image.url, 'support/conversations/7/attachments/a1');
+
+      final pdf = message.attachments.last;
+      expect(pdf.width, isNull);
+      expect(pdf.height, isNull);
+      expect(pdf.kind, 'pdf');
+    });
+
+    test('a message without attachments reads an empty list', () {
+      expect(
+        MagicStarterSupportMessage.fromMap(messageMap()).attachments,
+        isEmpty,
+      );
+      expect(
+        MagicStarterSupportMessage.fromMap(
+          messageMap(extra: <String, dynamic>{'attachments': null}),
+        ).attachments,
+        isEmpty,
+      );
     });
 
     test('defaults kind to message and tolerates a nameless sender', () {

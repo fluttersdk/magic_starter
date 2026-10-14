@@ -296,6 +296,9 @@
       "security_section": "Security"
     },
     "support": {
+      "attachment_too_large": ":name is larger than :max MB.",
+      "attachment_too_many": "You can attach up to :max files.",
+      "attachment_type_error": ":name is not a supported file type.",
       "back_to_list": "Back to conversations",
       "composer_hint": "Enter to send, Shift+Enter for a new line",
       "contact_sales_body": "I would like to talk to sales about the :plan plan.",
@@ -310,6 +313,7 @@
       "empty_title": "No conversations yet",
       "expect_ai": "Our AI answers right away and hands off to the team when needed.",
       "expect_team": "Our team usually replies within a few hours.",
+      "feedback_error": "We could not send your feedback. Please try again.",
       "how_short": "Our AI answers right away and hands off to the team when needed.",
       "how_step_1": "Our AI reads your account and answers right away.",
       "how_step_2": "Billing, security or anything complex opens a request for the team.",
@@ -326,6 +330,7 @@
       "not_found_title": "Conversation not found",
       "opened": "opened :date",
       "privacy_note": "Please do not include passwords or card numbers.",
+      "rating_error": "We could not save your rating. Please try again.",
       "reply_error": "We could not send your reply. Please try again.",
       "reply_placeholder": "Write a reply",
       "reply_submit": "Send",

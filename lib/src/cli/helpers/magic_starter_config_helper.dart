@@ -33,6 +33,11 @@ abstract class MagicStarterConfigHelper {
     'timezones',
     'billing',
     'support',
+    'support_csat',
+    'support_feedback',
+    'support_attachments',
+    'support_diagnostics',
+    'store_review',
   ];
 
   /// Parses feature toggles from config content.
