@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.46] - 2026-10-15
+
 ### Fixed
 
 - **`MSInput` keeps its 12px horizontal padding.** 0.0.44 added `py-2.5` to reach a 40px field, and `WInput` uses its default content padding (12 horizontal, 8 vertical) only when the className sets no padding at all, so the text and placeholder sat flush against the left border. The recipe now sets `px-3` beside `py-2.5`. (`lib/src/ui/components/input/input.recipe.dart`, `test/ui/components/input/input_test.dart`)
