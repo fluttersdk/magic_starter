@@ -354,9 +354,8 @@ void main() {
       () async {
         // The ordinary cold boot, and the one every other test here misses by
         // bumping after `bootProvider()`. Providers boot in order and this one
-        // goes last: magic_example ships Auth, then Notifications, then
-        // Starter, every doc prescribes it, and artisan's installer appends to
-        // the end. So `AuthServiceProvider.boot` has already awaited
+        // goes last: every doc prescribes Auth, then Notifications, then
+        // Starter, and artisan's installer appends to the end. So `AuthServiceProvider.boot` has already awaited
         // `Auth.restore()` and bumped, and the driver has already attached on a
         // broadcast stream that replays nothing. Subscribing alone declared
         // nothing at all.
