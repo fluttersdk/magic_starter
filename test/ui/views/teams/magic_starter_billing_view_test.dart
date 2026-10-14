@@ -1543,6 +1543,8 @@ void main() {
   /// screen.
   const String webOrigin = 'https://billing.example.test';
 
+  GoRouter? hostRouter;
+
   setUp(() async {
     MagicApp.reset();
     Magic.flush();
@@ -1579,10 +1581,40 @@ void main() {
   });
 
   tearDown(() {
+    hostRouter?.dispose();
+    hostRouter = null;
     Gate.flush();
     MagicApp.reset();
     Magic.flush();
   });
+
+  /// Hosts [page] as the only route of a bare router.
+  ///
+  /// The screen reads its upgrade link from its route, and a route has state
+  /// only under a router: a plain `MaterialApp(home: ...)` would throw there.
+  /// A bare [GoRouter] rather than [MagicRouter]'s, so the toasts keep their
+  /// old behaviour: they render only where [navigatorKey] is MagicRouter's own.
+  ///
+  /// One router per case, kept across a second call, so a re-pump that only
+  /// changes the surroundings (see [wrap]) updates the page it holds instead of
+  /// building another one.
+  Widget hostOnRouter(
+    Widget page, {
+    required TransitionBuilder builder,
+    GlobalKey<NavigatorState>? navigatorKey,
+  }) {
+    final GoRouter router = hostRouter ??= GoRouter(
+      navigatorKey: navigatorKey,
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/',
+          builder: (BuildContext context, GoRouterState state) => page,
+        ),
+      ],
+    );
+
+    return MaterialApp.router(routerConfig: router, builder: builder);
+  }
 
   /// Wraps [widget] with a default [WindTheme] under a viewport tall enough for
   /// the whole screen.
@@ -1606,13 +1638,11 @@ void main() {
     Size size = const Size(1280, 12000),
     bool disableAnimations = false,
   }) {
-    return MaterialApp(
-      home: MediaQuery(
+    return hostOnRouter(
+      Scaffold(body: widget),
+      builder: (BuildContext context, Widget? child) => MediaQuery(
         data: MediaQueryData(size: size, disableAnimations: disableAnimations),
-        child: WindTheme(
-          data: WindThemeData(),
-          child: Scaffold(body: widget),
-        ),
+        child: WindTheme(data: WindThemeData(), child: child!),
       ),
     );
   }
@@ -1620,18 +1650,19 @@ void main() {
   /// Wraps [widget] so a [MagicFeedback] toast can actually render.
   ///
   /// [WindTheme] sits ABOVE the [MaterialApp] because the toast is inserted
-  /// into the Navigator's overlay, which is a sibling of `home`: a Wind-built
-  /// toast under `home` throws "No WindTheme found in context". Without it
+  /// into the Navigator's overlay, which is a sibling of the page: a Wind-built
+  /// toast under the page throws "No WindTheme found in context". Without it
   /// `MagicFeedback` degrades to a warning log and an assertion on the reported
   /// copy passes for nobody.
   Widget wrapWithSnackbar(Widget widget) {
     return WindTheme(
       data: WindThemeData(),
-      child: MaterialApp(
+      child: hostOnRouter(
+        Scaffold(body: widget),
         navigatorKey: MagicRouter.instance.navigatorKey,
-        home: MediaQuery(
+        builder: (BuildContext context, Widget? child) => MediaQuery(
           data: const MediaQueryData(size: Size(1280, 12000)),
-          child: Scaffold(body: widget),
+          child: child!,
         ),
       ),
     );
@@ -1683,6 +1714,9 @@ void main() {
           ? wrapWithSnackbar(view)
           : wrap(view, size: surface, disableAnimations: disableAnimations),
     );
+    // One frame more than a bare app: the router resolves its first location
+    // after the app is pumped, so the page itself arrives a frame later.
+    await tester.pump();
     await tester.pump();
     await tester.pump();
   }
@@ -5251,6 +5285,76 @@ void main() {
         findsOneWidget,
       );
       expect(urls.where((String url) => url.startsWith('/support')), isEmpty);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('an upgrade link opens checkout for the plan its own page names', () {
+    testWidgets('and not for the plan another page in the router carries', (
+      tester,
+    ) async {
+      final _UnsubscribedRailBillingService billing =
+          _UnsubscribedRailBillingService();
+      Magic.put(
+        MagicStarterBillingController(
+          usageCopy: _usageCopy,
+          formatNumber: _formatNumber,
+          isOwnerReader: () => true,
+          storeFundedTeamReader: () async => null,
+          billingService: billing,
+        ),
+      );
+
+      Auth.fake();
+      addTearDown(Auth.unfake);
+      MagicRouter.reset();
+      addTearDown(MagicRouter.reset);
+      await tester.binding.setSurfaceSize(const Size(1280, 12000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      // Two shells, so the router builds the pushed billing page first and the
+      // page underneath after it: a read of the router's last-built state then
+      // names that page's query, which asks for the free tier, a downgrade the
+      // screen refuses to open a checkout for.
+      MagicRoute.group(
+        layout: (Widget child) => Scaffold(body: child),
+        routes: () {
+          MagicRoute.page('/elsewhere', () => const Text('Elsewhere'));
+        },
+      );
+      MagicRoute.group(
+        layoutId: 'app',
+        layout: (Widget child) => Scaffold(body: child),
+        routes: () {
+          MagicRoute.page(
+            MagicStarterConfig.billingRoute(),
+            () => MagicStarter.view.make('teams.billing'),
+          ).stacked();
+        },
+      );
+      MagicRouter.instance.setInitialLocation('/elsewhere?upgrade=free');
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (BuildContext context, Widget? child) =>
+              WindTheme(data: WindThemeData(), child: child!),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      MagicRoute.to(
+        MagicStarterConfig.billingRoute(),
+        query: <String, String>{
+          PlanUpgradeRequirement.planQueryKey: 'business',
+          PlanUpgradeRequirement.intentQueryKey: 'link-from-its-own-page',
+        },
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(billing.checkoutKeys, <String>['business_annual']);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
