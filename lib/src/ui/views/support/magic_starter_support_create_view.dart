@@ -1,9 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/magic_starter_support_controller.dart';
+import '../../../support/screen_capture.dart';
+import '../../../support/support_client_context.dart';
 import '../../components/button/index.dart';
 import '../../components/card/index.dart';
 import '../../components/form_field/index.dart';
@@ -23,6 +27,12 @@ import 'magic_starter_support_message_bubble.dart';
 ///
 /// Behind `support_attachments` the form also takes image and PDF files, which
 /// may stand in for the message text.
+///
+/// Behind `support_diagnostics` the conversation carries the client info
+/// ([MagicStarterSupportClientContext]) and the screenshot
+/// [MagicStarterScreenCapture] took of the screen the customer came from. The
+/// screenshot is shown full width before anything is sent, and removing it
+/// keeps it off this conversation and out of memory.
 class MagicStarterSupportCreateView
     extends MagicStatefulView<MagicStarterSupportController> {
   /// [pickFiles] stands in for the system file picker; it is a parameter only
@@ -55,6 +65,7 @@ class _MagicStarterSupportCreateViewState
   };
   static const _iconSend = Icons.send;
   static const _iconAttach = Icons.attach_file;
+  static const _iconRemove = Icons.close;
 
   /// Width of the "How it works" column beside the form on a wide screen.
   static const double _sideWidth = 300;
@@ -63,26 +74,77 @@ class _MagicStarterSupportCreateViewState
 
   String? _topic;
 
+  /// The captured screen this conversation will carry, until removed.
+  Uint8List? _screenshot;
+
+  /// True while the client info is read, before the controller's own
+  /// in-flight guard takes over.
+  bool _collecting = false;
+
   @override
   Future<List<MagicFile>> Function(List<String> extensions)?
   get pickFilesOverride => widget.pickFiles;
 
   @override
-  void onInit() => controller.forgetWriteError();
+  void onInit() {
+    controller.forgetWriteError();
+
+    if (MagicStarterConfig.hasSupportDiagnosticsFeatures()) {
+      _screenshot = MagicStarterScreenCapture.holder.bytes;
+    }
+  }
 
   @override
   void onClose() => _body.dispose();
 
   Future<void> _submit() async {
+    if (_collecting || controller.isSubmitting) return;
+
+    // 1. Diagnostics, when on: the client info and the screenshot kept.
+    final bool diagnostics = MagicStarterConfig.hasSupportDiagnosticsFeatures();
+    Map<String, String>? clientContext;
+    if (diagnostics) {
+      setState(() => _collecting = true);
+      clientContext = await MagicStarterSupportClientContext.collect(
+        route:
+            MagicStarterScreenCapture.holder.route ??
+            MagicStarterConfig.supportCreateRoute(),
+      );
+      if (!mounted) return;
+      setState(() => _collecting = false);
+    }
+
+    // 2. One write carries the message, the files and the diagnostics.
+    final Uint8List? screenshot = diagnostics ? _screenshot : null;
     final conversation = await controller.createConversation(
       topic: _topic,
       body: _body.text.trim(),
       source: 'in_app',
       attachments: pickedAttachments,
+      screenshot: screenshot == null ? null : _screenshotFile(screenshot),
+      clientContext: clientContext,
     );
     if (conversation == null) return;
 
+    // 3. What this conversation carried is never offered to the next one.
+    MagicStarterScreenCapture.holder.clear();
     MagicRoute.to(MagicStarterConfig.supportThreadPath(conversation.id));
+  }
+
+  /// Named `screenshot.png` with an image mime, which is what the backend's
+  /// extension rule accepts.
+  MagicFile _screenshotFile(Uint8List bytes) {
+    return MagicFile(
+      name: 'screenshot.png',
+      size: bytes.length,
+      mimeType: 'image/png',
+      bytes: bytes,
+    );
+  }
+
+  void _removeScreenshot() {
+    MagicStarterScreenCapture.holder.discard();
+    setState(() => _screenshot = null);
   }
 
   @override
@@ -146,6 +208,7 @@ class _MagicStarterSupportCreateViewState
           ),
           if (MagicStarterConfig.hasSupportAttachmentsFeatures())
             _buildAttachments(),
+          if (_screenshot != null) _buildScreenshot(_screenshot!),
           _buildFooter(wide),
         ],
       ),
@@ -178,6 +241,41 @@ class _MagicStarterSupportCreateViewState
           MagicStarterSupportPickedChips(
             files: pickedAttachments,
             onRemove: removeAttachment,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScreenshot(Uint8List bytes) {
+    return MSFormField(
+      label: trans('magic_starter.support.screenshot_label'),
+      hint: trans('magic_starter.support.screenshot_hint'),
+      child: WDiv(
+        className: 'flex flex-col items-start gap-2',
+        children: [
+          WDiv(
+            className:
+                'w-full rounded-xl border border-color-border overflow-hidden',
+            child: Image.memory(
+              bytes,
+              key: const ValueKey<String>('support-screenshot'),
+              width: double.infinity,
+              fit: BoxFit.contain,
+              semanticLabel: trans('magic_starter.support.screenshot_label'),
+            ),
+          ),
+          MSButton(
+            key: const ValueKey<String>('support-screenshot-remove'),
+            intent: ButtonIntent.secondary,
+            onPressed: _removeScreenshot,
+            child: WDiv(
+              className: 'flex flex-row items-center justify-center gap-2',
+              children: [
+                WIcon(_iconRemove, className: 'text-sm'),
+                WText(trans('magic_starter.support.screenshot_remove')),
+              ],
+            ),
           ),
         ],
       ),
@@ -230,7 +328,7 @@ class _MagicStarterSupportCreateViewState
     );
     final Widget send = MSButton(
       onPressed: _submit,
-      isLoading: controller.isSubmitting,
+      isLoading: controller.isSubmitting || _collecting,
       fullWidth: !wide,
       child: WDiv(
         className: 'flex flex-row items-center justify-center gap-2',

@@ -34,6 +34,7 @@ import 'ui/views/settings/security/magic_starter_connected_accounts_view.dart';
 import 'ui/views/settings/security/magic_starter_password_view.dart';
 import 'ui/views/settings/security/magic_starter_sessions_view.dart';
 import 'ui/views/settings/security/magic_starter_two_factor_view.dart';
+import 'ui/views/support/magic_starter_feedback_view.dart';
 import 'ui/views/support/magic_starter_support_create_view.dart';
 import 'ui/views/support/magic_starter_support_index_view.dart';
 import 'ui/views/support/magic_starter_support_thread_view.dart';
@@ -648,6 +649,13 @@ class MagicStarterManager {
         'support.thread',
         () => const MagicStarterSupportThreadView(),
       );
+
+      if (MagicStarterConfig.hasSupportFeedbackFeatures()) {
+        _registerDefault(
+          'support.feedback',
+          () => const MagicStarterFeedbackView(),
+        );
+      }
     }
 
     // Notification screens are NOT registered here. They belong to

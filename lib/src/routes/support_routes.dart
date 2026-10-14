@@ -3,8 +3,17 @@ import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
+import '../http/controllers/magic_starter_feedback_controller.dart';
 import '../http/controllers/magic_starter_support_controller.dart';
+import '../support/screen_capture.dart';
 import '../ui/widgets/magic_starter_hide_bottom_nav.dart';
+
+/// Full path of the "Send feedback" page (`support_feedback`).
+///
+/// Lives under the support prefix, so arriving on it counts as entering
+/// support for [MagicStarterScreenCapture].
+String magicStarterSupportFeedbackRoute() =>
+    '${MagicStarterConfig.supportRoute()}/feedback';
 
 /// Resolves a support screen, registering the shared controller first.
 ///
@@ -20,8 +29,9 @@ Widget _supportView(String key) {
 /// Routes are only registered when `magic_starter.features.support` is
 /// enabled. When disabled, calling this function is a no-op.
 ///
-/// `/support/new` is registered before `/support/:id` so the literal segment
-/// wins over the parameter. The list replaces and the other two are
+/// `/support/new` and, behind `support_feedback`, `/support/feedback` are
+/// registered before `/support/:id` so the literal segment wins over the
+/// parameter. The list replaces and the other two are
 /// `.stacked()`, the hub-and-spoke shape the settings routes use: a host
 /// commonly gives the list a nav destination, and the create and thread pages
 /// are places a reader drills into and needs the back gesture out of.
@@ -35,10 +45,21 @@ Widget _supportView(String key) {
 /// The host calls this from its route provider, as it does the other
 /// `registerMagicStarter*Routes()`: the profile dropdown shows its Support item
 /// whenever the feature is on, and without this call that item leads nowhere.
-/// The three view keys (`support.index`, `support.create`, `support.thread`)
-/// have default builders; `MagicStarter.view.register(...)` replaces one.
+/// The view keys (`support.index`, `support.create`, `support.thread`, and
+/// `support.feedback` behind its flag) have default builders;
+/// `MagicStarter.view.register(...)` replaces one.
+///
+/// Behind `support_diagnostics` this also adds
+/// [MagicStarterScreenCapture.observer] to the router, which is why it has to
+/// run before the router is built, as every route registration does.
 void registerMagicStarterSupportRoutes() {
   if (!MagicStarterConfig.hasSupportFeatures()) return;
+
+  final observer = MagicStarterScreenCapture.observer;
+  if (MagicStarterConfig.hasSupportDiagnosticsFeatures() &&
+      !MagicRouter.instance.observers.contains(observer)) {
+    MagicRouter.instance.addObserver(observer);
+  }
 
   MagicRoute.group(
     middleware: ['auth'],
@@ -54,6 +75,13 @@ void registerMagicStarterSupportRoutes() {
         MagicStarterConfig.supportCreateRoute(),
         () => _supportView('support.create'),
       ).title('magic_starter.titles.support_create').stacked();
+
+      if (MagicStarterConfig.hasSupportFeedbackFeatures()) {
+        MagicRoute.page(magicStarterSupportFeedbackRoute(), () {
+          Magic.findOrPut(MagicStarterFeedbackController.new);
+          return MagicStarter.view.make('support.feedback');
+        }).title('magic_starter.titles.support_feedback').stacked();
+      }
     },
   );
 

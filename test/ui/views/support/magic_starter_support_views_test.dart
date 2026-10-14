@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:magic_starter/src/ui/views/support/magic_starter_support_message_bubble.dart';
 
 // ---------------------------------------------------------------------------
@@ -2388,6 +2389,247 @@ void main() {
       await openMenu(tester);
 
       expect(find.text(trans('magic_starter.nav.support')), findsNothing);
+    });
+
+    group('feedback and store review', () {
+      setUp(() {
+        Config.set('magic_starter.features.support_feedback', true);
+        Config.set('magic_starter.features.store_review', true);
+        MagicStarterStoreReview.debugIsWebOverride = false;
+      });
+
+      tearDown(MagicStarterStoreReview.resetForTesting);
+
+      testWidgets('offers Send feedback when the feature is on', (
+        tester,
+      ) async {
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsOneWidget);
+      });
+
+      testWidgets('offers no Send feedback to a guest', (tester) async {
+        Auth.fake(
+          user: MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 6,
+            'is_guest': true,
+          }),
+        );
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsNothing);
+      });
+
+      testWidgets('offers no Send feedback when the feature is off', (
+        tester,
+      ) async {
+        Config.set('magic_starter.features.support_feedback', false);
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsNothing);
+      });
+
+      testWidgets('offers Rate us on a device', (tester) async {
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.rate_us')), findsOneWidget);
+      });
+
+      testWidgets('hides Rate us on the web', (tester) async {
+        MagicStarterStoreReview.debugIsWebOverride = true;
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.rate_us')), findsNothing);
+      });
+    });
+  });
+
+  group('the feedback page', () {
+    setUp(() {
+      Config.set('magic_starter.features.support_feedback', true);
+    });
+
+    tearDown(MagicStarterStoreReview.resetForTesting);
+
+    Future<void> mountRoutes(WidgetTester tester, {required String at}) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 2000);
+      addTearDown(tester.view.reset);
+
+      Kernel.register('auth', AllowAllMiddleware.new);
+      addTearDown(Kernel.flush);
+      MagicStarter.view.registerLayout('layout.app', (child) => child);
+
+      registerMagicStarterSupportRoutes();
+      MagicRouter.instance.setInitialLocation(at);
+
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (context, child) =>
+              WindTheme(data: WindThemeData(), child: child!),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('resolves to the feedback form, not to a thread', (
+      tester,
+    ) async {
+      final sent = fakeBackend({
+        'GET /support/feedback': (_) =>
+            Http.response(<String, dynamic>{'eligible': false}),
+      });
+
+      await mountRoutes(tester, at: '/support/feedback');
+
+      expect(
+        find.text(trans('magic_starter.support.feedback_question')),
+        findsOneWidget,
+      );
+      expect(count(sent, 'GET', '/support/conversations/feedback'), 0);
+    });
+
+    testWidgets('posts the chosen score', (tester) async {
+      final sent = fakeBackend({
+        'POST /support/feedback': (_) =>
+            Http.response(<String, dynamic>{'conversation_id': null}),
+      });
+      await mountRoutes(tester, at: '/support/feedback');
+
+      await tester.tap(find.byKey(const ValueKey<String>('feedback-score-8')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey<String>('feedback-submit')));
+      await tester.pumpAndSettle();
+
+      final post = sent.singleWhere((s) => s.method == 'POST');
+      expect((post.data! as Map)['score'], 8);
+    });
+
+    test('is not registered while the feature is off', () {
+      Config.set('magic_starter.features.support_feedback', false);
+
+      registerMagicStarterSupportRoutes();
+
+      expect(
+        MagicRouter.instance.allRoutes.map((route) => route.fullPath),
+        isNot(contains(magicStarterSupportFeedbackRoute())),
+      );
+    });
+  });
+
+  group('diagnostics on the create view', () {
+    const ValueKey<String> screenshot = ValueKey<String>('support-screenshot');
+    const ValueKey<String> removeScreenshot = ValueKey<String>(
+      'support-screenshot-remove',
+    );
+
+    /// A real 1x1 PNG, so the preview decodes what a capture would hold.
+    final Uint8List png = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    );
+
+    late List<SentRequest> sent;
+
+    setUp(() {
+      Config.set('magic_starter.features.support_diagnostics', true);
+      PackageInfo.setMockInitialValues(
+        appName: 'Uptizm',
+        packageName: 'com.example.app',
+        version: '2.3.0',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+      MagicStarterScreenCapture.resetForTesting();
+      MagicStarterScreenCapture.holder.debugHold(png, route: '/monitors/3');
+
+      sent = fakeBackend({
+        'POST /support/conversations': (_) => ok(
+          conversationJson(
+            id: 9,
+            messages: <Map<String, dynamic>>[messageJson()],
+          ),
+        ),
+        'GET /support/conversations/9': (_) => ok(conversationJson(id: 9)),
+        'POST /support/conversations/9/seen': (_) => ok(null),
+      });
+    });
+
+    tearDown(MagicStarterScreenCapture.resetForTesting);
+
+    Future<Map> send(WidgetTester tester) async {
+      await tester.enterText(find.byType(EditableText), 'It broke');
+      await tester.pump();
+      await tester.tap(find.text(trans('magic_starter.support.create_submit')));
+      await tester.pumpAndSettle();
+
+      return sent
+              .singleWhere(
+                (s) => s.method == 'POST' && s.url == '/support/conversations',
+              )
+              .data!
+          as Map;
+    }
+
+    testWidgets('shows the screenshot and sends it with the client info', (
+      tester,
+    ) async {
+      await mount(tester, at: '/support/new');
+
+      expect(find.byKey(screenshot), findsOneWidget);
+
+      final data = await send(tester);
+
+      final MagicFile file = data['screenshot'] as MagicFile;
+      expect(file.name, 'screenshot.png');
+      expect(file.mimeType, 'image/png');
+      expect(data['client_context[route]'], '/monitors/3');
+      expect(data['client_context[app_version]'], '2.3.0');
+      expect(data['client_context[build_number]'], '45');
+      expect(data['client_context[platform]'], isNotEmpty);
+      expect(data['client_context[locale]'], 'en');
+      expect(data['client_context[timezone]'], isNotEmpty);
+    });
+
+    testWidgets('remove drops the screenshot but keeps the client info', (
+      tester,
+    ) async {
+      await mount(tester, at: '/support/new');
+
+      await tester.tap(find.byKey(removeScreenshot));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(screenshot), findsNothing);
+      expect(MagicStarterScreenCapture.holder.bytes, isNull);
+
+      final data = await send(tester);
+
+      expect(data.containsKey('screenshot'), isFalse);
+      expect((data['client_context'] as Map)['route'], '/monitors/3');
+    });
+
+    testWidgets('a sent screenshot is not offered again', (tester) async {
+      await mount(tester, at: '/support/new');
+
+      await send(tester);
+
+      expect(MagicStarterScreenCapture.holder.bytes, isNull);
+    });
+
+    testWidgets('sends neither while the flag is off', (tester) async {
+      Config.set('magic_starter.features.support_diagnostics', false);
+
+      await mount(tester, at: '/support/new');
+
+      expect(find.byKey(screenshot), findsNothing);
+
+      final data = await send(tester);
+
+      expect(data.containsKey('screenshot'), isFalse);
+      expect(data.containsKey('client_context'), isFalse);
     });
   });
 }

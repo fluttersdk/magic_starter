@@ -5,6 +5,8 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
+import '../../../routes/support_routes.dart';
+import '../../../support/store_review.dart';
 import '../avatar/index.dart';
 
 /// A dropdown widget for the user profile.
@@ -46,6 +48,8 @@ class MSUserProfileDropdown extends StatelessWidget {
   static const _iconSignIn = Icons.login;
   static const _iconCreateAccount = Icons.person_add_alt_outlined;
   static const _iconPlaceholder = Icons.person_outline;
+  static const _iconFeedback = Icons.rate_review_outlined;
+  static const _iconRateUs = Icons.star_outline;
 
   @override
   Widget build(BuildContext context) {
@@ -238,6 +242,29 @@ class MSUserProfileDropdown extends StatelessWidget {
                 onTap: () {
                   close();
                   MagicRoute.to(MagicStarterConfig.supportRoute());
+                },
+              ),
+            // A guest is refused by the feedback endpoint, so it is not offered.
+            if (MagicStarterConfig.hasSupportFeatures() &&
+                MagicStarterConfig.hasSupportFeedbackFeatures() &&
+                !isGuest)
+              _buildMenuItem(
+                icon: _iconFeedback,
+                label: trans('magic_starter.nav.feedback'),
+                onTap: () {
+                  close();
+                  MagicRoute.to(magicStarterSupportFeedbackRoute());
+                },
+              ),
+            // The listing, never the review prompt: a tap must always open
+            // something, and the prompt is allowed to show nothing.
+            if (MagicStarterStoreReview.canOpenStoreListing)
+              _buildMenuItem(
+                icon: _iconRateUs,
+                label: trans('magic_starter.nav.rate_us'),
+                onTap: () {
+                  close();
+                  MagicStarterStoreReview.openStoreListing();
                 },
               ),
             _buildMenuItem(

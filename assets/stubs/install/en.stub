@@ -234,6 +234,8 @@
       "title": "Upgrade Your Guest Account"
     },
     "nav": {
+      "feedback": "Send feedback",
+      "rate_us": "Rate us",
       "settings": "Settings",
       "support": "Support"
     },
@@ -319,7 +321,16 @@
       "empty_title": "No conversations yet",
       "expect_ai": "Our AI answers right away and hands off to the team when needed.",
       "expect_team": "Our team usually replies within a few hours.",
+      "feedback_comment_placeholder": "What is the main reason for your score? (optional)",
+      "feedback_dismiss": "Not now",
       "feedback_error": "We could not send your feedback. Please try again.",
+      "feedback_high": "Very likely",
+      "feedback_low": "Not likely",
+      "feedback_question": "How likely are you to recommend us to a friend or colleague?",
+      "feedback_submit": "Send feedback",
+      "feedback_subtitle": "Tell us how we are doing.",
+      "feedback_thanks": "Thanks for your feedback.",
+      "feedback_view_conversation": "We opened a conversation about it. View it",
       "how_short": "Our AI answers right away and hands off to the team when needed.",
       "how_step_1": "Our AI reads your account and answers right away.",
       "how_step_2": "Billing, security or anything complex opens a request for the team.",
@@ -348,6 +359,9 @@
       "reply_error": "We could not send your reply. Please try again.",
       "reply_placeholder": "Write a reply",
       "reply_submit": "Send",
+      "screenshot_hint": "The screen you came from. It is sent only if you keep it.",
+      "screenshot_label": "Screenshot",
+      "screenshot_remove": "Remove screenshot",
       "sender": {
         "ai": "AI assistant",
         "customer": "You",
@@ -392,6 +406,7 @@
       "settings": "Settings",
       "support": "Support",
       "support_create": "New conversation",
+      "support_feedback": "Send feedback",
       "support_thread": "Conversation",
       "team_create": "Create Team",
       "team_invitation": "Team Invitation",
