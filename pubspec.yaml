@@ -121,6 +121,11 @@ dependencies:
   magic_payments: ^0.0.11
   args: ^2.7.0
   path: ^1.9.0
+  # The native store review prompt and the "Rate us" store listing link
+  # (Android, iOS and macOS; the starter hides both on web).
+  in_app_review: ^2.0.12
+  # App version and build number for the support conversation's client context.
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:
