@@ -404,15 +404,25 @@ void main() {
       backend();
       await mount(tester, const MagicStarterFeedbackCard());
 
-      final Color? disabled = fillOf(find.byKey(submit));
+      /// What the button is painted at: the button recipe's
+      /// `disabled:opacity-50`, or 1 with no fade at all.
+      double paintedOpacity() {
+        final Finder faded = find.descendant(
+          of: find.byKey(submit),
+          matching: find.byType(Opacity),
+        );
+
+        return faded.evaluate().isEmpty
+            ? 1
+            : tester.widget<Opacity>(faded.first).opacity;
+      }
+
+      expect(paintedOpacity(), lessThan(1));
 
       await tester.tap(find.byKey(const ValueKey<String>('feedback-score-4')));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      final Color? enabled = fillOf(find.byKey(submit));
-
-      expect(disabled, isNotNull);
-      expect(disabled, isNot(equals(enabled)));
+      expect(paintedOpacity(), 1);
     });
 
     testWidgets('the chosen score is filled with the primary colour', (

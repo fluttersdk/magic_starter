@@ -246,11 +246,7 @@ class _MagicStarterFeedbackCardState extends State<MagicStarterFeedbackCard> {
                 onPressed: _submit,
                 isLoading: _controller.isSubmitting,
                 disabled: _score == null,
-                // `disabled:opacity-50` in the button recipe paints nothing on a
-                // `WButton`, so the disabled state carries its own muted colours.
-                className:
-                    '$_touchHeight disabled:bg-surface-container-high '
-                    'disabled:text-fg-disabled',
+                className: _touchHeight,
                 child: WText(trans('magic_starter.support.feedback_submit')),
               ),
               if (!widget.onDemand)
