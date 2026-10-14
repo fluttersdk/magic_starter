@@ -213,12 +213,18 @@ class _MagicStarterSupportThreadViewState
 
   /// Opens a PDF through a 60 second signed link: the read credential stays
   /// the bearer token, and the link is minted only for this one tap.
+  ///
+  /// The web opens it in the current tab: a new window opened after the link
+  /// request is a popup Safari blocks while the launcher still answers `true`,
+  /// and the download route answers as an attachment, so the page stays.
   Future<void> _openPdf(MagicStarterSupportAttachment attachment) async {
     final String? id = _id;
     if (id == null) return;
 
     final String? url = await controller.attachmentLink(id, attachment.id);
-    if (url != null && await Launch.url(url)) return;
+    if (url != null && await Launch.url(url, webOnlyWindowName: '_self')) {
+      return;
+    }
 
     Magic.error(
       trans('magic_starter.titles.support_thread'),

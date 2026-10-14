@@ -200,13 +200,16 @@ MagicFile pickedFile(String name, {int bytes = 1024, int? size}) {
 /// Records what the screen asked the system to open instead of opening it.
 class _RecordingLaunchAdapter implements LaunchAdapter {
   final List<Uri> launched = <Uri>[];
+  final List<String?> windowNames = <String?>[];
 
   @override
   Future<bool> launch(
     Uri url, {
     LaunchMode mode = LaunchMode.externalApplication,
+    String? webOnlyWindowName,
   }) async {
     launched.add(url);
+    windowNames.add(webOnlyWindowName);
 
     return true;
   }
@@ -2200,6 +2203,9 @@ void main() {
         expect(launcher.launched, <Uri>[
           Uri.parse('https://api.example.com/signed?sig=1'),
         ]);
+        // Opened after the link request, so a new web window is a popup Safari
+        // blocks; the current tab downloads it and stays where it was.
+        expect(launcher.windowNames, <String?>['_self']);
       });
 
       testWidgets('attachments wrap from one shared start edge, evenly spaced', (
