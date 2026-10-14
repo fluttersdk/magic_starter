@@ -34,9 +34,9 @@ class _MagicStarterTwoFactorChallengeViewState
   bool _useRecoveryCode = false;
   final TextEditingController _codeController = TextEditingController();
 
-  /// The `two_factor_token` of this page's own route. Null until
-  /// [didChangeDependencies] has read it.
-  String? _token;
+  /// The `two_factor_token` of this page's own route, read by
+  /// [didChangeDependencies] before the first build.
+  late String _token;
 
   @override
   void onInit() {
@@ -44,14 +44,13 @@ class _MagicStarterTwoFactorChallengeViewState
     controller.setEmpty();
   }
 
-  // The route state cannot be read in initState, so the token is read here, on
-  // the first call only. The static reader names the page the router built
-  // last, which is another page's once routes sit in two layout shells.
+  // The route state cannot be read in initState, so the token is read here.
+  // Reading again on a later call is safe: the context-bound reader answers
+  // this page's own route, where the static reader named the page the router
+  // built last, which is another page's once routes sit in two layout shells.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_token != null) return;
-
     _token =
         MagicRouter.instance.queryParameterOf(context, 'two_factor_token') ??
         '';
@@ -65,12 +64,12 @@ class _MagicStarterTwoFactorChallengeViewState
   Future<void> _submit() async {
     if (_useRecoveryCode) {
       await controller.doTwoFactorChallenge(
-        twoFactorToken: _token!,
+        twoFactorToken: _token,
         recoveryCode: _codeController.text.trim(),
       );
     } else {
       await controller.doTwoFactorChallenge(
-        twoFactorToken: _token!,
+        twoFactorToken: _token,
         code: _codeController.text.trim(),
       );
     }
