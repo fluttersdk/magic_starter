@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Pre-built Auth, Profile, Teams & Notifications for the Magic Framework.</strong><br/>
-  15 opt-in features, every screen overridable.
+  20 opt-in features, every screen overridable.
 </p>
 
 <p align="center">
@@ -35,7 +35,7 @@
 
 Stop rebuilding authentication, profile management, and team features from scratch in every project. The same screens, the same API calls, the same state management — over and over.
 
-**Magic Starter** gives you production-ready screens for auth, profile, teams, and notifications out of the box. Everything is config-driven with 15 opt-in feature toggles. Every view is overridable via the view registry: swap any screen or layout from your host app without touching the package.
+**Magic Starter** gives you production-ready screens for auth, profile, teams, and notifications out of the box. Everything is config-driven with 20 opt-in feature toggles. Every view is overridable via the view registry: swap any screen or layout from your host app without touching the package.
 
 > **Config-driven starter kit.** Enable only what you need. Override any screen. Ship faster.
 
@@ -55,7 +55,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 | :speech_balloon: | **Support Desk** | Customer conversations with staff, realtime replies, and a Contact sales handoff from billing |
 | :art: | **Wind UI** | Tailwind-like className system — no Material widgets, dark mode built-in |
 | :package: | **Design-System Components** | 39 atomic components (MSButton, MSInput, MSBadge, MSDialog, MSToast, MSTabs, MSAccordion, MSDataTable, and more) plus `MagicStarterTokens` semantic alias layer |
-| :gear: | **15 Feature Toggles** | All opt-in, configure only what you need |
+| :gear: | **20 Feature Toggles** | All opt-in, configure only what you need |
 | :jigsaw: | **View Registry** | Override any screen or layout from the host app |
 | :hammer_and_wrench: | **CLI Tools** | install, configure, doctor, publish, uninstall |
 
@@ -142,7 +142,7 @@ All values are read at runtime via `ConfigRepository` — no hardcoded strings s
 
 ## Feature Toggles
 
-All 15 features default to `false` (opt-in). Enable only what your app needs:
+All 20 features default to `false` (opt-in). Enable only what your app needs:
 
 | Toggle | Description |
 |--------|-------------|
@@ -161,6 +161,11 @@ All 15 features default to `false` (opt-in). Enable only what your app needs:
 | `timezones` | Timezone selection via async API search |
 | `billing` | Subscription and billing screen over `magic_payments`. Also needs `billing.web_origin`, an absolute url Stripe can return to |
 | `support` | Support desk screens, the Support profile-menu item and the Contact sales conversation, over `magic-starter-laravel`'s support API. The host registers the routes with `registerMagicStarterSupportRoutes()`; see [Support](doc/basics/support.md) |
+| `support_csat` | A thumbs up or down, with an optional comment, on a resolved conversation; asked again after each new resolution. Needs `support` |
+| `support_feedback` | The occasional 0 to 10 card (`MagicStarterFeedbackCard`, placed by the host) and the "Send feedback" page and menu item. Needs `support` |
+| `support_attachments` | Images and PDFs on customer messages (jpg, png, webp, pdf; 3 files, 5 MB each by default). Needs `support` |
+| `support_diagnostics` | Client info and an automatic screenshot of the screen the customer came from, shown to staff only. The screenshot needs the app wrapped once with `MagicStarterScreenCapture.wrap(child)`; routes listed in `diagnostics.deny_capture_routes` are never captured. Needs `support` |
+| `store_review` | The native store review prompt (`MagicStarterStoreReview.maybeRequest()` at a host milestone, never on the web) and the "Rate us" menu item |
 
 ---
 
@@ -376,6 +381,7 @@ final success = await MagicStarterTwoFactorModal.show(
 |--------|---------|
 | `MagicStarterAuthFormCard` | Centered card wrapper for auth-adjacent screens (invite accept, onboarding) |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
+| `MagicStarterFeedbackCard` | The occasional 0 to 10 feedback card behind `support_feedback`; renders nothing until the backend says the account is due |
 | `MSTeamSelector` | Current-team switcher dropdown with create/settings links |
 | `MSAvatar` | Photo with an initials or glyph fallback, clipped to the shape you pass |
 | `MSUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
@@ -586,7 +592,7 @@ App launch → MagicStarterServiceProvider.boot()
 |---------|---------------|
 | Singleton Manager | `MagicStarterManager` — central customization registry |
 | View Registry | `MagicStarterViewRegistry` — string-keyed view builders, host app overrides |
-| Feature Toggles | `MagicStarterConfig`, 15 opt-in flags via `ConfigRepository` |
+| Feature Toggles | `MagicStarterConfig`, 20 opt-in flags via `ConfigRepository` |
 | Service Provider | Two-phase bootstrap: `register()` (sync) → `boot()` (async) |
 | IoC Container | All bindings via `Magic.singleton()` / `Magic.findOrPut()` |
 

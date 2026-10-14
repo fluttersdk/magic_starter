@@ -284,22 +284,34 @@ class MagicStarterSupportController extends MagicController
   ///
   /// [source] names the surface the customer opened it from; the backend
   /// records it, it does not infer it.
+  ///
+  /// [attachments] go up one multipart part each, [screenshot] is the
+  /// diagnostics capture (a file named `screenshot.png`) and [clientContext]
+  /// the client info (`route`, `app_version`, `build_number`, `platform`,
+  /// `os_version`, `locale`, `timezone`). Without a file the request stays
+  /// JSON. [body] may be empty when [attachments] carries something.
   Future<MagicStarterSupportConversation?> createConversation({
     required String body,
     required String source,
     String? topic,
     String? subject,
+    List<MagicFile> attachments = const <MagicFile>[],
+    MagicFile? screenshot,
+    Map<String, String>? clientContext,
   }) async {
     final response = await _submit(
       '/support/conversations',
       data: {
         'topic': ?topic,
         'subject': ?subject,
-        'body': body,
+        if (body.isNotEmpty || attachments.isEmpty) 'body': body,
         'source': source,
       },
       action: 'createConversation',
       fallbackKey: 'magic_starter.support.create_error',
+      attachments: attachments,
+      screenshot: screenshot,
+      clientContext: clientContext,
     );
     if (response == null) return null;
 
@@ -310,12 +322,20 @@ class MagicStarterSupportController extends MagicController
 
   /// Posts a reply to [id] and appends it to the loaded thread. Answers whether
   /// the backend accepted it.
-  Future<bool> sendMessage(Object id, String body) async {
+  ///
+  /// [attachments] go up one multipart part each, and [body] may then be
+  /// empty. Without a file the request stays JSON.
+  Future<bool> sendMessage(
+    Object id,
+    String body, {
+    List<MagicFile> attachments = const <MagicFile>[],
+  }) async {
     final response = await _submit(
       '/support/conversations/$id/messages',
-      data: {'body': body},
+      data: {if (body.isNotEmpty || attachments.isEmpty) 'body': body},
       action: 'sendMessage',
       fallbackKey: 'magic_starter.support.reply_error',
+      attachments: attachments,
     );
     if (response == null) return false;
 
@@ -330,6 +350,77 @@ class MagicStarterSupportController extends MagicController
     }
 
     return true;
+  }
+
+  /// Rates the resolved conversation [id] (`up` or `down`) and answers whether
+  /// the backend accepted it. The backend answers 422 for a conversation that
+  /// is not resolved; that lands in [getError] under `rating`.
+  ///
+  /// A blank [comment] is left out. Rating again within one resolution
+  /// overwrites the earlier rating.
+  Future<bool> rate(Object id, String rating, {String? comment}) async {
+    final note = comment?.trim();
+    final response = await _submit(
+      '/support/conversations/$id/rating',
+      data: {
+        'rating': rating,
+        'comment': ?(note == null || note.isEmpty ? null : note),
+      },
+      action: 'rate',
+      fallbackKey: 'magic_starter.support.rating_error',
+    );
+    if (response == null) return false;
+
+    final loaded = _conversation;
+    if (loaded != null && loaded.id.toString() == id.toString()) {
+      _conversation = loaded.withRating(
+        MagicStarterSupportRating(
+          value: rating,
+          comment: note == null || note.isEmpty ? null : note,
+          ratedAt: DateTime.now().toUtc(),
+        ),
+      );
+      refreshUI();
+    }
+
+    return true;
+  }
+
+  /// The headers an attachment read needs. An attachment answers only to the
+  /// bearer token, so a widget loading one passes these along with the url.
+  /// Empty when nobody is signed in.
+  Future<Map<String, String>> attachmentHeaders() async {
+    final token = await Auth.getToken();
+
+    return {if (token != null) 'Authorization': 'Bearer $token'};
+  }
+
+  /// Asks for a 60 second signed url to open the PDF [attachmentId] of
+  /// [conversationId] in the system viewer, or null when the backend refused.
+  Future<String?> attachmentLink(
+    Object conversationId,
+    Object attachmentId,
+  ) async {
+    try {
+      final response = await Http.post(
+        '/support/conversations/$conversationId/attachments/$attachmentId/link',
+      );
+
+      if (!response.successful) {
+        Log.warning(
+          '[MagicStarterSupportController.attachmentLink] '
+          '${response.statusCode}',
+        );
+        return null;
+      }
+
+      return (response.data as Map<String, dynamic>)['url'] as String?;
+    } catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterSupportController.attachmentLink] $e\n$stackTrace',
+      );
+      return null;
+    }
   }
 
   /// Tells the backend the customer has read [id]. Quiet by design: a seen
@@ -394,12 +485,15 @@ class MagicStarterSupportController extends MagicController
   }
 
   /// Runs one write and answers its response, or null after recording why the
-  /// backend refused it.
+  /// backend refused it (or why the client did not send it).
   Future<MagicResponse?> _submit(
     String url, {
     required Map<String, dynamic> data,
     required String action,
     required String fallbackKey,
+    List<MagicFile> attachments = const <MagicFile>[],
+    MagicFile? screenshot,
+    Map<String, String>? clientContext,
   }) async {
     if (_isSubmitting) return null;
     _isSubmitting = true;
@@ -408,10 +502,26 @@ class MagicStarterSupportController extends MagicController
     refreshUI();
 
     try {
-      final response = await Http.post(url, data: data);
+      // 1. Stop a pick the backend would refuse before it is uploaded.
+      final refusal = await _attachmentRefusal(attachments);
+      if (refusal != null) {
+        _writeError = refusal;
+
+        return null;
+      }
+
+      // 2. Send it: multipart when a file goes along, JSON otherwise.
+      final response = await _send(
+        url,
+        data: data,
+        attachments: attachments,
+        screenshot: screenshot,
+        clientContext: clientContext ?? const <String, String>{},
+      );
 
       if (response.successful) return response;
 
+      // 3. Record why the backend said no.
       if (response.notFound) {
         _markThreadNotFound();
       } else if (response.isValidationError) {
@@ -430,6 +540,90 @@ class MagicStarterSupportController extends MagicController
       _isSubmitting = false;
       refreshUI();
     }
+  }
+
+  /// One key per file: magic's Dio driver turns each `files` key into exactly
+  /// one multipart part, and the backend reads `attachments[0]`..`[2]`. The
+  /// client info is flattened to `client_context[key]` fields for the same
+  /// reason; the JSON path keeps it as a nested map.
+  Future<MagicResponse> _send(
+    String url, {
+    required Map<String, dynamic> data,
+    required List<MagicFile> attachments,
+    required MagicFile? screenshot,
+    required Map<String, String> clientContext,
+  }) {
+    final files = <String, dynamic>{
+      for (var i = 0; i < attachments.length; i++)
+        'attachments[$i]': attachments[i],
+      'screenshot': ?screenshot,
+    };
+
+    if (files.isEmpty) {
+      return Http.post(
+        url,
+        data: {
+          ...data,
+          if (clientContext.isNotEmpty) 'client_context': clientContext,
+        },
+      );
+    }
+
+    return Http.upload(
+      url,
+      data: {
+        ...data,
+        for (final field in clientContext.entries)
+          'client_context[${field.key}]': field.value,
+      },
+      files: files,
+    );
+  }
+
+  /// Why [attachments] must not be sent, or null when they may be.
+  Future<String?> _attachmentRefusal(List<MagicFile> attachments) async {
+    final maxFiles = MagicStarterConfig.supportAttachmentMaxFiles();
+    if (attachments.length > maxFiles) {
+      return trans('magic_starter.support.attachment_too_many', {
+        'max': maxFiles,
+      });
+    }
+
+    // `MagicFile.extension` is lower case; a host list may not be.
+    final extensions = {
+      for (final extension in MagicStarterConfig.supportAttachmentExtensions())
+        extension.toLowerCase(),
+    };
+    final maxBytes = MagicStarterConfig.supportAttachmentMaxBytes();
+
+    for (final file in attachments) {
+      if (!extensions.contains(file.extension)) {
+        return trans('magic_starter.support.attachment_type_error', {
+          'name': file.name,
+        });
+      }
+
+      final length = await _byteLength(file);
+      if (length != null && length > maxBytes) {
+        return trans('magic_starter.support.attachment_too_large', {
+          'name': file.name,
+          'max': maxBytes ~/ (1024 * 1024),
+        });
+      }
+    }
+
+    return null;
+  }
+
+  /// The size of [file] in bytes. A picker that could not read it reports null
+  /// or 0 (see [MagicFile.size]), and neither is a measurement, so the bytes
+  /// are read instead. Null when they cannot be read either; the backend
+  /// enforces the limit regardless.
+  Future<int?> _byteLength(MagicFile file) async {
+    final size = file.size;
+    if (size != null && size > 0) return size;
+
+    return (await file.readAsBytes())?.length;
   }
 
   void _markThreadNotFound() {

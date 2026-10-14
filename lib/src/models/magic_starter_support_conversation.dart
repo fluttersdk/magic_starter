@@ -1,5 +1,58 @@
 import 'package:flutter/foundation.dart';
 
+/// A file attached to a support message, as `magic-starter-laravel` serialises
+/// it.
+@immutable
+class MagicStarterSupportAttachment {
+  /// Backend key. Untyped for the same reason as [MagicStarterSupportMessage.id].
+  final dynamic id;
+
+  final String name;
+
+  final String mime;
+
+  /// Size in bytes after the backend re-encoded it.
+  final int size;
+
+  /// Pixel dimensions of an image. Null for a PDF.
+  final int? width;
+  final int? height;
+
+  /// `image` or `pdf`. Wire string, for the same reason as
+  /// [MagicStarterSupportMessage.senderType].
+  final String kind;
+
+  /// Where the bytes are read, relative to the API base
+  /// (`support/conversations/{c}/attachments/{a}`). The read needs the bearer
+  /// token, so it is fetched with `MagicStarterSupportController.attachmentHeaders`
+  /// and never opened as a bare link.
+  final String url;
+
+  const MagicStarterSupportAttachment({
+    required this.id,
+    required this.name,
+    required this.mime,
+    required this.size,
+    required this.kind,
+    required this.url,
+    this.width,
+    this.height,
+  });
+
+  factory MagicStarterSupportAttachment.fromMap(Map<String, dynamic> map) {
+    return MagicStarterSupportAttachment(
+      id: map['id'],
+      name: map['name'] as String,
+      mime: map['mime'] as String,
+      size: (map['size'] as num).toInt(),
+      width: (map['width'] as num?)?.toInt(),
+      height: (map['height'] as num?)?.toInt(),
+      kind: map['kind'] as String,
+      url: map['url'] as String,
+    );
+  }
+}
+
 /// One message in a support conversation, as `magic-starter-laravel` serialises
 /// it.
 @immutable
@@ -28,6 +81,10 @@ class MagicStarterSupportMessage {
 
   final DateTime createdAt;
 
+  /// What the sender attached. Empty on the public signed-link thread and on a
+  /// message with no files.
+  final List<MagicStarterSupportAttachment> attachments;
+
   const MagicStarterSupportMessage({
     required this.id,
     required this.senderType,
@@ -36,10 +93,12 @@ class MagicStarterSupportMessage {
     this.kind = 'message',
     this.senderName,
     this.senderAvatarUrl,
+    this.attachments = const <MagicStarterSupportAttachment>[],
   });
 
   factory MagicStarterSupportMessage.fromMap(Map<String, dynamic> map) {
     final sender = map['sender'] as Map<String, dynamic>?;
+    final attachments = map['attachments'] as List<dynamic>?;
 
     return MagicStarterSupportMessage(
       id: map['id'],
@@ -49,6 +108,12 @@ class MagicStarterSupportMessage {
       senderAvatarUrl: sender?['avatar_url'] as String?,
       body: map['body'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
+      attachments: [
+        for (final attachment in attachments ?? const <dynamic>[])
+          MagicStarterSupportAttachment.fromMap(
+            attachment as Map<String, dynamic>,
+          ),
+      ],
     );
   }
 }
@@ -80,6 +145,32 @@ class MagicStarterSupportLastMessage {
       senderName: map['sender_name'] as String?,
       bodyPreview: map['body_preview'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
+    );
+  }
+}
+
+/// The customer's rating of a resolved conversation.
+@immutable
+class MagicStarterSupportRating {
+  /// `up` or `down`. Wire string, for the same reason as
+  /// [MagicStarterSupportMessage.senderType].
+  final String value;
+
+  final String? comment;
+
+  final DateTime ratedAt;
+
+  const MagicStarterSupportRating({
+    required this.value,
+    required this.ratedAt,
+    this.comment,
+  });
+
+  factory MagicStarterSupportRating.fromMap(Map<String, dynamic> map) {
+    return MagicStarterSupportRating(
+      value: map['value'] as String,
+      comment: map['comment'] as String?,
+      ratedAt: DateTime.parse(map['rated_at'] as String),
     );
   }
 }
@@ -133,6 +224,13 @@ class MagicStarterSupportConversation {
 
   final List<MagicStarterSupportMessage> messages;
 
+  /// How the customer rated the current resolution. Null while unrated.
+  final MagicStarterSupportRating? rating;
+
+  /// Whether the conversation is resolved and not yet rated for its current
+  /// resolution, so the thumbs prompt applies.
+  final bool canRate;
+
   const MagicStarterSupportConversation({
     required this.id,
     required this.number,
@@ -148,12 +246,15 @@ class MagicStarterSupportConversation {
     this.waitingOnTeam = false,
     this.lastMessage,
     this.messages = const <MagicStarterSupportMessage>[],
+    this.rating,
+    this.canRate = false,
   });
 
   factory MagicStarterSupportConversation.fromMap(Map<String, dynamic> map) {
     final lastActivityAt = map['last_activity_at'] as String?;
     final lastMessage = map['last_message'] as Map<String, dynamic>?;
     final messages = map['messages'] as List<dynamic>?;
+    final rating = map['rating'] as Map<String, dynamic>?;
 
     return MagicStarterSupportConversation(
       id: map['id'],
@@ -177,6 +278,8 @@ class MagicStarterSupportConversation {
         for (final message in messages ?? const <dynamic>[])
           MagicStarterSupportMessage.fromMap(message as Map<String, dynamic>),
       ],
+      rating: rating == null ? null : MagicStarterSupportRating.fromMap(rating),
+      canRate: map['can_rate'] == true,
     );
   }
 
@@ -206,6 +309,32 @@ class MagicStarterSupportConversation {
       waitingOnTeam: waitingOnTeam,
       lastMessage: lastMessage,
       messages: [...messages, message],
+      rating: rating,
+      canRate: canRate,
+    );
+  }
+
+  /// This conversation with [rating] recorded, for a rating the backend has
+  /// just accepted. A rated resolution cannot be rated again, so [canRate]
+  /// closes.
+  MagicStarterSupportConversation withRating(MagicStarterSupportRating rating) {
+    return MagicStarterSupportConversation(
+      id: id,
+      number: number,
+      subject: subject,
+      source: source,
+      status: status,
+      priority: priority,
+      lastActivityAt: lastActivityAt,
+      hasUnread: hasUnread,
+      createdAt: createdAt,
+      topic: topic,
+      awaitingAi: awaitingAi,
+      waitingOnTeam: waitingOnTeam,
+      lastMessage: lastMessage,
+      messages: messages,
+      rating: rating,
+      canRate: false,
     );
   }
 }

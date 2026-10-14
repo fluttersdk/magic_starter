@@ -38,6 +38,11 @@ class MagicStarterConfig {
   static const bool _defaultTimezones = false;
   static const bool _defaultBilling = false;
   static const bool _defaultSupport = false;
+  static const bool _defaultSupportCsat = false;
+  static const bool _defaultSupportFeedback = false;
+  static const bool _defaultSupportAttachments = false;
+  static const bool _defaultSupportDiagnostics = false;
+  static const bool _defaultStoreReview = false;
   static const bool _defaultEmailIdentity = true;
   static const bool _defaultPhoneIdentity = false;
 
@@ -66,6 +71,19 @@ class MagicStarterConfig {
   ];
 
   static const int _defaultSupportMessageMaxLength = 2000;
+
+  static const int _defaultSupportAttachmentMaxFiles = 3;
+  static const int _defaultSupportAttachmentMaxBytes = 5 * 1024 * 1024;
+  static const List<String> _defaultSupportAttachmentExtensions = [
+    'jpg',
+    'jpeg',
+    'png',
+    'webp',
+    'pdf',
+  ];
+
+  static const int _defaultStoreReviewMinAccountDays = 7;
+  static const int _defaultStoreReviewIntervalDays = 120;
 
   static const String _defaultHomeRoute = '/';
   static const String _defaultLoginRoute = '/auth/login';
@@ -217,6 +235,137 @@ class MagicStarterConfig {
           _defaultSupport,
         ) ??
         _defaultSupport;
+  }
+
+  /// Returns whether the thumbs rating of a resolved conversation is enabled
+  /// (`magic_starter.features.support_csat`). Needs [hasSupportFeatures].
+  static bool hasSupportCsatFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.support_csat',
+          _defaultSupportCsat,
+        ) ??
+        _defaultSupportCsat;
+  }
+
+  /// Returns whether the occasional 0-10 feedback card is enabled
+  /// (`magic_starter.features.support_feedback`).
+  static bool hasSupportFeedbackFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.support_feedback',
+          _defaultSupportFeedback,
+        ) ??
+        _defaultSupportFeedback;
+  }
+
+  /// Returns whether support messages can carry image and PDF attachments
+  /// (`magic_starter.features.support_attachments`).
+  static bool hasSupportAttachmentsFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.support_attachments',
+          _defaultSupportAttachments,
+        ) ??
+        _defaultSupportAttachments;
+  }
+
+  /// Returns whether a new conversation carries client info and an auto
+  /// screenshot (`magic_starter.features.support_diagnostics`).
+  static bool hasSupportDiagnosticsFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.support_diagnostics',
+          _defaultSupportDiagnostics,
+        ) ??
+        _defaultSupportDiagnostics;
+  }
+
+  /// Returns whether the native store review prompt is enabled
+  /// (`magic_starter.features.store_review`).
+  static bool hasStoreReviewFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.store_review',
+          _defaultStoreReview,
+        ) ??
+        _defaultStoreReview;
+  }
+
+  /// Returns how many files one support message can carry
+  /// (`magic_starter.support.attachments.max_files`).
+  ///
+  /// The backend enforces its own limit; this one stops a pick the backend
+  /// would refuse before it is uploaded, so a host that changes one changes the
+  /// other.
+  static int supportAttachmentMaxFiles() {
+    return Config.get<int>(
+          'magic_starter.support.attachments.max_files',
+          _defaultSupportAttachmentMaxFiles,
+        ) ??
+        _defaultSupportAttachmentMaxFiles;
+  }
+
+  /// Returns the largest attachment in bytes
+  /// (`magic_starter.support.attachments.max_bytes`). Same pairing with the
+  /// backend as [supportAttachmentMaxFiles].
+  static int supportAttachmentMaxBytes() {
+    return Config.get<int>(
+          'magic_starter.support.attachments.max_bytes',
+          _defaultSupportAttachmentMaxBytes,
+        ) ??
+        _defaultSupportAttachmentMaxBytes;
+  }
+
+  /// Returns the attachment extensions the picker offers, lowercase and
+  /// without a dot (`magic_starter.support.attachments.extensions`). Same
+  /// pairing with the backend as [supportAttachmentMaxFiles].
+  static List<String> supportAttachmentExtensions() {
+    return Config.get<List<String>>(
+          'magic_starter.support.attachments.extensions',
+          _defaultSupportAttachmentExtensions,
+        ) ??
+        _defaultSupportAttachmentExtensions;
+  }
+
+  /// Returns the route patterns where the auto screenshot is never captured
+  /// (`magic_starter.diagnostics.deny_capture_routes`), such as a screen that
+  /// shows a password or a payment. Empty by default.
+  static List<String> diagnosticsDenyCaptureRoutes() {
+    return Config.get<List<String>>(
+          'magic_starter.diagnostics.deny_capture_routes',
+          const <String>[],
+        ) ??
+        const <String>[];
+  }
+
+  /// Returns the App Store id the "Rate us" action opens
+  /// (`magic_starter.store_review.app_store_id`), or `null` when unset.
+  ///
+  /// Carries no default: an id cannot be guessed, and iOS needs one for the
+  /// store listing while Android resolves it from the package name.
+  static String? storeReviewAppStoreId() {
+    final Object? id = Config.get<Object>(
+      'magic_starter.store_review.app_store_id',
+    );
+    final String value = id?.toString().trim() ?? '';
+
+    return value.isEmpty ? null : value;
+  }
+
+  /// Returns how old an account must be before the store review prompt can
+  /// show (`magic_starter.store_review.min_account_days`).
+  static int storeReviewMinAccountDays() {
+    return Config.get<int>(
+          'magic_starter.store_review.min_account_days',
+          _defaultStoreReviewMinAccountDays,
+        ) ??
+        _defaultStoreReviewMinAccountDays;
+  }
+
+  /// Returns the fewest days between two store review prompts
+  /// (`magic_starter.store_review.interval_days`).
+  static int storeReviewIntervalDays() {
+    return Config.get<int>(
+          'magic_starter.store_review.interval_days',
+          _defaultStoreReviewIntervalDays,
+        ) ??
+        _defaultStoreReviewIntervalDays;
   }
 
   /// Returns the topics a customer can open a support conversation under

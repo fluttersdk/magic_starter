@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,6 +69,40 @@ Map<String, dynamic> messageJson({
     'body': body,
     'created_at': '2026-10-12T09:00:00+00:00',
   };
+}
+
+Map<String, dynamic> attachmentJson({
+  String id = 'a1',
+  String name = 'error.png',
+  String mime = 'image/png',
+  String kind = 'image',
+}) {
+  return <String, dynamic>{
+    'id': id,
+    'name': name,
+    'mime': mime,
+    'size': 2048,
+    'width': kind == 'image' ? 640 : null,
+    'height': kind == 'image' ? 480 : null,
+    'kind': kind,
+    'url': 'support/conversations/7/attachments/$id',
+  };
+}
+
+/// A picked file, as `Pick` would hand it over. [size] stays null when the
+/// picker could not read it, which is the case the client check must cover.
+MagicFile pickedFile(
+  String name, {
+  String? mimeType,
+  int? size,
+  int bytes = 16,
+}) {
+  return MagicFile(
+    name: name,
+    size: size,
+    mimeType: mimeType,
+    bytes: Uint8List(bytes),
+  );
 }
 
 /// The route whose `fullPath` is [path], flat or inside a layout.
@@ -842,6 +877,378 @@ void main() {
       expect(controller.conversations, isEmpty);
       expect(controller.conversation, isNull);
       expect(controller.listStatus, MagicStarterSupportReadStatus.failed);
+    });
+  });
+
+  group('MagicStarterSupportController attachments and diagnostics', () {
+    test('createConversation with files uploads one part per file', () async {
+      final first = pickedFile('error.png', mimeType: 'image/png');
+      final second = pickedFile('invoice.pdf', mimeType: 'application/pdf');
+      final screenshot = pickedFile('screenshot.png', mimeType: 'image/png');
+
+      final fake = Http.fake((request) {
+        expect(request.method, 'POST');
+        expect(request.url, '/support/conversations');
+        expect(request.data['body'], 'See the attachment');
+        expect(request.data['source'], 'in_app');
+        expect(request.data['attachments[0]'], same(first));
+        expect(request.data['attachments[1]'], same(second));
+        expect(request.data['screenshot'], same(screenshot));
+        expect(request.data['client_context[route]'], '/monitors');
+        expect(request.data['client_context[app_version]'], '1.4.0');
+        expect(request.data, isNot(contains('attachments')));
+        expect(request.data, isNot(contains('client_context')));
+
+        return Http.response(<String, dynamic>{
+          'data': conversationJson(),
+        }, 201);
+      });
+
+      final created = await controller.createConversation(
+        body: 'See the attachment',
+        source: 'in_app',
+        attachments: <MagicFile>[first, second],
+        screenshot: screenshot,
+        clientContext: <String, String>{
+          'route': '/monitors',
+          'app_version': '1.4.0',
+        },
+      );
+
+      fake.assertSentCount(1);
+      expect(created, isNotNull);
+    });
+
+    test('createConversation without files keeps the JSON body', () async {
+      Http.fake((request) {
+        expect(request.data, <String, dynamic>{
+          'body': 'Hello',
+          'source': 'in_app',
+          'client_context': <String, String>{'route': '/monitors'},
+        });
+
+        return Http.response(<String, dynamic>{
+          'data': conversationJson(),
+        }, 201);
+      });
+
+      final created = await controller.createConversation(
+        body: 'Hello',
+        source: 'in_app',
+        clientContext: <String, String>{'route': '/monitors'},
+      );
+
+      expect(created, isNotNull);
+    });
+
+    test('a screenshot alone is enough to take the upload path', () async {
+      final screenshot = pickedFile('screenshot.png', mimeType: 'image/png');
+
+      Http.fake((request) {
+        expect(request.data['screenshot'], same(screenshot));
+        expect(request.data, isNot(contains('attachments[0]')));
+
+        return Http.response(<String, dynamic>{
+          'data': conversationJson(),
+        }, 201);
+      });
+
+      final created = await controller.createConversation(
+        body: 'Hello',
+        source: 'in_app',
+        screenshot: screenshot,
+      );
+
+      expect(created, isNotNull);
+    });
+
+    test('sendMessage with files omits an empty body and appends the '
+        'message with its attachments', () async {
+      final photo = pickedFile('error.png', mimeType: 'image/png');
+
+      Http.fake((request) {
+        if (request.method == 'GET') {
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(
+              messages: <Map<String, dynamic>>[messageJson(id: 1)],
+            ),
+          });
+        }
+
+        expect(request.url, '/support/conversations/7/messages');
+        expect(request.data['attachments[0]'], same(photo));
+        expect(request.data, isNot(contains('body')));
+        expect(request.data, isNot(contains('screenshot')));
+
+        return Http.response(<String, dynamic>{
+          'data': <String, dynamic>{
+            ...messageJson(id: 2, body: ''),
+            'attachments': <Map<String, dynamic>>[attachmentJson()],
+          },
+        }, 201);
+      });
+
+      await controller.loadConversation(7);
+      final sent = await controller.sendMessage(
+        7,
+        '',
+        attachments: <MagicFile>[photo],
+      );
+
+      expect(sent, isTrue);
+
+      final attachment = controller.conversation!.messages.last.attachments;
+      expect(attachment, hasLength(1));
+      expect(attachment.single.name, 'error.png');
+      expect(attachment.single.url, 'support/conversations/7/attachments/a1');
+    });
+
+    test('sendMessage with files keeps a typed body', () async {
+      Http.fake((request) {
+        expect(request.data['body'], 'Here it is');
+        expect(request.data, contains('attachments[0]'));
+
+        return Http.response(<String, dynamic>{
+          'data': messageJson(id: 2, body: 'Here it is'),
+        }, 201);
+      });
+
+      final sent = await controller.sendMessage(
+        7,
+        'Here it is',
+        attachments: <MagicFile>[pickedFile('a.pdf')],
+      );
+
+      expect(sent, isTrue);
+    });
+
+    test('a send without files stays JSON', () async {
+      Http.fake((request) {
+        expect(request.data, <String, dynamic>{'body': 'Any update?'});
+
+        return Http.response(<String, dynamic>{
+          'data': messageJson(id: 2, body: 'Any update?'),
+        }, 201);
+      });
+
+      expect(await controller.sendMessage(7, 'Any update?'), isTrue);
+    });
+
+    test('refuses more files than the limit before any request', () async {
+      final fake = Http.fake((request) => Http.response());
+
+      final sent = await controller.sendMessage(
+        7,
+        'Four',
+        attachments: <MagicFile>[
+          for (var i = 0; i < 4; i++) pickedFile('a$i.png'),
+        ],
+      );
+
+      expect(sent, isFalse);
+      expect(controller.writeError, isNotNull);
+      fake.assertNothingSent();
+    });
+
+    test('refuses an extension outside the allowed list', () async {
+      final fake = Http.fake((request) => Http.response());
+
+      final created = await controller.createConversation(
+        body: 'Hello',
+        source: 'in_app',
+        attachments: <MagicFile>[pickedFile('payload.svg')],
+      );
+
+      expect(created, isNull);
+      expect(controller.writeError, isNotNull);
+      fake.assertNothingSent();
+    });
+
+    test('refuses a file over the size limit', () async {
+      final fake = Http.fake((request) => Http.response());
+
+      final sent = await controller.sendMessage(
+        7,
+        'Big',
+        attachments: <MagicFile>[
+          pickedFile('big.png', size: 5 * 1024 * 1024 + 1),
+        ],
+      );
+
+      expect(sent, isFalse);
+      expect(controller.writeError, isNotNull);
+      fake.assertNothingSent();
+    });
+
+    test('reads the byte length when the picker reported no size', () async {
+      final fake = Http.fake((request) => Http.response());
+
+      // Neither a null size nor a zero one is a measurement (MagicFile.size).
+      for (final unknown in <int?>[null, 0]) {
+        final sent = await controller.sendMessage(
+          7,
+          'Big',
+          attachments: <MagicFile>[
+            pickedFile('big.png', size: unknown, bytes: 5 * 1024 * 1024 + 1),
+          ],
+        );
+
+        expect(sent, isFalse, reason: 'size $unknown must fall back to bytes');
+      }
+
+      fake.assertNothingSent();
+    });
+
+    test('an unmeasured file under the limit is sent', () async {
+      Http.fake((request) {
+        return Http.response(<String, dynamic>{
+          'data': messageJson(id: 2, body: 'Small'),
+        }, 201);
+      });
+
+      final sent = await controller.sendMessage(
+        7,
+        'Small',
+        attachments: <MagicFile>[pickedFile('small.JPG', bytes: 1024)],
+      );
+
+      expect(sent, isTrue);
+      expect(controller.writeError, isNull);
+    });
+
+    test('matches a host extension list written in upper case', () async {
+      Config.set('magic_starter.support.attachments.extensions', <String>[
+        'PNG',
+      ]);
+      Http.fake((request) {
+        return Http.response(<String, dynamic>{
+          'data': messageJson(id: 2, body: 'Shot'),
+        }, 201);
+      });
+
+      final sent = await controller.sendMessage(
+        7,
+        'Shot',
+        attachments: <MagicFile>[pickedFile('shot.png', bytes: 1024)],
+      );
+
+      expect(sent, isTrue);
+      expect(controller.writeError, isNull);
+    });
+
+    test('rate posts the rating and the comment', () async {
+      Http.fake((request) {
+        if (request.method == 'GET') {
+          return Http.response(<String, dynamic>{
+            'data': <String, dynamic>{
+              ...conversationJson(status: 'resolved'),
+              'can_rate': true,
+              'rating': null,
+            },
+          });
+        }
+
+        expect(request.method, 'POST');
+        expect(request.url, '/support/conversations/7/rating');
+        expect(request.data, <String, dynamic>{
+          'rating': 'down',
+          'comment': 'Still broken',
+        });
+
+        return Http.response(<String, dynamic>{});
+      });
+
+      await controller.loadConversation(7);
+      expect(controller.conversation!.canRate, isTrue);
+
+      final rated = await controller.rate(7, 'down', comment: 'Still broken');
+
+      expect(rated, isTrue);
+      expect(controller.conversation!.canRate, isFalse);
+      expect(controller.conversation!.rating!.value, 'down');
+      expect(controller.conversation!.rating!.comment, 'Still broken');
+    });
+
+    test('rate leaves the comment out when there is none', () async {
+      Http.fake((request) {
+        expect(request.data, <String, dynamic>{'rating': 'up'});
+
+        return Http.response(<String, dynamic>{});
+      });
+
+      expect(await controller.rate(7, 'up'), isTrue);
+    });
+
+    test('a 422 on rating surfaces as an error, not a throw', () async {
+      Http.fake((request) {
+        return Http.response(<String, dynamic>{
+          'message': 'The conversation is not resolved.',
+          'errors': <String, dynamic>{
+            'rating': <String>['The conversation is not resolved.'],
+          },
+        }, 422);
+      });
+
+      final rated = await controller.rate(7, 'up');
+
+      expect(rated, isFalse);
+      expect(
+        controller.getError('rating'),
+        'The conversation is not resolved.',
+      );
+    });
+
+    test('a 404 on rating resolves the thread to not-found', () async {
+      Http.fake((request) => Http.response(<String, dynamic>{}, 404));
+
+      expect(await controller.rate(99, 'up'), isFalse);
+      expect(controller.threadStatus, MagicStarterSupportReadStatus.notFound);
+    });
+
+    test('attachmentHeaders carries the bearer token', () async {
+      Auth.fake();
+      addTearDown(Auth.unfake);
+      await Auth.login(<String, dynamic>{
+        'token': 'abc123',
+      }, MagicStarterAuthUser());
+
+      expect(await controller.attachmentHeaders(), <String, String>{
+        'Authorization': 'Bearer abc123',
+      });
+    });
+
+    test('attachmentHeaders is empty without a token', () async {
+      Auth.fake();
+      addTearDown(Auth.unfake);
+
+      expect(await controller.attachmentHeaders(), isEmpty);
+    });
+
+    test(
+      'attachmentLink posts to the link endpoint and answers the url',
+      () async {
+        final fake = Http.fake((request) {
+          expect(request.method, 'POST');
+          expect(request.url, '/support/conversations/7/attachments/a2/link');
+
+          return Http.response(<String, dynamic>{
+            'url': 'https://api.example.com/signed?sig=1',
+          });
+        });
+
+        final url = await controller.attachmentLink(7, 'a2');
+
+        fake.assertSentCount(1);
+        expect(url, 'https://api.example.com/signed?sig=1');
+      },
+    );
+
+    test('attachmentLink answers null when the backend refuses', () async {
+      Log.fake();
+      addTearDown(Log.unfake);
+      Http.fake((request) => Http.response(<String, dynamic>{}, 403));
+
+      expect(await controller.attachmentLink(7, 'a1'), isNull);
     });
   });
 

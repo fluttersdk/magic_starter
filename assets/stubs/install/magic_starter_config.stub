@@ -21,6 +21,11 @@ Map<String, dynamic> get magicStarterConfig => {
       'timezones': {{ feature_timezones }},
       'billing': {{ feature_billing }},
       'support': {{ feature_support }},
+      'support_csat': {{ feature_support_csat }},
+      'support_feedback': {{ feature_support_feedback }},
+      'support_attachments': {{ feature_support_attachments }},
+      'support_diagnostics': {{ feature_support_diagnostics }},
+      'store_review': {{ feature_store_review }},
     },
     'auth': {
       'email': true,

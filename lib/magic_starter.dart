@@ -33,6 +33,7 @@ export 'src/http/controllers/magic_starter_billing_controller.dart';
 export 'package:magic_payments/magic_payments.dart' show BillingCycle;
 
 export 'src/http/controllers/magic_starter_newsletter_controller.dart';
+export 'src/http/controllers/magic_starter_feedback_controller.dart';
 export 'src/http/controllers/magic_starter_support_controller.dart';
 export 'src/routes/auth_routes.dart';
 export 'src/routes/profile_routes.dart';
@@ -46,6 +47,7 @@ export 'src/ui/views/auth/magic_starter_reset_password_view.dart';
 export 'src/ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 export 'src/ui/views/auth/magic_starter_otp_verify_view.dart';
 export 'src/ui/views/profile/magic_starter_profile_settings_view.dart';
+export 'src/ui/views/support/magic_starter_feedback_view.dart';
 export 'src/ui/views/support/magic_starter_support_create_view.dart';
 export 'src/ui/views/support/magic_starter_support_index_view.dart';
 export 'src/ui/views/support/magic_starter_support_thread_view.dart';
@@ -70,6 +72,7 @@ export 'src/ui/components/page_header/index.dart';
 export 'src/ui/widgets/magic_starter_dialog_shell.dart';
 export 'src/ui/widgets/magic_starter_hide_bottom_nav.dart';
 export 'src/ui/widgets/magic_starter_hide_chrome.dart';
+export 'src/ui/widgets/magic_starter_feedback_card.dart';
 export 'src/ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 
 // Design-system components (Wave 4 atomic-component library).
@@ -118,6 +121,9 @@ export 'src/support/session_device_title.dart';
 export 'src/support/plan_upgrade.dart';
 export 'src/support/upgrade_prompt.dart';
 export 'src/support/magic_starter_onboarding.dart';
+export 'src/support/screen_capture.dart';
+export 'src/support/store_review.dart';
+export 'src/support/support_client_context.dart';
 export 'src/http/magic_starter_guest_claim.dart';
 export 'src/middleware/ensure_authenticated.dart';
 export 'src/middleware/redirect_if_authenticated.dart';

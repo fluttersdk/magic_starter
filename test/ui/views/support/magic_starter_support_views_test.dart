@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:magic_starter/src/ui/views/support/magic_starter_support_message_bubble.dart';
 
 // ---------------------------------------------------------------------------
@@ -62,6 +63,8 @@ Map<String, dynamic> conversationJson({
   bool waitingOnTeam = false,
   Map<String, dynamic>? lastMessage,
   List<Map<String, dynamic>>? messages,
+  bool canRate = false,
+  Map<String, dynamic>? rating,
 }) {
   return <String, dynamic>{
     'id': id,
@@ -79,6 +82,8 @@ Map<String, dynamic> conversationJson({
     'waiting_on_team': waitingOnTeam,
     'last_message': ?lastMessage,
     'messages': ?messages,
+    'can_rate': canRate,
+    'rating': ?rating,
   };
 }
 
@@ -113,6 +118,7 @@ Map<String, dynamic> messageJson({
   String kind = 'message',
   String? senderName,
   String? senderAvatarUrl,
+  List<Map<String, dynamic>>? attachments,
 }) {
   return <String, dynamic>{
     'id': id,
@@ -120,6 +126,7 @@ Map<String, dynamic> messageJson({
     'kind': kind,
     'body': body,
     'created_at': '2026-10-12T09:00:00+00:00',
+    'attachments': ?attachments,
     if (senderName != null || senderAvatarUrl != null)
       'sender': <String, dynamic>{
         'name': senderName,
@@ -161,6 +168,55 @@ MagicResponse ok(Object? data) =>
 
 int count(List<SentRequest> sent, String method, String url) =>
     sent.where((s) => s.method == method && s.url == url).length;
+
+Map<String, dynamic> attachmentJson({
+  int id = 11,
+  String name = 'error.png',
+  String kind = 'image',
+}) {
+  return <String, dynamic>{
+    'id': id,
+    'name': name,
+    'mime': kind == 'image' ? 'image/png' : 'application/pdf',
+    'size': 2048,
+    'width': kind == 'image' ? 640 : null,
+    'height': kind == 'image' ? 480 : null,
+    'kind': kind,
+    'url': 'support/conversations/7/attachments/$id',
+  };
+}
+
+/// A picked file, as `Pick.files` hands it over. [size] defaults to the byte
+/// count; pass it to claim a size the picker reported.
+MagicFile pickedFile(String name, {int bytes = 1024, int? size}) {
+  return MagicFile(
+    name: name,
+    size: size ?? bytes,
+    mimeType: name.endsWith('.pdf') ? 'application/pdf' : 'image/png',
+    bytes: Uint8List(bytes),
+  );
+}
+
+/// Records what the screen asked the system to open instead of opening it.
+class _RecordingLaunchAdapter implements LaunchAdapter {
+  final List<Uri> launched = <Uri>[];
+  final List<String?> windowNames = <String?>[];
+
+  @override
+  Future<bool> launch(
+    Uri url, {
+    LaunchMode mode = LaunchMode.externalApplication,
+    String? webOnlyWindowName,
+  }) async {
+    launched.add(url);
+    windowNames.add(webOnlyWindowName);
+
+    return true;
+  }
+
+  @override
+  Future<bool> canLaunch(Uri url) async => true;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -208,6 +264,7 @@ void main() {
     WidgetTester tester, {
     required String at,
     Size size = const Size(1280, 2000),
+    Future<List<MagicFile>> Function(List<String> extensions)? pickFiles,
   }) async {
     // A logical size: flutter_test's default pixel ratio is 3, which would turn
     // a 1280 surface into a 427 px phone.
@@ -223,11 +280,15 @@ void main() {
     );
     MagicRoute.page(
       MagicStarterConfig.supportCreateRoute(),
-      () => MagicStarter.view.make('support.create'),
+      () => pickFiles == null
+          ? MagicStarter.view.make('support.create')
+          : MagicStarterSupportCreateView(pickFiles: pickFiles),
     ).stacked();
     MagicRoute.page(
       MagicStarterConfig.supportThreadRoute(),
-      () => MagicStarter.view.make('support.thread'),
+      () => pickFiles == null
+          ? MagicStarter.view.make('support.thread')
+          : MagicStarterSupportThreadView(pickFiles: pickFiles),
     ).stacked();
     MagicRouter.instance.setInitialLocation(at);
 
@@ -1836,6 +1897,545 @@ void main() {
     });
   });
 
+  group('attachments', () {
+    const ValueKey<String> attach = ValueKey<String>('support-attach');
+    const ValueKey<String> send = ValueKey<String>('support-send');
+
+    List<SentRequest> threadBackend({List<Map<String, dynamic>>? messages}) {
+      return fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            messages: messages ?? <Map<String, dynamic>>[messageJson()],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+        'POST /support/conversations/7/messages': (request) => ok(
+          messageJson(
+            id: 99,
+            body: ((request.data as Map)['body'] as String?) ?? '',
+            attachments: <Map<String, dynamic>>[attachmentJson(id: 31)],
+          ),
+        ),
+        'POST /support/conversations/7/attachments/12/link': (_) =>
+            Http.response(<String, dynamic>{
+              'url': 'https://api.example.com/signed?sig=1',
+            }),
+      });
+    }
+
+    Map<String, dynamic> imageMessage() => messageJson(
+      id: 2,
+      senderType: 'staff',
+      body: 'Here is the screenshot',
+      attachments: <Map<String, dynamic>>[attachmentJson()],
+    );
+
+    Future<void> pick(WidgetTester tester) async {
+      await tester.tap(find.byKey(attach));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the thread shows no attach button while the flag is off', (
+      tester,
+    ) async {
+      threadBackend();
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(attach), findsNothing);
+    });
+
+    testWidgets(
+      'the create view shows no attach button while the flag is off',
+      (tester) async {
+        fakeBackend({});
+
+        await mount(tester, at: '/support/new');
+
+        expect(find.byKey(attach), findsNothing);
+      },
+    );
+
+    group('with the flag on', () {
+      setUp(() {
+        Config.set('magic_starter.features.support_attachments', true);
+        Config.set(
+          'network.drivers.api.base_url',
+          'https://api.example.com/v1',
+        );
+      });
+
+      testWidgets('the picker is asked for the shipped extensions only', (
+        tester,
+      ) async {
+        threadBackend();
+        List<String>? asked;
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (extensions) async {
+            asked = extensions;
+
+            return <MagicFile>[];
+          },
+        );
+        await pick(tester);
+
+        expect(asked, <String>['jpg', 'jpeg', 'png', 'webp', 'pdf']);
+      });
+
+      testWidgets('a picked file shows as a chip with its size and can go', (
+        tester,
+      ) async {
+        threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[
+            pickedFile('error.png', bytes: 1536),
+          ],
+        );
+        await pick(tester);
+
+        expect(find.text('error.png'), findsOneWidget);
+        expect(find.text('1.5 KB'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('support-attachment-remove-0')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('error.png'), findsNothing);
+      });
+
+      testWidgets('a fourth file shows the limit error and sends nothing', (
+        tester,
+      ) async {
+        final sent = threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[
+            for (var i = 1; i <= 4; i++) pickedFile('shot$i.png'),
+          ],
+        );
+        await pick(tester);
+        await tester.tap(find.byKey(send));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            trans('magic_starter.support.attachment_too_many', {'max': 3}),
+          ),
+          findsOneWidget,
+        );
+        expect(count(sent, 'POST', '/support/conversations/7/messages'), 0);
+      });
+
+      testWidgets('a file over 5 MB shows the size error and sends nothing', (
+        tester,
+      ) async {
+        final sent = threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[
+            pickedFile('huge.png', bytes: 16, size: 5 * 1024 * 1024 + 1),
+          ],
+        );
+        await pick(tester);
+        await tester.tap(find.byKey(send));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            trans('magic_starter.support.attachment_too_large', {
+              'name': 'huge.png',
+              'max': 5,
+            }),
+          ),
+          findsOneWidget,
+        );
+        expect(count(sent, 'POST', '/support/conversations/7/messages'), 0);
+      });
+
+      testWidgets('an image-only reply is sent and the chips clear', (
+        tester,
+      ) async {
+        final sent = threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[pickedFile('error.png')],
+        );
+        await pick(tester);
+        await tester.tap(find.byKey(send));
+        await tester.pumpAndSettle();
+
+        final post = sent.singleWhere(
+          (s) =>
+              s.method == 'POST' &&
+              s.url == '/support/conversations/7/messages',
+        );
+        final Map data = post.data! as Map;
+        expect(data.keys, contains('attachments[0]'));
+        expect(data.keys, isNot(contains('body')));
+        expect(find.text('error.png'), findsNothing);
+      });
+
+      testWidgets('the create view posts the picked files with the message', (
+        tester,
+      ) async {
+        final sent = fakeBackend({
+          'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[]),
+          'POST /support/conversations': (_) => ok(
+            conversationJson(
+              id: 9,
+              messages: <Map<String, dynamic>>[messageJson(body: 'See file')],
+            ),
+          ),
+          'GET /support/conversations/9': (_) => ok(conversationJson(id: 9)),
+          'POST /support/conversations/9/seen': (_) => ok(null),
+        });
+
+        await mount(
+          tester,
+          at: '/support/new',
+          pickFiles: (_) async => <MagicFile>[pickedFile('error.png')],
+        );
+        await pick(tester);
+        await tester.enterText(find.byType(EditableText), 'See file');
+        await tester.pump();
+        await tester.tap(
+          find.text(trans('magic_starter.support.create_submit')),
+        );
+        await tester.pumpAndSettle();
+
+        final post = sent.singleWhere(
+          (s) => s.method == 'POST' && s.url == '/support/conversations',
+        );
+        final Map data = post.data! as Map;
+        expect(data['body'], 'See file');
+        expect(data.keys, contains('attachments[0]'));
+      });
+
+      testWidgets('a bubble shows the image through the bearer header', (
+        tester,
+      ) async {
+        threadBackend(messages: <Map<String, dynamic>>[imageMessage()]);
+        await Auth.login(<String, dynamic>{
+          'token': 'abc123',
+        }, MagicStarterAuthUser());
+
+        await mount(tester, at: '/support/7');
+
+        final Image image = tester.widget<Image>(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('support-attachment-11')),
+            matching: find.byType(Image),
+          ),
+        );
+        final NetworkImage provider = image.image as NetworkImage;
+        expect(
+          provider.url,
+          'https://api.example.com/v1/support/conversations/7/attachments/11',
+        );
+        expect(provider.headers, <String, String>{
+          'Authorization': 'Bearer abc123',
+        });
+      });
+
+      testWidgets('tapping the thumbnail opens it full size', (tester) async {
+        threadBackend(messages: <Map<String, dynamic>>[imageMessage()]);
+
+        await mount(tester, at: '/support/7');
+        expect(find.byType(Image), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('support-attachment-11')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(Image), findsNWidgets(2));
+      });
+
+      testWidgets('a PDF is an untrusted chip that opens the signed link', (
+        tester,
+      ) async {
+        final launcher = _RecordingLaunchAdapter();
+        Magic.singleton('launch', () => LaunchService(adapter: launcher));
+        final sent = threadBackend(
+          messages: <Map<String, dynamic>>[
+            messageJson(
+              id: 2,
+              senderType: 'staff',
+              body: 'The invoice',
+              attachments: <Map<String, dynamic>>[
+                attachmentJson(id: 12, name: 'invoice.pdf', kind: 'pdf'),
+              ],
+            ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7');
+
+        expect(find.text('invoice.pdf'), findsOneWidget);
+        expect(
+          find.text(trans('magic_starter.support.attachment_untrusted')),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('support-attachment-12')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          count(sent, 'POST', '/support/conversations/7/attachments/12/link'),
+          1,
+        );
+        expect(launcher.launched, <Uri>[
+          Uri.parse('https://api.example.com/signed?sig=1'),
+        ]);
+        // Opened after the link request, so a new web window is a popup Safari
+        // blocks; the current tab downloads it and stays where it was.
+        expect(launcher.windowNames, <String?>['_self']);
+      });
+
+      testWidgets('attachments wrap from one shared start edge, evenly spaced', (
+        tester,
+      ) async {
+        threadBackend(
+          messages: <Map<String, dynamic>>[
+            messageJson(
+              id: 2,
+              body: 'Three files',
+              attachments: <Map<String, dynamic>>[
+                attachmentJson(id: 21, name: 'one.png'),
+                attachmentJson(
+                  id: 22,
+                  name: 'a-fairly-long-invoice-name.pdf',
+                  kind: 'pdf',
+                ),
+                attachmentJson(id: 23, name: 'two.png'),
+              ],
+            ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7');
+
+        final List<Rect> items = <Rect>[
+          for (final int id in <int>[21, 22, 23])
+            tester.getRect(
+              find.byKey(ValueKey<String>('support-attachment-$id')),
+            ),
+        ];
+        final double firstRowTop = items.first.top;
+        final List<Rect> firstRow = items
+            .where((Rect r) => r.top == firstRowTop)
+            .toList();
+        final List<Rect> laterRows = items
+            .where((Rect r) => r.top != firstRowTop)
+            .toList();
+
+        // The pdf chip is wide enough to push the last image onto a second row.
+        expect(laterRows, isNotEmpty);
+        for (final Rect row in laterRows) {
+          expect(row.left, firstRow.first.left);
+        }
+        for (var i = 1; i < firstRow.length; i++) {
+          expect(firstRow[i].left - firstRow[i - 1].right, 8);
+        }
+        expect(laterRows.first.top - firstRow.first.bottom, 8);
+      });
+    });
+
+    testWidgets('a bubble shows no attachment while the flag is off', (
+      tester,
+    ) async {
+      threadBackend(messages: <Map<String, dynamic>>[imageMessage()]);
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.text('Here is the screenshot'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('support-attachment-11')),
+        findsNothing,
+      );
+    });
+  });
+
+  group('the rating block', () {
+    const ValueKey<String> block = ValueKey<String>('support-rating');
+    const ValueKey<String> submit = ValueKey<String>('support-rating-submit');
+
+    Map<String, dynamic> ratingJson(String value, {String? comment}) =>
+        <String, dynamic>{
+          'value': value,
+          'comment': comment,
+          'rated_at': '2026-10-12T10:00:00+00:00',
+        };
+
+    List<SentRequest> backend({
+      String status = 'resolved',
+      bool canRate = true,
+      Map<String, dynamic>? rating,
+    }) {
+      return fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            status: status,
+            canRate: canRate,
+            rating: rating,
+            messages: <Map<String, dynamic>>[messageJson()],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+        'POST /support/conversations/7/rating': (_) => ok(null),
+      });
+    }
+
+    setUp(() => Config.set('magic_starter.features.support_csat', true));
+
+    testWidgets('is absent while the flag is off', (tester) async {
+      Config.set('magic_starter.features.support_csat', false);
+      backend();
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsNothing);
+    });
+
+    testWidgets('is absent on a conversation that is not resolved', (
+      tester,
+    ) async {
+      backend(status: 'open');
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsNothing);
+    });
+
+    testWidgets('is absent when it cannot be rated and has no rating', (
+      tester,
+    ) async {
+      backend(canRate: false);
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsNothing);
+    });
+
+    testWidgets('posts the chosen value and thanks the customer', (
+      tester,
+    ) async {
+      final sent = backend();
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.support.rating_prompt')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('support-rating-down')),
+      );
+      await tester.pump();
+      await tester.enterText(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('support-rating-comment')),
+          matching: find.byType(EditableText),
+        ),
+        'Too slow',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(submit));
+      await tester.pumpAndSettle();
+
+      final post = sent.singleWhere(
+        (s) => s.method == 'POST' && s.url == '/support/conversations/7/rating',
+      );
+      expect(post.data, <String, dynamic>{
+        'rating': 'down',
+        'comment': 'Too slow',
+      });
+      expect(
+        find.byKey(const ValueKey<String>('support-rating-thanks')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the thumbs and the send button are 44 tall on a phone', (
+      tester,
+    ) async {
+      backend();
+
+      await mount(tester, at: '/support/7', size: const Size(390, 2400));
+
+      for (final String key in <String>[
+        'support-rating-up',
+        'support-rating-down',
+        'support-rating-submit',
+      ]) {
+        expect(
+          tester.getSize(find.byKey(ValueKey<String>(key))).height,
+          greaterThanOrEqualTo(44),
+          reason: key,
+        );
+      }
+    });
+
+    testWidgets('does nothing until a thumb is chosen', (tester) async {
+      final sent = backend();
+
+      await mount(tester, at: '/support/7');
+      await tester.tap(find.byKey(submit));
+      await tester.pumpAndSettle();
+
+      expect(count(sent, 'POST', '/support/conversations/7/rating'), 0);
+    });
+
+    testWidgets('an existing rating shows its choice and can be changed', (
+      tester,
+    ) async {
+      final sent = backend(
+        canRate: false,
+        rating: ratingJson('up', comment: 'Great help'),
+      );
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsOneWidget);
+      expect(find.text('Great help'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.support.rating_update')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('support-rating-down')),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(submit));
+      await tester.pumpAndSettle();
+
+      final post = sent.singleWhere(
+        (s) => s.method == 'POST' && s.url == '/support/conversations/7/rating',
+      );
+      expect((post.data as Map)['rating'], 'down');
+    });
+  });
+
   group('the user menu', () {
     Future<void> openMenu(WidgetTester tester) async {
       await tester.pumpWidget(
@@ -1863,6 +2463,331 @@ void main() {
       await openMenu(tester);
 
       expect(find.text(trans('magic_starter.nav.support')), findsNothing);
+    });
+
+    group('feedback and store review', () {
+      setUp(() {
+        Config.set('magic_starter.features.support_feedback', true);
+        Config.set('magic_starter.features.store_review', true);
+        MagicStarterStoreReview.debugIsWebOverride = false;
+        Auth.fake(
+          user: MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 5,
+            'name': 'Ada Lovelace',
+            'email': 'ada@example.com',
+            'email_verified_at': '2026-10-01T09:00:00+00:00',
+          }),
+        );
+      });
+
+      tearDown(MagicStarterStoreReview.resetForTesting);
+
+      testWidgets('offers Send feedback when the feature is on', (
+        tester,
+      ) async {
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsOneWidget);
+      });
+
+      testWidgets('offers no Send feedback to a guest', (tester) async {
+        Auth.fake(
+          user: MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 6,
+            'is_guest': true,
+          }),
+        );
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsNothing);
+      });
+
+      testWidgets('offers no Send feedback to an unverified email', (
+        tester,
+      ) async {
+        Auth.fake(
+          user: MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 7,
+            'name': 'Grace',
+            'email': 'grace@example.com',
+            'email_verified_at': null,
+          }),
+        );
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsNothing);
+      });
+
+      testWidgets('offers no Send feedback when the feature is off', (
+        tester,
+      ) async {
+        Config.set('magic_starter.features.support_feedback', false);
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsNothing);
+      });
+
+      testWidgets('offers Rate us on a device', (tester) async {
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.rate_us')), findsOneWidget);
+      });
+
+      testWidgets('hides Rate us on the web', (tester) async {
+        MagicStarterStoreReview.debugIsWebOverride = true;
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.rate_us')), findsNothing);
+      });
+    });
+  });
+
+  group('the feedback page', () {
+    setUp(() {
+      Config.set('magic_starter.features.support_feedback', true);
+    });
+
+    tearDown(MagicStarterStoreReview.resetForTesting);
+
+    Future<void> mountRoutes(WidgetTester tester, {required String at}) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 2000);
+      addTearDown(tester.view.reset);
+
+      Kernel.register('auth', AllowAllMiddleware.new);
+      addTearDown(Kernel.flush);
+      MagicStarter.view.registerLayout('layout.app', (child) => child);
+
+      registerMagicStarterSupportRoutes();
+      MagicRouter.instance.setInitialLocation(at);
+
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (context, child) =>
+              WindTheme(data: WindThemeData(), child: child!),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('resolves to the feedback form, not to a thread', (
+      tester,
+    ) async {
+      final sent = fakeBackend({
+        'GET /support/feedback': (_) =>
+            Http.response(<String, dynamic>{'eligible': false}),
+      });
+
+      await mountRoutes(tester, at: '/support/feedback');
+
+      expect(
+        find.text(trans('magic_starter.support.feedback_question')),
+        findsOneWidget,
+      );
+      expect(count(sent, 'GET', '/support/conversations/feedback'), 0);
+    });
+
+    testWidgets('posts the chosen score', (tester) async {
+      final sent = fakeBackend({
+        'POST /support/feedback': (_) =>
+            Http.response(<String, dynamic>{'conversation_id': null}),
+      });
+      await mountRoutes(tester, at: '/support/feedback');
+
+      await tester.tap(find.byKey(const ValueKey<String>('feedback-score-8')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey<String>('feedback-submit')));
+      await tester.pumpAndSettle();
+
+      final post = sent.singleWhere((s) => s.method == 'POST');
+      expect((post.data! as Map)['score'], 8);
+    });
+
+    test('is not registered while the feature is off', () {
+      Config.set('magic_starter.features.support_feedback', false);
+
+      registerMagicStarterSupportRoutes();
+
+      expect(
+        MagicRouter.instance.allRoutes.map((route) => route.fullPath),
+        isNot(contains(magicStarterSupportFeedbackRoute())),
+      );
+    });
+  });
+
+  group('diagnostics on the create view', () {
+    const ValueKey<String> screenshot = ValueKey<String>('support-screenshot');
+    const ValueKey<String> removeScreenshot = ValueKey<String>(
+      'support-screenshot-remove',
+    );
+
+    /// A real 1x1 PNG, so the preview decodes what a capture would hold.
+    final Uint8List png = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    );
+
+    late List<SentRequest> sent;
+
+    setUp(() {
+      Config.set('magic_starter.features.support_diagnostics', true);
+      PackageInfo.setMockInitialValues(
+        appName: 'Uptizm',
+        packageName: 'com.example.app',
+        version: '2.3.0',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+      MagicStarterScreenCapture.resetForTesting();
+      MagicStarterScreenCapture.holder.debugHold(png, route: '/monitors/3');
+
+      sent = fakeBackend({
+        'POST /support/conversations': (_) => ok(
+          conversationJson(
+            id: 9,
+            messages: <Map<String, dynamic>>[messageJson()],
+          ),
+        ),
+        'GET /support/conversations/9': (_) => ok(conversationJson(id: 9)),
+        'POST /support/conversations/9/seen': (_) => ok(null),
+      });
+    });
+
+    tearDown(MagicStarterScreenCapture.resetForTesting);
+
+    Future<Map> send(WidgetTester tester) async {
+      await tester.enterText(find.byType(EditableText), 'It broke');
+      await tester.pump();
+      await tester.tap(find.text(trans('magic_starter.support.create_submit')));
+      await tester.pumpAndSettle();
+
+      return sent
+              .singleWhere(
+                (s) => s.method == 'POST' && s.url == '/support/conversations',
+              )
+              .data!
+          as Map;
+    }
+
+    testWidgets('shows the screenshot and sends it with the client info', (
+      tester,
+    ) async {
+      await mount(tester, at: '/support/new');
+
+      expect(find.byKey(screenshot), findsOneWidget);
+
+      final data = await send(tester);
+
+      final MagicFile file = data['screenshot'] as MagicFile;
+      expect(file.name, 'screenshot.png');
+      expect(file.mimeType, 'image/png');
+      expect(data['client_context[route]'], '/monitors/3');
+      expect(data['client_context[app_version]'], '2.3.0');
+      expect(data['client_context[build_number]'], '45');
+      expect(data['client_context[platform]'], isNotEmpty);
+      expect(data['client_context[locale]'], 'en');
+      expect(data['client_context[timezone]'], isNotEmpty);
+    });
+
+    testWidgets('remove drops the screenshot but keeps the client info', (
+      tester,
+    ) async {
+      await mount(tester, at: '/support/new');
+
+      await tester.tap(find.byKey(removeScreenshot));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(screenshot), findsNothing);
+      expect(MagicStarterScreenCapture.holder.bytes, isNull);
+
+      final data = await send(tester);
+
+      expect(data.containsKey('screenshot'), isFalse);
+      expect((data['client_context'] as Map)['route'], '/monitors/3');
+    });
+
+    testWidgets('a sent screenshot is not offered again', (tester) async {
+      await mount(tester, at: '/support/new');
+
+      await send(tester);
+
+      expect(MagicStarterScreenCapture.holder.bytes, isNull);
+    });
+
+    testWidgets('a screenshot that arrives after the page opened is shown', (
+      tester,
+    ) async {
+      MagicStarterScreenCapture.holder.clear();
+      await mount(tester, at: '/support/new');
+      expect(find.byKey(screenshot), findsNothing);
+
+      MagicStarterScreenCapture.holder.debugHold(png, route: '/monitors/3');
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(screenshot), findsOneWidget);
+    });
+
+    testWidgets('a refused screenshot is explained under its preview', (
+      tester,
+    ) async {
+      fakeBackend({
+        'POST /support/conversations': (_) => Http.response(<String, dynamic>{
+          'message': 'The screenshot is too large.',
+          'errors': <String, dynamic>{
+            'screenshot': <String>['The screenshot is too large.'],
+          },
+        }, 422),
+      });
+      await mount(tester, at: '/support/new');
+
+      await tester.enterText(find.byType(EditableText), 'It broke');
+      await tester.pump();
+      await tester.tap(find.text(trans('magic_starter.support.create_submit')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('The screenshot is too large.'), findsOneWidget);
+      expect(find.byKey(screenshot), findsOneWidget);
+    });
+
+    testWidgets('an error on an unplaced field falls back to the write error', (
+      tester,
+    ) async {
+      fakeBackend({
+        'POST /support/conversations': (_) => Http.response(<String, dynamic>{
+          'message': 'The client_context.route field is too long.',
+          'errors': <String, dynamic>{
+            'client_context.route': <String>['The route is too long.'],
+          },
+        }, 422),
+      });
+      await mount(tester, at: '/support/new');
+
+      await tester.enterText(find.byType(EditableText), 'It broke');
+      await tester.pump();
+      await tester.tap(find.text(trans('magic_starter.support.create_submit')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('magic_starter.support.create_error')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('sends neither while the flag is off', (tester) async {
+      Config.set('magic_starter.features.support_diagnostics', false);
+
+      await mount(tester, at: '/support/new');
+
+      expect(find.byKey(screenshot), findsNothing);
+
+      final data = await send(tester);
+
+      expect(data.containsKey('screenshot'), isFalse);
+      expect(data.containsKey('client_context'), isFalse);
     });
   });
 }
