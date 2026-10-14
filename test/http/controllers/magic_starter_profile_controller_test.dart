@@ -2142,6 +2142,7 @@ class _RecordingLaunchAdapter implements LaunchAdapter {
   Future<bool> launch(
     Uri url, {
     LaunchMode mode = LaunchMode.externalApplication,
+    String? webOnlyWindowName,
   }) async {
     launched.add(url);
 

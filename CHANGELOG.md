@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 - **`MagicStarterConfig.supportThreadPath(Object id)`**, the route to one support conversation, beside `supportThreadRoute()` (the `:id` pattern). The support index, the create screen and the billing screen's Contact sales navigate through it. (`lib/src/configuration/magic_starter_config.dart`)
 
+### Changed
+
+- **`magic` floor moves `^0.0.28` to `^0.0.29`.** The reset-password, invitation-accept and support views read route values through `MagicRouter.pathParameterOf` and `queryParameterOf`, which magic 0.0.29 introduces, so an adopter on an older magic now gets a version-solve error instead of a compile error inside this package. magic 0.0.29 also adds `webOnlyWindowName` to `LaunchAdapter.launch()`, so a hand-written `LaunchAdapter` in an app's own tests adds that named parameter; the three test doubles here do. (`pubspec.yaml`, `test/`)
+
 ### Fixed
 
 - **Password reset works from the mailed link.** The reset view read the token from a `:token` path segment the route does not have, so it posted an empty token and the backend answered 422. It now reads `token` and `email` from the link's query string (`?token=...&email=...`) through `MagicRouter.instance.queryParameterOf`, once, in `didChangeDependencies`. Needs a `magic` with `queryParameterOf` and `pathParameterOf`. (`lib/src/ui/views/auth/magic_starter_reset_password_view.dart`)
