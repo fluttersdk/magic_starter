@@ -26,7 +26,9 @@ class _MagicStarterResetPasswordViewState
   static const _iconHidden = Icons.visibility_off;
   static const _iconCheck = Icons.check_circle_outline;
 
-  late final _token = MagicRouter.instance.pathParameter('token') ?? '';
+  /// The `token` of the mailed link, a query parameter: the route has no
+  /// `:token` segment. Null until [didChangeDependencies] has read it.
+  String? _token;
   late final form = MagicFormData({
     'email': '',
     'password': '',
@@ -38,12 +40,25 @@ class _MagicStarterResetPasswordViewState
 
   @override
   void onInit() {
-    final email = MagicRouter.instance.queryParameter('email');
+    controller.clearErrors();
+    controller.setEmpty();
+  }
+
+  // The route state cannot be read in initState, so the link is read here, on
+  // the first call only: this re-runs on inherited changes, and a later read
+  // would overwrite the email the viewer has since edited.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_token != null) return;
+
+    final MagicRouter router = MagicRouter.instance;
+    _token = router.queryParameterOf(context, 'token') ?? '';
+
+    final String? email = router.queryParameterOf(context, 'email');
     if (email != null && email.isNotEmpty) {
       form.set('email', email);
     }
-    controller.clearErrors();
-    controller.setEmpty();
   }
 
   @override
@@ -53,7 +68,7 @@ class _MagicStarterResetPasswordViewState
     if (!form.validate()) return;
 
     await controller.doResetPassword(
-      token: _token,
+      token: _token!,
       email: form.get('email'),
       password: form.get('password'),
       passwordConfirmation: form.get('password_confirmation'),

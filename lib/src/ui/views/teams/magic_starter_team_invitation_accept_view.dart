@@ -22,7 +22,9 @@ class _MagicStarterTeamInvitationAcceptViewState
           MagicStarterTeamController,
           MagicStarterTeamInvitationAcceptView
         > {
-  late final _token = MagicRouter.instance.pathParameter('token') ?? '';
+  /// The `:token` of THIS page's own route. Null until [didChangeDependencies]
+  /// has read it.
+  String? _token;
 
   @override
   void onInit() {
@@ -30,8 +32,15 @@ class _MagicStarterTeamInvitationAcceptViewState
     controller.setEmpty();
   }
 
+  // The route state cannot be read in initState. Read on the first call only.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _token ??= MagicRouter.instance.pathParameterOf(context, 'token') ?? '';
+  }
+
   Future<void> _accept() async {
-    final success = await controller.doAcceptInvitation(token: _token);
+    final success = await controller.doAcceptInvitation(token: _token!);
     if (success) {
       MagicRoute.to(MagicStarterConfig.homeRoute());
     }

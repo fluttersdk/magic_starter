@@ -227,11 +227,13 @@ final success = await MagicStarterTeamController.instance.doAcceptInvitation(
 
 This sends `POST /invitations/{token}/accept`. On success, `Auth.restore()` refreshes the user model to include the newly joined team.
 
-The invitation accept view is registered under `teams.invitation_accept`. The token is typically extracted from the URL query parameter in the view:
+The invitation accept view is registered under `teams.invitation_accept`, on the route `/invitations/:token/accept`. The view reads the token from its own route's path once, in `didChangeDependencies` (route state cannot be read in `initState`):
 
 ```dart
-final token = MagicRouter.instance.queryParameter('token') ?? '';
+_token ??= MagicRouter.instance.pathParameterOf(context, 'token');
 ```
+
+The static `pathParameter()` would answer for whichever page was built last, which across layout shells is not always this one.
 
 <a name="canceling-invitations"></a>
 ### Canceling Invitations

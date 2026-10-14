@@ -64,12 +64,7 @@ class _MagicStarterSupportCreateViewState
     );
     if (conversation == null) return;
 
-    MagicRoute.to(
-      MagicStarterConfig.supportThreadRoute().replaceFirst(
-        ':id',
-        '${conversation.id}',
-      ),
-    );
+    MagicRoute.to(MagicStarterConfig.supportThreadPath(conversation.id));
   }
 
   @override

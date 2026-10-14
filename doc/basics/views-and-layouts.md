@@ -185,7 +185,7 @@ Future<void> _submit() async {
 ```
 
 > [!NOTE]
-> Query parameters needed before calling the controller (like password reset tokens) should be extracted in the view: `MagicRouter.instance.queryParameter('token') ?? ''`.
+> Route values needed before calling the controller (like password reset tokens) should be extracted in the view's `didChangeDependencies`, through `MagicRouter.instance.queryParameterOf(context, 'token')` or `pathParameterOf(context, ...)`, which answer for the page the view sits in.
 
 <a name="applayout"></a>
 ## AppLayout

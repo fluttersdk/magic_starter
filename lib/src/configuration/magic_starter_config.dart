@@ -453,6 +453,10 @@ class MagicStarterConfig {
   /// Full path pattern for one support conversation thread.
   static String supportThreadRoute() => '${supportRoute()}/:id';
 
+  /// Full path to the support conversation [id], the route to navigate to.
+  static String supportThreadPath(Object id) =>
+      supportThreadRoute().replaceFirst(':id', '$id');
+
   /// Full path for team creation page.
   static String teamCreateRoute() => '${teamsPrefix()}/create';
 

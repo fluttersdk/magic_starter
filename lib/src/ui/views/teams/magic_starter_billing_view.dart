@@ -2107,12 +2107,7 @@ class _MagicStarterBillingViewState
       return;
     }
 
-    MagicRoute.to(
-      MagicStarterConfig.supportThreadRoute().replaceFirst(
-        ':id',
-        '${conversation.id}',
-      ),
-    );
+    MagicRoute.to(MagicStarterConfig.supportThreadPath(conversation.id));
   }
 
   /// Selects [plan]: hands off to sales for a custom tier, buys through the
