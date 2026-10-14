@@ -3,11 +3,21 @@ import 'package:magic/magic.dart';
 /// The `score` axis key: whether a score chip is the chosen one.
 const String kFeedbackScoreAxis = 'score';
 
+/// What a focused score looks like.
+///
+/// It trails each variant's own border classes, not the base: wind resolves a
+/// family last-wins across the active classes, so a `border-*` colour that came
+/// after `focus:border-2` would undo the thicker border.
+const String _scoreFocus =
+    'focus:border-2 focus:border-primary-400 '
+    'focus:ring-2 focus:ring-offset-2 focus:ring-primary-500';
+
 /// Builds the [WindSlotRecipe] for the MSFeedbackCard component.
 ///
-/// The chosen score borrows the selected-chip treatment of the support topic
-/// and rating chips (a primary border on `bg-primary-container`), so a screen
-/// that shows both reads them as one control family.
+/// A score is a 44 x 44 tap target. When the keyboard reaches it the border
+/// thickens to the primary colour and a ring follows; the border is what shows
+/// on a wind release that does not yet paint `focus:ring-*` on a `WDiv`. The chosen one is filled with the primary colour, so it reads as
+/// chosen at a glance rather than as a faint ring.
 ///
 /// ### Slot structure
 /// ```
@@ -15,7 +25,7 @@ const String kFeedbackScoreAxis = 'score';
 /// question - the 0-10 question
 /// scale    - the wrapping row of eleven score chips
 /// score    - one square chip (`score` axis: idle / selected)
-/// label    - the number inside a chip
+/// label    - the number inside a chip (`score` axis: idle / selected)
 /// ends     - the "Not likely" / "Very likely" row under the scale
 /// end      - one of those two captions
 /// actions  - the send and "Not now" row
@@ -28,8 +38,8 @@ const WindSlotRecipe feedbackCardRecipe = WindSlotRecipe(
     'question': 'text-sm font-semibold text-fg',
     'scale': 'flex flex-row wrap gap-2',
     'score':
-        'flex flex-row items-center justify-center w-10 h-10 rounded-xl border',
-    'label': 'text-sm font-medium text-fg',
+        'flex flex-row items-center justify-center w-11 h-11 rounded-xl border',
+    'label': 'text-sm font-medium',
     'ends': 'flex flex-row justify-between gap-3',
     'end': 'text-xs text-fg-muted',
     'actions': 'flex flex-row wrap items-center gap-3',
@@ -38,10 +48,15 @@ const WindSlotRecipe feedbackCardRecipe = WindSlotRecipe(
   },
   variants: {
     kFeedbackScoreAxis: {
-      'idle': {'score': 'border-color-border bg-surface-container-high'},
+      'idle': {
+        'score': 'border-color-border bg-surface-container-high $_scoreFocus',
+        'label': 'text-fg',
+      },
       'selected': {
         'score':
-            'border-primary-600 dark:border-primary-500 bg-primary-container',
+            'border-primary-600 dark:border-primary-500 bg-primary '
+            '$_scoreFocus',
+        'label': 'text-on-primary',
       },
     },
   },

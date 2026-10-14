@@ -2201,6 +2201,54 @@ void main() {
           Uri.parse('https://api.example.com/signed?sig=1'),
         ]);
       });
+
+      testWidgets('attachments wrap from one shared start edge, evenly spaced', (
+        tester,
+      ) async {
+        threadBackend(
+          messages: <Map<String, dynamic>>[
+            messageJson(
+              id: 2,
+              body: 'Three files',
+              attachments: <Map<String, dynamic>>[
+                attachmentJson(id: 21, name: 'one.png'),
+                attachmentJson(
+                  id: 22,
+                  name: 'a-fairly-long-invoice-name.pdf',
+                  kind: 'pdf',
+                ),
+                attachmentJson(id: 23, name: 'two.png'),
+              ],
+            ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7');
+
+        final List<Rect> items = <Rect>[
+          for (final int id in <int>[21, 22, 23])
+            tester.getRect(
+              find.byKey(ValueKey<String>('support-attachment-$id')),
+            ),
+        ];
+        final double firstRowTop = items.first.top;
+        final List<Rect> firstRow = items
+            .where((Rect r) => r.top == firstRowTop)
+            .toList();
+        final List<Rect> laterRows = items
+            .where((Rect r) => r.top != firstRowTop)
+            .toList();
+
+        // The pdf chip is wide enough to push the last image onto a second row.
+        expect(laterRows, isNotEmpty);
+        for (final Rect row in laterRows) {
+          expect(row.left, firstRow.first.left);
+        }
+        for (var i = 1; i < firstRow.length; i++) {
+          expect(firstRow[i].left - firstRow[i - 1].right, 8);
+        }
+        expect(laterRows.first.top - firstRow.first.bottom, 8);
+      });
     });
 
     testWidgets('a bubble shows no attachment while the flag is off', (
@@ -2319,6 +2367,26 @@ void main() {
         find.byKey(const ValueKey<String>('support-rating-thanks')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the thumbs and the send button are 44 tall on a phone', (
+      tester,
+    ) async {
+      backend();
+
+      await mount(tester, at: '/support/7', size: const Size(390, 2400));
+
+      for (final String key in <String>[
+        'support-rating-up',
+        'support-rating-down',
+        'support-rating-submit',
+      ]) {
+        expect(
+          tester.getSize(find.byKey(ValueKey<String>(key))).height,
+          greaterThanOrEqualTo(44),
+          reason: key,
+        );
+      }
     });
 
     testWidgets('does nothing until a thumb is chosen', (tester) async {

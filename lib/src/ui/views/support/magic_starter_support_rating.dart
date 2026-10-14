@@ -148,6 +148,8 @@ class _MagicStarterSupportRatingBlockState
             children: [
               MSButton(
                 key: const ValueKey<String>('support-rating-submit'),
+                // 44 px on a phone, the default 36 from `lg` up.
+                className: 'py-3 lg:py-2',
                 onPressed: _submit,
                 isLoading: widget.isSubmitting,
                 child: WText(
@@ -188,16 +190,17 @@ class _MagicStarterSupportRatingBlockState
         ? 'border-primary-600 dark:border-primary-500 bg-primary-container'
         : 'border-color-border bg-surface-container-high';
 
+    // The anchor's own `semanticLabel` makes it the one button of this pill;
+    // a `Semantics(button: true)` around it announced a second, nested one.
     return Semantics(
-      button: true,
       selected: selected,
-      label: label,
       child: WAnchor(
         key: ValueKey<String>('support-rating-$value'),
+        semanticLabel: label,
         onTap: () => _choose(value),
         child: WDiv(
           className:
-              'flex flex-row items-center gap-2 h-[38px] px-3.5 rounded-xl '
+              'flex flex-row items-center gap-2 h-11 lg:h-[38px] px-3.5 rounded-xl '
               'border $tone',
           children: [
             WIcon(selected ? selectedIcon : icon, className: 'text-sm text-fg'),

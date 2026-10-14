@@ -53,6 +53,9 @@ class _MSFeedbackCardState extends State<MSFeedbackCard> {
 
   late final bool _mayShow = _resolveMayShow();
 
+  /// Lifts a `md` button from 36 to 44 px on a phone, where a thumb taps it.
+  static const String _touchHeight = 'py-3 lg:py-2';
+
   int? _score;
   bool _answered = false;
 
@@ -176,12 +179,18 @@ class _MSFeedbackCardState extends State<MSFeedbackCard> {
                 onPressed: _submit,
                 isLoading: _controller.isSubmitting,
                 disabled: _score == null,
+                // `disabled:opacity-50` in the button recipe paints nothing on a
+                // `WButton`, so the disabled state carries its own muted colours.
+                className:
+                    '$_touchHeight disabled:bg-surface-container-high '
+                    'disabled:text-fg-disabled',
                 child: WText(trans('magic_starter.support.feedback_submit')),
               ),
               if (!widget.onDemand)
                 MSButton(
                   key: const ValueKey<String>('feedback-dismiss'),
                   intent: ButtonIntent.secondary,
+                  className: _touchHeight,
                   onPressed: _controller.isSubmitting
                       ? null
                       : _controller.dismiss,
@@ -202,12 +211,13 @@ class _MSFeedbackCardState extends State<MSFeedbackCard> {
       },
     );
 
+    // The anchor's own `semanticLabel` makes it the one button of this score;
+    // a `Semantics(button: true)` around it announced a second, nested one.
     return Semantics(
-      button: true,
       selected: selected,
-      label: '$score',
       child: WAnchor(
         key: ValueKey<String>('feedback-score-$score'),
+        semanticLabel: '$score',
         onTap: () => setState(() => _score = score),
         child: WDiv(
           className: slots['score'],

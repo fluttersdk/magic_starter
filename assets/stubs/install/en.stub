@@ -321,7 +321,7 @@
       "empty_title": "No conversations yet",
       "expect_ai": "Our AI answers right away and hands off to the team when needed.",
       "expect_team": "Our team usually replies within a few hours.",
-      "feedback_comment_placeholder": "What is the main reason for your score? (optional)",
+      "feedback_comment_placeholder": "Why this score? (optional)",
       "feedback_dismiss": "Not now",
       "feedback_error": "We could not send your feedback. Please try again.",
       "feedback_high": "Very likely",

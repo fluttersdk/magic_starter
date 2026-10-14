@@ -190,7 +190,11 @@ class MagicStarterSupportAttachmentList extends StatelessWidget {
 
   final ValueChanged<MagicStarterSupportAttachment> onOpenPdf;
 
-  /// Right-aligns the row, for the customer's own side of the thread.
+  /// Whether the bubble sits on the customer's own side of the thread.
+  ///
+  /// The rows of thumbnails start at one shared edge either way; a run that
+  /// was right-aligned left a short last row stranded against the far side of
+  /// a full one. The bubble places the whole block.
   final bool alignEnd;
 
   static const double _thumbnail = 160;
@@ -211,8 +215,7 @@ class MagicStarterSupportAttachmentList extends StatelessWidget {
     if (attachments.isEmpty || resolved == null) return const SizedBox.shrink();
 
     return WDiv(
-      className:
-          'flex flex-row wrap gap-2 ${alignEnd ? 'justify-end' : 'justify-start'}',
+      className: 'flex flex-row wrap gap-2 justify-start',
       children: [
         for (final attachment in attachments)
           attachment.kind == 'image'
