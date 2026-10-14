@@ -325,8 +325,9 @@ class MagicStarterServiceProvider extends ServiceProvider {
     //
     // Providers boot in order (`Application.boot`) and this one goes last:
     // every doc here prescribes Auth, then Notifications, then Starter, and
-    // artisan's installer appends to the END of the list. So `AuthServiceProvider.boot`
-    // has already awaited `Auth.restore()` and bumped the notifier
+    // artisan's installer appends to the END of the list. So
+    // `AuthServiceProvider.boot` has already awaited `Auth.restore()` and
+    // bumped the notifier
     // (`AuthServiceProvider.boot` awaits it, `BaseGuard.setUser` bumps), and
     // `NotificationServiceProvider.boot` has already attached the driver, on a
     // broadcast stream that hands nothing to a later subscriber. Subscribing
