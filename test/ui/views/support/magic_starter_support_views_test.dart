@@ -62,6 +62,8 @@ Map<String, dynamic> conversationJson({
   bool waitingOnTeam = false,
   Map<String, dynamic>? lastMessage,
   List<Map<String, dynamic>>? messages,
+  bool canRate = false,
+  Map<String, dynamic>? rating,
 }) {
   return <String, dynamic>{
     'id': id,
@@ -79,6 +81,8 @@ Map<String, dynamic> conversationJson({
     'waiting_on_team': waitingOnTeam,
     'last_message': ?lastMessage,
     'messages': ?messages,
+    'can_rate': canRate,
+    'rating': ?rating,
   };
 }
 
@@ -113,6 +117,7 @@ Map<String, dynamic> messageJson({
   String kind = 'message',
   String? senderName,
   String? senderAvatarUrl,
+  List<Map<String, dynamic>>? attachments,
 }) {
   return <String, dynamic>{
     'id': id,
@@ -120,6 +125,7 @@ Map<String, dynamic> messageJson({
     'kind': kind,
     'body': body,
     'created_at': '2026-10-12T09:00:00+00:00',
+    'attachments': ?attachments,
     if (senderName != null || senderAvatarUrl != null)
       'sender': <String, dynamic>{
         'name': senderName,
@@ -161,6 +167,52 @@ MagicResponse ok(Object? data) =>
 
 int count(List<SentRequest> sent, String method, String url) =>
     sent.where((s) => s.method == method && s.url == url).length;
+
+Map<String, dynamic> attachmentJson({
+  int id = 11,
+  String name = 'error.png',
+  String kind = 'image',
+}) {
+  return <String, dynamic>{
+    'id': id,
+    'name': name,
+    'mime': kind == 'image' ? 'image/png' : 'application/pdf',
+    'size': 2048,
+    'width': kind == 'image' ? 640 : null,
+    'height': kind == 'image' ? 480 : null,
+    'kind': kind,
+    'url': 'support/conversations/7/attachments/$id',
+  };
+}
+
+/// A picked file, as `Pick.files` hands it over. [size] defaults to the byte
+/// count; pass it to claim a size the picker reported.
+MagicFile pickedFile(String name, {int bytes = 1024, int? size}) {
+  return MagicFile(
+    name: name,
+    size: size ?? bytes,
+    mimeType: name.endsWith('.pdf') ? 'application/pdf' : 'image/png',
+    bytes: Uint8List(bytes),
+  );
+}
+
+/// Records what the screen asked the system to open instead of opening it.
+class _RecordingLaunchAdapter implements LaunchAdapter {
+  final List<Uri> launched = <Uri>[];
+
+  @override
+  Future<bool> launch(
+    Uri url, {
+    LaunchMode mode = LaunchMode.externalApplication,
+  }) async {
+    launched.add(url);
+
+    return true;
+  }
+
+  @override
+  Future<bool> canLaunch(Uri url) async => true;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -208,6 +260,7 @@ void main() {
     WidgetTester tester, {
     required String at,
     Size size = const Size(1280, 2000),
+    Future<List<MagicFile>> Function(List<String> extensions)? pickFiles,
   }) async {
     // A logical size: flutter_test's default pixel ratio is 3, which would turn
     // a 1280 surface into a 427 px phone.
@@ -223,11 +276,15 @@ void main() {
     );
     MagicRoute.page(
       MagicStarterConfig.supportCreateRoute(),
-      () => MagicStarter.view.make('support.create'),
+      () => pickFiles == null
+          ? MagicStarter.view.make('support.create')
+          : MagicStarterSupportCreateView(pickFiles: pickFiles),
     ).stacked();
     MagicRoute.page(
       MagicStarterConfig.supportThreadRoute(),
-      () => MagicStarter.view.make('support.thread'),
+      () => pickFiles == null
+          ? MagicStarter.view.make('support.thread')
+          : MagicStarterSupportThreadView(pickFiles: pickFiles),
     ).stacked();
     MagicRouter.instance.setInitialLocation(at);
 
@@ -1833,6 +1890,474 @@ void main() {
       await mountRoutes(tester, at: '/support/new');
 
       expect(find.text(bottomNavLabel), findsOneWidget);
+    });
+  });
+
+  group('attachments', () {
+    const ValueKey<String> attach = ValueKey<String>('support-attach');
+    const ValueKey<String> send = ValueKey<String>('support-send');
+
+    List<SentRequest> threadBackend({List<Map<String, dynamic>>? messages}) {
+      return fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            messages: messages ?? <Map<String, dynamic>>[messageJson()],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+        'POST /support/conversations/7/messages': (request) => ok(
+          messageJson(
+            id: 99,
+            body: ((request.data as Map)['body'] as String?) ?? '',
+            attachments: <Map<String, dynamic>>[attachmentJson(id: 31)],
+          ),
+        ),
+        'POST /support/conversations/7/attachments/12/link': (_) =>
+            Http.response(<String, dynamic>{
+              'url': 'https://api.example.com/signed?sig=1',
+            }),
+      });
+    }
+
+    Map<String, dynamic> imageMessage() => messageJson(
+      id: 2,
+      senderType: 'staff',
+      body: 'Here is the screenshot',
+      attachments: <Map<String, dynamic>>[attachmentJson()],
+    );
+
+    Future<void> pick(WidgetTester tester) async {
+      await tester.tap(find.byKey(attach));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the thread shows no attach button while the flag is off', (
+      tester,
+    ) async {
+      threadBackend();
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(attach), findsNothing);
+    });
+
+    testWidgets(
+      'the create view shows no attach button while the flag is off',
+      (tester) async {
+        fakeBackend({});
+
+        await mount(tester, at: '/support/new');
+
+        expect(find.byKey(attach), findsNothing);
+      },
+    );
+
+    group('with the flag on', () {
+      setUp(() {
+        Config.set('magic_starter.features.support_attachments', true);
+        Config.set(
+          'network.drivers.api.base_url',
+          'https://api.example.com/v1',
+        );
+      });
+
+      testWidgets('the picker is asked for the shipped extensions only', (
+        tester,
+      ) async {
+        threadBackend();
+        List<String>? asked;
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (extensions) async {
+            asked = extensions;
+
+            return <MagicFile>[];
+          },
+        );
+        await pick(tester);
+
+        expect(asked, <String>['jpg', 'jpeg', 'png', 'webp', 'pdf']);
+      });
+
+      testWidgets('a picked file shows as a chip with its size and can go', (
+        tester,
+      ) async {
+        threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[
+            pickedFile('error.png', bytes: 1536),
+          ],
+        );
+        await pick(tester);
+
+        expect(find.text('error.png'), findsOneWidget);
+        expect(find.text('1.5 KB'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('support-attachment-remove-0')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('error.png'), findsNothing);
+      });
+
+      testWidgets('a fourth file shows the limit error and sends nothing', (
+        tester,
+      ) async {
+        final sent = threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[
+            for (var i = 1; i <= 4; i++) pickedFile('shot$i.png'),
+          ],
+        );
+        await pick(tester);
+        await tester.tap(find.byKey(send));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            trans('magic_starter.support.attachment_too_many', {'max': 3}),
+          ),
+          findsOneWidget,
+        );
+        expect(count(sent, 'POST', '/support/conversations/7/messages'), 0);
+      });
+
+      testWidgets('a file over 5 MB shows the size error and sends nothing', (
+        tester,
+      ) async {
+        final sent = threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[
+            pickedFile('huge.png', bytes: 16, size: 5 * 1024 * 1024 + 1),
+          ],
+        );
+        await pick(tester);
+        await tester.tap(find.byKey(send));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            trans('magic_starter.support.attachment_too_large', {
+              'name': 'huge.png',
+              'max': 5,
+            }),
+          ),
+          findsOneWidget,
+        );
+        expect(count(sent, 'POST', '/support/conversations/7/messages'), 0);
+      });
+
+      testWidgets('an image-only reply is sent and the chips clear', (
+        tester,
+      ) async {
+        final sent = threadBackend();
+
+        await mount(
+          tester,
+          at: '/support/7',
+          pickFiles: (_) async => <MagicFile>[pickedFile('error.png')],
+        );
+        await pick(tester);
+        await tester.tap(find.byKey(send));
+        await tester.pumpAndSettle();
+
+        final post = sent.singleWhere(
+          (s) =>
+              s.method == 'POST' &&
+              s.url == '/support/conversations/7/messages',
+        );
+        final Map data = post.data! as Map;
+        expect(data.keys, contains('attachments[0]'));
+        expect(data.keys, isNot(contains('body')));
+        expect(find.text('error.png'), findsNothing);
+      });
+
+      testWidgets('the create view posts the picked files with the message', (
+        tester,
+      ) async {
+        final sent = fakeBackend({
+          'GET /support/conversations': (_) => ok(<Map<String, dynamic>>[]),
+          'POST /support/conversations': (_) => ok(
+            conversationJson(
+              id: 9,
+              messages: <Map<String, dynamic>>[messageJson(body: 'See file')],
+            ),
+          ),
+          'GET /support/conversations/9': (_) => ok(conversationJson(id: 9)),
+          'POST /support/conversations/9/seen': (_) => ok(null),
+        });
+
+        await mount(
+          tester,
+          at: '/support/new',
+          pickFiles: (_) async => <MagicFile>[pickedFile('error.png')],
+        );
+        await pick(tester);
+        await tester.enterText(find.byType(EditableText), 'See file');
+        await tester.pump();
+        await tester.tap(
+          find.text(trans('magic_starter.support.create_submit')),
+        );
+        await tester.pumpAndSettle();
+
+        final post = sent.singleWhere(
+          (s) => s.method == 'POST' && s.url == '/support/conversations',
+        );
+        final Map data = post.data! as Map;
+        expect(data['body'], 'See file');
+        expect(data.keys, contains('attachments[0]'));
+      });
+
+      testWidgets('a bubble shows the image through the bearer header', (
+        tester,
+      ) async {
+        threadBackend(messages: <Map<String, dynamic>>[imageMessage()]);
+        await Auth.login(<String, dynamic>{
+          'token': 'abc123',
+        }, MagicStarterAuthUser());
+
+        await mount(tester, at: '/support/7');
+
+        final Image image = tester.widget<Image>(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('support-attachment-11')),
+            matching: find.byType(Image),
+          ),
+        );
+        final NetworkImage provider = image.image as NetworkImage;
+        expect(
+          provider.url,
+          'https://api.example.com/v1/support/conversations/7/attachments/11',
+        );
+        expect(provider.headers, <String, String>{
+          'Authorization': 'Bearer abc123',
+        });
+      });
+
+      testWidgets('tapping the thumbnail opens it full size', (tester) async {
+        threadBackend(messages: <Map<String, dynamic>>[imageMessage()]);
+
+        await mount(tester, at: '/support/7');
+        expect(find.byType(Image), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('support-attachment-11')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(Image), findsNWidgets(2));
+      });
+
+      testWidgets('a PDF is an untrusted chip that opens the signed link', (
+        tester,
+      ) async {
+        final launcher = _RecordingLaunchAdapter();
+        Magic.singleton('launch', () => LaunchService(adapter: launcher));
+        final sent = threadBackend(
+          messages: <Map<String, dynamic>>[
+            messageJson(
+              id: 2,
+              senderType: 'staff',
+              body: 'The invoice',
+              attachments: <Map<String, dynamic>>[
+                attachmentJson(id: 12, name: 'invoice.pdf', kind: 'pdf'),
+              ],
+            ),
+          ],
+        );
+
+        await mount(tester, at: '/support/7');
+
+        expect(find.text('invoice.pdf'), findsOneWidget);
+        expect(
+          find.text(trans('magic_starter.support.attachment_untrusted')),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('support-attachment-12')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          count(sent, 'POST', '/support/conversations/7/attachments/12/link'),
+          1,
+        );
+        expect(launcher.launched, <Uri>[
+          Uri.parse('https://api.example.com/signed?sig=1'),
+        ]);
+      });
+    });
+
+    testWidgets('a bubble shows no attachment while the flag is off', (
+      tester,
+    ) async {
+      threadBackend(messages: <Map<String, dynamic>>[imageMessage()]);
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.text('Here is the screenshot'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('support-attachment-11')),
+        findsNothing,
+      );
+    });
+  });
+
+  group('the rating block', () {
+    const ValueKey<String> block = ValueKey<String>('support-rating');
+    const ValueKey<String> submit = ValueKey<String>('support-rating-submit');
+
+    Map<String, dynamic> ratingJson(String value, {String? comment}) =>
+        <String, dynamic>{
+          'value': value,
+          'comment': comment,
+          'rated_at': '2026-10-12T10:00:00+00:00',
+        };
+
+    List<SentRequest> backend({
+      String status = 'resolved',
+      bool canRate = true,
+      Map<String, dynamic>? rating,
+    }) {
+      return fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            status: status,
+            canRate: canRate,
+            rating: rating,
+            messages: <Map<String, dynamic>>[messageJson()],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+        'POST /support/conversations/7/rating': (_) => ok(null),
+      });
+    }
+
+    setUp(() => Config.set('magic_starter.features.support_csat', true));
+
+    testWidgets('is absent while the flag is off', (tester) async {
+      Config.set('magic_starter.features.support_csat', false);
+      backend();
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsNothing);
+    });
+
+    testWidgets('is absent on a conversation that is not resolved', (
+      tester,
+    ) async {
+      backend(status: 'open');
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsNothing);
+    });
+
+    testWidgets('is absent when it cannot be rated and has no rating', (
+      tester,
+    ) async {
+      backend(canRate: false);
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsNothing);
+    });
+
+    testWidgets('posts the chosen value and thanks the customer', (
+      tester,
+    ) async {
+      final sent = backend();
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.support.rating_prompt')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('support-rating-down')),
+      );
+      await tester.pump();
+      await tester.enterText(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('support-rating-comment')),
+          matching: find.byType(EditableText),
+        ),
+        'Too slow',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(submit));
+      await tester.pumpAndSettle();
+
+      final post = sent.singleWhere(
+        (s) => s.method == 'POST' && s.url == '/support/conversations/7/rating',
+      );
+      expect(post.data, <String, dynamic>{
+        'rating': 'down',
+        'comment': 'Too slow',
+      });
+      expect(
+        find.byKey(const ValueKey<String>('support-rating-thanks')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('does nothing until a thumb is chosen', (tester) async {
+      final sent = backend();
+
+      await mount(tester, at: '/support/7');
+      await tester.tap(find.byKey(submit));
+      await tester.pumpAndSettle();
+
+      expect(count(sent, 'POST', '/support/conversations/7/rating'), 0);
+    });
+
+    testWidgets('an existing rating shows its choice and can be changed', (
+      tester,
+    ) async {
+      final sent = backend(
+        canRate: false,
+        rating: ratingJson('up', comment: 'Great help'),
+      );
+
+      await mount(tester, at: '/support/7');
+
+      expect(find.byKey(block), findsOneWidget);
+      expect(find.text('Great help'), findsOneWidget);
+      expect(
+        find.text(trans('magic_starter.support.rating_update')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('support-rating-down')),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(submit));
+      await tester.pumpAndSettle();
+
+      final post = sent.singleWhere(
+        (s) => s.method == 'POST' && s.url == '/support/conversations/7/rating',
+      );
+      expect((post.data as Map)['rating'], 'down');
     });
   });
 

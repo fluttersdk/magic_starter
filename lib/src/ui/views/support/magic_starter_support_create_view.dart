@@ -9,6 +9,7 @@ import '../../components/card/index.dart';
 import '../../components/form_field/index.dart';
 import '../../components/page_scaffold/index.dart';
 import '../../components/textarea/index.dart';
+import 'magic_starter_support_attachments.dart';
 import 'magic_starter_support_index_view.dart';
 import 'magic_starter_support_message_bubble.dart';
 
@@ -19,9 +20,19 @@ import 'magic_starter_support_message_bubble.dart';
 /// opened from the app (`in_app`), and the client names neither a team nor a
 /// user; the backend scopes it to whoever is signed in. A refusal stays on this
 /// page with its message under the field it concerns.
+///
+/// Behind `support_attachments` the form also takes image and PDF files, which
+/// may stand in for the message text.
 class MagicStarterSupportCreateView
     extends MagicStatefulView<MagicStarterSupportController> {
-  const MagicStarterSupportCreateView({super.key});
+  /// [pickFiles] stands in for the system file picker; it is a parameter only
+  /// so a test can choose files without one.
+  const MagicStarterSupportCreateView({
+    super.key,
+    @visibleForTesting this.pickFiles,
+  });
+
+  final Future<List<MagicFile>> Function(List<String> extensions)? pickFiles;
 
   @override
   State<MagicStarterSupportCreateView> createState() =>
@@ -33,7 +44,8 @@ class _MagicStarterSupportCreateViewState
         MagicStatefulViewState<
           MagicStarterSupportController,
           MagicStarterSupportCreateView
-        > {
+        >
+    with MagicStarterSupportAttachmentPicking<MagicStarterSupportCreateView> {
   static const Map<String, IconData> _topicIcons = {
     'billing': Icons.credit_card,
     'technical': Icons.build_outlined,
@@ -42,6 +54,7 @@ class _MagicStarterSupportCreateViewState
     'other': Icons.more_horiz,
   };
   static const _iconSend = Icons.send;
+  static const _iconAttach = Icons.attach_file;
 
   /// Width of the "How it works" column beside the form on a wide screen.
   static const double _sideWidth = 300;
@@ -49,6 +62,10 @@ class _MagicStarterSupportCreateViewState
   final TextEditingController _body = TextEditingController();
 
   String? _topic;
+
+  @override
+  Future<List<MagicFile>> Function(List<String> extensions)?
+  get pickFilesOverride => widget.pickFiles;
 
   @override
   void onInit() => controller.forgetWriteError();
@@ -61,6 +78,7 @@ class _MagicStarterSupportCreateViewState
       topic: _topic,
       body: _body.text.trim(),
       source: 'in_app',
+      attachments: pickedAttachments,
     );
     if (conversation == null) return;
 
@@ -126,7 +144,41 @@ class _MagicStarterSupportCreateViewState
               ],
             ),
           ),
+          if (MagicStarterConfig.hasSupportAttachmentsFeatures())
+            _buildAttachments(),
           _buildFooter(wide),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachments() {
+    return MSFormField(
+      label: trans('magic_starter.support.attachments_label'),
+      hint: trans('magic_starter.support.attachments_hint', {
+        'max': MagicStarterConfig.supportAttachmentMaxFiles(),
+        'size': MagicStarterConfig.supportAttachmentMaxBytes() ~/ (1024 * 1024),
+      }),
+      error: magicStarterSupportAttachmentError(controller),
+      child: WDiv(
+        className: 'flex flex-col items-start gap-2',
+        children: [
+          MSButton(
+            key: const ValueKey<String>('support-attach'),
+            intent: ButtonIntent.secondary,
+            onPressed: pickAttachments,
+            child: WDiv(
+              className: 'flex flex-row items-center justify-center gap-2',
+              children: [
+                WIcon(_iconAttach, className: 'text-sm'),
+                WText(trans('magic_starter.support.attach_button')),
+              ],
+            ),
+          ),
+          MagicStarterSupportPickedChips(
+            files: pickedAttachments,
+            onRemove: removeAttachment,
+          ),
         ],
       ),
     );

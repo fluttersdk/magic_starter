@@ -1,6 +1,7 @@
 import 'dart:async' show Timer, unawaited;
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -14,8 +15,10 @@ import '../../components/error_state/index.dart';
 import '../../components/form_field/index.dart';
 import '../../components/page_scaffold/index.dart';
 import '../../components/skeleton/index.dart';
+import 'magic_starter_support_attachments.dart';
 import 'magic_starter_support_index_view.dart';
 import 'magic_starter_support_message_bubble.dart';
+import 'magic_starter_support_rating.dart';
 
 /// One support conversation as a chat: bubbles by who wrote them, a docked
 /// composer, and what to expect from the AI or the team above it.
@@ -24,9 +27,21 @@ import 'magic_starter_support_message_bubble.dart';
 /// unread dot on the list. The backend answers 404 for a conversation that is
 /// missing and for one a teammate opened alike, so the not-found state says
 /// nothing more than that.
+///
+/// Behind `support_attachments` the composer takes files and the bubbles show
+/// them; behind `support_csat` a resolved conversation asks for a thumbs
+/// rating under the thread. The composer stays on a resolved conversation:
+/// writing again reopens it.
 class MagicStarterSupportThreadView
     extends MagicStatefulView<MagicStarterSupportController> {
-  const MagicStarterSupportThreadView({super.key});
+  /// [pickFiles] stands in for the system file picker; it is a parameter only
+  /// so a test can choose files without one.
+  const MagicStarterSupportThreadView({
+    super.key,
+    @visibleForTesting this.pickFiles,
+  });
+
+  final Future<List<MagicFile>> Function(List<String> extensions)? pickFiles;
 
   @override
   State<MagicStarterSupportThreadView> createState() =>
@@ -39,7 +54,9 @@ class _MagicStarterSupportThreadViewState
           MagicStarterSupportController,
           MagicStarterSupportThreadView
         >
-    with MagicStarterSupportLiveRefresh<MagicStarterSupportThreadView> {
+    with
+        MagicStarterSupportLiveRefresh<MagicStarterSupportThreadView>,
+        MagicStarterSupportAttachmentPicking<MagicStarterSupportThreadView> {
   static const _iconError = Icons.error_outline;
   static const _iconSend = Icons.send;
   static const _iconAssistant = Icons.auto_awesome;
@@ -68,15 +85,39 @@ class _MagicStarterSupportThreadViewState
   Timer? _slowTimer;
   bool _slow = false;
 
+  /// The bearer header an attachment image is read with. Null until the token
+  /// has been read, and always null with `support_attachments` off.
+  Map<String, String>? _attachmentHeaders;
+
+  /// Why the last rating was refused. The controller keeps one write error for
+  /// the thread, so the composer would show it too; this one is the rating's.
+  String? _ratingError;
+
   /// What the thread looked like the last time it was scrolled to its end, so a
   /// new message, the typing bubble and the slow note each bring the newest
   /// line into view exactly once.
   String _scrolledTo = '';
 
   @override
+  Future<List<MagicFile>> Function(List<String> extensions)?
+  get pickFilesOverride => widget.pickFiles;
+
+  @override
   void onInit() {
     controller.forgetWriteError();
     startLiveRefresh();
+
+    if (MagicStarterConfig.hasSupportAttachmentsFeatures()) {
+      unawaited(_resolveAttachmentHeaders());
+    }
+  }
+
+  /// Reads the token once; an image is then fetched with it, never with a
+  /// credential carried in the url.
+  Future<void> _resolveAttachmentHeaders() async {
+    final headers = await controller.attachmentHeaders();
+
+    if (mounted) setState(() => _attachmentHeaders = headers);
   }
 
   @override
@@ -136,11 +177,53 @@ class _MagicStarterSupportThreadViewState
   Future<void> _send() async {
     final String? id = _id;
     final String body = _reply.text.trim();
-    if (id == null || body.isEmpty) return;
+    final List<MagicFile> files = pickedAttachments;
+    if (id == null || (body.isEmpty && files.isEmpty)) return;
 
-    final bool sent = await controller.sendMessage(id, body);
+    _ratingError = null;
+    final bool sent = await controller.sendMessage(
+      id,
+      body,
+      attachments: files,
+    );
+    if (!sent || !mounted) return;
 
-    if (sent) _reply.clear();
+    _reply.clear();
+    clearAttachments();
+  }
+
+  Future<bool> _rate(String rating, String comment) async {
+    final String? id = _id;
+    if (id == null) return false;
+
+    final bool saved = await controller.rate(id, rating, comment: comment);
+
+    if (mounted) {
+      setState(() {
+        _ratingError = saved
+            ? null
+            : controller.getError('rating') ??
+                  controller.getError('comment') ??
+                  controller.writeError;
+      });
+    }
+
+    return saved;
+  }
+
+  /// Opens a PDF through a 60 second signed link: the read credential stays
+  /// the bearer token, and the link is minted only for this one tap.
+  Future<void> _openPdf(MagicStarterSupportAttachment attachment) async {
+    final String? id = _id;
+    if (id == null) return;
+
+    final String? url = await controller.attachmentLink(id, attachment.id);
+    if (url != null && await Launch.url(url)) return;
+
+    Magic.error(
+      trans('magic_starter.titles.support_thread'),
+      trans('magic_starter.support.attachment_open_error'),
+    );
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -275,7 +358,25 @@ class _MagicStarterSupportThreadViewState
               : MagicStarterSupportTypingBubble(
                   assistantName: _assistantName(conversation),
                 ),
+        ?_buildRating(conversation),
       ],
+    );
+  }
+
+  /// The thumbs block, for a resolved conversation that can be rated or already
+  /// carries a rating. Gone as soon as a reply reopens the conversation.
+  Widget? _buildRating(MagicStarterSupportConversation conversation) {
+    if (!MagicStarterConfig.hasSupportCsatFeatures() ||
+        conversation.status != 'resolved' ||
+        !(conversation.canRate || conversation.rating != null)) {
+      return null;
+    }
+
+    return MagicStarterSupportRatingBlock(
+      rating: conversation.rating,
+      onSubmit: _rate,
+      isSubmitting: controller.isSubmitting,
+      error: _ratingError,
     );
   }
 
@@ -297,7 +398,11 @@ class _MagicStarterSupportThreadViewState
       return MagicStarterSupportActivityLine(message);
     }
 
-    return MagicStarterSupportMessageBubble(message);
+    return MagicStarterSupportMessageBubble(
+      message,
+      attachmentHeaders: _attachmentHeaders,
+      onOpenPdf: _openPdf,
+    );
   }
 
   Widget _buildComposer(MagicStarterSupportConversation conversation) {
@@ -307,8 +412,15 @@ class _MagicStarterSupportThreadViewState
           'w-full max-w-3xl mx-auto flex flex-col gap-2 pt-3 pb-4 lg:pb-5',
       children: [
         ?_buildExpectation(conversation),
+        MagicStarterSupportPickedChips(
+          files: pickedAttachments,
+          onRemove: removeAttachment,
+        ),
         MSFormField(
-          error: controller.getError('body') ?? controller.writeError,
+          error:
+              controller.getError('body') ??
+              magicStarterSupportAttachmentError(controller) ??
+              (_ratingError == null ? controller.writeError : null),
           child: Focus(onKeyEvent: _onKey, child: _buildField()),
         ),
         if (_enterSends)
@@ -368,6 +480,9 @@ class _MagicStarterSupportThreadViewState
         bg-surface-container border-color-border
         focus:border-color-border focus:ring-2 focus:ring-bg-primary
       ''',
+      prefix: MagicStarterConfig.hasSupportAttachmentsFeatures()
+          ? MagicStarterSupportAttachButton(onTap: pickAttachments)
+          : null,
       suffix: _buildSendButton(),
     );
   }
@@ -376,7 +491,8 @@ class _MagicStarterSupportThreadViewState
     return ListenableBuilder(
       listenable: _reply,
       builder: (context, _) {
-        final bool ready = _reply.text.trim().isNotEmpty;
+        final bool ready =
+            _reply.text.trim().isNotEmpty || pickedAttachments.isNotEmpty;
 
         return WDiv(
           className: 'py-1.5',

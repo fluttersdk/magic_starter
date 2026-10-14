@@ -2,8 +2,10 @@ import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_config.dart';
 import '../../../models/magic_starter_support_conversation.dart';
 import '../../components/avatar/index.dart';
+import 'magic_starter_support_attachments.dart';
 
 /// The face of whoever wrote a support line.
 ///
@@ -90,10 +92,25 @@ class MagicStarterSupportSenderAvatar extends StatelessWidget {
 ///
 /// Activity lines (a handoff, a status change) are not a person speaking and
 /// render through [MagicStarterSupportActivityLine], not here.
+///
+/// With `support_attachments` on, what the message carried renders inside the
+/// bubble, once the thread has handed over [onOpenPdf]; without it the bubble
+/// shows the text only. An image-only message has no text line.
 class MagicStarterSupportMessageBubble extends StatelessWidget {
-  const MagicStarterSupportMessageBubble(this.message, {super.key});
+  const MagicStarterSupportMessageBubble(
+    this.message, {
+    super.key,
+    this.attachmentHeaders,
+    this.onOpenPdf,
+  });
 
   final MagicStarterSupportMessage message;
+
+  /// The bearer header an image read needs; null while it is still resolving.
+  final Map<String, String>? attachmentHeaders;
+
+  /// Opens a PDF through a signed link. Null leaves attachments undrawn.
+  final ValueChanged<MagicStarterSupportAttachment>? onOpenPdf;
 
   static const _iconChip = Icons.auto_awesome;
 
@@ -119,7 +136,7 @@ class MagicStarterSupportMessageBubble extends StatelessWidget {
         WDiv(
           key: ValueKey<String>('support-bubble-${message.id}'),
           className: 'max-w-xl px-3.5 py-2.5 rounded-2xl bg-primary-container',
-          child: WText(message.body, className: 'text-sm text-fg'),
+          child: _buildContent(alignEnd: true),
         ),
         WText(
           key: ValueKey<String>('support-label-${message.id}'),
@@ -149,10 +166,35 @@ class MagicStarterSupportMessageBubble extends StatelessWidget {
               className:
                   'max-w-xl px-3.5 py-2.5 rounded-2xl bg-surface-container-high'
                   '${accent ? ' border-l-2 border-ai' : ''}',
-              child: WText(message.body, className: 'text-sm text-fg'),
+              child: _buildContent(),
             ),
             label,
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent({bool alignEnd = false}) {
+    final open = onOpenPdf;
+    final showAttachments =
+        open != null &&
+        message.attachments.isNotEmpty &&
+        MagicStarterConfig.hasSupportAttachmentsFeatures();
+    final text = WText(message.body, className: 'text-sm text-fg');
+
+    if (!showAttachments) return text;
+
+    return WDiv(
+      className:
+          'flex flex-col gap-2 ${alignEnd ? 'items-end' : 'items-start'}',
+      children: [
+        if (message.body.isNotEmpty) text,
+        MagicStarterSupportAttachmentList(
+          attachments: message.attachments,
+          headers: attachmentHeaders,
+          onOpenPdf: open,
+          alignEnd: alignEnd,
         ),
       ],
     );
