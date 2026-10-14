@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.45] - 2026-10-14
+
 ### Added
 
 - **`MagicStarterConfig.supportThreadPath(Object id)`**, the route to one support conversation, beside `supportThreadRoute()` (the `:id` pattern). The support index, the create screen and the billing screen's Contact sales navigate through it. (`lib/src/configuration/magic_starter_config.dart`)
@@ -18,6 +20,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Every sibling floor names this batch's release.** `magic_notifications` moves `^0.3.9` to `^0.3.10`, `magic_payments` `^0.0.11` to `^0.0.12` and `fluttersdk_wind` `^1.8.4` to `^1.9.0`; `fluttersdk_artisan` stays at `^0.0.20`, and `magic`'s move is the entry below. The old ranges already admitted the new versions, so a fresh `pub get` resolves nothing differently; what changes is that the floors name the releases this package is verified against. wind 1.9.0 makes `tracking-*` em, scaled by the rendered font size: the small uppercase labels that use `tracking-wide` and `tracking-widest` (the app layout's navigation group label, the team selector, the profile dropdown, the settings section and data table headers) now space at 0.025em and 0.1em of their own size instead of a flat 1px and 4px. `magicNotificationsConstraint`, which `starter:install` writes into a host's pubspec, moves with the floor, and the issue template's magic version placeholder names 0.0.29. (`pubspec.yaml`, `lib/src/cli/commands/magic_starter_install_command.dart`, `.github/ISSUE_TEMPLATE/bug_report.yml`)
 - **`magic` floor moves `^0.0.28` to `^0.0.29`.** The reset-password, invitation-accept and support views read route values through `MagicRouter.pathParameterOf` and `queryParameterOf`, which magic 0.0.29 introduces, and the support thread opens a PDF attachment with `Launch.url(webOnlyWindowName:)`, also new in 0.0.29, so an adopter on an older magic now gets a version-solve error instead of a compile error inside this package. magic 0.0.29 also adds `webOnlyWindowName` to `LaunchAdapter.launch()`, so a hand-written `LaunchAdapter` in an app's own tests adds that named parameter; the four test doubles here do. (`pubspec.yaml`, `test/`)
 
 ### Fixed
