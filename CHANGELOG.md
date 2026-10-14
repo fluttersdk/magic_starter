@@ -16,6 +16,10 @@ All notable changes to this project will be documented in this file.
 - **Dependencies `in_app_review` (^2.0.12) and `package_info_plus` (^10.2.2).** The first backs the review prompt and the store listing link, the second the app version and build number in the client info. (`pubspec.yaml`)
 - **Docs for all of it.** (`doc/basics/support.md`)
 
+### Changed
+
+- **`magic` floor moves `^0.0.28` to `^0.0.29`.** The reset-password, invitation-accept and support views read route values through `MagicRouter.pathParameterOf` and `queryParameterOf`, which magic 0.0.29 introduces, and the support thread opens a PDF attachment with `Launch.url(webOnlyWindowName:)`, also new in 0.0.29, so an adopter on an older magic now gets a version-solve error instead of a compile error inside this package. magic 0.0.29 also adds `webOnlyWindowName` to `LaunchAdapter.launch()`, so a hand-written `LaunchAdapter` in an app's own tests adds that named parameter; the three test doubles here do. (`pubspec.yaml`, `test/`)
+
 ### Fixed
 
 - **The store review prompt waits for the feedback card.** `MagicStarterStoreReview.maybeRequest()` used to know the card was shown only after the card had loaded, so a host calling it from a dashboard load could show the native sheet in the same session as the 0 to 10 card. With `support_feedback` on it now awaits the card's eligibility (`MagicStarterFeedbackController.ensureEligibility()`, one read shared with the card) and stays quiet when the card is due. (`lib/src/support/store_review.dart`, `lib/src/http/controllers/magic_starter_feedback_controller.dart`)

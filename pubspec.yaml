@@ -33,9 +33,10 @@ dependencies:
   # magic. `SessionScope`, `SessionScoped`, the keyed `LatestRead` and
   # `BaseGuard.cacheUser`, which the team switch and the billing reads call,
   # first ship in 0.0.22, and the restore listener reads `AuthRestored.changed`,
-  # which first ships in 0.0.24. The floor itself names 0.0.28, the release the
-  # 2026-10-13 batch verified this package against.
-  magic: ^0.0.28
+  # which first ships in 0.0.24. The floor is 0.0.29: the views read route
+  # values through `pathParameterOf` and `queryParameterOf`, which first ship
+  # there.
+  magic: ^0.0.29
   fluttersdk_artisan: ^0.0.20
   # This is a FLOOR for an API, not an upper-bound fix, and the API is
   # `Notify.view`: the notification screens, the bell dropdown and the
