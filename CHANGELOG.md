@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- **`magic` floor moves `^0.0.28` to `^0.0.29`.** The reset-password, invitation-accept and support views read route values through `MagicRouter.pathParameterOf` and `queryParameterOf`, which magic 0.0.29 introduces, and the support thread opens a PDF attachment with `Launch.url(webOnlyWindowName:)`, also new in 0.0.29, so an adopter on an older magic now gets a version-solve error instead of a compile error inside this package. magic 0.0.29 also adds `webOnlyWindowName` to `LaunchAdapter.launch()`, so a hand-written `LaunchAdapter` in an app's own tests adds that named parameter; the three test doubles here do. (`pubspec.yaml`, `test/`)
+- **`magic` floor moves `^0.0.28` to `^0.0.29`.** The reset-password, invitation-accept and support views read route values through `MagicRouter.pathParameterOf` and `queryParameterOf`, which magic 0.0.29 introduces, and the support thread opens a PDF attachment with `Launch.url(webOnlyWindowName:)`, also new in 0.0.29, so an adopter on an older magic now gets a version-solve error instead of a compile error inside this package. magic 0.0.29 also adds `webOnlyWindowName` to `LaunchAdapter.launch()`, so a hand-written `LaunchAdapter` in an app's own tests adds that named parameter; the four test doubles here do. (`pubspec.yaml`, `test/`)
 
 ### Fixed
 
