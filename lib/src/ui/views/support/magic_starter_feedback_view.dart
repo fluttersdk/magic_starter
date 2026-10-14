@@ -3,8 +3,8 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/magic_starter_feedback_controller.dart';
-import '../../components/feedback_card/index.dart';
 import '../../components/page_scaffold/index.dart';
+import '../../widgets/magic_starter_feedback_card.dart';
 
 /// The "Send feedback" page the profile menu opens.
 ///
@@ -34,7 +34,7 @@ class _MagicStarterFeedbackViewState
       subtitle: trans('magic_starter.support.feedback_subtitle'),
       backLabel: trans('magic_starter.support.index_title'),
       backFallback: MagicStarterConfig.supportRoute(),
-      children: const [MSFeedbackCard(onDemand: true)],
+      children: const [MagicStarterFeedbackCard(onDemand: true)],
     );
   }
 }

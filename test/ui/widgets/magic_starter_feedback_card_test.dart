@@ -7,7 +7,6 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/components/feedback_card/feedback_card.preview.dart';
 
 /// The package's own English copy, so the card renders real prose.
 class _ShippedLoader implements TranslationLoader {
@@ -143,7 +142,7 @@ void main() {
   ) async {
     backend();
 
-    await mount(tester, const MSFeedbackCard());
+    await mount(tester, const MagicStarterFeedbackCard());
 
     expect(
       find.text(trans('magic_starter.support.feedback_question')),
@@ -163,7 +162,7 @@ void main() {
   ) async {
     backend(eligible: false);
 
-    await mount(tester, const MSFeedbackCard());
+    await mount(tester, const MagicStarterFeedbackCard());
 
     expect(find.byKey(submit), findsNothing);
     expect(MagicStarterStoreReview.feedbackCardShown, isFalse);
@@ -180,7 +179,7 @@ void main() {
       }),
     );
 
-    await mount(tester, const MSFeedbackCard());
+    await mount(tester, const MagicStarterFeedbackCard());
 
     expect(sent, isEmpty);
     expect(find.byKey(submit), findsNothing);
@@ -191,7 +190,7 @@ void main() {
     tester,
   ) async {
     backend();
-    await mount(tester, const MSFeedbackCard());
+    await mount(tester, const MagicStarterFeedbackCard());
 
     await tester.tap(find.byKey(const ValueKey<String>('feedback-score-9')));
     await tester.pump();
@@ -218,7 +217,7 @@ void main() {
 
   testWidgets('sends nothing until a score is chosen', (tester) async {
     backend();
-    await mount(tester, const MSFeedbackCard());
+    await mount(tester, const MagicStarterFeedbackCard());
 
     await tester.tap(find.byKey(submit));
     await tester.pumpAndSettle();
@@ -228,7 +227,7 @@ void main() {
 
   testWidgets('a low score offers the conversation it opened', (tester) async {
     backend(conversationId: 'c-42');
-    await mount(tester, const MSFeedbackCard());
+    await mount(tester, const MagicStarterFeedbackCard());
 
     await tester.tap(find.byKey(const ValueKey<String>('feedback-score-2')));
     await tester.pump();
@@ -245,7 +244,7 @@ void main() {
     tester,
   ) async {
     backend();
-    await mount(tester, const MSFeedbackCard());
+    await mount(tester, const MagicStarterFeedbackCard());
 
     await tester.tap(find.byKey(dismiss));
     await tester.pumpAndSettle();
@@ -260,7 +259,7 @@ void main() {
       'dismissal', (tester) async {
     backend(eligible: false);
 
-    await mount(tester, const MSFeedbackCard(onDemand: true));
+    await mount(tester, const MagicStarterFeedbackCard(onDemand: true));
 
     expect(sent.where((s) => s.method == 'GET'), isEmpty);
     expect(find.byKey(submit), findsOneWidget);
@@ -274,7 +273,7 @@ void main() {
       tester,
     ) async {
       backend();
-      await mount(tester, const MSFeedbackCard(), size: phone);
+      await mount(tester, const MagicStarterFeedbackCard(), size: phone);
 
       for (var score = 0; score <= 10; score++) {
         final Size size = tester.getSize(
@@ -290,7 +289,7 @@ void main() {
       tester,
     ) async {
       backend();
-      await mount(tester, const MSFeedbackCard(), size: phone);
+      await mount(tester, const MagicStarterFeedbackCard(), size: phone);
 
       expect(
         tester.getSize(find.byKey(submit)).height,
@@ -306,7 +305,7 @@ void main() {
       tester,
     ) async {
       backend();
-      await mount(tester, const MSFeedbackCard(), size: phone);
+      await mount(tester, const MagicStarterFeedbackCard(), size: phone);
 
       final Rect card = tester.getRect(
         find.byKey(const ValueKey<String>('feedback-card')),
@@ -329,7 +328,7 @@ void main() {
     ) async {
       final SemanticsHandle handle = tester.ensureSemantics();
       backend();
-      await mount(tester, const MSFeedbackCard());
+      await mount(tester, const MagicStarterFeedbackCard());
 
       final List<String> names = _buttonNames(tester);
 
@@ -346,7 +345,7 @@ void main() {
     testWidgets('the chosen score is announced as selected', (tester) async {
       final SemanticsHandle handle = tester.ensureSemantics();
       backend();
-      await mount(tester, const MSFeedbackCard());
+      await mount(tester, const MagicStarterFeedbackCard());
 
       await tester.tap(find.byKey(const ValueKey<String>('feedback-score-7')));
       await tester.pump();
@@ -366,7 +365,7 @@ void main() {
 
     testWidgets('the focused score thickens its border', (tester) async {
       backend();
-      await mount(tester, const MSFeedbackCard());
+      await mount(tester, const MagicStarterFeedbackCard());
 
       final Finder score = find.byKey(
         const ValueKey<String>('feedback-score-0'),
@@ -403,7 +402,7 @@ void main() {
       tester,
     ) async {
       backend();
-      await mount(tester, const MSFeedbackCard());
+      await mount(tester, const MagicStarterFeedbackCard());
 
       final Color? disabled = fillOf(find.byKey(submit));
 
@@ -420,7 +419,7 @@ void main() {
       tester,
     ) async {
       backend();
-      await mount(tester, const MSFeedbackCard());
+      await mount(tester, const MagicStarterFeedbackCard());
 
       final Finder score = find.byKey(
         const ValueKey<String>('feedback-score-4'),
@@ -436,14 +435,6 @@ void main() {
       expect(selected, isNot(equals(idle)));
       expect(selected, fillOf(find.byKey(submit)));
     });
-  });
-
-  testWidgets('the preview builds', (tester) async {
-    backend();
-
-    await mount(tester, const FeedbackCardPreview());
-
-    expect(find.byType(MSFeedbackCard), findsWidgets);
   });
 }
 

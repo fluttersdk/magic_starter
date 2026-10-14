@@ -1116,6 +1116,26 @@ void main() {
       expect(controller.writeError, isNull);
     });
 
+    test('matches a host extension list written in upper case', () async {
+      Config.set('magic_starter.support.attachments.extensions', <String>[
+        'PNG',
+      ]);
+      Http.fake((request) {
+        return Http.response(<String, dynamic>{
+          'data': messageJson(id: 2, body: 'Shot'),
+        }, 201);
+      });
+
+      final sent = await controller.sendMessage(
+        7,
+        'Shot',
+        attachments: <MagicFile>[pickedFile('shot.png', bytes: 1024)],
+      );
+
+      expect(sent, isTrue);
+      expect(controller.writeError, isNull);
+    });
+
     test('rate posts the rating and the comment', () async {
       Http.fake((request) {
         if (request.method == 'GET') {

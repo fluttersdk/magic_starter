@@ -72,6 +72,7 @@ export 'src/ui/components/page_header/index.dart';
 export 'src/ui/widgets/magic_starter_dialog_shell.dart';
 export 'src/ui/widgets/magic_starter_hide_bottom_nav.dart';
 export 'src/ui/widgets/magic_starter_hide_chrome.dart';
+export 'src/ui/widgets/magic_starter_feedback_card.dart';
 export 'src/ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 
 // Design-system components (Wave 4 atomic-component library).
@@ -115,7 +116,6 @@ export 'src/ui/components/header_action/index.dart';
 export 'src/ui/components/key_value_editor/index.dart';
 export 'src/ui/components/string_value_list/index.dart';
 export 'src/ui/components/switch_row/index.dart';
-export 'src/ui/components/feedback_card/index.dart';
 export 'src/support/confirms_identity.dart';
 export 'src/support/session_device_title.dart';
 export 'src/support/plan_upgrade.dart';

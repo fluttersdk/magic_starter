@@ -589,7 +589,11 @@ class MagicStarterSupportController extends MagicController
       });
     }
 
-    final extensions = MagicStarterConfig.supportAttachmentExtensions();
+    // `MagicFile.extension` is lower case; a host list may not be.
+    final extensions = {
+      for (final extension in MagicStarterConfig.supportAttachmentExtensions())
+        extension.toLowerCase(),
+    };
     final maxBytes = MagicStarterConfig.supportAttachmentMaxBytes();
 
     for (final file in attachments) {

@@ -1,14 +1,76 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
-import '../../../configuration/magic_starter_config.dart';
-import '../../../http/controllers/magic_starter_feedback_controller.dart';
-import '../../../support/store_review.dart';
-import '../button/index.dart';
-import '../card/index.dart';
-import '../form_field/index.dart';
-import '../textarea/index.dart';
-import 'feedback_card.recipe.dart';
+import '../../configuration/magic_starter_config.dart';
+import '../../http/controllers/magic_starter_feedback_controller.dart';
+import '../../support/store_review.dart';
+import '../components/button/index.dart';
+import '../components/card/index.dart';
+import '../components/form_field/index.dart';
+import '../components/textarea/index.dart';
+
+/// The `score` axis key: whether a score chip is the chosen one.
+const String _scoreAxis = 'score';
+
+/// What a focused score looks like.
+///
+/// It trails each variant's own border classes, not the base: wind resolves a
+/// family last-wins across the active classes, so a `border-*` colour that came
+/// after `focus:border-2` would undo the thicker border.
+const String _scoreFocus =
+    'focus:border-2 focus:border-primary-400 '
+    'focus:ring-2 focus:ring-offset-2 focus:ring-primary-500';
+
+/// The card's slots.
+///
+/// A score is a 44 x 44 tap target. When the keyboard reaches it the border
+/// thickens to the primary colour and a ring follows; the border is what shows
+/// on a wind release that does not yet paint `focus:ring-*` on a `WDiv`. The
+/// chosen one is filled with the primary colour, so it reads as chosen at a
+/// glance rather than as a faint ring.
+///
+/// ```
+/// root     - the column inside the card
+/// question - the 0-10 question
+/// scale    - the wrapping row of eleven score chips
+/// score    - one square chip (`score` axis: idle / selected)
+/// label    - the number inside a chip (`score` axis: idle / selected)
+/// ends     - the "Not likely" / "Very likely" row under the scale
+/// end      - one of those two captions
+/// actions  - the send and "Not now" row
+/// thanks   - the line that replaces the form once answered
+/// link     - the conversation a low score opened
+/// ```
+const WindSlotRecipe _recipe = WindSlotRecipe(
+  slots: {
+    'root': 'flex flex-col gap-4',
+    'question': 'text-sm font-semibold text-fg',
+    'scale': 'flex flex-row wrap gap-2',
+    'score':
+        'flex flex-row items-center justify-center w-11 h-11 rounded-xl border',
+    'label': 'text-sm font-medium',
+    'ends': 'flex flex-row justify-between gap-3',
+    'end': 'text-xs text-fg-muted',
+    'actions': 'flex flex-row wrap items-center gap-3',
+    'thanks': 'text-sm text-fg',
+    'link': 'text-sm font-medium text-primary',
+  },
+  variants: {
+    _scoreAxis: {
+      'idle': {
+        'score': 'border-color-border bg-surface-container-high $_scoreFocus',
+        'label': 'text-fg',
+      },
+      'selected': {
+        'score':
+            'border-primary-600 dark:border-primary-500 bg-primary '
+            '$_scoreFocus',
+        'label': 'text-on-primary',
+      },
+    },
+  },
+  defaultVariants: {_scoreAxis: 'idle'},
+);
 
 /// **The occasional 0-10 feedback card.**
 ///
@@ -29,11 +91,11 @@ import 'feedback_card.recipe.dart';
 ///
 /// ### Example:
 /// ```dart
-/// const MSFeedbackCard()
+/// const MagicStarterFeedbackCard()
 /// ```
-class MSFeedbackCard extends StatefulWidget {
-  /// Creates an [MSFeedbackCard].
-  const MSFeedbackCard({super.key, this.onDemand = false});
+class MagicStarterFeedbackCard extends StatefulWidget {
+  /// Creates a [MagicStarterFeedbackCard].
+  const MagicStarterFeedbackCard({super.key, this.onDemand = false});
 
   /// Whether the customer asked for the form, which skips the eligibility read
   /// and the dismissal.
@@ -43,10 +105,11 @@ class MSFeedbackCard extends StatefulWidget {
   static const int maxScore = 10;
 
   @override
-  State<MSFeedbackCard> createState() => _MSFeedbackCardState();
+  State<MagicStarterFeedbackCard> createState() =>
+      _MagicStarterFeedbackCardState();
 }
 
-class _MSFeedbackCardState extends State<MSFeedbackCard> {
+class _MagicStarterFeedbackCardState extends State<MagicStarterFeedbackCard> {
   final MagicStarterFeedbackController _controller =
       MagicStarterFeedbackController.instance;
   final TextEditingController _comment = TextEditingController();
@@ -109,7 +172,7 @@ class _MSFeedbackCardState extends State<MSFeedbackCard> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
-        final slots = feedbackCardRecipe();
+        final slots = _recipe();
 
         if (_answered) return _buildThanks(slots);
         if (!widget.onDemand && !_controller.eligible) {
@@ -137,7 +200,11 @@ class _MSFeedbackCardState extends State<MSFeedbackCard> {
               WDiv(
                 className: slots['scale'],
                 children: [
-                  for (var score = 0; score <= MSFeedbackCard.maxScore; score++)
+                  for (
+                    var score = 0;
+                    score <= MagicStarterFeedbackCard.maxScore;
+                    score++
+                  )
                     _buildScore(score),
                 ],
               ),
@@ -205,10 +272,8 @@ class _MSFeedbackCardState extends State<MSFeedbackCard> {
 
   Widget _buildScore(int score) {
     final selected = _score == score;
-    final slots = feedbackCardRecipe(
-      variants: <String, String>{
-        kFeedbackScoreAxis: selected ? 'selected' : 'idle',
-      },
+    final slots = _recipe(
+      variants: <String, String>{_scoreAxis: selected ? 'selected' : 'idle'},
     );
 
     // The anchor's own `semanticLabel` makes it the one button of this score;

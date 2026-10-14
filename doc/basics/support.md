@@ -59,7 +59,7 @@ Five further flags build on it. All default to `false`, and the first four need 
 | Flag | Adds |
 |------|------|
 | `support_csat` | A thumbs rating under a resolved thread |
-| `support_feedback` | `MSFeedbackCard`, a "Send feedback" page and menu item |
+| `support_feedback` | `MagicStarterFeedbackCard`, a "Send feedback" page and menu item |
 | `support_attachments` | Image and PDF files on a new conversation and on a reply, and in the thread |
 | `support_diagnostics` | Client info and a previewed screenshot on a new conversation |
 | `store_review` | The native review prompt and a "Rate us" menu item (client only; the backend has no counterpart) |
@@ -179,15 +179,15 @@ The bytes live in memory only and are dropped on the next sign-in. Turn `support
 <a name="the-feedback-card"></a>
 ## The Feedback Card
 
-With `support_feedback` on, `MSFeedbackCard` asks "How likely are you to recommend us?" on a 0 to 10 scale with an optional comment (2000 characters at most). Place it yourself, on the screen where a customer finishes something:
+With `support_feedback` on, `MagicStarterFeedbackCard` asks "How likely are you to recommend us?" on a 0 to 10 scale with an optional comment (2000 characters at most). Place it yourself, on the screen where a customer finishes something:
 
 ```dart
-const MSFeedbackCard()
+const MagicStarterFeedbackCard()
 ```
 
 It renders nothing until the backend says the account is due (`GET support/feedback`, which the backend paces by account age and time since the last answer), and nothing for a guest or a signed-out visitor. "Not now" records a dismissal, which paces it like an answer. A score the backend counts as low opens, or continues, a conversation, and the thanks line then links to it. The backend never lets the AI desk answer that conversation.
 
-The same form is the "Send feedback" page (`/support/feedback`, view key `support.feedback`) behind a profile menu item. That page and `MSFeedbackCard(onDemand: true)` skip the eligibility read and the dismissal. A guest or an account with an unverified email is not offered the menu item, since the backend refuses it.
+The same form is the "Send feedback" page (`/support/feedback`, view key `support.feedback`) behind a profile menu item. That page and `MagicStarterFeedbackCard(onDemand: true)` skip the eligibility read and the dismissal. A guest or an account with an unverified email is not offered the menu item, since the backend refuses it.
 
 <a name="store-review"></a>
 ## Store Review
