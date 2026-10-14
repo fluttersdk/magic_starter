@@ -74,6 +74,44 @@ void main() {
       expect(logs.entries.where((e) => e.level == 'warning'), hasLength(1));
     });
 
+    test('ensureEligibility shares one in-flight read', () async {
+      final answer = Completer<MagicResponse>();
+      final fake = Http.fake((MagicRequest request) async => answer.future);
+
+      final first = controller.ensureEligibility();
+      final second = controller.ensureEligibility();
+      final card = controller.loadEligibility();
+      answer.complete(Http.response(<String, dynamic>{'eligible': true}));
+
+      expect(await first, isTrue);
+      expect(await second, isTrue);
+      await card;
+      fake.assertSentCount(1);
+    });
+
+    test('ensureEligibility does not read again once answered', () async {
+      final fake = Http.fake((request) {
+        return Http.response(<String, dynamic>{'eligible': false});
+      });
+
+      expect(await controller.ensureEligibility(), isFalse);
+      expect(await controller.ensureEligibility(), isFalse);
+
+      fake.assertSentCount(1);
+    });
+
+    test('ensureEligibility reads again after a session reset', () async {
+      Http.fake((request) {
+        return Http.response(<String, dynamic>{'eligible': true});
+      });
+      expect(await controller.ensureEligibility(), isTrue);
+
+      Http.fake((request) => Http.response(<String, dynamic>{}, 403));
+      await controller.resetForSession();
+
+      expect(await controller.ensureEligibility(), isFalse);
+    });
+
     test('submit posts the score and the comment', () async {
       Http.fake((request) {
         if (request.method == 'GET') {

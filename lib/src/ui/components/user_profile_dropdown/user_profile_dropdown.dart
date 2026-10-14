@@ -149,6 +149,7 @@ class MSUserProfileDropdown extends StatelessWidget {
     // account reaches the profile page's in-place upgrade, the same door the
     // settings hub's upgrade row opens, so the guest keeps its own data.
     final isGuest = Auth.user()?.get<bool>('is_guest') == true;
+    final canSendFeedback = !isGuest && _hasVerifiedEmail();
 
     return WDiv(
       className: 'flex flex-col py-2 w-full',
@@ -244,10 +245,11 @@ class MSUserProfileDropdown extends StatelessWidget {
                   MagicRoute.to(MagicStarterConfig.supportRoute());
                 },
               ),
-            // A guest is refused by the feedback endpoint, so it is not offered.
+            // The feedback endpoint refuses a guest and an unverified email with
+            // a 403, so neither is offered the form.
             if (MagicStarterConfig.hasSupportFeatures() &&
                 MagicStarterConfig.hasSupportFeedbackFeatures() &&
-                !isGuest)
+                canSendFeedback)
               _buildMenuItem(
                 icon: _iconFeedback,
                 label: trans('magic_starter.nav.feedback'),
@@ -288,6 +290,14 @@ class MSUserProfileDropdown extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Whether the signed-in account has verified its email, read from
+  /// `email_verified_at` as the profile controller does.
+  bool _hasVerifiedEmail() {
+    final verifiedAt = Auth.user()?.get<String?>('email_verified_at');
+
+    return verifiedAt != null && verifiedAt.isNotEmpty;
   }
 
   Widget _buildMenuItem({

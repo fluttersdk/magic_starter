@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,6 +63,7 @@ void main() {
     MagicStarterStoreReview.resetForTesting();
     Vault.unfake();
     Auth.unfake();
+    Http.unfake();
     MagicApp.reset();
     Magic.flush();
   });
@@ -153,6 +156,62 @@ void main() {
       ]);
 
       expect(requests(), 1);
+    });
+  });
+
+  group('beside the feedback card', () {
+    setUp(() => Config.set('magic_starter.features.support_feedback', true));
+
+    test('waits for the card eligibility and stays quiet when due', () async {
+      signIn(ageDays: 30);
+      final answer = Completer<MagicResponse>();
+      Http.fake((MagicRequest request) async => answer.future);
+
+      final asked = MagicStarterStoreReview.maybeRequest();
+      await Future<void>.delayed(Duration.zero);
+      answer.complete(Http.response(<String, dynamic>{'eligible': true}));
+
+      expect(await asked, isFalse);
+      expect(requests(), 0);
+      expect(MagicStarterStoreReview.feedbackCardShown, isTrue);
+    });
+
+    test('still asks when the card is not due', () async {
+      signIn(ageDays: 30);
+      final answer = Completer<MagicResponse>();
+      Http.fake((MagicRequest request) async => answer.future);
+
+      final asked = MagicStarterStoreReview.maybeRequest();
+      await Future<void>.delayed(Duration.zero);
+      answer.complete(Http.response(<String, dynamic>{'eligible': false}));
+
+      expect(await asked, isTrue);
+      expect(requests(), 1);
+    });
+
+    test('shares one eligibility read with the card', () async {
+      signIn(ageDays: 30);
+      final fake = Http.fake((request) {
+        return Http.response(<String, dynamic>{'eligible': false});
+      });
+
+      await Future.wait(<Future<void>>[
+        MagicStarterFeedbackController.instance.loadEligibility(),
+        MagicStarterStoreReview.maybeRequest(),
+      ]);
+
+      fake.assertSentCount(1);
+    });
+
+    test('does not read eligibility for an account too young to ask', () async {
+      signIn(ageDays: 2);
+      final fake = Http.fake((request) {
+        return Http.response(<String, dynamic>{'eligible': true});
+      });
+
+      expect(await MagicStarterStoreReview.maybeRequest(), isFalse);
+
+      fake.assertSentCount(0);
     });
   });
 

@@ -74,9 +74,6 @@ class _MagicStarterSupportCreateViewState
 
   String? _topic;
 
-  /// The captured screen this conversation will carry, until removed.
-  Uint8List? _screenshot;
-
   /// True while the client info is read, before the controller's own
   /// in-flight guard takes over.
   bool _collecting = false;
@@ -86,13 +83,7 @@ class _MagicStarterSupportCreateViewState
   get pickFilesOverride => widget.pickFiles;
 
   @override
-  void onInit() {
-    controller.forgetWriteError();
-
-    if (MagicStarterConfig.hasSupportDiagnosticsFeatures()) {
-      _screenshot = MagicStarterScreenCapture.holder.bytes;
-    }
-  }
+  void onInit() => controller.forgetWriteError();
 
   @override
   void onClose() => _body.dispose();
@@ -115,7 +106,9 @@ class _MagicStarterSupportCreateViewState
     }
 
     // 2. One write carries the message, the files and the diagnostics.
-    final Uint8List? screenshot = diagnostics ? _screenshot : null;
+    final Uint8List? screenshot = diagnostics
+        ? MagicStarterScreenCapture.holder.bytes
+        : null;
     final conversation = await controller.createConversation(
       topic: _topic,
       body: _body.text.trim(),
@@ -142,10 +135,7 @@ class _MagicStarterSupportCreateViewState
     );
   }
 
-  void _removeScreenshot() {
-    MagicStarterScreenCapture.holder.discard();
-    setState(() => _screenshot = null);
-  }
+  void _removeScreenshot() => MagicStarterScreenCapture.holder.discard();
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +163,21 @@ class _MagicStarterSupportCreateViewState
     );
   }
 
+  /// Rebuilds when the capture lands: the encode is asynchronous, so the bytes
+  /// can arrive after this page opened.
   Widget _buildForm(bool wide) {
+    return ListenableBuilder(
+      listenable: MagicStarterScreenCapture.holder.bytesListenable,
+      builder: (context, _) => _buildFormCard(wide),
+    );
+  }
+
+  Widget _buildFormCard(bool wide) {
+    final Uint8List? screenshot =
+        MagicStarterConfig.hasSupportDiagnosticsFeatures()
+        ? MagicStarterScreenCapture.holder.bytes
+        : null;
+
     return MSCard(
       child: WDiv(
         className: 'flex flex-col gap-5',
@@ -190,7 +194,10 @@ class _MagicStarterSupportCreateViewState
           ),
           MSFormField(
             label: trans('magic_starter.support.message_label'),
-            error: controller.getError('body') ?? controller.writeError,
+            error:
+                controller.getError('body') ??
+                controller.writeError ??
+                _unplacedError(),
             child: WDiv(
               className: 'flex flex-col gap-1.5',
               children: [
@@ -208,11 +215,29 @@ class _MagicStarterSupportCreateViewState
           ),
           if (MagicStarterConfig.hasSupportAttachmentsFeatures())
             _buildAttachments(),
-          if (_screenshot != null) _buildScreenshot(_screenshot!),
+          if (screenshot != null) _buildScreenshot(screenshot),
           _buildFooter(wide),
         ],
       ),
     );
+  }
+
+  /// The generic refusal text when the backend rejected a field this form has
+  /// no place for (a `client_context.*` key, say), so Send never fails silently.
+  String? _unplacedError() {
+    final bool unplaced = controller.validationErrors.keys.any(
+      (key) => !_placedErrorKey(key),
+    );
+
+    return unplaced ? trans('magic_starter.support.create_error') : null;
+  }
+
+  bool _placedErrorKey(String key) {
+    return key == 'topic' ||
+        key == 'body' ||
+        key == 'screenshot' ||
+        key == 'attachments' ||
+        key.startsWith('attachments.');
   }
 
   Widget _buildAttachments() {
@@ -251,6 +276,7 @@ class _MagicStarterSupportCreateViewState
     return MSFormField(
       label: trans('magic_starter.support.screenshot_label'),
       hint: trans('magic_starter.support.screenshot_hint'),
+      error: controller.getError('screenshot'),
       child: WDiv(
         className: 'flex flex-col items-start gap-2',
         children: [

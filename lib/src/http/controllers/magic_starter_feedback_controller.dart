@@ -28,6 +28,9 @@ class MagicStarterFeedbackController extends MagicController
   int _sessionGeneration = 0;
 
   bool _hasRead = false;
+
+  /// The eligibility read in flight, shared by every caller until it settles.
+  Future<void>? _eligibilityRead;
   bool _eligible = false;
   bool _isSubmitting = false;
   Object? _conversationId;
@@ -53,7 +56,33 @@ class MagicStarterFeedbackController extends MagicController
   /// Any answer other than a clear yes reads as "not eligible", a guest or an
   /// unverified email (403) included: the card is optional, so a failed read is
   /// logged and never shown.
-  Future<void> loadEligibility() async {
+  ///
+  /// A call made while a read is in flight joins it instead of sending another.
+  Future<void> loadEligibility() {
+    final inFlight = _eligibilityRead;
+    if (inFlight != null) return inFlight;
+
+    final read = _readEligibility();
+    _eligibilityRead = read;
+
+    return read.whenComplete(() {
+      if (identical(_eligibilityRead, read)) _eligibilityRead = null;
+    });
+  }
+
+  /// Answers whether this user is due the card, reading at most once per
+  /// session however many callers ask.
+  ///
+  /// The card and `MagicStarterStoreReview` both need the answer, and the
+  /// review prompt must wait for it: a prompt started while the card is still
+  /// loading would otherwise land in the same session as the card.
+  Future<bool> ensureEligibility() async {
+    if (_eligibilityRead != null || !_hasRead) await loadEligibility();
+
+    return _eligible;
+  }
+
+  Future<void> _readEligibility() async {
     final generation = _sessionGeneration;
     _hasRead = true;
 
@@ -161,6 +190,7 @@ class MagicStarterFeedbackController extends MagicController
 
     final hadRead = _hasRead;
 
+    _eligibilityRead = null;
     _hasRead = false;
     _eligible = false;
     _isSubmitting = false;

@@ -4,6 +4,7 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:magic/magic.dart';
 
 import '../configuration/magic_starter_config.dart';
+import '../http/controllers/magic_starter_feedback_controller.dart';
 
 /// Asks for a native store review at moments the host chooses, and opens the
 /// store listing for an explicit "Rate us".
@@ -24,6 +25,11 @@ import '../configuration/magic_starter_config.dart';
 /// device, or in a run where the feedback card was shown: one ask per session
 /// is already plenty. Nothing is asked before it, and nothing depends on a
 /// feedback score.
+///
+/// With `support_feedback` on, [maybeRequest] first waits for the card's
+/// eligibility read (shared with the card, never a second request): a host
+/// calling it from a screen load must not slip a review sheet in while the card
+/// is still deciding whether to show.
 class MagicStarterStoreReview {
   MagicStarterStoreReview._();
 
@@ -76,10 +82,15 @@ class MagicStarterStoreReview {
       // 1. The cheap, synchronous rules first.
       if (!_mayAsk()) return false;
 
-      // 2. The device's own memory of the last prompt.
+      // 2. A customer due the feedback card is asked that question, not this
+      //    one; the read may still be in flight when a host calls in.
+      if (await _feedbackCardDue()) return false;
+      if (!_mayAsk()) return false;
+
+      // 3. The device's own memory of the last prompt.
       if (!await _intervalElapsed()) return false;
 
-      // 3. The platform has the final say on whether a sheet can show.
+      // 4. The platform has the final say on whether a sheet can show.
       final review = InAppReview.instance;
       if (!await review.isAvailable()) return false;
 
@@ -108,6 +119,18 @@ class MagicStarterStoreReview {
     _feedbackCardShown = false;
     _requesting = false;
     debugIsWebOverride = null;
+  }
+
+  /// Whether the card is due this session, which also marks the session so
+  /// every later call stays quiet without asking again.
+  static Future<bool> _feedbackCardDue() async {
+    if (!MagicStarterConfig.hasSupportFeedbackFeatures()) return false;
+
+    final due = await MagicStarterFeedbackController.instance
+        .ensureEligibility();
+    if (due) noteFeedbackCardShown();
+
+    return due;
   }
 
   static bool _mayAsk() {

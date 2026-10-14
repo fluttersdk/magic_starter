@@ -2396,6 +2396,14 @@ void main() {
         Config.set('magic_starter.features.support_feedback', true);
         Config.set('magic_starter.features.store_review', true);
         MagicStarterStoreReview.debugIsWebOverride = false;
+        Auth.fake(
+          user: MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 5,
+            'name': 'Ada Lovelace',
+            'email': 'ada@example.com',
+            'email_verified_at': '2026-10-01T09:00:00+00:00',
+          }),
+        );
       });
 
       tearDown(MagicStarterStoreReview.resetForTesting);
@@ -2413,6 +2421,23 @@ void main() {
           user: MagicStarterAuthUser.fromMap(<String, dynamic>{
             'id': 6,
             'is_guest': true,
+          }),
+        );
+
+        await openMenu(tester);
+
+        expect(find.text(trans('magic_starter.nav.feedback')), findsNothing);
+      });
+
+      testWidgets('offers no Send feedback to an unverified email', (
+        tester,
+      ) async {
+        Auth.fake(
+          user: MagicStarterAuthUser.fromMap(<String, dynamic>{
+            'id': 7,
+            'name': 'Grace',
+            'email': 'grace@example.com',
+            'email_verified_at': null,
           }),
         );
 
@@ -2617,6 +2642,65 @@ void main() {
       await send(tester);
 
       expect(MagicStarterScreenCapture.holder.bytes, isNull);
+    });
+
+    testWidgets('a screenshot that arrives after the page opened is shown', (
+      tester,
+    ) async {
+      MagicStarterScreenCapture.holder.clear();
+      await mount(tester, at: '/support/new');
+      expect(find.byKey(screenshot), findsNothing);
+
+      MagicStarterScreenCapture.holder.debugHold(png, route: '/monitors/3');
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(screenshot), findsOneWidget);
+    });
+
+    testWidgets('a refused screenshot is explained under its preview', (
+      tester,
+    ) async {
+      fakeBackend({
+        'POST /support/conversations': (_) => Http.response(<String, dynamic>{
+          'message': 'The screenshot is too large.',
+          'errors': <String, dynamic>{
+            'screenshot': <String>['The screenshot is too large.'],
+          },
+        }, 422),
+      });
+      await mount(tester, at: '/support/new');
+
+      await tester.enterText(find.byType(EditableText), 'It broke');
+      await tester.pump();
+      await tester.tap(find.text(trans('magic_starter.support.create_submit')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('The screenshot is too large.'), findsOneWidget);
+      expect(find.byKey(screenshot), findsOneWidget);
+    });
+
+    testWidgets('an error on an unplaced field falls back to the write error', (
+      tester,
+    ) async {
+      fakeBackend({
+        'POST /support/conversations': (_) => Http.response(<String, dynamic>{
+          'message': 'The client_context.route field is too long.',
+          'errors': <String, dynamic>{
+            'client_context.route': <String>['The route is too long.'],
+          },
+        }, 422),
+      });
+      await mount(tester, at: '/support/new');
+
+      await tester.enterText(find.byType(EditableText), 'It broke');
+      await tester.pump();
+      await tester.tap(find.text(trans('magic_starter.support.create_submit')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(trans('magic_starter.support.create_error')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('sends neither while the flag is off', (tester) async {

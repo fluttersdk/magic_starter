@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
@@ -125,7 +125,7 @@ class MagicStarterScreenCapture {
 class MagicStarterCapturedScreen implements SessionScoped {
   MagicStarterCapturedScreen._();
 
-  Uint8List? _bytes;
+  final ValueNotifier<Uint8List?> _bytes = ValueNotifier<Uint8List?>(null);
   String? _route;
 
   /// Bumped by every new entry and every reset; a capture that finishes under
@@ -134,7 +134,11 @@ class MagicStarterCapturedScreen implements SessionScoped {
 
   /// PNG bytes of the screen that was left, at logical size. Null when that
   /// screen may not be captured, or the customer removed it.
-  Uint8List? get bytes => _bytes;
+  Uint8List? get bytes => _bytes.value;
+
+  /// Notifies when [bytes] changes. The encode is asynchronous, so a screen
+  /// that opened first listens here instead of reading [bytes] once.
+  ValueListenable<Uint8List?> get bytesListenable => _bytes;
 
   /// The path (no query) of the screen that was left, kept even when its
   /// pixels were not.
@@ -142,19 +146,19 @@ class MagicStarterCapturedScreen implements SessionScoped {
 
   /// Removes the screenshot, keeping the route: the customer said no to the
   /// picture, not to the rest of the client info.
-  void discard() => _bytes = null;
+  void discard() => _bytes.value = null;
 
   /// Forgets everything, once a conversation carried it.
   void clear() {
     _generation++;
-    _bytes = null;
+    _bytes.value = null;
     _route = null;
   }
 
   /// Seeds the holder as a capture would, for a screen test.
   @visibleForTesting
   void debugHold(Uint8List bytes, {required String route}) {
-    _bytes = bytes;
+    _bytes.value = bytes;
     _route = route;
   }
 
@@ -172,11 +176,15 @@ class MagicStarterCapturedScreen implements SessionScoped {
   void _complete(int generation, Uint8List bytes) {
     if (generation != _generation) return;
 
-    _bytes = bytes;
+    _bytes.value = bytes;
   }
 }
 
 /// Counts the dialog and popup routes open on the navigator it observes.
+///
+/// A popped route stays counted until its exit animation has run out: the
+/// boundary keeps painting a fading dialog for a few frames after `didPop`, and
+/// a capture in that window would carry what the dialog showed.
 class MagicStarterPopupObserver extends NavigatorObserver {
   MagicStarterPopupObserver._();
 
@@ -192,7 +200,23 @@ class MagicStarterPopupObserver extends NavigatorObserver {
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    _open.remove(route);
+    final Animation<double>? exit = route is PopupRoute
+        ? route.animation
+        : null;
+    if (exit == null || exit.isDismissed) {
+      _open.remove(route);
+
+      return;
+    }
+
+    void forgetOnceDismissed(AnimationStatus status) {
+      if (status != AnimationStatus.dismissed) return;
+
+      exit.removeStatusListener(forgetOnceDismissed);
+      _open.remove(route);
+    }
+
+    exit.addStatusListener(forgetOnceDismissed);
   }
 
   @override

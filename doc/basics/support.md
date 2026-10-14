@@ -187,7 +187,7 @@ const MSFeedbackCard()
 
 It renders nothing until the backend says the account is due (`GET support/feedback`, which the backend paces by account age and time since the last answer), and nothing for a guest or a signed-out visitor. "Not now" records a dismissal, which paces it like an answer. A score the backend counts as low opens, or continues, a conversation, and the thanks line then links to it. The backend never lets the AI desk answer that conversation.
 
-The same form is the "Send feedback" page (`/support/feedback`, view key `support.feedback`) behind a profile menu item. That page and `MSFeedbackCard(onDemand: true)` skip the eligibility read and the dismissal. A guest is not offered the menu item, since the backend refuses it.
+The same form is the "Send feedback" page (`/support/feedback`, view key `support.feedback`) behind a profile menu item. That page and `MSFeedbackCard(onDemand: true)` skip the eligibility read and the dismissal. A guest or an account with an unverified email is not offered the menu item, since the backend refuses it.
 
 <a name="store-review"></a>
 ## Store Review
@@ -207,6 +207,7 @@ await MagicStarterStoreReview.maybeRequest();
 - never in the first 7 days of an account (`magic_starter.store_review.min_account_days`);
 - at most once per 120 days on this device (`magic_starter.store_review.interval_days`, remembered in the `Vault`);
 - never in a run where the feedback card was shown, so a customer is not asked a question and then asked for a review in the same session;
+  With `support_feedback` on, the call first waits for the card's eligibility read (shared with the card) and stays quiet when the card is due, even if the card has not rendered yet;
 - never from a button. The platforms decide whether a sheet appears and say nothing back, so a button wired to it would sometimes do nothing. Call it from your own milestone.
 
 It answers whether the platform was asked, not whether a sheet showed. "Rate us" in the profile menu is the button instead: it calls `MagicStarterStoreReview.openStoreListing()`, which opens the store page and has no quota. It shows on Android, and on iOS and macOS once the App Store id is set:

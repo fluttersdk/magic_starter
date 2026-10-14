@@ -40,6 +40,7 @@ mixin MagicStarterSupportAttachmentPicking<T extends StatefulWidget>
     setState(() => _picked = [..._picked, ...chosen]);
   }
 
+  /// Drops the picked file at [index] (its position in [pickedAttachments]).
   void removeAttachment(int index) {
     setState(() => _picked = [..._picked]..removeAt(index));
   }

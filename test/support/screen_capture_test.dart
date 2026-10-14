@@ -159,6 +159,50 @@ void main() {
     expect(MagicStarterScreenCapture.holder.bytes, isNull);
   });
 
+  testWidgets('nothing is captured while a closing dialog is still painted', (
+    tester,
+  ) async {
+    await mount(tester, at: '/dashboard');
+    final NavigatorState navigator =
+        MagicRouter.instance.navigatorKey.currentState!;
+
+    showDialog<void>(
+      context: navigator.context,
+      builder: (_) => const Center(child: Text('secret dialog')),
+    );
+    await tester.pumpAndSettle();
+
+    // The route has popped, but its fade-out has not run a frame yet.
+    navigator.pop();
+    await tester.runAsync(() async {
+      MagicRoute.to('/support');
+      await MagicStarterScreenCapture.debugCaptureSettled;
+    });
+    await tester.pumpAndSettle();
+
+    expect(MagicStarterScreenCapture.holder.bytes, isNull);
+  });
+
+  testWidgets('a dialog that finished closing no longer blocks a capture', (
+    tester,
+  ) async {
+    await mount(tester, at: '/dashboard');
+    final NavigatorState navigator =
+        MagicRouter.instance.navigatorKey.currentState!;
+
+    showDialog<void>(
+      context: navigator.context,
+      builder: (_) => const Center(child: Text('secret dialog')),
+    );
+    await tester.pumpAndSettle();
+    navigator.pop();
+    await tester.pumpAndSettle();
+
+    await navigate(tester, '/support');
+
+    expect(MagicStarterScreenCapture.holder.bytes, isNotNull);
+  });
+
   testWidgets('a deny-listed visit drops the screenshot an earlier one held', (
     tester,
   ) async {
