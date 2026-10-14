@@ -137,4 +137,17 @@ void main() {
       greaterThanOrEqualTo(40),
     );
   });
+
+  testWidgets('Input insets its text 12 logical px from the left edge', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const MSInput(placeholder: 'Enter text')));
+
+    // WInput drops its 12px default content padding as soon as the className
+    // sets any padding, so the recipe's `py-*` must carry its own `px-*`.
+    final double inset =
+        tester.getTopLeft(find.text('Enter text')).dx -
+        tester.getTopLeft(find.byType(WInput)).dx;
+    expect(inset, 12);
+  });
 }
