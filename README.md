@@ -167,7 +167,7 @@ All 22 features default to `false` (opt-in). Enable only what your app needs:
 | `support_diagnostics` | Client info and an automatic screenshot of the screen the customer came from, shown to staff only. The screenshot needs the app wrapped once with `MagicStarterScreenCapture.wrap(child)`; routes listed in `diagnostics.deny_capture_routes` are never captured. Needs `support` |
 | `store_review` | The native store review prompt (`MagicStarterStoreReview.maybeRequest()` at a host milestone, never on the web) and the "Rate us" menu item |
 | `releases` | A "What's new" changelog page at `/settings/changelog` (view key `settings.changelog`), its settings hub row and the `MagicStarterAppVersion` caption, over `magic-starter-laravel`'s `GET releases`. Needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
-| `app_update` | `MagicStarterAppUpdateBanner`, mounted by the shipped app layout: on the web it offers Reload when a new deploy appears in `version.json`, on a store-installed release build it offers Update when the backend's latest build is higher. Needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
+| `app_update` | `MagicStarterAppUpdateBanner`, mounted by the shipped app layout: on the web it offers Reload when a new deploy appears in `version.json`, on a store-installed release build it offers Update when the backend's latest build is higher. The web banner reads only `version.json`; the store banner reads `GET releases` and needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
 
 ---
 

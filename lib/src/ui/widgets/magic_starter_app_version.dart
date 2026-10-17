@@ -12,25 +12,41 @@ import '../../support/app_build.dart';
 /// conversation reports. The starter shows it on the settings hub and the
 /// changelog page; a host app that wants it elsewhere places the widget itself.
 ///
+/// The read starts once, when the caption mounts; a rebuild reuses it.
+///
 /// ## Failure mode
 ///
 /// Renders nothing while the read is pending and when the platform cannot
 /// answer, so a caption never shows a placeholder or an error.
-class MagicStarterAppVersion extends StatelessWidget {
+class MagicStarterAppVersion extends StatefulWidget {
   /// The Wind className of the caption, replacing the default (a small, muted,
   /// centred line).
   final String? className;
-
-  /// The default caption style; `text-fg-muted` carries its dark pair.
-  static const String _defaultClassName = 'text-xs text-fg-muted text-center';
 
   /// Creates a [MagicStarterAppVersion].
   const MagicStarterAppVersion({super.key, this.className});
 
   @override
+  State<MagicStarterAppVersion> createState() => _MagicStarterAppVersionState();
+}
+
+class _MagicStarterAppVersionState extends State<MagicStarterAppVersion> {
+  /// The default caption style; `text-fg-muted` carries its dark pair.
+  static const String _defaultClassName = 'text-xs text-fg-muted text-center';
+
+  late final Future<PackageInfo?> _info;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _info = MagicStarterAppBuild.info();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<PackageInfo?>(
-      future: MagicStarterAppBuild.info(),
+      future: _info,
       builder: (context, snapshot) {
         final PackageInfo? info = snapshot.data;
         if (info == null) {
@@ -41,7 +57,7 @@ class MagicStarterAppVersion extends StatelessWidget {
           trans('magic_starter.releases.version_caption', {
             'version': MagicStarterAppBuild.label(info),
           }),
-          className: className ?? _defaultClassName,
+          className: widget.className ?? _defaultClassName,
         );
       },
     );

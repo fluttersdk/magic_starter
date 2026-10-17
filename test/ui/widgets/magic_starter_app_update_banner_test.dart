@@ -343,6 +343,121 @@ void main() {
       await finish(tester);
     });
 
+    testWidgets('a resume after 15 minutes checks again', (tester) async {
+      // A remount restarts the polling period but not the session cooldown,
+      // so the cooldown runs out before the next poll and only the resume can
+      // be the check.
+      deployed = '14';
+      await mount(tester);
+      await tester.pump(const Duration(minutes: 5));
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(minutes: 1));
+      await mount(tester);
+      expect(fetches, 1);
+
+      await tester.pump(const Duration(minutes: 10));
+      expect(fetches, 1);
+
+      await resume(tester);
+      expect(fetches, 2);
+
+      await finish(tester);
+    });
+
+    testWidgets('a remount shows a revealed build at once without a fetch', (
+      tester,
+    ) async {
+      await mount(tester);
+      await tester.pump(_delay);
+      expect(reload, findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await mount(tester);
+
+      expect(reload, findsOneWidget);
+      expect(fetches, 1);
+      await finish(tester);
+    });
+
+    testWidgets('a remount during the reveal delay waits a fresh delay', (
+      tester,
+    ) async {
+      await mount(tester);
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpWidget(const SizedBox());
+
+      await mount(tester);
+      await tester.pump(_delay - const Duration(seconds: 1));
+      expect(reload, findsNothing);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(reload, findsOneWidget);
+      expect(fetches, 1);
+      await finish(tester);
+    });
+
+    testWidgets('a rollback to the running build hides the banner', (
+      tester,
+    ) async {
+      await mount(tester);
+      await tester.pump(_delay);
+      expect(reload, findsOneWidget);
+
+      deployed = '14';
+      await tester.pump(_interval - _delay);
+      expect(fetches, 2);
+      expect(reload, findsNothing);
+
+      // The same build deployed again is a new deploy: it waits its delay.
+      deployed = '15';
+      await tester.pump(_interval);
+      expect(fetches, 3);
+      expect(reload, findsNothing);
+
+      await tester.pump(_delay);
+      expect(reload, findsOneWidget);
+      await finish(tester);
+    });
+
+    testWidgets('a rollback cancels a reveal still counting down', (
+      tester,
+    ) async {
+      await mount(tester);
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpWidget(const SizedBox());
+
+      deployed = '14';
+      await tester.pump(_interval);
+      await mount(tester);
+      expect(fetches, 2);
+
+      await tester.pump(_delay * 2);
+      expect(reload, findsNothing);
+      await finish(tester);
+    });
+
+    testWidgets('a failed check logs the error with its stack trace', (
+      tester,
+    ) async {
+      MagicStarterAppUpdateBanner.debugFetchDeployedBuild = () async {
+        throw StateError('offline');
+      };
+
+      await mount(tester);
+
+      final warnings = log.entries.where(
+        (e) => e.level == 'warning' && e.message.contains('check failed'),
+      );
+      expect(warnings, hasLength(1));
+      expect(warnings.single.message, contains('offline'));
+      expect(
+        warnings.single.message,
+        contains('magic_starter_app_update_banner_test.dart'),
+      );
+      expect(reload, findsNothing);
+      await finish(tester);
+    });
+
     testWidgets('unmounting during the reveal delay leaves no timer', (
       tester,
     ) async {
@@ -423,6 +538,31 @@ void main() {
       await tester.pump(const Duration(minutes: 1));
       await resume(tester);
       expect(releaseRequests(), 2);
+
+      await finish(tester);
+    });
+
+    testWidgets('a remount within 15 minutes asks the backend once', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      installed(installerStore: 'com.apple');
+
+      await mount(tester);
+      expect(releaseRequests(), 1);
+      expect(update, findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(minutes: 5));
+      await mount(tester);
+      expect(releaseRequests(), 1);
+      expect(update, findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(minutes: 10));
+      await mount(tester);
+      expect(releaseRequests(), 2);
+      expect(update, findsOneWidget);
 
       await finish(tester);
     });

@@ -10,7 +10,6 @@ import 'package:magic_starter/src/ui/views/settings/security/magic_starter_passw
 import 'package:magic_starter/src/ui/views/settings/security/magic_starter_sessions_view.dart';
 import 'package:magic_starter/src/ui/views/settings/security/magic_starter_two_factor_view.dart';
 import 'package:magic_starter/src/ui/views/profile/magic_starter_profile_sub_page_view.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 // ---------------------------------------------------------------------------
 // Mock NetworkDriver

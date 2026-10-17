@@ -34,6 +34,15 @@ import '../components/update_banner/update_banner.dart';
 /// the offered build under [dismissedBuildKey], so the banner returns only for
 /// a newer build. It never reloads on its own and never opens a dialog.
 ///
+/// ## Session memory
+///
+/// What the banner has learned lives for the app session, not for one mounted
+/// banner: the check cooldown, the build on offer and a reveal still counting
+/// down survive a remount (a layout swapping its body under hidden chrome, a
+/// host rebuilding its layout). A remount shows an offered build at once,
+/// restarts an unfinished reveal delay and checks only when the cooldown has
+/// run out, so a remount never adds a request.
+///
 /// ## Failure mode
 ///
 /// A check that cannot read a build (no network, a backend refusal, an
@@ -65,12 +74,47 @@ class MagicStarterAppUpdateBanner extends StatefulWidget {
   @visibleForTesting
   static Future<bool> Function(String url)? debugLaunchUrl;
 
-  /// Clears every test seam.
+  /// Runs for [checkInterval] after a check starts; a resume or a mount while
+  /// it runs is not due. A timer rather than a clock reading, so the interval
+  /// follows the same time source as every other timer here. Shared by every
+  /// banner and never cancelled by one being disposed.
+  static Timer? _cooldown;
+
+  /// The web build a reveal is counting down for, or was revealed for: a
+  /// later check that sees it again neither restarts nor repeats the delay.
+  static String? _announcedBuild;
+
+  /// Whether the reveal of [_announcedBuild] has yet to fire. The countdown
+  /// itself belongs to a mounted banner; the next one restarts it.
+  static bool _revealPending = false;
+
+  /// The build the banner is offering, or `null` while it is hidden.
+  static final ValueNotifier<String?> _visibleBuild = ValueNotifier<String?>(
+    null,
+  );
+
+  /// Where "Update" goes on a store install.
+  static String? _storeUrl;
+
+  /// Whether this mobile install was found unable to take a store update (a
+  /// sideload, TestFlight, a missing App Store id): no banner checks again
+  /// for the rest of the session.
+  static bool _storeInert = false;
+
+  /// Clears every test seam and the session memory, cancelling the cooldown.
   @visibleForTesting
   static void resetForTesting() {
     debugFetchDeployedBuild = null;
     debugReloadPage = null;
     debugLaunchUrl = null;
+
+    _cooldown?.cancel();
+    _cooldown = null;
+    _announcedBuild = null;
+    _revealPending = false;
+    _visibleBuild.value = null;
+    _storeUrl = null;
+    _storeInert = false;
   }
 
   @override
@@ -87,29 +131,13 @@ class _MagicStarterAppUpdateBannerState
   AppLifecycleListener? _lifecycle;
   Timer? _poll;
   Timer? _reveal;
-
-  /// Runs for [MagicStarterAppUpdateBanner.checkInterval] after a check
-  /// starts; a resume while it runs is not due. A timer rather than a clock
-  /// reading, so the interval follows the same time source as every other
-  /// timer here.
-  Timer? _cooldown;
-
   bool _checking = false;
-
-  /// The web build a reveal is counting down for, or was revealed for: a
-  /// later check that sees it again neither restarts nor repeats the delay.
-  String? _announcedBuild;
-
-  /// The build the banner is offering, or `null` while it is hidden.
-  String? _visibleBuild;
-
-  /// Where "Update" goes on a store install.
-  String? _storeUrl;
 
   @override
   void initState() {
     super.initState();
 
+    // 1. Decide whether this run can be offered a build at all.
     _mode = _pickMode();
     if (_mode == _Mode.inert) return;
 
@@ -120,8 +148,16 @@ class _MagicStarterAppUpdateBannerState
         (_) => _check(),
       );
     }
+
+    // 2. Finish a reveal an earlier banner was counting down for.
+    final String? announced = MagicStarterAppUpdateBanner._announcedBuild;
+    if (MagicStarterAppUpdateBanner._revealPending && announced != null) {
+      _scheduleReveal(announced);
+    }
+
+    // 3. Check now only when the session has not checked recently.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _check();
+      if (mounted) _checkIfDue();
     });
   }
 
@@ -129,37 +165,43 @@ class _MagicStarterAppUpdateBannerState
   void dispose() {
     _poll?.cancel();
     _reveal?.cancel();
-    _cooldown?.cancel();
     _lifecycle?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final String? build = _visibleBuild;
-    if (build == null) return const SizedBox.shrink();
+    if (_mode == _Mode.inert) return const SizedBox.shrink();
 
-    final bool web = _mode == _Mode.web;
+    return ValueListenableBuilder<String?>(
+      valueListenable: MagicStarterAppUpdateBanner._visibleBuild,
+      builder: (context, build, _) {
+        if (build == null) return const SizedBox.shrink();
 
-    return MSUpdateBanner(
-      message: trans(
-        web
-            ? 'magic_starter.app_update.message_web'
-            : 'magic_starter.app_update.message_store',
-      ),
-      actionLabel: trans(
-        web
-            ? 'magic_starter.app_update.reload'
-            : 'magic_starter.app_update.update',
-      ),
-      onAction: web ? _reload : _openStore,
-      dismissLabel: trans('magic_starter.app_update.later'),
-      onDismiss: () => _dismiss(build),
+        final bool web = _mode == _Mode.web;
+
+        return MSUpdateBanner(
+          message: trans(
+            web
+                ? 'magic_starter.app_update.message_web'
+                : 'magic_starter.app_update.message_store',
+          ),
+          actionLabel: trans(
+            web
+                ? 'magic_starter.app_update.reload'
+                : 'magic_starter.app_update.update',
+          ),
+          onAction: web ? _reload : _openStore,
+          dismissLabel: trans('magic_starter.app_update.later'),
+          onDismiss: () => _dismiss(build),
+        );
+      },
     );
   }
 
   /// Web on the web; iOS and Android only in a release build, since a debug or
-  /// profile build is never the one a store would replace.
+  /// profile build is never the one a store would replace, and only until the
+  /// session has found the install unable to take a store update.
   static _Mode _pickMode() {
     if (!MagicStarterConfig.hasAppUpdateFeatures()) return _Mode.inert;
     if (MagicStarterAppBuild.isWeb) return _Mode.web;
@@ -168,13 +210,15 @@ class _MagicStarterAppUpdateBannerState
         defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android;
 
-    return mobile && MagicStarterAppBuild.isReleaseMode
+    return mobile &&
+            MagicStarterAppBuild.isReleaseMode &&
+            !MagicStarterAppUpdateBanner._storeInert
         ? _Mode.mobile
         : _Mode.inert;
   }
 
   void _checkIfDue() {
-    if (_cooldown?.isActive ?? false) return;
+    if (MagicStarterAppUpdateBanner._cooldown?.isActive ?? false) return;
 
     _check();
   }
@@ -183,8 +227,11 @@ class _MagicStarterAppUpdateBannerState
     if (_mode == _Mode.inert || _checking) return;
 
     _checking = true;
-    _cooldown?.cancel();
-    _cooldown = Timer(MagicStarterAppUpdateBanner.checkInterval, () {});
+    MagicStarterAppUpdateBanner._cooldown?.cancel();
+    MagicStarterAppUpdateBanner._cooldown = Timer(
+      MagicStarterAppUpdateBanner.checkInterval,
+      () {},
+    );
 
     try {
       if (_mode == _Mode.web) {
@@ -192,8 +239,10 @@ class _MagicStarterAppUpdateBannerState
       } else {
         await _checkStore();
       }
-    } catch (error) {
-      Log.warning('[MagicStarterAppUpdateBanner] check failed: $error');
+    } catch (error, stackTrace) {
+      Log.warning(
+        '[MagicStarterAppUpdateBanner] check failed: $error\n$stackTrace',
+      );
     } finally {
       _checking = false;
     }
@@ -207,27 +256,60 @@ class _MagicStarterAppUpdateBannerState
         await (MagicStarterAppUpdateBanner.debugFetchDeployedBuild ??
             fetchDeployedBuildNumber)() ??
         '';
-    if (running.isEmpty || deployed.isEmpty || running == deployed) return;
+    if (running.isEmpty || deployed.isEmpty) return;
 
-    // 2. A build already counting down or on screen keeps its first reveal.
-    if (deployed == _announcedBuild) return;
+    // 2. A rollback to the running build leaves nothing newer to offer.
+    if (running == deployed) {
+      _withdraw();
+      return;
+    }
+
+    // 3. A build already announced keeps its first reveal; one whose
+    //    countdown ended with an earlier banner starts it again here.
+    if (deployed == MagicStarterAppUpdateBanner._announcedBuild) {
+      if (MagicStarterAppUpdateBanner._revealPending && _reveal == null) {
+        _scheduleReveal(deployed);
+      }
+      return;
+    }
     if (deployed == await _dismissedBuild()) return;
 
-    // 3. Wait out a rollout before bothering anyone.
-    _announcedBuild = deployed;
+    // 4. Wait out a rollout before bothering anyone.
+    MagicStarterAppUpdateBanner._announcedBuild = deployed;
+    MagicStarterAppUpdateBanner._revealPending = true;
+    _scheduleReveal(deployed);
+  }
+
+  /// Reveals [build] after [MagicStarterAppUpdateBanner.revealDelay]. The
+  /// timer belongs to this banner; a disposed one leaves the reveal pending
+  /// for the next.
+  void _scheduleReveal(String build) {
+    if (!mounted) return;
+
     _reveal?.cancel();
     _reveal = Timer(MagicStarterAppUpdateBanner.revealDelay, () {
       _reveal = null;
-      if (mounted) setState(() => _visibleBuild = deployed);
+      MagicStarterAppUpdateBanner._revealPending = false;
+      MagicStarterAppUpdateBanner._visibleBuild.value = build;
     });
+  }
+
+  /// Drops the announced build, a reveal counting down for it and a banner
+  /// offering it.
+  void _withdraw() {
+    _reveal?.cancel();
+    _reveal = null;
+    MagicStarterAppUpdateBanner._announcedBuild = null;
+    MagicStarterAppUpdateBanner._revealPending = false;
+    MagicStarterAppUpdateBanner._visibleBuild.value = null;
   }
 
   Future<void> _checkStore() async {
     // 1. Only a store install can be replaced by the store's build; anything
-    //    else stays quiet for the life of this banner.
+    //    else stays quiet for the rest of the session.
     final PackageInfo? info = await MagicStarterAppBuild.info();
     if (info == null || !MagicStarterAppBuild.isStoreInstall(info)) {
-      _mode = _Mode.inert;
+      _goInert();
       return;
     }
 
@@ -239,7 +321,7 @@ class _MagicStarterAppUpdateBannerState
         '[MagicStarterAppUpdateBanner] magic_starter.store_review.app_store_id '
         'is not set; the iOS update banner stays hidden.',
       );
-      _mode = _Mode.inert;
+      _goInert();
       return;
     }
 
@@ -254,10 +336,15 @@ class _MagicStarterAppUpdateBannerState
     final String build = '$latest';
     if (build == await _dismissedBuild()) return;
 
-    _storeUrl = ios
+    MagicStarterAppUpdateBanner._storeUrl = ios
         ? 'https://apps.apple.com/app/id$appStoreId'
         : 'https://play.google.com/store/apps/details?id=${info.packageName}';
-    if (mounted) setState(() => _visibleBuild = build);
+    MagicStarterAppUpdateBanner._visibleBuild.value = build;
+  }
+
+  void _goInert() {
+    MagicStarterAppUpdateBanner._storeInert = true;
+    _mode = _Mode.inert;
   }
 
   Future<String?> _dismissedBuild() {
@@ -269,7 +356,7 @@ class _MagicStarterAppUpdateBannerState
   }
 
   Future<void> _openStore() async {
-    final String? url = _storeUrl;
+    final String? url = MagicStarterAppUpdateBanner._storeUrl;
     if (url == null) return;
 
     final bool opened =
@@ -279,15 +366,16 @@ class _MagicStarterAppUpdateBannerState
     }
   }
 
-  /// Remembers [build] as declined, so only a newer one brings the banner
-  /// back, then hides it. A failed write still hides it for this session.
+  /// Hides the banner, then remembers [build] as declined, so only a newer one
+  /// brings it back. Hidden first, so a remount during the write does not
+  /// offer it again; a failed write still keeps it hidden for this session.
   Future<void> _dismiss(String build) async {
+    MagicStarterAppUpdateBanner._visibleBuild.value = null;
+
     try {
       await Vault.put(MagicStarterAppUpdateBanner.dismissedBuildKey, build);
     } catch (error) {
       Log.warning('[MagicStarterAppUpdateBanner] dismissal not stored: $error');
     }
-
-    if (mounted) setState(() => _visibleBuild = null);
   }
 }

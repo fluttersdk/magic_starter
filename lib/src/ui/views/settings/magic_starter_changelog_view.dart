@@ -120,7 +120,9 @@ class _MagicStarterChangelogViewState
               ),
               if (publishedAt != null)
                 WText(
-                  Carbon.fromDateTime(publishedAt).toFormattedDateString(),
+                  Carbon.fromDateTime(
+                    publishedAt.toLocal(),
+                  ).toFormattedDateString(),
                   className: 'text-xs text-fg-muted',
                 ),
             ],

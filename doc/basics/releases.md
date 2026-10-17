@@ -114,7 +114,7 @@ On the web the banner compares the build the page is running with the `build_num
 
 A difference is not shown at once. The banner waits 60 seconds from the moment it first sees the new build (`MagicStarterAppUpdateBanner.revealDelay`), so a deploy that is still rolling out does not flash it at every customer. The action is "Reload", which reloads the page.
 
-The check needs a build number on both sides, so it stays quiet when `version.json` is missing or the build was made without `--build-number` and carries none. The running build is read once, at boot, and kept for the life of the page: a later first read could already see the next deploy and report it as the one that is loaded.
+The check needs a build number on both sides, so it stays quiet when `version.json` is missing. A build made without `--build-number` carries the pubspec build number instead, which stays the same from one deploy to the next, so the banner cannot tell two such deploys apart. The running build is read once, at boot, and kept for the life of the page: a later first read could already see the next deploy and report it as the one that is loaded.
 
 Serve `index.html`, `main.dart.js`, `flutter_bootstrap.js` and `version.json` with `Cache-Control: no-cache`. If a CDN or the browser answers with an old copy, "Reload" loads the old bundle and the banner comes straight back. An nginx server block:
 

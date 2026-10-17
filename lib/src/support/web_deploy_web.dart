@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:js_interop';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:magic/magic.dart';
 import 'package:web/web.dart' as web;
 
@@ -16,7 +17,7 @@ import 'package:web/web.dart' as web;
 ///
 /// [url] replaces the default location; it is a test seam.
 Future<String?> fetchDeployedBuildNumber({Uri? url}) async {
-  final Uri target = url ?? _versionUrl();
+  final Uri target = url ?? defaultVersionUrl();
 
   try {
     final web.Response response = await web.window
@@ -48,8 +49,17 @@ Future<String?> fetchDeployedBuildNumber({Uri? url}) async {
 /// Reloads the page, which fetches the newly deployed bundle.
 void reloadPage() => web.window.location.reload();
 
-Uri _versionUrl() {
-  return Uri.base
+/// Where the deployed `version.json` lives: next to the app's `index.html`,
+/// with a `cb` cache buster.
+///
+/// Resolved against the document base (the `<base href>` Flutter writes into
+/// `index.html`), not [Uri.base]: on the web `Uri.base` is the page's own
+/// address, and under the path url strategy a deep route such as
+/// `/settings/changelog` would send the read to `/settings/version.json`,
+/// which answers the SPA fallback page or a 404.
+@visibleForTesting
+Uri defaultVersionUrl() {
+  return Uri.parse(web.document.baseURI)
       .resolve('version.json')
       .replace(
         queryParameters: <String, String>{

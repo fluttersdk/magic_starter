@@ -131,6 +131,11 @@ export 'src/support/magic_starter_onboarding.dart';
 export 'src/support/screen_capture.dart';
 export 'src/support/store_review.dart';
 export 'src/support/app_build.dart';
+
+/// `MagicStarterAppBuild.info()`, `label()` and `isStoreInstall()` take or
+/// answer a `PackageInfo`, so an adopter can name it without adding
+/// package_info_plus to their own pubspec.
+export 'package:package_info_plus/package_info_plus.dart' show PackageInfo;
 export 'src/support/support_client_context.dart';
 export 'src/http/magic_starter_guest_claim.dart';
 export 'src/middleware/ensure_authenticated.dart';

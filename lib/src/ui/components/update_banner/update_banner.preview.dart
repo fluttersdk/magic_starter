@@ -38,7 +38,7 @@ class UpdateBannerPreview extends StatelessWidget {
         MSUpdateBanner(
           message:
               'A new version is available. Reload to get the latest fixes and '
-              'improvements; nothing you have open will be lost.',
+              'improvements.',
           actionLabel: 'Reload',
           onAction: _noop,
           dismissLabel: 'Later',

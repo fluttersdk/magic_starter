@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 /// The package's own English copy, so the page renders real prose.
 class _ShippedLoader implements TranslationLoader {
@@ -226,6 +225,24 @@ void main() {
 
       final String date = Carbon.fromDateTime(
         DateTime.parse('2026-10-20T09:00:00.000000Z'),
+      ).toFormattedDateString();
+
+      expect(find.text(date), findsOneWidget);
+    });
+
+    testWidgets('shows a release near midnight UTC on the reader local day', (
+      tester,
+    ) async {
+      const String instant = '2026-10-20T23:30:00.000000Z';
+      final Map<String, dynamic> feed = _feed();
+      ((feed['data'] as List<Map<String, dynamic>>).first)['published_at'] =
+          instant;
+      Http.fake((request) => Http.response(feed));
+
+      await mount(tester);
+
+      final String date = Carbon.fromDateTime(
+        DateTime.parse(instant).toLocal(),
       ).toFormattedDateString();
 
       expect(find.text(date), findsOneWidget);

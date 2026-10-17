@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 /// The package's own English copy, so the caption renders real prose.
 class _ShippedLoader implements TranslationLoader {
@@ -148,6 +147,30 @@ void main() {
       final WText text = tester.widget<WText>(find.byType(WText));
 
       expect(text.className, 'text-xs text-left');
+    });
+
+    testWidgets('reads the package info once, however often it rebuilds', (
+      tester,
+    ) async {
+      mockPackageInfo();
+      MagicStarterAppBuild.debugIsWebOverride = false;
+
+      await mount(tester, const MagicStarterAppVersion());
+      final Future<PackageInfo?>? first = tester
+          .widget<FutureBuilder<PackageInfo?>>(
+            find.byType(FutureBuilder<PackageInfo?>),
+          )
+          .future;
+
+      await mount(tester, const MagicStarterAppVersion(className: 'text-sm'));
+      final Future<PackageInfo?>? second = tester
+          .widget<FutureBuilder<PackageInfo?>>(
+            find.byType(FutureBuilder<PackageInfo?>),
+          )
+          .future;
+
+      expect(identical(first, second), isTrue);
+      expect(tester.widget<WText>(find.byType(WText)).className, 'text-sm');
     });
   });
 }

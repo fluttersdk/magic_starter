@@ -45,6 +45,8 @@ Map<String, dynamic> get magicStarterConfig => {
       'timezones': false,
       'billing': false,
       'support': false,
+      'releases': false,
+      'app_update': false,
     },
     'auth': {
       'email': true,
@@ -119,6 +121,8 @@ Every feature defaults to `false` and must be explicitly enabled. Each toggle co
 | `guest_auth` | `false` | The login screen's "Continue as guest" button, plus the listeners that record a guest sign-in and claim that guest's data when an account signs in. It adds no routes or screens, and `MagicStarterGuestAuthController` works without it. |
 | `timezones` | `false` | Timezone selection with debounced async API search. |
 | `support` | `false` | Support desk screens (`/support`, `/support/new`, `/support/:id`), the Support profile-menu item and the Contact sales conversation. The host registers the routes with `registerMagicStarterSupportRoutes()`; see [Support](../basics/support.md). |
+| `releases` | `false` | The "What's new" changelog page (`/settings/changelog`), its settings hub row and the `MagicStarterAppVersion` caption, read from the backend's `GET releases`. Needs `Features::releases()` on `magic-starter-laravel`; see [Releases](../basics/releases.md). |
+| `app_update` | `false` | `MagicStarterAppUpdateBanner` in the app layout: Reload when a new web deploy appears in `version.json`, Update when the store has a newer build than a store-installed release build. The store path reads `GET releases` and needs `Features::releases()` on the backend; see [Releases](../basics/releases.md). |
 
 To enable features, set their values to `true` in `lib/config/magic_starter.dart`:
 

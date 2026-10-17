@@ -127,6 +127,17 @@ void main() {
       expect(MagicStarterAppBuild.isWeb, isFalse);
     });
 
+    test('PackageInfo, which the app build support answers, is nameable', () {
+      final PackageInfo info = PackageInfo(
+        appName: 'Example',
+        packageName: 'com.example.app',
+        version: '1.4.0',
+        buildNumber: '14',
+      );
+
+      expect(MagicStarterAppBuild.label(info), '1.4.0 (14)');
+    });
+
     test('the update banner component and both widgets are reachable', () {
       expect(
         MSUpdateBanner(
