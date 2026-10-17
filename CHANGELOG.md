@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.47] - 2026-10-17
+
 ### Added
 
 - **`MagicStarterLayoutIds.app`, the `layoutId` of the authenticated shell.** Magic merges route groups into one go_router `ShellRoute` only when they carry the same id, so a host's own authenticated group must use it, or it becomes a second shell and every crossing between it and the starter's pages re-animates the whole layout. The starter's profile, team, notification and support groups, and the `starter:install` route stub, use it. (`lib/src/routes/layout_ids.dart`, `lib/src/routes/`, `assets/stubs/install/app_routes.stub`, `lib/src/cli/commands/magic_starter_install_command.dart`)
