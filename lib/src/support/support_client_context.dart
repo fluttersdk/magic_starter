@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:magic/magic.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'app_build.dart';
+
 /// The client info a new support conversation carries behind
 /// `support_diagnostics`: where the customer was, which build they run, on
 /// what, and in which language and timezone.
@@ -23,7 +25,7 @@ class MagicStarterSupportClientContext {
   /// app version is read from the platform, and an unreadable one is logged
   /// and left out: diagnostics never stand between a customer and support.
   static Future<Map<String, String>> collect({required String route}) async {
-    final PackageInfo? package = await _packageInfo();
+    final PackageInfo? package = await MagicStarterAppBuild.info();
 
     final Map<String, String?> context = <String, String?>{
       'route': Uri.parse(route).path,
@@ -41,16 +43,6 @@ class MagicStarterSupportClientContext {
         if (field.value != null && field.value!.isNotEmpty)
           field.key: _limit(field.value!),
     };
-  }
-
-  static Future<PackageInfo?> _packageInfo() async {
-    try {
-      return await PackageInfo.fromPlatform();
-    } catch (error) {
-      Log.warning('[MagicStarterSupportClientContext] package info: $error');
-
-      return null;
-    }
   }
 
   static String _limit(String value) {

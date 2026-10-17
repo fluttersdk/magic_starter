@@ -267,6 +267,13 @@
       "verify_button": "Verify Code",
       "verify_error": "Failed to verify code. Please try again."
     },
+    "app_update": {
+      "later": "Later",
+      "message_store": "A new version is available in the store.",
+      "message_web": "A new version of the app is available.",
+      "reload": "Reload",
+      "update": "Update"
+    },
     "appearance": {
       "dark": "Dark",
       "dark_description": "Always use the dark theme.",
@@ -291,6 +298,19 @@
         "option_scheduled": "Delete after the grace period (cancel by signing in)",
         "title": "Delete Account"
       }
+    },
+    "releases": {
+      "empty_description": "Release notes appear here when a new version ships.",
+      "empty_title": "No releases yet",
+      "fetch_error": "Release notes could not be loaded.",
+      "retry": "Try again",
+      "title": "What's new",
+      "types": {
+        "fixed": "Fixed",
+        "improved": "Improved",
+        "new": "New"
+      },
+      "version_caption": "Version :version"
     },
     "settings": {
       "account_section": "Account",
