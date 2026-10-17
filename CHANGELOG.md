@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MagicStarterLayoutIds.app`, the `layoutId` of the authenticated shell.** Magic merges route groups into one go_router `ShellRoute` only when they carry the same id, so a host's own authenticated group must use it, or it becomes a second shell and every crossing between it and the starter's pages re-animates the whole layout. The starter's profile, team, notification and support groups, and the `starter:install` route stub, use it. (`lib/src/routes/layout_ids.dart`, `lib/src/routes/`, `assets/stubs/install/app_routes.stub`, `lib/src/cli/commands/magic_starter_install_command.dart`)
+- **`MagicStarterBottomNavScope` and `MagicStarterBottomNavSlot`, for a host layout with its own bottom nav.** The scope goes at the layout's root and reports how much of the bar is showing (`MagicStarterBottomNavScope.visibilityOf(context)`, `0` to `1`); the slot wraps the nav and sizes it by that fraction, so the content above grows into the room the bar gives up. `MagicStarterAppLayout` is built on them. (`lib/src/ui/widgets/magic_starter_hide_bottom_nav.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
+### Changed
+
+- **Breaking: `MagicStarterHideBottomNav` wraps a page and animates with it; `MagicStarterHideBottomNav.of()` is removed.** It used to be an `InheritedWidget` around a route group that the layout read; it now registers the page's own route with the nearest `MagicStarterBottomNavScope`, so the bar collapses in step with the page's transition (an iOS back swipe included) and returns as it leaves. A page registers once magic's route middleware has mounted it, so the bar starts collapsing a frame or two into the transition. A host that wrapped a route group moves the wrapper onto the page. (`lib/src/ui/widgets/magic_starter_hide_bottom_nav.dart`)
+- **The support thread joins the app shell.** It no longer has its own `app.chat` shell, so moving between support pages never rebuilds the layout; the page itself is wrapped in `MagicStarterHideBottomNav`. (`lib/src/routes/support_routes.dart`)
+- **`MagicStarterAppLayout` hands the collapsed bar's share of the bottom inset back to its content.** A Scaffold strips the bottom inset from its body while it has a bottom bar, so a page that hides the nav would have lost the inset its docked composer clears the home indicator with. (`lib/src/ui/layouts/magic_starter_app_layout.dart`)
+- **`MagicStarterHideChrome` doc block corrected.** A separate `layoutId` is a separate shell, so entering an immersive route rebuilds the layout and its state; that is intended for such a route. (`lib/src/ui/widgets/magic_starter_hide_chrome.dart`, `doc/basics/views-and-layouts.md`)
+
+### Fixed
+
+- **The team invitation page sits in the page container.** It now renders inside `MSPageContainer` like every other app page, so it gets the host's page pad instead of a bottom padding each host patched in. (`lib/src/ui/views/teams/magic_starter_team_invitation_accept_view.dart`)
+
 ## [0.0.46] - 2026-10-15
 
 ### Fixed

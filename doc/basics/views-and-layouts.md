@@ -346,9 +346,46 @@ MagicRoute.page(
 
 Set the two fields together. Wind reads `scrollPrimary` only where it builds a scroll view, so beside a non-scrolling className it claims nothing and is inert; it matters the moment the className scrolls. Two `primary: true` scrollables in one tree contend for the single controller.
 
+### Hiding the bottom nav on a page
+
+Wrap the page, not the route group, in `MagicStarterHideBottomNav`:
+
+```dart
+MagicRoute.page(
+  '/chat/:id',
+  () => MagicStarterHideBottomNav(child: ChatView()),
+).stacked();
+```
+
+The phone's bottom bar collapses in step with that page's transition and returns as it leaves, an iOS back swipe included. The page stays in the same shell as the rest of the app, so nothing is rebuilt on the way in. A page registers once magic's route middleware has mounted it, so the bar starts collapsing a frame or two into the transition.
+
+A host layout that draws its own bottom nav joins in with two widgets: `MagicStarterBottomNavScope` at the layout's root, and its nav inside `MagicStarterBottomNavSlot`:
+
+```dart
+class MyAppShell extends StatelessWidget {
+  const MyAppShell({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MagicStarterBottomNavScope(
+      child: Column(
+        children: [
+          Expanded(child: child),
+          MagicStarterBottomNavSlot(child: MyBottomNav()),
+        ],
+      ),
+    );
+  }
+}
+```
+
+The slot's height is the nav's times how much of it is showing, so the content above grows into the room the bar gives up. Read that fraction with `MagicStarterBottomNavScope.visibilityOf(context)` when the layout needs it, for instance to hand the collapsed bar's share of the bottom inset back to its content, as `MagicStarterAppLayout` does. Place the scope inside the layout, never around it: magic tells shells apart by the layout widget's runtime type.
+
 ### An immersive route
 
-`MagicStarterHideBottomNav` drops the mobile bottom bar. `MagicStarterHideChrome` drops all of the chrome, so a player, a viewfinder or a map paints the whole window:
+`MagicStarterHideChrome` drops all of the chrome, so a player, a viewfinder or a map paints the whole window:
 
 ```dart
 MagicRoute.group(
@@ -360,7 +397,9 @@ MagicRoute.group(
 );
 ```
 
-No sidebar, no drawer, no header and no bottom bar. The route also gets the window with no safe-area inset, since a surface that sizes itself wants the whole of it. The shell stays in the tree: its layout state, its notification polling and its auth listeners all survive the route, which wrapping the route in a bare page would throw away.
+No sidebar, no drawer, no header and no bottom bar. The route also gets the window with no safe-area inset, since a surface that sizes itself wants the whole of it.
+
+The group needs an id of its own, and a separate id is a separate shell: entering the route builds this layout and leaving it builds the app shell again, so the layout's state (the sidebar's collapsed choice, notification polling, the auth listeners) is rebuilt on each crossing. That is intended for an immersive route, which has no chrome to carry across. A page that only wants the bottom bar gone belongs in the app shell under `MagicStarterHideBottomNav`.
 
 <a name="guestlayout"></a>
 ## GuestLayout
@@ -592,6 +631,21 @@ MagicStarter.view.registerLayout(
 Call this from your own `AppServiceProvider`'s `boot()` method, alongside other startup customization such as `MagicStarter.useNavigation()` or `MagicStarter.useHeader()`.
 
 `registerLayout()` always overwrites whatever is currently registered under the key: the default registration in `MagicStarterManager` is conditional (`if (!hasLayout(key))`), but `registerLayout()` itself is not. Since the default is registered synchronously the first time the `magic_starter` singleton is resolved (before your own code runs), your override always lands after it and always wins, whether you call `registerLayout()` early or late in your app's boot sequence. There is no ordering to get wrong.
+
+Your own authenticated routes join the same shell. Magic merges route groups into ONE go_router `ShellRoute` only when they carry the same `layoutId`, so give your group `MagicStarterLayoutIds.app` (and build its layout through `makeLayout` if you like):
+
+```dart
+MagicRoute.group(
+  layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
+  middleware: ['auth'],
+  layoutId: MagicStarterLayoutIds.app,
+  routes: () {
+    MagicRoute.page('/', () => const DashboardView());
+  },
+);
+```
+
+A group with another id, or none, becomes a second shell, and every crossing between it and the starter's profile, team, notification or support pages rebuilds and re-animates the whole layout.
 
 > [!NOTE]
 > Do not add a second layout key for this. `layout.app` is the only authenticated-shell key the starter resolves; overriding it in place is the supported pattern, not adding a new one alongside it.
@@ -851,8 +905,11 @@ The modal can also be used for standalone re-authentication (e.g. before a sensi
 | `MSAvatar` | A photo with a fallback, clipped to whatever shape `className` asks for. Owns no size, shape or colour, because those differ per surface; the fallback is a WIDGET so a host keeps its own initials rule. Falls back on an empty url and on a load error. |
 | `MSUserProfileDropdown` | Circular avatar menu showing signed-in user info, profile links, theme toggle, and logout. Supports a custom `triggerBuilder`. |
 | `MSSocialDivider` | Horizontal "Or continue with" divider for auth forms. No parameters — pure presentation. |
-| `MagicStarterHideBottomNav` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar. Wrap a route layout with this widget and check `MagicStarterHideBottomNav.of(context)` in the layout's build method. |
-| `MagicStarterHideChrome` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the whole shell chrome: sidebar, drawer, header and bottom bar, plus the safe-area inset and the shell's scroll container. Same wrapping shape, read with `MagicStarterHideChrome.of(context)`. See [An immersive route](#applayout). |
+| `MagicStarterHideBottomNav` | Wraps a page and collapses the phone's bottom navigation in step with that page's route transition. Does nothing without a `MagicStarterBottomNavScope` above it. See [Hiding the bottom nav on a page](#hiding-the-bottom-nav-on-a-page). |
+| `MagicStarterBottomNavScope` | A layout's root, so the bar and the routed page share it. `visibilityOf(context)` reads how much of the bar is showing, `0` to `1`. |
+| `MagicStarterBottomNavSlot` | Wraps a layout's bottom nav; its height follows the scope's visibility. |
+| `MagicStarterLayoutIds` | The `layoutId` values of the starter's route groups; `MagicStarterLayoutIds.app` is the authenticated shell a host's own group must share. See [Overriding the App Shell](#overriding-the-app-shell). |
+| `MagicStarterHideChrome` | `InheritedWidget` that signals `MagicStarterAppLayout` to hide the whole shell chrome: sidebar, drawer, header and bottom bar, plus the safe-area inset and the shell's scroll container. Wrap a route group's layout with it, read with `MagicStarterHideChrome.of(context)`. See [An immersive route](#applayout). |
 
 > [!NOTE]
 > The bell-icon dropdown is not in this table. It moved to `magic_notifications` as `NotificationDropdown`; see [Notifications](notifications.md).

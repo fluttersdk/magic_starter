@@ -24,7 +24,8 @@ Two files here are thin aliases kept for existing callers: `MagicStarterConfirmD
 - **`MagicStarterPasswordConfirmDialog`**: inline error handling through `setState()`, and it NEVER auto-closes on error. Supports `ConfirmDialogVariant` (`primary` default, `danger`, `warning`) through the same `_resolveConfirmClassName()` pattern as `MSConfirmDialog`; pass `variant:` to both the constructor and `show()`.
 - **`MagicStarterTimezoneSelect`**: debounced async search through `Http.get('/timezones')`. Never a local timezone list.
 - **`MagicStarterAuthFormCard`**: `WDiv` + `WText` title + child, reused across login, register, forgot and reset.
-- **`MagicStarterHideBottomNav`**: an `InheritedWidget` that signals `MagicStarterAppLayout` to suppress the mobile bottom nav for a fullscreen route. Wrap the route group, do not poke the layout.
+- **`MagicStarterHideBottomNav`**: wraps a PAGE (not a route group) and registers its `ModalRoute` with the nearest `MagicStarterBottomNavScope`, so the phone's bottom nav collapses in step with that page's transition. A layout puts `MagicStarterBottomNavScope` at its own root (never around the layout: magic tells shells apart by the layout's runtime type) and its nav in `MagicStarterBottomNavSlot`; `MagicStarterBottomNavScope.visibilityOf(context)` reads the fraction showing. There is no `of()`.
+- **`MagicStarterHideChrome`**: an `InheritedWidget` for an immersive route group. It needs its own `layoutId`, and a separate id is a separate shell, so entering it rebuilds the layout and its state. Every other authenticated group uses `MagicStarterLayoutIds.app`.
 
 ## Dialog layout rules
 
