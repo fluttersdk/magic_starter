@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/views/settings/magic_starter_changelog_view.dart';
 
 // ---------------------------------------------------------------------------
 // Test Suite

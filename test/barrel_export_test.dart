@@ -90,5 +90,60 @@ void main() {
         isA<Widget>(),
       );
     });
+
+    test('the release models are reachable and parse a feed', () {
+      final MagicStarterReleaseFeed feed = MagicStarterReleaseFeed.fromJson(
+        <String, dynamic>{
+          'data': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'version': '1.1.0',
+              'ios_build': 15,
+              'android_build': 15,
+              'items': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'type': 'new',
+                  'text': <String, String>{'en': 'Dark mode'},
+                },
+              ],
+            },
+          ],
+          'meta': <String, dynamic>{
+            'latest_build': <String, dynamic>{'ios': 15, 'android': 16},
+          },
+        },
+      );
+
+      final MagicStarterRelease release = feed.releases.single;
+
+      expect(release.version, '1.1.0');
+      expect(release.items.single.type, MagicStarterReleaseItemType.newFeature);
+      expect(feed.latestIosBuild, 15);
+      expect(feed.latestAndroidBuild, 16);
+    });
+
+    test('the releases controller and the app build support are reachable', () {
+      expect(MagicStarterReleasesController.readFeed, isA<Function>());
+      expect(MagicStarterAppBuild.isStoreInstall, isA<Function>());
+      expect(MagicStarterAppBuild.isWeb, isFalse);
+    });
+
+    test('the update banner component and both widgets are reachable', () {
+      expect(
+        MSUpdateBanner(
+          message: 'A new version is ready.',
+          actionLabel: 'Reload',
+          onAction: () {},
+          dismissLabel: 'Later',
+          onDismiss: () {},
+        ),
+        isA<Widget>(),
+      );
+      expect(const MagicStarterAppVersion(), isA<Widget>());
+      expect(const MagicStarterAppUpdateBanner(), isA<Widget>());
+    });
+
+    test('the changelog view is reachable', () {
+      expect(const MagicStarterChangelogView(), isA<Widget>());
+    });
   });
 }

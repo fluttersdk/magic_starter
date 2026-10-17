@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/support/app_build.dart';
-import 'package:magic_starter/src/ui/widgets/magic_starter_app_version.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// The package's own English copy, so the caption renders real prose.
