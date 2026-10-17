@@ -9,6 +9,7 @@ import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
+import '../support/app_build.dart';
 
 /// Reloads the app when `Auth.restore()`'s background user sync CHANGED the
 /// user: after a write that calls `Auth.restore()` (team rename, invitation
@@ -177,6 +178,17 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // 2. If not, register 'indigo' as the fallback primary color.
     // 3. Emit info log to notify about the fallback.
     _bootPrimaryColorFallback();
+
+    // package_info_plus reads `version.json` once and caches the answer for
+    // the process. Reading it at boot pins the build of the bundle that is
+    // running; a first read later could already see the next deploy and report
+    // it as the running one: the update banner would then stay hidden and the
+    // version caption would name a build that is not loaded.
+    if (MagicStarterAppBuild.isWeb &&
+        (MagicStarterConfig.hasAppUpdateFeatures() ||
+            MagicStarterConfig.hasReleasesFeatures())) {
+      unawaited(MagicStarterAppBuild.prime());
+    }
 
     _forgetIntendedUrlOnSignOut();
     _declarePushIdentityOnSignIn();

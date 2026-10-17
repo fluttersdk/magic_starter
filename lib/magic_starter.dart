@@ -16,6 +16,7 @@ export 'src/http/controllers/magic_starter_auth_controller.dart';
 export 'src/models/magic_starter_auth_user.dart';
 export 'src/models/magic_starter_plan.dart';
 export 'src/models/magic_starter_support_conversation.dart';
+export 'src/models/magic_starter_release.dart';
 export 'src/http/controllers/magic_starter_profile_controller.dart';
 export 'src/http/controllers/magic_starter_team_controller.dart';
 export 'src/http/controllers/magic_starter_otp_controller.dart';
@@ -35,6 +36,7 @@ export 'package:magic_payments/magic_payments.dart' show BillingCycle;
 export 'src/http/controllers/magic_starter_newsletter_controller.dart';
 export 'src/http/controllers/magic_starter_feedback_controller.dart';
 export 'src/http/controllers/magic_starter_support_controller.dart';
+export 'src/http/controllers/magic_starter_releases_controller.dart';
 export 'src/routes/auth_routes.dart';
 export 'src/routes/layout_ids.dart';
 export 'src/routes/profile_routes.dart';
@@ -52,6 +54,7 @@ export 'src/ui/views/support/magic_starter_feedback_view.dart';
 export 'src/ui/views/support/magic_starter_support_create_view.dart';
 export 'src/ui/views/support/magic_starter_support_index_view.dart';
 export 'src/ui/views/support/magic_starter_support_thread_view.dart';
+export 'src/ui/views/settings/magic_starter_changelog_view.dart';
 export 'src/ui/views/teams/magic_starter_billing_view.dart';
 export 'src/ui/views/teams/magic_starter_team_create_view.dart';
 export 'src/ui/views/teams/magic_starter_team_settings_view.dart';
@@ -74,6 +77,8 @@ export 'src/ui/widgets/magic_starter_dialog_shell.dart';
 export 'src/ui/widgets/magic_starter_hide_bottom_nav.dart';
 export 'src/ui/widgets/magic_starter_hide_chrome.dart';
 export 'src/ui/widgets/magic_starter_feedback_card.dart';
+export 'src/ui/widgets/magic_starter_app_version.dart';
+export 'src/ui/widgets/magic_starter_app_update_banner.dart';
 export 'src/ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 
 // Design-system components (Wave 4 atomic-component library).
@@ -111,6 +116,7 @@ export 'src/ui/components/page_container/index.dart';
 export 'src/ui/components/page_scaffold/index.dart';
 export 'src/ui/components/upgrade_dialog/index.dart';
 export 'src/ui/components/upgrade_nudge/index.dart';
+export 'src/ui/components/update_banner/index.dart';
 export 'src/ui/components/usage_meter/index.dart';
 export 'src/ui/components/form_actions/index.dart';
 export 'src/ui/components/header_action/index.dart';
@@ -124,6 +130,12 @@ export 'src/support/upgrade_prompt.dart';
 export 'src/support/magic_starter_onboarding.dart';
 export 'src/support/screen_capture.dart';
 export 'src/support/store_review.dart';
+export 'src/support/app_build.dart';
+
+/// `MagicStarterAppBuild.info()`, `label()` and `isStoreInstall()` take or
+/// answer a `PackageInfo`, so an adopter can name it without adding
+/// package_info_plus to their own pubspec.
+export 'package:package_info_plus/package_info_plus.dart' show PackageInfo;
 export 'src/support/support_client_context.dart';
 export 'src/http/magic_starter_guest_claim.dart';
 export 'src/middleware/ensure_authenticated.dart';

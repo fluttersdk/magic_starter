@@ -43,6 +43,8 @@ class MagicStarterConfig {
   static const bool _defaultSupportAttachments = false;
   static const bool _defaultSupportDiagnostics = false;
   static const bool _defaultStoreReview = false;
+  static const bool _defaultReleases = false;
+  static const bool _defaultAppUpdate = false;
   static const bool _defaultEmailIdentity = true;
   static const bool _defaultPhoneIdentity = false;
 
@@ -285,6 +287,26 @@ class MagicStarterConfig {
           _defaultStoreReview,
         ) ??
         _defaultStoreReview;
+  }
+
+  /// Returns whether the changelog page, its settings hub row and the app
+  /// version caption are enabled (`magic_starter.features.releases`).
+  static bool hasReleasesFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.releases',
+          _defaultReleases,
+        ) ??
+        _defaultReleases;
+  }
+
+  /// Returns whether the app update banner is enabled
+  /// (`magic_starter.features.app_update`).
+  static bool hasAppUpdateFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.app_update',
+          _defaultAppUpdate,
+        ) ??
+        _defaultAppUpdate;
   }
 
   /// Returns how many files one support message can carry
@@ -629,6 +651,9 @@ class MagicStarterConfig {
 
   /// Full path for the Newsletter settings sub-page.
   static String settingsNewsletterRoute() => '${profilePrefix()}/newsletter';
+
+  /// Full path for the Changelog ("What's new") settings sub-page.
+  static String settingsChangelogRoute() => '${profilePrefix()}/changelog';
 
   /// Full path for the Two-Factor security sub-page.
   static String settingsTwoFactorRoute() =>

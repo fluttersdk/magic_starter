@@ -26,6 +26,8 @@ Map<String, dynamic> get magicStarterConfig => {
       'support_attachments': {{ feature_support_attachments }},
       'support_diagnostics': {{ feature_support_diagnostics }},
       'store_review': {{ feature_store_review }},
+      'releases': {{ feature_releases }},
+      'app_update': {{ feature_app_update }},
     },
     'auth': {
       'email': true,

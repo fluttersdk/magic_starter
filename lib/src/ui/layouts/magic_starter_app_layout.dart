@@ -12,6 +12,7 @@ import '../../magic_starter_manager.dart';
 import '../components/avatar/index.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
+import '../widgets/magic_starter_app_update_banner.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
 import '../widgets/magic_starter_hide_chrome.dart';
 
@@ -266,6 +267,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                       className: 'flex-1 flex flex-col h-full overflow-hidden',
                       children: [
                         _buildHeader(context, isDesktop),
+                        // Non-modal, so it sits above every page rather than
+                        // in one of them. The toggle is static per app run, so
+                        // the column keeps its shape across breakpoints. A host
+                        // mapping `layout.app` to its own layout places
+                        // `MagicStarterAppUpdateBanner` itself.
+                        if (MagicStarterConfig.hasAppUpdateFeatures())
+                          const MagicStarterAppUpdateBanner(),
                         // The content box is the host's, because only the
                         // host knows the shape of its screens. The shipped one
                         // does not scroll: the child is the shell's nested

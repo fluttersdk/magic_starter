@@ -3,6 +3,7 @@ import 'package:magic/magic.dart';
 import 'package:magic_starter/src/ui/components/empty_state/empty_state.recipe.dart';
 import 'package:magic_starter/src/ui/components/error_state/error_state.recipe.dart';
 import 'package:magic_starter/src/ui/components/upgrade_dialog/upgrade_dialog.recipe.dart';
+import 'package:magic_starter/src/ui/components/update_banner/update_banner.recipe.dart';
 import 'package:magic_starter/src/ui/components/upgrade_nudge/upgrade_nudge.recipe.dart';
 import 'package:magic_starter/src/ui/theme/magic_starter_tokens.dart';
 
@@ -102,7 +103,7 @@ void main() {
         .map((String raw) => raw.contains(':') ? raw.split(':').last : raw);
   }
 
-  /// Every className string the four shared components emit, keyed by origin so
+  /// Every className string the five shared components emit, keyed by origin so
   /// a failure names the exact recipe entry to fix.
   final Map<String, String> sharedClassNames = <String, String>{
     'emptyState.root': emptyStateRootClassName(),
@@ -123,6 +124,10 @@ void main() {
       variants: const {},
     ).entries)
       'upgradeDialog.${slot.key}': slot.value,
+    for (final MapEntry<String, String> slot in updateBannerRecipe(
+      variants: const {},
+    ).entries)
+      'updateBanner.${slot.key}': slot.value,
   };
 
   group('shared component recipes only emit resolvable colour tokens', () {

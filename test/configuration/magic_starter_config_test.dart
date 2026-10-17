@@ -53,6 +53,14 @@ void main() {
         expect(MagicStarterConfig.hasNewsletterFeatures(), isFalse);
       });
 
+      test('hasReleasesFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasReleasesFeatures(), isFalse);
+      });
+
+      test('hasAppUpdateFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasAppUpdateFeatures(), isFalse);
+      });
+
       test('hasEmailVerificationFeatures() returns false by default', () {
         expect(MagicStarterConfig.hasEmailVerificationFeatures(), isFalse);
       });
@@ -115,6 +123,13 @@ void main() {
         expect(
           MagicStarterConfig.teamSettingsRoute(),
           equals('/teams/settings'),
+        );
+      });
+
+      test('settingsChangelogRoute() returns "/settings/changelog"', () {
+        expect(
+          MagicStarterConfig.settingsChangelogRoute(),
+          equals('/settings/changelog'),
         );
       });
 
@@ -213,6 +228,18 @@ void main() {
         Config.set('magic_starter.features.newsletter', true);
 
         expect(MagicStarterConfig.hasNewsletterFeatures(), isTrue);
+      });
+
+      test('hasReleasesFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.releases', true);
+
+        expect(MagicStarterConfig.hasReleasesFeatures(), isTrue);
+      });
+
+      test('hasAppUpdateFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.app_update', true);
+
+        expect(MagicStarterConfig.hasAppUpdateFeatures(), isTrue);
       });
 
       test(
@@ -353,6 +380,15 @@ void main() {
         Config.set('magic_starter.routes.profile_prefix', '/account');
 
         expect(MagicStarterConfig.profileRoute(), equals('/account/profile'));
+      });
+
+      test('settingsChangelogRoute() uses configured profilePrefix', () {
+        Config.set('magic_starter.routes.profile_prefix', '/account');
+
+        expect(
+          MagicStarterConfig.settingsChangelogRoute(),
+          equals('/account/changelog'),
+        );
       });
 
       test('notificationsRoute() uses configured notificationsPrefix', () {

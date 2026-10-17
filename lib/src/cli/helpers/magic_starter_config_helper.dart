@@ -38,6 +38,8 @@ abstract class MagicStarterConfigHelper {
     'support_attachments',
     'support_diagnostics',
     'store_review',
+    'releases',
+    'app_update',
   ];
 
   /// Parses feature toggles from config content.

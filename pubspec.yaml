@@ -127,6 +127,10 @@ dependencies:
   in_app_review: ^2.0.12
   # App version and build number for the support conversation's client context.
   package_info_plus: ^10.2.2
+  # The web update banner fetches the deployed `version.json` without the Http
+  # facade's API base url, and reloads the page. Already in the graph through
+  # `magic`; declared here because `lib/` imports it directly.
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

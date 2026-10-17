@@ -28,6 +28,8 @@ Map<String, dynamic> get magicStarterConfig => {
       'support_attachments': false,
       'support_diagnostics': false,
       'store_review': false,
+      'releases': false,
+      'app_update': false,
     },
     'auth': {'email': true, 'phone': false},
     'defaults': {'locale': 'en', 'timezone': 'UTC'},

@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Pre-built Auth, Profile, Teams & Notifications for the Magic Framework.</strong><br/>
-  20 opt-in features, every screen overridable.
+  22 opt-in features, every screen overridable.
 </p>
 
 <p align="center">
@@ -142,7 +142,7 @@ All values are read at runtime via `ConfigRepository` — no hardcoded strings s
 
 ## Feature Toggles
 
-All 20 features default to `false` (opt-in). Enable only what your app needs:
+All 22 features default to `false` (opt-in). Enable only what your app needs:
 
 | Toggle | Description |
 |--------|-------------|
@@ -166,6 +166,8 @@ All 20 features default to `false` (opt-in). Enable only what your app needs:
 | `support_attachments` | Images and PDFs on customer messages (jpg, png, webp, pdf; 3 files, 5 MB each by default). Needs `support` |
 | `support_diagnostics` | Client info and an automatic screenshot of the screen the customer came from, shown to staff only. The screenshot needs the app wrapped once with `MagicStarterScreenCapture.wrap(child)`; routes listed in `diagnostics.deny_capture_routes` are never captured. Needs `support` |
 | `store_review` | The native store review prompt (`MagicStarterStoreReview.maybeRequest()` at a host milestone, never on the web) and the "Rate us" menu item |
+| `releases` | A "What's new" changelog page at `/settings/changelog` (view key `settings.changelog`), its settings hub row and the `MagicStarterAppVersion` caption, over `magic-starter-laravel`'s `GET releases`. Needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
+| `app_update` | `MagicStarterAppUpdateBanner`, mounted by the shipped app layout: on the web it offers Reload when a new deploy appears in `version.json`, on a store-installed release build it offers Update when the backend's latest build is higher. The web banner reads only `version.json`; the store banner reads `GET releases` and needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
 
 ---
 

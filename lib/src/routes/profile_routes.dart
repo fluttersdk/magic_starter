@@ -5,6 +5,7 @@ import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/magic_starter_newsletter_controller.dart';
 import '../http/controllers/magic_starter_profile_controller.dart';
+import '../http/controllers/magic_starter_releases_controller.dart';
 import 'layout_ids.dart';
 
 /// Resolves a settings view backed by [MagicStarterProfileController].
@@ -23,6 +24,12 @@ Widget _profileSettingsView(String key) {
 Widget _newsletterSettingsView() {
   Magic.findOrPut(MagicStarterNewsletterController.new);
   return MagicStarter.view.make('settings.newsletter');
+}
+
+/// Resolves the changelog sub-page, registering its controller first.
+Widget _changelogSettingsView() {
+  Magic.findOrPut(MagicStarterReleasesController.new);
+  return MagicStarter.view.make('settings.changelog');
 }
 
 /// Registers profile/settings routes provided by Magic Starter plugin.
@@ -103,6 +110,14 @@ void registerMagicStarterProfileRoutes() {
           MagicStarterConfig.settingsNewsletterRoute(),
           () => _newsletterSettingsView(),
         ).title('magic_starter.titles.newsletter').stacked();
+      }
+
+      // Changelog sub-page.
+      if (MagicStarterConfig.hasReleasesFeatures()) {
+        MagicRoute.page(
+          MagicStarterConfig.settingsChangelogRoute(),
+          () => _changelogSettingsView(),
+        ).title('magic_starter.titles.changelog').stacked();
       }
 
       // Security — Two-Factor sub-page.

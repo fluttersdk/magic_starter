@@ -733,6 +733,70 @@ void main() {
     });
   });
 
+  group('MagicStarterAppLayout app update banner', () {
+    // The banner sits above every page, and the toggle is static per app run,
+    // so both widths are driven to prove the column keeps one shape.
+    setUp(() {
+      // No network seam answers, so a mounted banner has nothing to look up.
+      MagicStarterAppUpdateBanner.debugFetchDeployedBuild = () async => null;
+    });
+
+    tearDown(() {
+      MagicStarterAppUpdateBanner.resetForTesting();
+      Config.set('magic_starter.features.app_update', false);
+    });
+
+    for (final double width in <double>[400, 1280]) {
+      testWidgets('mounts no banner at $width when app_update is off', (
+        tester,
+      ) async {
+        tester.view.physicalSize = Size(width, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Config.set('magic_starter.features.app_update', false);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterAppUpdateBanner), findsNothing);
+      });
+
+      testWidgets('mounts exactly one banner at $width when app_update is on', (
+        tester,
+      ) async {
+        tester.view.physicalSize = Size(width, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Config.set('magic_starter.features.app_update', true);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterAppUpdateBanner), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('mounts no banner under hidden chrome', (tester) async {
+      Config.set('magic_starter.features.app_update', true);
+
+      await tester.pumpWidget(
+        createApp(child: const SizedBox(), hideChrome: true),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterAppUpdateBanner), findsNothing);
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // The sidebar avatar. A host that opens a guest session without awaiting it
   // paints its first frame with no user, so both forms are driven across that

@@ -450,6 +450,85 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // Releases: the What's new row and the version caption
+  // -------------------------------------------------------------------------
+
+  group('releases', () {
+    setUp(() {
+      PackageInfo.setMockInitialValues(
+        appName: 'Uptizm',
+        packageName: 'com.example.app',
+        version: '1.2.0',
+        buildNumber: '34',
+        buildSignature: '',
+      );
+    });
+
+    testWidgets('shows the What\'s new row and the version caption when on', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.releases', true);
+
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpAndSettle();
+
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsChangelogRoute()),
+        isNotNull,
+      );
+      expect(find.byType(MagicStarterAppVersion), findsOneWidget);
+    });
+
+    testWidgets('shows neither the row nor the caption when off', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.releases', false);
+
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpAndSettle();
+
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsChangelogRoute()),
+        isNull,
+      );
+      expect(find.byType(MagicStarterAppVersion), findsNothing);
+    });
+
+    testWidgets('puts the caption between the sections and the footer slot', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.releases', true);
+      MagicStarter.view.slot(
+        'settings.hub',
+        'footer',
+        (context) => const WText('INJECTED FOOTER', className: 'text-fg'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpAndSettle();
+
+      final double captionTop = tester
+          .getTopLeft(find.byType(MagicStarterAppVersion))
+          .dy;
+      final double footerTop = tester
+          .getTopLeft(find.text('INJECTED FOOTER'))
+          .dy;
+      final double lastRowTop = tester
+          .getTopLeft(
+            find.byWidget(
+              tester
+                  .widgetList<MSSettingsNavRow>(find.byType(MSSettingsNavRow))
+                  .last,
+            ),
+          )
+          .dy;
+
+      expect(captionTop, greaterThan(lastRowTop));
+      expect(captionTop, lessThan(footerTop));
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Empty-section omission — a section with zero enabled rows must not render
   // -------------------------------------------------------------------------
 
