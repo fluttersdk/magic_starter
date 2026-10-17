@@ -3,6 +3,7 @@ import 'package:magic/magic.dart';
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/magic_starter_team_controller.dart';
+import 'layout_ids.dart';
 
 /// Registers team routes provided by Magic Starter plugin.
 ///
@@ -20,7 +21,7 @@ void registerMagicStarterTeamRoutes() {
 
   MagicRoute.group(
     middleware: ['auth'],
-    layoutId: 'app',
+    layoutId: MagicStarterLayoutIds.app,
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(

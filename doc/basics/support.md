@@ -113,7 +113,7 @@ The backend derives the subject from the first line of the message (the topic is
 
 The counter under the message field reads `magic_starter.support.message_max_length` (`MagicStarterConfig.supportMessageMaxLength()`, default 2000). It is display only: set it to the backend's `support.message_max_length`, which is what refuses a longer message.
 
-On a phone the thread hides the bottom navigation, like a chat screen: `registerMagicStarterSupportRoutes()` registers it in its own route group (`layoutId: 'app.chat'`) wrapped in `MagicStarterHideBottomNav`. The list and the create page keep it.
+On a phone the thread hides the bottom navigation, like a chat screen: `registerMagicStarterSupportRoutes()` registers it in the app shell (`MagicStarterLayoutIds.app`) with the page wrapped in `MagicStarterHideBottomNav`, so the bar slides away with the page and moving between support pages never rebuilds the layout. The list and the create page keep it.
 
 <a name="live-updates"></a>
 ## Live Updates

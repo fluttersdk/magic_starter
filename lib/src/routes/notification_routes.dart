@@ -7,6 +7,7 @@ import '../facades/magic_starter.dart';
 import '../ui/components/confirm_dialog/confirm_dialog.dart';
 import '../ui/components/page_container/page_container.recipe.dart';
 import '../ui/components/page_scaffold/page_scaffold.recipe.dart';
+import 'layout_ids.dart';
 
 /// Registers notification routes provided by Magic Starter plugin.
 ///
@@ -37,7 +38,7 @@ void registerMagicStarterNotificationRoutes() {
 
   MagicRoute.group(
     middleware: ['auth'],
-    layoutId: 'app',
+    layoutId: MagicStarterLayoutIds.app,
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(

@@ -121,6 +121,22 @@ void main() {
     expect(stacking[MagicStarterConfig.notificationPreferencesRoute()], isTrue);
   });
 
+  test('the support thread pushes inside the one app shell', () {
+    Config.set('magic_starter.features.support', true);
+    Config.set('magic_starter.features.support_feedback', true);
+    registerMagicStarterSupportRoutes();
+
+    // A group under any other id is a second ShellRoute, and crossing into it
+    // rebuilds and re-animates the whole layout.
+    final List<LayoutDefinition> layouts = MagicRouter.instance.mergedLayouts;
+    expect(layouts, hasLength(1));
+    expect(layouts.single.id, MagicStarterLayoutIds.app);
+
+    final Map<String, bool?> stacking = stackingByPath();
+    expect(stacking[MagicStarterConfig.supportRoute()], isNot(true));
+    expect(stacking[MagicStarterConfig.supportThreadRoute()], isTrue);
+  });
+
   test('a stacked route names no transition, so the host decides', () {
     enableEveryFeature();
     registerMagicStarterProfileRoutes();

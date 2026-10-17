@@ -983,7 +983,7 @@ $teamArgs    );
   MagicRoute.group(
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     middleware: ['auth'],
-    layoutId: 'app',
+    layoutId: MagicStarterLayoutIds.app,
     routes: () {
       MagicRoute.page('/', () => const DashboardView());
     },

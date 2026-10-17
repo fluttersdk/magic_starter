@@ -36,6 +36,7 @@ export 'src/http/controllers/magic_starter_newsletter_controller.dart';
 export 'src/http/controllers/magic_starter_feedback_controller.dart';
 export 'src/http/controllers/magic_starter_support_controller.dart';
 export 'src/routes/auth_routes.dart';
+export 'src/routes/layout_ids.dart';
 export 'src/routes/profile_routes.dart';
 export 'src/routes/team_routes.dart';
 export 'src/routes/notification_routes.dart';

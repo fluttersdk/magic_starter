@@ -5,6 +5,7 @@ import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/magic_starter_newsletter_controller.dart';
 import '../http/controllers/magic_starter_profile_controller.dart';
+import 'layout_ids.dart';
 
 /// Resolves a settings view backed by [MagicStarterProfileController].
 ///
@@ -50,7 +51,7 @@ Widget _newsletterSettingsView() {
 void registerMagicStarterProfileRoutes() {
   MagicRoute.group(
     middleware: ['auth'],
-    layoutId: 'app',
+    layoutId: MagicStarterLayoutIds.app,
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       // Hub index — the default Settings destination.

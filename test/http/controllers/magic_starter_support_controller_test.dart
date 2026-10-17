@@ -1286,7 +1286,9 @@ void main() {
         final route = routeFor(entry.key);
         expect(route, isNotNull, reason: '${entry.key} is not registered');
 
-        final widget = Function.apply(route!.handler, const <Object>[]);
+        // The thread page comes wrapped so the bottom nav slides away with it.
+        final Object? built = Function.apply(route!.handler, const <Object>[]);
+        final widget = built is MagicStarterHideBottomNav ? built.child : built;
         expect((widget as Text).data, entry.value);
       }
     });

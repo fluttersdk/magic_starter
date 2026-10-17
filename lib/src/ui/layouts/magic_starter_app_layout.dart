@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart' show Drawer, Scaffold, Icons;
 import 'package:flutter/widgets.dart';
@@ -216,70 +217,122 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
         (_collapsedChoice ?? layoutTheme.sidebarCollapsedByDefault);
     final isCompact = isDesktop && (!isExpanded || collapsed);
 
-    return Scaffold(
-      backgroundColor: wColor(
-        context,
-        layoutTheme.contentBackgroundLightColor,
-        shade: layoutTheme.contentBackgroundLightShade,
-        darkColorName: layoutTheme.contentBackgroundDarkColor,
-        darkShade: layoutTheme.contentBackgroundDarkShade,
-      ),
-      drawer: (isDesktop || hideChrome)
-          ? null
-          : _buildDrawer(context, currentPath),
-      // The route content is keyed by path so each route mounts as a distinct
-      // subtree. Without it the persistent shell reuses the scroll container's
-      // child slot across different route views; swapping a scrollable view for
-      // another then tears down render objects in a confused order
-      // (markNeedsLayout on an already-dirty relayout boundary, double detach)
-      // under accumulated navigation. Debug-only asserts, but they surface the
-      // red ErrorWidget in dev.
-      //
-      // That key is applied by MagicStarterViewRegistry.makeLayout rather than
-      // here, so a host app replacing this layout keeps it; see that method's
-      // doc block. It survives the immersive branch below too, because the key
-      // IS `widget.child` rather than something this shell wraps around it.
-      body: hideChrome
-          ? widget.child
-          : SafeArea(
-              bottom: false,
-              child: WDiv(
-                className: 'flex flex-row w-full h-full',
-                children: [
-                  if (isDesktop)
-                    _buildSidebar(
-                      context,
-                      currentPath,
-                      compact: isCompact,
-                      collapsible: canCollapse,
-                    ),
-                  WDiv(
-                    className: 'flex-1 flex flex-col h-full overflow-hidden',
-                    children: [
-                      _buildHeader(context, isDesktop),
-                      // The content box is the host's, because only the host
-                      // knows the shape of its screens. The shipped one does
-                      // not scroll: the child is the shell's nested Navigator,
-                      // and scrolling it gave its Overlay an unbounded height
-                      // that breaks a page left under a stacked route (see
-                      // `MagicStarterLayoutTheme.contentClassName`).
-                      WDiv(
-                        className: layoutTheme.contentClassName,
-                        scrollPrimary: layoutTheme.contentScrollPrimary,
-                        child: widget.child,
+    // The bar shows on a phone and goes through the slot, which collapses it
+    // while a [MagicStarterHideBottomNav] page is on screen.
+    final showsBottomNav = !isDesktop && hasBottomNav && !hideChrome;
+
+    // The scope sits at the root, above both the slot and the routed child,
+    // so a page under the shell's Navigator reaches the bar's slot.
+    return MagicStarterBottomNavScope(
+      child: Scaffold(
+        backgroundColor: wColor(
+          context,
+          layoutTheme.contentBackgroundLightColor,
+          shade: layoutTheme.contentBackgroundLightShade,
+          darkColorName: layoutTheme.contentBackgroundDarkColor,
+          darkShade: layoutTheme.contentBackgroundDarkShade,
+        ),
+        drawer: (isDesktop || hideChrome)
+            ? null
+            : _buildDrawer(context, currentPath),
+        // The route content is keyed by path so each route mounts as a
+        // distinct subtree. Without it the persistent shell reuses the scroll
+        // container's child slot across different route views; swapping a
+        // scrollable view for another then tears down render objects in a
+        // confused order (markNeedsLayout on an already-dirty relayout
+        // boundary, double detach) under accumulated navigation. Debug-only
+        // asserts, but they surface the red ErrorWidget in dev.
+        //
+        // That key is applied by MagicStarterViewRegistry.makeLayout rather
+        // than here, so a host app replacing this layout keeps it; see that
+        // method's doc block. It survives the immersive branch below too,
+        // because the key IS `widget.child` rather than something this shell
+        // wraps around it.
+        body: hideChrome
+            ? widget.child
+            : SafeArea(
+                bottom: false,
+                child: WDiv(
+                  className: 'flex flex-row w-full h-full',
+                  children: [
+                    if (isDesktop)
+                      _buildSidebar(
+                        context,
+                        currentPath,
+                        compact: isCompact,
+                        collapsible: canCollapse,
                       ),
-                    ],
-                  ),
-                ],
+                    WDiv(
+                      className: 'flex-1 flex flex-col h-full overflow-hidden',
+                      children: [
+                        _buildHeader(context, isDesktop),
+                        // The content box is the host's, because only the
+                        // host knows the shape of its screens. The shipped one
+                        // does not scroll: the child is the shell's nested
+                        // Navigator, and scrolling it gave its Overlay an
+                        // unbounded height that breaks a page left under a
+                        // stacked route (see
+                        // `MagicStarterLayoutTheme.contentClassName`).
+                        WDiv(
+                          className: layoutTheme.contentClassName,
+                          scrollPrimary: layoutTheme.contentScrollPrimary,
+                          // Applied whether or not the bar shows (a no-op
+                          // without one), so crossing the breakpoint keeps the
+                          // same widget shape above the shell's Navigator.
+                          child: _restoreBottomInset(
+                            MediaQuery.of(context),
+                            widget.child,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+        bottomNavigationBar: showsBottomNav
+            ? MagicStarterBottomNavSlot(
+                child: _buildBottomNav(context, currentPath),
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// Hands the collapsed share of the bar back to the content as bottom inset.
+  ///
+  /// A Scaffold strips the bottom inset from its body whenever it has a bottom
+  /// bar, and the slot is that bar even while it is collapsed. A page that
+  /// hides the bar used to get no bar at all and kept the inset its docked
+  /// composer clears the home indicator with; blending the stripped value
+  /// towards the [outer] one by the hidden fraction gives that back, and moves
+  /// a docked footer with the bar rather than after it.
+  Widget _restoreBottomInset(MediaQueryData outer, Widget child) {
+    return Builder(
+      builder: (BuildContext context) {
+        final double hidden =
+            1 - MagicStarterBottomNavScope.visibilityOf(context);
+        final MediaQueryData inner = MediaQuery.of(context);
+
+        return MediaQuery(
+          data: inner.copyWith(
+            padding: inner.padding.copyWith(
+              bottom: lerpDouble(
+                inner.padding.bottom,
+                outer.padding.bottom,
+                hidden,
               ),
             ),
-      bottomNavigationBar:
-          (!isDesktop &&
-              hasBottomNav &&
-              !hideChrome &&
-              !MagicStarterHideBottomNav.of(context))
-          ? _buildBottomNav(context, currentPath)
-          : null,
+            viewPadding: inner.viewPadding.copyWith(
+              bottom: lerpDouble(
+                inner.viewPadding.bottom,
+                outer.viewPadding.bottom,
+                hidden,
+              ),
+            ),
+          ),
+          child: child,
+        );
+      },
     );
   }
 
