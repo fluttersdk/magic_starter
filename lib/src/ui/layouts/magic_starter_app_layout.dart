@@ -276,12 +276,13 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                         WDiv(
                           className: layoutTheme.contentClassName,
                           scrollPrimary: layoutTheme.contentScrollPrimary,
-                          child: showsBottomNav
-                              ? _restoreBottomInset(
-                                  MediaQuery.of(context),
-                                  widget.child,
-                                )
-                              : widget.child,
+                          // Applied whether or not the bar shows (a no-op
+                          // without one), so crossing the breakpoint keeps the
+                          // same widget shape above the shell's Navigator.
+                          child: _restoreBottomInset(
+                            MediaQuery.of(context),
+                            widget.child,
+                          ),
                         ),
                       ],
                     ),
