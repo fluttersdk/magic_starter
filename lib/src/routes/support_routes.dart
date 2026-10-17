@@ -7,6 +7,7 @@ import '../http/controllers/magic_starter_feedback_controller.dart';
 import '../http/controllers/magic_starter_support_controller.dart';
 import '../support/screen_capture.dart';
 import '../ui/widgets/magic_starter_hide_bottom_nav.dart';
+import 'layout_ids.dart';
 
 /// Full path of the "Send feedback" page (`support_feedback`).
 ///
@@ -36,11 +37,11 @@ Widget _supportView(String key) {
 /// commonly gives the list a nav destination, and the create and thread pages
 /// are places a reader drills into and needs the back gesture out of.
 ///
-/// The thread is a chat screen, so it sits in its own route group
-/// (`layoutId: 'app.chat'`) whose layout is wrapped in
-/// [MagicStarterHideBottomNav]: the phone's bottom navigation is gone under the
-/// composer, and stays on the list and the create page. The group needs its own
-/// id because two groups sharing one share one layout element.
+/// The thread is a chat screen, so its page is wrapped in
+/// [MagicStarterHideBottomNav]: the phone's bottom navigation slides away under
+/// the composer with the push and comes back with the pop, and stays on the
+/// list and the create page. Every support page shares the one app shell, so
+/// moving between them never rebuilds the layout.
 ///
 /// The host calls this from its route provider, as it does the other
 /// `registerMagicStarter*Routes()`: the profile dropdown shows its Support item
@@ -63,7 +64,7 @@ void registerMagicStarterSupportRoutes() {
 
   MagicRoute.group(
     middleware: ['auth'],
-    layoutId: 'app',
+    layoutId: MagicStarterLayoutIds.app,
     layout: (child) => MagicStarter.view.makeLayout('layout.app', child: child),
     routes: () {
       MagicRoute.page(
@@ -82,19 +83,10 @@ void registerMagicStarterSupportRoutes() {
           return MagicStarter.view.make('support.feedback');
         }).title('magic_starter.titles.support_feedback').stacked();
       }
-    },
-  );
 
-  MagicRoute.group(
-    middleware: ['auth'],
-    layoutId: 'app.chat',
-    layout: (child) => MagicStarterHideBottomNav(
-      child: MagicStarter.view.makeLayout('layout.app', child: child),
-    ),
-    routes: () {
       MagicRoute.page(
         MagicStarterConfig.supportThreadRoute(),
-        () => _supportView('support.thread'),
+        () => MagicStarterHideBottomNav(child: _supportView('support.thread')),
       ).title('magic_starter.titles.support_thread').stacked();
     },
   );
