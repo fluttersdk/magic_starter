@@ -518,50 +518,51 @@ void main() {
       expect(find.text('Overview'), findsOneWidget);
     });
 
-    testWidgets('mobile bottom nav renders through a slot under its own scope', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
+    testWidgets(
+      'mobile bottom nav renders through a slot under its own scope',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
 
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      MagicStarter.useNavigation(
-        mainItems: const [],
-        bottomItems: const [
-          MagicStarterNavItem(
-            icon: Icons.dashboard_outlined,
-            labelKey: 'Overview',
-            path: '/',
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: const [
+            MagicStarterNavItem(
+              icon: Icons.dashboard_outlined,
+              labelKey: 'Overview',
+              path: '/',
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(createApp(child: const Text('page')));
+        await tester.pumpAndSettle();
+
+        // The scope sits inside the layout, above both the bar and the routed
+        // child, so a page under the shell can reach the bar's slot.
+        final Finder scope = find.descendant(
+          of: find.byType(MagicStarterAppLayout),
+          matching: find.byType(MagicStarterBottomNavScope),
+        );
+        expect(scope, findsOneWidget);
+        expect(
+          find.descendant(of: scope, matching: find.text('page')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(MagicStarterBottomNavSlot),
+            matching: find.text('Overview'),
           ),
-        ],
-      );
-
-      await tester.pumpWidget(createApp(child: const Text('page')));
-      await tester.pumpAndSettle();
-
-      // The scope sits inside the layout, above both the bar and the routed
-      // child, so a page under the shell can reach the bar's slot.
-      final Finder scope = find.descendant(
-        of: find.byType(MagicStarterAppLayout),
-        matching: find.byType(MagicStarterBottomNavScope),
-      );
-      expect(scope, findsOneWidget);
-      expect(
-        find.descendant(of: scope, matching: find.text('page')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byType(MagicStarterBottomNavSlot),
-          matching: find.text('Overview'),
-        ),
-        findsOneWidget,
-      );
-    });
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('a hiding page gets the home indicator inset back', (
       tester,
@@ -604,10 +605,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(
-        tester.getSize(find.byType(MagicStarterBottomNavSlot)).height,
-        0,
-      );
+      expect(tester.getSize(find.byType(MagicStarterBottomNavSlot)).height, 0);
       expect(pageInset, 34);
     });
 
