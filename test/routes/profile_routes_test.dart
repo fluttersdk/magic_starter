@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/views/settings/magic_starter_changelog_view.dart';
 
 // ---------------------------------------------------------------------------
 // Test Suite
@@ -41,6 +42,7 @@ void enableAllSettingsFeatures() {
   Config.set('magic_starter.features.extended_profile', true);
   Config.set('magic_starter.features.timezones', true);
   Config.set('magic_starter.features.newsletter', true);
+  Config.set('magic_starter.features.releases', true);
 }
 
 /// A bridge the route tests only need to see as present.
@@ -151,6 +153,7 @@ void main() {
         expect(routeFor(MagicStarterConfig.settingsLanguageRoute()), isNull);
         expect(routeFor(MagicStarterConfig.settingsTimezoneRoute()), isNull);
         expect(routeFor(MagicStarterConfig.settingsNewsletterRoute()), isNull);
+        expect(routeFor(MagicStarterConfig.settingsChangelogRoute()), isNull);
 
         // The hub, profile, appearance, and password are always present
         // (password mirrors the hub row, which has no feature flag).
@@ -243,6 +246,28 @@ void main() {
       expect(routeFor(MagicStarterConfig.settingsNewsletterRoute()), isNotNull);
     });
 
+    test('changelog sub-route appears when releases is on', () {
+      Config.set('magic_starter.features.releases', true);
+
+      registerMagicStarterProfileRoutes();
+
+      final route = routeFor(MagicStarterConfig.settingsChangelogRoute());
+      expect(route, isNotNull);
+      expect(route!.routeTitle, 'magic_starter.titles.changelog');
+    });
+
+    test('changelog sub-route resolves the registered changelog view', () {
+      Config.set('magic_starter.features.releases', true);
+      Magic.flush();
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      MagicStarter.view;
+
+      registerMagicStarterProfileRoutes();
+
+      final route = routeFor(MagicStarterConfig.settingsChangelogRoute())!;
+      expect(route.buildWidget(const {}), isA<MagicStarterChangelogView>());
+    });
+
     test(
       'all sub-routes resolve registered views when every feature is on',
       () {
@@ -261,6 +286,7 @@ void main() {
           MagicStarterConfig.settingsLanguageRoute(),
           MagicStarterConfig.settingsTimezoneRoute(),
           MagicStarterConfig.settingsNewsletterRoute(),
+          MagicStarterConfig.settingsChangelogRoute(),
           MagicStarterConfig.settingsTwoFactorRoute(),
           MagicStarterConfig.settingsPasswordRoute(),
           MagicStarterConfig.settingsSessionsRoute(),

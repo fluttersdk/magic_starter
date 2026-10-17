@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/widgets/magic_starter_app_version.dart';
 import 'package:magic_starter/src/ui/views/settings/magic_starter_settings_hub_view.dart';
 import 'package:magic_starter/src/ui/views/settings/preferences/magic_starter_appearance_view.dart';
 import 'package:magic_starter/src/ui/views/settings/preferences/magic_starter_language_view.dart';
@@ -10,6 +11,7 @@ import 'package:magic_starter/src/ui/views/settings/security/magic_starter_passw
 import 'package:magic_starter/src/ui/views/settings/security/magic_starter_sessions_view.dart';
 import 'package:magic_starter/src/ui/views/settings/security/magic_starter_two_factor_view.dart';
 import 'package:magic_starter/src/ui/views/profile/magic_starter_profile_sub_page_view.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // ---------------------------------------------------------------------------
 // Mock NetworkDriver
@@ -447,6 +449,85 @@ void main() {
       navRowFor(tester, MagicStarterConfig.settingsNewsletterRoute()),
       isNotNull,
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Releases: the What's new row and the version caption
+  // -------------------------------------------------------------------------
+
+  group('releases', () {
+    setUp(() {
+      PackageInfo.setMockInitialValues(
+        appName: 'Uptizm',
+        packageName: 'com.example.app',
+        version: '1.2.0',
+        buildNumber: '34',
+        buildSignature: '',
+      );
+    });
+
+    testWidgets('shows the What\'s new row and the version caption when on', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.releases', true);
+
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpAndSettle();
+
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsChangelogRoute()),
+        isNotNull,
+      );
+      expect(find.byType(MagicStarterAppVersion), findsOneWidget);
+    });
+
+    testWidgets('shows neither the row nor the caption when off', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.releases', false);
+
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpAndSettle();
+
+      expect(
+        navRowFor(tester, MagicStarterConfig.settingsChangelogRoute()),
+        isNull,
+      );
+      expect(find.byType(MagicStarterAppVersion), findsNothing);
+    });
+
+    testWidgets('puts the caption between the sections and the footer slot', (
+      tester,
+    ) async {
+      Config.set('magic_starter.features.releases', true);
+      MagicStarter.view.slot(
+        'settings.hub',
+        'footer',
+        (context) => const WText('INJECTED FOOTER', className: 'text-fg'),
+      );
+
+      await tester.pumpWidget(wrap(const MagicStarterSettingsHubView()));
+      await tester.pumpAndSettle();
+
+      final double captionTop = tester
+          .getTopLeft(find.byType(MagicStarterAppVersion))
+          .dy;
+      final double footerTop = tester
+          .getTopLeft(find.text('INJECTED FOOTER'))
+          .dy;
+      final double lastRowTop = tester
+          .getTopLeft(
+            find.byWidget(
+              tester
+                  .widgetList<MSSettingsNavRow>(find.byType(MSSettingsNavRow))
+                  .last,
+            ),
+          )
+          .dy;
+
+      expect(captionTop, greaterThan(lastRowTop));
+      expect(captionTop, lessThan(footerTop));
+    });
   });
 
   // -------------------------------------------------------------------------

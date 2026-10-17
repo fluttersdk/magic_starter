@@ -25,6 +25,7 @@ import 'ui/views/auth/magic_starter_reset_password_view.dart';
 import 'ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 import 'ui/views/auth/magic_starter_otp_verify_view.dart';
 import 'ui/views/profile/magic_starter_profile_sub_page_view.dart';
+import 'ui/views/settings/magic_starter_changelog_view.dart';
 import 'ui/views/settings/magic_starter_settings_hub_view.dart';
 import 'ui/views/settings/preferences/magic_starter_appearance_view.dart';
 import 'ui/views/settings/preferences/magic_starter_language_view.dart';
@@ -580,6 +581,14 @@ class MagicStarterManager {
       _registerDefault(
         'settings.newsletter',
         () => const MagicStarterNewsletterView(),
+      );
+    }
+
+    // Changelog.
+    if (MagicStarterConfig.hasReleasesFeatures()) {
+      _registerDefault(
+        'settings.changelog',
+        () => const MagicStarterChangelogView(),
       );
     }
 

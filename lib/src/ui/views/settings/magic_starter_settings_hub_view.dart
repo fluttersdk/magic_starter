@@ -8,6 +8,7 @@ import '../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../components/settings_nav_row/index.dart';
 import '../../components/page_scaffold/index.dart';
 import '../../components/settings_section/index.dart';
+import '../../widgets/magic_starter_app_version.dart';
 
 /// iOS-style Settings hub --- the drill-down index for the starter.
 ///
@@ -25,6 +26,10 @@ import '../../components/settings_section/index.dart';
 ///    app's social login bridge.
 /// 2. **Guest detection** via `Gate.denies('starter.delete-account')`: guests
 ///    see an upgrade row in the Account group instead of editing affordances.
+///
+/// With the `releases` feature on, the Preferences group ends in a "What's new"
+/// row and the page closes on a [MagicStarterAppVersion] caption naming the
+/// running build, just above the footer slot.
 ///
 /// Header and footer injection points are exposed through the view registry
 /// slots `settings.hub.header` and `settings.hub.footer`.
@@ -57,6 +62,7 @@ class _MagicStarterSettingsHubViewState
   static const _iconLanguage = Icons.language_outlined;
   static const _iconTimezone = Icons.schedule_outlined;
   static const _iconNewsletter = Icons.mail_outline;
+  static const _iconChangelog = Icons.new_releases_outlined;
 
   /// Whether the current user is a guest (denied account deletion).
   bool get _isGuest => Gate.denies('starter.delete-account');
@@ -181,6 +187,12 @@ class _MagicStarterSettingsHubViewState
           title: trans('magic_starter.newsletter.section_title'),
           to: MagicStarterConfig.settingsNewsletterRoute(),
         ),
+      if (MagicStarterConfig.hasReleasesFeatures())
+        MSSettingsNavRow(
+          icon: _iconChangelog,
+          title: trans('magic_starter.releases.title'),
+          to: MagicStarterConfig.settingsChangelogRoute(),
+        ),
     ];
   }
 
@@ -232,6 +244,8 @@ class _MagicStarterSettingsHubViewState
             header: trans('magic_starter.settings.preferences_section'),
             children: preferencesRows,
           ),
+        if (MagicStarterConfig.hasReleasesFeatures())
+          const MagicStarterAppVersion(),
         ?footerSlot,
       ],
     );

@@ -410,6 +410,7 @@
     },
     "titles": {
       "appearance": "Appearance",
+      "changelog": "What's new",
       "connected_accounts": "Connected Accounts",
       "forgot_password": "Forgot Password",
       "language": "Language",
