@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
+import '../../components/page_container/page_container.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
 
 class MagicStarterTeamInvitationAcceptView
@@ -62,16 +63,23 @@ class _MagicStarterTeamInvitationAcceptViewState
     // Its own scroll, like every other starter screen gets from
     // `MSPageScaffold`: a host whose content box does not scroll hands this
     // view a bounded height, and the card overflowed a short one. Not the
-    // ambient primary controller, for the reason `MSPageScaffold` gives.
+    // ambient primary controller, for the reason `MSPageScaffold` gives. The
+    // card sits in the same `MSPageContainer` as every other app page, so it
+    // gets the host's page pad instead of a bottom padding each host patched in.
     return SingleChildScrollView(
       primary: false,
-      child: controller.renderState(
-        (_) => _buildSuccess(headerSlot: headerSlot, footerSlot: footerSlot),
-        onEmpty: _buildDefault(headerSlot: headerSlot, footerSlot: footerSlot),
-        onError: (message) => _buildError(
-          message,
-          headerSlot: headerSlot,
-          footerSlot: footerSlot,
+      child: MSPageContainer(
+        child: controller.renderState(
+          (_) => _buildSuccess(headerSlot: headerSlot, footerSlot: footerSlot),
+          onEmpty: _buildDefault(
+            headerSlot: headerSlot,
+            footerSlot: footerSlot,
+          ),
+          onError: (message) => _buildError(
+            message,
+            headerSlot: headerSlot,
+            footerSlot: footerSlot,
+          ),
         ),
       ),
     );

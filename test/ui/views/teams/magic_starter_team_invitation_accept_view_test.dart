@@ -107,6 +107,62 @@ void main() {
     });
   });
 
+  group('MagicStarterTeamInvitationAcceptView — page container', () {
+    late MagicStarterTeamController controller;
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      MagicRouter.reset();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Config.set('magic_starter.features.teams', true);
+      controller = MagicStarterTeamController.instance;
+    });
+
+    tearDown(() {
+      controller.members.dispose();
+      controller.invitations.dispose();
+      controller.currentTeamId.dispose();
+      MagicRouter.reset();
+    });
+
+    Finder cardInsideContainer() => find.descendant(
+      of: find.byType(MSPageContainer),
+      matching: find.byType(MagicStarterAuthFormCard),
+    );
+
+    testWidgets('wraps the card in the page container by default', (
+      tester,
+    ) async {
+      await mount(tester);
+
+      expect(cardInsideContainer(), findsOneWidget);
+    });
+
+    testWidgets('wraps the card in the page container on success', (
+      tester,
+    ) async {
+      await mount(tester);
+
+      controller.setSuccess(true);
+      await tester.pumpAndSettle();
+
+      expect(cardInsideContainer(), findsOneWidget);
+    });
+
+    testWidgets('wraps the card in the page container on error', (
+      tester,
+    ) async {
+      await mount(tester);
+
+      controller.setError('Invitation expired');
+      await tester.pumpAndSettle();
+
+      expect(cardInsideContainer(), findsOneWidget);
+    });
+  });
+
   group('MagicStarterTeamInvitationAcceptView — the invitation token', () {
     late MagicStarterTeamController controller;
 
