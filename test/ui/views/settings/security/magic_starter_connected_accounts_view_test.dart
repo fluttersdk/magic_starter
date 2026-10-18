@@ -364,8 +364,9 @@ void main() {
     ) async {
       await pumpView(tester);
 
-      // The label's painted colour, not its className: `text-destructive` is
-      // no alias and rendered the danger action neutral.
+      // The label's painted colour, not its className: a token the theme does
+      // not define renders the danger action neutral. This stock theme defines
+      // no `text-destructive`, so the red is the fallback pair.
       final RichText label = tester.widget<RichText>(
         find.descendant(
           of: buttonLabelled(_shipped('disconnect')),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../theme/magic_starter_tokens.dart';
 import 'dropdown_menu.dart';
 
 /// Static preview for the [MSDropdownMenu] component.
@@ -18,6 +19,11 @@ class DropdownMenuPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final destructiveText = MagicStarterTokens.role(
+      WindTheme.maybeDataOf(context),
+      'text-destructive',
+    );
+
     return WDiv(
       className: 'flex flex-row gap-8 p-6',
       children: [
@@ -32,9 +38,9 @@ class DropdownMenuPreview extends StatelessWidget {
             const MSDropdownMenuItem(label: 'View details', onTap: null),
             MSDropdownMenuItem(
               label: 'Delete',
-              leading: const WIcon(
+              leading: WIcon(
                 _iconDelete,
-                className: 'text-destructive text-sm',
+                className: '$destructiveText text-sm',
               ),
               onTap: () {},
             ),

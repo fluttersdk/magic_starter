@@ -944,22 +944,34 @@ class MagicStarterTheme {
   factory MagicStarterTheme.fromWind(WindThemeData theme) {
     // Resolve each semantic role once so the sub-theme builders below read as a
     // flat mapping from role to token/fallback rather than repeated lookups.
-    final surface = _windRole(theme, 'bg-surface');
-    final surfaceContainer = _windRole(theme, 'bg-surface-container');
-    final surfaceContainerHigh = _windRole(theme, 'bg-surface-container-high');
-    final fg = _windRole(theme, 'text-fg');
-    final fgMuted = _windRole(theme, 'text-fg-muted');
-    final fgDisabled = _windRole(theme, 'text-fg-disabled');
-    final bgPrimary = _windRole(theme, 'bg-primary');
-    final textPrimary = _windRole(theme, 'text-primary');
-    final onPrimary = _windRole(theme, 'text-on-primary');
-    final border = _windRole(theme, 'border-color-border');
-    final borderSubtle = _windRole(theme, 'border-color-border-subtle');
-    final bgDestructive = _windRole(theme, 'bg-destructive');
-    final onDestructive = _windRole(theme, 'text-on-destructive');
-    final destructiveContainer = _windRole(theme, 'bg-destructive-container');
-    final textDestructive = _windRole(theme, 'text-destructive');
-    final bgWarning = _windRole(theme, 'bg-warning');
+    final surface = MagicStarterTokens.role(theme, 'bg-surface');
+    final surfaceContainer = MagicStarterTokens.role(
+      theme,
+      'bg-surface-container',
+    );
+    final surfaceContainerHigh = MagicStarterTokens.role(
+      theme,
+      'bg-surface-container-high',
+    );
+    final fg = MagicStarterTokens.role(theme, 'text-fg');
+    final fgMuted = MagicStarterTokens.role(theme, 'text-fg-muted');
+    final fgDisabled = MagicStarterTokens.role(theme, 'text-fg-disabled');
+    final bgPrimary = MagicStarterTokens.role(theme, 'bg-primary');
+    final textPrimary = MagicStarterTokens.role(theme, 'text-primary');
+    final onPrimary = MagicStarterTokens.role(theme, 'text-on-primary');
+    final border = MagicStarterTokens.role(theme, 'border-color-border');
+    final borderSubtle = MagicStarterTokens.role(
+      theme,
+      'border-color-border-subtle',
+    );
+    final bgDestructive = MagicStarterTokens.role(theme, 'bg-destructive');
+    final onDestructive = MagicStarterTokens.role(theme, 'text-on-destructive');
+    final destructiveContainer = MagicStarterTokens.role(
+      theme,
+      'bg-destructive-container',
+    );
+    final textDestructive = MagicStarterTokens.role(theme, 'text-destructive');
+    final bgWarning = MagicStarterTokens.role(theme, 'bg-warning');
 
     return MagicStarterTheme(
       navigation: MagicStarterNavigationTheme(
@@ -1065,60 +1077,4 @@ class MagicStarterTheme {
       auth: auth ?? this.auth,
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// WindThemeData -> semantic-role derivation helpers (used by
-// MagicStarterTheme.fromWind)
-// ---------------------------------------------------------------------------
-
-/// Fallback palette pairs for semantic roles that are NOT keys in
-/// [MagicStarterTokens.defaultAliases].
-///
-/// `text-primary` resolves directly against the `primary` color and is always
-/// available, so its fallback is only a safety net. `text-destructive` has no
-/// canonical alias (the contract ships `bg-destructive` / `text-on-destructive`
-/// only), so it falls back to the red text pair the sub-themes used before.
-const Map<String, String> _windRoleFallbacks = {
-  'text-primary': 'text-primary',
-  'text-destructive': 'text-red-600 dark:text-red-400',
-};
-
-/// Resolves a semantic role [token] against [theme].
-///
-/// Returns the bare semantic token when [theme] defines the role (so it
-/// re-skins with the passed palette); otherwise returns the shipped default
-/// palette pair so the surface stays visible even when the theme omits the
-/// role. This keeps [MagicStarterTheme.fromWind] derived-from-the-theme without
-/// ever emitting a token that would silently no-op at render time.
-String _windRole(WindThemeData theme, String token) {
-  if (_windThemeDefines(theme, token)) return token;
-  return MagicStarterTokens.defaultAliases[token] ??
-      _windRoleFallbacks[token] ??
-      token;
-}
-
-/// Whether [theme] defines the semantic role behind [token], either as an alias
-/// key (`bg-surface`, `text-fg`, `border-color-border`, ...) or via the backing
-/// color key in [WindThemeData.colors] (`bg-primary` -> `primary`).
-bool _windThemeDefines(WindThemeData theme, String token) {
-  if (theme.aliases.containsKey(token)) {
-    return true;
-  }
-
-  final colorKey = _windBackingColorKey(token);
-  return colorKey != null && theme.colors.containsKey(colorKey);
-}
-
-/// Strips the CSS-property prefix off a semantic [token] to recover its backing
-/// color key (`border-color-border` -> `border`, `bg-primary` -> `primary`,
-/// `text-fg` -> `fg`), or `null` when the token carries no known prefix.
-String? _windBackingColorKey(String token) {
-  for (final prefix in const ['border-color-', 'bg-', 'text-']) {
-    if (token.startsWith(prefix)) {
-      return token.substring(prefix.length);
-    }
-  }
-
-  return null;
 }

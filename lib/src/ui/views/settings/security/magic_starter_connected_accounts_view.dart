@@ -9,6 +9,7 @@ import '../../../../support/confirms_identity.dart';
 import '../../../components/button/index.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
+import '../../../theme/magic_starter_tokens.dart';
 
 /// Connected accounts settings sub-page.
 ///
@@ -179,6 +180,10 @@ class _MagicStarterConnectedAccountsViewState
     final hasPassword = Auth.user()?.get<bool>('has_password') ?? true;
     final onlyLoginMethod = !hasPassword && links.length <= 1;
     final pending = _pendingConnect;
+    final destructiveText = MagicStarterTokens.role(
+      WindTheme.maybeDataOf(context),
+      'text-destructive',
+    );
 
     return MSPageScaffold(
       title: trans('social.connected_accounts'),
@@ -186,11 +191,7 @@ class _MagicStarterConnectedAccountsViewState
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
         if (_error != null)
-          // Raw pair: the alias contract has no destructive text role.
-          WText(
-            _error!,
-            className: 'text-sm text-red-600 dark:text-red-400 px-1',
-          ),
+          WText(_error!, className: 'text-sm $destructiveText px-1'),
         MSSettingsSection(
           footer: onlyLoginMethod && links.isNotEmpty
               ? trans('social.last_login_method')
@@ -267,7 +268,7 @@ class _MagicStarterConnectedAccountsViewState
             disabled: !canDisconnect,
             intent: ButtonIntent.secondary,
             size: ButtonSize.sm,
-            className: kButtonDangerOutlineClassName,
+            className: buttonDangerOutlineClassName(context),
             child: WText(trans('social.disconnect')),
           )
         else

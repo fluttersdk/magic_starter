@@ -6,13 +6,13 @@ const String kSettingsRowToneAxis = 'tone';
 /// Tone variants for [MSSettingsRow].
 ///
 /// - [defaultTone] — Standard row: title uses the default foreground token.
-/// - [destructive] — Danger row (Delete / Sign-out): title uses the destructive
-///   foreground token to signal an irreversible action.
+/// - [destructive] — Danger row (Delete / Sign-out): title uses the host's
+///   destructive text role, resolved by [MSSettingsRow] at build time.
 enum SettingsRowTone {
   /// Standard row: title rendered in `text-fg`.
   defaultTone,
 
-  /// Danger row: title rendered in `text-destructive`.
+  /// Danger row: title rendered in the resolved destructive text role.
   destructive,
 }
 
@@ -26,14 +26,12 @@ enum SettingsRowTone {
 ///
 /// Tone -> semantic token mapping:
 /// - defaultTone: `text-fg font-medium text-base`
-/// - destructive: `text-destructive font-medium text-base`
+/// - destructive: no colour token; [MSSettingsRow] adds the resolved role to the
+///   title, since the container class cannot read the theme
 const WindRecipe settingsRowRecipe = WindRecipe(
   base: 'min-h-12 px-5 py-4 flex flex-row items-center gap-3',
   variants: {
-    kSettingsRowToneAxis: {
-      'defaultTone': 'text-fg',
-      'destructive': 'text-destructive',
-    },
+    kSettingsRowToneAxis: {'defaultTone': 'text-fg', 'destructive': ''},
   },
   defaultVariants: {kSettingsRowToneAxis: 'defaultTone'},
 );

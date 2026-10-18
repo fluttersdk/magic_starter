@@ -28,7 +28,7 @@ lib/src/ui/components/<name>/
 
 - Wind UI exclusively. No Material widgets, except `Icons.*` for icon data and the Material `Dialog` shell inside `MSDialog`.
 - Style through the semantic alias layer (`bg-surface*`, `text-fg*`, `border-color-border*`, `bg-primary`, `text-on-primary`, `bg-destructive`), not raw `gray-*` / `red-*` palette classes. Wind drops an unknown alias SILENTLY, so a token that does not exist renders identically to no token at all: assert the RESOLVED colour in a test, never the className string.
-- The alias contract ships no destructive TEXT role. `text-destructive` parses and then resolves to nothing; `MSErrorState` keeps a raw `text-red-*` pair on purpose and says so in a docblock.
+- The alias contract ships no destructive TEXT role. `text-destructive` parses and then resolves to nothing unless the host defines it, so resolve it with `MagicStarterTokens.role(WindTheme.maybeDataOf(context), 'text-destructive')`, which keeps a host's alias and falls back to the red pair. `MSErrorState`'s context-free icon class keeps a raw `text-red-*` pair and says so in a docblock.
 - Dark mode: every colour token needs its `dark:` pair in the same className.
 - Never hardcode a modal className. Dialogs read `MagicStarter.manager.modalTheme` at build time (`titleClassName`, `primaryButtonClassName`, `dangerButtonClassName`, ...).
 
