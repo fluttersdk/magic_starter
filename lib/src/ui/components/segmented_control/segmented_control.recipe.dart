@@ -17,6 +17,7 @@ enum SegmentedControlSize {
 /// Slots:
 /// - `root` — the outer container row.
 /// - `item` — each individual segment button.
+/// - `hit` — the tappable cell around each segment's painted `item`.
 ///
 /// Variant axes:
 /// - `size`: `sm` | `md` (default `md`).
@@ -37,6 +38,9 @@ Map<String, String> segmentedControlRecipe({
       'item':
           'px-3 py-1.5 rounded-md text-sm font-medium text-center text-fg-muted cursor-pointer selected:bg-surface selected:text-fg selected:shadow-sm transition-colors '
           'focus:ring-2 focus:ring-offset-1 focus:ring-primary-500 dark:focus:ring-primary-400',
+      // The touch target around a segment's painted pill: 44 px tall on a phone
+      // with the pill centred in it, nothing extra from `lg` up.
+      'hit': 'flex flex-col justify-center min-h-11 lg:min-h-0',
     },
     variants: {
       kSegmentedControlSizeAxis: {

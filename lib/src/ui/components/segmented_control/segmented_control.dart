@@ -85,7 +85,11 @@ class MSSegmentedControl<T> extends StatelessWidget {
     return WDiv(
       className: rootClassName,
       children: List<Widget>.generate(options.length, (index) {
-        final Widget segment = _buildSegment(index, slots['item'] ?? '');
+        final Widget segment = _buildSegment(
+          index,
+          slots['item'] ?? '',
+          slots['hit'] ?? '',
+        );
         if (!shrinkSegments) return segment;
 
         return Flexible(fit: FlexFit.loose, child: segment);
@@ -149,7 +153,11 @@ class MSSegmentedControl<T> extends StatelessWidget {
 
   /// Builds a single segment at [index], activating the `selected:` state for
   /// the currently selected index.
-  Widget _buildSegment(int index, String itemClassName) {
+  ///
+  /// The pill sits in a [hitClassName] cell that is 44 px tall below `lg`, so
+  /// the anchor (and the semantics node a tap target check measures) is the
+  /// cell while the painted pill keeps its own height.
+  Widget _buildSegment(int index, String itemClassName, String hitClassName) {
     final bool isSelected = index == selectedIndex;
     final Set<String> segmentStates = {if (isSelected) 'selected'};
 
@@ -157,9 +165,12 @@ class MSSegmentedControl<T> extends StatelessWidget {
       onTap: () => onChanged?.call(index),
       states: segmentStates,
       child: WDiv(
-        className: itemClassName,
-        states: segmentStates,
-        child: WText(options[index]),
+        className: hitClassName,
+        child: WDiv(
+          className: itemClassName,
+          states: segmentStates,
+          child: WText(options[index]),
+        ),
       ),
     );
   }

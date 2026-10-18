@@ -22,11 +22,13 @@ import 'button.recipe.dart';
 ///
 /// ### Tap target
 ///
-/// [ButtonSize.sm] paints 32 px tall, short of the 44 px a thumb needs. Below
-/// `lg` it sits in a [kButtonMinTapExtent] hit area, centred on the button,
-/// whose size the painted button keeps. The area presses the button, and is
-/// inert while it is loading, disabled or has no [onPressed]. From `lg` up the
-/// button is laid out exactly as before.
+/// [ButtonSize.sm] paints 32 px tall and [ButtonSize.md] about 36 px, short of
+/// the 44 px a thumb needs. Below `lg` every size sits in a
+/// [kButtonMinTapExtent] hit area, centred on the button, whose size the
+/// painted button keeps; a size already that tall ([ButtonSize.lg]) is not
+/// widened by it. The area presses the button, and is inert while it is
+/// loading, disabled or has no [onPressed]. From `lg` up the button is laid out
+/// exactly as before.
 ///
 /// ### Loading state
 ///
@@ -136,10 +138,6 @@ class MSButton extends StatelessWidget {
     final Widget sized = fullWidth
         ? SizedBox(width: double.infinity, child: button)
         : button;
-
-    if (size != ButtonSize.sm) {
-      return sized;
-    }
 
     return WBreakpoint(base: (_) => _withTapTarget(sized), lg: (_) => sized);
   }
