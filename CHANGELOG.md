@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - **`MSCombobox`'s search field placeholder is translated.** It was a hard-coded `Search...`, so a Turkish host showed English in the open dropdown. It now reads the new `common.search_placeholder` key; add it to your `en.json` (the install stub has it) and to your other locales. An explicit `searchPlaceholder` still wins. (`lib/src/ui/components/combobox/`, `assets/stubs/install/en.stub`)
-- **The billing screen stops refetching on a language change for a guest or before a first load.** After a sign-out the controller stays registered (the session scope resets only on a non-null identity), so a guest switching language fired unauthenticated plans and usage reads and degradation logs. The locale listener now returns early unless the user is signed in and the plans or the usage have loaded at least once in the current session (an empty answer counts), and a new session starts unloaded. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+- **The billing screen stops refetching on a language change for a guest.** After a sign-out the controller stays registered (the session scope resets only on a non-null identity), so a guest switching language fired unauthenticated plans and usage reads and degradation logs. The locale listener now returns early unless the user is signed in; a signed-in switch still refetches, including one that lands while the session's first reads are in flight. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
 
 ### Changed
 

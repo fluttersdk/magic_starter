@@ -35,11 +35,6 @@ class _FakeBilling
   bool failInvoices = false;
   bool failPaymentMethod = false;
 
-  /// Replaces the default catalogue and usage when set, so a case can answer
-  /// an empty one.
-  List<Map<String, dynamic>>? plansRows;
-  List<UsageStat>? usageStats;
-
   /// Raises an `Error` rather than an `Exception` out of `getInvoices`.
   ///
   /// Its own flag because [failInvoices] cannot reach this path: it throws a
@@ -111,9 +106,6 @@ class _FakeBilling
     await _enter(_plansRead);
     if (failPlans) throw const BillingException('catalogue read failed');
 
-    final List<Map<String, dynamic>>? override = plansRows;
-    if (override != null) return override;
-
     return <Map<String, dynamic>>[
       <String, dynamic>{'id': 'tier-a', 'name': 'Tier A', 'monthly': 0},
       <String, dynamic>{'id': 'tier-b', 'name': 'Tier B', 'monthly': 29},
@@ -124,9 +116,6 @@ class _FakeBilling
   Future<List<UsageStat>> getUsage() async {
     await _enter(_usageRead);
     if (failUsage) throw const BillingException('usage read failed');
-
-    final List<UsageStat>? override = usageStats;
-    if (override != null) return override;
 
     return const <UsageStat>[
       UsageStat(key: 'seats', used: 3, limit: 10),
@@ -1648,10 +1637,12 @@ void main() {
     });
 
     test(
-      'a signed-in user whose first load never landed fires no read',
+      'a switch while the first reads are in flight refetches them',
       () async {
-        billing.failPlans = true;
-        billing.failUsage = true;
+        // A sign-in with a saved locale: the session's first reads leave under
+        // the old language and the switch lands before they answer.
+        final Completer<void> firstReads = Completer<void>();
+        billing.gate = firstReads;
         await signIn();
         final MagicStarterBillingController controller = build();
         controller.onInit();
@@ -1661,8 +1652,11 @@ void main() {
 
         await switchLocale();
 
-        expect(reads(_plansRead), plansBefore);
-        expect(reads(_usageRead), usageBefore);
+        expect(reads(_plansRead), plansBefore + 1);
+        expect(reads(_usageRead), usageBefore + 1);
+        billing.gate = null;
+        firstReads.complete();
+        await Future<void>.delayed(Duration.zero);
         controller.dispose();
       },
     );
@@ -1679,60 +1673,6 @@ void main() {
 
       expect(reads(_plansRead), plansBefore + 1);
       expect(reads(_usageRead), usageBefore + 1);
-      controller.dispose();
-    });
-
-    test(
-      'an empty catalogue and an empty usage still count as loaded',
-      () async {
-        billing.plansRows = const <Map<String, dynamic>>[];
-        billing.usageStats = const <UsageStat>[];
-        await signIn();
-        final MagicStarterBillingController controller = build();
-        controller.onInit();
-        await Future<void>.delayed(Duration.zero);
-        final int plansBefore = reads(_plansRead);
-        final int usageBefore = reads(_usageRead);
-
-        await switchLocale();
-
-        expect(reads(_plansRead), plansBefore + 1);
-        expect(reads(_usageRead), usageBefore + 1);
-        controller.dispose();
-      },
-    );
-
-    test('a read from a superseded session does not mark the new one '
-        'loaded', () async {
-      // 1. The previous session's reads park on a gate.
-      final Completer<void> previousGate = Completer<void>();
-      billing.gate = previousGate;
-      await signIn();
-      final MagicStarterBillingController controller = build();
-      final Future<void> previousLoad = controller.load();
-      await Future<void>.delayed(Duration.zero);
-
-      // 2. The session resets and its own reads fail, so nothing legitimate
-      //    marks it loaded.
-      billing.gate = null;
-      billing.failPlans = true;
-      billing.failUsage = true;
-      await controller.resetForSession();
-      controller.onInit();
-      await Future<void>.delayed(Duration.zero);
-
-      // 3. The previous session's reads now succeed, after the reset.
-      billing.failPlans = false;
-      billing.failUsage = false;
-      previousGate.complete();
-      await previousLoad;
-      final int plansBefore = reads(_plansRead);
-      final int usageBefore = reads(_usageRead);
-
-      await switchLocale();
-
-      expect(reads(_plansRead), plansBefore);
-      expect(reads(_usageRead), usageBefore);
       controller.dispose();
     });
   });
