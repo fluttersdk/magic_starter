@@ -4,16 +4,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
+/// Serves a catalogue whose default placeholder differs from the English
+/// fallback, so a hard-coded string cannot pass for a translated one.
+class _SelectLangLoader implements TranslationLoader {
+  @override
+  Future<Map<String, dynamic>> load(Locale locale) async => {
+    'common.select_option': 'Pick one',
+  };
+}
+
 void main() {
-  setUp(() {
+  setUp(() async {
     MagicApp.reset();
     Magic.flush();
     Magic.singleton('magic_starter', () => MagicStarterManager());
+    Translator.instance.setLoader(_SelectLangLoader());
+    await Translator.instance.setLocale(const Locale('en'));
   });
 
   tearDown(() {
     MagicApp.reset();
     Magic.flush();
+    Translator.reset();
   });
 
   Widget wrap(Widget widget) {
@@ -100,6 +112,65 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(selected, equals('a'));
+    });
+
+    testWidgets('shows the translated default when no placeholder is given', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          MSSelect<String>(
+            value: null,
+            options: const [SelectOption(value: 'a', label: 'Option A')],
+            onChange: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Pick one'), findsOneWidget);
+      expect(find.text('Select an option'), findsNothing);
+    });
+
+    testWidgets('names the trigger by the translated default with no value', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        wrap(
+          MSSelect<String>(
+            value: null,
+            options: const [SelectOption(value: 'a', label: 'Option A')],
+            onChange: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(find.byType(WSelect<String>)).label,
+        equals('Pick one'),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('an explicit placeholder wins over the translated default', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          MSSelect<String>(
+            value: null,
+            placeholder: 'Choose a role',
+            options: const [SelectOption(value: 'a', label: 'Option A')],
+            onChange: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choose a role'), findsOneWidget);
+      expect(find.text('Pick one'), findsNothing);
     });
   });
 

@@ -104,6 +104,7 @@ class _MagicStarterLanguageViewState
                   onChange: (v) =>
                       setState(() => form.set('language', v ?? '')),
                   label: trans('profile.language_label'),
+                  placeholder: trans('common.select_option'),
                   options: _localeOptions(),
                   labelClassName: formTheme.labelClassName,
                   className: formTheme.inputClassName,

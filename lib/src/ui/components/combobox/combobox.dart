@@ -43,7 +43,8 @@ class MSCombobox<T> extends StatelessWidget {
   /// Optional async callback for remote option filtering.
   final Future<List<SelectOption<T>>> Function(String query)? onSearch;
 
-  /// Optional placeholder text shown when [value] is `null`.
+  /// Placeholder text shown when [value] is `null`. Defaults to
+  /// `trans('common.search_options')`.
   final String? placeholder;
 
   /// Optional search field placeholder.
@@ -78,7 +79,7 @@ class MSCombobox<T> extends StatelessWidget {
       value: value,
       options: options,
       onChange: onChange,
-      placeholder: placeholder ?? 'Search options...',
+      placeholder: placeholder ?? trans('common.search_options'),
       searchable: true,
       searchPlaceholder: searchPlaceholder ?? 'Search...',
       onSearch: onSearch,

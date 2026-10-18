@@ -274,6 +274,7 @@ class _MagicStarterTeamSettingsViewState
                     WFormSelect<String>(
                       value: inviteForm.get('role'),
                       label: trans('attributes.role'),
+                      placeholder: trans('common.select_option'),
                       options: [
                         SelectOption(
                           value: 'member',
