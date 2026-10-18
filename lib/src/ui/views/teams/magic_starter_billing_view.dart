@@ -10,6 +10,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_billing_controller.dart';
 import '../../../http/controllers/magic_starter_support_controller.dart';
+import '../../../models/magic_starter_campaign.dart';
 import '../../../models/magic_starter_plan.dart';
 import '../../../support/plan_upgrade.dart';
 import '../../components/badge/index.dart';
@@ -1454,8 +1455,14 @@ class _MagicStarterBillingViewState
   /// that registered nothing renders no child at all: a placeholder child would
   /// still consume a slot in the card's `gap-4` column and leave a visible hole
   /// between the price and the features.
+  ///
+  /// With no slot registered the highlight defaults to [_buildCampaignTag], so
+  /// a registered slot REPLACES the campaign tag: the host that took over this
+  /// spot reads `MagicStarterBillingController.campaign` and decides for itself.
   Widget? _buildPlanHighlight(MagicStarterPlan plan) {
-    if (!MagicStarter.view.hasSlot(_viewKey, _planHighlightSlot)) return null;
+    if (!MagicStarter.view.hasSlot(_viewKey, _planHighlightSlot)) {
+      return _buildCampaignTag(plan);
+    }
 
     // Through a Builder, because a slot builder receives the context it is
     // called with: the scope has to be an ANCESTOR of that context for
@@ -1473,6 +1480,72 @@ class _MagicStarterBillingViewState
         },
       ),
     );
+  }
+
+  /// The default highlight: the running campaign's discount, on a card that
+  /// sells one of the campaign's products.
+  ///
+  /// `null` for every other card, so only the discounted tiers carry it and the
+  /// rest keep their `gap-4` column unbroken. Gated on the same web-purchase
+  /// answer the campaign was loaded under, because an offer on a card that
+  /// cannot be bought is a promise this screen cannot keep.
+  Widget? _buildCampaignTag(MagicStarterPlan plan) {
+    final MagicStarterCampaign? campaign = controller.campaign;
+    if (campaign == null || !_canPurchaseViaWeb) return null;
+    if (!plan.products.any((MagicStarterProduct product) {
+      return campaign.coversProduct(product.key);
+    })) {
+      return null;
+    }
+
+    return WDiv(
+      className: 'flex flex-row flex-wrap items-center gap-2',
+      children: <Widget>[
+        MSBadge(
+          trans('magic_starter.billing.campaign_badge'),
+          tone: BadgeTone.success,
+        ),
+        WText(
+          _campaignDiscountText(campaign.discount),
+          className: 'text-sm font-semibold text-fg',
+        ),
+      ],
+    );
+  }
+
+  /// "20% off" or "5.00 USD off".
+  ///
+  /// A whole percent goes through the consumer's [MagicStarterNumberFormat]
+  /// like every other count here. An amount is in the currency's minor unit and
+  /// reaches the consumer's [MagicStarterPriceFormat] as one; without one it is
+  /// written the producer's way (`'5.00 USD'`), which assumes a currency with
+  /// two decimals.
+  String _campaignDiscountText(MagicStarterCampaignDiscount discount) {
+    return switch (discount.type) {
+      MagicStarterCampaignDiscountType.percent => trans(
+        'magic_starter.billing.campaign_discount_percent',
+        <String, dynamic>{
+          'value': discount.value == discount.value.roundToDouble()
+              ? controller.formatNumber(discount.value.round())
+              : '${discount.value}',
+        },
+      ),
+      MagicStarterCampaignDiscountType.amount => trans(
+        'magic_starter.billing.campaign_discount_amount',
+        <String, dynamic>{'amount': _campaignAmountText(discount)},
+      ),
+    };
+  }
+
+  String _campaignAmountText(MagicStarterCampaignDiscount discount) {
+    final String currency = discount.currency ?? '';
+    final String major = (discount.value / 100).toStringAsFixed(2);
+
+    return controller.priceText((
+      amountMinor: discount.value.round(),
+      currency: currency,
+      display: '$major $currency'.trim(),
+    ));
   }
 
   // ---------------------------------------------------------------------------

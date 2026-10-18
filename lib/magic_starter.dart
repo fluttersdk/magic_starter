@@ -15,6 +15,7 @@ export 'src/models/magic_starter_nav_item.dart';
 export 'src/http/controllers/magic_starter_auth_controller.dart';
 export 'src/models/magic_starter_auth_user.dart';
 export 'src/models/magic_starter_plan.dart';
+export 'src/models/magic_starter_campaign.dart';
 export 'src/models/magic_starter_support_conversation.dart';
 export 'src/models/magic_starter_release.dart';
 export 'src/http/controllers/magic_starter_profile_controller.dart';
@@ -79,6 +80,7 @@ export 'src/ui/widgets/magic_starter_hide_chrome.dart';
 export 'src/ui/widgets/magic_starter_feedback_card.dart';
 export 'src/ui/widgets/magic_starter_app_version.dart';
 export 'src/ui/widgets/magic_starter_app_update_banner.dart';
+export 'src/ui/widgets/magic_starter_campaign_banner.dart';
 export 'src/ui/views/teams/magic_starter_team_invitation_accept_view.dart';
 
 // Design-system components (Wave 4 atomic-component library).

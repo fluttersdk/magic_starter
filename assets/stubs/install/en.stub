@@ -99,6 +99,11 @@
       "guest_login_error": "Unable to continue as guest. Please try again."
     },
     "billing": {
+      "campaign_badge": "Limited offer",
+      "campaign_discount_amount": ":amount off",
+      "campaign_discount_percent": ":value% off",
+      "campaign_dismiss": "Dismiss",
+      "campaign_see_plans": "See plans",
       "description": "Your plan, usage, and invoices.",
       "errors": {
         "already_owned": "You already have this plan. Restore purchases if it is not showing yet.",

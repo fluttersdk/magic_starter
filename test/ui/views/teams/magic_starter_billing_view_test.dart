@@ -6152,4 +6152,146 @@ void main() {
       );
     }
   });
+
+  group('campaign tag on a plan card', () {
+    final Map<String, dynamic> percentWire =
+        jsonDecode(
+              File(
+                '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+
+    /// The wire body with the campaign's discount and product list replaced.
+    Map<String, dynamic> campaignWire({
+      Map<String, dynamic>? discount,
+      List<String>? products,
+    }) {
+      return <String, dynamic>{
+        'data': <String, dynamic>{
+          ...(percentWire['data'] as Map<String, dynamic>),
+          'discount': ?discount,
+          'products': ?products,
+        },
+      };
+    }
+
+    /// Mounts the screen, then loads the campaign `GET /billing/campaign`
+    /// answers with [body]. The screen itself never fetches it: the app layout's
+    /// banner does, so the case plays that part.
+    Future<void> mountWithCampaign(
+      WidgetTester tester,
+      Map<String, dynamic> body, {
+      MagicStarterPriceFormat? formatPrice,
+    }) async {
+      Http.fake((request) => Http.response(body));
+
+      await mount(
+        tester,
+        _RailBillingService(),
+        isOwner: true,
+        formatPrice: formatPrice,
+      );
+      await Magic.find<MagicStarterBillingController>().loadCampaign();
+      await tester.pump();
+    }
+
+    String badge() => trans('magic_starter.billing.campaign_badge');
+
+    testWidgets('tags only the plans whose products are in the campaign, '
+        'with the percent off', (tester) async {
+      await mountWithCampaign(tester, campaignWire());
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(badge()), findsOneWidget);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_percent',
+            <String, dynamic>{'value': '20'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('states an amount discount in the catalogue price format', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'USD',
+          },
+          products: <String>['business_annual'],
+        ),
+      );
+
+      expect(find.text(badge()), findsOneWidget);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '5.00 USD'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('writes an amount through the consumer\'s price format', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'USD',
+          },
+        ),
+        formatPrice: (MagicStarterWebPrice price) =>
+            '${price.currency}/${price.amountMinor}',
+      );
+
+      expect(find.text('USD/500 off'), findsOneWidget);
+    });
+
+    testWidgets('tags nothing for a campaign on products no card sells', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(products: <String>['ghost_monthly']),
+      );
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('tags nothing without a campaign', (tester) async {
+      await mountWithCampaign(tester, <String, dynamic>{'data': null});
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('a registered plan_card_highlight slot wins over the tag', (
+      tester,
+    ) async {
+      MagicStarter.view.slot('teams.billing', 'plan_card_highlight', (
+        BuildContext context,
+      ) {
+        return WText('slot-${MagicStarterPlanCardScope.of(context).id}');
+      });
+
+      await mountWithCampaign(tester, campaignWire());
+
+      expect(find.text('slot-pro'), findsOneWidget);
+      expect(find.text('slot-business'), findsOneWidget);
+      expect(find.text(badge()), findsNothing);
+    });
+  });
 }

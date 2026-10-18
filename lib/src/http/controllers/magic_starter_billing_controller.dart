@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_payments/magic_payments.dart';
 
+import '../../configuration/magic_starter_config.dart';
+import '../../models/magic_starter_campaign.dart';
 import '../../models/magic_starter_plan.dart';
 
 /// Pairs the consumer's display copy onto the usage stats the billing wire
@@ -320,6 +322,8 @@ class MagicStarterBillingController extends MagicController
   bool _pmError = false;
   String? _storeFundedTeam;
   String? _awaitingProductKey;
+  MagicStarterCampaign? _campaign;
+  bool _campaignRequested = false;
 
   /// The entitlement as it stood before the sheet opened, set once the store
   /// has REPORTED the purchase (completed or pending), or `null` while the
@@ -458,6 +462,15 @@ class MagicStarterBillingController extends MagicController
   /// Empty until [loadPlans] resolves, and stays empty (last-known state) on a
   /// failed read.
   List<MagicStarterPlan> get plans => _plans;
+
+  /// The campaign the backend offers this team, or `null` while none is known:
+  /// before [loadCampaign] answers, when the backend answered none, when the
+  /// caller is not the audience of this build's web rail, and after a failed
+  /// read.
+  ///
+  /// Held on this instance and nowhere else, so a team switch or a sign-in
+  /// ([resetForSession]) drops it with the rest of the session.
+  MagicStarterCampaign? get campaign => _campaign;
 
   /// The current cycle's usage stats, with the consumer's copy already paired
   /// on by [usageCopy].
@@ -819,6 +832,8 @@ class MagicStarterBillingController extends MagicController
     _pmLoading = true;
     _pmError = false;
     _storeFundedTeam = null;
+    _campaign = null;
+    _campaignRequested = false;
     _endAwaiting();
     _storeOffers = const <String, StoreProductOffer>{};
     _entitlementSnapshot = _emptySnapshot;
@@ -845,6 +860,53 @@ class MagicStarterBillingController extends MagicController
       loadPaymentMethod(),
       loadStoreFundedTeam(),
     ]);
+  }
+
+  /// Reads the campaign offered to this team and publishes [campaign].
+  ///
+  /// Not part of [load]: the six billing reads belong to the billing screen,
+  /// while the app-wide campaign banner needs this one on every authenticated
+  /// page. It reads `GET /billing/campaign` directly because [BillingService]
+  /// carries no campaign read.
+  ///
+  /// Asks only when the `billing` feature is on and [canPurchaseViaWeb] holds,
+  /// since the offer is a web checkout discount, and asks once per session: a
+  /// repeated call is a no-op until [resetForSession] clears the flag. A refused
+  /// or unreadable answer is logged and leaves [campaign] `null` for the rest of
+  /// the session, because a promotion is not worth a retry loop.
+  Future<void> loadCampaign() async {
+    if (!MagicStarterConfig.hasBillingFeatures()) return;
+    if (!canPurchaseViaWeb) return;
+    if (_campaignRequested) return;
+
+    _campaignRequested = true;
+    final int session = _sessionGeneration;
+
+    try {
+      final MagicResponse response = await Http.get('/billing/campaign');
+      if (session != _sessionGeneration) return;
+
+      if (!response.successful) {
+        Log.warning(
+          '[MagicStarterBillingController.loadCampaign] '
+          'status ${response.statusCode}',
+        );
+
+        return;
+      }
+
+      final Object? payload = response.data;
+      final Object? data = payload is Map<String, dynamic>
+          ? payload['data']
+          : null;
+      _campaign = data is Map<String, dynamic>
+          ? MagicStarterCampaign.fromMap(data)
+          : null;
+      refreshUI();
+    } catch (error) {
+      if (session != _sessionGeneration) return;
+      _reportDegradation('campaign', error);
+    }
   }
 
   /// Reads the customer's current entitlement and republishes [currentPlanId],
