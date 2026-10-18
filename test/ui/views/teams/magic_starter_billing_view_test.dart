@@ -6347,7 +6347,7 @@ void main() {
             'currency_options': <String, dynamic>{'try': 15000},
           },
         ),
-        billing: _TryPricedRailBillingService(),
+        billing: _PricedRailBillingService('TRY'),
       );
 
       expect(
@@ -6361,8 +6361,8 @@ void main() {
       );
     });
 
-    testWidgets('falls back to the campaign\'s own amount when the card\'s '
-        'currency has no option', (tester) async {
+    testWidgets('keeps the campaign\'s own amount on a card priced in its '
+        'currency, whatever the case', (tester) async {
       await mountWithCampaign(
         tester,
         campaignWire(
@@ -6370,12 +6370,12 @@ void main() {
             'type': 'amount',
             'value': 500,
             'currency': 'usd',
-            'currency_options': <String, dynamic>{'eur': 450},
+            'currency_options': <String, dynamic>{'try': 15000},
           },
         ),
-        billing: _TryPricedRailBillingService(),
       );
 
+      expect(find.text(badge()), findsOneWidget);
       expect(
         find.text(
           trans(
@@ -6385,6 +6385,44 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('tags nothing when the card\'s currency is neither the '
+        'campaign\'s nor one the coupon prices', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'usd',
+            'currency_options': <String, dynamic>{'try': 15000},
+          },
+        ),
+        billing: _PricedRailBillingService('EUR'),
+      );
+
+      expect(find.text(badge()), findsNothing);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '5.00 USD'},
+          ),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('keeps the tag on a card priced in another currency for a '
+        'percent discount', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(),
+        billing: _PricedRailBillingService('EUR'),
+      );
+
+      expect(find.text(badge()), findsOneWidget);
     });
 
     testWidgets('a registered plan_card_highlight slot wins over the tag', (
@@ -6405,9 +6443,14 @@ void main() {
   });
 }
 
-/// A web build whose `pro` tier is priced in Turkish lira, the currency a
+/// A web build whose `pro` tier is priced in [currency], the currency a
 /// campaign's per-currency amount is looked up by.
-class _TryPricedRailBillingService extends _RailBillingService {
+class _PricedRailBillingService extends _RailBillingService {
+  _PricedRailBillingService(this.currency);
+
+  /// The ISO 4217 code the `pro` products are priced in.
+  final String currency;
+
   @override
   Future<List<Map<String, dynamic>>> getPlans() async {
     return <Map<String, dynamic>>[
@@ -6425,9 +6468,9 @@ class _TryPricedRailBillingService extends _RailBillingService {
                   ...product,
                   'prices': <String, dynamic>{
                     'web': <String, dynamic>{
-                      'TRY': <String, dynamic>{
+                      currency: <String, dynamic>{
                         'amount_minor': 99900,
-                        'display': '999.00 TRY',
+                        'display': '999.00 $currency',
                       },
                     },
                   },

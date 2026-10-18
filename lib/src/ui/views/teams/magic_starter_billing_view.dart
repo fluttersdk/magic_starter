@@ -1515,6 +1515,12 @@ class _MagicStarterBillingViewState
   /// read is once per session. Gated on the same web-purchase answer the
   /// campaign was loaded under, because an offer on a card that cannot be bought
   /// is a promise this screen cannot keep.
+  ///
+  /// Also `null` for a fixed-amount discount Stripe would not apply at this
+  /// card's price: an amount coupon only takes money off in a currency it
+  /// prices, so a card in any other currency (a currency added to the
+  /// catalogue after the campaign's coupon was snapshotted) gets no tag rather
+  /// than a figure checkout will not give. See [_campaignAmountText].
   Widget? _buildCampaignTag(MagicStarterPlan plan) {
     final MagicStarterCampaign? campaign = controller.campaign;
     if (campaign == null || !_canPurchaseViaWeb) return null;
@@ -1523,6 +1529,12 @@ class _MagicStarterBillingViewState
     final MagicStarterProduct? product = _saleProduct(plan);
     if (product == null || !campaign.coversProduct(product.key)) return null;
 
+    final String? discountText = _campaignDiscountText(
+      campaign.discount,
+      _firstWebPrice(product)?.currency,
+    );
+    if (discountText == null) return null;
+
     return WDiv(
       className: 'flex flex-row flex-wrap items-center gap-2 pt-3.5',
       children: <Widget>[
@@ -1530,13 +1542,7 @@ class _MagicStarterBillingViewState
           trans('magic_starter.billing.campaign_badge'),
           tone: BadgeTone.success,
         ),
-        WText(
-          _campaignDiscountText(
-            campaign.discount,
-            _firstWebPrice(product)?.currency,
-          ),
-          className: 'text-sm font-semibold text-fg',
-        ),
+        WText(discountText, className: 'text-sm font-semibold text-fg'),
       ],
     );
   }
@@ -1548,32 +1554,43 @@ class _MagicStarterBillingViewState
   /// reaches the consumer's [MagicStarterPriceFormat] as one; without one it is
   /// written the producer's way (`'5.00 USD'`), which assumes a currency with
   /// two decimals. [cardCurrency] is the currency the card is priced in, or
-  /// `null` when it shows no figure.
-  String _campaignDiscountText(
+  /// `null` when it shows no figure. `null` comes back for an amount the card's
+  /// currency cannot carry; see [_campaignAmountText].
+  String? _campaignDiscountText(
     MagicStarterCampaignDiscount discount,
     String? cardCurrency,
   ) {
-    return switch (discount.type) {
-      MagicStarterCampaignDiscountType.percent => trans(
-        'magic_starter.billing.campaign_discount_percent',
-        <String, dynamic>{
-          'value': discount.value == discount.value.roundToDouble()
-              ? controller.formatNumber(discount.value.round())
-              : '${discount.value}',
-        },
-      ),
-      MagicStarterCampaignDiscountType.amount => trans(
-        'magic_starter.billing.campaign_discount_amount',
-        <String, dynamic>{
-          'amount': _campaignAmountText(discount, cardCurrency),
-        },
-      ),
-    };
+    switch (discount.type) {
+      case MagicStarterCampaignDiscountType.percent:
+        return trans(
+          'magic_starter.billing.campaign_discount_percent',
+          <String, dynamic>{
+            'value': discount.value == discount.value.roundToDouble()
+                ? controller.formatNumber(discount.value.round())
+                : '${discount.value}',
+          },
+        );
+      case MagicStarterCampaignDiscountType.amount:
+        final String? amount = _campaignAmountText(discount, cardCurrency);
+        if (amount == null) return null;
+
+        return trans(
+          'magic_starter.billing.campaign_discount_amount',
+          <String, dynamic>{'amount': amount},
+        );
+    }
   }
 
-  /// The amount off in the currency the card is priced in when the coupon
-  /// prices that currency, else the campaign's own amount and currency.
-  String _campaignAmountText(
+  /// The amount off in the currency the card is priced in, or `null` when the
+  /// coupon does not apply in it.
+  ///
+  /// Stripe applies an `amount_off` coupon only in a currency it prices: the
+  /// campaign's own, or one of its `currency_options`. A card in any other
+  /// currency (one added to the catalogue after the coupon was snapshotted)
+  /// would be promised a discount checkout does not give, so the answer is
+  /// `null` and the card shows no tag. A card with no figure
+  /// ([cardCurrency] `null`) keeps the campaign's own amount and currency.
+  String? _campaignAmountText(
     MagicStarterCampaignDiscount discount,
     String? cardCurrency,
   ) {
@@ -1585,6 +1602,8 @@ class _MagicStarterBillingViewState
       if (option != null) {
         amount = option;
         currency = cardCurrency;
+      } else if (cardCurrency.toLowerCase() != currency.toLowerCase()) {
+        return null;
       }
     }
 
