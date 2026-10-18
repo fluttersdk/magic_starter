@@ -13,6 +13,7 @@ import '../components/avatar/index.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
 import '../widgets/magic_starter_app_update_banner.dart';
+import '../widgets/magic_starter_campaign_banner.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
 import '../widgets/magic_starter_hide_chrome.dart';
 
@@ -274,6 +275,14 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                         // `MagicStarterAppUpdateBanner` itself.
                         if (MagicStarterConfig.hasAppUpdateFeatures())
                           const MagicStarterAppUpdateBanner(),
+                        // The same reasoning holds for a running campaign. It
+                        // renders nothing unless the billing controller has
+                        // an offer for this web owner, so it costs a page
+                        // nothing while there is none. A host mapping
+                        // `layout.app` to its own layout places
+                        // `MagicStarterCampaignBanner` itself.
+                        if (MagicStarterConfig.hasBillingFeatures())
+                          const MagicStarterCampaignBanner(),
                         // The content box is the host's, because only the
                         // host knows the shape of its screens. The shipped one
                         // does not scroll: the child is the shell's nested

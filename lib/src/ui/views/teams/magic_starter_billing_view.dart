@@ -10,6 +10,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_billing_controller.dart';
 import '../../../http/controllers/magic_starter_support_controller.dart';
+import '../../../models/magic_starter_campaign.dart';
 import '../../../models/magic_starter_plan.dart';
 import '../../../support/plan_upgrade.dart';
 import '../../components/badge/index.dart';
@@ -474,6 +475,14 @@ class _MagicStarterBillingViewState
     // from inside a paint.
     controller.addListener(_startRequestedUpgrade);
 
+    // The campaign is the app layout's banner's read, but a host mapping
+    // `layout.app` to its own layout has no banner, and the plan cards' tag is
+    // this screen's. The read is idempotent and waits for a web rail the
+    // entitlement has not ruled out, so it repeats on every notification, as the
+    // banner's does.
+    controller.addListener(_loadCampaign);
+    _loadCampaign();
+
     // The controller's own `onInit` ran once, for the lifetime of the session
     // singleton, so a screen opened again after closing mid-wait would never
     // read the entitlement the store purchase is waiting on and would keep the
@@ -487,11 +496,16 @@ class _MagicStarterBillingViewState
   @override
   void onClose() {
     controller.removeListener(_startRequestedUpgrade);
+    controller.removeListener(_loadCampaign);
     // The controller is a session singleton and outlives this screen, so a
     // purchase wait it is polling for would keep reading the entitlement, and
     // keep its timer, after nobody is left to be told the answer.
     controller.cancelWait();
     _cycleOverride.dispose();
+  }
+
+  void _loadCampaign() {
+    unawaited(controller.loadCampaign());
   }
 
   // ---------------------------------------------------------------------------
@@ -1134,6 +1148,15 @@ class _MagicStarterBillingViewState
                       sentence: true,
                     )
                   : _webPrice(plan, isFloor: isFloor, isCustom: isCustom);
+              // The campaign tag is the default of the highlight slot, but it
+              // follows the selected cycle (the toggle picks the product the
+              // card sells), so it lives in this builder: a tag that appears
+              // on one cycle only, outside it, would leave the card's `gap-4`
+              // column a hole on the other.
+              final Widget? campaignTag =
+                  MagicStarter.view.hasSlot(_viewKey, _planHighlightSlot)
+                  ? null
+                  : _buildCampaignTag(plan);
 
               return WDiv(
                 className: 'flex flex-col gap-0.5',
@@ -1151,6 +1174,7 @@ class _MagicStarterBillingViewState
                           : 'text-3xl font-semibold tabular-nums text-fg',
                     ),
                   WText(_billingNote(plan), className: 'text-xs text-fg-muted'),
+                  ?campaignTag,
                 ],
               );
             },
@@ -1454,6 +1478,11 @@ class _MagicStarterBillingViewState
   /// that registered nothing renders no child at all: a placeholder child would
   /// still consume a slot in the card's `gap-4` column and leave a visible hole
   /// between the price and the features.
+  ///
+  /// With no slot registered the card shows [_buildCampaignTag] under its price
+  /// instead, so a registered slot REPLACES the campaign tag: the host that took
+  /// over this spot reads `MagicStarterBillingController.campaign` and decides
+  /// for itself.
   Widget? _buildPlanHighlight(MagicStarterPlan plan) {
     if (!MagicStarter.view.hasSlot(_viewKey, _planHighlightSlot)) return null;
 
@@ -1473,6 +1502,119 @@ class _MagicStarterBillingViewState
         },
       ),
     );
+  }
+
+  /// The default highlight: the running campaign's discount, on a card whose
+  /// sale product is one of the campaign's.
+  ///
+  /// The product is the one the card's call to action buys at the selected cycle
+  /// ([_saleProduct]), not any product of the tier: the offer is a checkout
+  /// discount, and a card selling `pro_annual` must not advertise a campaign
+  /// that covers `pro_monthly` only. `null` for every other card, so only the
+  /// discounted ones carry it, and `null` once the campaign has ended, since the
+  /// read is once per session. Gated on the same web-purchase answer the
+  /// campaign was loaded under, because an offer on a card that cannot be bought
+  /// is a promise this screen cannot keep.
+  ///
+  /// Also `null` for a fixed-amount discount Stripe would not apply at this
+  /// card's price: an amount coupon only takes money off in a currency it
+  /// prices, so a card in any other currency (a currency added to the
+  /// catalogue after the campaign's coupon was snapshotted) gets no tag rather
+  /// than a figure checkout will not give. See [_campaignAmountText].
+  Widget? _buildCampaignTag(MagicStarterPlan plan) {
+    final MagicStarterCampaign? campaign = controller.campaign;
+    if (campaign == null || !_canPurchaseViaWeb) return null;
+    if (campaign.hasEndedAt(DateTime.now())) return null;
+
+    final MagicStarterProduct? product = _saleProduct(plan);
+    if (product == null || !campaign.coversProduct(product.key)) return null;
+
+    final String? discountText = _campaignDiscountText(
+      campaign.discount,
+      _firstWebPrice(product)?.currency,
+    );
+    if (discountText == null) return null;
+
+    return WDiv(
+      className: 'flex flex-row flex-wrap items-center gap-2 pt-3.5',
+      children: <Widget>[
+        MSBadge(
+          trans('magic_starter.billing.campaign_badge'),
+          tone: BadgeTone.success,
+        ),
+        WText(discountText, className: 'text-sm font-semibold text-fg'),
+      ],
+    );
+  }
+
+  /// "20% off" or "5.00 USD off".
+  ///
+  /// A whole percent goes through the consumer's [MagicStarterNumberFormat]
+  /// like every other count here. An amount is in the currency's minor unit and
+  /// reaches the consumer's [MagicStarterPriceFormat] as one; without one it is
+  /// written the producer's way (`'5.00 USD'`), which assumes a currency with
+  /// two decimals. [cardCurrency] is the currency the card is priced in, or
+  /// `null` when it shows no figure. `null` comes back for an amount the card's
+  /// currency cannot carry; see [_campaignAmountText].
+  String? _campaignDiscountText(
+    MagicStarterCampaignDiscount discount,
+    String? cardCurrency,
+  ) {
+    switch (discount.type) {
+      case MagicStarterCampaignDiscountType.percent:
+        return trans(
+          'magic_starter.billing.campaign_discount_percent',
+          <String, dynamic>{
+            'value': discount.value == discount.value.roundToDouble()
+                ? controller.formatNumber(discount.value.round())
+                : '${discount.value}',
+          },
+        );
+      case MagicStarterCampaignDiscountType.amount:
+        final String? amount = _campaignAmountText(discount, cardCurrency);
+        if (amount == null) return null;
+
+        return trans(
+          'magic_starter.billing.campaign_discount_amount',
+          <String, dynamic>{'amount': amount},
+        );
+    }
+  }
+
+  /// The amount off in the currency the card is priced in, or `null` when the
+  /// coupon does not apply in it.
+  ///
+  /// Stripe applies an `amount_off` coupon only in a currency it prices: the
+  /// campaign's own, or one of its `currency_options`. A card in any other
+  /// currency (one added to the catalogue after the coupon was snapshotted)
+  /// would be promised a discount checkout does not give, so the answer is
+  /// `null` and the card shows no tag. A card with no figure
+  /// ([cardCurrency] `null`) keeps the campaign's own amount and currency.
+  String? _campaignAmountText(
+    MagicStarterCampaignDiscount discount,
+    String? cardCurrency,
+  ) {
+    num amount = discount.value;
+    String currency = discount.currency ?? '';
+
+    if (cardCurrency != null) {
+      final num? option = discount.amountIn(cardCurrency);
+      if (option != null) {
+        amount = option;
+        currency = cardCurrency;
+      } else if (cardCurrency.toLowerCase() != currency.toLowerCase()) {
+        return null;
+      }
+    }
+
+    currency = currency.toUpperCase();
+    final String major = (amount / 100).toStringAsFixed(2);
+
+    return controller.priceText((
+      amountMinor: amount.round(),
+      currency: currency,
+      display: '$major $currency'.trim(),
+    ));
   }
 
   // ---------------------------------------------------------------------------

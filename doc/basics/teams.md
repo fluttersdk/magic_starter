@@ -8,6 +8,7 @@
     - [Price Format](#price-format)
     - [Free Trials](#free-trials)
     - [Changing a Web Plan](#changing-a-web-plan)
+    - [Campaigns](#campaigns)
 - [Invitation](#invitation)
     - [Sending Invitations](#sending-invitations)
     - [Accepting Invitations](#accepting-invitations)
@@ -193,6 +194,32 @@ An upgrade is refused with a 402 when the card declines or the bank asks for 3D 
 | `errors.payment_requires_action` | `Your bank asked to confirm this payment, which a plan change cannot do here, so your plan has not changed. Try a card that does not ask for confirmation, or contact us.` |
 
 An app that publishes its own `en.json` adds these keys by hand.
+
+<a name="campaigns"></a>
+### Campaigns
+
+A staff-run, time-boxed offer on `magic-starter-laravel` (`GET /billing/campaign`) reaches a floor-tier team owner on the web rail as an app-wide banner and a tag on the plan cards it discounts. The backend answers `{"data": null}` unless the caller is the audience, so nothing here decides who qualifies; the client only declines to ask when it could not act on the offer.
+
+`MagicStarterBillingController.loadCampaign()` reads the offer. It is separate from `load()`, which stays the billing screen's six reads, and it asks only when the `billing` feature is on and `canPurchaseViaWeb` holds (a web rail, no store managing the subscription, not a known non-owner). The answer lives on the controller instance as `MagicStarterBillingController.campaign`, a `MagicStarterCampaign` (`id`, `startsAt`, `endsAt`, `products`, `discount`, and `headlineFor(languageCode)` / `bodyFor(languageCode)`, which pick the app locale, then `magic_starter.defaults.locale`, then any copy the backend sent). A team switch or a sign-in (`resetForSession`) clears it and the mounted banner asks again for the new team. The backend answers 404 when its `campaigns` feature is off (the default), which is read as no campaign and logs nothing; any other failed read is logged as a warning.
+
+| Where | What it shows |
+|---|---|
+| `MagicStarterCampaignBanner` | The headline and body above every page, a "See plans" action that goes to `MagicStarterConfig.billingRoute()` and a "Dismiss" action. `MagicStarterAppLayout` mounts it beside the app update banner when `billing` is on; a host that maps `layout.app` to its own layout places it itself. It resolves the registered billing controller without running its `onInit`, so it never starts the six billing reads. It hides itself once `endsAt` has passed, without waiting for another read |
+| Plan card | For a card whose product at the selected billing cycle is in the campaign, a "Limited offer" tag and the discount (":value% off", or ":amount off" for a fixed sum) in the card's highlight spot. The tag follows the cycle toggle: a campaign on `pro_monthly` only tags the Pro card while Monthly is selected. It also hides once `endsAt` has passed. A fixed-amount discount tags only a card priced in the campaign's own currency or one the coupon lists in `currency_options`, because Stripe applies an amount coupon only in a currency it prices; a card in any other currency (one added to the catalogue after the coupon was snapshotted) carries no tag. The billing screen reads the campaign itself, so a host without the banner still gets the tag |
+
+"Dismiss" stores the campaign id in the `Vault` under `MagicStarterCampaignBanner.dismissalKey()`, which is `dismissedCampaignKey` plus the signed-in account's id, so a second account on the same device does not inherit the first one's dismissal. That campaign stays hidden across launches; the next campaign has a new id and shows again.
+
+The tag is the DEFAULT content of the `plan_card_highlight` slot. An app that registers that slot replaces it, and reads `MagicStarterBillingController.campaign` to render the offer itself. A fixed-sum discount is a minor-unit amount, taken from the coupon's amount in the currency the card is priced in (`discount.currency_options`), else the campaign's own `value` and `currency`: the tag passes it through the app's `MagicStarterPriceFormat` when one is registered, and otherwise writes it the producer's way (`5.00 USD`), which assumes a currency with two decimals.
+
+The package ships English copy only. The headline and body come from the backend per language; the labels are keys under `magic_starter.billing` in `en.stub`, and an app that publishes its own `en.json` adds them by hand:
+
+| Key | Default |
+|---|---|
+| `campaign_see_plans` | `See plans` |
+| `campaign_dismiss` | `Dismiss` |
+| `campaign_badge` | `Limited offer` |
+| `campaign_discount_percent` | `:value% off` |
+| `campaign_discount_amount` | `:amount off` |
 
 <a name="invitation"></a>
 ## Invitation
