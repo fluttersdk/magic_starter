@@ -485,7 +485,7 @@ class _MagicStarterProfileSettingsViewState
                     if (photoUrl != null && photoUrl.isNotEmpty)
                       MSButton(
                         intent: ButtonIntent.secondary,
-                        className: 'text-destructive',
+                        className: kButtonDangerOutlineClassName,
                         onPressed: _handlePhotoRemove,
                         isLoading: isLoading,
                         child: WText(trans('common.remove')),
@@ -898,7 +898,7 @@ class _MagicStarterProfileSettingsViewState
               Builder(
                 builder: (context) => MSButton(
                   intent: ButtonIntent.secondary,
-                  className: 'text-destructive',
+                  className: kButtonDangerOutlineClassName,
                   onPressed: () => _disableTwoFactor(context),
                   isLoading: isLoading,
                   child: WText(trans('profile.two_factor_disable')),
@@ -1048,7 +1048,7 @@ class _MagicStarterProfileSettingsViewState
                   Builder(
                     builder: (context) => MSButton(
                       intent: ButtonIntent.secondary,
-                      className: 'text-destructive',
+                      className: kButtonDangerOutlineClassName,
                       fullWidth: true,
                       onPressed: () => _revokeOtherSessions(context),
                       isLoading: isLoading,
@@ -1123,7 +1123,7 @@ class _MagicStarterProfileSettingsViewState
             builder: (isLoading) => MSButton(
               intent: ButtonIntent.secondary,
               size: ButtonSize.sm,
-              className: 'text-destructive',
+              className: kButtonDangerOutlineClassName,
               onPressed: () => _revokeSession(context, tokenId),
               isLoading: isLoading,
               child: WText(trans('profile.revoke')),

@@ -13,6 +13,18 @@ const String kButtonSizeAxis = 'size';
 /// the button and not a bigger button; see [MSButton] for how it is laid out.
 const double kButtonMinTapExtent = 44;
 
+/// Caller className that turns a [ButtonIntent.secondary] button into an
+/// outlined danger action (remove, disable, revoke, disconnect).
+///
+/// Raw palette pairs on purpose: the alias contract ships `bg-destructive` and
+/// `text-on-destructive` but no destructive TEXT or BORDER role, and wind drops
+/// an unknown `text-destructive` silently, so the semantic-looking token would
+/// render the label in the neutral `text-fg`. Same gap as
+/// `errorStateIconClassName`. Appended after the intent, so last-wins replaces
+/// the secondary text and border colours.
+const String kButtonDangerOutlineClassName =
+    'text-red-600 dark:text-red-400 border-red-200 dark:border-red-700';
+
 /// Visual intent variants for [MSButton].
 ///
 /// - [primary] — Brand-colored filled button for the main call-to-action.

@@ -662,7 +662,8 @@ class _MagicStarterBillingViewState
           if (controller.planStatus.isDunning)
             WText(
               trans('magic_starter.billing.payment_failed_notice'),
-              className: 'text-sm text-destructive',
+              // Raw pair: the alias contract has no destructive text role.
+              className: 'text-sm text-red-600 dark:text-red-400',
             ),
           // A stat the consumer's copy could not name gets NO meter, rather
           // than one labelled with its raw wire key. The producer reports every
