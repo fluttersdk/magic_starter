@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.52] - 2026-10-18
+
 ### Fixed
 
 - **The `MSSettingsRow` destructive title is red.** It emitted `text-destructive`, which is no key in `MagicStarterTokens.defaultAliases`, so wind dropped it and the Delete and Sign-out rows rendered neutral. The title now takes the host's `text-destructive` when its theme defines one and the red pair otherwise. (`lib/src/ui/components/settings_row/`)
@@ -12,7 +14,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **New `MagicStarterTokens.role(WindThemeData? theme, String token)`.** The rule `MagicStarterTheme.fromWind` used privately is public: it returns the token when the theme defines it as an alias key or through its backing colour, else the shipped alias value, else the built-in fallback pair (a null theme means no `WindTheme` ancestor, so the fallback). `fromWind` calls it. (`lib/src/ui/theme/magic_starter_tokens.dart`, `lib/src/configuration/magic_starter_theme.dart`)
-- **`kButtonDangerOutlineClassName` is replaced by `buttonDangerOutlineClassName(BuildContext context)`.** Breaking for anyone who adopted 0.0.51's const: the danger label colour now depends on the theme, so the class is built at build time. Pass `buttonDangerOutlineClassName(context)` as the `className` of a secondary `MSButton`. (`lib/src/ui/components/button/`)
+- **BREAKING: `kButtonDangerOutlineClassName` is replaced by `buttonDangerOutlineClassName(BuildContext context)`.** Breaking for anyone who adopted 0.0.51's const: the danger label colour now depends on the theme, so the class is built at build time. Pass `buttonDangerOutlineClassName(context)` as the `className` of a secondary `MSButton`. (`lib/src/ui/components/button/`)
 
 ## [0.0.51] - 2026-10-18
 
