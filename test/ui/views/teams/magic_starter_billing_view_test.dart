@@ -6425,16 +6425,32 @@ void main() {
       expect(find.text(badge()), findsOneWidget);
     });
 
-    testWidgets('a registered plan_card_highlight slot wins over the tag', (
-      tester,
-    ) async {
+    testWidgets(
+      'a registered plan_card_highlight slot renders beside the tag',
+      (tester) async {
+        MagicStarter.view.slot('teams.billing', 'plan_card_highlight', (
+          BuildContext context,
+        ) {
+          return WText('slot-${MagicStarterPlanCardScope.of(context).id}');
+        });
+
+        await mountWithCampaign(tester, campaignWire());
+
+        expect(find.text('slot-pro'), findsOneWidget);
+        expect(find.text('slot-business'), findsOneWidget);
+        expect(find.text(badge()), findsOneWidget);
+      },
+    );
+
+    testWidgets('a registered plan_card_highlight slot renders with no '
+        'campaign, and no tag', (tester) async {
       MagicStarter.view.slot('teams.billing', 'plan_card_highlight', (
         BuildContext context,
       ) {
         return WText('slot-${MagicStarterPlanCardScope.of(context).id}');
       });
 
-      await mountWithCampaign(tester, campaignWire());
+      await mountWithCampaign(tester, <String, dynamic>{'data': null});
 
       expect(find.text('slot-pro'), findsOneWidget);
       expect(find.text('slot-business'), findsOneWidget);
