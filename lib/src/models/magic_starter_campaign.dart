@@ -26,26 +26,45 @@ class MagicStarterCampaignDiscount {
   /// discount, `null` for a percent.
   final String? currency;
 
+  /// What an [MagicStarterCampaignDiscountType.amount] discount takes off in
+  /// each currency the coupon prices, keyed by lowercase ISO 4217 code, in that
+  /// currency's minor unit. Empty for a percent and for a coupon with no
+  /// per-currency amounts; read it through [amountIn].
+  final Map<String, num> currencyOptions;
+
   const MagicStarterCampaignDiscount({
     required this.type,
     required this.value,
     this.currency,
+    this.currencyOptions = const <String, num>{},
   });
 
-  /// Decodes the wire object `{"type": "percent"|"amount", "value", "currency"}`.
+  /// Decodes the wire object `{"type": "percent"|"amount", "value", "currency",
+  /// "currency_options"}`.
   ///
   /// Throws an [ArgumentError] for a type this build does not know, so a
   /// client older than the backend shows no campaign rather than a wrong
   /// discount.
   factory MagicStarterCampaignDiscount.fromMap(Map<String, dynamic> map) {
+    final Object? options = map['currency_options'];
+
     return MagicStarterCampaignDiscount(
       type: MagicStarterCampaignDiscountType.values.byName(
         map['type'] as String,
       ),
       value: map['value'] as num,
       currency: map['currency'] as String?,
+      currencyOptions: <String, num>{
+        if (options is Map<String, dynamic>)
+          for (final MapEntry<String, dynamic> entry in options.entries)
+            if (entry.value is num) entry.key.toLowerCase(): entry.value as num,
+      },
     );
   }
+
+  /// The minor-unit amount this discount takes off in [currency] (any case),
+  /// or `null` when the coupon prices no such currency.
+  num? amountIn(String currency) => currencyOptions[currency.toLowerCase()];
 }
 
 /// The time-boxed offer `GET /billing/campaign` answers for the current team.
@@ -104,6 +123,15 @@ class MagicStarterCampaign {
 
   /// Whether the catalogue product [key] is part of the offer.
   bool coversProduct(String key) => products.contains(key);
+
+  /// Whether the offer is over at [now], from [endsAt] on.
+  ///
+  /// The backend filters by its own clock when it answers, but the answer is
+  /// read once per session, so a screen left open past [endsAt] would keep
+  /// advertising a campaign checkout no longer honours. The start is not
+  /// checked: the backend answered only once the campaign opened, and a device
+  /// clock running behind must not hide it.
+  bool hasEndedAt(DateTime now) => !now.isBefore(endsAt);
 
   /// The headline for a reader whose language is [languageCode]; see
   /// [_pick].

@@ -871,9 +871,11 @@ class MagicStarterBillingController extends MagicController
   ///
   /// Asks only when the `billing` feature is on and [canPurchaseViaWeb] holds,
   /// since the offer is a web checkout discount, and asks once per session: a
-  /// repeated call is a no-op until [resetForSession] clears the flag. A refused
-  /// or unreadable answer is logged and leaves [campaign] `null` for the rest of
-  /// the session, because a promotion is not worth a retry loop.
+  /// repeated call is a no-op until [resetForSession] clears the flag. A 404 is
+  /// silently "no campaign", since the route exists only on a backend with its
+  /// `campaigns` feature on. Any other refused or unreadable answer is logged
+  /// and leaves [campaign] `null` for the rest of the session, because a
+  /// promotion is not worth a retry loop.
   Future<void> loadCampaign() async {
     if (!MagicStarterConfig.hasBillingFeatures()) return;
     if (!canPurchaseViaWeb) return;
@@ -887,6 +889,11 @@ class MagicStarterBillingController extends MagicController
       if (session != _sessionGeneration) return;
 
       if (!response.successful) {
+        // 404 is the answer of a backend with the `campaigns` feature off (the
+        // default): the route is not registered, which is "no campaign", not a
+        // fault worth a warning on every session.
+        if (response.statusCode == 404) return;
+
         Log.warning(
           '[MagicStarterBillingController.loadCampaign] '
           'status ${response.statusCode}',

@@ -23,7 +23,8 @@ import '../components/update_banner/update_banner.dart';
 ///
 /// ## When it shows
 ///
-/// Only with a campaign in hand, while
+/// Only with a campaign in hand that has not ended
+/// ([MagicStarterCampaign.hasEndedAt]), while
 /// [MagicStarterBillingController.canPurchaseViaWeb] holds and the campaign's
 /// id is not the one dismissed. With the billing feature off, or no billing
 /// controller registered, it renders nothing and starts nothing. A host
@@ -31,9 +32,11 @@ import '../components/update_banner/update_banner.dart';
 ///
 /// ## Dismissal
 ///
-/// "Dismiss" stores the campaign id under [dismissedCampaignKey] in the
-/// [Vault], so that campaign stays hidden across launches and the next one
-/// (a new id) shows again. The banner holds no static state.
+/// "Dismiss" stores the campaign id in the [Vault] under [dismissalKey], which
+/// carries the signed-in account's id: a second account on the same device does
+/// not inherit the first one's dismissal. That campaign stays hidden across
+/// launches and the next one (a new id) shows again. The banner holds no static
+/// state.
 ///
 /// ## Failure mode
 ///
@@ -42,9 +45,15 @@ class MagicStarterCampaignBanner extends StatefulWidget {
   /// Creates a [MagicStarterCampaignBanner].
   const MagicStarterCampaignBanner({super.key});
 
-  /// The [Vault] key the dismissed campaign's id is stored under.
+  /// The prefix of the [Vault] key the dismissed campaign's id is stored under;
+  /// see [dismissalKey].
   static const String dismissedCampaignKey =
       'magic_starter.campaign.dismissed_id';
+
+  /// The [Vault] key the signed-in account's dismissed campaign id is stored
+  /// under: [dismissedCampaignKey] and the account's id, since the vault is
+  /// device-wide and a dismissal is one person's.
+  static String dismissalKey() => '$dismissedCampaignKey.${Auth.id()}';
 
   /// Stands in for the router when "See plans" is tapped, in a test.
   @visibleForTesting
@@ -63,6 +72,10 @@ class _MagicStarterCampaignBannerState
   String? _dismissedId;
   bool _dismissalRead = false;
 
+  /// The [MagicStarterCampaignBanner.dismissalKey] [_dismissedId] was read for,
+  /// so a sign-in as another account is noticed and its own dismissal read.
+  String? _dismissalKeyRead;
+
   @override
   void initState() {
     super.initState();
@@ -77,7 +90,7 @@ class _MagicStarterCampaignBannerState
     //    the six billing reads this banner has no use for.
     final MagicStarterBillingController controller =
         Magic.find<MagicStarterBillingController>();
-    _controller = controller..addListener(_loadCampaign);
+    _controller = controller..addListener(_onControllerChanged);
 
     // 3. Ask for the offer, and for what the viewer already dismissed.
     _loadCampaign();
@@ -86,7 +99,7 @@ class _MagicStarterCampaignBannerState
 
   @override
   void dispose() {
-    _controller?.removeListener(_loadCampaign);
+    _controller?.removeListener(_onControllerChanged);
     super.dispose();
   }
 
@@ -102,6 +115,7 @@ class _MagicStarterCampaignBannerState
         if (campaign == null ||
             !_dismissalRead ||
             campaign.id == _dismissedId ||
+            campaign.hasEndedAt(DateTime.now()) ||
             !controller.canPurchaseViaWeb) {
           return const SizedBox.shrink();
         }
@@ -128,21 +142,35 @@ class _MagicStarterCampaignBannerState
     ].where((String line) => line.isNotEmpty).join('\n');
   }
 
-  /// Idempotent on the controller, so every notification may call it: it is
-  /// what repeats the read after a reset cleared the answer.
+  /// Every notification asks again, which is what repeats the read after a
+  /// reset cleared the answer, and a sign-in is a reset: if it was another
+  /// account, what it dismissed is read before the banner may show.
+  void _onControllerChanged() {
+    _loadCampaign();
+
+    if (MagicStarterCampaignBanner.dismissalKey() != _dismissalKeyRead) {
+      _dismissalRead = false;
+      unawaited(_readDismissal());
+    }
+  }
+
+  /// Idempotent on the controller, so every notification may call it.
   void _loadCampaign() {
     unawaited(_controller?.loadCampaign());
   }
 
   Future<void> _readDismissal() async {
+    final String key = MagicStarterCampaignBanner.dismissalKey();
+    _dismissalKeyRead = key;
     String? id;
 
     try {
-      id = await Vault.get(MagicStarterCampaignBanner.dismissedCampaignKey);
+      id = await Vault.get(key);
     } catch (error) {
       Log.warning('[MagicStarterCampaignBanner] dismissal not read: $error');
     }
-    if (!mounted) return;
+    // A newer read (another account signed in meanwhile) owns the answer.
+    if (!mounted || key != _dismissalKeyRead) return;
 
     setState(() {
       _dismissedId = id;
@@ -167,7 +195,7 @@ class _MagicStarterCampaignBannerState
     setState(() => _dismissedId = id);
 
     try {
-      await Vault.put(MagicStarterCampaignBanner.dismissedCampaignKey, id);
+      await Vault.put(MagicStarterCampaignBanner.dismissalKey(), id);
     } catch (error) {
       Log.warning('[MagicStarterCampaignBanner] dismissal not stored: $error');
     }

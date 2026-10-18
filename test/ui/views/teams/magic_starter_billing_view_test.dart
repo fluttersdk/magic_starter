@@ -5197,11 +5197,15 @@ void main() {
       final List<({String method, String url, Object? data})> sent =
           <({String method, String url, Object? data})>[];
       Http.fake((request) {
-        sent.add((
-          method: request.method,
-          url: request.url,
-          data: request.data,
-        ));
+        // The screen also reads the campaign on mount; this case is about the
+        // support desk alone.
+        if (request.url.startsWith('/support')) {
+          sent.add((
+            method: request.method,
+            url: request.url,
+            data: request.data,
+          ));
+        }
 
         return Http.response(<String, dynamic>{
           'data': <String, dynamic>{
@@ -6162,37 +6166,47 @@ void main() {
             )
             as Map<String, dynamic>;
 
-    /// The wire body with the campaign's discount and product list replaced.
+    /// The wire body with the campaign's discount, product list and window
+    /// replaced. The window is open around the real clock by default, because
+    /// the tag is hidden for a campaign that is not running and the fixture's
+    /// own dates are a fixed calendar week.
     Map<String, dynamic> campaignWire({
       Map<String, dynamic>? discount,
       List<String>? products,
+      Duration startsIn = const Duration(days: -1),
+      Duration endsIn = const Duration(days: 1),
     }) {
+      final DateTime now = DateTime.now().toUtc();
+
       return <String, dynamic>{
         'data': <String, dynamic>{
           ...(percentWire['data'] as Map<String, dynamic>),
+          'starts_at': now.add(startsIn).toIso8601String(),
+          'ends_at': now.add(endsIn).toIso8601String(),
           'discount': ?discount,
           'products': ?products,
         },
       };
     }
 
-    /// Mounts the screen, then loads the campaign `GET /billing/campaign`
-    /// answers with [body]. The screen itself never fetches it: the app layout's
-    /// banner does, so the case plays that part.
+    /// Mounts the screen over [billing] and lets it read the campaign
+    /// `GET /billing/campaign` answers with [body]: nothing else mounts here,
+    /// so the screen has to ask for it itself.
     Future<void> mountWithCampaign(
       WidgetTester tester,
       Map<String, dynamic> body, {
       MagicStarterPriceFormat? formatPrice,
+      BillingService? billing,
     }) async {
       Http.fake((request) => Http.response(body));
 
       await mount(
         tester,
-        _RailBillingService(),
+        billing ?? _RailBillingService(),
         isOwner: true,
         formatPrice: formatPrice,
       );
-      await Magic.find<MagicStarterBillingController>().loadCampaign();
+      await tester.pump();
       await tester.pump();
     }
 
@@ -6278,6 +6292,101 @@ void main() {
       expect(find.text(badge()), findsNothing);
     });
 
+    testWidgets('the screen reads the campaign itself, with no banner '
+        'mounted', (tester) async {
+      await mountWithCampaign(tester, campaignWire());
+
+      expect(Magic.find<MagicStarterBillingController>().campaign, isNotNull);
+      expect(find.byType(MagicStarterCampaignBanner), findsNothing);
+      expect(find.text(badge()), findsOneWidget);
+    });
+
+    testWidgets('tags a card only for the product it sells on the selected '
+        'cycle', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(products: <String>['pro_monthly']),
+      );
+
+      // The toggle defaults to annual, and the card sells pro_annual there.
+      expect(find.text(badge()), findsNothing);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      expect(find.text(badge()), findsOneWidget);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_annual')));
+      await tester.pump();
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('tags nothing once the campaign has ended', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          startsIn: const Duration(days: -2),
+          endsIn: const Duration(minutes: -1),
+        ),
+      );
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('names the amount in the currency the card is priced in', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'usd',
+            'currency_options': <String, dynamic>{'try': 15000},
+          },
+        ),
+        billing: _TryPricedRailBillingService(),
+      );
+
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '150.00 TRY'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('falls back to the campaign\'s own amount when the card\'s '
+        'currency has no option', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'usd',
+            'currency_options': <String, dynamic>{'eur': 450},
+          },
+        ),
+        billing: _TryPricedRailBillingService(),
+      );
+
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '5.00 USD'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a registered plan_card_highlight slot wins over the tag', (
       tester,
     ) async {
@@ -6294,4 +6403,37 @@ void main() {
       expect(find.text(badge()), findsNothing);
     });
   });
+}
+
+/// A web build whose `pro` tier is priced in Turkish lira, the currency a
+/// campaign's per-currency amount is looked up by.
+class _TryPricedRailBillingService extends _RailBillingService {
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async {
+    return <Map<String, dynamic>>[
+      for (final Map<String, dynamic> row in _planWireRows)
+        if (row['id'] != 'pro')
+          row
+        else
+          <String, dynamic>{
+            ...row,
+            'products': <Map<String, dynamic>>[
+              for (final Map<String, dynamic> product
+                  in (row['products'] as List<dynamic>)
+                      .cast<Map<String, dynamic>>())
+                <String, dynamic>{
+                  ...product,
+                  'prices': <String, dynamic>{
+                    'web': <String, dynamic>{
+                      'TRY': <String, dynamic>{
+                        'amount_minor': 99900,
+                        'display': '999.00 TRY',
+                      },
+                    },
+                  },
+                },
+            ],
+          },
+    ];
+  }
 }

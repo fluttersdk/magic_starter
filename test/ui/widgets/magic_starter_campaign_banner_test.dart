@@ -43,13 +43,31 @@ class _ShippedLoader implements TranslationLoader {
 }
 
 /// The wire body of `GET /billing/campaign`, exactly as the backend package
-/// serializes it.
-Map<String, dynamic> _wire() {
+/// serializes it, window included.
+Map<String, dynamic> _fixture() {
   final String raw = File(
     '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
   ).readAsStringSync();
 
   return jsonDecode(raw) as Map<String, dynamic>;
+}
+
+/// The fixture's campaign with its window moved around the real clock, because
+/// the banner hides a campaign that is not running and the fixture's own dates
+/// are a fixed calendar week. Open by default; [startsIn] and [endsIn] are
+/// offsets from now.
+Map<String, dynamic> _wire({
+  Duration startsIn = const Duration(days: -1),
+  Duration endsIn = const Duration(days: 1),
+}) {
+  final Map<String, dynamic> data = Map<String, dynamic>.of(
+    _fixture()['data'] as Map<String, dynamic>,
+  );
+  final DateTime now = DateTime.now().toUtc();
+  data['starts_at'] = now.add(startsIn).toIso8601String();
+  data['ends_at'] = now.add(endsIn).toIso8601String();
+
+  return <String, dynamic>{'data': data};
 }
 
 /// The wire body with its campaign renamed, for the "a new campaign shows
@@ -137,9 +155,30 @@ class _WebRailBilling extends _NoRailBilling implements WebBillingService {
   Future<String> openPortal({String? returnUrl}) => throw UnimplementedError();
 }
 
+/// A signed-in account, for the per-account dismissal key.
+class _User extends Model with Authenticatable {
+  @override
+  String get table => 'users';
+
+  @override
+  String get resource => 'users';
+
+  @override
+  List<String> get fillable => <String>['id'];
+}
+
+_User _user(int id) {
+  final _User user = _User();
+  user.fill(<String, dynamic>{'id': id});
+  user.exists = true;
+
+  return user;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late FakeLogManager logs;
   late List<String> requests;
   late FutureOr<Map<String, dynamic>> Function() campaignBody;
   const Key bannerKey = Key('campaign-banner');
@@ -147,8 +186,9 @@ void main() {
   setUp(() async {
     MagicApp.reset();
     Magic.flush();
-    Log.fake();
+    logs = Log.fake();
     Vault.fake();
+    Auth.fake(user: _user(1));
 
     Config.set('magic_starter.features.billing', true);
 
@@ -168,6 +208,7 @@ void main() {
     MagicStarterCampaignBanner.debugNavigateTo = null;
     Http.unfake();
     Vault.unfake();
+    Auth.unfake();
     Log.unfake();
     MagicApp.reset();
     Magic.flush();
@@ -221,7 +262,7 @@ void main() {
   group('MagicStarterCampaign', () {
     test('decodes the wire fixture', () {
       final MagicStarterCampaign campaign = MagicStarterCampaign.fromMap(
-        (_wire()['data'] as Map<String, dynamic>),
+        (_fixture()['data'] as Map<String, dynamic>),
       );
 
       expect(campaign.id, 'camp-1');
@@ -231,6 +272,7 @@ void main() {
       expect(campaign.discount.type, MagicStarterCampaignDiscountType.percent);
       expect(campaign.discount.value, 20);
       expect(campaign.discount.currency, isNull);
+      expect(campaign.discount.currencyOptions, isEmpty);
       expect(campaign.coversProduct('pro_annual'), isTrue);
       expect(campaign.coversProduct('business_annual'), isFalse);
     });
@@ -250,6 +292,36 @@ void main() {
       expect(campaign.discount.type, MagicStarterCampaignDiscountType.amount);
       expect(campaign.discount.value, 500);
       expect(campaign.discount.currency, 'USD');
+      expect(campaign.discount.currencyOptions, isEmpty);
+    });
+
+    test('decodes the per-currency amounts of an amount discount', () {
+      final Map<String, dynamic> data = Map<String, dynamic>.of(
+        (_wire()['data'] as Map<String, dynamic>),
+      );
+      data['discount'] = <String, dynamic>{
+        'type': 'amount',
+        'value': 500,
+        'currency': 'usd',
+        'currency_options': <String, dynamic>{'try': 15000, 'eur': 450},
+      };
+
+      final MagicStarterCampaignDiscount discount =
+          MagicStarterCampaign.fromMap(data).discount;
+
+      expect(discount.currencyOptions, <String, num>{'try': 15000, 'eur': 450});
+      expect(discount.amountIn('TRY'), 15000);
+      expect(discount.amountIn('usd'), isNull);
+    });
+
+    test('ends at its end, whatever the clock says about its start', () {
+      final MagicStarterCampaign campaign = MagicStarterCampaign.fromMap(
+        (_fixture()['data'] as Map<String, dynamic>),
+      );
+
+      expect(campaign.hasEndedAt(DateTime.utc(2026, 10, 31, 23, 59)), isFalse);
+      expect(campaign.hasEndedAt(DateTime.utc(2026, 11, 7, 23, 59)), isFalse);
+      expect(campaign.hasEndedAt(DateTime.utc(2026, 11, 8)), isTrue);
     });
 
     test('picks the reader locale, then the default, then any copy', () {
@@ -339,6 +411,26 @@ void main() {
       await controller.loadCampaign();
 
       expect(controller.campaign, isNull);
+      logs.assertLogged(
+        'warning',
+        '[MagicStarterBillingController.loadCampaign] status 500',
+      );
+    });
+
+    test('a 404 is no campaign, without a warning', () async {
+      Http.fake((request) {
+        requests.add(request.url);
+
+        return Http.response(<String, dynamic>{'message': 'Not Found.'}, 404);
+      });
+      final MagicStarterBillingController controller = register();
+
+      await controller.loadCampaign();
+      await controller.loadCampaign();
+
+      expect(controller.campaign, isNull);
+      expect(campaignRequests(), 1);
+      logs.assertNothingLogged();
     });
 
     test('does not fire any of the six billing reads', () async {
@@ -494,7 +586,7 @@ void main() {
 
       expect(headline, findsNothing);
       expect(
-        await Vault.get(MagicStarterCampaignBanner.dismissedCampaignKey),
+        await Vault.get(MagicStarterCampaignBanner.dismissalKey()),
         'camp-1',
       );
 
@@ -509,7 +601,7 @@ void main() {
       tester,
     ) async {
       Vault.fake(<String, String>{
-        MagicStarterCampaignBanner.dismissedCampaignKey: 'camp-1',
+        MagicStarterCampaignBanner.dismissalKey(): 'camp-1',
       });
       register();
       await mount(tester);
@@ -523,6 +615,73 @@ void main() {
       await settle(tester);
 
       expect(headline, findsOneWidget);
+    });
+
+    testWidgets('a dismissal belongs to the account that made it', (
+      tester,
+    ) async {
+      register();
+      await mount(tester);
+      await tester.tap(dismiss);
+      await settle(tester);
+      expect(headline, findsNothing);
+
+      // A second account on the same device inherits nothing.
+      await tester.pumpWidget(const SizedBox());
+      Auth.fake(user: _user(2));
+      await mount(tester);
+
+      expect(headline, findsOneWidget);
+
+      // And the first account still has its own dismissal.
+      await tester.pumpWidget(const SizedBox());
+      Auth.fake(user: _user(1));
+      await mount(tester);
+
+      expect(headline, findsNothing);
+    });
+
+    testWidgets('a sign-in as another account re-reads the dismissal', (
+      tester,
+    ) async {
+      final MagicStarterBillingController controller = register();
+      await mount(tester);
+      await tester.tap(dismiss);
+      await settle(tester);
+      expect(headline, findsNothing);
+
+      Auth.fake(user: _user(2));
+      await controller.resetForSession();
+      await settle(tester);
+
+      expect(headline, findsOneWidget);
+    });
+
+    testWidgets('renders nothing once the campaign has ended', (tester) async {
+      campaignBody = () => _wire(
+        startsIn: const Duration(days: -2),
+        endsIn: const Duration(minutes: -1),
+      );
+      register();
+
+      await mount(tester);
+
+      expect(campaignRequests(), 1);
+      expect(find.byType(MSUpdateBanner), findsNothing);
+    });
+
+    testWidgets('shows an answered campaign on a device clock behind its start', (
+      tester,
+    ) async {
+      campaignBody = () => _wire(
+        startsIn: const Duration(minutes: 1),
+        endsIn: const Duration(days: 2),
+      );
+      register();
+
+      await mount(tester);
+
+      expect(find.byType(MSUpdateBanner), findsOneWidget);
     });
 
     testWidgets('a team switch drops it, then shows the next team\'s', (

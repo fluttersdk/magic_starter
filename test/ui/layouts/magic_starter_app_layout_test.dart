@@ -891,14 +891,22 @@ void main() {
           billingService: _WebRailBilling(),
         ),
       );
-      mockDriver.mockResponse(
-        statusCode: 200,
-        data: jsonDecode(
-          File(
-            '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
-          ).readAsStringSync(),
-        ),
-      );
+      // The banner hides a campaign that is not running, and the fixture's own
+      // window is a fixed calendar week, so the window moves around now.
+      final Map<String, dynamic> wire =
+          jsonDecode(
+                File(
+                  '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
+                ).readAsStringSync(),
+              )
+              as Map<String, dynamic>;
+      final DateTime now = DateTime.now().toUtc();
+      (wire['data'] as Map<String, dynamic>)
+        ..['starts_at'] = now
+            .subtract(const Duration(days: 1))
+            .toIso8601String()
+        ..['ends_at'] = now.add(const Duration(days: 1)).toIso8601String();
+      mockDriver.mockResponse(statusCode: 200, data: wire);
 
       await tester.pumpWidget(createApp(child: const Text('page body')));
       await tester.pumpAndSettle();
