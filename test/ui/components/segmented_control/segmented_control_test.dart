@@ -371,6 +371,101 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Tap target
+  // ---------------------------------------------------------------------------
+
+  group('SegmentedControl tap target', () {
+    /// Both `physicalSize` and `devicePixelRatio` are set, since setting only
+    /// the first lays the tree out at the wrong logical width.
+    Future<void> pumpAt(WidgetTester tester, Size size) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        wrap(
+          Center(
+            child: MSSegmentedControl<String>(
+              options: const ['Monthly', 'Annual'],
+              selectedIndex: 0,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// The painted pill of the segment labelled [label].
+    Finder pill(String label) => find
+        .ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is WDiv && (widget.className ?? '').contains('px-3'),
+          ),
+        )
+        .first;
+
+    testWidgets('every segment meets the iOS tap target on a phone', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpAt(tester, const Size(390, 844));
+
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('the painted pill is the same size on a phone and at lg', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(1280, 800));
+      final wide = tester.getSize(pill('Monthly'));
+
+      await pumpAt(tester, const Size(390, 844));
+
+      expect(tester.getSize(pill('Monthly')), wide);
+      expect(wide.height, lessThan(44));
+    });
+
+    testWidgets('the hit area adds nothing from lg up', (tester) async {
+      await pumpAt(tester, const Size(1280, 800));
+
+      expect(
+        tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+        lessThan(44),
+      );
+    });
+
+    testWidgets('a tap just outside the painted pill selects the segment', (
+      tester,
+    ) async {
+      int? changed;
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        wrap(
+          Center(
+            child: MSSegmentedControl<String>(
+              options: const ['Monthly', 'Annual'],
+              selectedIndex: 0,
+              onChanged: (index) => changed = index,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final Rect painted = tester.getRect(pill('Annual'));
+      await tester.tapAt(painted.topCenter - const Offset(0, 6));
+
+      expect(changed, 1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Keyboard focus ring
   // ---------------------------------------------------------------------------
 

@@ -136,7 +136,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`). Below `lg`, `sm` keeps its painted size but takes a 44x44 hit area |
+| `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`). Below `lg`, every size keeps its painted size but takes a 44x44 hit area |
 | `MSInput` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`). A single-line field is at least 40px tall (`py-2.5` over a `leading-5` line) |
 | `MSTextarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `MSInput`; `fullWidth: true` fills the parent width (defaults `false`). On iOS a focused field carries a Done toolbar above the keyboard, since a multiline field's Return key inserts a newline and would otherwise leave the keyboard with no way out. One consequence for consumer TESTS: while that toolbar is up it schedules a frame callback every frame, so `pumpAndSettle` under `debugDefaultTargetPlatformOverride = TargetPlatform.iOS` never settles; pump explicitly instead |
 | `MSCheckbox` | | Boolean toggle; Wind-only, no Material dependency |
@@ -167,7 +167,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `MSSegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher |
+| `MSSegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher; below `lg` each segment is at least 44 px tall to tap, the painted pill unchanged |
 | `MSTabs` | `tabsRecipe` | Full tab bar with content panels |
 | `MSAccordion` | `MSAccordionItem`, `accordionRecipe` | Collapsible section list |
 | `MSNavbar` | | Horizontal top navigation bar |

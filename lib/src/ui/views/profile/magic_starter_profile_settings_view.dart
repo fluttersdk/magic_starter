@@ -575,6 +575,7 @@ class _MagicStarterProfileSettingsViewState
               value: profileForm.get('language'),
               onChange: (v) => profileForm.set('language', v ?? ''),
               label: trans('profile.language_label'),
+              placeholder: trans('common.select_option'),
               options: finalLocales,
               labelClassName: formTheme.labelClassName,
               className: formTheme.inputClassName,

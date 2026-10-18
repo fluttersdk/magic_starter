@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/src/ui/components/update_banner/index.dart';
@@ -147,6 +148,54 @@ void main() {
         ),
         isSemantics(isLiveRegion: true),
       );
+
+      handle.dispose();
+    });
+
+    // QA (campaign-model D-01) reported the banner exposing no semantics nodes
+    // and no keyboard reach. Not reproduced on wind 1.9.1: the action and the
+    // dismiss are enabled buttons and Tab reaches each in turn.
+    testWidgets('action and dismiss are enabled buttons reached by Tab '
+        '(D-01 not reproduced)', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await mountAt(
+        tester,
+        const Size(390, 844),
+        MSUpdateBanner(
+          message: message,
+          actionLabel: actionLabel,
+          onAction: () {},
+          dismissLabel: dismissLabel,
+          onDismiss: () {},
+        ),
+      );
+
+      for (final String label in const <String>[actionLabel, dismissLabel]) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)),
+          isSemantics(
+            label: label,
+            isButton: true,
+            isEnabled: true,
+            hasEnabledState: true,
+            hasTapAction: true,
+            isFocusable: true,
+          ),
+        );
+      }
+
+      bool focused(String label) =>
+          Focus.maybeOf(tester.element(find.text(label)))?.hasPrimaryFocus ??
+          false;
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(focused(actionLabel), isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(focused(dismissLabel), isTrue);
 
       handle.dispose();
     });

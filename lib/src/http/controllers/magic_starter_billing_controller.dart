@@ -774,7 +774,19 @@ class MagicStarterBillingController extends MagicController
   @override
   void onInit() {
     super.onInit();
+    Lang.addListener(_reloadLocalizedCopy);
     unawaited(load());
+  }
+
+  /// Re-reads the two answers whose words are fixed at read time.
+  ///
+  /// The plan rows are localized by the backend per request, and [usageCopy]
+  /// pairs its labels onto the stats once, so a language change without a
+  /// reload would leave both in the language they were fetched in while the
+  /// rest of the screen moved. Everything else this controller holds is data.
+  void _reloadLocalizedCopy() {
+    unawaited(loadPlans());
+    unawaited(loadUsage());
   }
 
   /// Drops every field the six reads populate, publishes the cleared state,
@@ -1361,6 +1373,7 @@ class MagicStarterBillingController extends MagicController
 
   @override
   void dispose() {
+    Lang.removeListener(_reloadLocalizedCopy);
     cancelWait();
     _awaitingWindow?.cancel();
     super.dispose();

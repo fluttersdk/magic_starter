@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`MSSelect` and `MSCombobox` default placeholders are translated.** They were hard-coded English (`Select an option`, `Search options...`), so a Turkish host showed and announced English on the closed trigger. They now read `common.select_option` and `common.search_options`, and the team invite role select and both language selects pass `common.select_option` too. Add both keys to your `en.json` (the install stub has them) and to your other locales. (`lib/src/ui/components/select/`, `lib/src/ui/components/combobox/`, `lib/src/ui/views/`, `assets/stubs/install/en.stub`)
+- **The billing screen's usage labels and plan copy follow a language change without a reload.** `usageCopy` pairs its labels onto the usage stats once at read time, and the backend localizes the plan rows (`tagline`, `ai_line`, `features`) per request and the controller kept them as fetched, so switching language left both in the previous language while the rest of the screen moved. `MagicStarterBillingController` now listens to `Lang` and re-reads the plans and the usage when the locale changes. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+
+### Changed
+
+- **Every `MSButton` size and each `MSSegmentedControl` segment get a 44 px hit area below `lg`.** `md` (the default, about 36 px) joins `sm`, and a segment (about 28 px) sits in a 44 px cell with the painted pill centred in it. The painted sizes are unchanged; the area is laid out around them, so a row holding either grows to 44 px tall on a phone. From `lg` up nothing changes. `MSSegmentedControl`'s recipe gains a `hit` slot for that cell. (`lib/src/ui/components/button/`, `lib/src/ui/components/segmented_control/`)
+
 ## [0.0.49] - 2026-10-18
 
 ### Added

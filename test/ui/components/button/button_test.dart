@@ -495,17 +495,93 @@ void main() {
       expect(presses, 0);
     });
 
-    testWidgets('md and lg keep their layout on a phone', (tester) async {
+    Widget sizedButton(
+      ButtonSize size, {
+      VoidCallback? onPressed,
+      bool fullWidth = false,
+    }) => MSButton(
+      size: size,
+      onPressed: onPressed,
+      fullWidth: fullWidth,
+      child: const WText('Save'),
+    );
+
+    for (final ButtonSize size in const [ButtonSize.md, ButtonSize.lg]) {
+      testWidgets('${size.name} meets the iOS tap target on a phone', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        await pumpAt(tester, phone, sizedButton(size, onPressed: () {}));
+
+        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+        handle.dispose();
+      });
+    }
+
+    testWidgets('a full-width md meets the iOS tap target on a phone', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
       await pumpAt(
         tester,
         phone,
-        MSButton(onPressed: () {}, child: const WText('Save')),
+        SizedBox(
+          width: 300,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              sizedButton(ButtonSize.md, onPressed: () {}, fullWidth: true),
+            ],
+          ),
+        ),
       );
 
-      expect(
-        tester.getSize(find.byType(MSButton)),
-        tester.getSize(find.byType(WButton)),
-      );
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      expect(tester.getSize(find.byType(WButton)).width, 300);
+      handle.dispose();
     });
+
+    testWidgets('md paints at the same size on a phone and on desktop', (
+      tester,
+    ) async {
+      await pumpAt(
+        tester,
+        desktop,
+        sizedButton(ButtonSize.md, onPressed: () {}),
+      );
+      final desktopSize = tester.getSize(find.byType(WButton));
+
+      await pumpAt(tester, phone, sizedButton(ButtonSize.md, onPressed: () {}));
+
+      expect(tester.getSize(find.byType(WButton)), desktopSize);
+      expect(desktopSize.height, lessThan(44));
+    });
+
+    testWidgets('a tap just outside the painted md presses it', (tester) async {
+      var presses = 0;
+      await pumpAt(
+        tester,
+        phone,
+        sizedButton(ButtonSize.md, onPressed: () => presses++),
+      );
+
+      final painted = tester.getRect(find.byType(WButton));
+      await tester.tapAt(painted.topCenter - const Offset(0, 3));
+
+      expect(presses, 1);
+    });
+
+    for (final ButtonSize size in const [ButtonSize.sm, ButtonSize.md]) {
+      testWidgets('${size.name} has no hit area wrapper from lg up', (
+        tester,
+      ) async {
+        await pumpAt(tester, desktop, sizedButton(size, onPressed: () {}));
+
+        expect(
+          tester.getSize(find.byType(MSButton)),
+          tester.getSize(find.byType(WButton)),
+        );
+      });
+    }
   });
 }

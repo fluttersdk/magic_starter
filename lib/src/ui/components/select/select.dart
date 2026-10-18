@@ -43,7 +43,8 @@ class MSSelect<T> extends StatelessWidget {
   /// Called when the user selects an option.
   final ValueChanged<T?>? onChange;
 
-  /// Optional placeholder shown when [value] is `null`.
+  /// Placeholder shown when [value] is `null`. Defaults to
+  /// `trans('common.select_option')`.
   final String? placeholder;
 
   /// Whether the dropdown is disabled.
@@ -73,7 +74,7 @@ class MSSelect<T> extends StatelessWidget {
       value: value,
       options: options,
       onChange: onChange,
-      placeholder: placeholder ?? 'Select an option',
+      placeholder: placeholder ?? trans('common.select_option'),
       disabled: disabled,
       className: slots['trigger'],
       menuClassName: slots['popup'],

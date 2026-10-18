@@ -6,11 +6,11 @@ const String kButtonIntentAxis = 'intent';
 /// The size axis key for the button recipe.
 const String kButtonSizeAxis = 'size';
 
-/// The smallest hit area, in logical pixels, [MSButton.size] `sm` gets below
-/// `lg`: the iOS minimum tap target.
+/// The smallest hit area, in logical pixels, every [MSButton] gets below `lg`:
+/// the iOS minimum tap target.
 ///
-/// `sm` paints 32 px tall, so this is a hit area around the button and not a
-/// bigger button; see [MSButton] for how it is laid out.
+/// `sm` paints 32 px and `md` about 36 px tall, so this is a hit area around
+/// the button and not a bigger button; see [MSButton] for how it is laid out.
 const double kButtonMinTapExtent = 44;
 
 /// Visual intent variants for [MSButton].
