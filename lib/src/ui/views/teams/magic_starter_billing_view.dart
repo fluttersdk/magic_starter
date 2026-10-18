@@ -1148,15 +1148,13 @@ class _MagicStarterBillingViewState
                       sentence: true,
                     )
                   : _webPrice(plan, isFloor: isFloor, isCustom: isCustom);
-              // The campaign tag is the default of the highlight slot, but it
-              // follows the selected cycle (the toggle picks the product the
-              // card sells), so it lives in this builder: a tag that appears
-              // on one cycle only, outside it, would leave the card's `gap-4`
-              // column a hole on the other.
-              final Widget? campaignTag =
-                  MagicStarter.view.hasSlot(_viewKey, _planHighlightSlot)
-                  ? null
-                  : _buildCampaignTag(plan);
+              // The campaign tag follows the selected cycle (the toggle picks
+              // the product the card sells), so it lives in this builder: a tag
+              // that appears on one cycle only, outside it, would leave the
+              // card's `gap-4` column a hole on the other. It renders whether
+              // or not the highlight slot is registered; the slot is its own
+              // child below.
+              final Widget? campaignTag = _buildCampaignTag(plan);
 
               return WDiv(
                 className: 'flex flex-col gap-0.5',
@@ -1479,10 +1477,9 @@ class _MagicStarterBillingViewState
   /// still consume a slot in the card's `gap-4` column and leave a visible hole
   /// between the price and the features.
   ///
-  /// With no slot registered the card shows [_buildCampaignTag] under its price
-  /// instead, so a registered slot REPLACES the campaign tag: the host that took
-  /// over this spot reads `MagicStarterBillingController.campaign` and decides
-  /// for itself.
+  /// The slot sits beside [_buildCampaignTag], which the card shows under its
+  /// price whether or not a slot is registered: a host that wants its own offer
+  /// copy reads `MagicStarterBillingController.campaign` here, and the tag stays.
   Widget? _buildPlanHighlight(MagicStarterPlan plan) {
     if (!MagicStarter.view.hasSlot(_viewKey, _planHighlightSlot)) return null;
 
@@ -1504,8 +1501,8 @@ class _MagicStarterBillingViewState
     );
   }
 
-  /// The default highlight: the running campaign's discount, on a card whose
-  /// sale product is one of the campaign's.
+  /// The running campaign's discount tag, on a card whose sale product is one
+  /// of the campaign's.
   ///
   /// The product is the one the card's call to action buys at the selected cycle
   /// ([_saleProduct]), not any product of the tier: the offer is a checkout
