@@ -17,9 +17,10 @@ String errorStateIconWrapClassName() =>
 /// [MagicStarterTokens.defaultAliases] nor in the map `design:sync` generates
 /// for a consumer. Wind's text parser claims a `text-<name>` token and then
 /// resolves `destructive` to no colour, dropping the class silently, so writing
-/// the semantic-looking token here would render no colour at all. See
-/// `_windRoleFallbacks` in `lib/src/configuration/magic_starter_theme.dart`,
-/// which encodes the same gap for the sub-themes.
+/// the semantic-looking token here would render no colour at all. A surface
+/// with a `BuildContext` resolves it through [MagicStarterTokens.role]
+/// instead, which keeps a host's own `text-destructive` and falls back to this
+/// pair; this function takes no context.
 String errorStateIconClassName() => 'text-4xl text-red-600 dark:text-red-400';
 
 /// Title className (destructive tone).

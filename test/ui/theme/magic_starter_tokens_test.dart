@@ -113,6 +113,64 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // role()
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterTokens.role', () {
+    const hostRed = 'text-[#DF202E] dark:text-[#FF645F]';
+    const redFallback = 'text-red-600 dark:text-red-400';
+
+    test('returns the token when the theme defines it as an alias key', () {
+      final theme = WindThemeData(aliases: {'text-destructive': hostRed});
+
+      expect(
+        MagicStarterTokens.role(theme, 'text-destructive'),
+        'text-destructive',
+      );
+    });
+
+    test('returns the token when the theme carries its backing colour', () {
+      final theme = WindThemeData(
+        colors: {
+          'destructive': const MaterialColor(0xFFDF202E, {
+            500: Color(0xFFDF202E),
+          }),
+        },
+      );
+
+      expect(
+        MagicStarterTokens.role(theme, 'text-destructive'),
+        'text-destructive',
+      );
+    });
+
+    test('falls back to the red pair when the theme defines neither', () {
+      expect(
+        MagicStarterTokens.role(WindThemeData(), 'text-destructive'),
+        redFallback,
+      );
+      expect(
+        MagicStarterTokens.role(
+          WindThemeData(aliases: MagicStarterTokens.defaultAliases),
+          'text-destructive',
+        ),
+        redFallback,
+      );
+    });
+
+    test('falls back to the red pair when there is no theme', () {
+      expect(MagicStarterTokens.role(null, 'text-destructive'), redFallback);
+    });
+
+    test('falls back to the shipped alias value for a default role', () {
+      expect(
+        MagicStarterTokens.role(null, 'text-fg'),
+        MagicStarterTokens.defaultAliases['text-fg'],
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // QA: bg-surface text-fg resolves (not a silent no-op)
   // -------------------------------------------------------------------------
 

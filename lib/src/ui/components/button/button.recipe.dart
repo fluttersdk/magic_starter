@@ -1,4 +1,7 @@
+import 'package:flutter/widgets.dart' show BuildContext;
 import 'package:magic/magic.dart';
+
+import '../../theme/magic_starter_tokens.dart';
 
 /// The intent axis key for the button recipe.
 const String kButtonIntentAxis = 'intent';
@@ -16,14 +19,21 @@ const double kButtonMinTapExtent = 44;
 /// Caller className that turns a [ButtonIntent.secondary] button into an
 /// outlined danger action (remove, disable, revoke, disconnect).
 ///
-/// Raw palette pairs on purpose: the alias contract ships `bg-destructive` and
-/// `text-on-destructive` but no destructive TEXT or BORDER role, and wind drops
-/// an unknown `text-destructive` silently, so the semantic-looking token would
-/// render the label in the neutral `text-fg`. Same gap as
-/// `errorStateIconClassName`. Appended after the intent, so last-wins replaces
-/// the secondary text and border colours.
-const String kButtonDangerOutlineClassName =
-    'text-red-600 dark:text-red-400 border-red-200 dark:border-red-700';
+/// The label colour is the host's `text-destructive` role when its theme defines
+/// one and the red text pair otherwise (see [MagicStarterTokens.role]); a bare
+/// `text-destructive` would render neutral where the host omits it, since wind
+/// drops an unknown alias silently. The border is a raw red pair on purpose: the
+/// alias contract ships no destructive BORDER role. Needs a [context] under the
+/// `WindTheme`, so call it at build time. Appended after the intent, so
+/// last-wins replaces the secondary text and border colours.
+String buttonDangerOutlineClassName(BuildContext context) {
+  final textRole = MagicStarterTokens.role(
+    WindTheme.maybeDataOf(context),
+    'text-destructive',
+  );
+
+  return '$textRole border-red-200 dark:border-red-700';
+}
 
 /// Visual intent variants for [MSButton].
 ///

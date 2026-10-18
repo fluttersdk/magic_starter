@@ -21,6 +21,7 @@ import '../../components/page_scaffold/page_scaffold.dart';
 import '../../components/segmented_control/index.dart';
 import '../../components/skeleton/index.dart';
 import '../../components/usage_meter/index.dart';
+import '../../theme/magic_starter_tokens.dart';
 
 /// Publishes the catalogue row a plan card was built from, so the
 /// `plan_card_highlight` slot can render the fields this package never names.
@@ -586,6 +587,10 @@ class _MagicStarterBillingViewState
     final bool resolving = controller.plans.isEmpty || planId == null;
     final MagicStarterPlan? current = _current;
     final DateTime? trialEnd = controller.trialEnd;
+    final String destructiveText = MagicStarterTokens.role(
+      WindTheme.maybeDataOf(context),
+      'text-destructive',
+    );
 
     return MSCard(
       child: WDiv(
@@ -662,8 +667,7 @@ class _MagicStarterBillingViewState
           if (controller.planStatus.isDunning)
             WText(
               trans('magic_starter.billing.payment_failed_notice'),
-              // Raw pair: the alias contract has no destructive text role.
-              className: 'text-sm text-red-600 dark:text-red-400',
+              className: 'text-sm $destructiveText',
             ),
           // A stat the consumer's copy could not name gets NO meter, rather
           // than one labelled with its raw wire key. The producer reports every

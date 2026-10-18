@@ -1,3 +1,5 @@
+import 'package:magic/magic.dart';
+
 /// **Semantic Token Alias Convention**
 ///
 /// [MagicStarterTokens] provides the default light+dark alias map for the
@@ -86,8 +88,68 @@
 ///   child: WText('Hello', className: 'text-fg'),
 /// )
 /// ```
+///
+/// ## Roles the map does not ship
+///
+/// `text-destructive` is not a key in [defaultAliases], yet a host may define
+/// it (typically as its brand red). [role] resolves such a token against
+/// the active theme: the host's own definition when it has one, the red text
+/// pair otherwise.
 final class MagicStarterTokens {
   MagicStarterTokens._();
+
+  /// Fallback palette pairs for semantic roles that are NOT keys in
+  /// [defaultAliases].
+  ///
+  /// `text-primary` resolves directly against the `primary` colour and is always
+  /// available, so its fallback is only a safety net. `text-destructive` has no
+  /// canonical alias (the contract ships `bg-destructive` / `text-on-destructive`
+  /// only), so it falls back to the red text pair.
+  static const Map<String, String> _roleFallbacks = {
+    'text-primary': 'text-primary',
+    'text-destructive': 'text-red-600 dark:text-red-400',
+  };
+
+  /// Resolves a semantic role [token] against [theme].
+  ///
+  /// Returns the bare [token] when [theme] defines the role, either as an alias
+  /// key (`bg-surface`, `text-fg`, `border-color-border`, ...) or through its
+  /// backing colour in [WindThemeData.colors] (`bg-primary` -> `primary`), so
+  /// the surface re-skins with the host palette. Otherwise returns the shipped
+  /// [defaultAliases] value, then the built-in fallback pair, so the surface
+  /// stays visible instead of resolving to a token wind drops silently.
+  ///
+  /// A null [theme] means no `WindTheme` ancestor: the fallback applies.
+  static String role(WindThemeData? theme, String token) {
+    if (theme != null && _themeDefines(theme, token)) {
+      return token;
+    }
+
+    return defaultAliases[token] ?? _roleFallbacks[token] ?? token;
+  }
+
+  static bool _themeDefines(WindThemeData theme, String token) {
+    if (theme.aliases.containsKey(token)) {
+      return true;
+    }
+
+    final colorKey = _backingColorKey(token);
+    return colorKey != null && theme.colors.containsKey(colorKey);
+  }
+
+  /// Strips the CSS-property prefix off a semantic [token] to recover its
+  /// backing colour key (`border-color-border` -> `border`, `bg-primary` ->
+  /// `primary`, `text-fg` -> `fg`), or `null` when the token carries no known
+  /// prefix.
+  static String? _backingColorKey(String token) {
+    for (final prefix in const ['border-color-', 'bg-', 'text-']) {
+      if (token.startsWith(prefix)) {
+        return token.substring(prefix.length);
+      }
+    }
+
+    return null;
+  }
 
   /// The default semantic alias map providing light+dark token pairs for all
   /// 17 semantic roles used by the magic_starter component system.

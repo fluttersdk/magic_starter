@@ -589,17 +589,25 @@ void main() {
   group('danger outline className', () {
     // The real alias map, so `text-fg` and `border-color-border` resolve the
     // way they do in an app and the danger pair has something to override.
-    Future<Color?> labelColour(WidgetTester tester, String className) async {
+    // `aliases` lets a host define its own `text-destructive`; `className`
+    // replaces the resolved danger class.
+    Future<Color?> labelColour(
+      WidgetTester tester, {
+      Map<String, String> aliases = MagicStarterTokens.defaultAliases,
+      String? className,
+    }) async {
       await tester.pumpWidget(
         MaterialApp(
           home: WindTheme(
-            data: WindThemeData(aliases: MagicStarterTokens.defaultAliases),
+            data: WindThemeData(aliases: aliases),
             child: Scaffold(
-              body: MSButton(
-                intent: ButtonIntent.secondary,
-                className: className,
-                onPressed: () {},
-                child: const WText('Remove'),
+              body: Builder(
+                builder: (context) => MSButton(
+                  intent: ButtonIntent.secondary,
+                  className: className ?? buttonDangerOutlineClassName(context),
+                  onPressed: () {},
+                  child: const WText('Remove'),
+                ),
               ),
             ),
           ),
@@ -613,20 +621,31 @@ void main() {
           ?.color;
     }
 
-    testWidgets('paints the label red on the secondary intent', (tester) async {
+    testWidgets('paints the label red under the stock aliases', (tester) async {
+      expect(await labelColour(tester), WindThemeData().getColor('red', 600));
+    });
+
+    testWidgets('paints the label in a host text-destructive', (tester) async {
       expect(
-        await labelColour(tester, kButtonDangerOutlineClassName),
-        WindThemeData().getColor('red', 600),
+        await labelColour(
+          tester,
+          aliases: {
+            ...MagicStarterTokens.defaultAliases,
+            'text-destructive': 'text-[#DF202E] dark:text-[#FF645F]',
+          },
+        ),
+        const Color(0xFFDF202E),
       );
     });
 
     testWidgets('`text-destructive` is no alias and leaves the label neutral', (
       tester,
     ) async {
-      // Pins the gap the constant exists for: if the alias contract ever ships
-      // a destructive text role, this fails and the constant can use it.
+      // Pins the gap buttonDangerOutlineClassName(context) resolves around: if
+      // the alias contract ever ships a destructive text role, this fails and
+      // the function can drop its fallback.
       expect(
-        await labelColour(tester, 'text-destructive'),
+        await labelColour(tester, className: 'text-destructive'),
         isNot(WindThemeData().getColor('red', 600)),
       );
     });

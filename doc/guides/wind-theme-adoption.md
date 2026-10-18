@@ -67,6 +67,8 @@ The role tokens match the `MagicStarterTokens.defaultAliases` contract:
 | `text-destructive` | Inline error text (falls back to red when undefined) |
 | `bg-warning` | Warning action surface |
 
+A host that defines `text-destructive` (as an alias, or through a `destructive` colour) re-skins the outlined danger buttons, the destructive `MSSettingsRow` title and the inline error text; without it they fall back to the red pair. `MagicStarterTokens.role(theme, token)` is the lookup they share.
+
 ## Alias-to-property mapping
 
 Each sub-theme property below is rebuilt from the listed semantic roles. Layout,

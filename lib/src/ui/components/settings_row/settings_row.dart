@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../theme/magic_starter_tokens.dart';
 import 'settings_row.recipe.dart';
 
 /// A single iOS-style settings list row.
@@ -90,13 +91,18 @@ class MSSettingsRow extends StatelessWidget {
     this.tone = SettingsRowTone.defaultTone,
   });
 
-  /// Resolves the title className from the recipe for the active [tone].
-  String _resolveTitleClassName() {
-    // The recipe base holds layout tokens; tone-variant holds the text color.
-    // We only want the tone's color token for the title, not the full base.
+  /// Resolves the title className for the active [tone].
+  ///
+  /// The destructive colour is read from the active theme at build time because
+  /// `text-destructive` is a host-defined role, not a key in the shipped alias
+  /// map: a bare token would render neutral in a host that omits it.
+  String _resolveTitleClassName(BuildContext context) {
     final toneClass = switch (tone) {
       SettingsRowTone.defaultTone => 'text-fg',
-      SettingsRowTone.destructive => 'text-destructive',
+      SettingsRowTone.destructive => MagicStarterTokens.role(
+        WindTheme.maybeDataOf(context),
+        'text-destructive',
+      ),
     };
     return 'text-base font-medium $toneClass';
   }
@@ -124,7 +130,7 @@ class MSSettingsRow extends StatelessWidget {
         WDiv(
           className: 'flex flex-col gap-0.5 flex-1 min-w-0',
           children: [
-            WText(title, className: _resolveTitleClassName()),
+            WText(title, className: _resolveTitleClassName(context)),
             if (subtitle != null)
               WText(subtitle!, className: 'text-sm text-fg-muted'),
           ],

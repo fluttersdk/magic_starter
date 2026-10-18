@@ -218,7 +218,7 @@ class _MagicStarterProfileSubPageViewState
                       if (photoUrl != null && photoUrl.isNotEmpty)
                         MSButton(
                           intent: ButtonIntent.secondary,
-                          className: kButtonDangerOutlineClassName,
+                          className: buttonDangerOutlineClassName(context),
                           onPressed: _handlePhotoRemove,
                           isLoading: isLoading,
                           child: WText(trans('common.remove')),

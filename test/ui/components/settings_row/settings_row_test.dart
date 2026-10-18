@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' show Icons, MaterialApp, Scaffold;
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -26,6 +27,28 @@ void main() {
     );
   }
 
+  // The stock alias map by default, so `text-fg` resolves the way it does in an
+  // app; a host passes its own map to define `text-destructive`.
+  Widget wrapWithAliases(
+    Widget widget, {
+    Map<String, String> aliases = MagicStarterTokens.defaultAliases,
+  }) {
+    return MaterialApp(
+      home: WindTheme(
+        data: WindThemeData(aliases: aliases),
+        child: Scaffold(body: widget),
+      ),
+    );
+  }
+
+  Color? paintedColour(WidgetTester tester, String text) {
+    return tester
+        .renderObject<RenderParagraph>(find.text(text))
+        .text
+        .style
+        ?.color;
+  }
+
   // ---------------------------------------------------------------------------
   // Recipe variant-class assertions
   // ---------------------------------------------------------------------------
@@ -38,26 +61,25 @@ void main() {
       expect(cls, contains('text-fg'));
     });
 
-    test('destructive tone emits text-destructive token for title', () {
+    test('destructive tone keeps the base layout and no default colour', () {
       final cls = settingsRowRecipe(
         variants: {kSettingsRowToneAxis: SettingsRowTone.destructive.name},
       );
-      expect(cls, contains('text-destructive'));
+      expect(cls, contains('min-h-12'));
+      expect(cls, isNot(contains('text-fg')));
     });
 
     test('default variant emits default tone when nothing passed', () {
       final cls = settingsRowRecipe();
       expect(cls, contains('text-fg'));
-      expect(cls, isNot(contains('text-destructive')));
     });
 
     test('emission order: base precedes tone-variant classes', () {
       final cls = settingsRowRecipe(
-        variants: {kSettingsRowToneAxis: SettingsRowTone.destructive.name},
+        variants: {kSettingsRowToneAxis: SettingsRowTone.defaultTone.name},
       );
-      // base contains min-h-12; destructive contains text-destructive
       final baseIdx = cls.indexOf('min-h-12');
-      final variantIdx = cls.indexOf('text-destructive');
+      final variantIdx = cls.indexOf('text-fg');
       expect(baseIdx, lessThan(variantIdx));
     });
   });
@@ -149,24 +171,56 @@ void main() {
     expect(titleTexts.first.className, contains('text-fg'));
   });
 
+  testWidgets('SettingsRow default tone title paints the text-fg colour', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrapWithAliases(const MSSettingsRow(title: 'Appearance')),
+    );
+
+    expect(
+      paintedColour(tester, 'Appearance'),
+      WindThemeData().getColor('gray', 900),
+    );
+  });
+
   testWidgets(
-    'SettingsRow destructive tone title uses text-destructive className',
+    'SettingsRow destructive title paints red under the stock aliases',
     (tester) async {
       await tester.pumpWidget(
-        wrap(
+        wrapWithAliases(
           const MSSettingsRow(
             title: 'Delete Account',
             tone: SettingsRowTone.destructive,
           ),
         ),
       );
-      final titleTexts = tester
-          .widgetList<WText>(find.byType(WText))
-          .where((w) => w.data == 'Delete Account');
-      expect(titleTexts, isNotEmpty);
-      expect(titleTexts.first.className, contains('text-destructive'));
+
+      expect(
+        paintedColour(tester, 'Delete Account'),
+        WindThemeData().getColor('red', 600),
+      );
     },
   );
+
+  testWidgets('SettingsRow destructive title follows a host text-destructive', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrapWithAliases(
+        const MSSettingsRow(
+          title: 'Delete Account',
+          tone: SettingsRowTone.destructive,
+        ),
+        aliases: {
+          ...MagicStarterTokens.defaultAliases,
+          'text-destructive': 'text-[#DF202E] dark:text-[#FF645F]',
+        },
+      ),
+    );
+
+    expect(paintedColour(tester, 'Delete Account'), const Color(0xFFDF202E));
+  });
 
   testWidgets('SettingsRow row container has min-h-12 className', (
     tester,

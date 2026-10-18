@@ -5,35 +5,34 @@ const String kSettingsRowToneAxis = 'tone';
 
 /// Tone variants for [MSSettingsRow].
 ///
-/// - [defaultTone] — Standard row: title uses the default foreground token.
-/// - [destructive] — Danger row (Delete / Sign-out): title uses the destructive
-///   foreground token to signal an irreversible action.
+/// - [defaultTone]: standard row, title uses the default foreground token.
+/// - [destructive]: danger row (Delete / Sign-out), title uses the host's
+///   destructive text role, resolved by [MSSettingsRow] at build time.
 enum SettingsRowTone {
   /// Standard row: title rendered in `text-fg`.
   defaultTone,
 
-  /// Danger row: title rendered in `text-destructive`.
+  /// Danger row: title rendered in the resolved destructive text role.
   destructive,
 }
 
 /// The settings row [WindRecipe].
 ///
-/// Drives the title className for each [SettingsRowTone]. The recipe is a
-/// top-level const because [MSSettingsRow] has no theme-override hook; it reads
-/// straight from the semantic alias tokens.
+/// Drives the row container's className for each [SettingsRowTone]. The
+/// destructive title colour is not here: [MSSettingsRow] resolves it against
+/// the active theme at build time. The recipe is a top-level const because
+/// [MSSettingsRow] has no theme-override hook.
 ///
 /// Emission order: `base ++ tone-variant`.
 ///
 /// Tone -> semantic token mapping:
 /// - defaultTone: `text-fg font-medium text-base`
-/// - destructive: `text-destructive font-medium text-base`
+/// - destructive: no colour token; [MSSettingsRow] adds the resolved role to the
+///   title, since the container class cannot read the theme
 const WindRecipe settingsRowRecipe = WindRecipe(
   base: 'min-h-12 px-5 py-4 flex flex-row items-center gap-3',
   variants: {
-    kSettingsRowToneAxis: {
-      'defaultTone': 'text-fg',
-      'destructive': 'text-destructive',
-    },
+    kSettingsRowToneAxis: {'defaultTone': 'text-fg', 'destructive': ''},
   },
   defaultVariants: {kSettingsRowToneAxis: 'defaultTone'},
 );

@@ -314,7 +314,7 @@ class _MagicStarterTwoFactorViewState
                   onPressed: () => _disableTwoFactor(context),
                   isLoading: isLoading,
                   intent: ButtonIntent.secondary,
-                  className: kButtonDangerOutlineClassName,
+                  className: buttonDangerOutlineClassName(context),
                   child: WText(trans('profile.two_factor_disable')),
                 ),
               ),
