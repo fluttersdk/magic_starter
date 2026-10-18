@@ -6457,6 +6457,78 @@ void main() {
       expect(find.text(badge()), findsNothing);
     });
   });
+
+  group('a locale switch without a reload', () {
+    const String planTagline = 'Startups and small teams that page.';
+    const String secondLocaleTagline = 'Sayfalanan küçük ekipler.';
+
+    testWidgets('re-reads the usage copy and the backend-localized plan rows', (
+      tester,
+    ) async {
+      MagicStarter.view.slot('teams.billing', 'plan_card_highlight', (
+        BuildContext context,
+      ) {
+        return WText(
+          'ai-${MagicStarterPlanCardScope.of(context).raw['ai_line']}',
+        );
+      });
+
+      await mount(tester, _LocalizedBillingService());
+
+      // 1. English before the switch: the arrange step is sound.
+      expect(find.text('Monitors'), findsOneWidget);
+      expect(find.text(planTagline), findsOneWidget);
+
+      // 2. The operator saves another language; nothing but the translator
+      //    announces it, and the backend answers per Accept-Language.
+      Translator.instance.setLoader(
+        const _CatalogueLoader(_secondLocaleCatalogue),
+      );
+      await Translator.instance.setLocale(const Locale('xx'));
+      await tester.pump();
+      await tester.pump();
+
+      // 3. The paired usage label and the cached plan rows follow.
+      expect(find.text('İzleyiciler'), findsOneWidget);
+      expect(find.text('Monitors'), findsNothing);
+      expect(find.text(secondLocaleTagline), findsOneWidget);
+      expect(find.text(planTagline), findsNothing);
+      expect(
+        find.text('ai-Tam yapay zeka olay analizi.'),
+        findsWidgets,
+        reason: 'the plan_card_highlight slot reads the refetched row',
+      );
+    });
+  });
+}
+
+/// Answers the catalogue and the usage the way the backend does per request:
+/// in the language the translator holds when the read is made.
+class _LocalizedBillingService extends _ReadsBillingService {
+  _LocalizedBillingService()
+    : super(
+        usage: const <UsageStat>[
+          UsageStat(key: 'monitors', used: 3, limit: 50),
+        ],
+      );
+
+  bool get _secondLocale => Translator.instance.locale.languageCode == 'xx';
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async {
+    if (!_secondLocale) return _planWireRows;
+
+    return <Map<String, dynamic>>[
+      for (final Map<String, dynamic> row in _planWireRows)
+        <String, dynamic>{
+          ...row,
+          'tagline': row['id'] == 'pro'
+              ? 'Sayfalanan küçük ekipler.'
+              : row['tagline'],
+          'ai_line': 'Tam yapay zeka olay analizi.',
+        },
+    ];
+  }
 }
 
 /// A web build whose `pro` tier is priced in [currency], the currency a
