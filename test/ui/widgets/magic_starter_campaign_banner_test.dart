@@ -670,19 +670,20 @@ void main() {
       expect(find.byType(MSUpdateBanner), findsNothing);
     });
 
-    testWidgets('shows an answered campaign on a device clock behind its start', (
-      tester,
-    ) async {
-      campaignBody = () => _wire(
-        startsIn: const Duration(minutes: 1),
-        endsIn: const Duration(days: 2),
-      );
-      register();
+    testWidgets(
+      'shows an answered campaign on a device clock behind its start',
+      (tester) async {
+        campaignBody = () => _wire(
+          startsIn: const Duration(minutes: 1),
+          endsIn: const Duration(days: 2),
+        );
+        register();
 
-      await mount(tester);
+        await mount(tester);
 
-      expect(find.byType(MSUpdateBanner), findsOneWidget);
-    });
+        expect(find.byType(MSUpdateBanner), findsOneWidget);
+      },
+    );
 
     testWidgets('a team switch drops it, then shows the next team\'s', (
       tester,
