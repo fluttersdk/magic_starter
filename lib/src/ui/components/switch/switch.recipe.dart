@@ -33,24 +33,22 @@ const WindRecipe switchThumbRecipe = WindRecipe(
   base: 'w-5 h-5 rounded-full bg-surface shadow',
 );
 
-/// The [WindRecipe] for the tappable row around an [MSSwitch]: the track, and
-/// its `label` when there is one.
+/// The [WindRecipe] for the tappable area around an unlabelled [MSSwitch].
 ///
 /// `min-h-11 lg:min-h-0` is the touch target: 44 px tall on a phone, around a
 /// 24 px track that is still painted at 24 px, and nothing extra from `lg` up.
-/// `items-center` keeps a one-line label and the track on one centre line.
 const WindRecipe switchHitAreaRecipe = WindRecipe(
-  base: 'flex flex-row items-center gap-3 min-h-11 lg:min-h-0',
+  base: 'flex flex-row items-center min-h-11 lg:min-h-0',
 );
 
-/// The className of the cell that holds the visible label of an [MSSwitch].
+/// The [WindRecipe] for the tappable area around a labelled [MSSwitch].
 ///
-/// `flex-1 min-w-0` is what lets a long label wrap inside the row instead of
-/// measuring wider than its column; see `switch_row.recipe.dart` for why a
-/// bare `min-w-0` is not enough in Wind's greedy flex. It sits on a cell, not
-/// on the text, because the text is wrapped in `ExcludeSemantics` and an
-/// `Expanded` has to be a direct child of the row.
-const String switchLabelCellClassName = 'flex-1 min-w-0';
+/// The same touch target as [switchHitAreaRecipe]. The track and the label
+/// inside it are laid out by the switch itself, centred on one line, so this
+/// only sets the height.
+const WindRecipe switchLabelledHitAreaRecipe = WindRecipe(
+  base: 'min-h-11 lg:min-h-0',
+);
 
 /// The className of the visible label text inside an [MSSwitch].
 const String switchLabelClassName = 'text-sm text-fg';

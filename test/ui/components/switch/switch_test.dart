@@ -371,5 +371,54 @@ void main() {
       expect(find.text('Weekly digest'), findsOneWidget);
       expect(tester.getSize(find.byType(MSSwitch)).height, 44);
     });
+
+    testWidgets('a labelled switch reports its intrinsic size', (tester) async {
+      // IntrinsicHeight, IntrinsicWidth and an IntrinsicColumnWidth table all
+      // ask the switch to measure itself before it is laid out.
+      await pumpAt(
+        tester,
+        phone,
+        IntrinsicWidth(
+          child: IntrinsicHeight(
+            child: MSSwitch(
+              value: true,
+              onChanged: (_) {},
+              label: 'Weekly digest',
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      final Size size = tester.getSize(find.byType(MSSwitch));
+      expect(size.height, 44);
+      expect(
+        size.width,
+        tester.getSize(find.byType(WSwitch)).width +
+            12 +
+            tester.getSize(find.text('Weekly digest')).width,
+      );
+    });
+
+    testWidgets('a long label still wraps in a bounded column', (tester) async {
+      const String long =
+          'Send me a summary of everything that happened on my '
+          'monitors while I was away, every single morning';
+      await pumpAt(
+        tester,
+        phone,
+        SizedBox(
+          width: 240,
+          child: MSSwitch(value: false, onChanged: (_) {}, label: long),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byType(MSSwitch)).width,
+        lessThanOrEqualTo(240),
+      );
+      expect(tester.getSize(find.text(long)).height, greaterThan(20));
+    });
   });
 }
