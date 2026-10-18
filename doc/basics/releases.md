@@ -75,7 +75,7 @@ MagicStarter.view.register('settings.changelog', () => const MyChangelogView());
 <a name="the-version-caption"></a>
 ## The Version Caption
 
-`MagicStarterAppVersion` is a one-line caption naming the build the app runs. The settings hub and the changelog page show it when `releases` is on. A host that wants it elsewhere, in its own footer or drawer, places the widget itself:
+`MagicStarterAppVersion` is a one-line caption naming the build the app runs. The settings hub and the changelog page show it when `releases` is on. On the settings hub it closes the page, below anything a host registers in the hub's `footer` slot. A host that wants it elsewhere, in its own footer or drawer, places the widget itself:
 
 ```dart
 const MagicStarterAppVersion()

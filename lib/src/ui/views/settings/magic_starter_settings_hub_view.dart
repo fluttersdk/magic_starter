@@ -29,7 +29,8 @@ import '../../widgets/magic_starter_app_version.dart';
 ///
 /// With the `releases` feature on, the Preferences group ends in a "What's new"
 /// row and the page closes on a [MagicStarterAppVersion] caption naming the
-/// running build, just above the footer slot.
+/// running build, below the footer slot, so a consumer's own footer groups
+/// (team, about) sit above it and the caption is the last thing on the page.
 ///
 /// Header and footer injection points are exposed through the view registry
 /// slots `settings.hub.header` and `settings.hub.footer`.
@@ -244,9 +245,9 @@ class _MagicStarterSettingsHubViewState
             header: trans('magic_starter.settings.preferences_section'),
             children: preferencesRows,
           ),
+        ?footerSlot,
         if (MagicStarterConfig.hasReleasesFeatures())
           const MagicStarterAppVersion(),
-        ?footerSlot,
       ],
     );
   }

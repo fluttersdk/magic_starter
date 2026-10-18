@@ -17,7 +17,8 @@ Map<String, String> selectRecipe({
     slots: {
       'trigger':
           'w-full px-3 py-[9px] rounded-lg bg-surface-container-high border '
-          'border-color-border text-fg flex items-center justify-between gap-2',
+          'border-color-border text-fg flex items-center justify-between gap-2 '
+          'focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400',
       'popup':
           'bg-surface border border-color-border rounded-lg shadow-md overflow-hidden',
       'item':
