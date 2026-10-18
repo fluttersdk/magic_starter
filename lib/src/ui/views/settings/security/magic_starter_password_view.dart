@@ -6,6 +6,7 @@ import '../../../../configuration/magic_starter_config.dart';
 import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../../../support/confirms_identity.dart';
+import '../../../components/button/index.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 
@@ -232,15 +233,11 @@ class _MagicStarterPasswordViewState
                 children: [
                   MagicBuilder<bool>(
                     listenable: passwordForm.processingListenable,
-                    builder: (isProcessing) => WButton(
-                      onTap: isProcessing
-                          ? null
-                          : (hasPassword
-                                ? _submitPassword
-                                : _submitSetPassword),
+                    builder: (isProcessing) => MSButton(
+                      onPressed: hasPassword
+                          ? _submitPassword
+                          : _submitSetPassword,
                       isLoading: isProcessing,
-                      className:
-                          'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                       child: WText(
                         trans(
                           hasPassword

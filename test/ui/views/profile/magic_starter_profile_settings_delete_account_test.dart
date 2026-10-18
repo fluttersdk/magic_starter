@@ -260,7 +260,7 @@ void main() {
 
       final button = find.byWidgetPredicate(
         (widget) =>
-            widget is WButton &&
+            widget is MSButton &&
             widget.child is WText &&
             (widget.child as WText).data ==
                 trans('magic_starter.profile.delete_account.button'),

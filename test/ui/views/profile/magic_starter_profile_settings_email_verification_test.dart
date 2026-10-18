@@ -293,7 +293,7 @@ void main() {
       expect(
         find.byWidgetPredicate(
           (widget) =>
-              widget is WButton &&
+              widget is MSButton &&
               widget.child is WText &&
               (widget.child as WText).data ==
                   trans('magic_starter.email_verification.resend_button'),
@@ -331,7 +331,7 @@ void main() {
 
         final resendButton = find.byWidgetPredicate(
           (widget) =>
-              widget is WButton &&
+              widget is MSButton &&
               widget.child is WText &&
               (widget.child as WText).data ==
                   trans('magic_starter.email_verification.resend_button'),

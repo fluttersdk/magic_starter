@@ -6,6 +6,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../components/avatar/index.dart';
+import '../../components/button/index.dart';
 import '../../components/settings_section/index.dart';
 import '../../components/page_scaffold/index.dart';
 
@@ -208,24 +209,18 @@ class _MagicStarterProfileSubPageViewState
                         'flex flex-col sm:flex-row items-stretch '
                         'sm:items-center gap-2 sm:gap-3',
                     children: [
-                      WButton(
-                        onTap: isLoading ? null : _handlePhotoUpload,
+                      MSButton(
+                        intent: ButtonIntent.secondary,
+                        onPressed: _handlePhotoUpload,
                         isLoading: isLoading,
-                        className:
-                            'px-4 py-2 rounded-lg bg-surface '
-                            'border border-color-border hover:bg-surface-container '
-                            'text-fg text-sm font-medium',
                         child: WText(trans('common.upload')),
                       ),
                       if (photoUrl != null && photoUrl.isNotEmpty)
-                        WButton(
-                          onTap: isLoading ? null : _handlePhotoRemove,
+                        MSButton(
+                          intent: ButtonIntent.secondary,
+                          className: 'text-destructive',
+                          onPressed: _handlePhotoRemove,
                           isLoading: isLoading,
-                          className:
-                              'px-4 py-2 rounded-lg bg-surface '
-                              'border border-color-border '
-                              'hover:bg-surface-container '
-                              'text-destructive text-sm font-medium',
                           child: WText(trans('common.remove')),
                         ),
                     ],
@@ -317,15 +312,17 @@ class _MagicStarterProfileSubPageViewState
             ),
             MagicBuilder<bool>(
               listenable: _emailVerificationLoading,
-              builder: (isLoading) => WButton(
-                onTap: isLoading ? null : _handleSendEmailVerification,
-                isLoading: isLoading,
-                className:
-                    'self-start px-4 py-2 rounded-lg bg-primary '
-                    'hover:bg-primary/80 text-white text-sm font-medium',
-                child: WText(
-                  trans('magic_starter.email_verification.resend_button'),
-                ),
+              builder: (isLoading) => WDiv(
+                className: 'flex flex-col items-start',
+                children: [
+                  MSButton(
+                    onPressed: _handleSendEmailVerification,
+                    isLoading: isLoading,
+                    child: WText(
+                      trans('magic_starter.email_verification.resend_button'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -396,12 +393,9 @@ class _MagicStarterProfileSubPageViewState
           children: [
             MagicBuilder<bool>(
               listenable: _profileSaveLoading,
-              builder: (isProcessing) => WButton(
-                onTap: isProcessing ? null : _submitProfile,
+              builder: (isProcessing) => MSButton(
+                onPressed: _submitProfile,
                 isLoading: isProcessing,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary '
-                    'hover:bg-primary/80 text-white text-sm font-medium',
                 child: WText(trans('common.save')),
               ),
             ),
@@ -498,12 +492,9 @@ class _MagicStarterProfileSubPageViewState
                 children: [
                   MagicBuilder<bool>(
                     listenable: upgradeForm.processingListenable,
-                    builder: (isProcessing) => WButton(
-                      onTap: isProcessing ? null : _submitGuestUpgrade,
+                    builder: (isProcessing) => MSButton(
+                      onPressed: _submitGuestUpgrade,
                       isLoading: isProcessing,
-                      className:
-                          'px-4 py-2 rounded-lg bg-primary '
-                          'hover:bg-primary/80 text-white text-sm font-medium',
                       child: WText(trans('magic_starter.guest_upgrade.button')),
                     ),
                   ),

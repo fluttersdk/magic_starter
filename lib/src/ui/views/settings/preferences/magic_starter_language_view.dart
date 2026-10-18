@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
+import '../../../components/button/index.dart';
 import '../../../components/page_scaffold/index.dart';
 import '../../../components/settings_section/index.dart';
 
@@ -121,11 +122,9 @@ class _MagicStarterLanguageViewState
           children: [
             MagicBuilder<bool>(
               listenable: _saveLoading,
-              builder: (isSaving) => WButton(
-                onTap: isSaving ? null : _submit,
+              builder: (isSaving) => MSButton(
+                onPressed: _submit,
                 isLoading: isSaving,
-                className:
-                    'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-on-primary text-sm font-medium',
                 child: WText(trans('common.save')),
               ),
             ),

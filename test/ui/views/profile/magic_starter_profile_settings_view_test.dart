@@ -158,6 +158,15 @@ class MockGuard implements Guard {
   ValueNotifier<int> get stateNotifier => ValueNotifier(0);
 }
 
+/// Short labels for the two raw keys too wide for a 390 px right-aligned row.
+class _ShortLabelLoader implements TranslationLoader {
+  @override
+  Future<Map<String, dynamic>> load(Locale locale) async => {
+    'profile.update_password': 'Update',
+    'magic_starter.profile.delete_account.button': 'Delete',
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Test Suite
 // ---------------------------------------------------------------------------
@@ -279,6 +288,39 @@ void main() {
       },
     );
 
+    testWidgets('the Save button is a 44 px tap target on a phone and saves', (
+      tester,
+    ) async {
+      mockDriver.mockResponse(statusCode: 200, data: {'data': {}});
+      // Ahem paints every glyph as wide as it is tall, so the two raw keys that
+      // sit in a right-aligned row would overflow a 390 px card.
+      Translator.instance.setLoader(_ShortLabelLoader());
+      await Translator.instance.setLocale(const Locale('en'));
+      addTearDown(Translator.reset);
+      final handle = tester.ensureSemantics();
+      tester.view.physicalSize = const Size(390, 844) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
+
+      final saveButton = find.widgetWithText(MSButton, 'common.save').first;
+      await tester.ensureVisible(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(saveButton).rect.height,
+        greaterThanOrEqualTo(44),
+      );
+
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(mockDriver.lastMethod, 'PUT');
+      expect(mockDriver.lastUrl, contains('/user/profile'));
+      handle.dispose();
+    });
+
     testWidgets(
       'backend validation errors display on form fields after failed submit',
       (tester) async {
@@ -296,7 +338,7 @@ void main() {
         await tester.pumpWidget(wrap(const MagicStarterProfileSettingsView()));
 
         // Scroll to and tap the profile save button.
-        final saveButtons = find.widgetWithText(WButton, 'common.save');
+        final saveButtons = find.widgetWithText(MSButton, 'common.save');
         expect(saveButtons, findsWidgets);
 
         await tester.ensureVisible(saveButtons.first);

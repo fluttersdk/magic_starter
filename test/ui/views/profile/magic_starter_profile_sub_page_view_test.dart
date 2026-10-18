@@ -258,7 +258,7 @@ void main() {
 
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
-      final saveButton = find.widgetWithText(WButton, 'common.save');
+      final saveButton = find.widgetWithText(MSButton, 'common.save');
       expect(saveButton, findsOneWidget);
 
       await tester.ensureVisible(saveButton);
@@ -268,6 +268,35 @@ void main() {
 
       expect(mockDriver.lastMethod, 'PUT');
       expect(mockDriver.lastUrl, contains('/user/profile'));
+    });
+
+    testWidgets('the Save button is a 44 px tap target on a phone and saves', (
+      tester,
+    ) async {
+      mockDriver.mockResponse(statusCode: 200, data: {'data': {}});
+      final handle = tester.ensureSemantics();
+      tester.view.physicalSize = const Size(390, 844) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
+
+      final saveButton = find.widgetWithText(MSButton, 'common.save');
+      expect(saveButton, findsOneWidget);
+      await tester.ensureVisible(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(saveButton).rect.height,
+        greaterThanOrEqualTo(44),
+      );
+
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(mockDriver.lastMethod, 'PUT');
+      expect(mockDriver.lastUrl, contains('/user/profile'));
+      handle.dispose();
     });
 
     testWidgets('backend validation errors display after a failed save', (
@@ -285,7 +314,7 @@ void main() {
 
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
-      final saveButton = find.widgetWithText(WButton, 'common.save');
+      final saveButton = find.widgetWithText(MSButton, 'common.save');
       await tester.ensureVisible(saveButton);
       await tester.pumpAndSettle();
       await tester.tap(saveButton);
@@ -317,7 +346,7 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterProfileSubPageView()));
 
       final resendButton = find.widgetWithText(
-        WButton,
+        MSButton,
         'magic_starter.email_verification.resend_button',
       );
       expect(resendButton, findsOneWidget);

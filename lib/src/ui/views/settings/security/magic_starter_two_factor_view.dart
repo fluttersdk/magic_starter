@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
+import '../../../components/button/index.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 import '../../../../support/confirms_identity.dart';
@@ -209,13 +210,16 @@ class _MagicStarterTwoFactorViewState
         ),
         MagicBuilder<bool>(
           listenable: _twoFactorLoading,
-          builder: (isLoading) => Builder(
-            builder: (context) => WButton(
-              onTap: isLoading ? null : () => _enableTwoFactor(context),
-              isLoading: isLoading,
-              className:
-                  'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-              child: WText(trans('profile.two_factor_enable')),
+          // `items-start` instead of `self-start`: below `lg` MSButton's tap area
+          // fills a stretched column's tight width, this keeps it button-sized.
+          builder: (isLoading) => WDiv(
+            className: 'flex flex-col items-start',
+            child: Builder(
+              builder: (context) => MSButton(
+                onPressed: () => _enableTwoFactor(context),
+                isLoading: isLoading,
+                child: WText(trans('profile.two_factor_enable')),
+              ),
             ),
           ),
         ),
@@ -263,13 +267,12 @@ class _MagicStarterTwoFactorViewState
               WDiv(
                 className: 'w-full mt-2 flex flex-row gap-2 wrap',
                 children: [
-                  WButton(
-                    onTap: () async {
+                  MSButton(
+                    onPressed: () async {
                       final codes = _recoveryCodes.join('\n');
                       await Clipboard.setData(ClipboardData(text: codes));
                     },
-                    className:
-                        'text-primary dark:text-primary border border-primary/30 dark:border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg px-4 py-2 text-sm font-medium',
+                    intent: ButtonIntent.secondary,
                     child: WText(
                       trans('profile.copy_recovery_codes'),
                       className: 'text-center',
@@ -278,13 +281,10 @@ class _MagicStarterTwoFactorViewState
                   MagicBuilder<bool>(
                     listenable: _twoFactorLoading,
                     builder: (isLoading) => Builder(
-                      builder: (context) => WButton(
-                        onTap: isLoading
-                            ? null
-                            : () => _regenerateRecoveryCodes(context),
+                      builder: (context) => MSButton(
+                        onPressed: () => _regenerateRecoveryCodes(context),
                         isLoading: isLoading,
-                        className:
-                            'px-4 py-2 rounded-lg bg-surface-container border border-color-border hover:bg-surface-container-high text-fg text-sm font-medium',
+                        intent: ButtonIntent.secondary,
                         child: WText(
                           trans('profile.two_factor_regenerate_codes'),
                         ),
@@ -302,20 +302,19 @@ class _MagicStarterTwoFactorViewState
             className: 'wrap gap-3',
             children: [
               Builder(
-                builder: (context) => WButton(
-                  onTap: isLoading ? null : () => _showRecoveryCodes(context),
+                builder: (context) => MSButton(
+                  onPressed: () => _showRecoveryCodes(context),
                   isLoading: isLoading,
-                  className:
-                      'px-4 py-2 rounded-lg bg-surface-container border border-color-border hover:bg-surface-container-high text-fg text-sm font-medium',
+                  intent: ButtonIntent.secondary,
                   child: WText(trans('profile.two_factor_show_recovery_codes')),
                 ),
               ),
               Builder(
-                builder: (context) => WButton(
-                  onTap: isLoading ? null : () => _disableTwoFactor(context),
+                builder: (context) => MSButton(
+                  onPressed: () => _disableTwoFactor(context),
                   isLoading: isLoading,
-                  className:
-                      'text-destructive border border-color-border hover:bg-surface-container rounded-lg px-4 py-2 text-sm font-medium',
+                  intent: ButtonIntent.secondary,
+                  className: 'text-destructive',
                   child: WText(trans('profile.two_factor_disable')),
                 ),
               ),

@@ -292,7 +292,7 @@ void main() {
       expect(
         find.byWidgetPredicate(
           (Widget w) =>
-              w is WButton &&
+              w is MSButton &&
               w.child is WText &&
               (w.child as WText).data == trans('profile.two_factor_enable'),
         ),
@@ -318,7 +318,7 @@ void main() {
       expect(
         find.byWidgetPredicate(
           (Widget w) =>
-              w is WButton &&
+              w is MSButton &&
               w.child is WText &&
               (w.child as WText).data == trans('profile.two_factor_disable'),
         ),
@@ -341,7 +341,7 @@ void main() {
 
       final btn = find.byWidgetPredicate(
         (Widget w) =>
-            w is WButton &&
+            w is MSButton &&
             w.child is WText &&
             (w.child as WText).data == trans('profile.two_factor_disable'),
       );
@@ -368,7 +368,7 @@ void main() {
 
         final btn = find.byWidgetPredicate(
           (Widget w) =>
-              w is WButton &&
+              w is MSButton &&
               w.child is WText &&
               (w.child as WText).data == trans('profile.two_factor_disable'),
         );
@@ -432,7 +432,7 @@ void main() {
 
       final submit = find.byWidgetPredicate(
         (Widget w) =>
-            w is WButton &&
+            w is MSButton &&
             w.child is WText &&
             (w.child as WText).data == trans('profile.update_password'),
       );
@@ -459,7 +459,7 @@ void main() {
 
     final setButton = find.byWidgetPredicate(
       (Widget w) =>
-          w is WButton &&
+          w is MSButton &&
           w.child is WText &&
           (w.child as WText).data == trans('profile.set_password'),
     );
@@ -620,7 +620,7 @@ void main() {
 
         final btn = find.byWidgetPredicate(
           (Widget w) =>
-              w is WButton &&
+              w is MSButton &&
               w.child is WText &&
               (w.child as WText).data == trans('profile.logout_other_sessions'),
         );
@@ -653,7 +653,7 @@ void main() {
 
         final btn = find.byWidgetPredicate(
           (Widget w) =>
-              w is WButton &&
+              w is MSButton &&
               w.child is WText &&
               (w.child as WText).data == trans('profile.logout_other_sessions'),
         );

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:magic/magic.dart';
 
 import '../../facades/magic_starter.dart';
+import '../components/button/index.dart';
 
 /// A multi-step wizard modal widget for Two-Factor Authentication (2FA) setup.
 ///
@@ -206,14 +207,14 @@ class _MagicStarterTwoFactorModalState
             WDiv(
               className: 'w-full mt-2',
               children: [
-                WButton(
-                  onTap: () async {
+                MSButton(
+                  onPressed: () async {
                     final codes = recoveryCodes.join('\n');
                     await Clipboard.setData(ClipboardData(text: codes));
                     Magic.toast(trans('profile.copy_recovery_codes_success'));
                   },
-                  className:
-                      'w-full flex justify-center text-primary dark:text-primary border border-primary/30 dark:border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg px-4 py-2 text-sm font-medium',
+                  intent: ButtonIntent.secondary,
+                  fullWidth: true,
                   child: WText(
                     trans('profile.two_factor.copy_codes'),
                     className: 'text-center',

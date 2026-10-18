@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../../configuration/magic_starter_config.dart';
 import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
+import '../../../components/button/index.dart';
 import '../../../components/confirm_dialog/confirm_dialog.dart';
 import '../../../components/dialog/dialog.dart';
 import '../../../components/settings_row/index.dart';
@@ -271,13 +272,12 @@ class _MagicStarterSessionsViewState
                   className: 'px-5 py-4',
                   children: [
                     Builder(
-                      builder: (context) => WButton(
-                        onTap: isLoading
-                            ? null
-                            : () => _revokeOtherSessions(context),
+                      builder: (context) => MSButton(
+                        onPressed: () => _revokeOtherSessions(context),
                         isLoading: isLoading,
-                        className:
-                            'text-destructive border border-color-border hover:bg-surface-container rounded-lg px-4 py-2 w-full flex justify-center',
+                        intent: ButtonIntent.secondary,
+                        fullWidth: true,
+                        className: 'text-destructive',
                         child: WText(trans('profile.logout_other_sessions')),
                       ),
                     ),
@@ -381,13 +381,12 @@ class _MagicStarterSessionsViewState
           : MagicBuilder<bool>(
               listenable: _sessionActionLoading,
               builder: (isLoading) => Builder(
-                builder: (context) => WButton(
-                  onTap: isLoading
-                      ? null
-                      : () => _revokeSession(context, tokenId),
+                builder: (context) => MSButton(
+                  onPressed: () => _revokeSession(context, tokenId),
                   isLoading: isLoading,
-                  className:
-                      'text-destructive text-sm px-3 py-1 rounded border border-color-border hover:bg-surface-container',
+                  intent: ButtonIntent.secondary,
+                  size: ButtonSize.sm,
+                  className: 'text-destructive',
                   child: WText(
                     trans('profile.revoke'),
                     className: 'text-destructive',
