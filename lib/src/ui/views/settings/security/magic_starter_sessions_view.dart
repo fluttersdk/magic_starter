@@ -387,10 +387,7 @@ class _MagicStarterSessionsViewState
                   intent: ButtonIntent.secondary,
                   size: ButtonSize.sm,
                   className: 'text-destructive',
-                  child: WText(
-                    trans('profile.revoke'),
-                    className: 'text-destructive',
-                  ),
+                  child: WText(trans('profile.revoke')),
                 ),
               ),
             ),

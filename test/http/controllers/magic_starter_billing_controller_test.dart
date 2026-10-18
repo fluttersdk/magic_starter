@@ -1618,7 +1618,11 @@ void main() {
       Translator.instance.setLoader(const _BlankCatalogueLoader());
     });
 
-    tearDown(Auth.unfake);
+    // The loader and the `xx` locale would otherwise leak into later groups.
+    tearDown(() {
+      Auth.unfake();
+      Translator.reset();
+    });
 
     test('a guest switching language fires no plans or usage read', () async {
       await signIn();

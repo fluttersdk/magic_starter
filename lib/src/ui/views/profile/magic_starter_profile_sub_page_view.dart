@@ -206,7 +206,7 @@ class _MagicStarterProfileSubPageViewState
                   listenable: _photoLoading,
                   builder: (isLoading) => WDiv(
                     className:
-                        'flex flex-col sm:flex-row items-stretch '
+                        'flex flex-col sm:flex-row items-start '
                         'sm:items-center gap-2 sm:gap-3',
                     children: [
                       MSButton(

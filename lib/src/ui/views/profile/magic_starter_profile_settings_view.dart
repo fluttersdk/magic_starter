@@ -474,7 +474,7 @@ class _MagicStarterProfileSettingsViewState
                 listenable: _photoLoading,
                 builder: (isLoading) => WDiv(
                   className:
-                      'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3',
+                      'flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3',
                   children: [
                     MSButton(
                       intent: ButtonIntent.secondary,
