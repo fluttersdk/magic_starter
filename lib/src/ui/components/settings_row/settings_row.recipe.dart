@@ -5,8 +5,8 @@ const String kSettingsRowToneAxis = 'tone';
 
 /// Tone variants for [MSSettingsRow].
 ///
-/// - [defaultTone] — Standard row: title uses the default foreground token.
-/// - [destructive] — Danger row (Delete / Sign-out): title uses the host's
+/// - [defaultTone]: standard row, title uses the default foreground token.
+/// - [destructive]: danger row (Delete / Sign-out), title uses the host's
 ///   destructive text role, resolved by [MSSettingsRow] at build time.
 enum SettingsRowTone {
   /// Standard row: title rendered in `text-fg`.
@@ -18,9 +18,10 @@ enum SettingsRowTone {
 
 /// The settings row [WindRecipe].
 ///
-/// Drives the title className for each [SettingsRowTone]. The recipe is a
-/// top-level const because [MSSettingsRow] has no theme-override hook; it reads
-/// straight from the semantic alias tokens.
+/// Drives the row container's className for each [SettingsRowTone]. The
+/// destructive title colour is not here: [MSSettingsRow] resolves it against
+/// the active theme at build time. The recipe is a top-level const because
+/// [MSSettingsRow] has no theme-override hook.
 ///
 /// Emission order: `base ++ tone-variant`.
 ///
