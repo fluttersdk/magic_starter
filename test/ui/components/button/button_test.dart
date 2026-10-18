@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -583,5 +584,51 @@ void main() {
         );
       });
     }
+  });
+
+  group('danger outline className', () {
+    // The real alias map, so `text-fg` and `border-color-border` resolve the
+    // way they do in an app and the danger pair has something to override.
+    Future<Color?> labelColour(WidgetTester tester, String className) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: WindTheme(
+            data: WindThemeData(aliases: MagicStarterTokens.defaultAliases),
+            child: Scaffold(
+              body: MSButton(
+                intent: ButtonIntent.secondary,
+                className: className,
+                onPressed: () {},
+                child: const WText('Remove'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      return tester
+          .renderObject<RenderParagraph>(find.text('Remove'))
+          .text
+          .style
+          ?.color;
+    }
+
+    testWidgets('paints the label red on the secondary intent', (tester) async {
+      expect(
+        await labelColour(tester, kButtonDangerOutlineClassName),
+        WindThemeData().getColor('red', 600),
+      );
+    });
+
+    testWidgets('`text-destructive` is no alias and leaves the label neutral', (
+      tester,
+    ) async {
+      // Pins the gap the constant exists for: if the alias contract ever ships
+      // a destructive text role, this fails and the constant can use it.
+      expect(
+        await labelColour(tester, 'text-destructive'),
+        isNot(WindThemeData().getColor('red', 600)),
+      );
+    });
   });
 }

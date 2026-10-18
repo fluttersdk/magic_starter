@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
+import '../../components/button/index.dart';
 import '../../components/card/card.dart';
 import '../../components/page_scaffold/page_scaffold.dart';
 import '../../widgets/magic_starter_confirm_dialog.dart';
@@ -160,11 +161,9 @@ class _MagicStarterTeamSettingsViewState
             WDiv(
               className: 'flex justify-end',
               children: [
-                WButton(
-                  onTap: _submit,
+                MSButton(
+                  onPressed: _submit,
                   isLoading: controller.isLoading,
-                  className:
-                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                   child: WText(trans('common.save')),
                 ),
               ],

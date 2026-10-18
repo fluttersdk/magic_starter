@@ -362,7 +362,7 @@ void main() {
       expect(
         find.byWidgetPredicate(
           (Widget widget) =>
-              widget is WButton &&
+              widget is MSButton &&
               widget.child is WText &&
               (widget.child as WText).data ==
                   trans('profile.two_factor_enable'),
@@ -384,7 +384,7 @@ void main() {
       expect(
         find.byWidgetPredicate(
           (Widget widget) =>
-              widget is WButton &&
+              widget is MSButton &&
               widget.child is WText &&
               (widget.child as WText).data ==
                   trans('profile.two_factor_disable'),
@@ -407,7 +407,7 @@ void main() {
 
       final btn = find.byWidgetPredicate(
         (Widget widget) =>
-            widget is WButton &&
+            widget is MSButton &&
             widget.child is WText &&
             (widget.child as WText).data == trans('profile.two_factor_disable'),
       );
@@ -432,7 +432,7 @@ void main() {
 
       final btn = find.byWidgetPredicate(
         (Widget widget) =>
-            widget is WButton &&
+            widget is MSButton &&
             widget.child is WText &&
             (widget.child as WText).data == trans('profile.two_factor_disable'),
       );
@@ -459,7 +459,7 @@ void main() {
 
       final btn = find.byWidgetPredicate(
         (Widget widget) =>
-            widget is WButton &&
+            widget is MSButton &&
             widget.child is WText &&
             (widget.child as WText).data ==
                 trans('profile.two_factor_show_recovery_codes'),
@@ -487,7 +487,7 @@ void main() {
         // 1. Tap Show Recovery Codes to reveal them.
         final showBtn = find.byWidgetPredicate(
           (Widget widget) =>
-              widget is WButton &&
+              widget is MSButton &&
               widget.child is WText &&
               (widget.child as WText).data ==
                   trans('profile.two_factor_show_recovery_codes'),
@@ -511,7 +511,7 @@ void main() {
         // Regenerate button must NOT be visible when no codes are shown.
         final regenBtn = find.byWidgetPredicate(
           (Widget widget) =>
-              widget is WButton &&
+              widget is MSButton &&
               widget.child is WText &&
               (widget.child as WText).data ==
                   trans('profile.two_factor_regenerate_codes'),

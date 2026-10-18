@@ -286,6 +286,78 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // Save button tap target
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterTeamSettingsView, save button', () {
+    late MagicStarterTeamController controller;
+    late FakeNetworkDriver network;
+
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Config.set('magic_starter.features.teams', true);
+      Config.set('wind.colors.primary', 'indigo');
+      Auth.fake(
+        user: MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'name': 'Ada',
+          'current_team_id': 1,
+        }),
+      );
+      network = Http.fake((MagicRequest request) {
+        if (request.method == 'GET' && request.url == '/teams/1/members') {
+          return Http.response({'data': []});
+        }
+        return Http.response({
+          'data': {'id': 1, 'name': 'Team X'},
+        });
+      });
+      MagicStarter.useTeamResolver(
+        currentTeam: () => const MagicStarterTeam(id: 1, name: 'Team X'),
+        allTeams: () => const [MagicStarterTeam(id: 1, name: 'Team X')],
+        onSwitch: (dynamic id) => MagicStarter.switchTeam('$id'),
+      );
+      controller = MagicStarterTeamController.instance;
+    });
+
+    tearDown(() {
+      Auth.unfake();
+      Http.unfake();
+      controller.members.dispose();
+      controller.invitations.dispose();
+      controller.currentTeamId.dispose();
+    });
+
+    testWidgets('is a 44 px tap target at 390x844 and still saves', (
+      tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      tester.view.physicalSize = const Size(390, 844) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(wrap(const MagicStarterTeamSettingsView()));
+      await tester.pumpAndSettle();
+
+      // The button's own node: the whole-screen guideline also trips on the
+      // 28x28 header back button, which is not under test here.
+      final Finder save = find.widgetWithText(MSButton, 'common.save');
+      expect(save, findsOneWidget);
+      expect(tester.getSemantics(save).rect.height, greaterThanOrEqualTo(44));
+
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+
+      network.assertSent((r) => r.method == 'PUT' && r.url == '/teams/1');
+      semantics.dispose();
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Session scope reset: a team switch must refresh THIS mounted screen
   // without a full app remount (see MagicStarterServiceProvider's
   // _ReloadOnAuthRestored and MagicStarterTeamController.resetForSession).

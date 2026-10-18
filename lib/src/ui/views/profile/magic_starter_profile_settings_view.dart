@@ -7,6 +7,7 @@ import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../components/avatar/avatar.dart';
+import '../../components/button/index.dart';
 import '../../components/switch/switch.dart';
 import '../../components/card/card.dart';
 import '../../components/page_scaffold/page_scaffold.dart';
@@ -473,21 +474,20 @@ class _MagicStarterProfileSettingsViewState
                 listenable: _photoLoading,
                 builder: (isLoading) => WDiv(
                   className:
-                      'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3',
+                      'flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3',
                   children: [
-                    WButton(
-                      onTap: isLoading ? null : _handlePhotoUpload,
+                    MSButton(
+                      intent: ButtonIntent.secondary,
+                      onPressed: _handlePhotoUpload,
                       isLoading: isLoading,
-                      className:
-                          'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                       child: WText(trans('common.upload')),
                     ),
                     if (photoUrl != null && photoUrl.isNotEmpty)
-                      WButton(
-                        onTap: isLoading ? null : _handlePhotoRemove,
+                      MSButton(
+                        intent: ButtonIntent.secondary,
+                        className: kButtonDangerOutlineClassName,
+                        onPressed: _handlePhotoRemove,
                         isLoading: isLoading,
-                        className:
-                            'px-4 py-2 rounded-lg bg-surface-container-high border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium',
                         child: WText(trans('common.remove')),
                       ),
                   ],
@@ -587,11 +587,9 @@ class _MagicStarterProfileSettingsViewState
             children: [
               MagicBuilder<bool>(
                 listenable: _profileSaveLoading,
-                builder: (isProcessing) => WButton(
-                  onTap: isProcessing ? null : _submitProfile,
+                builder: (isProcessing) => MSButton(
+                  onPressed: _submitProfile,
                   isLoading: isProcessing,
-                  className:
-                      'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                   child: WText(trans('common.save')),
                 ),
               ),
@@ -665,11 +663,9 @@ class _MagicStarterProfileSettingsViewState
               children: [
                 MagicBuilder<bool>(
                   listenable: passwordForm.processingListenable,
-                  builder: (isProcessing) => WButton(
-                    onTap: isProcessing ? null : _submitPassword,
+                  builder: (isProcessing) => MSButton(
+                    onPressed: _submitPassword,
                     isLoading: isProcessing,
-                    className:
-                        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                     child: WText(trans('profile.update_password')),
                   ),
                 ),
@@ -744,14 +740,17 @@ class _MagicStarterProfileSettingsViewState
           ),
           MagicBuilder<bool>(
             listenable: _emailVerificationLoading,
-            builder: (isLoading) => WButton(
-              onTap: isLoading ? null : _handleSendEmailVerification,
-              isLoading: isLoading,
-              className:
-                  'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-              child: WText(
-                trans('magic_starter.email_verification.resend_button'),
-              ),
+            builder: (isLoading) => WDiv(
+              className: 'flex flex-col items-start',
+              children: [
+                MSButton(
+                  onPressed: _handleSendEmailVerification,
+                  isLoading: isLoading,
+                  child: WText(
+                    trans('magic_starter.email_verification.resend_button'),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -797,14 +796,17 @@ class _MagicStarterProfileSettingsViewState
         ),
         MagicBuilder<bool>(
           listenable: _twoFactorLoading,
-          builder: (isLoading) => Builder(
-            builder: (context) => WButton(
-              onTap: isLoading ? null : () => _enableTwoFactor(context),
-              isLoading: isLoading,
-              className:
-                  'self-start px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-              child: WText(trans('profile.two_factor_enable')),
-            ),
+          builder: (isLoading) => WDiv(
+            className: 'flex flex-col items-start',
+            children: [
+              Builder(
+                builder: (context) => MSButton(
+                  onPressed: () => _enableTwoFactor(context),
+                  isLoading: isLoading,
+                  child: WText(trans('profile.two_factor_enable')),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -851,13 +853,12 @@ class _MagicStarterProfileSettingsViewState
               WDiv(
                 className: 'w-full mt-2 flex flex-row gap-2 wrap',
                 children: [
-                  WButton(
-                    onTap: () async {
+                  MSButton(
+                    intent: ButtonIntent.secondary,
+                    onPressed: () async {
                       final codes = _recoveryCodes.join('\n');
                       await Clipboard.setData(ClipboardData(text: codes));
                     },
-                    className:
-                        'text-primary dark:text-primary border border-primary/30 dark:border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg px-4 py-2 text-sm font-medium',
                     child: WText(
                       trans('profile.copy_recovery_codes'),
                       className: 'text-center',
@@ -866,13 +867,10 @@ class _MagicStarterProfileSettingsViewState
                   MagicBuilder<bool>(
                     listenable: _twoFactorLoading,
                     builder: (isLoading) => Builder(
-                      builder: (context) => WButton(
-                        onTap: isLoading
-                            ? null
-                            : () => _regenerateRecoveryCodes(context),
+                      builder: (context) => MSButton(
+                        intent: ButtonIntent.secondary,
+                        onPressed: () => _regenerateRecoveryCodes(context),
                         isLoading: isLoading,
-                        className:
-                            'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                         child: WText(
                           trans('profile.two_factor_regenerate_codes'),
                         ),
@@ -890,20 +888,19 @@ class _MagicStarterProfileSettingsViewState
             className: 'wrap gap-3',
             children: [
               Builder(
-                builder: (context) => WButton(
-                  onTap: isLoading ? null : () => _showRecoveryCodes(context),
+                builder: (context) => MSButton(
+                  intent: ButtonIntent.secondary,
+                  onPressed: () => _showRecoveryCodes(context),
                   isLoading: isLoading,
-                  className:
-                      'px-4 py-2 rounded-lg bg-surface-container-high border border-color-border hover:bg-surface-container text-fg text-sm font-medium',
                   child: WText(trans('profile.two_factor_show_recovery_codes')),
                 ),
               ),
               Builder(
-                builder: (context) => WButton(
-                  onTap: isLoading ? null : () => _disableTwoFactor(context),
+                builder: (context) => MSButton(
+                  intent: ButtonIntent.secondary,
+                  className: kButtonDangerOutlineClassName,
+                  onPressed: () => _disableTwoFactor(context),
                   isLoading: isLoading,
-                  className:
-                      'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 text-sm font-medium',
                   child: WText(trans('profile.two_factor_disable')),
                 ),
               ),
@@ -1049,13 +1046,12 @@ class _MagicStarterProfileSettingsViewState
                 className: 'mt-2',
                 children: [
                   Builder(
-                    builder: (context) => WButton(
-                      onTap: isLoading
-                          ? null
-                          : () => _revokeOtherSessions(context),
+                    builder: (context) => MSButton(
+                      intent: ButtonIntent.secondary,
+                      className: kButtonDangerOutlineClassName,
+                      fullWidth: true,
+                      onPressed: () => _revokeOtherSessions(context),
                       isLoading: isLoading,
-                      className:
-                          'text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-4 py-2 w-full flex justify-center',
                       child: WText(trans('profile.logout_other_sessions')),
                     ),
                   ),
@@ -1124,11 +1120,12 @@ class _MagicStarterProfileSettingsViewState
         if (!isCurrent)
           MagicBuilder<bool>(
             listenable: _sessionActionLoading,
-            builder: (isLoading) => WButton(
-              onTap: isLoading ? null : () => _revokeSession(context, tokenId),
+            builder: (isLoading) => MSButton(
+              intent: ButtonIntent.secondary,
+              size: ButtonSize.sm,
+              className: kButtonDangerOutlineClassName,
+              onPressed: () => _revokeSession(context, tokenId),
               isLoading: isLoading,
-              className:
-                  'text-red-600 dark:text-red-400 text-sm px-3 py-1 rounded border border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20',
               child: WText(trans('profile.revoke')),
             ),
           ),
@@ -1194,10 +1191,9 @@ class _MagicStarterProfileSettingsViewState
           WDiv(
             className: 'flex justify-end',
             children: [
-              WButton(
-                onTap: _confirmDeleteAccount,
-                className:
-                    'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white text-sm font-medium',
+              MSButton(
+                intent: ButtonIntent.destructive,
+                onPressed: _confirmDeleteAccount,
                 child: WText(
                   trans('magic_starter.profile.delete_account.button'),
                 ),
@@ -1297,11 +1293,9 @@ class _MagicStarterProfileSettingsViewState
               children: [
                 MagicBuilder<bool>(
                   listenable: upgradeForm.processingListenable,
-                  builder: (isProcessing) => WButton(
-                    onTap: isProcessing ? null : _submitGuestUpgrade,
+                  builder: (isProcessing) => MSButton(
+                    onPressed: _submitGuestUpgrade,
                     isLoading: isProcessing,
-                    className:
-                        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
                     child: WText(trans('magic_starter.guest_upgrade.button')),
                   ),
                 ),

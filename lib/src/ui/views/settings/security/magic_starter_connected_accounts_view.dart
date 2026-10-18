@@ -6,6 +6,7 @@ import '../../../../configuration/magic_starter_config.dart';
 import '../../../../facades/magic_starter.dart';
 import '../../../../http/controllers/magic_starter_profile_controller.dart';
 import '../../../../support/confirms_identity.dart';
+import '../../../components/button/index.dart';
 import '../../../components/page_scaffold/page_scaffold.dart';
 import '../../../components/settings_section/settings_section.dart';
 
@@ -185,7 +186,11 @@ class _MagicStarterConnectedAccountsViewState
       backFallback: MagicStarterConfig.settingsHubRoute(),
       children: [
         if (_error != null)
-          WText(_error!, className: 'text-sm text-destructive px-1'),
+          // Raw pair: the alias contract has no destructive text role.
+          WText(
+            _error!,
+            className: 'text-sm text-red-600 dark:text-red-400 px-1',
+          ),
         MSSettingsSection(
           footer: onlyLoginMethod && links.isNotEmpty
               ? trans('social.last_login_method')
@@ -208,13 +213,10 @@ class _MagicStarterConnectedAccountsViewState
               WDiv(
                 className: 'px-5 py-4',
                 children: [
-                  WButton(
-                    onTap: () =>
+                  MSButton(
+                    onPressed: () =>
                         _openProvider(pending.provider, pending.opener),
-                    className:
-                        'px-4 py-2 rounded-lg bg-primary '
-                        'hover:bg-primary/80 text-white text-sm font-medium '
-                        'w-full flex justify-center',
+                    fullWidth: true,
                     child: WText(
                       trans('social.continue_with', {
                         'provider': bridge.label(pending.provider),
@@ -257,25 +259,23 @@ class _MagicStarterConnectedAccountsViewState
           ],
         ),
         if (link != null)
-          WButton(
-            onTap: isIdle && canDisconnect ? () => _disconnect(provider) : null,
+          MSButton(
+            onPressed: isIdle && canDisconnect
+                ? () => _disconnect(provider)
+                : null,
             isLoading: isBusy,
-            className:
-                'text-destructive text-sm px-3 py-1 rounded border '
-                'border-color-border hover:bg-surface-container '
-                '${canDisconnect ? '' : 'opacity-50'}',
-            child: WText(
-              trans('social.disconnect'),
-              className: 'text-destructive',
-            ),
+            disabled: !canDisconnect,
+            intent: ButtonIntent.secondary,
+            size: ButtonSize.sm,
+            className: kButtonDangerOutlineClassName,
+            child: WText(trans('social.disconnect')),
           )
         else
-          WButton(
-            onTap: isIdle ? () => _connect(provider) : null,
+          MSButton(
+            onPressed: isIdle ? () => _connect(provider) : null,
             isLoading: isBusy,
-            className:
-                'px-3 py-1 rounded border border-color-border '
-                'hover:bg-surface-container text-fg text-sm',
+            intent: ButtonIntent.secondary,
+            size: ButtonSize.sm,
             child: WText(trans('social.connect')),
           ),
       ],

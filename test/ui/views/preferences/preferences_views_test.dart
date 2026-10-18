@@ -392,7 +392,7 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterLanguageView()));
       await tester.pumpAndSettle();
 
-      final saveButton = find.byType(WButton);
+      final saveButton = find.byType(MSButton);
       expect(saveButton, findsWidgets);
       await tester.ensureVisible(saveButton.first);
       await tester.tap(saveButton.first);
@@ -401,6 +401,34 @@ void main() {
       expect(mockDriver.lastMethod, 'PUT');
       expect(mockDriver.lastUrl, contains('/user/profile'));
       expect((mockDriver.lastData as Map)['locale'], 'tr');
+    });
+
+    testWidgets('the Save button is a 44 px tap target at 390x844 and saves', (
+      tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      tester.view.physicalSize = const Size(390, 844) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      mockDriver.mockResponse(statusCode: 200, data: {'data': {}});
+
+      await tester.pumpWidget(wrap(const MagicStarterLanguageView()));
+      await tester.pumpAndSettle();
+
+      // The button's own node: the whole-screen guideline also trips on the
+      // 28x28 header back button, which is not under test here.
+      final Finder save = find.widgetWithText(MSButton, 'common.save');
+      expect(save, findsOneWidget);
+      expect(tester.getSemantics(save).rect.height, greaterThanOrEqualTo(44));
+
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+
+      expect(mockDriver.lastMethod, 'PUT');
+      expect(mockDriver.lastUrl, contains('/user/profile'));
+      expect((mockDriver.lastData as Map)['locale'], 'tr');
+      semantics.dispose();
     });
   });
 
@@ -435,7 +463,7 @@ void main() {
       await tester.pumpWidget(wrap(const MagicStarterTimezoneView()));
       await tester.pumpAndSettle();
 
-      final saveButton = find.byType(WButton);
+      final saveButton = find.byType(MSButton);
       expect(saveButton, findsWidgets);
       await tester.ensureVisible(saveButton.first);
       await tester.tap(saveButton.first);

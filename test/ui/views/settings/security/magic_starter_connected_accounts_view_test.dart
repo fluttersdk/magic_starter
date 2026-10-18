@@ -359,6 +359,29 @@ void main() {
       expect(buttonLabelled(_shipped('connect')), findsOneWidget);
     });
 
+    testWidgets('Disconnect is a 44 px MSButton with a red label', (
+      tester,
+    ) async {
+      await pumpView(tester);
+
+      // The label's painted colour, not its className: `text-destructive` is
+      // no alias and rendered the danger action neutral.
+      final RichText label = tester.widget<RichText>(
+        find.descendant(
+          of: buttonLabelled(_shipped('disconnect')),
+          matching: find.byType(RichText),
+        ),
+      );
+      expect(label.text.style?.color, WindThemeData().getColor('red', 600));
+      expect(
+        find.ancestor(
+          of: buttonLabelled(_shipped('disconnect')),
+          matching: find.byType(MSButton),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a revoked link counts as unlinked', (tester) async {
       mockGuard.userData = _user(
         accounts: [_link('google', revokedAt: '2026-10-02T10:00:00.000000Z')],

@@ -12,5 +12,6 @@ export 'button.recipe.dart'
         ButtonIntent,
         ButtonSize,
         buttonRecipe,
+        kButtonDangerOutlineClassName,
         kButtonIntentAxis,
         kButtonSizeAxis;

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`MSCombobox`'s search field placeholder is translated.** It was a hard-coded `Search...`, so a Turkish host showed English in the open dropdown. It now reads the new `common.search_placeholder` key; add it to your `en.json` (the install stub has it) and to your other locales. An explicit `searchPlaceholder` still wins. (`lib/src/ui/components/combobox/`, `assets/stubs/install/en.stub`)
+- **The billing screen stops refetching on a language change for a guest.** After a sign-out the controller stays registered (the session scope resets only on a non-null identity), so a guest switching language fired unauthenticated plans and usage reads and degradation logs. The locale listener now returns early unless the user is signed in; a signed-in switch still refetches, including one that lands while the session's first reads are in flight. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+- **The billing dunning notice and the connected accounts error are red again.** Both used `text-destructive`, which is no alias, so wind dropped it and they rendered in the neutral text colour. They use the raw red pair. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`, `lib/src/ui/views/settings/security/magic_starter_connected_accounts_view.dart`)
+
+### Changed
+
+- **`MSInput`, `MSSelect` and `MSCombobox` paint 44 px tall below `lg`.** They painted about 40 px, under the 44 px touch target. The box is taller on a phone with the text centred in it, and from `lg` up nothing changes (still 40 px). `MSTextarea` is unchanged; `MagicStarterTimezoneSelect` shares the select recipe and grows with it. (`lib/src/ui/components/input/`, `lib/src/ui/components/select/`, `lib/src/ui/components/combobox/`)
+- **Action buttons in the profile, settings, security and team views are `MSButton`s.** The profile and its sub-page (save, upload, remove, resend, two-factor, sessions, revoke, delete account, guest upgrade), the settings (language, timezone, password, two-factor, sessions, connected accounts), the team settings and create views and the two-factor modal's copy button, and the connected accounts Disconnect button now get the 44 px hit area below `lg`. They take the intents' look: the copy-codes buttons lose their primary outline and small buttons are 4 px taller. Outlined danger actions (remove photo, disable two-factor, log out other sessions, revoke, disconnect) are the secondary intent plus the new `kButtonDangerOutlineClassName`, a raw red text and border pair, because the alias contract has no destructive text role and `text-destructive` renders neutral. Dialog buttons styled by the theme or at runtime are unchanged. (`lib/src/ui/views/profile/`, `lib/src/ui/views/settings/`, `lib/src/ui/views/teams/`, `lib/src/ui/widgets/magic_starter_two_factor_modal.dart`)
+
 ## [0.0.50] - 2026-10-18
 
 ### Fixed

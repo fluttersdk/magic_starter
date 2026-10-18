@@ -22,7 +22,7 @@ paths:
   - Layout: `WDiv(className: 'flex flex-col gap-4 p-6')`
   - Text: `WText('label', className: 'text-sm font-medium text-gray-700 dark:text-gray-300')`
   - Input: `WFormInput(form: form, name: 'email')`
-  - Button: `WButton(onPressed: submit, className: '...')`
+  - Button: `MSButton(onPressed: submit, isLoading: isSubmitting, child: WText(...))`, an intent and a size rather than a literal className, so it gets the 44 px hit area below `lg`
 - Multi-line className with triple quotes for readability:
   ```dart
   className: '''

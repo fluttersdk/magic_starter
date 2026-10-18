@@ -784,7 +784,17 @@ class MagicStarterBillingController extends MagicController
   /// pairs its labels onto the stats once, so a language change without a
   /// reload would leave both in the language they were fetched in while the
   /// rest of the screen moved. Everything else this controller holds is data.
+  ///
+  /// Silent for a guest: after a sign-out this controller stays registered (the
+  /// session scope resets only on a non-null identity), so an unguarded
+  /// listener would fire unauthenticated reads and degradation logs on every
+  /// language switch. It deliberately does not wait for a first load to land: a
+  /// sign-in with a saved locale switches the language while the session's
+  /// first reads are still in flight under the old one, and only this refetch
+  /// supersedes them.
   void _reloadLocalizedCopy() {
+    if (!Auth.check()) return;
+
     unawaited(loadPlans());
     unawaited(loadUsage());
   }

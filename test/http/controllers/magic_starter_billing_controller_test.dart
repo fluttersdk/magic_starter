@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show Locale;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -222,6 +223,17 @@ List<UsageStat> _copy(List<UsageStat> stats) {
       label: 'Seats',
     );
   }).toList();
+}
+
+/// A catalogue with no sentences, so a locale switch announces itself without
+/// reading an asset bundle the unit harness does not have.
+class _BlankCatalogueLoader implements TranslationLoader {
+  const _BlankCatalogueLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(Locale locale) async {
+    return const <String, dynamic>{};
+  }
 }
 
 void main() {
@@ -1577,6 +1589,94 @@ void main() {
       await teamALoad;
 
       expect(controller.currentPlanId, 'team-b-plan');
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, the locale listener', () {
+    int reads(String read) {
+      return billing.started.where((String started) => started == read).length;
+    }
+
+    Future<void> signIn() {
+      return Auth.login(<String, dynamic>{
+        'token': 'session-token',
+      }, MagicStarter.createUser(<String, dynamic>{'id': 1, 'name': 'Alice'}));
+    }
+
+    // The translator is a process singleton, so the switch itself is the only
+    // thing the listener hears; a microtask turn lets the refetch it starts
+    // reach the fake.
+    Future<void> switchLocale() async {
+      await Translator.instance.setLocale(const Locale('xx'));
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    setUp(() {
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Auth.fake();
+      Translator.instance.setLoader(const _BlankCatalogueLoader());
+    });
+
+    // The loader and the `xx` locale would otherwise leak into later groups.
+    tearDown(() {
+      Auth.unfake();
+      Translator.reset();
+    });
+
+    test('a guest switching language fires no plans or usage read', () async {
+      await signIn();
+      final MagicStarterBillingController controller = build();
+      controller.onInit();
+      await Future<void>.delayed(Duration.zero);
+      await Auth.logout();
+      final int plansBefore = reads(_plansRead);
+      final int usageBefore = reads(_usageRead);
+
+      await switchLocale();
+
+      expect(reads(_plansRead), plansBefore);
+      expect(reads(_usageRead), usageBefore);
+      controller.dispose();
+    });
+
+    test(
+      'a switch while the first reads are in flight refetches them',
+      () async {
+        // A sign-in with a saved locale: the session's first reads leave under
+        // the old language and the switch lands before they answer.
+        final Completer<void> firstReads = Completer<void>();
+        billing.gate = firstReads;
+        await signIn();
+        final MagicStarterBillingController controller = build();
+        controller.onInit();
+        await Future<void>.delayed(Duration.zero);
+        final int plansBefore = reads(_plansRead);
+        final int usageBefore = reads(_usageRead);
+
+        await switchLocale();
+
+        expect(reads(_plansRead), plansBefore + 1);
+        expect(reads(_usageRead), usageBefore + 1);
+        billing.gate = null;
+        firstReads.complete();
+        await Future<void>.delayed(Duration.zero);
+        controller.dispose();
+      },
+    );
+
+    test('a signed-in user after a load refetches plans and usage', () async {
+      await signIn();
+      final MagicStarterBillingController controller = build();
+      controller.onInit();
+      await Future<void>.delayed(Duration.zero);
+      final int plansBefore = reads(_plansRead);
+      final int usageBefore = reads(_usageRead);
+
+      await switchLocale();
+
+      expect(reads(_plansRead), plansBefore + 1);
+      expect(reads(_usageRead), usageBefore + 1);
       controller.dispose();
     });
   });
