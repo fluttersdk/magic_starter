@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show Locale;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -33,6 +34,11 @@ class _FakeBilling
   bool failUsage = false;
   bool failInvoices = false;
   bool failPaymentMethod = false;
+
+  /// Replaces the default catalogue and usage when set, so a case can answer
+  /// an empty one.
+  List<Map<String, dynamic>>? plansRows;
+  List<UsageStat>? usageStats;
 
   /// Raises an `Error` rather than an `Exception` out of `getInvoices`.
   ///
@@ -105,6 +111,9 @@ class _FakeBilling
     await _enter(_plansRead);
     if (failPlans) throw const BillingException('catalogue read failed');
 
+    final List<Map<String, dynamic>>? override = plansRows;
+    if (override != null) return override;
+
     return <Map<String, dynamic>>[
       <String, dynamic>{'id': 'tier-a', 'name': 'Tier A', 'monthly': 0},
       <String, dynamic>{'id': 'tier-b', 'name': 'Tier B', 'monthly': 29},
@@ -115,6 +124,9 @@ class _FakeBilling
   Future<List<UsageStat>> getUsage() async {
     await _enter(_usageRead);
     if (failUsage) throw const BillingException('usage read failed');
+
+    final List<UsageStat>? override = usageStats;
+    if (override != null) return override;
 
     return const <UsageStat>[
       UsageStat(key: 'seats', used: 3, limit: 10),
@@ -222,6 +234,17 @@ List<UsageStat> _copy(List<UsageStat> stats) {
       label: 'Seats',
     );
   }).toList();
+}
+
+/// A catalogue with no sentences, so a locale switch announces itself without
+/// reading an asset bundle the unit harness does not have.
+class _BlankCatalogueLoader implements TranslationLoader {
+  const _BlankCatalogueLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(Locale locale) async {
+    return const <String, dynamic>{};
+  }
 }
 
 void main() {
@@ -1577,6 +1600,139 @@ void main() {
       await teamALoad;
 
       expect(controller.currentPlanId, 'team-b-plan');
+      controller.dispose();
+    });
+  });
+
+  group('MagicStarterBillingController, the locale listener', () {
+    int reads(String read) {
+      return billing.started.where((String started) => started == read).length;
+    }
+
+    Future<void> signIn() {
+      return Auth.login(<String, dynamic>{
+        'token': 'session-token',
+      }, MagicStarter.createUser(<String, dynamic>{'id': 1, 'name': 'Alice'}));
+    }
+
+    // The translator is a process singleton, so the switch itself is the only
+    // thing the listener hears; a microtask turn lets the refetch it starts
+    // reach the fake.
+    Future<void> switchLocale() async {
+      await Translator.instance.setLocale(const Locale('xx'));
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    setUp(() {
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Auth.fake();
+      Translator.instance.setLoader(const _BlankCatalogueLoader());
+    });
+
+    tearDown(Auth.unfake);
+
+    test('a guest switching language fires no plans or usage read', () async {
+      await signIn();
+      final MagicStarterBillingController controller = build();
+      controller.onInit();
+      await Future<void>.delayed(Duration.zero);
+      await Auth.logout();
+      final int plansBefore = reads(_plansRead);
+      final int usageBefore = reads(_usageRead);
+
+      await switchLocale();
+
+      expect(reads(_plansRead), plansBefore);
+      expect(reads(_usageRead), usageBefore);
+      controller.dispose();
+    });
+
+    test(
+      'a signed-in user whose first load never landed fires no read',
+      () async {
+        billing.failPlans = true;
+        billing.failUsage = true;
+        await signIn();
+        final MagicStarterBillingController controller = build();
+        controller.onInit();
+        await Future<void>.delayed(Duration.zero);
+        final int plansBefore = reads(_plansRead);
+        final int usageBefore = reads(_usageRead);
+
+        await switchLocale();
+
+        expect(reads(_plansRead), plansBefore);
+        expect(reads(_usageRead), usageBefore);
+        controller.dispose();
+      },
+    );
+
+    test('a signed-in user after a load refetches plans and usage', () async {
+      await signIn();
+      final MagicStarterBillingController controller = build();
+      controller.onInit();
+      await Future<void>.delayed(Duration.zero);
+      final int plansBefore = reads(_plansRead);
+      final int usageBefore = reads(_usageRead);
+
+      await switchLocale();
+
+      expect(reads(_plansRead), plansBefore + 1);
+      expect(reads(_usageRead), usageBefore + 1);
+      controller.dispose();
+    });
+
+    test(
+      'an empty catalogue and an empty usage still count as loaded',
+      () async {
+        billing.plansRows = const <Map<String, dynamic>>[];
+        billing.usageStats = const <UsageStat>[];
+        await signIn();
+        final MagicStarterBillingController controller = build();
+        controller.onInit();
+        await Future<void>.delayed(Duration.zero);
+        final int plansBefore = reads(_plansRead);
+        final int usageBefore = reads(_usageRead);
+
+        await switchLocale();
+
+        expect(reads(_plansRead), plansBefore + 1);
+        expect(reads(_usageRead), usageBefore + 1);
+        controller.dispose();
+      },
+    );
+
+    test('a read from a superseded session does not mark the new one '
+        'loaded', () async {
+      // 1. The previous session's reads park on a gate.
+      final Completer<void> previousGate = Completer<void>();
+      billing.gate = previousGate;
+      await signIn();
+      final MagicStarterBillingController controller = build();
+      final Future<void> previousLoad = controller.load();
+      await Future<void>.delayed(Duration.zero);
+
+      // 2. The session resets and its own reads fail, so nothing legitimate
+      //    marks it loaded.
+      billing.gate = null;
+      billing.failPlans = true;
+      billing.failUsage = true;
+      await controller.resetForSession();
+      controller.onInit();
+      await Future<void>.delayed(Duration.zero);
+
+      // 3. The previous session's reads now succeed, after the reset.
+      billing.failPlans = false;
+      billing.failUsage = false;
+      previousGate.complete();
+      await previousLoad;
+      final int plansBefore = reads(_plansRead);
+      final int usageBefore = reads(_usageRead);
+
+      await switchLocale();
+
+      expect(reads(_plansRead), plansBefore);
+      expect(reads(_usageRead), usageBefore);
       controller.dispose();
     });
   });

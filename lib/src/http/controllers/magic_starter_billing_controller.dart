@@ -308,6 +308,11 @@ class MagicStarterBillingController extends MagicController
 
   String? _currentPlanId;
   bool _entitlementLoaded = false;
+
+  /// Whether the plan catalogue or the usage has settled for the current
+  /// session, an empty answer included. Gates [_reloadLocalizedCopy]: with
+  /// nothing loaded there is no copy in a stale language to refresh.
+  bool _copyLoaded = false;
   ManageVia? _manageVia;
   String? _manageUrl;
   bool? _renews;
@@ -784,7 +789,14 @@ class MagicStarterBillingController extends MagicController
   /// pairs its labels onto the stats once, so a language change without a
   /// reload would leave both in the language they were fetched in while the
   /// rest of the screen moved. Everything else this controller holds is data.
+  ///
+  /// Silent for a guest and before a first load: after a sign-out this
+  /// controller stays registered (the session scope resets only on a non-null
+  /// identity), so an unguarded listener would fire unauthenticated reads and
+  /// degradation logs on every language switch.
   void _reloadLocalizedCopy() {
+    if (!Auth.check() || !_copyLoaded) return;
+
     unawaited(loadPlans());
     unawaited(loadUsage());
   }
@@ -830,6 +842,7 @@ class MagicStarterBillingController extends MagicController
 
     _currentPlanId = null;
     _entitlementLoaded = false;
+    _copyLoaded = false;
     _manageVia = null;
     _manageUrl = null;
     _renews = null;
@@ -1004,6 +1017,7 @@ class MagicStarterBillingController extends MagicController
       if (!_latestRead.isCurrent(readToken, _plansKey)) return;
 
       _plans = rows.map(MagicStarterPlan.fromMap).toList();
+      _copyLoaded = true;
       refreshUI();
       await loadStoreProducts();
     } catch (error) {
@@ -1032,6 +1046,7 @@ class MagicStarterBillingController extends MagicController
       if (!_latestRead.isCurrent(readToken, _usageKey)) return;
 
       _usage = usageCopy(stats);
+      _copyLoaded = true;
       refreshUI();
     } catch (error) {
       if (session != _sessionGeneration) return;

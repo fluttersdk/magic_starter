@@ -1576,6 +1576,12 @@ void main() {
 
     Http.fake();
 
+    // The controller's locale listener asks `Auth.check()`, so a case that
+    // switches the language needs `auth` bound. A guest is the neutral default:
+    // the listener then leaves the copy alone, and the case that is about the
+    // refetch signs a user in itself.
+    Auth.fake();
+
     Translator.instance.setLoader(const _CatalogueLoader());
     await Translator.instance.setLocale(const Locale('en'));
   });
@@ -6465,6 +6471,12 @@ void main() {
     testWidgets('re-reads the usage copy and the backend-localized plan rows', (
       tester,
     ) async {
+      Auth.fake(
+        user: MagicStarter.createUser(<String, dynamic>{
+          'id': 1,
+          'name': 'Alice',
+        }),
+      );
       MagicStarter.view.slot('teams.billing', 'plan_card_highlight', (
         BuildContext context,
       ) {

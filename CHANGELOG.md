@@ -7,10 +7,12 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - **`MSCombobox`'s search field placeholder is translated.** It was a hard-coded `Search...`, so a Turkish host showed English in the open dropdown. It now reads the new `common.search_placeholder` key; add it to your `en.json` (the install stub has it) and to your other locales. An explicit `searchPlaceholder` still wins. (`lib/src/ui/components/combobox/`, `assets/stubs/install/en.stub`)
+- **The billing screen stops refetching on a language change for a guest or before a first load.** After a sign-out the controller stays registered (the session scope resets only on a non-null identity), so a guest switching language fired unauthenticated plans and usage reads and degradation logs. The locale listener now returns early unless the user is signed in and the plans or the usage have loaded at least once in the current session (an empty answer counts), and a new session starts unloaded. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
 
 ### Changed
 
 - **`MSInput`, `MSSelect` and `MSCombobox` paint 44 px tall below `lg`.** They painted about 40 px, under the 44 px touch target. The box is taller on a phone with the text centred in it, and from `lg` up nothing changes (still 40 px). `MSTextarea` is unchanged. (`lib/src/ui/components/input/`, `lib/src/ui/components/select/`, `lib/src/ui/components/combobox/`)
+- **Action buttons in the profile, settings, security and team views are `MSButton`s.** The profile and its sub-page (save, upload, remove, resend, two-factor, sessions, revoke, delete account, guest upgrade), the settings (language, timezone, password, two-factor, sessions, connected accounts), the team settings and create views and the two-factor modal's copy button now get the 44 px hit area below `lg`. Outlined red buttons keep their red text on the secondary intent. Dialog buttons styled by the theme or at runtime are unchanged. (`lib/src/ui/views/profile/`, `lib/src/ui/views/settings/`, `lib/src/ui/views/teams/`, `lib/src/ui/widgets/magic_starter_two_factor_modal.dart`)
 
 ## [0.0.50] - 2026-10-18
 
