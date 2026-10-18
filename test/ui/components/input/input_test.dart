@@ -150,4 +150,60 @@ void main() {
         tester.getTopLeft(find.byType(WInput)).dx;
     expect(inset, 12);
   });
+
+  // ---------------------------------------------------------------------------
+  // Touch target: 44 px below lg, unchanged from lg up
+  // ---------------------------------------------------------------------------
+
+  group('Input touch target', () {
+    const phone = Size(390, 844);
+    const desktop = Size(1280, 800);
+
+    /// Both `physicalSize` and `devicePixelRatio` are set, since setting only
+    /// the first lays the tree out at the wrong logical width.
+    Future<void> pumpAt(WidgetTester tester, Size size) async {
+      tester.view.devicePixelRatio = 3.0;
+      tester.view.physicalSize = size * 3.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        wrap(const Center(child: MSInput(placeholder: 'Enter text'))),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('paints at least 44 px tall on a phone', (tester) async {
+      await pumpAt(tester, phone);
+
+      expect(
+        tester.getSize(find.byType(WInput)).height,
+        greaterThanOrEqualTo(44),
+      );
+    });
+
+    testWidgets('keeps its text vertically centred in the 44 px box', (
+      tester,
+    ) async {
+      await pumpAt(tester, phone);
+
+      expect(
+        tester.getCenter(find.text('Enter text')).dy,
+        closeTo(tester.getCenter(find.byType(WInput)).dy, 1),
+      );
+    });
+
+    testWidgets('meets the iOS tap target on a phone', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpAt(tester, phone);
+
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('keeps its height from lg up', (tester) async {
+      await pumpAt(tester, desktop);
+
+      expect(tester.getSize(find.byType(WInput)).height, 40);
+    });
+  });
 }

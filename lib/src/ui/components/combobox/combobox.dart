@@ -47,7 +47,8 @@ class MSCombobox<T> extends StatelessWidget {
   /// `trans('common.search_options')`.
   final String? placeholder;
 
-  /// Optional search field placeholder.
+  /// Placeholder of the search field. Defaults to
+  /// `trans('common.search_placeholder')`.
   final String? searchPlaceholder;
 
   /// Whether the combobox is disabled.
@@ -81,7 +82,8 @@ class MSCombobox<T> extends StatelessWidget {
       onChange: onChange,
       placeholder: placeholder ?? trans('common.search_options'),
       searchable: true,
-      searchPlaceholder: searchPlaceholder ?? 'Search...',
+      searchPlaceholder:
+          searchPlaceholder ?? trans('common.search_placeholder'),
       onSearch: onSearch,
       disabled: disabled,
       className: slots['trigger'],

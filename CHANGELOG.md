@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`MSCombobox`'s search field placeholder is translated.** It was a hard-coded `Search...`, so a Turkish host showed English in the open dropdown. It now reads the new `common.search_placeholder` key; add it to your `en.json` (the install stub has it) and to your other locales. An explicit `searchPlaceholder` still wins. (`lib/src/ui/components/combobox/`, `assets/stubs/install/en.stub`)
+
+### Changed
+
+- **`MSInput`, `MSSelect` and `MSCombobox` paint 44 px tall below `lg`.** They painted about 40 px, under the 44 px touch target. The box is taller on a phone with the text centred in it, and from `lg` up nothing changes (still 40 px). `MSTextarea` is unchanged. (`lib/src/ui/components/input/`, `lib/src/ui/components/select/`, `lib/src/ui/components/combobox/`)
+
 ## [0.0.50] - 2026-10-18
 
 ### Fixed
