@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -30,6 +31,13 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('segmented control recipe', () {
+    test('item slot carries a focus ring with its dark pair', () {
+      final item = segmentedControlRecipe()['item'];
+      expect(item, contains('focus:ring-2'));
+      expect(item, contains('focus:ring-primary-500'));
+      expect(item, contains('dark:focus:ring-primary-400'));
+    });
+
     test('sm size emits text-sm', () {
       final cls = segmentedControlRecipe(
         variants: {'size': SegmentedControlSize.sm.name},
@@ -359,6 +367,80 @@ void main() {
       // their content width instead of asserting.
       expect(tester.takeException(), isNull);
       expect(find.text(annual), findsOneWidget);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Keyboard focus ring
+  // ---------------------------------------------------------------------------
+
+  group('SegmentedControl keyboard focus', () {
+    /// The ring is an outline wind paints in a foreground DecoratedBox, so the
+    /// resolved colour is read off the border rather than the className string.
+    Finder ringOutline() => find.descendant(
+      of: find.byType(MSSegmentedControl<String>),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is DecoratedBox &&
+            widget.position == DecorationPosition.foreground &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).border != null,
+      ),
+    );
+
+    Widget control() => Center(
+      child: MSSegmentedControl<String>(
+        options: const ['Monthly', 'Annual'],
+        selectedIndex: 0,
+        onChanged: (_) {},
+      ),
+    );
+
+    testWidgets('paints no ring while the control is at rest', (tester) async {
+      await tester.pumpWidget(wrap(control()));
+
+      expect(ringOutline(), findsNothing);
+    });
+
+    testWidgets('Tab onto a segment paints the primary ring on it alone', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(control()));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      expect(ringOutline(), findsOneWidget);
+      final decoration =
+          tester.widget<DecoratedBox>(ringOutline()).decoration
+              as BoxDecoration;
+      expect(
+        (decoration.border! as Border).top.color,
+        WindThemeData().getColor('primary', 500),
+      );
+    });
+
+    testWidgets('a tap does not paint the ring', (tester) async {
+      await tester.pumpWidget(wrap(control()));
+
+      await tester.tap(find.text('Annual'));
+      await tester.pumpAndSettle();
+
+      expect(ringOutline(), findsNothing);
+    });
+
+    testWidgets('the ring reserves its space, so focus shifts nothing', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(control()));
+      final before = tester.getRect(find.byType(MSSegmentedControl<String>));
+      final firstBefore = tester.getRect(find.text('Monthly'));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      expect(tester.getRect(find.byType(MSSegmentedControl<String>)), before);
+      expect(tester.getRect(find.text('Monthly')), firstBefore);
     });
   });
 }

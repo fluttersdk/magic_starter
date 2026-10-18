@@ -32,8 +32,11 @@ Map<String, String> segmentedControlRecipe({
       // `text-center` keeps a label that wrapped onto a second line (the
       // segment is capped at an equal share of a row too narrow for its
       // labels) centred under the first, whatever the caller aligns.
+      // The ring is an outline around the segment, so focus moves nothing; the
+      // root's `p-1 gap-1` (4 px) leaves room for its 2 px plus 1 px offset.
       'item':
-          'px-3 py-1.5 rounded-md text-sm font-medium text-center text-fg-muted cursor-pointer selected:bg-surface selected:text-fg selected:shadow-sm transition-colors',
+          'px-3 py-1.5 rounded-md text-sm font-medium text-center text-fg-muted cursor-pointer selected:bg-surface selected:text-fg selected:shadow-sm transition-colors '
+          'focus:ring-2 focus:ring-offset-1 focus:ring-primary-500 dark:focus:ring-primary-400',
     },
     variants: {
       kSegmentedControlSizeAxis: {

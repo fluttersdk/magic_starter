@@ -20,6 +20,14 @@ import 'button.recipe.dart';
 /// )
 /// ```
 ///
+/// ### Tap target
+///
+/// [ButtonSize.sm] paints 32 px tall, short of the 44 px a thumb needs. Below
+/// `lg` it sits in a [kButtonMinTapExtent] hit area, centred on the button,
+/// whose size the painted button keeps. The area presses the button, and is
+/// inert while it is loading, disabled or has no [onPressed]. From `lg` up the
+/// button is laid out exactly as before.
+///
 /// ### Loading state
 ///
 /// ```dart
@@ -125,10 +133,44 @@ class MSButton extends StatelessWidget {
       child: child,
     );
 
-    if (!fullWidth) {
-      return button;
+    final Widget sized = fullWidth
+        ? SizedBox(width: double.infinity, child: button)
+        : button;
+
+    if (size != ButtonSize.sm) {
+      return sized;
     }
 
-    return SizedBox(width: double.infinity, child: button);
+    return WBreakpoint(base: (_) => _withTapTarget(sized), lg: (_) => sized);
+  }
+
+  /// Wraps [button] in a [kButtonMinTapExtent] square hit area.
+  ///
+  /// The button's own anchor wins a press that lands on it, so [onPressed]
+  /// never fires twice. MergeSemantics hands assistive technology one node
+  /// the size of the area instead of a 32 px one inside it, which is the rect
+  /// a tap target check measures.
+  Widget _withTapTarget(Widget button) {
+    final bool pressable = onPressed != null && !isLoading && !disabled;
+
+    return MergeSemantics(
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: pressable ? onPressed : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: kButtonMinTapExtent,
+            minHeight: kButtonMinTapExtent,
+          ),
+          child: Center(
+            // A stretched button keeps its width; a content-width one must not
+            // widen to fill whatever the parent offers.
+            widthFactor: fullWidth ? null : 1,
+            heightFactor: 1,
+            child: button,
+          ),
+        ),
+      ),
+    );
   }
 }

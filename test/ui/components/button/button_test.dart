@@ -373,4 +373,139 @@ void main() {
     final size = tester.getSize(find.byType(MSButton));
     expect(size.width, lessThan(300));
   });
+
+  // ---------------------------------------------------------------------------
+  // Tap target
+  // ---------------------------------------------------------------------------
+
+  group('Button tap target', () {
+    /// Mounts [widget] on a surface of [size] logical pixels. Both
+    /// `physicalSize` and `devicePixelRatio` are set, since setting only the
+    /// first lays the tree out at the wrong logical width.
+    Future<void> pumpAt(WidgetTester tester, Size size, Widget widget) async {
+      tester.view.devicePixelRatio = 3.0;
+      tester.view.physicalSize = size * 3.0;
+      addTearDown(tester.view.reset);
+
+      // `pump`, not `pumpAndSettle`: a loading button spins forever.
+      await tester.pumpWidget(wrap(Center(child: widget)));
+      await tester.pump();
+    }
+
+    const phone = Size(390, 844);
+    const desktop = Size(1280, 800);
+
+    Widget smallButton({
+      VoidCallback? onPressed,
+      bool isLoading = false,
+      bool disabled = false,
+      bool fullWidth = false,
+    }) => MSButton(
+      size: ButtonSize.sm,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      disabled: disabled,
+      fullWidth: fullWidth,
+      child: const WText('Save'),
+    );
+
+    testWidgets('sm meets the iOS tap target on a phone', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpAt(tester, phone, smallButton(onPressed: () {}));
+
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('a full-width sm meets the iOS tap target on a phone', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpAt(
+        tester,
+        phone,
+        // A Column, because a stretched button fills a BOUNDED height.
+        SizedBox(
+          width: 300,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [smallButton(onPressed: () {}, fullWidth: true)],
+          ),
+        ),
+      );
+
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      expect(tester.getSize(find.byType(WButton)).width, 300);
+      handle.dispose();
+    });
+
+    testWidgets('sm paints at the same size on a phone and on desktop', (
+      tester,
+    ) async {
+      await pumpAt(tester, desktop, smallButton(onPressed: () {}));
+      final desktopSize = tester.getSize(find.byType(WButton));
+
+      await pumpAt(tester, phone, smallButton(onPressed: () {}));
+
+      expect(tester.getSize(find.byType(WButton)), desktopSize);
+      expect(desktopSize.height, lessThan(44));
+    });
+
+    testWidgets('a tap just outside the painted button presses it', (
+      tester,
+    ) async {
+      var presses = 0;
+      await pumpAt(tester, phone, smallButton(onPressed: () => presses++));
+
+      final painted = tester.getRect(find.byType(WButton));
+      await tester.tapAt(painted.topCenter - const Offset(0, 5));
+
+      expect(presses, 1);
+    });
+
+    testWidgets('a tap on the painted button presses it once', (tester) async {
+      var presses = 0;
+      await pumpAt(tester, phone, smallButton(onPressed: () => presses++));
+
+      await tester.tap(find.byType(WButton));
+
+      expect(presses, 1);
+    });
+
+    testWidgets('a loading or disabled sm never fires from the extra area', (
+      tester,
+    ) async {
+      var presses = 0;
+      await pumpAt(
+        tester,
+        phone,
+        smallButton(onPressed: () => presses++, isLoading: true),
+      );
+      var painted = tester.getRect(find.byType(WButton));
+      await tester.tapAt(painted.topCenter - const Offset(0, 5));
+
+      await pumpAt(
+        tester,
+        phone,
+        smallButton(onPressed: () => presses++, disabled: true),
+      );
+      painted = tester.getRect(find.byType(WButton));
+      await tester.tapAt(painted.topCenter - const Offset(0, 5));
+
+      expect(presses, 0);
+    });
+
+    testWidgets('md and lg keep their layout on a phone', (tester) async {
+      await pumpAt(
+        tester,
+        phone,
+        MSButton(onPressed: () {}, child: const WText('Save')),
+      );
+
+      expect(
+        tester.getSize(find.byType(MSButton)),
+        tester.getSize(find.byType(WButton)),
+      );
+    });
+  });
 }

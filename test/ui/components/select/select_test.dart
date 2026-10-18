@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -47,6 +48,13 @@ void main() {
     test('all three required slots are present', () {
       final cls = selectRecipe();
       expect(cls.keys, containsAll(['trigger', 'popup', 'item']));
+    });
+
+    test('trigger slot carries a focus ring with its dark pair', () {
+      final trigger = selectRecipe()['trigger'];
+      expect(trigger, contains('focus:ring-2'));
+      expect(trigger, contains('focus:ring-primary-500'));
+      expect(trigger, contains('dark:focus:ring-primary-400'));
     });
   });
 
@@ -113,5 +121,69 @@ void main() {
       tester.getSize(find.byType(WSelect<String>)).height,
       greaterThanOrEqualTo(40),
     );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Keyboard focus ring
+  // ---------------------------------------------------------------------------
+
+  group('Select keyboard focus', () {
+    /// The ring is an outline wind paints in a foreground DecoratedBox, so the
+    /// resolved colour is read off the border rather than the className string.
+    Finder ringOutline() => find.descendant(
+      of: find.byType(MSSelect<String>),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is DecoratedBox &&
+            widget.position == DecorationPosition.foreground &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).border != null,
+      ),
+    );
+
+    Widget select({bool disabled = false}) => MSSelect<String>(
+      value: null,
+      options: const [SelectOption(value: 'a', label: 'Option A')],
+      onChange: (_) {},
+      disabled: disabled,
+    );
+
+    testWidgets('paints no ring while the select is at rest', (tester) async {
+      await tester.pumpWidget(wrap(select()));
+      await tester.pumpAndSettle();
+
+      expect(ringOutline(), findsNothing);
+    });
+
+    testWidgets('Tab onto the select paints the primary ring', (tester) async {
+      await tester.pumpWidget(wrap(select()));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      expect(ringOutline(), findsOneWidget);
+      final decoration =
+          tester.widget<DecoratedBox>(ringOutline()).decoration
+              as BoxDecoration;
+      expect(
+        (decoration.border! as Border).top.color,
+        WindThemeData().getColor('primary', 500),
+      );
+      // Focus alone must not open the menu.
+      expect(find.text('Option A'), findsNothing);
+    });
+
+    testWidgets('a disabled select is skipped by Tab and paints no ring', (
+      tester,
+    ) async {
+      await tester.pumpWidget(wrap(select(disabled: true)));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      expect(ringOutline(), findsNothing);
+    });
   });
 }

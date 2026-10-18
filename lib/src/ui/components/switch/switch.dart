@@ -16,6 +16,12 @@ import 'switch.recipe.dart';
 ///   onChanged: (v) => setState(() => _enabled = v),
 /// )
 /// ```
+///
+/// ### Tap target
+///
+/// Below `lg` the switch sits in a 44 px tall hit area (the iOS minimum) around
+/// its 24 px track, which is still painted at 24 px. The area, and [label] when
+/// there is one, toggle the switch like the track does.
 @immutable
 class MSSwitch extends StatelessWidget {
   /// Whether the switch is on.
@@ -36,6 +42,13 @@ class MSSwitch extends StatelessWidget {
   /// Accessible label for the switch (required for icon-only usage).
   final String? semanticLabel;
 
+  /// Optional visible label beside the track.
+  ///
+  /// Part of the tap target (tapping it toggles the switch) and the switch's
+  /// accessible name unless [semanticLabel] says otherwise. Null renders the
+  /// track alone.
+  final String? label;
+
   /// Creates a [MSSwitch].
   const MSSwitch({
     super.key,
@@ -45,6 +58,7 @@ class MSSwitch extends StatelessWidget {
     this.className,
     this.thumbClassName,
     this.semanticLabel,
+    this.label,
   });
 
   /// Resolves the track className from the recipe with the caller className
@@ -58,13 +72,46 @@ class MSSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WSwitch(
+    final bool enabled = !disabled && onChanged != null;
+
+    // 1. The track keeps the whole semantics node; the visible label below is
+    //    excluded so a screen reader hears the name once, not twice.
+    final Widget track = WSwitch(
       value: value,
       onChanged: onChanged,
       disabled: disabled,
       className: _resolveClassName(),
       thumbClassName: _resolveThumbClassName(),
-      semanticLabel: semanticLabel,
+      semanticLabel: semanticLabel ?? label,
+    );
+
+    // 2. The row around the track is the tap target. The track's own anchor
+    //    still wins a tap that lands on it, so a toggle never fires twice, and
+    //    MergeSemantics hands assistive technology one node the size of the
+    //    row rather than a 24 px one inside it.
+    return MergeSemantics(
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: enabled ? () => onChanged!(!value) : null,
+        child: WDiv(
+          className: switchHitAreaRecipe(),
+          children: [
+            track,
+            if (label != null)
+              WDiv(
+                className: switchLabelCellClassName,
+                child: ExcludeSemantics(
+                  child: WText(
+                    label!,
+                    className: enabled
+                        ? switchLabelClassName
+                        : '$switchLabelClassName opacity-50',
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

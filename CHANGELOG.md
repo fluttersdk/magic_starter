@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- MSSwitch accepts an optional visible label that is part of its tap target. Tapping the label toggles the switch, and it is the switch's accessible name unless `semanticLabel` is set; without it the switch renders as before. (`lib/src/ui/components/switch/`)
+
+### Changed
+
+- **`MSSelect`, `MSSwitch` and `MSSegmentedControl` show a keyboard focus ring.** The select's trigger lights `focus:` when Tab lands on it (needs the `fluttersdk_wind` that sets it, 1.9.1), and the switch track and each segment draw a primary ring that is an outline around the box, so focus moves nothing; touch paints none. (`lib/src/ui/components/select/`, `lib/src/ui/components/switch/`, `lib/src/ui/components/segmented_control/`)
+- **`MSButton` `sm` and `MSSwitch` get a 44 x 44 hit area below `lg`.** The painted size is unchanged (a 32 px button, a 24 px track); the area is laid out around it, so a row holding either grows to 44 px tall on a phone. From `lg` up nothing changes. (`lib/src/ui/components/button/`, `lib/src/ui/components/switch/`)
+- **The settings hub's version caption closes the page below the footer slot.** It used to sit between the preferences group and the footer slot; a host's own footer groups (team, about) now come first and the caption is the last thing on the page. (`lib/src/ui/views/settings/magic_starter_settings_hub_view.dart`)
+
 ## [0.0.48] - 2026-10-17
 
 ### Added

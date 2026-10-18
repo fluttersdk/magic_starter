@@ -494,7 +494,7 @@ void main() {
       expect(find.byType(MagicStarterAppVersion), findsNothing);
     });
 
-    testWidgets('puts the caption between the sections and the footer slot', (
+    testWidgets('closes the page with the caption, below the footer slot', (
       tester,
     ) async {
       Config.set('magic_starter.features.releases', true);
@@ -523,8 +523,8 @@ void main() {
           )
           .dy;
 
-      expect(captionTop, greaterThan(lastRowTop));
-      expect(captionTop, lessThan(footerTop));
+      expect(footerTop, greaterThan(lastRowTop));
+      expect(captionTop, greaterThan(footerTop));
     });
   });
 
