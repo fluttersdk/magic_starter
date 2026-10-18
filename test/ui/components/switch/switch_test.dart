@@ -350,5 +350,26 @@ void main() {
 
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('a labelled switch lays out in a row of unbounded width', (
+      tester,
+    ) async {
+      // A settings row's trailing slot is a Row child without a flex share,
+      // so the switch inside it is measured with an unbounded width.
+      await pumpAt(
+        tester,
+        phone,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MSSwitch(value: true, onChanged: (_) {}, label: 'Weekly digest'),
+          ],
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Weekly digest'), findsOneWidget);
+      expect(tester.getSize(find.byType(MSSwitch)).height, 44);
+    });
   });
 }

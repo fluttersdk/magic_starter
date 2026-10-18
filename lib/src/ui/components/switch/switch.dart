@@ -89,28 +89,38 @@ class MSSwitch extends StatelessWidget {
     //    still wins a tap that lands on it, so a toggle never fires twice, and
     //    MergeSemantics hands assistive technology one node the size of the
     //    row rather than a 24 px one inside it.
+    Widget hitArea(bool wrapsLabel) => WDiv(
+      className: switchHitAreaRecipe(),
+      children: [
+        track,
+        if (label != null)
+          WDiv(
+            className: wrapsLabel ? switchLabelCellClassName : null,
+            child: ExcludeSemantics(
+              child: WText(
+                label!,
+                className: enabled
+                    ? switchLabelClassName
+                    : '$switchLabelClassName opacity-50',
+              ),
+            ),
+          ),
+      ],
+    );
+
     return MergeSemantics(
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: enabled ? () => onChanged!(!value) : null,
-        child: WDiv(
-          className: switchHitAreaRecipe(),
-          children: [
-            track,
-            if (label != null)
-              WDiv(
-                className: switchLabelCellClassName,
-                child: ExcludeSemantics(
-                  child: WText(
-                    label!,
-                    className: enabled
-                        ? switchLabelClassName
-                        : '$switchLabelClassName opacity-50',
-                  ),
-                ),
+        // 3. The label's flex share only exists inside a bounded width. A
+        //    trailing slot of a settings row measures its child unbounded, and
+        //    a flex child there throws, so the label keeps its natural width.
+        child: label == null
+            ? hitArea(false)
+            : LayoutBuilder(
+                builder: (context, constraints) =>
+                    hitArea(constraints.hasBoundedWidth),
               ),
-          ],
-        ),
       ),
     );
   }
