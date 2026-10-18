@@ -52,7 +52,7 @@ void main() {
       await tester.pumpWidget(wrap(row()));
 
       final MSSwitch control = tester.widget<MSSwitch>(find.byType(MSSwitch));
-      expect(control.semanticLabel, 'Notify subscribers');
+      expect(control.label, 'Notify subscribers');
     });
 
     testWidgets('reports the flipped value when toggled', (tester) async {
@@ -63,6 +63,33 @@ void main() {
       await tester.pump();
 
       expect(reported, <bool>[true]);
+    });
+
+    testWidgets('tapping the label toggles the switch', (tester) async {
+      final List<bool> reported = <bool>[];
+      await tester.pumpWidget(wrap(row(onChanged: reported.add)));
+
+      await tester.tap(find.text('Notify subscribers'));
+      await tester.pump();
+
+      expect(reported, <bool>[true]);
+    });
+
+    testWidgets('a two-line label aligns to the top of the switch', (
+      tester,
+    ) async {
+      final String label = 'Notify every subscriber ' * 6;
+      await tester.pumpWidget(
+        wrap(
+          MSSwitchRow(label: label, value: true, onChanged: (_) {}),
+          width: 320,
+        ),
+      );
+
+      expect(
+        tester.getTopLeft(find.byType(WSwitch)).dy,
+        tester.getTopLeft(find.text(label)).dy,
+      );
     });
 
     testWidgets('wraps a 200-character label instead of overflowing', (

@@ -120,7 +120,8 @@ class MSSwitch extends StatelessWidget {
 
 enum _SwitchSlot { track, label }
 
-/// Lays the track and its label out on one centre line.
+/// Lays the track and its label out on one centre line, or top-aligned once
+/// the label wraps.
 ///
 /// Not a flex row: a label with a flex share throws in a row of unbounded
 /// width (the trailing slot of a settings row), and a [LayoutBuilder] choosing
@@ -237,6 +238,11 @@ class _RenderSwitchLabelLayout extends RenderBox
     );
     size = _sizeFor(constraints, _track.size, _label.size);
 
+    // A label taller than the track has wrapped, and a two-line label beside a
+    // one-line track reads correctly only when both align to the top.
+    final bool topAligned = _label.size.height > _track.size.height;
+    double top(Size child) => topAligned ? 0 : (size.height - child.height) / 2;
+
     final bool ltr = _textDirection == TextDirection.ltr;
     final double trackX = ltr ? 0 : size.width - _track.size.width;
     final double labelX = ltr
@@ -244,11 +250,11 @@ class _RenderSwitchLabelLayout extends RenderBox
         : size.width - _track.size.width - _gap - _label.size.width;
     (_track.parentData! as BoxParentData).offset = Offset(
       trackX,
-      (size.height - _track.size.height) / 2,
+      top(_track.size),
     );
     (_label.parentData! as BoxParentData).offset = Offset(
       labelX,
-      (size.height - _label.size.height) / 2,
+      top(_label.size),
     );
   }
 

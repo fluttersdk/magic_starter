@@ -4,16 +4,13 @@ import 'package:magic/magic.dart';
 import '../switch/switch.dart';
 import 'switch_row.recipe.dart';
 
-/// A labelled toggle: an [MSSwitch] with its text label beside it.
+/// A labelled toggle that takes its column's full width: an [MSSwitch] with
+/// its [MSSwitch.label] beside it.
 ///
-/// One definition, so a caller does not re-derive the label/switch layout
-/// (and the `flex-1 min-w-0` shrink fix it depends on) per screen. See
-/// [switchRowRecipe] for the layout reasoning.
-///
-/// The switch renders no label of its own, which is why the label is a
-/// sibling here rather than a property of the control. [label] is also the
-/// switch's accessibility name, so a screen reader announces the same words
-/// the operator reads.
+/// The switch lays the label out itself, so the label wraps inside the column
+/// instead of overflowing it, toggles the switch when tapped, and is the
+/// switch's accessibility name: a screen reader announces the same words the
+/// operator reads.
 ///
 /// ### Example
 /// ```dart
@@ -37,9 +34,7 @@ class MSSwitchRow extends StatelessWidget {
   /// Appended to the row's own className, for per-caller spacing only.
   ///
   /// Emission order is recipe then caller, so this can override the row. It
-  /// cannot reach the label, which is deliberate: the label's `flex-1
-  /// min-w-0` is the fix, and a caller that could replace it would
-  /// reintroduce the overflow one screen at a time.
+  /// cannot reach the label, whose layout belongs to [MSSwitch].
   final String? className;
 
   /// Creates a [MSSwitchRow].
@@ -55,10 +50,7 @@ class MSSwitchRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return WDiv(
       className: switchRowRecipe()(className: className),
-      children: <Widget>[
-        MSSwitch(value: value, onChanged: onChanged, semanticLabel: label),
-        WText(label, className: switchRowLabelClassName),
-      ],
+      child: MSSwitch(value: value, onChanged: onChanged, label: label),
     );
   }
 }
