@@ -400,6 +400,27 @@ void main() {
       );
     });
 
+    testWidgets('a one-line label stays centred at a larger text scale', (
+      tester,
+    ) async {
+      // At 1.3x a 14 px label line is taller than the 24 px track without
+      // having wrapped, so it must not be top-aligned like a wrapped one.
+      await pumpAt(
+        tester,
+        phone,
+        MediaQuery.withClampedTextScaling(
+          minScaleFactor: 1.3,
+          maxScaleFactor: 1.3,
+          child: MSSwitch(value: true, onChanged: (_) {}, label: 'Digest'),
+        ),
+      );
+
+      expect(
+        tester.getCenter(find.text('Digest')).dy,
+        moreOrLessEquals(tester.getCenter(find.byType(WSwitch)).dy),
+      );
+    });
+
     testWidgets('a long label still wraps in a bounded column', (tester) async {
       const String long =
           'Send me a summary of everything that happened on my '

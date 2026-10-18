@@ -238,9 +238,12 @@ class _RenderSwitchLabelLayout extends RenderBox
     );
     size = _sizeFor(constraints, _track.size, _label.size);
 
-    // A label taller than the track has wrapped, and a two-line label beside a
-    // one-line track reads correctly only when both align to the top.
-    final bool topAligned = _label.size.height > _track.size.height;
+    // A label taller than its own single line has wrapped, and a two-line label
+    // beside a one-line track reads correctly only when both align to the top.
+    // Measured against the label's line rather than the track, since a scaled
+    // single line outgrows the 24 px track without wrapping.
+    final bool topAligned =
+        _label.size.height > _label.getMaxIntrinsicHeight(double.infinity);
     double top(Size child) => topAligned ? 0 : (size.height - child.height) / 2;
 
     final bool ltr = _textDirection == TextDirection.ltr;
