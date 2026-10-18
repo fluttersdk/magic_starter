@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.49] - 2026-10-18
+
 ### Added
 
 - MSSwitch accepts an optional visible label that is part of its tap target. Tapping the label toggles the switch, and it is the switch's accessible name unless `semanticLabel` is set; without it the switch renders as before. (`lib/src/ui/components/switch/`)
@@ -11,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **The `fluttersdk_wind` floor names 1.9.1.** `^1.9.0` moves to `^1.9.1`, the first release whose `WSelect` lights `focus:` on keyboard focus; on an older wind the `MSSelect` focus ring never paints. 1.9.1 also makes every `WButton` a button to assistive technology, so a disabled, loading or callback-less `MSButton` is announced as a button that is not enabled (a test that finds one by its text now finds a disabled button), and a `WPopover` trigger is one button; this package uses both widgets. (`pubspec.yaml`)
 - **`MSSelect`, `MSSwitch` and `MSSegmentedControl` show a keyboard focus ring.** The select's trigger lights `focus:` when Tab lands on it (needs the `fluttersdk_wind` that sets it, 1.9.1), and the switch track and each segment draw a primary ring that is an outline around the box, so focus moves nothing; touch paints none. (`lib/src/ui/components/select/`, `lib/src/ui/components/switch/`, `lib/src/ui/components/segmented_control/`)
 - **`MSButton` `sm` and `MSSwitch` get a 44 x 44 hit area below `lg`.** The painted size is unchanged (a 32 px button, a 24 px track); the area is laid out around it, so a row holding either grows to 44 px tall on a phone. From `lg` up nothing changes. (`lib/src/ui/components/button/`, `lib/src/ui/components/switch/`)
 - **`MSSwitchRow` is an `MSSwitch` with its `label`, so tapping the label toggles it.** A one-line label sits on the track's centre line and a wrapped one aligns to its top, as before. `switchRowLabelClassName` is removed and `switchRowRecipe` now carries only `w-full`, since the switch lays out its own label. The inner `MSSwitch` now carries the text as `label` with `semanticLabel` null, so a host test that finds the row's switch by `semanticLabel` matches on `label` instead. A labelled `MSSwitch` also lays out in a row of unbounded width and under `IntrinsicHeight`. (`lib/src/ui/components/switch_row/`, `lib/src/ui/components/switch/`)
