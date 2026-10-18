@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Campaigns: an app-wide banner and a plan-card tag for the offer a staff member runs.** `MagicStarterCampaignBanner` shows the active campaign's headline and body above every page to a floor-tier team owner on the web rail, with a "See plans" action and a "Dismiss" that stores the campaign id in the `Vault`, per signed-in account, so only that campaign stays hidden for that account. `MagicStarterAppLayout` mounts it beside the app update banner when `billing` is on. On the billing screen a plan card whose product at the selected cycle is in the campaign gets a "Limited offer" tag with the percent or amount off (in the currency the card is priced in, from `discount.currency_options`) as the default of the `plan_card_highlight` slot, which a registered slot still replaces; the screen reads the campaign itself, so a host without the banner gets the tag, and both surfaces hide once the campaign ends. `MagicStarterBillingController.loadCampaign()` reads `GET /billing/campaign` (a 404, a backend with its `campaigns` feature off, is silently no campaign; separate from `load()`: the banner resolves the controller without running its `onInit`, so it never starts the six billing reads) and `campaign` holds the `MagicStarterCampaign` on the instance, so `resetForSession` drops it with the rest of the session. Needs a `magic-starter-laravel` that serves the endpoint; an existing app merges the new `magic_starter.billing.campaign_*` lang keys by hand. (`lib/src/models/magic_starter_campaign.dart`, `lib/src/ui/widgets/magic_starter_campaign_banner.dart`, `lib/src/http/controllers/magic_starter_billing_controller.dart`, `lib/src/ui/views/teams/magic_starter_billing_view.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `assets/stubs/install/en.stub`, `doc/basics/teams.md`)
+
 ## [0.0.48] - 2026-10-17
 
 ### Added

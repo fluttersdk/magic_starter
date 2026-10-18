@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
+import 'package:magic_payments/magic_payments.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 class MockNetworkDriver implements NetworkDriver {
@@ -186,6 +187,54 @@ class MockGuard implements Guard {
 
   @override
   T? user<T extends Model>() => _user as T?;
+}
+
+/// A billing build with a web rail. The campaign banner reads the rail's
+/// presence and nothing else from it, so every call is an error.
+class _WebRailBilling implements BillingService, WebBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() => throw UnimplementedError();
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() => throw UnimplementedError();
+
+  @override
+  Future<List<UsageStat>> getUsage() => throw UnimplementedError();
+
+  @override
+  Future<BillingInvoicesPage> getInvoices({String? cursor}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<PaymentMethod> getPaymentMethod() => throw UnimplementedError();
+
+  @override
+  Future<BillingCheckoutSession> checkout({
+    required String productKey,
+    required String successUrl,
+    required String cancelUrl,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> swap({required String productKey}) => throw UnimplementedError();
+
+  @override
+  Future<void> cancel() => throw UnimplementedError();
+
+  @override
+  Future<String> openPortal({String? returnUrl}) => throw UnimplementedError();
+}
+
+/// The three labels the campaign banner renders, so a strip is not laid out
+/// around raw keys.
+class _CampaignCopyLoader implements TranslationLoader {
+  const _CampaignCopyLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(Locale _) async => <String, dynamic>{
+    'magic_starter.billing.campaign_see_plans': 'See plans',
+    'magic_starter.billing.campaign_dismiss': 'Dismiss',
+  };
 }
 
 void main() {
@@ -794,6 +843,87 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MagicStarterAppUpdateBanner), findsNothing);
+    });
+  });
+
+  group('MagicStarterAppLayout campaign banner', () {
+    setUp(() async {
+      Vault.fake();
+
+      // Without copy the two labels are dotted keys with no space to wrap at,
+      // wider than the strip itself.
+      Translator.instance.setLoader(const _CampaignCopyLoader());
+      await Translator.instance.setLocale(const Locale('en'));
+    });
+
+    tearDown(() {
+      Vault.unfake();
+      Config.set('magic_starter.features.billing', false);
+    });
+
+    testWidgets('mounts no banner when billing is off', (tester) async {
+      Config.set('magic_starter.features.billing', false);
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterCampaignBanner), findsNothing);
+    });
+
+    testWidgets('mounts one banner when billing is on, and no controller '
+        'leaves it empty', (tester) async {
+      Config.set('magic_starter.features.billing', true);
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterCampaignBanner), findsOneWidget);
+      expect(find.byType(MSUpdateBanner), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows the active campaign above the page', (tester) async {
+      Config.set('magic_starter.features.billing', true);
+      Magic.put(
+        MagicStarterBillingController(
+          usageCopy: (List<UsageStat> stats) => stats,
+          formatNumber: (int value) => value.toString(),
+          billingService: _WebRailBilling(),
+        ),
+      );
+      // The banner hides a campaign that is not running, and the fixture's own
+      // window is a fixed calendar week, so the window moves around now.
+      final Map<String, dynamic> wire =
+          jsonDecode(
+                File(
+                  '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
+                ).readAsStringSync(),
+              )
+              as Map<String, dynamic>;
+      final DateTime now = DateTime.now().toUtc();
+      (wire['data'] as Map<String, dynamic>)
+        ..['starts_at'] = now
+            .subtract(const Duration(days: 1))
+            .toIso8601String()
+        ..['ends_at'] = now.add(const Duration(days: 1)).toIso8601String();
+      mockDriver.mockResponse(statusCode: 200, data: wire);
+
+      await tester.pumpWidget(createApp(child: const Text('page body')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Pro is 20% off this week'), findsOneWidget);
+      expect(find.text('page body'), findsOneWidget);
+    });
+
+    testWidgets('mounts no banner under hidden chrome', (tester) async {
+      Config.set('magic_starter.features.billing', true);
+
+      await tester.pumpWidget(
+        createApp(child: const SizedBox(), hideChrome: true),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MagicStarterCampaignBanner), findsNothing);
     });
   });
 

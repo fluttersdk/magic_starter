@@ -5197,11 +5197,15 @@ void main() {
       final List<({String method, String url, Object? data})> sent =
           <({String method, String url, Object? data})>[];
       Http.fake((request) {
-        sent.add((
-          method: request.method,
-          url: request.url,
-          data: request.data,
-        ));
+        // The screen also reads the campaign on mount; this case is about the
+        // support desk alone.
+        if (request.url.startsWith('/support')) {
+          sent.add((
+            method: request.method,
+            url: request.url,
+            data: request.data,
+          ));
+        }
 
         return Http.response(<String, dynamic>{
           'data': <String, dynamic>{
@@ -6152,4 +6156,327 @@ void main() {
       );
     }
   });
+
+  group('campaign tag on a plan card', () {
+    final Map<String, dynamic> percentWire =
+        jsonDecode(
+              File(
+                '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+
+    /// The wire body with the campaign's discount, product list and window
+    /// replaced. The window is open around the real clock by default, because
+    /// the tag is hidden for a campaign that is not running and the fixture's
+    /// own dates are a fixed calendar week.
+    Map<String, dynamic> campaignWire({
+      Map<String, dynamic>? discount,
+      List<String>? products,
+      Duration startsIn = const Duration(days: -1),
+      Duration endsIn = const Duration(days: 1),
+    }) {
+      final DateTime now = DateTime.now().toUtc();
+
+      return <String, dynamic>{
+        'data': <String, dynamic>{
+          ...(percentWire['data'] as Map<String, dynamic>),
+          'starts_at': now.add(startsIn).toIso8601String(),
+          'ends_at': now.add(endsIn).toIso8601String(),
+          'discount': ?discount,
+          'products': ?products,
+        },
+      };
+    }
+
+    /// Mounts the screen over [billing] and lets it read the campaign
+    /// `GET /billing/campaign` answers with [body]: nothing else mounts here,
+    /// so the screen has to ask for it itself.
+    Future<void> mountWithCampaign(
+      WidgetTester tester,
+      Map<String, dynamic> body, {
+      MagicStarterPriceFormat? formatPrice,
+      BillingService? billing,
+    }) async {
+      Http.fake((request) => Http.response(body));
+
+      await mount(
+        tester,
+        billing ?? _RailBillingService(),
+        isOwner: true,
+        formatPrice: formatPrice,
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    String badge() => trans('magic_starter.billing.campaign_badge');
+
+    testWidgets('tags only the plans whose products are in the campaign, '
+        'with the percent off', (tester) async {
+      await mountWithCampaign(tester, campaignWire());
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(badge()), findsOneWidget);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_percent',
+            <String, dynamic>{'value': '20'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('states an amount discount in the catalogue price format', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'USD',
+          },
+          products: <String>['business_annual'],
+        ),
+      );
+
+      expect(find.text(badge()), findsOneWidget);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '5.00 USD'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('writes an amount through the consumer\'s price format', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'USD',
+          },
+        ),
+        formatPrice: (MagicStarterWebPrice price) =>
+            '${price.currency}/${price.amountMinor}',
+      );
+
+      expect(find.text('USD/500 off'), findsOneWidget);
+    });
+
+    testWidgets('tags nothing for a campaign on products no card sells', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(products: <String>['ghost_monthly']),
+      );
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('tags nothing without a campaign', (tester) async {
+      await mountWithCampaign(tester, <String, dynamic>{'data': null});
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('the screen reads the campaign itself, with no banner '
+        'mounted', (tester) async {
+      await mountWithCampaign(tester, campaignWire());
+
+      expect(Magic.find<MagicStarterBillingController>().campaign, isNotNull);
+      expect(find.byType(MagicStarterCampaignBanner), findsNothing);
+      expect(find.text(badge()), findsOneWidget);
+    });
+
+    testWidgets('tags a card only for the product it sells on the selected '
+        'cycle', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(products: <String>['pro_monthly']),
+      );
+
+      // The toggle defaults to annual, and the card sells pro_annual there.
+      expect(find.text(badge()), findsNothing);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_monthly')));
+      await tester.pump();
+
+      expect(find.text(badge()), findsOneWidget);
+
+      await tester.tap(find.text(trans('magic_starter.billing.plans_annual')));
+      await tester.pump();
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('tags nothing once the campaign has ended', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          startsIn: const Duration(days: -2),
+          endsIn: const Duration(minutes: -1),
+        ),
+      );
+
+      expect(find.text(badge()), findsNothing);
+    });
+
+    testWidgets('names the amount in the currency the card is priced in', (
+      tester,
+    ) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'usd',
+            'currency_options': <String, dynamic>{'try': 15000},
+          },
+        ),
+        billing: _PricedRailBillingService('TRY'),
+      );
+
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '150.00 TRY'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('keeps the campaign\'s own amount on a card priced in its '
+        'currency, whatever the case', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'usd',
+            'currency_options': <String, dynamic>{'try': 15000},
+          },
+        ),
+      );
+
+      expect(find.text(badge()), findsOneWidget);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '5.00 USD'},
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tags nothing when the card\'s currency is neither the '
+        'campaign\'s nor one the coupon prices', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(
+          discount: <String, dynamic>{
+            'type': 'amount',
+            'value': 500,
+            'currency': 'usd',
+            'currency_options': <String, dynamic>{'try': 15000},
+          },
+        ),
+        billing: _PricedRailBillingService('EUR'),
+      );
+
+      expect(find.text(badge()), findsNothing);
+      expect(
+        find.text(
+          trans(
+            'magic_starter.billing.campaign_discount_amount',
+            <String, dynamic>{'amount': '5.00 USD'},
+          ),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('keeps the tag on a card priced in another currency for a '
+        'percent discount', (tester) async {
+      await mountWithCampaign(
+        tester,
+        campaignWire(),
+        billing: _PricedRailBillingService('EUR'),
+      );
+
+      expect(find.text(badge()), findsOneWidget);
+    });
+
+    testWidgets('a registered plan_card_highlight slot wins over the tag', (
+      tester,
+    ) async {
+      MagicStarter.view.slot('teams.billing', 'plan_card_highlight', (
+        BuildContext context,
+      ) {
+        return WText('slot-${MagicStarterPlanCardScope.of(context).id}');
+      });
+
+      await mountWithCampaign(tester, campaignWire());
+
+      expect(find.text('slot-pro'), findsOneWidget);
+      expect(find.text('slot-business'), findsOneWidget);
+      expect(find.text(badge()), findsNothing);
+    });
+  });
+}
+
+/// A web build whose `pro` tier is priced in [currency], the currency a
+/// campaign's per-currency amount is looked up by.
+class _PricedRailBillingService extends _RailBillingService {
+  _PricedRailBillingService(this.currency);
+
+  /// The ISO 4217 code the `pro` products are priced in.
+  final String currency;
+
+  @override
+  Future<List<Map<String, dynamic>>> getPlans() async {
+    return <Map<String, dynamic>>[
+      for (final Map<String, dynamic> row in _planWireRows)
+        if (row['id'] != 'pro')
+          row
+        else
+          <String, dynamic>{
+            ...row,
+            'products': <Map<String, dynamic>>[
+              for (final Map<String, dynamic> product
+                  in (row['products'] as List<dynamic>)
+                      .cast<Map<String, dynamic>>())
+                <String, dynamic>{
+                  ...product,
+                  'prices': <String, dynamic>{
+                    'web': <String, dynamic>{
+                      currency: <String, dynamic>{
+                        'amount_minor': 99900,
+                        'display': '999.00 $currency',
+                      },
+                    },
+                  },
+                },
+            ],
+          },
+    ];
+  }
 }
