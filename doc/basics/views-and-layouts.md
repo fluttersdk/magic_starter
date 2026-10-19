@@ -769,6 +769,7 @@ MSPageHeader(
 | `leading` | `Widget?` | — | Widget placed before the title (e.g. back button) |
 | `actions` | `List<Widget>?` | — | Row of trailing action widgets (e.g. buttons) |
 | `titleSuffix` | `Widget?` | — | Optional widget rendered inline after the title (e.g. status badge). Stays on the same row as the title text. |
+| `subtitleSuffix` | `Widget?` | - | Optional widget on the subtitle line, right after the subtitle (e.g. a pill beside a URL). Wraps under the subtitle when the line cannot hold both; renders nothing without a `subtitle`. |
 | `inlineActions` | `bool` | — | When `true`, forces single-row layout on all screen sizes (no mobile stacking). Useful for detail views where actions must stay inline with the title. |
 
 ### MSCard

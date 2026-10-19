@@ -80,4 +80,28 @@ void main() {
     await tester.pump();
     expect(find.byType(EmptyStatePreview), findsOneWidget);
   });
+
+  testWidgets('centres on the page inside a start-aligned column', (
+    tester,
+  ) async {
+    // A page body is a start-aligned flex column, which hands its children a
+    // loose width. The state used to shrink to its text there and sit against
+    // the left edge with `items-center` centring nothing.
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      wrap(
+        WDiv(
+          className: 'flex flex-col gap-6',
+          children: const [
+            MSEmptyState(title: 'Nothing here', description: 'Not yet.'),
+          ],
+        ),
+      ),
+    );
+
+    expect(tester.getCenter(find.text('Nothing here')).dx, closeTo(600, 1));
+  });
 }

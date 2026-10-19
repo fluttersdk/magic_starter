@@ -258,15 +258,10 @@ class _MagicStarterSupportIndexViewState
     if (conversations.isNotEmpty) return _buildList(conversations);
 
     return switch (controller.listStatus) {
-      // The empty state sizes to its text; the page column would otherwise park
-      // it against the left edge.
-      MagicStarterSupportReadStatus.loaded => WDiv(
-        className: 'w-full flex flex-col items-center',
-        child: MSEmptyState(
-          icon: _iconEmpty,
-          title: trans('magic_starter.support.empty_title'),
-          description: trans('magic_starter.support.empty_description'),
-        ),
+      MagicStarterSupportReadStatus.loaded => MSEmptyState(
+        icon: _iconEmpty,
+        title: trans('magic_starter.support.empty_title'),
+        description: trans('magic_starter.support.empty_description'),
       ),
       MagicStarterSupportReadStatus.failed ||
       MagicStarterSupportReadStatus.notFound => MSErrorState(

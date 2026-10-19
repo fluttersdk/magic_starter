@@ -495,6 +495,78 @@ void main() {
     expect(find.text('Empty Actions'), findsOneWidget);
   });
 
+  testWidgets('subtitleSuffix sits on the subtitle line, after the subtitle', (
+    tester,
+  ) async {
+    const suffixKey = Key('subtitle_suffix');
+    await tester.pumpWidget(
+      wrap(
+        const MSPageHeader(
+          title: 'Shop',
+          subtitle: 'https://shop.test',
+          subtitleSuffix: SizedBox(key: suffixKey, width: 40, height: 12),
+        ),
+      ),
+    );
+
+    final Rect subtitle = tester.getRect(find.text('https://shop.test'));
+    final Rect suffix = tester.getRect(find.byKey(suffixKey));
+
+    expect(suffix.left, greaterThanOrEqualTo(subtitle.right));
+    expect(suffix.center.dy, closeTo(subtitle.center.dy, 1));
+  });
+
+  testWidgets('subtitleSuffix renders nothing without a subtitle', (
+    tester,
+  ) async {
+    const suffixKey = Key('subtitle_suffix');
+    await tester.pumpWidget(
+      wrap(
+        const MSPageHeader(
+          title: 'Shop',
+          subtitleSuffix: SizedBox(key: suffixKey),
+        ),
+      ),
+    );
+
+    expect(find.byKey(suffixKey), findsNothing);
+  });
+
+  testWidgets('a suffix that does not fit wraps under the subtitle', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    MagicStarter.usePageHeaderTheme(
+      const MagicStarterPageHeaderTheme(
+        inlineActions: true,
+        subtitleClassName: 'text-xs truncate',
+      ),
+    );
+
+    const suffixKey = Key('subtitle_suffix');
+    await tester.pumpWidget(
+      wrap(
+        MSPageHeader(
+          title: 'Shop',
+          subtitle: 'https://${'a' * 80}.test',
+          subtitleSuffix: const SizedBox(key: suffixKey, width: 60, height: 12),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final Rect suffix = tester.getRect(find.byKey(suffixKey));
+    expect(suffix.right, lessThanOrEqualTo(390));
+    expect(
+      suffix.top,
+      greaterThanOrEqualTo(
+        tester.getRect(find.textContaining('https://')).bottom,
+      ),
+    );
+  });
+
   testWidgets('adds no suffix wrapper when titleSuffix is null', (
     tester,
   ) async {

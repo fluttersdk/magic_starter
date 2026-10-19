@@ -2,7 +2,7 @@ import 'dart:async' show Timer, unawaited;
 
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, visibleForTesting;
-import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/material.dart' show CircularProgressIndicator, Icons;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
@@ -59,6 +59,10 @@ class _MagicStarterSupportThreadViewState
         MagicStarterSupportAttachmentPicking<MagicStarterSupportThreadView> {
   static const _iconError = Icons.error_outline;
   static const _iconSend = Icons.send;
+
+  /// The send circle while a reply can go (or is going) and while it cannot.
+  static const String _sendLive = 'bg-primary text-on-primary';
+  static const String _sendIdle = 'bg-surface-container-high text-fg-muted';
   static const _iconAssistant = Icons.auto_awesome;
   static const _iconWaiting = Icons.schedule;
 
@@ -163,6 +167,11 @@ class _MagicStarterSupportThreadViewState
     if (seen && mounted) await controller.loadConversations();
   }
 
+  /// Whether a reply is in flight. The view's own flag, not the controller's
+  /// `isSubmitting`, which every write shares: a rating being saved must not
+  /// spin the Send circle.
+  bool _sending = false;
+
   /// Whether Enter sends. A hardware keyboard (web and desktop) sends on Enter
   /// and breaks the line on Shift+Enter; a phone's soft keyboard keeps Enter as
   /// a line break and sends from the button.
@@ -178,15 +187,20 @@ class _MagicStarterSupportThreadViewState
     final String? id = _id;
     final String body = _reply.text.trim();
     final List<MagicFile> files = pickedAttachments;
-    if (id == null || (body.isEmpty && files.isEmpty)) return;
+    if (id == null || _sending || controller.isSubmitting) return;
+    if (body.isEmpty && files.isEmpty) return;
 
     _ratingError = null;
-    final bool sent = await controller.sendMessage(
-      id,
-      body,
-      attachments: files,
-    );
-    if (!sent || !mounted) return;
+    setState(() => _sending = true);
+    final bool sent;
+    try {
+      sent = await controller.sendMessage(id, body, attachments: files);
+    } finally {
+      // A reply whose answer fails to decode throws past the controller's own
+      // guard; Send must not stay spinning and disabled after it.
+      if (mounted) setState(() => _sending = false);
+    }
+    if (!mounted || !sent) return;
 
     _reply.clear();
     clearAttachments();
@@ -482,7 +496,7 @@ class _MagicStarterSupportThreadViewState
       maxLines: 5,
       placeholder: trans('magic_starter.support.reply_placeholder'),
       className: '''
-        w-full pl-3.5 pr-2 py-1.5 rounded-3xl border text-sm text-fg
+        w-full pl-3.5 pr-1 py-1.5 rounded-3xl border text-sm text-fg
         bg-surface-container border-color-border
         focus:border-color-border focus:ring-2 focus:ring-bg-primary
       ''',
@@ -495,33 +509,63 @@ class _MagicStarterSupportThreadViewState
 
   Widget _buildSendButton() {
     return ListenableBuilder(
-      listenable: _reply,
+      listenable: Listenable.merge([_reply, controller]),
       builder: (context, _) {
+        final bool sending = _sending;
+        // Another write (a rating) holds the controller: Send cannot go, but
+        // nothing of this reply is in flight, so no spinner.
+        final bool blocked = sending || controller.isSubmitting;
         final bool ready =
-            _reply.text.trim().isNotEmpty || pickedAttachments.isNotEmpty;
+            !sending &&
+            (_reply.text.trim().isNotEmpty || pickedAttachments.isNotEmpty);
 
-        return WDiv(
-          className: 'py-1.5',
-          child: Semantics(
-            button: true,
-            label: trans('magic_starter.support.reply_submit'),
-            child: WAnchor(
-              key: const ValueKey<String>('support-send'),
-              onTap: _send,
-              child: WDiv(
-                className:
-                    'w-9 h-9 rounded-full flex items-center justify-center '
-                    '${ready ? 'bg-primary' : 'bg-surface-container-high'}',
-                child: WIcon(
-                  _iconSend,
-                  className:
-                      'text-base ${ready ? 'text-on-primary' : 'text-fg-muted'}',
-                ),
-              ),
+        // One labelled button node: an outer `Semantics(button:)` around the
+        // anchor read as a button holding a second, unnamed one. The 44 px box
+        // is the touch target; the 36 px circle is what paints. The circle
+        // sits at the box's right edge and the field's right padding is 4 px,
+        // the same as the box leaves above and below it, so the circle stands
+        // the same distance from the border on three sides.
+        return WAnchor(
+          key: const ValueKey<String>('support-send'),
+          onTap: blocked ? null : _send,
+          // Says it is not pressable while a write is out, instead of an
+          // enabled button that does nothing.
+          isDisabled: blocked,
+          semanticLabel: trans('magic_starter.support.reply_submit'),
+          child: WDiv(
+            className: 'size-11 flex items-center justify-end',
+            child: WDiv(
+              key: const ValueKey<String>('support-send-circle'),
+              className:
+                  'w-9 h-9 rounded-full flex items-center justify-center '
+                  '${sending || ready ? _sendLive : _sendIdle}',
+              child: sending
+                  ? const _SendSpinner()
+                  : WIcon(_iconSend, className: 'text-base'),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// The send circle's in-flight state: a small spinner in the circle's own
+/// text colour, so it follows the host's `text-on-primary`.
+class _SendSpinner extends StatelessWidget {
+  const _SendSpinner();
+
+  @override
+  Widget build(BuildContext context) {
+    final Color? color = DefaultTextStyle.of(context).style.color;
+
+    return SizedBox(
+      width: 16,
+      height: 16,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: color == null ? null : AlwaysStoppedAnimation<Color>(color),
+      ),
     );
   }
 }

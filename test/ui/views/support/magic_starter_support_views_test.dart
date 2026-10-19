@@ -863,6 +863,172 @@ void main() {
       );
     });
 
+    testWidgets('the send control is one named 44 px button', (tester) async {
+      // An outer Semantics(button:) around the anchor read as a button holding
+      // a second, unnamed one, and the painted circle was the whole 36 px target.
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(conversationJson(id: 7)),
+      });
+
+      await mount(tester, at: '/support/7');
+
+      final Finder send = find.byKey(const ValueKey<String>('support-send'));
+      final node = tester.getSemantics(send);
+
+      expect(node.label, trans('magic_starter.support.reply_submit'));
+      expect(tester.getSize(send).height, greaterThanOrEqualTo(44));
+      expect(tester.getSize(send).width, greaterThanOrEqualTo(44));
+    });
+
+    testWidgets('the send circle sits evenly inside the field', (tester) async {
+      // The 44 px target centred the 36 px circle, so the circle stood 4 px
+      // further from the field's right edge than from its top and bottom.
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(conversationJson(id: 7)),
+      });
+
+      await mount(tester, at: '/support/7');
+
+      final Rect field = tester.getRect(find.byType(WInput).last);
+      final Rect circle = tester.getRect(
+        find.byKey(const ValueKey<String>('support-send-circle')),
+      );
+      final double top = circle.top - field.top;
+
+      expect(field.bottom - circle.bottom, closeTo(top, 1));
+      expect(field.right - circle.right, closeTo(top, 1));
+    });
+
+    testWidgets('a reply in flight shows a spinner and sends once', (
+      tester,
+    ) async {
+      final Completer<MagicResponse> answer = Completer<MagicResponse>();
+      int posts = 0;
+      Http.fake((MagicRequest request) async {
+        if (request.method == 'POST') {
+          posts++;
+
+          return answer.future;
+        }
+
+        return ok(conversationJson(id: 7));
+      });
+
+      await mount(tester, at: '/support/7');
+      await tester.enterText(find.byType(EditableText).last, 'Still there?');
+      await tester.tap(find.byKey(const ValueKey<String>('support-send')));
+      await tester.pump();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('support-send')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
+      // The controller drops a second POST on its own; what the view owes is
+      // a control that says it is not pressable while the reply is out.
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey<String>('support-send'))),
+        isSemantics(isButton: true, hasEnabledState: true, isEnabled: false),
+      );
+      expect(posts, 1);
+
+      answer.complete(
+        ok(<String, dynamic>{
+          'id': 99,
+          'body': 'Still there?',
+          'sender_type': 'user',
+          'created_at': '2026-10-19T00:00:00Z',
+        }),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('a reply whose answer will not decode frees Send again', (
+      tester,
+    ) async {
+      Http.fake((MagicRequest request) async {
+        if (request.method == 'POST') {
+          return Http.response(<String, dynamic>{'data': 'not a message'});
+        }
+
+        return ok(conversationJson(id: 7));
+      });
+
+      await mount(tester, at: '/support/7');
+      await tester.enterText(find.byType(EditableText).last, 'Still there?');
+      await tester.tap(find.byKey(const ValueKey<String>('support-send')));
+      await tester.pump();
+      await tester.pump();
+      tester.takeException();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('support-send')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('saving a rating does not spin the Send circle', (
+      tester,
+    ) async {
+      // The controller's in-flight flag is shared by every write, so reading it
+      // spun Send while a CSAT rating was being saved.
+      final Completer<MagicResponse> rated = Completer<MagicResponse>();
+      Http.fake((MagicRequest request) async {
+        if (request.url.endsWith('/rating')) return rated.future;
+
+        return ok(conversationJson(id: 7));
+      });
+
+      await mount(tester, at: '/support/7');
+      unawaited(MagicStarterSupportController.instance.rate(7, 'up'));
+      await tester.pump();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('support-send')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsNothing,
+      );
+      // Not a reply in flight, but the controller takes one write at a time,
+      // so Send says it cannot go rather than taking a tap that does nothing.
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey<String>('support-send'))),
+        isSemantics(isButton: true, hasEnabledState: true, isEnabled: false),
+      );
+      rated.complete(ok(conversationJson(id: 7)));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the attach control is one named 44 px button', (tester) async {
+      Config.set('magic_starter.features.support_attachments', true);
+      addTearDown(
+        () => Config.set('magic_starter.features.support_attachments', false),
+      );
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(conversationJson(id: 7)),
+      });
+
+      await mount(tester, at: '/support/7');
+
+      final Finder attach = find.byKey(
+        const ValueKey<String>('support-attach'),
+      );
+
+      expect(
+        tester.getSemantics(attach).label,
+        trans('magic_starter.support.attach_button'),
+      );
+      expect(tester.getSize(attach).height, greaterThanOrEqualTo(44));
+      expect(tester.getSize(attach).width, greaterThanOrEqualTo(44));
+    });
+
     testWidgets('opens clean after a refused reply elsewhere', (tester) async {
       // The controller is one singleton across the support screens. magic's
       // view clears field errors on init, but the write error is this

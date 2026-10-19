@@ -770,6 +770,39 @@ void main() {
       expect(controller.conversation!.messages.last.body, 'Any update?');
     });
 
+    test(
+      'a sent reply whose answer will not decode reloads the thread',
+      () async {
+        // The server took the reply, so it is not a failure to retry (that would
+        // post it twice); the thread is read again to show it.
+        Magic.singleton('log', () => LogManager());
+        int reads = 0;
+        Http.fake((request) {
+          if (request.method == 'GET') {
+            reads++;
+
+            return Http.response(<String, dynamic>{
+              'data': conversationJson(
+                messages: <Map<String, dynamic>>[
+                  messageJson(id: 1),
+                  if (reads > 1) messageJson(id: 2, body: 'Any update?'),
+                ],
+              ),
+            });
+          }
+
+          return Http.response(<String, dynamic>{'data': 'not a message'}, 201);
+        });
+
+        await controller.loadConversation(7);
+        final sent = await controller.sendMessage(7, 'Any update?');
+
+        expect(sent, isTrue);
+        expect(reads, 2);
+        expect(controller.conversation!.messages.last.body, 'Any update?');
+      },
+    );
+
     test('a reply on a pending thread puts the AI back on the clock', () async {
       Http.fake((request) {
         if (request.method == 'GET') {

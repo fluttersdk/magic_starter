@@ -88,12 +88,15 @@ class MagicStarterSupportAttachButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: trans('magic_starter.support.attach_button'),
-      child: WAnchor(
-        key: const ValueKey<String>('support-attach'),
-        onTap: onTap,
+    // One labelled button node in a 44 px box: an outer `Semantics(button:)`
+    // around the anchor read as a button holding a second, unnamed one, and
+    // the 36 px circle was the whole target.
+    return WAnchor(
+      key: const ValueKey<String>('support-attach'),
+      onTap: onTap,
+      semanticLabel: trans('magic_starter.support.attach_button'),
+      child: WDiv(
+        className: 'size-11 flex items-center justify-center',
         child: WDiv(
           className: 'w-9 h-9 rounded-full flex items-center justify-center',
           child: WIcon(_iconAttach, className: 'text-base text-fg-muted'),
