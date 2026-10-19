@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart' show Icons;
@@ -13,6 +14,7 @@ import '../../components/card/index.dart';
 import '../../components/form_field/index.dart';
 import '../../components/page_scaffold/index.dart';
 import '../../components/textarea/index.dart';
+import 'magic_starter_support_article_card.dart';
 import 'magic_starter_support_attachments.dart';
 import 'magic_starter_support_index_view.dart';
 import 'magic_starter_support_message_bubble.dart';
@@ -33,6 +35,10 @@ import 'magic_starter_support_message_bubble.dart';
 /// [MagicStarterScreenCapture] took of the screen the customer came from. The
 /// screenshot is shown full width before anything is sent, and removing it
 /// keeps it off this conversation and out of memory.
+///
+/// While the customer writes, up to three knowledge-base articles that match
+/// the message appear above Send. The lookup waits until the message has 12
+/// characters and the typing has paused, and a failed one shows nothing.
 class MagicStarterSupportCreateView
     extends MagicStatefulView<MagicStarterSupportController> {
   /// [pickFiles] stands in for the system file picker; it is a parameter only
@@ -70,7 +76,19 @@ class _MagicStarterSupportCreateViewState
   /// Width of the "How it works" column beside the form on a wide screen.
   static const double _sideWidth = 300;
 
+  /// Characters the message needs before articles are looked up.
+  static const int _suggestFrom = 12;
+
+  /// How long typing must pause before the lookup is sent.
+  static const Duration _suggestDelay = Duration(milliseconds: 600);
+
   final TextEditingController _body = TextEditingController();
+
+  Timer? _suggestTimer;
+
+  /// The trimmed text the last change was judged on, so a cursor move, which
+  /// notifies the controller too, does not restart the pause.
+  String _typed = '';
 
   String? _topic;
 
@@ -83,10 +101,35 @@ class _MagicStarterSupportCreateViewState
   get pickFilesOverride => widget.pickFiles;
 
   @override
-  void onInit() => controller.forgetWriteError();
+  void onInit() {
+    controller.forgetWriteError();
+    controller.forgetArticleSuggestions(notify: false);
+    _body.addListener(_onBodyChanged);
+  }
 
   @override
-  void onClose() => _body.dispose();
+  void onClose() {
+    _suggestTimer?.cancel();
+    _body.dispose();
+  }
+
+  void _onBodyChanged() {
+    final String text = _body.text.trim();
+    if (text == _typed) return;
+
+    _typed = text;
+    _suggestTimer?.cancel();
+
+    if (text.runes.length < _suggestFrom) {
+      controller.forgetArticleSuggestions();
+      return;
+    }
+
+    _suggestTimer = Timer(
+      _suggestDelay,
+      () => controller.suggestArticles(text),
+    );
+  }
 
   Future<void> _submit() async {
     if (_collecting || controller.isSubmitting) return;
@@ -216,6 +259,7 @@ class _MagicStarterSupportCreateViewState
           if (MagicStarterConfig.hasSupportAttachmentsFeatures())
             _buildAttachments(),
           if (screenshot != null) _buildScreenshot(screenshot),
+          if (controller.articleSuggestions.isNotEmpty) _buildSuggestions(),
           _buildFooter(wide),
         ],
       ),
@@ -238,6 +282,20 @@ class _MagicStarterSupportCreateViewState
         key == 'screenshot' ||
         key == 'attachments' ||
         key.startsWith('attachments.');
+  }
+
+  Widget _buildSuggestions() {
+    return WDiv(
+      className: 'flex flex-col gap-2',
+      children: [
+        WText(
+          trans('magic_starter.support.articles_label'),
+          className: 'text-sm font-medium text-fg',
+        ),
+        for (final article in controller.articleSuggestions)
+          MagicStarterSupportArticleCard(article),
+      ],
+    );
   }
 
   Widget _buildAttachments() {

@@ -4,6 +4,7 @@
 - [Enabling the Desk](#enabling-the-desk)
 - [Screens](#screens)
 - [The AI Desk](#the-ai-desk)
+- [Knowledge Base Articles](#knowledge-base-articles)
 - [Topics](#topics)
 - [Live Updates](#live-updates)
 - [Contact Sales](#contact-sales)
@@ -97,6 +98,16 @@ When the backend has an AI responder bound, a verified customer's conversation s
 If the AI has been pending for 45 seconds, counted from when the screen first saw it pending, the typing bubble gives way to "This is taking longer than usual. If the AI cannot answer, our team will take over." The backend's sweeper hands the turn to staff after a few minutes, so a stranded thread does not stay in the typing state.
 
 The composer sits in the page scaffold's `footer`, above the keyboard. On web and desktop Enter sends and Shift+Enter breaks the line (a pending IME composition keeps Enter); on a phone Enter breaks the line and the round send button sends. A write the backend refuses for a reason other than validation shows under the field as `writeError`.
+
+<a name="knowledge-base-articles"></a>
+## Knowledge Base Articles
+
+When the backend runs `magic-starter-laravel` with `support.articles.enabled`, two screens point the customer at its public knowledge-base articles:
+
+- **While writing.** Once the new-conversation message has 12 characters and typing has paused for 600 ms, the form asks `GET support/articles?search=&locale=` (the message cut to 200 characters, the app's language code) and shows up to three articles, question and excerpt, under a "These may help" label above Start conversation. A slower earlier answer never replaces a newer one, falling under 12 characters clears them, and a failed or switched-off (404) lookup shows nothing.
+- **Under an AI answer.** An AI message parses `articles` (`slug`, `question`, `url`), and its bubble shows one `MagicStarterSupportArticleCard` per article. No other sender's message renders them.
+
+A tap opens the article's `url`, the public FAQ page of its language anchored on the article, with `Launch.url`; a url the system cannot open shows `article_open_error`, and an article without a `url` is plain text. The labels are `magic_starter.support.articles_label` and `magic_starter.support.article_open_error`: add both to every locale the app ships, since the translator merges no fallback.
 
 <a name="topics"></a>
 ## Topics
