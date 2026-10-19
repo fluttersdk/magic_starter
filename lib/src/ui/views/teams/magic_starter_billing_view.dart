@@ -2649,14 +2649,17 @@ class _MagicStarterBillingViewState
   /// unrankable, so every priced tier falls back to a second neutral label rather
   /// than claiming a direction against a tier with no known position.
   String _ctaLabel(MagicStarterPlan plan) {
+    // The held tier first, custom included: a custom tier is granted by an
+    // operator, and its held marker read "Contact sales" to the team on it.
+    if (controller.currentPlanId != null &&
+        plan.id == controller.currentPlanId) {
+      return trans('magic_starter.billing.plan_button_current');
+    }
     if (_isCustom(plan)) {
       return trans('magic_starter.billing.plan_button_contact');
     }
     if (controller.currentPlanId == null) {
       return trans('magic_starter.billing.plan_button_unresolved');
-    }
-    if (plan.id == controller.currentPlanId) {
-      return trans('magic_starter.billing.plan_button_current');
     }
 
     final int? direction = _direction(plan);

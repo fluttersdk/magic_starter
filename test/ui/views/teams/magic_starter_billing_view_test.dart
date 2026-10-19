@@ -1282,6 +1282,13 @@ List<Map<String, dynamic>> _producerPlanRows() {
   return (body['data'] as List<dynamic>).cast<Map<String, dynamic>>();
 }
 
+/// A web build for a team an operator granted the custom tier: no rail sells
+/// it, so the entitlement names it with nothing behind it.
+class _HeldCustomTierBillingService extends _RailBillingService {
+  @override
+  String get entitlementPlan => 'enterprise';
+}
+
 /// A WEB build for a team on the producer's free tier, reading the producer's
 /// rows.
 class _ProducerRowsWebBillingService extends _UnsubscribedRailBillingService {
@@ -3092,6 +3099,26 @@ void main() {
   });
 
   group('the grid has exactly one focal point', () {
+    testWidgets('a held custom tier reads Current plan, not the sales handoff', (
+      tester,
+    ) async {
+      // A custom tier is sold by contract and granted by an operator, so a team
+      // can hold it. Its card checked "custom" before "held" and showed the
+      // held marker labelled "Contact sales", inviting the customer to buy the
+      // plan they are on.
+      await mount(tester, _HeldCustomTierBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_current')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_contact')),
+        findsNothing,
+      );
+    });
+
     testWidgets('the held tier renders no button at all, and the cheapest tier '
         'above it is the only filled one', (tester) async {
       // The state that broke it. The fixture holds `pro`, which is also the
