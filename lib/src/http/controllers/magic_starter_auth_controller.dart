@@ -51,6 +51,9 @@ class MagicStarterAuthController extends MagicController
   /// Render reset password view via registry key.
   Widget resetPassword() => MagicStarter.view.make('auth.reset_password');
 
+  /// Render the mailed email verification page via registry key.
+  Widget verifyEmail() => MagicStarter.view.make('auth.verify_email');
+
   /// Render two-factor challenge view via registry key.
   Widget twoFactorChallenge() =>
       MagicStarter.view.make('auth.two_factor_challenge');
@@ -330,6 +333,50 @@ class MagicStarterAuthController extends MagicController
       setSuccess(true);
     } catch (e, stackTrace) {
       Log.error('[MagicStarterAuthController.doResetPassword] $e\n$stackTrace');
+      setError(trans('errors.unexpected'));
+    } finally {
+      _isSubmitting = false;
+    }
+  }
+
+  /// Verifies an email address from the mailed link.
+  ///
+  /// The backend mails `/auth/verify-email?id=&hash=&expires=&signature=`; the
+  /// four values are replayed as `GET /email/verify/{id}/{hash}`, whose
+  /// `signed` middleware checks them against the API host. A signed-in user is
+  /// restored afterwards so `email_verified_at` reaches the profile.
+  Future<void> doVerifyEmail({
+    required String id,
+    required String hash,
+    required String expires,
+    required String signature,
+  }) async {
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+    setLoading();
+    clearErrors();
+
+    try {
+      final response = await Http.get(
+        '/email/verify/${Uri.encodeComponent(id)}/${Uri.encodeComponent(hash)}',
+        query: {'expires': expires, 'signature': signature},
+      );
+
+      // Every refusal here (a bad or expired signature, a hash for an address
+      // since changed, an unknown user) means the same thing to the reader,
+      // and the API's own wording ("Invalid signature.") is not theirs.
+      if (!response.successful) {
+        setError(trans('magic_starter.email_verification.verify_failed'));
+        return;
+      }
+
+      if (await Auth.hasToken()) {
+        await Auth.restore();
+      }
+
+      setSuccess(true);
+    } catch (e, stackTrace) {
+      Log.error('[MagicStarterAuthController.doVerifyEmail] $e\n$stackTrace');
       setError(trans('errors.unexpected'));
     } finally {
       _isSubmitting = false;

@@ -65,4 +65,23 @@ void registerMagicStarterAuthRoutes() {
       }
     },
   );
+
+  // The verification mail is opened signed in as often as signed out, so this
+  // page sits outside the guest group: `guest` would bounce a signed-in viewer
+  // home before the link was ever replayed.
+  if (MagicStarterConfig.hasEmailVerificationFeatures()) {
+    MagicRoute.group(
+      prefix: MagicStarterConfig.authPrefix(),
+      layout: (child) =>
+          MagicStarter.view.makeLayout('layout.guest', child: child),
+      routes: () {
+        MagicRoute.page(
+              '/verify-email',
+              MagicStarterAuthController.instance.verifyEmail,
+            )
+            .title('magic_starter.titles.verify_email')
+            .transition(RouteTransition.none);
+      },
+    );
+  }
 }

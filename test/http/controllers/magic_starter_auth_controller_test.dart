@@ -15,6 +15,7 @@ class MockNetworkDriver implements NetworkDriver {
   String? lastMethod;
   String? lastUrl;
   dynamic lastData;
+  Map<String, dynamic>? lastQuery;
 
   void mockResponse({required int statusCode, dynamic data}) {
     nextResponse = MagicResponse(data: data ?? {}, statusCode: statusCode);
@@ -35,7 +36,10 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
-  }) async => _respond('GET', url);
+  }) async {
+    lastQuery = query;
+    return _respond('GET', url);
+  }
 
   @override
   Future<MagicResponse> post(
@@ -642,6 +646,57 @@ void main() {
         );
 
         expect(controller.isSuccess, isFalse);
+      });
+    });
+
+    // ---------------------------------------------------------------------
+    // doVerifyEmail
+    // ---------------------------------------------------------------------
+
+    group('doVerifyEmail', () {
+      Future<void> verify() => controller.doVerifyEmail(
+        id: 'user-7',
+        hash: 'abc123',
+        expires: '1792366139',
+        signature: 'sig-xyz',
+      );
+
+      test('replays the mailed link against the signed API route', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Email verified successfully.'},
+        );
+
+        await verify();
+
+        expect(mockDriver.lastMethod, 'GET');
+        expect(mockDriver.lastUrl, '/email/verify/user-7/abc123');
+        expect(mockDriver.lastQuery, {
+          'expires': '1792366139',
+          'signature': 'sig-xyz',
+        });
+        expect(controller.isSuccess, isTrue);
+      });
+
+      test('refreshes a signed-in user so the verified flag lands', () async {
+        mockGuard.mockToken = 'token-1';
+        mockDriver.mockResponse(statusCode: 200, data: {'message': 'ok'});
+
+        await verify();
+
+        expect(Auth.user()?.get<String>('name'), 'Restored User');
+      });
+
+      test('an invalid or expired link sets the error state', () async {
+        mockDriver.mockResponse(
+          statusCode: 403,
+          data: {'message': 'Invalid signature.'},
+        );
+
+        await verify();
+
+        expect(controller.isSuccess, isFalse);
+        expect(controller.isError, isTrue);
       });
     });
 

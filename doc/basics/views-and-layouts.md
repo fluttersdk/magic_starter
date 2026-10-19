@@ -566,6 +566,7 @@ Built-in view keys:
 | `auth.register` | Registration page |
 | `auth.forgot_password` | Forgot password page |
 | `auth.reset_password` | Reset password page |
+| `auth.verify_email` | Email verification page (the mailed link) |
 | `auth.otp_verify` | OTP verification page |
 | `auth.two_factor_challenge` | Two-factor challenge page |
 | `profile.settings` | Profile settings page |

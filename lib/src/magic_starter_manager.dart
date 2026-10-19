@@ -22,6 +22,7 @@ import 'ui/views/auth/magic_starter_forgot_password_view.dart';
 import 'ui/views/auth/magic_starter_login_view.dart';
 import 'ui/views/auth/magic_starter_register_view.dart';
 import 'ui/views/auth/magic_starter_reset_password_view.dart';
+import 'ui/views/auth/magic_starter_verify_email_view.dart';
 import 'ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 import 'ui/views/auth/magic_starter_otp_verify_view.dart';
 import 'ui/views/profile/magic_starter_profile_sub_page_view.dart';
@@ -527,6 +528,12 @@ class MagicStarterManager {
       'auth.reset_password',
       () => const MagicStarterResetPasswordView(),
     );
+    if (MagicStarterConfig.hasEmailVerificationFeatures()) {
+      _registerDefault(
+        'auth.verify_email',
+        () => const MagicStarterVerifyEmailView(),
+      );
+    }
     // Two-factor challenge — conditional on feature flag.
     if (MagicStarterConfig.hasTwoFactorFeatures()) {
       _registerDefault(
