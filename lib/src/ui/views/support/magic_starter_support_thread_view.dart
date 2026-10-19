@@ -192,14 +192,15 @@ class _MagicStarterSupportThreadViewState
 
     _ratingError = null;
     setState(() => _sending = true);
-    final bool sent = await controller.sendMessage(
-      id,
-      body,
-      attachments: files,
-    );
-    if (!mounted) return;
-    setState(() => _sending = false);
-    if (!sent) return;
+    final bool sent;
+    try {
+      sent = await controller.sendMessage(id, body, attachments: files);
+    } finally {
+      // A reply whose answer fails to decode throws past the controller's own
+      // guard; Send must not stay spinning and disabled after it.
+      if (mounted) setState(() => _sending = false);
+    }
+    if (!mounted || !sent) return;
 
     _reply.clear();
     clearAttachments();

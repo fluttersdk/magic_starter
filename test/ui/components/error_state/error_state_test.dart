@@ -99,4 +99,25 @@ void main() {
     await tester.pump();
     expect(find.byType(ErrorStatePreview), findsOneWidget);
   });
+
+  testWidgets('centres on the page inside a start-aligned column', (
+    tester,
+  ) async {
+    // Like MSEmptyState, it shrank to its text in a start-aligned page body
+    // and sat against the left edge.
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      wrap(
+        WDiv(
+          className: 'flex flex-col gap-6',
+          children: const [MSErrorState(title: 'Could not load')],
+        ),
+      ),
+    );
+
+    expect(tester.getCenter(find.text('Could not load')).dx, closeTo(600, 1));
+  });
 }

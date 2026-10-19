@@ -341,12 +341,22 @@ class MagicStarterSupportController extends MagicController
 
     final loaded = _conversation;
     if (loaded != null && loaded.id.toString() == id.toString()) {
-      _conversation = loaded.withMessage(
-        MagicStarterSupportMessage.fromMap(
-          _payload(response) as Map<String, dynamic>,
-        ),
-      );
-      refreshUI();
+      final Object? payload = _payload(response);
+      if (payload is Map<String, dynamic>) {
+        _conversation = loaded.withMessage(
+          MagicStarterSupportMessage.fromMap(payload),
+        );
+        refreshUI();
+      } else {
+        // The server took the reply but answered something this client cannot
+        // read: read the thread again rather than report a failure the reader
+        // would retry, posting the reply twice.
+        Log.error(
+          '[MagicStarterSupportController.sendMessage] unreadable reply: '
+          '$payload',
+        );
+        await loadConversation(id);
+      }
     }
 
     return true;

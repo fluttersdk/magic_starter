@@ -2,8 +2,11 @@
 // the canonical 4-file atomic-component shape.
 
 /// Root container className for [MSErrorState].
+/// `w-full` for the reason `emptyStateRootClassName` has it: a page body is a
+/// start-aligned column, and without it the state hugged the left edge.
 String errorStateRootClassName() =>
-    'flex flex-col items-center justify-center gap-4 py-12 px-6 text-center';
+    'w-full flex flex-col items-center justify-center gap-4 py-12 px-6 '
+    'text-center';
 
 /// Icon wrapper className (destructive tinted background).
 String errorStateIconWrapClassName() =>

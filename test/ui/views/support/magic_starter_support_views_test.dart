@@ -946,6 +946,33 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
+    testWidgets('a reply whose answer will not decode frees Send again', (
+      tester,
+    ) async {
+      Http.fake((MagicRequest request) async {
+        if (request.method == 'POST') {
+          return Http.response(<String, dynamic>{'data': 'not a message'});
+        }
+
+        return ok(conversationJson(id: 7));
+      });
+
+      await mount(tester, at: '/support/7');
+      await tester.enterText(find.byType(EditableText).last, 'Still there?');
+      await tester.tap(find.byKey(const ValueKey<String>('support-send')));
+      await tester.pump();
+      await tester.pump();
+      tester.takeException();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('support-send')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsNothing,
+      );
+    });
+
     testWidgets('saving a rating does not spin the Send circle', (
       tester,
     ) async {
