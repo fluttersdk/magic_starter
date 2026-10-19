@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.55] - 2026-10-20
+
 ### Fixed
 
 - **A held custom tier reads "Current plan".** A custom tier (no price, no product) is granted by an operator, as `magic-starter-laravel`'s "Grant a plan" now makes easy, and the team holding it saw its held marker labelled "Contact sales": the card checked "custom" before "held". The held tier is checked first. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)

@@ -37,7 +37,7 @@ Or add it manually to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.54
+  magic_starter: ^0.0.55
 ```
 
 Then fetch dependencies:
