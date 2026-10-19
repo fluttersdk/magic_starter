@@ -332,6 +332,7 @@
       "security_section": "Security"
     },
     "support": {
+      "articles_label": "These may help",
       "attach_button": "Attach files",
       "attachment_open_error": "We could not open this file.",
       "attachment_remove": "Remove :name",

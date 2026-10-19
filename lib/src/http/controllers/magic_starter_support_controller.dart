@@ -47,6 +47,12 @@ class MagicStarterSupportController extends MagicController
   /// Rows requested per page of the conversation list.
   static const int _perPage = 20;
 
+  /// Suggestions kept, though the backend may send up to five.
+  static const int _maxSuggestions = 3;
+
+  /// The backend's cap on `search`; a longer body is searched by its start.
+  static const int _maxSearchLength = 200;
+
   /// Bumped by [resetForSession]; a read that started under an older value
   /// belongs to the previous session and publishes nothing.
   int _sessionGeneration = 0;
@@ -60,6 +66,11 @@ class MagicStarterSupportController extends MagicController
   /// older value belongs to a list that has since been replaced and appends
   /// nothing, so a slow page 2 cannot land on a freshly reloaded page 1.
   int _listRead = 0;
+
+  /// Bumped by every [suggestArticles] and [forgetArticleSuggestions]; only the
+  /// newest lookup publishes, so a slow answer for text the customer has since
+  /// changed cannot replace the newer suggestions.
+  int _suggestionRead = 0;
 
   bool _isSubmitting = false;
   bool _isLoadingMore = false;
@@ -76,6 +87,8 @@ class MagicStarterSupportController extends MagicController
   MagicStarterSupportReadStatus _threadStatus =
       MagicStarterSupportReadStatus.idle;
   MagicStarterSupportConversation? _conversation;
+
+  List<MagicStarterSupportArticle> _articleSuggestions = const [];
 
   String? _writeError;
 
@@ -103,6 +116,11 @@ class MagicStarterSupportController extends MagicController
   /// The thread last read, with its messages. Null before the first read and
   /// whenever [threadStatus] is not loaded.
   MagicStarterSupportConversation? get conversation => _conversation;
+
+  /// The articles suggested for what the customer is writing, at most three.
+  /// Empty while nothing is suggested, which includes a failed lookup.
+  List<MagicStarterSupportArticle> get articleSuggestions =>
+      _articleSuggestions;
 
   /// Whether the AI still owes the open thread an answer, for the typing
   /// indicator. False when no thread is loaded.
@@ -274,6 +292,62 @@ class MagicStarterSupportController extends MagicController
     }
 
     refreshUI();
+  }
+
+  /// Looks up articles for [search] in the app's locale and publishes them as
+  /// [articleSuggestions].
+  ///
+  /// Suggestions are optional, so a refusal (a 404 when the backend has the
+  /// feature off included) and a transport failure both leave nothing to show
+  /// and say nothing. Only the newest call publishes.
+  Future<void> suggestArticles(String search) async {
+    final generation = _sessionGeneration;
+    final read = ++_suggestionRead;
+
+    try {
+      final response = await Http.get(
+        '/support/articles',
+        query: {
+          'search': String.fromCharCodes(search.runes.take(_maxSearchLength)),
+          'locale': Lang.current.languageCode,
+        },
+      );
+      if (generation != _sessionGeneration || read != _suggestionRead) return;
+
+      if (response.successful) {
+        _articleSuggestions = [
+          for (final row in _payload(response) as List<dynamic>)
+            MagicStarterSupportArticle.fromMap(row as Map<String, dynamic>),
+        ].take(_maxSuggestions).toList();
+      } else {
+        _articleSuggestions = const [];
+        if (!response.notFound) {
+          Log.warning(
+            '[MagicStarterSupportController.suggestArticles] '
+            '${response.statusCode}',
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      Log.error(
+        '[MagicStarterSupportController.suggestArticles] $e\n$stackTrace',
+      );
+      if (generation != _sessionGeneration || read != _suggestionRead) return;
+      _articleSuggestions = const [];
+    }
+
+    refreshUI();
+  }
+
+  /// Drops the suggestions and abandons any lookup still in flight, so what it
+  /// finds later is not shown. [notify] false is for a screen's `onInit`, which
+  /// runs while the screen is being built (see [forgetWriteError]).
+  void forgetArticleSuggestions({bool notify = true}) {
+    _suggestionRead++;
+    if (_articleSuggestions.isEmpty) return;
+
+    _articleSuggestions = const [];
+    if (notify) refreshUI();
   }
 
   /// Opens a conversation and answers it, or null when the backend refused
@@ -481,6 +555,7 @@ class MagicStarterSupportController extends MagicController
 
     _conversations = const [];
     _conversation = null;
+    _articleSuggestions = const [];
     _listStatus = MagicStarterSupportReadStatus.idle;
     _threadStatus = MagicStarterSupportReadStatus.idle;
     _listPage = 0;

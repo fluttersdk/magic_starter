@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../models/magic_starter_support_conversation.dart';
 import '../../components/avatar/index.dart';
+import 'magic_starter_support_article_card.dart';
 import 'magic_starter_support_attachments.dart';
 
 /// The face of whoever wrote a support line.
@@ -96,6 +97,9 @@ class MagicStarterSupportSenderAvatar extends StatelessWidget {
 /// With `support_attachments` on, what the message carried renders inside the
 /// bubble, once the thread has handed over [onOpenPdf]; without it the bubble
 /// shows the text only. An image-only message has no text line.
+///
+/// The assistant's knowledge-base articles sit under its bubble as
+/// [MagicStarterSupportArticleCard]s; no other sender gets them.
 class MagicStarterSupportMessageBubble extends StatelessWidget {
   const MagicStarterSupportMessageBubble(
     this.message, {
@@ -168,6 +172,15 @@ class MagicStarterSupportMessageBubble extends StatelessWidget {
                   '${accent ? ' border-l-2 border-ai' : ''}',
               child: _buildContent(),
             ),
+            if (message.senderType == 'ai' && message.articles.isNotEmpty)
+              WDiv(
+                key: ValueKey<String>('support-articles-${message.id}'),
+                className: 'w-full max-w-xl flex flex-col gap-2',
+                children: [
+                  for (final article in message.articles)
+                    MagicStarterSupportArticleCard(article),
+                ],
+              ),
             label,
           ],
         ),

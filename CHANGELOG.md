@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Article suggestions while writing to support, and article cards on AI answers.** Once the new-conversation message has 12 characters and typing has paused for 600 ms, the form asks `GET support/articles?search=&locale=` and shows up to three matching articles (question and excerpt) under a "These may help" label above Send; a tap opens the article's `url` with `Launch.url`, and an article without a `url` is plain text. A slower earlier answer never replaces a newer one, falling under 12 characters clears the cards, and a failed or switched-off (404) lookup shows nothing. The `search` is cut to the backend's 200 character cap. An AI message now parses `articles` (`slug`, `question`, `url`) and its bubble shows one `MagicStarterSupportArticleCard` per article; no other sender renders them. New model `MagicStarterSupportArticle`, controller members `suggestArticles`, `articleSuggestions` and `forgetArticleSuggestions`, and catalogue key `magic_starter.support.articles_label`; add it to your `en.json` (the install stub has it) and your other locales, since the translator merges no fallback. Needs `magic-starter-laravel` with `support.articles.enabled`. (`lib/src/ui/views/support/magic_starter_support_create_view.dart`, `lib/src/ui/views/support/magic_starter_support_message_bubble.dart`, `lib/src/ui/views/support/magic_starter_support_article_card.dart`, `lib/src/models/magic_starter_support_conversation.dart`, `lib/src/http/controllers/magic_starter_support_controller.dart`, `assets/stubs/install/en.stub`)
+
 ## [0.0.53] - 2026-10-19
 
 ### Added

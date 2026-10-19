@@ -53,6 +53,39 @@ class MagicStarterSupportAttachment {
   }
 }
 
+/// A knowledge-base article offered to the customer, as `magic-starter-laravel`
+/// serialises it: a suggestion while writing, or a card under an AI answer.
+@immutable
+class MagicStarterSupportArticle {
+  final String slug;
+
+  final String question;
+
+  /// Plain-text excerpt of the answer. Only the suggestion lookup sends it; the
+  /// cards under an AI answer carry none.
+  final String? excerpt;
+
+  /// The public page the article is read on. Null when the host has configured
+  /// no public page, in which case there is nothing to open.
+  final String? url;
+
+  const MagicStarterSupportArticle({
+    required this.slug,
+    required this.question,
+    this.excerpt,
+    this.url,
+  });
+
+  factory MagicStarterSupportArticle.fromMap(Map<String, dynamic> map) {
+    return MagicStarterSupportArticle(
+      slug: map['slug'] as String,
+      question: map['question'] as String,
+      excerpt: map['excerpt'] as String?,
+      url: map['url'] as String?,
+    );
+  }
+}
+
 /// One message in a support conversation, as `magic-starter-laravel` serialises
 /// it.
 @immutable
@@ -85,6 +118,10 @@ class MagicStarterSupportMessage {
   /// message with no files.
   final List<MagicStarterSupportAttachment> attachments;
 
+  /// The knowledge-base cards the backend stored with an AI answer. Empty for
+  /// every other sender, which the backend never sends them for.
+  final List<MagicStarterSupportArticle> articles;
+
   const MagicStarterSupportMessage({
     required this.id,
     required this.senderType,
@@ -94,11 +131,13 @@ class MagicStarterSupportMessage {
     this.senderName,
     this.senderAvatarUrl,
     this.attachments = const <MagicStarterSupportAttachment>[],
+    this.articles = const <MagicStarterSupportArticle>[],
   });
 
   factory MagicStarterSupportMessage.fromMap(Map<String, dynamic> map) {
     final sender = map['sender'] as Map<String, dynamic>?;
     final attachments = map['attachments'] as List<dynamic>?;
+    final articles = map['articles'] as List<dynamic>?;
 
     return MagicStarterSupportMessage(
       id: map['id'],
@@ -113,6 +152,10 @@ class MagicStarterSupportMessage {
           MagicStarterSupportAttachment.fromMap(
             attachment as Map<String, dynamic>,
           ),
+      ],
+      articles: [
+        for (final article in articles ?? const <dynamic>[])
+          MagicStarterSupportArticle.fromMap(article as Map<String, dynamic>),
       ],
     );
   }

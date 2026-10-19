@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/views/support/magic_starter_support_article_card.dart';
 import 'package:magic_starter/src/ui/views/support/magic_starter_support_message_bubble.dart';
 
 // ---------------------------------------------------------------------------
@@ -118,6 +119,7 @@ Map<String, dynamic> messageJson({
   String? senderName,
   String? senderAvatarUrl,
   List<Map<String, dynamic>>? attachments,
+  List<Map<String, dynamic>>? articles,
 }) {
   return <String, dynamic>{
     'id': id,
@@ -126,6 +128,7 @@ Map<String, dynamic> messageJson({
     'body': body,
     'created_at': '2026-10-12T09:00:00+00:00',
     'attachments': ?attachments,
+    'articles': ?articles,
     if (senderName != null || senderAvatarUrl != null)
       'sender': <String, dynamic>{
         'name': senderName,
@@ -2953,6 +2956,323 @@ void main() {
 
       expect(data.containsKey('screenshot'), isFalse);
       expect(data.containsKey('client_context'), isFalse);
+    });
+  });
+
+  group('article suggestions on the create view', () {
+    const String typed = 'My monitor will not save';
+
+    Map<String, dynamic> suggestionJson(String slug, {String? url}) {
+      return <String, dynamic>{
+        'id': slug,
+        'slug': slug,
+        'question': 'Question $slug',
+        'excerpt': 'Excerpt $slug',
+        'url': url,
+      };
+    }
+
+    Finder card(String slug) {
+      return find.byKey(ValueKey<String>('support-article-$slug'));
+    }
+
+    /// Answers every `GET /support/articles` with [answer] and records the query
+    /// each one carried.
+    List<Map<String, dynamic>?> articlesBackend(
+      Future<MagicResponse> Function(int call) answer,
+    ) {
+      final List<Map<String, dynamic>?> queries = <Map<String, dynamic>?>[];
+      Http.fake((MagicRequest request) {
+        if (request.url != '/support/articles') {
+          return Future<MagicResponse>.value(
+            Http.response(<String, dynamic>{}, 404),
+          );
+        }
+        queries.add(request.queryParameters);
+
+        return answer(queries.length - 1);
+      });
+
+      return queries;
+    }
+
+    Future<void> type(WidgetTester tester, String text) async {
+      await tester.enterText(find.byType(EditableText), text);
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+
+    testWidgets('searches once, 600 ms after the body reaches 12 characters', (
+      tester,
+    ) async {
+      final queries = articlesBackend(
+        (_) async => ok(<Map<String, dynamic>>[suggestionJson('one')]),
+      );
+      await mount(tester, at: '/support/new');
+
+      await type(tester, 'Too short');
+      expect(queries, isEmpty, reason: 'under 12 characters asks nothing');
+
+      await tester.enterText(find.byType(EditableText), typed);
+      await tester.pump(const Duration(milliseconds: 599));
+      expect(queries, isEmpty, reason: 'the debounce has not elapsed');
+
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump();
+
+      expect(queries, hasLength(1));
+      expect(queries.single, <String, dynamic>{
+        'search': typed,
+        'locale': 'en',
+      });
+    });
+
+    testWidgets('a burst of typing is one request for the last text', (
+      tester,
+    ) async {
+      final queries = articlesBackend((_) async => ok(<Object>[]));
+      await mount(tester, at: '/support/new');
+
+      await tester.enterText(find.byType(EditableText), 'My monitor will');
+      await tester.pump(const Duration(milliseconds: 300));
+      await type(tester, typed);
+      await tester.pump();
+
+      expect(queries, hasLength(1));
+      expect(queries.single!['search'], typed);
+    });
+
+    testWidgets('shows up to three cards under the label, above Send', (
+      tester,
+    ) async {
+      articlesBackend(
+        (_) async => ok(<Map<String, dynamic>>[
+          for (final String slug in <String>['a', 'b', 'c', 'd'])
+            suggestionJson(slug, url: 'https://example.com/faq#$slug'),
+        ]),
+      );
+      await mount(tester, at: '/support/new');
+
+      await type(tester, typed);
+      await tester.pump();
+
+      expect(find.byType(MagicStarterSupportArticleCard), findsNWidgets(3));
+      expect(find.text('Question a'), findsOneWidget);
+      expect(find.text('Excerpt a'), findsOneWidget);
+      expect(card('d'), findsNothing, reason: 'three is the limit');
+
+      final Finder label = find.text(
+        trans('magic_starter.support.articles_label'),
+      );
+      expect(label, findsOneWidget);
+
+      final double send = tester
+          .getTopLeft(find.text(trans('magic_starter.support.create_submit')))
+          .dy;
+      expect(tester.getBottomLeft(card('c')).dy, lessThanOrEqualTo(send));
+      expect(
+        tester.getTopLeft(label).dy,
+        lessThan(tester.getTopLeft(card('a')).dy),
+      );
+    });
+
+    testWidgets('a slower first answer arriving last is ignored', (
+      tester,
+    ) async {
+      final List<Completer<MagicResponse>> answers = <Completer<MagicResponse>>[
+        Completer<MagicResponse>(),
+        Completer<MagicResponse>(),
+      ];
+      articlesBackend((call) => answers[call].future);
+      await mount(tester, at: '/support/new');
+
+      await type(tester, typed);
+      await type(tester, '$typed again');
+
+      answers[1].complete(ok(<Map<String, dynamic>>[suggestionJson('fresh')]));
+      await tester.pump();
+      answers[0].complete(ok(<Map<String, dynamic>>[suggestionJson('stale')]));
+      await tester.pump();
+
+      expect(card('fresh'), findsOneWidget);
+      expect(card('stale'), findsNothing);
+    });
+
+    for (final int status in <int>[404, 500]) {
+      testWidgets('a lookup answered $status renders nothing', (tester) async {
+        articlesBackend(
+          (_) async => Http.response(<String, dynamic>{}, status),
+        );
+        await mount(tester, at: '/support/new');
+
+        await type(tester, typed);
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(MagicStarterSupportArticleCard), findsNothing);
+        expect(
+          find.text(trans('magic_starter.support.articles_label')),
+          findsNothing,
+        );
+      });
+    }
+
+    testWidgets('cards go when the body falls under 12 characters', (
+      tester,
+    ) async {
+      final Completer<MagicResponse> lateAnswer = Completer<MagicResponse>();
+      final queries = articlesBackend(
+        (call) => call == 0
+            ? Future<MagicResponse>.value(
+                ok(<Map<String, dynamic>>[suggestionJson('one')]),
+              )
+            : lateAnswer.future,
+      );
+      await mount(tester, at: '/support/new');
+
+      await type(tester, typed);
+      await tester.pump();
+      expect(card('one'), findsOneWidget);
+
+      await type(tester, '$typed and more');
+      expect(queries, hasLength(2));
+      await tester.enterText(find.byType(EditableText), 'Gone');
+      await tester.pump();
+      expect(card('one'), findsNothing);
+
+      lateAnswer.complete(ok(<Map<String, dynamic>>[suggestionJson('late')]));
+      await tester.pump();
+
+      expect(card('late'), findsNothing, reason: 'that answer is out of date');
+    });
+
+    testWidgets('a tap opens the article url, and nothing when it has none', (
+      tester,
+    ) async {
+      final launcher = _RecordingLaunchAdapter();
+      Magic.singleton('launch', () => LaunchService(adapter: launcher));
+      articlesBackend(
+        (_) async => ok(<Map<String, dynamic>>[
+          suggestionJson('linked', url: 'https://example.com/faq#linked'),
+          suggestionJson('bare'),
+        ]),
+      );
+      await mount(tester, at: '/support/new');
+      await type(tester, typed);
+      await tester.pump();
+
+      await tester.tap(card('bare'));
+      await tester.pump();
+      expect(launcher.launched, isEmpty);
+
+      await tester.tap(card('linked'));
+      await tester.pump();
+      expect(launcher.launched, <Uri>[
+        Uri.parse('https://example.com/faq#linked'),
+      ]);
+    });
+  });
+
+  group('article cards on the thread', () {
+    List<Map<String, dynamic>> twoArticles() => <Map<String, dynamic>>[
+      <String, dynamic>{
+        'slug': 'first',
+        'question': 'How do I add a monitor?',
+        'url': 'https://example.com/faq#first',
+      },
+      <String, dynamic>{
+        'slug': 'second',
+        'question': 'Why is my monitor paused?',
+        'url': null,
+      },
+    ];
+
+    testWidgets('an AI answer carries one card per article', (tester) async {
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            messages: <Map<String, dynamic>>[
+              messageJson(id: 1, body: 'Help with monitors'),
+              messageJson(
+                id: 2,
+                senderType: 'ai',
+                senderName: 'Uptizm AI',
+                body: 'Start with these.',
+                articles: twoArticles(),
+              ),
+            ],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+      });
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(find.byType(MagicStarterSupportArticleCard), findsNWidgets(2));
+      expect(find.text('How do I add a monitor?'), findsOneWidget);
+      expect(find.text('Why is my monitor paused?'), findsOneWidget);
+    });
+
+    testWidgets('a customer message never renders cards', (tester) async {
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            messages: <Map<String, dynamic>>[
+              messageJson(
+                id: 1,
+                body: 'Help with monitors',
+                articles: twoArticles(),
+              ),
+              messageJson(
+                id: 2,
+                senderType: 'staff',
+                body: 'On it.',
+                articles: twoArticles(),
+              ),
+            ],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+      });
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+
+      expect(find.byType(MagicStarterSupportArticleCard), findsNothing);
+    });
+
+    testWidgets('a card opens its url and the one without a url opens none', (
+      tester,
+    ) async {
+      final launcher = _RecordingLaunchAdapter();
+      Magic.singleton('launch', () => LaunchService(adapter: launcher));
+      fakeBackend({
+        'GET /support/conversations/7': (_) => ok(
+          conversationJson(
+            id: 7,
+            messages: <Map<String, dynamic>>[
+              messageJson(
+                id: 2,
+                senderType: 'ai',
+                body: 'Start with these.',
+                articles: twoArticles(),
+              ),
+            ],
+          ),
+        ),
+        'POST /support/conversations/7/seen': (_) => ok(null),
+      });
+
+      await mount(tester, at: '/support/7', size: const Size(1200, 800));
+      await tester.tap(find.text('Why is my monitor paused?'));
+      await tester.pump();
+      expect(launcher.launched, isEmpty);
+
+      await tester.tap(find.text('How do I add a monitor?'));
+      await tester.pump();
+      expect(launcher.launched, <Uri>[
+        Uri.parse('https://example.com/faq#first'),
+      ]);
     });
   });
 }
