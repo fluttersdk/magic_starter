@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **An email verification page at `/auth/verify-email`.** The verification mail of `magic-starter-laravel` 0.0.41 opens it with `id`, `hash`, `expires` and `signature`; the page replays them as `GET /email/verify/{id}/{hash}` once, restores a signed-in user so `email_verified_at` lands, and says whether it worked. Before, the mail pointed at the client host's `/api/v1/email/verify/...`, which no client route served, so a customer landed on sign-in and was never verified. The route sits outside the `guest` group, because the link is opened signed in as often as signed out, and registers only with `features.email_verification`. The page replays only a key-shaped `id` and a sha1 `hash` (anything else is a failed link, never a request), and a reader signed in as someone else is told the address is verified rather than theirs. The backend mails the path `/auth/verify-email`, so the page assumes the default `routes.auth_prefix` of `/auth`, as `/auth/reset-password` already does. New view key `auth.verify_email` (`MagicStarterVerifyEmailView`), controller method `doVerifyEmail`, and catalogue keys `magic_starter.titles.verify_email` and `magic_starter.email_verification.{continue,verify_failed,verify_subtitle,verify_success,verify_success_other,verifying}`; add them to your `en.json` (the install stub has them) and your other locales. (`lib/src/routes/auth_routes.dart`, `lib/src/ui/views/auth/magic_starter_verify_email_view.dart`, `lib/src/http/controllers/magic_starter_auth_controller.dart`, `assets/stubs/install/en.stub`)
+
 ## [0.0.52] - 2026-10-18
 
 ### Fixed

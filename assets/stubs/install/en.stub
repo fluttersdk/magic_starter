@@ -234,7 +234,13 @@
       "sent": "Verification email sent successfully.",
       "unverified_description": "Your email address is not verified yet. Please verify it to secure your account.",
       "unverified_title": "Email address not verified",
-      "verified": "Your email address is verified."
+      "verified": "Your email address is verified.",
+      "continue": "Continue",
+      "verify_failed": "This verification link is invalid or has expired. Request a new one from your profile.",
+      "verify_subtitle": "Confirming your email address",
+      "verify_success": "Your email address is verified. Thank you!",
+      "verify_success_other": "The email address is verified.",
+      "verifying": "Verifying your email address..."
     },
     "guest_upgrade": {
       "button": "Upgrade Account",
@@ -442,7 +448,8 @@
       "team_settings": "Team Settings",
       "timezone": "Timezone",
       "two_factor": "Two-Factor Authentication",
-      "two_factor_challenge": "Two-Factor Challenge"
+      "two_factor_challenge": "Two-Factor Challenge",
+      "verify_email": "Verify Email"
     }
   },
   "nav": {

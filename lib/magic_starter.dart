@@ -48,6 +48,7 @@ export 'src/ui/views/auth/magic_starter_login_view.dart';
 export 'src/ui/views/auth/magic_starter_register_view.dart';
 export 'src/ui/views/auth/magic_starter_forgot_password_view.dart';
 export 'src/ui/views/auth/magic_starter_reset_password_view.dart';
+export 'src/ui/views/auth/magic_starter_verify_email_view.dart';
 export 'src/ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 export 'src/ui/views/auth/magic_starter_otp_verify_view.dart';
 export 'src/ui/views/profile/magic_starter_profile_settings_view.dart';

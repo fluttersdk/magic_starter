@@ -352,7 +352,7 @@ void main() {
       },
     );
 
-    test('--tag=views:auth publishes all six auth views when present', () async {
+    test('--tag=views:auth publishes all seven auth views when present', () async {
       createPluginFile(
         'lib/src/ui/views/auth/magic_starter_login_view.dart',
         'login',
@@ -377,8 +377,19 @@ void main() {
         'lib/src/ui/views/auth/magic_starter_otp_verify_view.dart',
         'otp',
       );
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_verify_email_view.dart',
+        'verify_email',
+      );
 
       await _runPublish(command, tag: 'views:auth');
+
+      expect(
+        hostFileExists(
+          'lib/resources/views/starter/auth/magic_starter_verify_email_view.dart',
+        ),
+        isTrue,
+      );
 
       expect(
         hostFileExists(

@@ -43,6 +43,7 @@ List<RouteDefinition> allRegisteredRoutes() {
 void enableEveryRoutedFeature() {
   Config.set('magic_starter.features.registration', true);
   Config.set('magic_starter.features.two_factor', true);
+  Config.set('magic_starter.features.email_verification', true);
   Config.set('magic_starter.features.phone_otp', true);
   Config.set('magic_starter.features.notifications', true);
   Config.set('magic_starter.features.extended_profile', true);

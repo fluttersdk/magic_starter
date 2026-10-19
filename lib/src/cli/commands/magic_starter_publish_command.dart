@@ -30,6 +30,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
         'ui/views/auth/magic_starter_forgot_password_view.dart',
     'auth.reset_password':
         'ui/views/auth/magic_starter_reset_password_view.dart',
+    'auth.verify_email': 'ui/views/auth/magic_starter_verify_email_view.dart',
     'auth.two_factor_challenge':
         'ui/views/auth/magic_starter_two_factor_challenge_view.dart',
     'auth.otp_verify': 'ui/views/auth/magic_starter_otp_verify_view.dart',
