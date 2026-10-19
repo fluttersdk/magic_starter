@@ -109,8 +109,14 @@ class MSSettingsSection extends StatelessWidget {
         // 2. Grouped rounded container with interleaved dividers.
         WDiv(className: _containerClass(), children: _buildRows()),
 
-        // 3. Optional footer caption.
-        if (footer != null) WText(footer!, className: _captionClass()),
+        // 3. Optional footer caption, twice the header's distance off the
+        //    card: it explains the rows above it, and sitting as tight as the
+        //    header made it read as part of the card.
+        if (footer != null)
+          WDiv(
+            className: 'pt-1.5',
+            child: WText(footer!, className: _captionClass()),
+          ),
       ],
     );
   }

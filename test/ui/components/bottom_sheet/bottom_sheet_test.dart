@@ -45,6 +45,63 @@ void main() {
       expect(find.text('Sheet Title'), findsOneWidget);
     });
 
+    testWidgets('scrolls its body by default', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        wrap(const MSBottomSheet(body: SizedBox(key: Key('b'), height: 10))),
+      );
+
+      expect(
+        find.ancestor(
+          of: find.byKey(const Key('b')),
+          matching: find.byType(Scrollable),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a non-scrollable sheet hands its body the bounded height', (
+      tester,
+    ) async {
+      // A body with its own list (a paged table under a fixed chart) used to
+      // nest that list inside the sheet's scroll view: two scrollbars, and
+      // the list had to guess a fixed height.
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      BoxConstraints? seen;
+      await tester.pumpWidget(
+        wrap(
+          MSBottomSheet(
+            scrollable: false,
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                seen = constraints;
+
+                return const SizedBox(key: Key('b'), height: 10);
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.ancestor(
+          of: find.byKey(const Key('b')),
+          matching: find.byType(Scrollable),
+        ),
+        findsNothing,
+      );
+      expect(seen!.hasBoundedHeight, isTrue);
+      expect(seen!.maxHeight, lessThanOrEqualTo(800 * 0.85));
+    });
+
     testWidgets('renders body content', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;

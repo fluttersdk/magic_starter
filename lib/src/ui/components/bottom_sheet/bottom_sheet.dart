@@ -10,8 +10,8 @@ import '../../../facades/magic_starter.dart';
 /// A reusable bottom-sheet component with Wind UI chrome driven by
 /// `MagicStarter.manager.modalTheme` tokens.
 ///
-/// Provides an optional header (title + description), a scrollable body, and
-/// an optional sticky footer. The bottom sheet slides up from the screen edge
+/// Provides an optional header (title + description), a body (scrolled by the
+/// sheet unless [scrollable] is false), and an optional sticky footer. The bottom sheet slides up from the screen edge
 /// with a rounded top radius.
 ///
 /// All classNames are read from the modal theme at build time; override via
@@ -33,8 +33,17 @@ class MSBottomSheet extends StatelessWidget {
   /// Optional sub-heading rendered below [title].
   final String? description;
 
-  /// Content widget rendered in the scrollable body area.
+  /// Content widget rendered in the body area.
   final Widget body;
+
+  /// Whether the sheet scrolls [body] for it (the default).
+  ///
+  /// Pass `false` for a body that owns its scrolling, such as a fixed summary
+  /// above a paged list: the body then gets the sheet's bounded height to lay
+  /// out in (an `Expanded` list fills what is left), and the sheet adds no
+  /// scroll view of its own, so there is one scrollbar rather than one inside
+  /// another. Such a body must fit, or scroll, within that height itself.
+  final bool scrollable;
 
   /// Optional builder for the sticky footer; receives the sheet's own
   /// [BuildContext].
@@ -47,6 +56,7 @@ class MSBottomSheet extends StatelessWidget {
     this.description,
     required this.body,
     this.footerBuilder,
+    this.scrollable = true,
   });
 
   /// Opens the bottom sheet and resolves when it is dismissed.
@@ -56,6 +66,7 @@ class MSBottomSheet extends StatelessWidget {
     String? description,
     required Widget body,
     Widget Function(BuildContext sheetContext)? footerBuilder,
+    bool scrollable = true,
   }) {
     return m.showModalBottomSheet<T>(
       context: context,
@@ -71,6 +82,7 @@ class MSBottomSheet extends StatelessWidget {
         description: description,
         body: body,
         footerBuilder: footerBuilder,
+        scrollable: scrollable,
       ),
     );
   }
@@ -173,13 +185,18 @@ class MSBottomSheet extends StatelessWidget {
                     WText(description!, className: theme.descriptionClassName),
                 ],
               ),
-            // 5. Scrollable body.
+            // 5. Body: scrolled by the sheet, or handed the bounded height to
+            //    scroll within itself (see [scrollable]).
             Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                children: [WDiv(className: theme.bodyClassName, child: body)],
-              ),
+              child: scrollable
+                  ? ListView(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      children: [
+                        WDiv(className: theme.bodyClassName, child: body),
+                      ],
+                    )
+                  : WDiv(className: theme.bodyClassName, child: body),
             ),
             // 6. Sticky footer.
             if (footerBuilder != null)

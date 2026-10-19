@@ -2,8 +2,12 @@
 // the canonical 4-file atomic-component shape.
 
 /// Root container className for [MSEmptyState].
+/// `w-full` because a page body is a start-aligned column that hands its
+/// children a loose width: without it the state shrinks to its text and
+/// `items-center` centres it inside itself, against the left edge.
 String emptyStateRootClassName() =>
-    'flex flex-col items-center justify-center gap-4 py-12 px-6 text-center';
+    'w-full flex flex-col items-center justify-center gap-4 py-12 px-6 '
+    'text-center';
 
 /// Icon wrapper className.
 String emptyStateIconWrapClassName() =>

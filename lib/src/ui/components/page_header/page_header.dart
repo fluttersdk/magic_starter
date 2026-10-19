@@ -58,6 +58,14 @@ class MSPageHeader extends StatelessWidget {
   /// Optional widget rendered inline after the title column.
   final Widget? titleSuffix;
 
+  /// Optional widget rendered on the subtitle line, right after [subtitle]
+  /// (a status pill beside a URL, say).
+  ///
+  /// Needs a [subtitle]: without one there is no line to sit on and nothing
+  /// renders. When the line cannot hold both, the suffix wraps under the
+  /// subtitle rather than overflowing the header.
+  final Widget? subtitleSuffix;
+
   /// When `true`, the outer container uses `flex-row` instead of the default
   /// responsive `flex-col sm:flex-row` stacked layout, and the title row claims
   /// the remaining width with `flex-1 min-w-0` so a long title SHRINKS instead
@@ -99,6 +107,7 @@ class MSPageHeader extends StatelessWidget {
     this.leading,
     this.actions,
     this.titleSuffix,
+    this.subtitleSuffix,
     this.inlineActions,
     this.backLabel,
     this.backFallback,
@@ -128,6 +137,23 @@ class MSPageHeader extends StatelessWidget {
         className: MagicStarter.pageHeaderTheme.backControlClassName,
         child: WIcon(_chevronLeft),
       ),
+    );
+  }
+
+  /// Builds the subtitle line: the text alone, or the text followed by
+  /// [subtitleSuffix], which wraps under the text when the line is too narrow
+  /// for both (a phone header leaves the title column under 100 px).
+  Widget _buildSubtitle(String text) {
+    final Widget label = WText(
+      text,
+      className: MagicStarter.pageHeaderTheme.subtitleClassName,
+    );
+    final Widget? suffix = subtitleSuffix;
+    if (suffix == null) return label;
+
+    return WDiv(
+      className: 'wrap items-center gap-2',
+      children: [label, suffix],
     );
   }
 
@@ -171,11 +197,7 @@ class MSPageHeader extends StatelessWidget {
                   title,
                   className: MagicStarter.pageHeaderTheme.titleClassName,
                 ),
-                if (subtitle != null)
-                  WText(
-                    subtitle!,
-                    className: MagicStarter.pageHeaderTheme.subtitleClassName,
-                  ),
+                if (subtitle != null) _buildSubtitle(subtitle!),
               ],
             ),
             if (titleSuffix != null)

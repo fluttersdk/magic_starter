@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MSBottomSheet(scrollable: false)`.** For a body that owns its scrolling (a fixed summary over a paged list): the sheet hands the body its bounded height and adds no scroll view, so the list fills what is left and there is one scrollbar instead of one nested in another. The default (`true`) is unchanged. Also on `MSBottomSheet.show`. (`lib/src/ui/components/bottom_sheet/bottom_sheet.dart`)
+- **`MSPageHeader.subtitleSuffix`.** A widget on the subtitle line, right after the subtitle (a status pill beside a URL). When the line cannot hold both (a phone header), the suffix wraps under the subtitle instead of overflowing. Renders nothing without a `subtitle`. (`lib/src/ui/components/page_header/page_header.dart`)
+
+### Fixed
+
+- **`MSEmptyState` centres on the page.** A page body is a start-aligned column that hands its children a loose width, so the state shrank to its text and sat against the left edge; its root now takes `w-full`. (`lib/src/ui/components/empty_state/empty_state.recipe.dart`)
+- **The support Send button sits evenly in the composer and shows it is sending.** Its circle stood 4 px further from the field's right edge than from the top and bottom; it now sits flush right in its 44 px target with a 4 px field padding. While a reply is in flight the circle shows a spinner in its own text colour and a second tap sends nothing. (`lib/src/ui/views/support/magic_starter_support_thread_view.dart`)
+- **An `MSSettingsSection` footer stands clear of its card.** It sat 6 px under the card, as tight as the header above it, and read as part of the card; it now sits 12 px below. (`lib/src/ui/components/settings_section/settings_section.dart`)
+- **Touch targets below `lg` reach 44 px.** A one-word `MSSegmentedControl` segment ("All") was 42 px wide: the hit cell had a height floor only, and now has `min-w-11` too. `MSTabs` tabs were 36 px tall on a phone and take `py-3` below `lg` (36 px from `lg` up, unchanged). The support thread's Send and Attach controls were 36 px circles wrapped in an outer `Semantics(button:)`, which read as a named button holding a second, unnamed one (and a semantics-driven tap on the outer node missed); each is now one labelled `WAnchor` around a 44 px box, the 36 px circle unchanged inside it. (`lib/src/ui/components/segmented_control/`, `lib/src/ui/components/tabs/`, `lib/src/ui/views/support/`)
+
 ## [0.0.52] - 2026-10-18
 
 ### Fixed

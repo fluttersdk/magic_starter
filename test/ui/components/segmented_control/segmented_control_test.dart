@@ -198,6 +198,37 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('a one-word segment is still a 44 px target each way', (
+      tester,
+    ) async {
+      // "All" painted 42 px wide: the hit cell had a 44 px floor in height
+      // only, so a short label left the target narrower than the touch floor.
+      // One-letter labels, because the test font paints every glyph as wide
+      // as it is tall and "All" alone already clears 44 px here.
+      await pumpOnPhone(
+        tester,
+        MSSegmentedControl<String>(
+          options: const ['A', 'B'],
+          selectedIndex: 0,
+          onChanged: (_) {},
+        ),
+      );
+
+      // The hit cell is the box the recipe's `hit` slot paints around a pill.
+      final Finder cells = find.byWidgetPredicate(
+        (widget) =>
+            widget is WDiv && (widget.className?.contains('min-h-11') ?? false),
+      );
+      expect(cells, findsNWidgets(2));
+
+      for (final Element cell in cells.evaluate()) {
+        final Size size = (cell.renderObject! as RenderBox).size;
+
+        expect(size.width, greaterThanOrEqualTo(44));
+        expect(size.height, greaterThanOrEqualTo(44));
+      }
+    });
+
     testWidgets('the selected segment stays distinguishable and tappable', (
       tester,
     ) async {

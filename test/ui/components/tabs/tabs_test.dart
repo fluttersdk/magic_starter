@@ -163,6 +163,40 @@ void main() {
       expect(bottomBorders, contains(_brandShade(500)));
     });
 
+    testWidgets('a tab is a 44 px target below lg and 36 px from lg', (
+      tester,
+    ) async {
+      // A tab painted 36 px tall on a phone, under the 44 px touch floor.
+      Future<double> tabHeightAt(double width) async {
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.physicalSize = Size(width, 800);
+        await tester.pumpWidget(
+          wrap(
+            MSTabs(
+              tabs: const ['Tab 1', 'Tab 2'],
+              selectedIndex: 1,
+              onChanged: (_) {},
+              panelBuilder: (i) => Text('Panel $i'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final Finder tab = find.byWidgetPredicate(
+          (widget) =>
+              widget is WDiv && (widget.className ?? '').contains('px-4'),
+        );
+
+        return tester.getSize(tab.first).height;
+      }
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      expect(await tabHeightAt(390), greaterThanOrEqualTo(44));
+      expect(await tabHeightAt(1280), lessThan(44));
+    });
+
     testWidgets('calls onChanged when a tab is tapped', (tester) async {
       int? changed;
       await tester.pumpWidget(

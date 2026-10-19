@@ -293,4 +293,31 @@ void main() {
       expect(captionText.className, contains('uppercase'));
     });
   });
+
+  testWidgets('the footer stands twice the header\'s gap off the card', (
+    tester,
+  ) async {
+    const Key card = Key('row');
+    await tester.pumpWidget(
+      wrap(
+        const MSSettingsSection(
+          header: 'HEAD',
+          footer: 'Foot note',
+          children: [SizedBox(key: card, height: 40)],
+        ),
+      ),
+    );
+
+    Finder caption(String text) =>
+        find.byWidgetPredicate((w) => w is WText && w.data == text);
+    final Rect container = tester.getRect(
+      find.ancestor(of: find.byKey(card), matching: find.byType(WDiv)).first,
+    );
+    final double headerGap =
+        container.top - tester.getRect(caption('HEAD')).bottom;
+    final double footerGap =
+        tester.getRect(caption('Foot note')).top - container.bottom;
+
+    expect(footerGap, closeTo(headerGap * 2, 1));
+  });
 }
