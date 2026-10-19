@@ -110,6 +110,13 @@ await MagicStarterAuthController.instance.doForgotPassword(
 
 On success, the controller sets success state. The view should display a confirmation message. No navigation occurs — the user stays on the same page.
 
+<a name="verify-email"></a>
+## Verify Email
+
+Registered with `features.email_verification`. The verification mail of `magic-starter-laravel` 0.0.41 and later opens `/auth/verify-email?id=...&hash=...&expires=...&signature=...`. `MagicStarterVerifyEmailView` reads the four query parameters once in `didChangeDependencies` and calls `doVerifyEmail`, which replays them as `GET /email/verify/{id}/{hash}?expires=...&signature=...`; the API's `signed` middleware checks them against its own host. On success a signed-in user is restored so `email_verified_at` lands, and the page offers Continue (home) or Back to Sign In. Any refusal (a bad or expired signature, a changed address), and any link whose `id` is not key-shaped or whose `hash` is not a sha1, shows `magic_starter.email_verification.verify_failed`; the malformed link is never sent. A reader signed in as a different user sees `verify_success_other` instead of the second-person copy.
+
+The route sits outside the `guest` group: the link is opened signed in as often as signed out, and `guest` would send a signed-in reader home before the link was replayed.
+
 <a name="reset-password"></a>
 ## Reset Password
 
@@ -429,6 +436,7 @@ All views extend `MagicStatefulView<ControllerType>` and are registered in the v
 | `auth.register` | `RegisterView` | `GuestLayout` |
 | `auth.forgot_password` | `ForgotPasswordView` | `GuestLayout` |
 | `auth.reset_password` | `ResetPasswordView` | `GuestLayout` |
+| `auth.verify_email` | `VerifyEmailView` | `GuestLayout` |
 | `auth.two_factor_challenge` | `TwoFactorChallengeView` | `GuestLayout` |
 | `auth.otp_verify` | `OtpVerifyView` | `GuestLayout` |
 

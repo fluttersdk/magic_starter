@@ -574,6 +574,7 @@ The following default views are registered:
 | `auth.register` | `MagicStarterRegisterView` | Always |
 | `auth.forgot_password` | `MagicStarterForgotPasswordView` | Always |
 | `auth.reset_password` | `MagicStarterResetPasswordView` | Always |
+| `auth.verify_email` | `MagicStarterVerifyEmailView` | `hasEmailVerificationFeatures()` |
 | `auth.two_factor_challenge` | `MagicStarterTwoFactorChallengeView` | `hasTwoFactorFeatures()` |
 | `auth.otp_verify` | `MagicStarterOtpVerifyView` | `hasPhoneOtpFeatures()` |
 | `profile.settings` | `MagicStarterProfileSettingsView` | Always |
