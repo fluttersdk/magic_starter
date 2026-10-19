@@ -201,6 +201,11 @@ MagicFile pickedFile(String name, {int bytes = 1024, int? size}) {
 
 /// Records what the screen asked the system to open instead of opening it.
 class _RecordingLaunchAdapter implements LaunchAdapter {
+  _RecordingLaunchAdapter({this.opens = true});
+
+  /// What the system answers: false is a url it has no handler for.
+  final bool opens;
+
   final List<Uri> launched = <Uri>[];
   final List<String?> windowNames = <String?>[];
 
@@ -213,7 +218,7 @@ class _RecordingLaunchAdapter implements LaunchAdapter {
     launched.add(url);
     windowNames.add(webOnlyWindowName);
 
-    return true;
+    return opens;
   }
 
   @override
@@ -3170,6 +3175,35 @@ void main() {
         Uri.parse('https://example.com/faq#linked'),
       ]);
     });
+
+    testWidgets(
+      'a url the system cannot open says so instead of doing nothing',
+      (tester) async {
+        final launcher = _RecordingLaunchAdapter(opens: false);
+        Magic.singleton('launch', () => LaunchService(adapter: launcher));
+        articlesBackend(
+          (_) async => ok(<Map<String, dynamic>>[
+            suggestionJson('linked', url: 'https://example.com/faq#linked'),
+          ]),
+        );
+        await mount(tester, at: '/support/new');
+        await type(tester, typed);
+        await tester.pump();
+
+        await tester.tap(card('linked'));
+        await tester.pump();
+        await tester.pump();
+
+        expect(launcher.launched, hasLength(1));
+        expect(
+          find.text(trans('magic_starter.support.article_open_error')),
+          findsOneWidget,
+        );
+
+        // The toast dismisses itself after four seconds.
+        await tester.pump(const Duration(seconds: 5));
+      },
+    );
   });
 
   group('article cards on the thread', () {

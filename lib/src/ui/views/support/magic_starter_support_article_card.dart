@@ -44,6 +44,17 @@ class MagicStarterSupportArticleCard extends StatelessWidget {
 
     if (url == null) return card;
 
-    return WAnchor(onTap: () => Launch.url(url), child: card);
+    return WAnchor(onTap: () => _open(url), child: card);
+  }
+
+  /// Opens the article, and says so when the system has nothing to open it with,
+  /// as the thread does for an attachment, rather than leaving the tap silent.
+  Future<void> _open(String url) async {
+    if (await Launch.url(url)) return;
+
+    Magic.error(
+      trans('magic_starter.titles.support'),
+      trans('magic_starter.support.article_open_error'),
+    );
   }
 }

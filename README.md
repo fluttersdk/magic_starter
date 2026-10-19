@@ -160,7 +160,7 @@ All 22 features default to `false` (opt-in). Enable only what your app needs:
 | `notifications` | Real-time notification polling, read/unread, preference matrix. Also declares and releases the push external id as sessions begin and end, prefixed by `notifications.external_id_prefix` (default `user_`, matching the backend) |
 | `timezones` | Timezone selection via async API search |
 | `billing` | Subscription and billing screen over `magic_payments`. Also needs `billing.web_origin`, an absolute url Stripe can return to |
-| `support` | Support desk screens, the Support profile-menu item and the Contact sales conversation, over `magic-starter-laravel`'s support API. The host registers the routes with `registerMagicStarterSupportRoutes()`; see [Support](doc/basics/support.md) |
+| `support` | Support desk screens, the Support profile-menu item and the Contact sales conversation, over `magic-starter-laravel`'s support API, with knowledge-base article suggestions while writing and article cards under AI answers when the backend's articles are on. The host registers the routes with `registerMagicStarterSupportRoutes()`; see [Support](doc/basics/support.md) |
 | `support_csat` | A thumbs up or down, with an optional comment, on a resolved conversation; asked again after each new resolution. Needs `support` |
 | `support_feedback` | The occasional 0 to 10 card (`MagicStarterFeedbackCard`, placed by the host) and the "Send feedback" page and menu item. Needs `support` |
 | `support_attachments` | Images and PDFs on customer messages (jpg, png, webp, pdf; 3 files, 5 MB each by default). Needs `support` |
