@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.57] - 2026-10-22
+
 ### Added
 
 - **A large title that collapses into a compact bar on scroll.** `MSPageHeader` takes `size: MSPageHeaderSize.regular | large | compact`. `large` renders the title in the new `largeTitleClassName` (`text-4xl lg:text-3xl`: display size on a phone, one step smaller from `lg`). `compact` is a 44 pt bar below the top safe area with the leading control, a centred one-line title (`compactTitleClassName`) and the actions, over a translucent `compactBarClassName` fill and a `compactBarBlurSigma` backdrop blur (20 by default, `0` for none); under high contrast (`MediaQuery.highContrast`) it paints `compactBarOpaqueClassName` with no blur. `MSPageScaffold(largeTitle: true)` renders the large header and fades the compact bar in over the top of the page once the header has scrolled under it, 200 ms ease-out, a swap under Reduce Motion; the bar is unmounted while hidden. `MagicStarterPageHeaderTheme.largeTitle` turns both on for every header and scaffold, the starter's own pages included; `size:` and `largeTitle:` still win. Off by default, so nothing changes until a host opts in. (`lib/src/ui/components/page_header/page_header.dart`, `lib/src/ui/components/page_scaffold/page_scaffold.dart`, `lib/src/configuration/magic_starter_theme.dart`)
