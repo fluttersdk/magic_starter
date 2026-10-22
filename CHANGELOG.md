@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A bottom bar item answers a tap anywhere in its slot.** Each item sized itself to its label inside a `justify-between` row, so a short label made a small target ("Add" was 24 px wide at 390) and the gaps between items took no tap. Every item now takes an equal share of the bar, the bar drops its side padding so the outer slots reach the edge, and the whole share is the tap target; a wrapped label is centred. (`lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
 ## [0.0.55] - 2026-10-20
 
 ### Fixed
