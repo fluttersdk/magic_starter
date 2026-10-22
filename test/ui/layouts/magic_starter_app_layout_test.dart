@@ -584,9 +584,17 @@ void main() {
       MagicStarter.useNavigation(
         mainItems: const [],
         bottomItems: const [
-          MagicStarterNavItem(icon: Icons.home, labelKey: 'Overview', path: '/'),
+          MagicStarterNavItem(
+            icon: Icons.home,
+            labelKey: 'Overview',
+            path: '/',
+          ),
           MagicStarterNavItem(icon: Icons.add, labelKey: 'Add', path: '/add'),
-          MagicStarterNavItem(icon: Icons.place, labelKey: 'Places', path: '/p'),
+          MagicStarterNavItem(
+            icon: Icons.place,
+            labelKey: 'Places',
+            path: '/p',
+          ),
           MagicStarterNavItem(icon: Icons.more, labelKey: 'More', path: '/m'),
         ],
       );
