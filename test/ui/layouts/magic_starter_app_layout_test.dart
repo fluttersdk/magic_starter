@@ -567,6 +567,57 @@ void main() {
       expect(find.text('Overview'), findsOneWidget);
     });
 
+    testWidgets('each bottom nav item takes an equal share of the bar', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      // A short label ("Add") must not shrink its tap target to the label's
+      // width: the whole slot under it answers the tap, so a thumb that lands
+      // beside the word still reaches the destination.
+      MagicStarter.useNavigation(
+        mainItems: const [],
+        bottomItems: const [
+          MagicStarterNavItem(
+            icon: Icons.home,
+            labelKey: 'Overview',
+            path: '/',
+          ),
+          MagicStarterNavItem(icon: Icons.add, labelKey: 'Add', path: '/add'),
+          MagicStarterNavItem(
+            icon: Icons.place,
+            labelKey: 'Places',
+            path: '/p',
+          ),
+          MagicStarterNavItem(icon: Icons.more, labelKey: 'More', path: '/m'),
+        ],
+      );
+
+      await tester.pumpWidget(createApp(child: const SizedBox()));
+      await tester.pumpAndSettle();
+
+      double slotWidth(String label) => tester
+          .getSize(
+            find
+                .ancestor(of: find.text(label), matching: find.byType(WAnchor))
+                .first,
+          )
+          .width;
+
+      final widths = ['Overview', 'Add', 'Places', 'More'].map(slotWidth);
+
+      expect(widths.toSet(), hasLength(1));
+      // The slots cover the bar edge to edge: no strip beside the outermost
+      // items is left without a destination.
+      expect(widths.reduce((a, b) => a + b), 400);
+    });
+
     testWidgets(
       'mobile bottom nav renders through a slot under its own scope',
       (tester) async {

@@ -768,17 +768,24 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                 border-t border-color-border
             ''',
       children: [
+        // Every item takes an equal share of the bar, so its tap target is the
+        // whole slot rather than the width of its label: a short label such as
+        // "Add" left a 24 px target with dead gaps between the items. The bar
+        // carries no side padding, so the outermost slots reach the screen edge
+        // instead of leaving a strip that takes no tap.
         WDiv(
-          className: 'flex flex-row justify-between px-4',
+          className: 'flex flex-row',
           children: navConfig.bottomItems
               .map(
-                (item) => _bottomNavItem(
-                  context,
-                  icon: item.icon,
-                  activeIcon: item.activeIcon ?? item.icon,
-                  label: trans(item.labelKey),
-                  path: item.path,
-                  isActive: _isActive(item.path, currentPath),
+                (item) => Expanded(
+                  child: _bottomNavItem(
+                    context,
+                    icon: item.icon,
+                    activeIcon: item.activeIcon ?? item.icon,
+                    label: trans(item.labelKey),
+                    path: item.path,
+                    isActive: _isActive(item.path, currentPath),
+                  ),
                 ),
               )
               .toList(),
@@ -820,7 +827,8 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             label,
             states: isActive ? {'active'} : {},
             className:
-                'text-xs text-fg-muted ${navTheme.bottomNavActiveClassName}',
+                'text-xs text-center text-fg-muted '
+                '${navTheme.bottomNavActiveClassName}',
           ),
         ],
       ),
