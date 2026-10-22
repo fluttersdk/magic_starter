@@ -20,7 +20,7 @@
 
 Magic Starter ships a complete atomic design-system component library under `lib/src/ui/components/`. Every component is driven by a `WindRecipe` that resolves colors through the `MagicStarterTokens` semantic alias layer, so a single brand configuration flows into all built-in screens and every component your host app composes directly.
 
-All 44 components are exported from `package:magic_starter/magic_starter.dart`.
+All 46 components are exported from `package:magic_starter/magic_starter.dart`.
 
 <a name="semantic-token-layer"></a>
 ## Semantic Token Layer
@@ -178,8 +178,8 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 
 | Component | Notes |
 |-----------|-------|
-| `MSDialog` | Modal dialog shell; reads `MagicStarterModalTheme` tokens |
-| `MSBottomSheet` | Slide-up sheet; reads `MagicStarterModalTheme` tokens |
+| `MSDialog` | Modal dialog shell; reads `MagicStarterModalTheme` tokens. `scrollable: false` hands a body that scrolls itself the bounded height, as on `MSBottomSheet` |
+| `MSBottomSheet` | Slide-up sheet; reads `MagicStarterModalTheme` tokens. `MSBottomSheet.show(..., dialogBreakpoint: 'lg')` presents an `MSDialog` from that Wind breakpoint up, with the same title, description, body, footer and `scrollable`, so one call serves a phone and a desktop; the width is read when the call is made. Null (the default) always presents a sheet |
 
 <a name="composition-and-app-chrome"></a>
 ### Composition and App Chrome
@@ -188,12 +188,13 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 |-----------|-------|
 | `MSFormField` | Label + input + hint + error layout wrapper |
 | `MSCard` | Surface/inset/elevated variants |
-| `MSPageHeader` | Full-width responsive header (title, subtitle, leading, actions). Stacked below `sm`, a row above it; `inlineActions` (or `MagicStarterPageHeaderTheme.inlineActions`) makes it a row at every width AND lets a long title shrink instead of overflowing |
+| `MSPageHeader` | Full-width responsive header (title, subtitle, leading, actions). Stacked below `sm`, a row above it; `inlineActions` (or `MagicStarterPageHeaderTheme.inlineActions`) makes it a row at every width AND lets a long title shrink instead of overflowing. `size` picks `MSPageHeaderSize.regular`, `.large` (the theme's `largeTitleClassName`, display size on a phone and one step smaller from `lg`) or `.compact` (a 44 pt bar below the top safe area: leading control, centred one-line title, actions, over a translucent fill and a backdrop blur that turn opaque under high contrast). Null follows `MagicStarterPageHeaderTheme.largeTitle` |
 | `MSSocialDivider` | "Or continue with" separator for auth forms |
 | `MSUserProfileDropdown` | Avatar menu with profile links, theme toggle and logout |
 | `MSTeamSelector` | Current-team switcher; requires a registered team resolver |
 | `MSPageContainer` | Shared page geometry: width cap, edge margins, vertical rhythm, horizontal safe area. Reads `MagicStarter.manager.pageContainerClassName` |
-| `MSPageScaffold` | Full page treatment: page surface + own scroll + `MSPageContainer` + `MSPageHeader` + `gap-6` sections column. `footer` docks a widget below the scroll area, outside it, in the same width and edge margins; it clears the bottom safe area and rides above the on-screen keyboard (a chat composer is the use). A docked layout needs a bounded height, as the app shell provides. `scrollController` hands the scroll area to the page, to keep a thread on its newest message |
+| `MSPageScaffold` | Full page treatment: page surface + own scroll + `MSPageContainer` + `MSPageHeader` + `gap-6` sections column. `footer` docks a widget below the scroll area, outside it, in the same width and edge margins; it clears the bottom safe area and rides above the on-screen keyboard (a chat composer is the use). A docked layout needs a bounded height, as the app shell provides. `scrollController` hands the scroll area to the page, to keep a thread on its newest message. `largeTitle: true` (or `MagicStarterPageHeaderTheme.largeTitle`, which also reaches the starter's own pages) renders a large header that collapses into the compact bar pinned over the page once it has scrolled under it, fading in 200 ms (a swap under Reduce Motion) |
+| `MSMasterDetail` | A list and its selected item side by side from `breakpoint` (`lg` by default): `master` in a fixed `w-96` column, `detail` (or `placeholder` while it is null) in the rest. Below the breakpoint it renders `detail ?? master`, which is push navigation when the selection lives in the route. Owns no page geometry or scroll, so it goes inside `MSPageScaffold`; `MSMasterDetail.isSplit(context)` gives a page the same answer for its header |
 | `MSFormActions` | Cancel/submit footer row for a form; `cancelLabel`/`onCancel` are optional (omitting both renders no cancel button) |
 | `MSHeaderAction` | Page-header action that collapses to an icon-only glyph below `lg` and a labelled `MSButton` at `lg` and up; `label` becomes the icon form's accessibility label |
 

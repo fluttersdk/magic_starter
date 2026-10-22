@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/src/facades/magic_starter.dart';
+import 'package:magic_starter/src/configuration/magic_starter_theme.dart';
 import 'package:magic_starter/src/magic_starter_manager.dart';
 import 'package:magic_starter/src/ui/components/page_container/page_container.dart';
+import 'package:magic_starter/src/ui/components/page_header/page_header.dart';
 import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.dart';
 import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.recipe.dart';
 import 'package:magic_starter/src/ui/components/page_scaffold/page_scaffold.preview.dart';
@@ -414,5 +416,344 @@ void main() {
     await tester.pumpWidget(wrap(const PageScaffoldPreview()));
     await tester.pump();
     expect(find.byType(PageScaffoldPreview), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
+  // Large title
+  // -------------------------------------------------------------------------
+
+  group('large title', () {
+    // A bounded page, as the app shell gives one: the scaffold owns the scroll.
+    Widget page(Widget scaffold, {MediaQueryData? media}) {
+      final Widget app = MaterialApp(
+        home: WindTheme(
+          data: WindThemeData(),
+          child: Scaffold(body: scaffold),
+        ),
+      );
+
+      return media == null ? app : MediaQuery(data: media, child: app);
+    }
+
+    const List<Widget> tallBody = [SizedBox(height: 2000)];
+
+    Finder bar() => find.byWidgetPredicate(
+      (w) => w is MSPageHeader && w.size == MSPageHeaderSize.compact,
+    );
+
+    testWidgets('renders a large header and no bar at the top', (tester) async {
+      await tester.pumpWidget(
+        page(
+          const MSPageScaffold(
+            title: 'Stock',
+            largeTitle: true,
+            children: tallBody,
+          ),
+        ),
+      );
+
+      final MSPageHeader header = tester.widget<MSPageHeader>(
+        find.byType(MSPageHeader),
+      );
+      expect(header.size, MSPageHeaderSize.large);
+      expect(bar(), findsNothing);
+      expect(find.text('Stock'), findsOneWidget);
+    });
+
+    testWidgets('the bar fades in once the header has scrolled away', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(
+          const MSPageScaffold(
+            title: 'Stock',
+            largeTitle: true,
+            children: tallBody,
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+
+      expect(bar(), findsOneWidget);
+      expect(tester.getTopLeft(bar()).dy, 0);
+      final FadeTransition fade = tester.widget<FadeTransition>(
+        find.ancestor(of: bar(), matching: find.byType(FadeTransition)).first,
+      );
+      expect(fade.opacity.value, 1.0);
+      expect(
+        tester
+            .widget<IgnorePointer>(
+              find
+                  .ancestor(of: bar(), matching: find.byType(IgnorePointer))
+                  .first,
+            )
+            .ignoring,
+        isFalse,
+      );
+    });
+
+    testWidgets('the bar stays away while the header is still in view', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(
+          const MSPageScaffold(
+            title: 'Stock',
+            largeTitle: true,
+            children: tallBody,
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -10),
+      );
+      await tester.pumpAndSettle();
+
+      expect(bar(), findsNothing);
+    });
+
+    testWidgets('scrolling back to the top fades the bar out and unmounts it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(
+          const MSPageScaffold(
+            title: 'Stock',
+            largeTitle: true,
+            children: tallBody,
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, 400),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Mid-fade: still mounted, no longer tappable.
+      expect(bar(), findsOneWidget);
+      expect(
+        tester
+            .widget<IgnorePointer>(
+              find
+                  .ancestor(of: bar(), matching: find.byType(IgnorePointer))
+                  .first,
+            )
+            .ignoring,
+        isTrue,
+      );
+
+      await tester.pumpAndSettle();
+      expect(bar(), findsNothing);
+      expect(find.text('Stock'), findsOneWidget);
+    });
+
+    testWidgets('Reduce Motion swaps the bar in without a fade', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(
+          const MSPageScaffold(
+            title: 'Stock',
+            largeTitle: true,
+            children: tallBody,
+          ),
+          media: const MediaQueryData(
+            size: Size(800, 600),
+            disableAnimations: true,
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      final FadeTransition fade = tester.widget<FadeTransition>(
+        find.ancestor(of: bar(), matching: find.byType(FadeTransition)).first,
+      );
+      expect(fade.opacity.value, 1.0);
+    });
+
+    testWidgets('a horizontal list inside the page does not collapse it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(
+          MSPageScaffold(
+            title: 'Stock',
+            largeTitle: true,
+            children: [
+              SizedBox(
+                height: 80,
+                child: ListView(
+                  key: const Key('carousel'),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (int i = 0; i < 20; i++)
+                      SizedBox(width: 120, child: Text('Card $i')),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 2000),
+            ],
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byKey(const Key('carousel')),
+        const Offset(-600, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(bar(), findsNothing);
+    });
+
+    testWidgets('the bar carries the back control and the actions', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(
+          MSPageScaffold(
+            title: 'Milk',
+            largeTitle: true,
+            backLabel: 'Stock',
+            backFallback: '/stock',
+            actions: [TextButton(onPressed: () {}, child: const Text('Edit'))],
+            children: tallBody,
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(of: bar(), matching: find.byIcon(Icons.chevron_left)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: bar(), matching: find.text('Edit')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the theme makes every scaffold a large title', (tester) async {
+      MagicStarter.usePageHeaderTheme(
+        const MagicStarterPageHeaderTheme(largeTitle: true),
+      );
+
+      await tester.pumpWidget(
+        page(const MSPageScaffold(title: 'Settings', children: tallBody)),
+      );
+
+      expect(
+        tester.widget<MSPageHeader>(find.byType(MSPageHeader)).size,
+        MSPageHeaderSize.large,
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+      expect(bar(), findsOneWidget);
+    });
+
+    testWidgets('an explicit false beats a large theme', (tester) async {
+      MagicStarter.usePageHeaderTheme(
+        const MagicStarterPageHeaderTheme(largeTitle: true),
+      );
+
+      await tester.pumpWidget(
+        page(
+          const MSPageScaffold(
+            title: 'Settings',
+            largeTitle: false,
+            children: tallBody,
+          ),
+        ),
+      );
+
+      expect(
+        tester.widget<MSPageHeader>(find.byType(MSPageHeader)).size,
+        MSPageHeaderSize.regular,
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+      expect(bar(), findsNothing);
+    });
+
+    testWidgets('the default stays the regular header with no bar', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(const MSPageScaffold(title: 'Plain', children: tallBody)),
+      );
+
+      expect(
+        tester.widget<MSPageHeader>(find.byType(MSPageHeader)).size,
+        MSPageHeaderSize.regular,
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+      expect(bar(), findsNothing);
+    });
+
+    testWidgets('a docked footer stays below the collapsing page', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        page(
+          const MSPageScaffold(
+            title: 'Thread',
+            largeTitle: true,
+            footer: Text('composer'),
+            children: tallBody,
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+
+      expect(bar(), findsOneWidget);
+      expect(find.text('composer'), findsOneWidget);
+      expect(
+        tester.getBottomLeft(find.text('composer')).dy,
+        greaterThan(tester.getBottomLeft(bar()).dy),
+      );
+    });
   });
 }

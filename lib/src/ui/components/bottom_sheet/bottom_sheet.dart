@@ -6,6 +6,8 @@ import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_theme.dart';
 import '../../../facades/magic_starter.dart';
+import '../../theme/magic_starter_breakpoints.dart';
+import '../dialog/dialog.dart';
 
 /// A reusable bottom-sheet component with Wind UI chrome driven by
 /// `MagicStarter.manager.modalTheme` tokens.
@@ -17,12 +19,20 @@ import '../../../facades/magic_starter.dart';
 /// All classNames are read from the modal theme at build time; override via
 /// `MagicStarter.useModalTheme()` before the first bottom sheet is shown.
 ///
+/// ### Adaptive presentation
+///
+/// A sheet rises from the bottom edge of a phone; on a desktop window that
+/// edge is a long way from the pointer. Pass `dialogBreakpoint` to [show] and,
+/// from that Wind breakpoint up, the same call presents an [MSDialog] with the
+/// same title, description, body, footer and [scrollable] contract instead.
+///
 /// ### Example
 /// ```dart
 /// await MSBottomSheet.show(
 ///   context,
 ///   title: 'Select action',
 ///   body: Column(children: [...]),
+///   dialogBreakpoint: 'lg', // a dialog from 1024 px, a sheet below
 /// );
 /// ```
 @immutable
@@ -60,6 +70,15 @@ class MSBottomSheet extends StatelessWidget {
   });
 
   /// Opens the bottom sheet and resolves when it is dismissed.
+  ///
+  /// With [dialogBreakpoint] set (a Wind breakpoint name such as `'lg'`), a
+  /// screen at least that wide gets an [MSDialog] instead, built from the same
+  /// arguments; [footerBuilder] then receives the dialog's context, so a
+  /// `Navigator.pop` in it closes whichever was shown. The width is read once,
+  /// when the call is made. Null (the default) always presents a sheet.
+  ///
+  /// Throws a [StateError] when [dialogBreakpoint] names a breakpoint the Wind
+  /// theme does not carry, rather than silently never presenting a dialog.
   static Future<T?> show<T>(
     BuildContext context, {
     String? title,
@@ -67,7 +86,25 @@ class MSBottomSheet extends StatelessWidget {
     required Widget body,
     Widget Function(BuildContext sheetContext)? footerBuilder,
     bool scrollable = true,
+    String? dialogBreakpoint,
   }) {
+    final String? breakpoint = dialogBreakpoint;
+    if (breakpoint != null &&
+        MagicStarterBreakpoints.isAtLeast(
+          context,
+          breakpoint,
+          setting: 'MSBottomSheet.show(dialogBreakpoint:)',
+        )) {
+      return MSDialog.show<T>(
+        context,
+        title: title,
+        description: description,
+        body: body,
+        footerBuilder: footerBuilder,
+        scrollable: scrollable,
+      );
+    }
+
     return m.showModalBottomSheet<T>(
       context: context,
       backgroundColor: m.Colors.transparent,

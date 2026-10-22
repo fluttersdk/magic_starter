@@ -12,6 +12,7 @@ import '../../magic_starter_manager.dart';
 import '../components/avatar/index.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
+import '../theme/magic_starter_breakpoints.dart';
 import '../widgets/magic_starter_app_update_banner.dart';
 import '../widgets/magic_starter_campaign_banner.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
@@ -150,19 +151,11 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   /// nothing to read. Both values were hardcoded before they became fields, so
   /// this is a failure class the configuration introduced and has to close.
   bool _isAtLeast(BuildContext context, String field, String name) {
-    final screens = WindTheme.dataOf(context).screens;
-
-    if (!screens.containsKey(name)) {
-      final known = screens.entries.toList()
-        ..sort((a, b) => a.value.compareTo(b.value));
-
-      throw StateError(
-        'MagicStarterLayoutTheme.$field is "$name", which the Wind theme does '
-        'not carry. Use one of: ${known.map((e) => e.key).join(', ')}.',
-      );
-    }
-
-    return wScreenIs(context, name);
+    return MagicStarterBreakpoints.isAtLeast(
+      context,
+      name,
+      setting: 'MagicStarterLayoutTheme.$field',
+    );
   }
 
   // -------------------------------------------------------------------------

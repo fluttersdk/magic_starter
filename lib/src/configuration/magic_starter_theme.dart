@@ -489,6 +489,51 @@ class MagicStarterPageHeaderTheme {
   /// parameter at all, so a consumer using the scaffold had no way to reach it.
   final bool inlineActions;
 
+  /// Whether every [MSPageHeader] and [MSPageScaffold] uses the large-title
+  /// presentation without an argument.
+  ///
+  /// Defaults to `false`. Like [inlineActions], this is the switch a
+  /// scaffold consumer can reach once, so the starter's own pages (settings,
+  /// profile, teams) follow the host's choice instead of keeping the regular
+  /// title beside the host's large ones.
+  final bool largeTitle;
+
+  /// Title className in the large-title presentation.
+  ///
+  /// Defaults to
+  /// `'text-4xl lg:text-3xl font-bold text-gray-900 dark:text-white line-clamp-2'`:
+  /// the display size on a phone, one step smaller from `lg`, where the page
+  /// sits beside a sidebar and a phone-sized title would crowd it.
+  final String largeTitleClassName;
+
+  /// The compact title bar's container className, translucent by default.
+  ///
+  /// The bar is the one a large title collapses into once it has scrolled
+  /// away, and it floats over the content, so a translucent fill with
+  /// [compactBarBlurSigma] behind it reads as glass. Defaults to
+  /// `'px-2 bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700'`.
+  final String compactBarClassName;
+
+  /// The compact title bar's container className when the platform asks for
+  /// more contrast (`MediaQuery.highContrast`, iOS Increase Contrast).
+  ///
+  /// Glass belongs to the bar only while it stays legible: under that setting
+  /// the bar drops the blur and paints this opaque fill instead. Defaults to
+  /// `'px-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700'`.
+  final String compactBarOpaqueClassName;
+
+  /// Title className inside the compact title bar.
+  ///
+  /// Defaults to `'text-base font-semibold text-gray-900 dark:text-white truncate'`.
+  final String compactTitleClassName;
+
+  /// Backdrop blur behind the compact title bar, as a Gaussian sigma in
+  /// logical pixels (CSS `backdrop-filter: blur(24px)` is a sigma of 24).
+  ///
+  /// Defaults to `20`. `0` paints no blur at all, which also skips the
+  /// backdrop layer and its cost.
+  final double compactBarBlurSigma;
+
   const MagicStarterPageHeaderTheme({
     this.containerClassName =
         'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
@@ -502,6 +547,16 @@ class MagicStarterPageHeaderTheme {
     this.backControlClassName =
         'flex items-center justify-center size-9 text-2xl text-fg-muted hover:text-fg',
     this.inlineActions = false,
+    this.largeTitle = false,
+    this.largeTitleClassName =
+        'text-4xl lg:text-3xl font-bold text-gray-900 dark:text-white line-clamp-2',
+    this.compactBarClassName =
+        'px-2 bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700',
+    this.compactBarOpaqueClassName =
+        'px-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700',
+    this.compactTitleClassName =
+        'text-base font-semibold text-gray-900 dark:text-white truncate',
+    this.compactBarBlurSigma = 20.0,
   });
 }
 
@@ -1030,6 +1085,12 @@ class MagicStarterTheme {
         subtitleClassName: 'text-sm $fgMuted line-clamp-2',
         backControlClassName:
             'flex items-center justify-center size-9 text-2xl $fgMuted hover:$fg',
+        largeTitleClassName: 'text-4xl lg:text-3xl font-bold $fg line-clamp-2',
+        // A semantic token carries no opacity step, so the bar is opaque here;
+        // a host after glass themes it with its own translucent fill.
+        compactBarClassName: 'px-2 $surfaceContainer border-b $border',
+        compactBarOpaqueClassName: 'px-2 $surfaceContainer border-b $border',
+        compactTitleClassName: 'text-base font-semibold $fg truncate',
       ),
       layout: MagicStarterLayoutTheme(
         sidebarClassName: 'h-full flex flex-col $surface border-r $border',

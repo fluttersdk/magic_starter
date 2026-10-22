@@ -74,6 +74,50 @@ void main() {
       expect(find.text('footer widget'), findsOneWidget);
     });
 
+    testWidgets('scrolls its body by default', (tester) async {
+      await tester.pumpWidget(
+        wrap(const MSDialog(body: SizedBox(key: Key('b'), height: 10))),
+      );
+
+      expect(
+        find.ancestor(
+          of: find.byKey(const Key('b')),
+          matching: find.byType(Scrollable),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a non-scrollable dialog hands its body the bounded height', (
+      tester,
+    ) async {
+      BoxConstraints? seen;
+
+      await tester.pumpWidget(
+        wrap(
+          MSDialog(
+            scrollable: false,
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                seen = constraints;
+
+                return const SizedBox(key: Key('b'), height: 10);
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.ancestor(
+          of: find.byKey(const Key('b')),
+          matching: find.byType(Scrollable),
+        ),
+        findsNothing,
+      );
+      expect(seen!.hasBoundedHeight, isTrue);
+    });
+
     testWidgets('static show() opens dialog', (tester) async {
       tester.view.physicalSize = const Size(1200, 800);
       tester.view.devicePixelRatio = 1.0;

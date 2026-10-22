@@ -7,8 +7,9 @@ import 'page_header.dart';
 
 /// Static preview for [MSPageHeader].
 ///
-/// Renders four layout variants: title-only, with subtitle, with actions, and
-/// with inlineActions. One preview class per file.
+/// Renders the layout variants: title-only, with subtitle, with actions, with
+/// inlineActions, with a back control, the large title and the compact bar.
+/// One preview class per file.
 class PageHeaderPreview extends StatelessWidget {
   const PageHeaderPreview({super.key});
 
@@ -35,6 +36,15 @@ class PageHeaderPreview extends StatelessWidget {
           subtitle: 'Edit your profile information',
           backLabel: 'Settings',
           backFallback: '/settings',
+        ),
+        // Large title, and the compact bar it collapses into on scroll.
+        const MSPageHeader(title: 'Stock', size: MSPageHeaderSize.large),
+        MSPageHeader(
+          title: 'Stock',
+          size: MSPageHeaderSize.compact,
+          backLabel: 'Overview',
+          backFallback: '/',
+          actions: [MSButton(onPressed: () {}, child: const WText('Edit'))],
         ),
       ],
     );

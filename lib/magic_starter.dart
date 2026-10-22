@@ -117,6 +117,7 @@ export 'src/ui/components/settings_row/index.dart';
 export 'src/ui/components/settings_nav_row/index.dart';
 export 'src/ui/components/page_container/index.dart';
 export 'src/ui/components/page_scaffold/index.dart';
+export 'src/ui/components/master_detail/index.dart';
 export 'src/ui/components/upgrade_dialog/index.dart';
 export 'src/ui/components/upgrade_nudge/index.dart';
 export 'src/ui/components/update_banner/index.dart';
