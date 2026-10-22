@@ -67,7 +67,7 @@ Stop rebuilding authentication, profile management, and team features from scrat
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.55
+  magic_starter: ^0.0.56
 ```
 
 ### 2. Install configuration
