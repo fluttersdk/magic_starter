@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -344,7 +346,11 @@ void main() {
   });
 
   testWidgets('PageHeader preview renders without error', (tester) async {
-    await tester.pumpWidget(wrap(const PageHeaderPreview()));
+    // The catalog scrolls its previews; the variant list outgrows the 600 px
+    // test window since the large and compact sizes joined it.
+    await tester.pumpWidget(
+      wrap(const SingleChildScrollView(child: PageHeaderPreview())),
+    );
     await tester.pump();
     expect(find.byType(PageHeaderPreview), findsOneWidget);
   });
@@ -580,6 +586,376 @@ void main() {
     // Outer WDiv + inner title row WDiv + title column WDiv = 3. No suffix
     // wrapper WDiv should be present.
     expect(innerDivs, findsNWidgets(3));
+  });
+
+  group('size', () {
+    WText titleText(WidgetTester tester, String title) {
+      return tester.widget<WText>(
+        find.byWidgetPredicate((w) => w is WText && w.data == title),
+      );
+    }
+
+    testWidgets('defaults to the regular title', (tester) async {
+      await tester.pumpWidget(wrap(const MSPageHeader(title: 'Plain')));
+
+      expect(
+        titleText(tester, 'Plain').className,
+        const MagicStarterPageHeaderTheme().titleClassName,
+      );
+      expect(
+        tester.widget<MSPageHeader>(find.byType(MSPageHeader)).effectiveSize,
+        MSPageHeaderSize.regular,
+      );
+    });
+
+    testWidgets('large renders the large title class', (tester) async {
+      await tester.pumpWidget(
+        wrap(const MSPageHeader(title: 'Stock', size: MSPageHeaderSize.large)),
+      );
+
+      expect(
+        titleText(tester, 'Stock').className,
+        const MagicStarterPageHeaderTheme().largeTitleClassName,
+      );
+    });
+
+    testWidgets('the shipped large title is display size, smaller from lg', (
+      tester,
+    ) async {
+      double renderedSize() {
+        final RichText text = tester.widget<RichText>(
+          find.descendant(
+            of: find.byType(MSPageHeader),
+            matching: find.byType(RichText),
+          ),
+        );
+
+        return text.text.style!.fontSize!;
+      }
+
+      final List<double> sizes = <double>[];
+      for (final double width in const <double>[390, 1280]) {
+        tester.view.physicalSize = Size(width, 800);
+        tester.view.devicePixelRatio = 1.0;
+        await tester.pumpWidget(
+          wrap(
+            const MSPageHeader(title: 'Stock', size: MSPageHeaderSize.large),
+          ),
+        );
+        sizes.add(renderedSize());
+      }
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+
+      expect(sizes, <double>[36, 30]);
+    });
+
+    testWidgets('the theme makes every header large without an argument', (
+      tester,
+    ) async {
+      MagicStarter.usePageHeaderTheme(
+        const MagicStarterPageHeaderTheme(
+          largeTitle: true,
+          largeTitleClassName: 'text-4xl font-bold',
+        ),
+      );
+
+      await tester.pumpWidget(wrap(const MSPageHeader(title: 'Themed')));
+
+      expect(titleText(tester, 'Themed').className, 'text-4xl font-bold');
+    });
+
+    testWidgets('an explicit regular size beats a large theme', (tester) async {
+      MagicStarter.usePageHeaderTheme(
+        const MagicStarterPageHeaderTheme(largeTitle: true),
+      );
+
+      await tester.pumpWidget(
+        wrap(const MSPageHeader(title: 'Kept', size: MSPageHeaderSize.regular)),
+      );
+
+      expect(
+        titleText(tester, 'Kept').className,
+        const MagicStarterPageHeaderTheme().titleClassName,
+      );
+    });
+
+    testWidgets('large keeps the subtitle, back control and actions', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          MSPageHeader(
+            title: 'Milk',
+            subtitle: 'Dairy',
+            size: MSPageHeaderSize.large,
+            backLabel: 'Stock',
+            backFallback: '/stock',
+            actions: [
+              ElevatedButton(onPressed: () {}, child: const Text('Edit')),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.text('Dairy'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+      expect(find.text('Edit'), findsOneWidget);
+    });
+
+    testWidgets('compact is a 44 pt bar with leading, title and actions', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          Align(
+            alignment: Alignment.topCenter,
+            child: MSPageHeader(
+              title: 'Milk',
+              subtitle: 'Dairy',
+              titleSuffix: const Text('suffix'),
+              size: MSPageHeaderSize.compact,
+              backLabel: 'Stock',
+              backFallback: '/stock',
+              actions: [
+                ElevatedButton(onPressed: () {}, child: const Text('Edit')),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(NavigationToolbar), findsOneWidget);
+      expect(find.text('Milk'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+      expect(find.text('Edit'), findsOneWidget);
+      // A navigation bar has no room for the subtitle or the suffixes.
+      expect(find.text('Dairy'), findsNothing);
+      expect(find.text('suffix'), findsNothing);
+      expect(
+        tester.getSize(find.byType(NavigationToolbar)).height,
+        MSPageHeader.compactBarHeight,
+      );
+      expect(
+        titleText(tester, 'Milk').className,
+        const MagicStarterPageHeaderTheme().compactTitleClassName,
+      );
+    });
+
+    testWidgets('compact centres the title whatever sits beside it', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        wrap(
+          Align(
+            alignment: Alignment.topCenter,
+            child: MSPageHeader(
+              title: 'Milk',
+              size: MSPageHeaderSize.compact,
+              backLabel: 'Stock',
+              backFallback: '/stock',
+              // A trailing side three times the chevron's width: a row would
+              // push the title off centre, a navigation bar does not.
+              actions: const [SizedBox(width: 120, height: 36)],
+            ),
+          ),
+        ),
+      );
+
+      final double centre = tester.getCenter(find.text('Milk')).dx;
+      expect(centre, moreOrLessEquals(195, epsilon: 1));
+    });
+
+    testWidgets('compact is glass: the translucent fill over a blur', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          const Align(
+            alignment: Alignment.topCenter,
+            child: MSPageHeader(title: 'Glass', size: MSPageHeaderSize.compact),
+          ),
+        ),
+      );
+
+      final BackdropFilter filter = tester.widget<BackdropFilter>(
+        find.byType(BackdropFilter),
+      );
+      expect(
+        filter.filter.toString(),
+        ImageFilter.blur(sigmaX: 20, sigmaY: 20).toString(),
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is WDiv &&
+              w.className ==
+                  const MagicStarterPageHeaderTheme().compactBarClassName,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'the shipped bar fill resolves translucent, the opaque one not',
+      (tester) async {
+        // Wind drops a token it cannot parse without a word, so the fill is
+        // checked as the colour it paints, not as the class string.
+        Color fillOf(String title) {
+          final Finder bar = find.byWidgetPredicate(
+            (w) => w is MSPageHeader && w.title == title,
+          );
+          final Iterable<DecoratedBox> boxes = tester.widgetList<DecoratedBox>(
+            find.descendant(of: bar, matching: find.byType(DecoratedBox)),
+          );
+
+          return boxes
+              .map((box) => box.decoration)
+              .whereType<BoxDecoration>()
+              .firstWhere((decoration) => decoration.color != null)
+              .color!;
+        }
+
+        await tester.pumpWidget(
+          wrap(
+            const Column(
+              children: [
+                MSPageHeader(title: 'Glass', size: MSPageHeaderSize.compact),
+              ],
+            ),
+          ),
+        );
+        expect(fillOf('Glass').a, moreOrLessEquals(0.8, epsilon: 0.01));
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(highContrast: true),
+              child: WindTheme(
+                data: WindThemeData(),
+                child: const Scaffold(
+                  body: Column(
+                    children: [
+                      MSPageHeader(
+                        title: 'Solid',
+                        size: MSPageHeaderSize.compact,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(fillOf('Solid').a, 1.0);
+      },
+    );
+
+    testWidgets('compact turns opaque and unblurred under high contrast', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(highContrast: true),
+            child: WindTheme(
+              data: WindThemeData(),
+              child: const Scaffold(
+                body: Align(
+                  alignment: Alignment.topCenter,
+                  child: MSPageHeader(
+                    title: 'Solid',
+                    size: MSPageHeaderSize.compact,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(BackdropFilter), findsNothing);
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is WDiv &&
+              w.className ==
+                  const MagicStarterPageHeaderTheme().compactBarOpaqueClassName,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a zero blur sigma adds no backdrop layer', (tester) async {
+      MagicStarter.usePageHeaderTheme(
+        const MagicStarterPageHeaderTheme(compactBarBlurSigma: 0),
+      );
+
+      await tester.pumpWidget(
+        wrap(
+          const Align(
+            alignment: Alignment.topCenter,
+            child: MSPageHeader(title: 'Flat', size: MSPageHeaderSize.compact),
+          ),
+        ),
+      );
+
+      expect(find.byType(BackdropFilter), findsNothing);
+    });
+
+    testWidgets('compact clears the top safe area below its fill', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(padding: EdgeInsets.only(top: 47)),
+            child: WindTheme(
+              data: WindThemeData(),
+              child: const Align(
+                alignment: Alignment.topCenter,
+                child: MSPageHeader(
+                  title: 'Notch',
+                  size: MSPageHeaderSize.compact,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.getTopLeft(find.byType(NavigationToolbar)).dy, 47);
+      expect(
+        tester.getSize(find.byType(MSPageHeader)).height,
+        greaterThanOrEqualTo(47 + MSPageHeader.compactBarHeight),
+      );
+    });
+
+    testWidgets('the compact title is a heading for assistive technology', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrap(
+          const Align(
+            alignment: Alignment.topCenter,
+            child: MSPageHeader(title: 'Heard', size: MSPageHeaderSize.compact),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.text('Heard')),
+        matchesSemantics(label: 'Heard', isHeader: true),
+      );
+      handle.dispose();
+    });
   });
 }
 

@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
@@ -19,6 +21,15 @@ import '../../../facades/magic_starter.dart';
 /// needs BOTH [backLabel] and [backFallback]; with either missing the header is
 /// unchanged and top-level pages show no back affordance.
 ///
+/// ### Sizes
+///
+/// [size] picks one of three presentations, see [MSPageHeaderSize]: the
+/// regular header, the large title (display size on a phone, one step smaller
+/// from `lg`), and the compact title bar a large title collapses into. Left
+/// null, it follows `MagicStarter.pageHeaderTheme.largeTitle`. The collapse
+/// itself needs a scroll position, so it lives in
+/// `MSPageScaffold(largeTitle: true)`, which renders both.
+///
 /// ### Example
 /// ```dart
 /// MSPageHeader(
@@ -38,6 +49,10 @@ import '../../../facades/magic_starter.dart';
 class MSPageHeader extends StatelessWidget {
   // Icon reference extracted as a static const for Flutter web tree-shaking.
   static const IconData _chevronLeft = Icons.chevron_left;
+
+  /// Height of the compact title bar's toolbar row in logical pixels, the
+  /// platform's 44 pt navigation bar. The top safe area is added above it.
+  static const double compactBarHeight = 44.0;
 
   /// Required title text.
   final String title;
@@ -99,6 +114,20 @@ class MSPageHeader extends StatelessWidget {
   /// announced itself as a button and did nothing when pressed.
   final String? backFallback;
 
+  /// The presentation: regular, large title, or compact title bar.
+  ///
+  /// Null (the default) reads `MagicStarter.pageHeaderTheme.largeTitle`:
+  /// [MSPageHeaderSize.large] when it is set, [MSPageHeaderSize.regular]
+  /// otherwise. The compact bar is never a theme default; it is asked for.
+  final MSPageHeaderSize? size;
+
+  /// The presentation this header renders, resolving the theme default.
+  MSPageHeaderSize get effectiveSize =>
+      size ??
+      (MagicStarter.pageHeaderTheme.largeTitle
+          ? MSPageHeaderSize.large
+          : MSPageHeaderSize.regular);
+
   /// Creates a [MSPageHeader].
   const MSPageHeader({
     super.key,
@@ -111,6 +140,7 @@ class MSPageHeader extends StatelessWidget {
     this.inlineActions,
     this.backLabel,
     this.backFallback,
+    this.size,
   });
 
   /// Builds the back affordance control from [backLabel] and [backFallback].
@@ -157,21 +187,81 @@ class MSPageHeader extends StatelessWidget {
     );
   }
 
+  /// The compact title bar: leading control, centred one-line title, actions.
+  ///
+  /// The fill bleeds under the status bar and the toolbar row sits below the
+  /// top safe area, as a navigation bar does. Glass (a translucent fill over a
+  /// blur) gives way to the opaque fill when the platform asks for more
+  /// contrast, since a blurred backdrop is what costs legibility there.
+  Widget _buildCompactBar(BuildContext context, Widget? effectiveLeading) {
+    final theme = MagicStarter.pageHeaderTheme;
+    final bool opaque = MediaQuery.highContrastOf(context);
+    final List<Widget>? trailing = actions;
+
+    final Widget bar = WDiv(
+      className: opaque
+          ? theme.compactBarOpaqueClassName
+          : theme.compactBarClassName,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: compactBarHeight,
+          child: NavigationToolbar(
+            leading: effectiveLeading,
+            middle: Semantics(
+              header: true,
+              child: WText(title, className: theme.compactTitleClassName),
+            ),
+            trailing: trailing != null && trailing.isNotEmpty
+                ? WDiv(
+                    className: theme.actionContainerClassName,
+                    children: trailing,
+                  )
+                : null,
+          ),
+        ),
+      ),
+    );
+
+    if (opaque || theme.compactBarBlurSigma <= 0) return bar;
+
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: theme.compactBarBlurSigma,
+          sigmaY: theme.compactBarBlurSigma,
+        ),
+        child: bar,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Resolve the effective leading: an explicit widget takes priority; when
-    // both back arguments are set, auto-build the unified back control.
+    // 1. Resolve the effective leading: an explicit widget takes priority;
+    //    when both back arguments are set, auto-build the unified back control.
     //
-    // BOTH, because `backFallback` is the control's only destination. Gated on
-    // `backLabel` alone, a caller passing just the label got a chevron that
-    // announced itself as a button and did nothing when pressed, which is worse
-    // than no control at all. Every in-package caller passes both.
+    //    BOTH, because `backFallback` is the control's only destination. Gated
+    //    on `backLabel` alone, a caller passing just the label got a chevron
+    //    that announced itself as a button and did nothing when pressed, which
+    //    is worse than no control at all. Every in-package caller passes both.
     final String? fallback = backFallback;
     final Widget? effectiveLeading =
         leading ??
         (backLabel != null && fallback != null
             ? _buildBackControl(fallback)
             : null);
+
+    // 2. The compact bar is its own layout, not a restyled header.
+    final MSPageHeaderSize resolvedSize = effectiveSize;
+    if (resolvedSize == MSPageHeaderSize.compact) {
+      return _buildCompactBar(context, effectiveLeading);
+    }
+
+    // 3. Regular and large share the layout and differ in the title only.
+    final String titleClassName = resolvedSize == MSPageHeaderSize.large
+        ? MagicStarter.pageHeaderTheme.largeTitleClassName
+        : MagicStarter.pageHeaderTheme.titleClassName;
 
     return WDiv(
       className: isInline
@@ -193,10 +283,7 @@ class MSPageHeader extends StatelessWidget {
             WDiv(
               className: 'flex flex-col gap-1 flex-initial min-w-0',
               children: [
-                WText(
-                  title,
-                  className: MagicStarter.pageHeaderTheme.titleClassName,
-                ),
+                WText(title, className: titleClassName),
                 if (subtitle != null) _buildSubtitle(subtitle!),
               ],
             ),
@@ -213,4 +300,24 @@ class MSPageHeader extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The presentations of [MSPageHeader].
+enum MSPageHeaderSize {
+  /// The header every page had before sizes existed: the theme's
+  /// `titleClassName`, responsive layout, a hairline under it.
+  regular,
+
+  /// The large title: the regular layout with the theme's
+  /// `largeTitleClassName`, display size on a phone and one step smaller from
+  /// `lg`. `MSPageScaffold(largeTitle: true)` collapses it into [compact] on
+  /// scroll.
+  large,
+
+  /// The compact title bar: a 44 pt toolbar row below the top safe area with
+  /// the leading control, a centred one-line title and the actions, over the
+  /// theme's `compactBarClassName` fill and `compactBarBlurSigma` blur. The
+  /// subtitle and both suffixes are not drawn, as a navigation bar has no
+  /// room for them.
+  compact,
 }

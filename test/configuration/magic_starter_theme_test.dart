@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:magic/magic.dart';
 import 'package:magic_starter/src/configuration/magic_starter_theme.dart';
+import 'package:magic_starter/src/ui/theme/magic_starter_tokens.dart';
 
 void main() {
   // -------------------------------------------------------------------------
@@ -270,6 +272,36 @@ void main() {
 
         expect(theme.subtitleClassName, contains('text-sm'));
         expect(theme.containerClassName, contains('border-b'));
+      });
+    });
+
+    group('large title', () {
+      test('is off by default, so no consumer changes', () {
+        const theme = MagicStarterPageHeaderTheme();
+
+        expect(theme.largeTitle, isFalse);
+      });
+
+      test('the compact bar ships as blurred glass with an opaque twin', () {
+        const theme = MagicStarterPageHeaderTheme();
+
+        expect(theme.compactBarClassName, contains('/80'));
+        expect(theme.compactBarOpaqueClassName, isNot(contains('/')));
+        expect(theme.compactBarBlurSigma, greaterThan(0));
+      });
+
+      test('fromWind themes the large title and the bar on the tokens', () {
+        final MagicStarterPageHeaderTheme theme = MagicStarterTheme.fromWind(
+          WindThemeData(aliases: MagicStarterTokens.defaultAliases),
+        ).pageHeader;
+
+        expect(theme.largeTitleClassName, contains('text-fg'));
+        expect(theme.compactTitleClassName, contains('text-fg'));
+        expect(theme.compactBarClassName, contains('bg-surface-container'));
+        expect(
+          theme.compactBarOpaqueClassName,
+          contains('bg-surface-container'),
+        );
       });
     });
   });

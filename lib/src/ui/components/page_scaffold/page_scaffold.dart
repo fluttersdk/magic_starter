@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import '../page_container/page_container.dart';
 import '../page_header/page_header.dart';
 import 'page_scaffold.recipe.dart';
@@ -36,6 +37,17 @@ import 'page_scaffold.recipe.dart';
 /// a chat composer needs. A docked layout needs a bounded height, as the app
 /// shell provides; without [footer] the layout is the plain scroll view above.
 /// Pass [scrollController] to keep a thread pinned to its newest message.
+///
+/// ### Large title
+///
+/// With [largeTitle] (or `MagicStarterPageHeaderTheme.largeTitle`), the header
+/// renders as [MSPageHeaderSize.large] and collapses into a
+/// [MSPageHeaderSize.compact] bar pinned over the top of the page once the
+/// large header has scrolled under it, fading back out on the way down. The
+/// bar spans the page edge to edge, outside the container, and is unmounted
+/// while hidden, so the title and actions exist once in the tree whenever the
+/// bar is not on screen. While it is, they exist twice: an action carrying a
+/// `GlobalKey` cannot be used here.
 ///
 /// ### Example: sub-page with back
 /// ```dart
@@ -104,6 +116,14 @@ class MSPageScaffold extends StatelessWidget {
   /// that keeps to the bottom.
   final ScrollController? scrollController;
 
+  /// Whether the header is a large title that collapses into a compact bar on
+  /// scroll.
+  ///
+  /// Null (the default) reads `MagicStarter.pageHeaderTheme.largeTitle`, so a
+  /// host turns every scaffold, the starter's own pages included, into large
+  /// titles once.
+  final bool? largeTitle;
+
   /// Creates a [MSPageScaffold].
   const MSPageScaffold({
     super.key,
@@ -115,12 +135,59 @@ class MSPageScaffold extends StatelessWidget {
     this.backFallback,
     this.footer,
     this.scrollController,
+    this.largeTitle,
   });
+
+  /// Whether this scaffold uses the large title, resolving the theme default.
+  bool get isLargeTitle =>
+      largeTitle ?? MagicStarter.pageHeaderTheme.largeTitle;
+
+  /// The page header in [headerSize], keyed when the large-title frame needs
+  /// to measure it.
+  MSPageHeader _header(MSPageHeaderSize headerSize, {Key? key}) {
+    return MSPageHeader(
+      key: key,
+      title: title,
+      subtitle: subtitle,
+      actions: actions,
+      backLabel: backLabel,
+      backFallback: backFallback,
+      size: headerSize,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final Widget content = isLargeTitle
+        ? _LargeTitleFrame(
+            compactBar: _header(MSPageHeaderSize.compact),
+            scrollAreaBuilder: (Key headerKey) => _buildScrollArea(
+              _header(MSPageHeaderSize.large, key: headerKey),
+            ),
+          )
+        : _buildScrollArea(_header(MSPageHeaderSize.regular));
+
+    // The page-surface fill wraps the scroll view (which expands to the full
+    // content viewport), so the surface paints the ENTIRE area, not only the
+    // content height. Painting it on the scroll view's child left everything
+    // below the last section showing the layout's grey content background.
+    return WDiv(
+      className: pageScaffoldSurfaceRecipe(),
+      child: footer == null
+          ? content
+          : Column(
+              children: [
+                Expanded(child: content),
+                _DockedFooter(child: footer!),
+              ],
+            ),
+    );
+  }
+
+  /// The scrolling area: [header] plus the children in the page geometry.
+  Widget _buildScrollArea(Widget header) {
     // 1. The scrolling area: header plus children in the shared page geometry.
-    final Widget scrollArea = SingleChildScrollView(
+    return SingleChildScrollView(
       // 2. Each page owns its own implicit scroll controller. Never attach to
       //    the ambient PrimaryScrollController: with RouteTransition.none two
       //    routes are briefly mounted simultaneously and two `primary: true`
@@ -132,34 +199,135 @@ class MSPageScaffold extends StatelessWidget {
       child: MSPageContainer(
         children: [
           // 4. Unified page header: back affordance and actions compose here.
-          MSPageHeader(
-            title: title,
-            subtitle: subtitle,
-            actions: actions,
-            backLabel: backLabel,
-            backFallback: backFallback,
-          ),
+          header,
 
           // 5. Children column with a standard gap between sections.
           WDiv(className: pageScaffoldChildrenAreaRecipe(), children: children),
         ],
       ),
     );
+  }
+}
 
-    // 6. The page-surface fill wraps the scroll view (which expands to the full
-    //    content viewport), so the surface paints the ENTIRE area, not only the
-    //    content height. Painting it on the scroll view's child left everything
-    //    below the last section showing the layout's grey content background.
-    return WDiv(
-      className: pageScaffoldSurfaceRecipe(),
-      child: footer == null
-          ? scrollArea
-          : Column(
-              children: [
-                Expanded(child: scrollArea),
-                _DockedFooter(child: footer!),
-              ],
-            ),
+/// The large-title behaviour of [MSPageScaffold]: watches its own scroll view
+/// and fades [compactBar] in over the top once the large header is under it.
+@immutable
+class _LargeTitleFrame extends StatefulWidget {
+  /// The bar shown once the large header has scrolled away.
+  final Widget compactBar;
+
+  /// Builds the scroll area around a large header carrying the given key,
+  /// which the frame measures to know when the header has gone.
+  final Widget Function(Key headerKey) scrollAreaBuilder;
+
+  const _LargeTitleFrame({
+    required this.compactBar,
+    required this.scrollAreaBuilder,
+  });
+
+  @override
+  State<_LargeTitleFrame> createState() => _LargeTitleFrameState();
+}
+
+class _LargeTitleFrameState extends State<_LargeTitleFrame>
+    with SingleTickerProviderStateMixin {
+  /// The quiet state change the design calls for, 200 ms ease-out.
+  static const Duration _fadeDuration = Duration(milliseconds: 200);
+
+  final GlobalKey _headerKey = GlobalKey();
+
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    duration: _fadeDuration,
+  );
+
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _fade,
+    curve: Curves.easeOut,
+  );
+
+  bool _collapsed = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Reduce Motion: the bar swaps instead of fading.
+    _fade.duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : _fadeDuration;
+  }
+
+  @override
+  void dispose() {
+    _fade.dispose();
+    super.dispose();
+  }
+
+  /// Collapses once the large header's bottom edge has passed under the
+  /// compact bar, and expands again when it comes back out.
+  ///
+  /// Measured from the header's render box rather than a fixed scroll offset,
+  /// because the header's height and its distance from the top (the host's
+  /// page padding, a wrapped two-line title) are not known here.
+  bool _onScroll(ScrollNotification notification) {
+    // 1. Only this page's own vertical scroll counts: a horizontal carousel or
+    //    a nested list inside a section says nothing about the header.
+    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+
+    // 2. Locate the header against the frame.
+    final RenderObject? frame = context.findRenderObject();
+    final RenderObject? header = _headerKey.currentContext?.findRenderObject();
+    if (frame is! RenderBox || header is! RenderBox || !header.attached) {
+      return false;
+    }
+
+    final double headerBottom = header
+        .localToGlobal(Offset(0, header.size.height), ancestor: frame)
+        .dy;
+    final double barBottom =
+        MediaQuery.paddingOf(context).top + MSPageHeader.compactBarHeight;
+
+    // 3. Flip only on a change, so a scroll does not rebuild per frame.
+    final bool collapsed = headerBottom <= barBottom;
+    if (collapsed != _collapsed) {
+      setState(() => _collapsed = collapsed);
+      collapsed ? _fade.forward() : _fade.reverse();
+    }
+
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        NotificationListener<ScrollNotification>(
+          onNotification: _onScroll,
+          child: widget.scrollAreaBuilder(_headerKey),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: AnimatedBuilder(
+            animation: _fade,
+            builder: (BuildContext context, Widget? bar) {
+              // Unmounted while fully hidden: the title and the actions would
+              // otherwise sit in the tree twice, once invisible.
+              if (_fade.isDismissed) return const SizedBox.shrink();
+
+              return IgnorePointer(
+                ignoring: !_collapsed,
+                child: FadeTransition(opacity: _opacity, child: bar),
+              );
+            },
+            child: widget.compactBar,
+          ),
+        ),
+      ],
     );
   }
 }

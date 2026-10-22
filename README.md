@@ -241,7 +241,7 @@ WindApp(
 | Selection / navigation | `MSSegmentedControl`, `MSTabs`, `MSAccordion`, `MSNavbar`, `MSDropdownMenu` |
 | Overlay | `MSDialog`, `MSBottomSheet`, `MSConfirmDialog` |
 | Composition | `MSAvatar`, `MSFormField`, `MSCard`, `MSPageHeader`, `MSSocialDivider` |
-| Page geometry | `MSPageContainer`, `MSPageScaffold` |
+| Page geometry | `MSPageContainer`, `MSPageScaffold`, `MSMasterDetail` |
 | Settings surface | `MSSettingsSection`, `MSSettingsRow`, `MSSettingsNavRow` |
 | Billing surface | `MSUsageMeter`, `MSUpgradeDialog`, `MSUpgradeNudge` |
 | App chrome | `MSUserProfileDropdown`, `MSTeamSelector` |
@@ -312,6 +312,27 @@ MSPageHeader(
   ],
 )
 ```
+
+`size: MSPageHeaderSize.large` renders a large title, and `MSPageScaffold(largeTitle: true)` collapses it into a compact bar (`MSPageHeaderSize.compact`) pinned over the page once it scrolls away. `MagicStarterPageHeaderTheme(largeTitle: true)` turns it on for every page, the starter's own included.
+
+### MSMasterDetail
+
+A list beside its selected item from `lg` up, and one of the two below it. Keep the selection in the route and a row tap is push navigation on a phone:
+
+```dart
+MSPageScaffold(
+  title: 'Stock',
+  children: [
+    MSMasterDetail(
+      master: StockList(selectedId: productId),
+      detail: productId == null ? null : ProductDetail(id: productId),
+      placeholder: const MSEmptyState(title: 'Pick a product'),
+    ),
+  ],
+)
+```
+
+`MSBottomSheet.show(context, ..., dialogBreakpoint: 'lg')` follows the same idea for overlays: a sheet on a phone, an `MSDialog` from `lg`, from one call.
 
 ### MSCard
 

@@ -273,6 +273,167 @@ void main() {
     });
   });
 
+  group('dialogBreakpoint', () {
+    void setWidth(WidgetTester tester, double width) {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
+
+    Widget opener({
+      String? dialogBreakpoint,
+      bool scrollable = true,
+      Widget body = const Text('sheet body'),
+      ValueChanged<Object?>? onResult,
+    }) {
+      return wrap(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              final Object? result = await MSBottomSheet.show<String>(
+                context,
+                title: 'Move',
+                description: 'Pick a place',
+                body: body,
+                scrollable: scrollable,
+                dialogBreakpoint: dialogBreakpoint,
+                footerBuilder: (sheetContext) => ElevatedButton(
+                  onPressed: () => Navigator.of(sheetContext).pop('moved'),
+                  child: const Text('Done'),
+                ),
+              );
+              onResult?.call(result);
+            },
+            child: const Text('Open'),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('presents a dialog from the breakpoint up', (tester) async {
+      setWidth(tester, 1280);
+
+      await tester.pumpWidget(opener(dialogBreakpoint: 'lg'));
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MSDialog), findsOneWidget);
+      expect(find.byType(MSBottomSheet), findsNothing);
+      expect(find.text('Move'), findsOneWidget);
+      expect(find.text('Pick a place'), findsOneWidget);
+      expect(find.text('sheet body'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+    });
+
+    testWidgets('stays a sheet below the breakpoint', (tester) async {
+      setWidth(tester, 390);
+
+      await tester.pumpWidget(opener(dialogBreakpoint: 'lg'));
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MSBottomSheet), findsOneWidget);
+      expect(find.byType(MSDialog), findsNothing);
+    });
+
+    testWidgets('without the argument a wide screen still gets a sheet', (
+      tester,
+    ) async {
+      setWidth(tester, 1440);
+
+      await tester.pumpWidget(opener());
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MSBottomSheet), findsOneWidget);
+      expect(find.byType(MSDialog), findsNothing);
+    });
+
+    testWidgets('the footer pops the dialog with its result', (tester) async {
+      setWidth(tester, 1280);
+      Object? result;
+
+      await tester.pumpWidget(
+        opener(dialogBreakpoint: 'lg', onResult: (value) => result = value),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MSDialog), findsNothing);
+      expect(result, 'moved');
+    });
+
+    testWidgets('a non-scrollable body keeps its bounded height in a dialog', (
+      tester,
+    ) async {
+      setWidth(tester, 1280);
+      BoxConstraints? seen;
+
+      await tester.pumpWidget(
+        opener(
+          dialogBreakpoint: 'lg',
+          scrollable: false,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              seen = constraints;
+
+              return const SizedBox(key: Key('b'), height: 10);
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MSDialog), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.byKey(const Key('b')),
+          matching: find.byType(Scrollable),
+        ),
+        findsNothing,
+      );
+      expect(seen!.hasBoundedHeight, isTrue);
+    });
+
+    testWidgets('an unknown breakpoint fails loudly', (tester) async {
+      setWidth(tester, 1280);
+      Object? error;
+
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                try {
+                  MSBottomSheet.show<void>(
+                    context,
+                    body: const Text('x'),
+                    dialogBreakpoint: 'desktop',
+                  );
+                } on StateError catch (e) {
+                  error = e;
+                }
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(error, isA<StateError>());
+      expect(
+        (error! as StateError).message,
+        contains('MSBottomSheet.show(dialogBreakpoint:)'),
+      );
+    });
+  });
+
   // Verify BottomSheet is re-exported from index.dart
   test('BottomSheet is re-exported from index.dart', () {
     expect(MSBottomSheet, isNotNull);

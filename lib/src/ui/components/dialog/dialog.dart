@@ -35,8 +35,16 @@ class MSDialog extends StatelessWidget {
   /// Optional sub-heading rendered below [title].
   final String? description;
 
-  /// Content widget rendered in the scrollable body area.
+  /// Content widget rendered in the body area.
   final Widget body;
+
+  /// Whether the dialog scrolls [body] for it (the default).
+  ///
+  /// Pass `false` for a body that owns its scrolling: it then gets the
+  /// dialog's bounded height to lay out in and the dialog adds no scroll view
+  /// of its own, the same contract as `MSBottomSheet.scrollable`, so a sheet
+  /// presented as a dialog from a breakpoint keeps its body's layout.
+  final bool scrollable;
 
   /// Optional builder for the sticky footer; receives the dialog's own
   /// [BuildContext] so callers can safely access
@@ -50,6 +58,7 @@ class MSDialog extends StatelessWidget {
     this.description,
     required this.body,
     this.footerBuilder,
+    this.scrollable = true,
   });
 
   /// Opens the dialog and resolves when it is dismissed.
@@ -59,6 +68,7 @@ class MSDialog extends StatelessWidget {
     String? description,
     required Widget body,
     Widget Function(BuildContext dialogContext)? footerBuilder,
+    bool scrollable = true,
   }) {
     return m.showDialog<T>(
       context: context,
@@ -67,6 +77,7 @@ class MSDialog extends StatelessWidget {
         description: description,
         body: body,
         footerBuilder: footerBuilder,
+        scrollable: scrollable,
       ),
     );
   }
@@ -112,13 +123,18 @@ class MSDialog extends StatelessWidget {
                       ),
                   ],
                 ),
-              // 4. Scrollable body: ListView collapses to content height.
+              // 4. Body: a ListView that collapses to content height, or the
+              //    bounded height handed to a body that scrolls itself.
               Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  children: [WDiv(className: theme.bodyClassName, child: body)],
-                ),
+                child: scrollable
+                    ? ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        children: [
+                          WDiv(className: theme.bodyClassName, child: body),
+                        ],
+                      )
+                    : WDiv(className: theme.bodyClassName, child: body),
               ),
               // 5. Sticky footer: Builder gives footer access to dialog
               //    context so Navigator.of(dialogContext) works correctly.

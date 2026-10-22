@@ -454,7 +454,7 @@ MagicStarter.useCardTheme(
 <a name="page-header-theme"></a>
 ## Page Header Theme
 
-`MagicStarterPageHeaderTheme` overrides Wind UI tokens for the `MSPageHeader` container, title, subtitle, and action container, plus one layout switch.
+`MagicStarterPageHeaderTheme` overrides Wind UI tokens for the `MSPageHeader` container, title, subtitle, action container and compact bar, plus two layout switches.
 
 ```dart
 MagicStarter.usePageHeaderTheme(
@@ -491,6 +491,33 @@ help, for the same reason `truncate` does not without a constrained box.
 screen can still opt out with `inlineActions: false`. `MSPageScaffold` does not
 expose the argument, which is why the theme is the only reachable switch for a
 scaffold consumer.
+
+### Large title
+
+`largeTitle: true` makes every `MSPageHeader` a large title and every
+`MSPageScaffold` collapse it into a compact bar on scroll, the starter's own
+pages included. A widget argument still wins (`size:` on the header,
+`largeTitle:` on the scaffold).
+
+```dart
+MagicStarter.usePageHeaderTheme(
+  const MagicStarterPageHeaderTheme(
+    largeTitle: true,
+    largeTitleClassName: 'text-4xl lg:text-3xl font-bold text-fg',
+    compactBarClassName: 'px-2 bg-white/80 dark:bg-gray-900/80 border-b border-color-border',
+    compactBarOpaqueClassName: 'px-2 bg-surface-container border-b border-color-border',
+    compactTitleClassName: 'text-base font-semibold text-fg truncate',
+    compactBarBlurSigma: 24,
+  ),
+);
+```
+
+The bar is glass: `compactBarClassName` should be translucent, and
+`compactBarBlurSigma` blurs what scrolls under it (`0` adds no blur layer).
+Under high contrast (`MediaQuery.highContrast`, iOS Increase Contrast) it paints
+`compactBarOpaqueClassName` with no blur. A semantic alias carries no opacity
+step, so `MagicStarterTheme.fromWind` sets both fills to the opaque
+`bg-surface-container`; a host after glass passes its own translucent fill.
 
 <a name="layout-theme"></a>
 ## Layout Theme

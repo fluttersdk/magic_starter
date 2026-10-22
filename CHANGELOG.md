@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **A large title that collapses into a compact bar on scroll.** `MSPageHeader` takes `size: MSPageHeaderSize.regular | large | compact`. `large` renders the title in the new `largeTitleClassName` (`text-4xl lg:text-3xl`: display size on a phone, one step smaller from `lg`). `compact` is a 44 pt bar below the top safe area with the leading control, a centred one-line title (`compactTitleClassName`) and the actions, over a translucent `compactBarClassName` fill and a `compactBarBlurSigma` backdrop blur (20 by default, `0` for none); under high contrast (`MediaQuery.highContrast`) it paints `compactBarOpaqueClassName` with no blur. `MSPageScaffold(largeTitle: true)` renders the large header and fades the compact bar in over the top of the page once the header has scrolled under it, 200 ms ease-out, a swap under Reduce Motion; the bar is unmounted while hidden. `MagicStarterPageHeaderTheme.largeTitle` turns both on for every header and scaffold, the starter's own pages included; `size:` and `largeTitle:` still win. Off by default, so nothing changes until a host opts in. (`lib/src/ui/components/page_header/page_header.dart`, `lib/src/ui/components/page_scaffold/page_scaffold.dart`, `lib/src/configuration/magic_starter_theme.dart`)
+- **`MSMasterDetail`, a list beside its selected item from `lg` up.** From `breakpoint` (`'lg'` by default) the `master` list sits in a `w-96` column with the `detail` (or the `placeholder` while there is none) beside it; below it the widget renders `detail ?? master`, which is push navigation when the selection lives in the route (`/stock` and `/stock/42`). It owns no page geometry and no scroll, so it goes inside `MSPageScaffold`; `MSMasterDetail.isSplit(context)` gives a page the same answer for its header. `className`, `masterClassName` and `detailClassName` append to the recipes (`masterDetailSplitRecipe`, `masterDetailMasterColumnRecipe`, `masterDetailDetailColumnRecipe`). (`lib/src/ui/components/master_detail/`)
+- **`MSBottomSheet.show(dialogBreakpoint:)`.** From that Wind breakpoint up, the call presents an `MSDialog` with the same title, description, body, footer and `scrollable` instead of a sheet, so one call serves a phone and a desktop; `footerBuilder` then receives the dialog's context, so its `Navigator.pop` closes whichever was shown. Null (the default) keeps the sheet at every width. `MSDialog` and `MSDialog.show` take `scrollable` for it, with the sheet's contract. (`lib/src/ui/components/bottom_sheet/bottom_sheet.dart`, `lib/src/ui/components/dialog/dialog.dart`)
+
+### Changed
+
+- **One breakpoint check for every width decision.** The shell's sidebar, `MSMasterDetail` and the adaptive sheet resolve a breakpoint name through the same check, and a name the Wind theme does not carry throws a `StateError` naming the setting it came from, instead of silently pinning the narrow layout. The shell's message is unchanged. (`lib/src/ui/theme/magic_starter_breakpoints.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
 ## [0.0.56] - 2026-10-22
 
 ### Fixed
