@@ -23,6 +23,11 @@ class MagicStarterProfileController extends MagicController
       Magic.findOrPut(MagicStarterProfileController.new);
   bool _isSubmitting = false;
 
+  /// Whether a write is in flight. Every write refuses to start while one is,
+  /// answering false without sending, so a caller that reports a false as a
+  /// failure checks this first.
+  bool get isSubmitting => _isSubmitting;
+
   /// How many [withoutNotifying] actions are in flight.
   ///
   /// While above zero, [notifyListeners] calls are silently discarded. A count

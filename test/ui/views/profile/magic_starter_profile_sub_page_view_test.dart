@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -12,6 +15,9 @@ import 'package:magic_starter/src/ui/views/profile/magic_starter_profile_sub_pag
 
 class MockNetworkDriver implements NetworkDriver {
   MagicResponse? nextResponse;
+
+  /// When set, a PUT waits on this instead of answering at once.
+  Completer<MagicResponse>? heldPut;
   String? lastMethod;
   String? lastUrl;
   dynamic lastData;
@@ -49,7 +55,12 @@ class MockNetworkDriver implements NetworkDriver {
     String url, {
     dynamic data,
     Map<String, String>? headers,
-  }) async => _respond('PUT', url, data: data);
+  }) async {
+    final MagicResponse response = _respond('PUT', url, data: data);
+    final Completer<MagicResponse>? held = heldPut;
+
+    return held == null ? response : held.future;
+  }
 
   @override
   Future<MagicResponse> delete(
@@ -185,7 +196,7 @@ void main() {
       Magic.flush();
 
       Config.set('magic_starter.features.extended_profile', true);
-      Config.set('magic_starter.features.profile_photo', true);
+      Config.set('magic_starter.features.profile_photos', true);
       Config.set('magic_starter.features.email_verification', true);
 
       mockDriver = MockNetworkDriver();
@@ -358,6 +369,154 @@ void main() {
 
       expect(mockDriver.lastMethod, 'POST');
       expect(mockDriver.lastUrl, contains('/email/verification-notification'));
+    });
+
+    group('profile photo upload', () {
+      Future<MagicFile?> pickPhoto() async => MagicFile(
+        name: 'avatar.png',
+        size: 3,
+        mimeType: 'image/png',
+        bytes: Uint8List.fromList(<int>[1, 2, 3]),
+      );
+
+      Future<void> tapUpload(WidgetTester tester) async {
+        final upload = find.widgetWithText(MSButton, 'common.upload');
+        await tester.ensureVisible(upload);
+        await tester.pumpAndSettle();
+        await tester.tap(upload);
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('a picked photo is uploaded to /user/profile-photo', (
+        tester,
+      ) async {
+        mockDriver.mockResponse(statusCode: 200, data: {});
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImage: pickPhoto)),
+        );
+        await tapUpload(tester);
+
+        expect(mockDriver.lastMethod, 'UPLOAD');
+        expect(mockDriver.lastUrl, '/user/profile-photo');
+        expect(find.text('profile.photo_update_failed'), findsNothing);
+      });
+
+      testWidgets('a refused photo shows the server reason under the button', (
+        tester,
+      ) async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message':
+                'The photo field must not be greater than 1024 kilobytes.',
+            'errors': {
+              'photo': [
+                'The photo field must not be greater than 1024 kilobytes.',
+              ],
+            },
+          },
+        );
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImage: pickPhoto)),
+        );
+        await tapUpload(tester);
+
+        expect(
+          find.text('The photo field must not be greater than 1024 kilobytes.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets(
+        'a long refusal wraps beside the avatar instead of overflowing',
+        (tester) async {
+          // 700 px is past `sm`, so the avatar and this column share a row and
+          // only `sm:flex-1` bounds the column; on a phone the column stacks
+          // under the avatar and is bounded anyway.
+          tester.view.physicalSize = const Size(700, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          const String reason =
+              'The photo field must be a file of type: jpg, jpeg, png, bmp, gif, '
+              'svg or webp, and must not be greater than 1024 kilobytes.';
+          mockDriver.mockResponse(
+            statusCode: 422,
+            data: {
+              'errors': {
+                'photo': [reason],
+              },
+            },
+          );
+
+          await tester.pumpWidget(
+            wrap(MagicStarterProfileSubPageView(pickImage: pickPhoto)),
+          );
+          await tapUpload(tester);
+
+          expect(find.text(reason), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        },
+      );
+
+      testWidgets('an upload refused by a write in flight shows no error', (
+        tester,
+      ) async {
+        // The controller runs one write at a time and answers false, without
+        // sending, to a second one. That false is not a failed upload.
+        mockDriver
+          ..mockResponse(statusCode: 200, data: {'data': {}})
+          ..heldPut = Completer<MagicResponse>();
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImage: pickPhoto)),
+        );
+        final saveButton = find.widgetWithText(MSButton, 'common.save');
+        await tester.ensureVisible(saveButton);
+        await tester.pumpAndSettle();
+        await tester.tap(saveButton);
+        await tester.pump();
+
+        final upload = find.widgetWithText(MSButton, 'common.upload');
+        await tester.ensureVisible(upload);
+        await tester.pump();
+        await tester.tap(upload);
+        await tester.pump();
+
+        expect(mockDriver.lastMethod, 'PUT');
+        expect(find.text('profile.photo_update_failed'), findsNothing);
+
+        mockDriver.heldPut!.complete(
+          MagicResponse(data: {'data': {}}, statusCode: 200),
+        );
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a failed upload with no reason shows the fallback copy', (
+        tester,
+      ) async {
+        mockDriver.mockResponse(statusCode: 500, data: {});
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImage: pickPhoto)),
+        );
+        await tapUpload(tester);
+
+        expect(find.text('profile.photo_update_failed'), findsOneWidget);
+      });
+
+      testWidgets('a cancelled pick uploads nothing and shows nothing', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImage: () async => null)),
+        );
+        await tapUpload(tester);
+
+        expect(mockDriver.lastMethod, isNull);
+        expect(find.text('profile.photo_update_failed'), findsNothing);
+      });
     });
 
     testWidgets('does not render password / sessions / 2FA sections', (
