@@ -31,7 +31,11 @@ import '../../components/page_scaffold/index.dart';
 /// and sessions management now live on their own Security sub-pages.
 class MagicStarterProfileSubPageView
     extends MagicStatefulView<MagicStarterProfileController> {
-  const MagicStarterProfileSubPageView({super.key});
+  const MagicStarterProfileSubPageView({super.key, this.pickImageOverride});
+
+  /// A stand-in for the system image picker, for tests. Null reads
+  /// `Pick.image`.
+  final Future<MagicFile?> Function()? pickImageOverride;
 
   @override
   State<MagicStarterProfileSubPageView> createState() =>
@@ -79,6 +83,13 @@ class _MagicStarterProfileSubPageViewState
     false,
   );
   final ValueNotifier<bool> _profileSaveLoading = ValueNotifier<bool>(false);
+
+  /// Why the last photo upload or removal failed, shown under its buttons.
+  ///
+  /// The photo section renders no form, so a refusal written only to the
+  /// controller's errors (a 422 for a file over the size limit, an unexpected
+  /// failure) reached nothing on screen and the tap read as doing nothing.
+  String? _photoError;
 
   // -- Lifecycle -------------------------------------------------------------
 
@@ -200,7 +211,9 @@ class _MagicStarterProfileSubPageViewState
               ),
             ),
             WDiv(
-              className: 'flex flex-col gap-2 min-w-0',
+              // `sm:flex-1` bounds the column beside the avatar, so a long
+              // refusal under the buttons wraps instead of overflowing.
+              className: 'flex flex-col gap-2 min-w-0 sm:flex-1',
               children: [
                 MagicBuilder<bool>(
                   listenable: _photoLoading,
@@ -230,6 +243,8 @@ class _MagicStarterProfileSubPageViewState
                   trans('profile.photo_requirements'),
                   className: 'text-xs text-fg-muted',
                 ),
+                if (_photoError != null)
+                  WText(_photoError!, className: 'text-xs text-destructive'),
               ],
             ),
           ],
@@ -239,16 +254,38 @@ class _MagicStarterProfileSubPageViewState
   }
 
   Future<void> _handlePhotoUpload() async {
-    final file = await Pick.image();
-    if (file == null) return;
-    await _trackLoading(
+    final picker = widget.pickImageOverride;
+    final file = picker == null ? await Pick.image() : await picker();
+    if (file == null || !mounted) return;
+
+    setState(() => _photoError = null);
+    final bool updated = await _trackLoading(
       _photoLoading,
       () => controller.doUpdateProfilePhoto(file: file),
     );
+    if (!updated) _reportPhotoFailure(trans('profile.photo_update_failed'));
   }
 
   Future<void> _handlePhotoRemove() async {
-    await _trackLoading(_photoLoading, () => controller.doDeleteProfilePhoto());
+    setState(() => _photoError = null);
+    final bool removed = await _trackLoading(
+      _photoLoading,
+      () => controller.doDeleteProfilePhoto(),
+    );
+    if (!removed) _reportPhotoFailure(trans('profile.photo_delete_failed'));
+  }
+
+  /// Shows why a photo write failed: the server's reason for the `photo`
+  /// field when it gave one, else the controller's error, else [fallback].
+  void _reportPhotoFailure(String fallback) {
+    if (!mounted) return;
+
+    final String? status = controller.rxStatus.message;
+    setState(() {
+      _photoError =
+          controller.getError('photo') ??
+          (status != null && status.isNotEmpty ? status : fallback);
+    });
   }
 
   // -- Email Verification Section -------------------------------------------

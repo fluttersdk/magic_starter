@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A failed profile photo upload says why.** The Profile sub-page wrote a refusal (a 422 for a file over the 1 MB limit, a failed request) only to the controller's errors, which the photo section never renders, so a failed upload or removal read as a tap that did nothing. The reason now shows under the buttons: the server's `photo` message when it sent one, else `profile.photo_update_failed` or `profile.photo_delete_failed`. The column beside the avatar is bounded from `sm` up so the message wraps. `MagicStarterProfileSubPageView` takes a `pickImageOverride` so a test can stand in for the system picker. (`lib/src/ui/views/profile/magic_starter_profile_sub_page_view.dart`)
+
 ## [0.0.57] - 2026-10-22
 
 ### Added

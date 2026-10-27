@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -185,7 +187,7 @@ void main() {
       Magic.flush();
 
       Config.set('magic_starter.features.extended_profile', true);
-      Config.set('magic_starter.features.profile_photo', true);
+      Config.set('magic_starter.features.profile_photos', true);
       Config.set('magic_starter.features.email_verification', true);
 
       mockDriver = MockNetworkDriver();
@@ -358,6 +360,121 @@ void main() {
 
       expect(mockDriver.lastMethod, 'POST');
       expect(mockDriver.lastUrl, contains('/email/verification-notification'));
+    });
+
+    group('profile photo upload', () {
+      Future<MagicFile?> pickPhoto() async => MagicFile(
+        name: 'avatar.png',
+        size: 3,
+        mimeType: 'image/png',
+        bytes: Uint8List.fromList(<int>[1, 2, 3]),
+      );
+
+      Future<void> tapUpload(WidgetTester tester) async {
+        final upload = find.widgetWithText(MSButton, 'common.upload');
+        await tester.ensureVisible(upload);
+        await tester.pumpAndSettle();
+        await tester.tap(upload);
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('a picked photo is uploaded to /user/profile-photo', (
+        tester,
+      ) async {
+        mockDriver.mockResponse(statusCode: 200, data: {});
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImageOverride: pickPhoto)),
+        );
+        await tapUpload(tester);
+
+        expect(mockDriver.lastMethod, 'UPLOAD');
+        expect(mockDriver.lastUrl, '/user/profile-photo');
+        expect(find.text('profile.photo_update_failed'), findsNothing);
+      });
+
+      testWidgets('a refused photo shows the server reason under the button', (
+        tester,
+      ) async {
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'message':
+                'The photo field must not be greater than 1024 kilobytes.',
+            'errors': {
+              'photo': [
+                'The photo field must not be greater than 1024 kilobytes.',
+              ],
+            },
+          },
+        );
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImageOverride: pickPhoto)),
+        );
+        await tapUpload(tester);
+
+        expect(
+          find.text('The photo field must not be greater than 1024 kilobytes.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('a refusal wraps on a phone instead of overflowing', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(390, 844) * 3;
+        tester.view.devicePixelRatio = 3;
+        addTearDown(tester.view.reset);
+        mockDriver.mockResponse(
+          statusCode: 422,
+          data: {
+            'errors': {
+              'photo': [
+                'The photo field must not be greater than 1024 kilobytes.',
+              ],
+            },
+          },
+        );
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImageOverride: pickPhoto)),
+        );
+        await tapUpload(tester);
+
+        expect(
+          find.text('The photo field must not be greater than 1024 kilobytes.'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a failed upload with no reason shows the fallback copy', (
+        tester,
+      ) async {
+        mockDriver.mockResponse(statusCode: 500, data: {});
+
+        await tester.pumpWidget(
+          wrap(MagicStarterProfileSubPageView(pickImageOverride: pickPhoto)),
+        );
+        await tapUpload(tester);
+
+        expect(find.text('profile.photo_update_failed'), findsOneWidget);
+      });
+
+      testWidgets('a cancelled pick uploads nothing and shows nothing', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          wrap(
+            MagicStarterProfileSubPageView(pickImageOverride: () async => null),
+          ),
+        );
+        await tapUpload(tester);
+
+        expect(mockDriver.lastMethod, isNull);
+        expect(find.text('profile.photo_update_failed'), findsNothing);
+      });
     });
 
     testWidgets('does not render password / sessions / 2FA sections', (
