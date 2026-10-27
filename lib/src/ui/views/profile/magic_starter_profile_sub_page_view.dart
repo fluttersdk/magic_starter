@@ -31,11 +31,14 @@ import '../../components/page_scaffold/index.dart';
 /// and sessions management now live on their own Security sub-pages.
 class MagicStarterProfileSubPageView
     extends MagicStatefulView<MagicStarterProfileController> {
-  const MagicStarterProfileSubPageView({super.key, this.pickImageOverride});
+  /// [pickImage] stands in for the system image picker; it is a parameter only
+  /// so a test can choose a photo without one.
+  const MagicStarterProfileSubPageView({
+    super.key,
+    @visibleForTesting this.pickImage,
+  });
 
-  /// A stand-in for the system image picker, for tests. Null reads
-  /// `Pick.image`.
-  final Future<MagicFile?> Function()? pickImageOverride;
+  final Future<MagicFile?> Function()? pickImage;
 
   @override
   State<MagicStarterProfileSubPageView> createState() =>
@@ -254,9 +257,14 @@ class _MagicStarterProfileSubPageViewState
   }
 
   Future<void> _handlePhotoUpload() async {
-    final picker = widget.pickImageOverride;
+    final picker = widget.pickImage;
     final file = picker == null ? await Pick.image() : await picker();
     if (file == null || !mounted) return;
+
+    // Another write holds the controller's one-at-a-time guard, so nothing
+    // would be sent and nothing failed: reporting it would show an error for
+    // a request that never left.
+    if (controller.isSubmitting) return;
 
     setState(() => _photoError = null);
     final bool updated = await _trackLoading(
@@ -267,6 +275,8 @@ class _MagicStarterProfileSubPageViewState
   }
 
   Future<void> _handlePhotoRemove() async {
+    if (controller.isSubmitting) return;
+
     setState(() => _photoError = null);
     final bool removed = await _trackLoading(
       _photoLoading,
