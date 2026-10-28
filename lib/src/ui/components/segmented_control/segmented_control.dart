@@ -31,6 +31,23 @@ import 'segmented_control.recipe.dart';
 /// at content width and the container places them, since only a horizontal
 /// flex over a bounded width can hand a segment a share of it.
 ///
+/// ### The selected segment in a scroller
+///
+/// A row wider than a horizontal scroller around it (the `overflow-x-auto` root
+/// override, or a `SingleChildScrollView` the host wraps it in) can leave the
+/// active segment clipped or out of sight. When the control first mounts, and
+/// whenever [selectedIndex] changes, it scrolls the nearest horizontal scroller
+/// just far enough to show that segment whole, once the frame is laid out and
+/// without animation. Nothing moves when the segment is already in view, on a
+/// rebuild that keeps the same [selectedIndex] (the user's own scrolling is not
+/// undone), without a horizontal scroller above the control, or for an index
+/// that names no segment.
+///
+/// Only a horizontal scroller moves, and only that one. `Scrollable.ensureVisible`
+/// is not used because it walks every scrollable above the segment: it would
+/// also put the control at the top edge of the page's vertical scroll view, or
+/// pull the page down to a control that sits below the fold.
+///
 /// ### Example Usage:
 ///
 /// ```dart
@@ -41,7 +58,7 @@ import 'segmented_control.recipe.dart';
 /// )
 /// ```
 @immutable
-class MSSegmentedControl<T> extends StatelessWidget {
+class MSSegmentedControl<T> extends StatefulWidget {
   /// The label displayed for each segment, in display order.
   final List<String> options;
 
@@ -68,34 +85,7 @@ class MSSegmentedControl<T> extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // 1. Resolve slot classNames from the recipe for the requested size.
-    final slots = segmentedControlRecipe(
-      variants: {kSegmentedControlSizeAxis: size.name},
-      classNames: classNames,
-    );
-
-    // 2. Decide whether the segments may shrink: only a flex row with a bounded
-    //    width divides a horizontal share among them.
-    final String rootClassName = slots['root'] ?? '';
-    final bool shrinkSegments = _rootDividesWidth(rootClassName);
-
-    // 3. Build the root container with a segment per option, each one free to
-    //    shrink to an equal share of the row when the labels do not fit.
-    return WDiv(
-      className: rootClassName,
-      children: List<Widget>.generate(options.length, (index) {
-        final Widget segment = _buildSegment(
-          index,
-          slots['item'] ?? '',
-          slots['hit'] ?? '',
-        );
-        if (!shrinkSegments) return segment;
-
-        return Flexible(fit: FlexFit.loose, child: segment);
-      }),
-    );
-  }
+  State<MSSegmentedControl<T>> createState() => _MSSegmentedControlState<T>();
 
   /// Wind display tokens, in the order the parser knows them.
   static const Set<String> _displayTokens = {
@@ -150,6 +140,108 @@ class MSSegmentedControl<T> extends StatelessWidget {
 
     return display == 'flex' && direction.startsWith('flex-row');
   }
+}
+
+/// State of [MSSegmentedControl]: builds the row and keeps the selected segment
+/// in view of a horizontal scroller around it.
+class _MSSegmentedControlState<T> extends State<MSSegmentedControl<T>> {
+  /// One key per segment, so the selected one can be found once the frame is
+  /// laid out. Grown in [build] to the number of options.
+  final List<GlobalKey> _segmentKeys = <GlobalKey>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _revealSelectedAfterFrame();
+  }
+
+  @override
+  void didUpdateWidget(MSSegmentedControl<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedIndex == widget.selectedIndex) return;
+
+    _revealSelectedAfterFrame();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 1. Resolve slot classNames from the recipe for the requested size.
+    final slots = segmentedControlRecipe(
+      variants: {kSegmentedControlSizeAxis: widget.size.name},
+      classNames: widget.classNames,
+    );
+
+    // 2. Decide whether the segments may shrink: only a flex row with a bounded
+    //    width divides a horizontal share among them.
+    final String rootClassName = slots['root'] ?? '';
+    final bool shrinkSegments = MSSegmentedControl._rootDividesWidth(
+      rootClassName,
+    );
+
+    // 3. Keep a key per segment for the reveal.
+    while (_segmentKeys.length < widget.options.length) {
+      _segmentKeys.add(GlobalKey());
+    }
+
+    // 4. Build the root container with a segment per option, each one free to
+    //    shrink to an equal share of the row when the labels do not fit.
+    return WDiv(
+      className: rootClassName,
+      children: List<Widget>.generate(widget.options.length, (index) {
+        final Widget segment = _buildSegment(
+          index,
+          slots['item'] ?? '',
+          slots['hit'] ?? '',
+        );
+        if (!shrinkSegments) return segment;
+
+        return Flexible(fit: FlexFit.loose, child: segment);
+      }),
+    );
+  }
+
+  /// Scrolls the selected segment into view once this frame has been laid out.
+  ///
+  /// The scroller's extent is only known after layout, so this waits for the
+  /// frame that mounted or rebuilt the row.
+  void _revealSelectedAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revealSelected());
+  }
+
+  /// Shows the selected segment whole in the nearest horizontal [Scrollable].
+  ///
+  /// Does nothing when there is no horizontal scroller above the segment, when
+  /// the index names no segment, or when the segment is already in view.
+  void _revealSelected() {
+    // 1. The control may be gone, or the index may name no segment (-1 is a
+    //    row with nothing selected).
+    final int index = widget.selectedIndex;
+    if (!mounted || index < 0 || index >= _segmentKeys.length) return;
+
+    // 2. Only a horizontal scroller is asked: Scrollable.ensureVisible walks
+    //    every scrollable above the segment, so it would also move the page's
+    //    vertical scroll view to put the control at its top edge.
+    final BuildContext? segment = _segmentKeys[index].currentContext;
+    if (segment == null) return;
+
+    final ScrollableState? scroller = Scrollable.maybeOf(
+      segment,
+      axis: Axis.horizontal,
+    );
+    final RenderObject? target = segment.findRenderObject();
+    if (scroller == null || target == null) return;
+
+    // 3. Each keep-visible policy moves the strip in one direction only, and
+    //    only when the segment lies past that edge, so a segment already in view
+    //    stays where it is. Without a duration the jump happens right here, and
+    //    the second call sees the position the first one left.
+    for (final ScrollPositionAlignmentPolicy policy in const [
+      ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+    ]) {
+      scroller.position.ensureVisible(target, alignmentPolicy: policy);
+    }
+  }
 
   /// Builds a single segment at [index], activating the `selected:` state for
   /// the currently selected index.
@@ -158,18 +250,19 @@ class MSSegmentedControl<T> extends StatelessWidget {
   /// the anchor (and the semantics node a tap target check measures) is the
   /// cell while the painted pill keeps its own height.
   Widget _buildSegment(int index, String itemClassName, String hitClassName) {
-    final bool isSelected = index == selectedIndex;
+    final bool isSelected = index == widget.selectedIndex;
     final Set<String> segmentStates = {if (isSelected) 'selected'};
 
     return WAnchor(
-      onTap: () => onChanged?.call(index),
+      key: _segmentKeys[index],
+      onTap: () => widget.onChanged?.call(index),
       states: segmentStates,
       child: WDiv(
         className: hitClassName,
         child: WDiv(
           className: itemClassName,
           states: segmentStates,
-          child: WText(options[index]),
+          child: WText(widget.options[index]),
         ),
       ),
     );

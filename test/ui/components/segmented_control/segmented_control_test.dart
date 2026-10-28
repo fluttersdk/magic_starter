@@ -569,4 +569,329 @@ void main() {
       expect(tester.getRect(find.text('Monthly')), firstBefore);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Selected segment in a scroller
+  // ---------------------------------------------------------------------------
+
+  group('SegmentedControl inside a scroller', () {
+    /// Wide enough that the row is several times a 300 px viewport.
+    const List<String> options = [
+      'Day',
+      'Week',
+      'Month',
+      'Quarter',
+      'Year',
+      'All time',
+      'Custom',
+    ];
+    const String last = 'Custom';
+
+    /// The row in a 300 px wide horizontal scroll view, as a host wraps it.
+    Widget inScroller({
+      required int selectedIndex,
+      ScrollController? controller,
+      ValueChanged<int>? onChanged,
+    }) {
+      return wrap(
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 300,
+            child: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              child: MSSegmentedControl<String>(
+                options: options,
+                selectedIndex: selectedIndex,
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    /// The segment's tap cell, which is what has to be reachable: the outermost
+    /// anchor around the label.
+    Finder segment(String label) => find
+        .ancestor(of: find.text(label), matching: find.byType(WAnchor))
+        .last;
+
+    /// Whether the whole segment lies inside the horizontal [viewport].
+    bool isFullyInside(WidgetTester tester, String label, Finder viewport) {
+      final Rect cell = tester.getRect(segment(label));
+      final Rect view = tester.getRect(viewport);
+
+      return cell.left >= view.left - 0.01 && cell.right <= view.right + 0.01;
+    }
+
+    double pixelsOf(WidgetTester tester, Finder scrollable) =>
+        tester.state<ScrollableState>(scrollable).position.pixels;
+
+    testWidgets('mounted with the last segment selected, it is in view after '
+        'the first frame', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: options.length - 1));
+
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('mounted with the first segment selected, it leaves the scroll '
+        'position alone', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      await tester.pump();
+
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('mounted with a selection already in view, nothing scrolls', (
+      tester,
+    ) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 1));
+      await tester.pump();
+
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('a root that scrolls itself reveals the selection too', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 300,
+              child: MSSegmentedControl<String>(
+                classNames: const {'root': 'overflow-x-auto'},
+                options: options,
+                selectedIndex: options.length - 1,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a selectedIndex change to an off-screen segment scrolls to '
+        'it', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isFalse);
+
+      await tester.pumpWidget(inScroller(selectedIndex: options.length - 1));
+      await tester.pump();
+
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a selectedIndex change back to the start scrolls back', (
+      tester,
+    ) async {
+      await tester.pumpWidget(inScroller(selectedIndex: options.length - 1));
+      await tester.pump();
+      expect(isFullyInside(tester, 'Day', find.byType(Scrollable)), isFalse);
+
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      await tester.pump();
+
+      expect(isFullyInside(tester, 'Day', find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a segment half out of view is brought fully in', (
+      tester,
+    ) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      // 'Quarter' starts inside the 300 px viewport and ends past it.
+      final Rect cell = tester.getRect(segment('Quarter'));
+      expect(cell.left, lessThan(300));
+      expect(cell.right, greaterThan(300));
+
+      await tester.pumpWidget(inScroller(selectedIndex: 3));
+      await tester.pump();
+
+      expect(isFullyInside(tester, 'Quarter', find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a selectedIndex change between visible segments scrolls '
+        'nothing', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+
+      await tester.pumpWidget(inScroller(selectedIndex: 1));
+      await tester.pump();
+
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('a tap on a visible segment moves the selection and not the '
+        'strip', (tester) async {
+      int selected = 0;
+      late StateSetter rebuild;
+
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+
+            return inScroller(
+              selectedIndex: selected,
+              onChanged: (index) => selected = index,
+            );
+          },
+        ),
+      );
+
+      await tester.tap(find.text('Week'));
+      rebuild(() {});
+      await tester.pump();
+
+      expect(selected, 1);
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('a rebuild with the same selectedIndex leaves the position the '
+        'user chose', (tester) async {
+      final ScrollController controller = ScrollController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        inScroller(selectedIndex: options.length - 1, controller: controller),
+      );
+      await tester.pump();
+      expect(controller.offset, greaterThan(0));
+
+      // The user scrolls back to the start, away from the selection.
+      controller.jumpTo(0);
+      await tester.pump();
+
+      // A parent rebuild hands the control a new widget with the same index.
+      await tester.pumpWidget(
+        inScroller(
+          selectedIndex: options.length - 1,
+          controller: controller,
+          onChanged: (_) {},
+        ),
+      );
+      await tester.pump();
+
+      expect(controller.offset, 0);
+    });
+
+    testWidgets('with no scrollable above it, nothing throws', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          Align(
+            alignment: Alignment.topLeft,
+            child: MSSegmentedControl<String>(
+              options: options,
+              selectedIndex: options.length - 1,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(Scrollable), findsNothing);
+      expect(tester.takeException(), isNull);
+      expect(find.text(last), findsOneWidget);
+    });
+
+    for (final int index in [-1, options.length, options.length + 5]) {
+      testWidgets('a selectedIndex of $index, which names no segment, reveals '
+          'nothing', (tester) async {
+        await tester.pumpWidget(inScroller(selectedIndex: index));
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+        expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+      });
+    }
+
+    group('inside the page\'s vertical scroll view', () {
+      /// The control in its horizontal strip, in a tall page scrolled by
+      /// [page]: [above] px of content over it and a long tail below.
+      Widget onPage({
+        required int selectedIndex,
+        required ScrollController page,
+        required double above,
+      }) {
+        return wrap(
+          SingleChildScrollView(
+            controller: page,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: above),
+                SizedBox(
+                  width: 300,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: MSSegmentedControl<String>(
+                      options: options,
+                      selectedIndex: selectedIndex,
+                      onChanged: (_) {},
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2000),
+              ],
+            ),
+          ),
+        );
+      }
+
+      Finder strip() => find.byType(Scrollable).last;
+
+      testWidgets('a visible segment keeps the page\'s vertical offset on '
+          'mount', (tester) async {
+        final ScrollController page = ScrollController(initialScrollOffset: 50);
+        addTearDown(page.dispose);
+
+        await tester.pumpWidget(
+          onPage(selectedIndex: options.length - 1, page: page, above: 100),
+        );
+        await tester.pump();
+
+        expect(page.offset, 50);
+        expect(isFullyInside(tester, last, strip()), isTrue);
+      });
+
+      testWidgets('a visible segment keeps the page\'s vertical offset when '
+          'the selection changes', (tester) async {
+        final ScrollController page = ScrollController(initialScrollOffset: 50);
+        addTearDown(page.dispose);
+
+        await tester.pumpWidget(
+          onPage(selectedIndex: 0, page: page, above: 100),
+        );
+        await tester.pumpWidget(
+          onPage(selectedIndex: options.length - 1, page: page, above: 100),
+        );
+        await tester.pump();
+
+        expect(page.offset, 50);
+        expect(isFullyInside(tester, last, strip()), isTrue);
+      });
+
+      testWidgets('a control below the fold does not pull the page down to '
+          'it', (tester) async {
+        final ScrollController page = ScrollController();
+        addTearDown(page.dispose);
+
+        await tester.pumpWidget(
+          onPage(selectedIndex: options.length - 1, page: page, above: 1500),
+        );
+        await tester.pump();
+
+        expect(page.offset, 0);
+        expect(
+          tester.state<ScrollableState>(strip()).position.pixels,
+          greaterThan(0),
+        );
+      });
+    });
+  });
 }
