@@ -120,6 +120,16 @@ class MagicStarterNavigationTheme {
   /// Defaults to `''`, leaving the shipped shell with no ring.
   final String focusItemClassName;
 
+  /// Extra className for the count badge on a nav item.
+  ///
+  /// Appended after the neutral `MSBadge` recipe, so Wind's per-family
+  /// last-wins lets a host recolour it (`'bg-primary text-on-primary'`) while
+  /// the shape and type size stay. A colour token written here carries its own
+  /// `dark:` peer, or is a semantic alias that already does.
+  ///
+  /// Defaults to `''`, leaving the badge on the recipe's neutral tone.
+  final String badgeClassName;
+
   const MagicStarterNavigationTheme({
     this.activeItemClassName =
         'active:text-primary active:bg-primary/10 dark:active:bg-primary/10',
@@ -133,6 +143,7 @@ class MagicStarterNavigationTheme {
     this.dropdownAvatarClassName = 'bg-gradient-to-tr from-primary to-gray-200',
     this.dropdownAvatarTextClassName = 'text-sm font-bold text-white',
     this.focusItemClassName = '',
+    this.badgeClassName = '',
   });
 }
 

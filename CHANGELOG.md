@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **A count badge on a navigation item.** `MagicStarterNavItem` takes `badgeCount`, a `ValueListenable<int?>`: the shell listens to it, so a host moves the number by updating the notifier and never rebuilds the navigation config. The badge is hidden while the value is `null` or not above zero and reads `99+` above 99. It is drawn in the sidebar, the drawer and the bottom bar: at the trailing edge of a labelled row, and on the corner of the icon on the compact rail and the bottom bar, where it takes no room from the item. It is not colour alone: the number is drawn, and a screen reader gets the `badgeLabelKey` sentence (default `nav.badge_count`, read through `transChoice` with the real count, even above 99) in place of the drawn number, after the item's own label. The look is the neutral `MSBadge`, and `MagicStarterNavigationTheme.badgeClassName` (default `''`) is appended to it. An item that holds a notifier is not `const`, so its list is `final`; an item without a badge stays `const`. New exported widget `MagicStarterNavBadge` for a host that registers its own layout, and catalogue key `nav.badge_count` (the install stub has it; add it to your other locales, since the translator merges no fallback). (`lib/src/models/magic_starter_nav_item.dart`, `lib/src/ui/widgets/magic_starter_nav_badge.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`, `lib/src/configuration/magic_starter_theme.dart`, `assets/stubs/install/en.stub`)
+
 ## [0.0.58] - 2026-10-27
 
 ### Fixed

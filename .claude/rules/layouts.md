@@ -14,6 +14,7 @@ paths:
   - `_buildBrand` dispatches to `brandBuilder` when set, else `WText` with `brandClassName`
   - `_bottomNavItem` uses `bottomNavActiveClassName` on icon and label
   - `_buildUserMenu` avatar uses `avatarClassName` + `avatarTextClassName`
+  - A nav item's `badgeCount` becomes a `MagicStarterNavBadge` through `_navBadge`, which reads `badgeClassName`; `_navItem` ends the labelled row with it and `_withCornerBadge` lays it over the icon on the compact rail and the bottom bar, absolutely placed so the item never changes size
 - Guest layout: minimal centered wrapper — constrains content to 480px max width with scroll
 - Guest layout background: `wColor()` for theme-aware color — no hardcoded hex values
 - Route transitions: guest routes use `RouteTransition.none` — no animation between auth screens

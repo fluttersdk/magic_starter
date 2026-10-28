@@ -78,6 +78,7 @@ export 'src/ui/components/page_header/index.dart';
 export 'src/ui/widgets/magic_starter_dialog_shell.dart';
 export 'src/ui/widgets/magic_starter_hide_bottom_nav.dart';
 export 'src/ui/widgets/magic_starter_hide_chrome.dart';
+export 'src/ui/widgets/magic_starter_nav_badge.dart';
 export 'src/ui/widgets/magic_starter_feedback_card.dart';
 export 'src/ui/widgets/magic_starter_app_version.dart';
 export 'src/ui/widgets/magic_starter_app_update_banner.dart';
