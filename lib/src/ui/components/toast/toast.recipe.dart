@@ -1,25 +1,49 @@
+import 'package:flutter/widgets.dart' show Color;
 import 'package:magic/magic.dart';
 
+import '../../theme/magic_starter_tokens.dart';
 import 'toast.dart' show ToastVariant;
 
 /// The variant axis key for the toast recipe (`ToastVariant.<value>.name`).
 const String kToastVariantAxis = 'variant';
+
+/// The on-colour role that reads on the fill of each toned [ToastVariant], by
+/// variant name, or `null` for the neutral `info` toast, which has no fill of
+/// its own to read against.
+String? toastOnRole(String variant) {
+  return switch (variant) {
+    'success' => 'text-on-success',
+    'warning' => 'text-on-warning',
+    'error' => 'text-on-destructive',
+    _ => null,
+  };
+}
 
 /// Builds the toast [WindRecipe] using semantic tokens.
 ///
 /// The recipe maps each [ToastVariant] to a bg-* semantic token so the toast
 /// tone follows the design-system color ramp without hardcoded hex values.
 ///
+/// The text of a toned variant is the on-colour role of its fill
+/// ([toastOnRole]) and never a literal `text-white`: a host's dark fills can be
+/// light, and white on them fails 4.5:1. [theme] is the active Wind theme, so a
+/// role the host defines stays a bare token that its alias map expands, and one
+/// it does not define resolves to the role's fallback pair (see
+/// [MagicStarterTokens.role]). With no theme every role takes its fallback.
+///
 /// Emission order: `base ++ variant ++ caller` — no compound variants.
-WindRecipe buildToastRecipe() {
-  return const WindRecipe(
+WindRecipe buildToastRecipe([WindThemeData? theme]) {
+  String on(String variant) =>
+      MagicStarterTokens.role(theme, toastOnRole(variant)!);
+
+  return WindRecipe(
     base: 'flex flex-row items-center gap-3 px-4 py-3 rounded-lg shadow-md',
     variants: {
       kToastVariantAxis: {
         'info': 'bg-surface border border-color-border text-fg',
-        'success': 'bg-success text-white',
-        'warning': 'bg-warning text-white',
-        'error': 'bg-destructive text-white',
+        'success': 'bg-success ${on('success')}',
+        'warning': 'bg-warning ${on('warning')}',
+        'error': 'bg-destructive ${on('error')}',
       },
     },
     defaultVariants: {kToastVariantAxis: 'info'},
@@ -35,6 +59,9 @@ WindRecipe buildToastRecipe() {
 /// cell the room it needs on the right: the cell's own `px-2` and this `pr-2`
 /// add up to the `px-4` the toast had.
 const String kToastWithActionClassName = 'py-0 pr-2';
+
+/// The tone axis key for the toast action recipe.
+const String kToastToneAxis = 'tone';
 
 /// Builds the slot recipe for the action of [MSToast].
 ///
@@ -52,17 +79,22 @@ const String kToastWithActionClassName = 'py-0 pr-2';
 ///   grows to the whole height an overlay offers it.
 /// - `label` - the action text.
 ///
-/// Variant axes:
-/// - `variant`: `info` | `success` | `warning` | `error` (default `info`), the
-///   tone of the toast the action sits on. `info` reads as a primary text
-///   action on the surface; the three coloured tones keep the white of their
-///   message, since a primary label would not read on a green or red fill.
-Map<String, String> toastActionRecipe({
-  Map<String, String?>? variants,
-  Map<String, String>? classNames,
-}) {
-  const recipe = WindSlotRecipe(
-    slots: {
+/// A toned toast passes [onRole], the on-colour role of its fill (already
+/// resolved, see [toastOnRole]), and [onColour], what that role paints in the
+/// current mode. The label reads the role. The ring and the hover fill are
+/// arbitrary-colour classes made from [onColour], because a ring takes a colour
+/// and not a text role: they are the label's colour, and so read against the
+/// fill exactly as the label does (3:1 for the ring is met wherever 4.5:1 is
+/// for the label). Without [onRole] the toast is the neutral `info` one: a
+/// primary label on the surface, with a primary ring.
+Map<String, String> toastActionRecipe({String? onRole, Color? onColour}) {
+  final bool toned = onRole != null;
+  final String? hex = onColour == null
+      ? null
+      : '#${(onColour.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+
+  final recipe = WindSlotRecipe(
+    slots: const {
       'message': 'flex-initial min-w-0 py-3',
       'cell':
           'flex flex-col justify-center items-center h-11 min-w-11 px-2 '
@@ -70,28 +102,21 @@ Map<String, String> toastActionRecipe({
       'label': 'text-sm font-semibold',
     },
     variants: {
-      kToastVariantAxis: {
-        'info': {
+      kToastToneAxis: {
+        'neutral': const {
           'cell':
               'hover:bg-surface-container-high focus:ring-primary-500 '
               'dark:focus:ring-primary-400',
           'label': 'text-primary',
         },
-        'success': {
-          'cell': 'hover:bg-white/15 focus:ring-white',
-          'label': 'text-white',
-        },
-        'warning': {
-          'cell': 'hover:bg-white/15 focus:ring-white',
-          'label': 'text-white',
-        },
-        'error': {
-          'cell': 'hover:bg-white/15 focus:ring-white',
-          'label': 'text-white',
+        'toned': {
+          'cell': hex == null ? '' : 'hover:bg-[$hex]/15 focus:ring-[$hex]',
+          'label': onRole ?? '',
         },
       },
     },
-    defaultVariants: {kToastVariantAxis: 'info'},
+    defaultVariants: const {kToastToneAxis: 'neutral'},
   );
-  return recipe(variants: variants, classNames: classNames);
+
+  return recipe(variants: {kToastToneAxis: toned ? 'toned' : 'neutral'});
 }

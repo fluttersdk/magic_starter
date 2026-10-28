@@ -95,6 +95,12 @@ import 'package:magic/magic.dart';
 /// it (typically as its brand red). [role] resolves such a token against
 /// the active theme: the host's own definition when it has one, the red text
 /// pair otherwise.
+///
+/// `text-on-success` and `text-on-warning` are the same kind of role: the text
+/// and icon colour that reads on `bg-success` and `bg-warning`. A host that
+/// defines its own fills defines these beside them (a host whose dark fills are
+/// light needs dark text there); without them [role] falls back to near-black,
+/// which reads on the stock fills.
 final class MagicStarterTokens {
   MagicStarterTokens._();
 
@@ -105,9 +111,19 @@ final class MagicStarterTokens {
   /// available, so its fallback is only a safety net. `text-destructive` has no
   /// canonical alias (the contract ships `bg-destructive` / `text-on-destructive`
   /// only), so it falls back to the red text pair.
+  ///
+  /// `text-on-success` and `text-on-warning` are the text and icon colours that
+  /// read on `bg-success` and `bg-warning`. The contract ships the two fills but
+  /// no such roles, so a host that defines its own fills defines them beside
+  /// them (a host whose dark fills are light needs dark text there). Without
+  /// them the fallback is the near-black `gray-950` in both modes, because it
+  /// reads on the STOCK fills (green and amber, 600 in light and 500 in dark) at
+  /// about 6:1 to 9:1 where white reads at 3.3:1 and 3.2:1 on the light ones.
   static const Map<String, String> _roleFallbacks = {
     'text-primary': 'text-primary',
     'text-destructive': 'text-red-600 dark:text-red-400',
+    'text-on-success': 'text-gray-950 dark:text-gray-950',
+    'text-on-warning': 'text-gray-950 dark:text-gray-950',
   };
 
   /// Resolves a semantic role [token] against [theme].

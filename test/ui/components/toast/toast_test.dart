@@ -1,3 +1,5 @@
+import 'dart:math' show max, min;
+
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
@@ -131,6 +133,7 @@ void main() {
     Widget toast, {
     Size size = phone,
     Brightness brightness = Brightness.light,
+    Map<String, String> aliases = MagicStarterTokens.defaultAliases,
   }) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = size;
@@ -140,7 +143,7 @@ void main() {
       MaterialApp(
         home: WindTheme(
           data: WindThemeData(
-            aliases: MagicStarterTokens.defaultAliases,
+            aliases: aliases,
             brightness: brightness,
             syncWithSystem: false,
           ),
@@ -184,15 +187,27 @@ void main() {
     // from the builder: a refactor that moved a token cannot move this with it.
     const legacyBase =
         'flex flex-row items-center gap-3 px-4 py-3 rounded-lg shadow-md';
+    // `info` is the previous string byte for byte. The three toned variants
+    // kept their fill and swapped the literal `text-white` for the on-colour
+    // role of the fill (see the contrast group below); with no theme to define a
+    // role the string carries the role's fallback pair instead.
     const legacyVariant = {
       'info': 'bg-surface border border-color-border text-fg',
-      'success': 'bg-success text-white',
-      'warning': 'bg-warning text-white',
-      'error': 'bg-destructive text-white',
+      'success': 'bg-success text-gray-950 dark:text-gray-950',
+      'warning': 'bg-warning text-gray-950 dark:text-gray-950',
+      'error': 'bg-destructive text-white dark:text-white',
+    };
+    // Under the stock alias map, which defines `text-on-destructive` and no
+    // on-colour role for the success and warning fills.
+    const stockVariant = {
+      'info': 'bg-surface border border-color-border text-fg',
+      'success': 'bg-success text-gray-950 dark:text-gray-950',
+      'warning': 'bg-warning text-gray-950 dark:text-gray-950',
+      'error': 'bg-destructive text-on-destructive',
     };
 
     for (final variant in ToastVariant.values) {
-      test('emits the previous ${variant.name} className byte for byte', () {
+      test('emits the ${variant.name} className, base unchanged', () {
         expect(
           buildToastRecipe()(variants: {kToastVariantAxis: variant.name}),
           '$legacyBase ${legacyVariant[variant.name]}',
@@ -205,7 +220,7 @@ void main() {
 
         final box = tester.widget<WDiv>(toastBox());
 
-        expect(box.className, '$legacyBase ${legacyVariant[variant.name]}');
+        expect(box.className, '$legacyBase ${stockVariant[variant.name]}');
         expect(box.child, isA<WText>());
         expect(find.byType(WAnchor), findsNothing);
       });
@@ -478,9 +493,14 @@ void main() {
           );
 
           final windTheme = WindThemeData();
-          final expected = variant == ToastVariant.info
-              ? windTheme.getColor('primary', 500)
-              : const Color(0xFFFFFFFF);
+          final expected = switch (variant) {
+            ToastVariant.info => windTheme.getColor('primary', 500),
+            // The stock alias map defines no on-colour role for the success
+            // and warning fills, so those two read the fallback.
+            ToastVariant.success ||
+            ToastVariant.warning => windTheme.getColor('gray', 950),
+            ToastVariant.error => const Color(0xFFFFFFFF),
+          };
 
           expect(colourOf(tester, 'Undo'), expected);
           if (variant != ToastVariant.info) {
@@ -520,12 +540,14 @@ void main() {
                       .border!
                   as Border;
           final windTheme = WindThemeData();
+          // The ring of a toned variant is the colour of its label, which is
+          // the colour that has to read against the fill.
           final expected = variant == ToastVariant.info
               ? windTheme.getColor(
                   'primary',
                   brightness == Brightness.dark ? 400 : 500,
                 )
-              : const Color(0xFFFFFFFF);
+              : colourOf(tester, 'Undo');
 
           expect(border.top.color, expected);
           expect(border.top.strokeAlign, BorderSide.strokeAlignInside);
@@ -572,16 +594,166 @@ void main() {
 
           expect(hovered, isNotNull);
           if (variant != ToastVariant.info) {
-            // White over a coloured fill, quiet enough to leave the label
-            // white on it readable.
-            expect(hovered!.r, 1);
-            expect(hovered.g, 1);
-            expect(hovered.b, 1);
+            // The label colour over its own fill, quiet enough to leave the
+            // label readable on it.
+            final label = colourOf(tester, 'Undo')!;
+            expect(hovered!.r, closeTo(label.r, 0.01));
+            expect(hovered.g, closeTo(label.g, 0.01));
+            expect(hovered.b, closeTo(label.b, 0.01));
             expect(hovered.a, closeTo(0.15, 0.01));
           }
         });
       }
     }
+  });
+
+  // The fill of a toned toast is the host's, light in some dark themes, so a
+  // literal white label can fail on it. The label, the message and the ring read
+  // the on-colour role of the fill, and the numbers below are measured off what
+  // is painted, from the roles the test defines.
+  group('toast contrast', () {
+    /// WCAG contrast ratio of two opaque colours.
+    double contrast(Color a, Color b) {
+      final la = a.computeLuminance();
+      final lb = b.computeLuminance();
+
+      return (max(la, lb) + 0.05) / (min(la, lb) + 0.05);
+    }
+
+    /// The fill the toast paints behind its message.
+    Color fillOf(WidgetTester tester) => tester
+        .widgetList<DecoratedBox>(
+          find.descendant(
+            of: find.byType(MSToast),
+            matching: find.byType(DecoratedBox),
+          ),
+        )
+        .where((box) => box.position == DecorationPosition.background)
+        .map((box) => box.decoration)
+        .whereType<BoxDecoration>()
+        .map((decoration) => decoration.color)
+        .nonNulls
+        .first;
+
+    /// The colour of the focus ring on the action, after Tab.
+    Future<Color> ringOf(WidgetTester tester) async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      final ring = find.descendant(
+        of: find.byType(MSToast),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is DecoratedBox &&
+              widget.position == DecorationPosition.foreground &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration as BoxDecoration).border != null,
+        ),
+      );
+
+      return ((tester.widget<DecoratedBox>(ring).decoration as BoxDecoration)
+                  .border!
+              as Border)
+          .top
+          .color;
+    }
+
+    // A host whose dark fills are light, so its on-colour roles flip to dark
+    // text there. These are the host's roles; the numbers are measured below.
+    final hostAliases = <String, String>{
+      ...MagicStarterTokens.defaultAliases,
+      'bg-success': 'bg-[#2E7D4F] dark:bg-[#8FD1A3]',
+      'text-on-success': 'text-[#FFFFFF] dark:text-[#0B2A18]',
+      'bg-warning': 'bg-[#9A5B00] dark:bg-[#F2B65C]',
+      'text-on-warning': 'text-[#FFFFFF] dark:text-[#2B1A00]',
+      'bg-destructive': 'bg-[#C62828] dark:bg-[#FF8A80]',
+      'text-on-destructive': 'text-[#FFFFFF] dark:text-[#3B0A07]',
+    };
+
+    final toned = ToastVariant.values.where((v) => v != ToastVariant.info);
+
+    for (final brightness in Brightness.values) {
+      for (final variant in toned) {
+        final label = '${variant.name} ${brightness.name}';
+
+        testWidgets('a host theme with the roles: message and label read the '
+            'fill at 4.5:1 and the ring at 3:1, $label', (tester) async {
+          await pumpToast(
+            tester,
+            undoToast(variant: variant),
+            brightness: brightness,
+            aliases: hostAliases,
+          );
+
+          final fill = fillOf(tester);
+          final message = colourOf(tester, 'Moved to Kitchen')!;
+          final action = colourOf(tester, 'Undo')!;
+          final ring = await ringOf(tester);
+
+          expect(contrast(message, fill), greaterThanOrEqualTo(4.5));
+          expect(contrast(action, fill), greaterThanOrEqualTo(4.5));
+          expect(contrast(ring, fill), greaterThanOrEqualTo(3));
+        });
+      }
+    }
+
+    // The stock alias map defines no on-colour role for the success and warning
+    // fills, so these read the fallbacks, which are chosen to read on the stock
+    // fills. The error variant reads `text-on-destructive` (white): 4.8:1 on the
+    // stock light fill, but 3.8:1 on the stock dark one (red-500), which is the
+    // alias map's own pairing and is also what a destructive button paints.
+    for (final brightness in Brightness.values) {
+      for (final variant in [ToastVariant.success, ToastVariant.warning]) {
+        testWidgets('the stock aliases: ${variant.name} ${brightness.name} '
+            'reads at 4.5:1 through the fallback role', (tester) async {
+          await pumpToast(
+            tester,
+            undoToast(variant: variant),
+            brightness: brightness,
+          );
+
+          final fill = fillOf(tester);
+
+          expect(
+            contrast(colourOf(tester, 'Moved to Kitchen')!, fill),
+            greaterThanOrEqualTo(4.5),
+          );
+          expect(
+            contrast(colourOf(tester, 'Undo')!, fill),
+            greaterThanOrEqualTo(4.5),
+          );
+          expect(contrast(await ringOf(tester), fill), greaterThanOrEqualTo(3));
+        });
+      }
+    }
+
+    testWidgets('a message-only toned toast reads the role too', (
+      tester,
+    ) async {
+      await pumpToast(
+        tester,
+        const MSToast(message: 'Saved', variant: ToastVariant.success),
+        brightness: Brightness.dark,
+        aliases: hostAliases,
+      );
+
+      expect(
+        contrast(colourOf(tester, 'Saved')!, fillOf(tester)),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+
+    testWidgets('the info variant is untouched: text-fg on bg-surface', (
+      tester,
+    ) async {
+      await pumpToast(tester, undoToast(), brightness: Brightness.dark);
+
+      expect(tester.widget<WDiv>(toastBox()).className, contains('text-fg'));
+      expect(
+        contrast(colourOf(tester, 'Moved to Kitchen')!, fillOf(tester)),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
   });
 
   testWidgets('the toast preview shows an action on every variant', (

@@ -162,6 +162,35 @@ void main() {
       expect(MagicStarterTokens.role(null, 'text-destructive'), redFallback);
     });
 
+    // The on-colour roles of the success and warning fills. The alias contract
+    // ships no such keys (only `text-on-destructive`), so a host that wants its
+    // own defines them next to its `bg-success` and `bg-warning`; without them
+    // the fallback has to read on the STOCK fills (green and amber 600 in
+    // light, 500 in dark), which white does not (3.3:1 and 3.2:1).
+    for (final role in ['text-on-success', 'text-on-warning']) {
+      test('$role is the token when the theme defines it', () {
+        final theme = WindThemeData(
+          aliases: {role: 'text-[#0B2A18] dark:text-[#FFFFFF]'},
+        );
+
+        expect(MagicStarterTokens.role(theme, role), role);
+      });
+
+      test('$role falls back to a dark pair that reads on the stock fills', () {
+        const fallback = 'text-gray-950 dark:text-gray-950';
+
+        expect(MagicStarterTokens.role(WindThemeData(), role), fallback);
+        expect(
+          MagicStarterTokens.role(
+            WindThemeData(aliases: MagicStarterTokens.defaultAliases),
+            role,
+          ),
+          fallback,
+        );
+        expect(MagicStarterTokens.role(null, role), fallback);
+      });
+    }
+
     test('falls back to the shipped alias value for a default role', () {
       expect(
         MagicStarterTokens.role(null, 'text-fg'),

@@ -68,8 +68,11 @@ The role tokens match the `MagicStarterTokens.defaultAliases` contract:
 | `bg-destructive-container` | Tinted danger surface (error banners) |
 | `text-destructive` | Inline error text (falls back to red when undefined) |
 | `bg-warning` | Warning action surface |
+| `text-on-success` / `text-on-warning` | Text and icons on `bg-success` / `bg-warning` (falls back to near-black when undefined) |
 
 A host that defines `text-destructive` (as an alias, or through a `destructive` colour) re-skins the outlined danger buttons, the destructive `MSSettingsRow` title and the inline error text; without it they fall back to the red pair. `MagicStarterTokens.role(theme, token)` is the lookup they share.
+
+`MSToast` is the one place that reads `text-on-success` and `text-on-warning`: its success and warning variants paint the message, the action label and the focus ring in them (the error variant reads `text-on-destructive`). The alias contract ships the fills and not these two roles, so a host that defines its own `bg-success` and `bg-warning` defines them beside the fills, and a host whose dark fills are light (a pale green on a dark surface) writes dark text for the dark half, or the toast fails 4.5:1 there. Without them the toast falls back to near-black on both fills, which reads on the stock green and amber.
 
 ## Alias-to-property mapping
 

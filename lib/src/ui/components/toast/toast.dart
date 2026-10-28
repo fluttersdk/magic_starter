@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../theme/magic_starter_tokens.dart';
 import 'toast.recipe.dart';
 
 /// Visual style variants for [MSToast].
@@ -41,6 +42,16 @@ enum ToastVariant {
 /// )
 /// ```
 ///
+/// ### Colours
+///
+/// `info` is `text-fg` on `bg-surface`. The three toned variants read the
+/// on-colour role of their fill for the message, the action label and the focus
+/// ring: `text-on-success`, `text-on-warning` and `text-on-destructive`. A host
+/// whose dark fills are light defines them dark there, so the text keeps 4.5:1
+/// on the fill; without a role the toast falls back to near-black on the success
+/// and warning fills (it reads on the stock green and amber) and to the alias
+/// map's white on the destructive one.
+///
 /// ### An action
 ///
 /// [actionLabel] and [onAction] add a text action at the trailing side, for a
@@ -55,8 +66,8 @@ enum ToastVariant {
 /// ```
 ///
 /// The action is a text button in the tone of the variant (a primary label on
-/// the info surface, white on the three coloured ones), in a cell at least
-/// 44 px each way at every width, so it is a hit target on a phone and under a
+/// the info surface, the on-colour role of the fill on the three coloured
+/// ones), in a cell at least 44 px each way at every width, so it is a hit target on a phone and under a
 /// pointer alike. The cell is named for assistive technology by [actionLabel],
 /// takes keyboard focus (Tab) and shows a ring inside the toast when it has it,
 /// and Enter or Space presses it. A one line toast is as tall with an action as
@@ -104,11 +115,12 @@ class MSToast extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? label = actionLabel;
     final VoidCallback? onPressed = onAction;
+    final WindThemeData? windTheme = WindTheme.maybeDataOf(context);
 
     // 1. Without an action the toast is the banner it always was.
     if (label == null || onPressed == null) {
       return WDiv(
-        className: buildToastRecipe()(
+        className: buildToastRecipe(windTheme)(
           variants: {kToastVariantAxis: variant.name},
           className: className,
         ),
@@ -116,15 +128,24 @@ class MSToast extends StatelessWidget {
       );
     }
 
-    // 2. With one, the message column takes the vertical padding and the 44 px
-    //    cell sits at the trailing edge; the caller's className still comes
-    //    last.
+    // 2. A toned toast hands its action the on-colour role of the fill, and the
+    //    colour that role paints now, for the ring and the hover fill.
+    final String? baseRole = toastOnRole(variant.name);
+    final String? onRole = baseRole == null
+        ? null
+        : MagicStarterTokens.role(windTheme, baseRole);
+    final Color? onColour = onRole == null
+        ? null
+        : WindParser.parse(onRole, context).color;
     final Map<String, String> action = toastActionRecipe(
-      variants: {kToastVariantAxis: variant.name},
+      onRole: onRole,
+      onColour: onColour,
     );
 
+    // 3. The message column takes the vertical padding and the 44 px cell sits
+    //    at the trailing edge; the caller's className still comes last.
     return WDiv(
-      className: buildToastRecipe()(
+      className: buildToastRecipe(windTheme)(
         variants: {kToastVariantAxis: variant.name},
         className: <String>[kToastWithActionClassName, ?className].join(' '),
       ),
