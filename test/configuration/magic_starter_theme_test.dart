@@ -651,6 +651,57 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // MagicStarterFieldTheme
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterFieldTheme', () {
+    group('defaults', () {
+      test('the input keeps the padding and type of the previous recipe', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.inputSizeClassName, 'py-3 lg:py-2.5 text-sm leading-5');
+      });
+
+      test('the select and combobox triggers keep their 44 px floor', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.selectSizeClassName, 'py-[9px] min-h-11 lg:min-h-0');
+      });
+
+      test('the segmented items keep the padding and type of both sizes', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.segmentedSmClassName, 'px-2 py-1 text-sm');
+        expect(theme.segmentedMdClassName, 'px-3 py-1.5 text-sm');
+      });
+
+      test('the segmented root keeps its one step of padding', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.segmentedPaddingClassName, 'p-1');
+      });
+    });
+
+    group('custom overrides', () {
+      test(
+        'accepts a custom inputSizeClassName and keeps the other fields',
+        () {
+          const theme = MagicStarterFieldTheme(
+            inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+          );
+
+          expect(
+            theme.inputSizeClassName,
+            'py-[11px] text-[17px] leading-[22px]',
+          );
+          expect(theme.selectSizeClassName, 'py-[9px] min-h-11 lg:min-h-0');
+          expect(theme.segmentedMdClassName, 'px-3 py-1.5 text-sm');
+        },
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // MagicStarterTheme (unified wrapper)
   // -------------------------------------------------------------------------
 
@@ -668,6 +719,7 @@ void main() {
         expect(theme.modal, isA<MagicStarterModalTheme>());
         expect(theme.dropdown, isA<MagicStarterDropdownTheme>());
         expect(theme.button, isA<MagicStarterButtonTheme>());
+        expect(theme.field, isA<MagicStarterFieldTheme>());
       });
 
       test('default form sub-theme has correct defaults', () {
@@ -747,6 +799,18 @@ void main() {
         expect(theme.button.shapeClassName, equals('rounded-full'));
       });
 
+      test('stores custom field sub-theme', () {
+        const customField = MagicStarterFieldTheme(
+          inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+        );
+        const theme = MagicStarterTheme(field: customField);
+
+        expect(
+          theme.field.inputSizeClassName,
+          equals('py-[11px] text-[17px] leading-[22px]'),
+        );
+      });
+
       test('other sub-themes remain at defaults when one is customized', () {
         const theme = MagicStarterTheme(
           form: MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -823,6 +887,30 @@ void main() {
         expect(updated.button.shapeClassName, equals('rounded-full'));
         expect(updated.dropdown.textClassName, contains('text-gray-900'));
         expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('overrides field sub-theme while keeping others unchanged', () {
+        const original = MagicStarterTheme();
+        final updated = original.copyWith(
+          field: const MagicStarterFieldTheme(
+            selectSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+          ),
+        );
+
+        expect(
+          updated.field.selectSizeClassName,
+          equals('py-2.5 text-[17px] leading-[22px]'),
+        );
+        expect(updated.button.shapeClassName, equals('rounded-lg'));
+        expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('copyWith with no arguments keeps the field sub-theme', () {
+        final updated = const MagicStarterTheme(
+          field: MagicStarterFieldTheme(segmentedPaddingClassName: 'p-0'),
+        ).copyWith();
+
+        expect(updated.field.segmentedPaddingClassName, equals('p-0'));
       });
 
       test('copyWith with no arguments keeps the button sub-theme', () {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
 
+import '../../facades/magic_starter.dart';
 import '../components/select/select.recipe.dart';
 
 /// Searchable timezone select widget for Magic Starter.
@@ -446,7 +447,7 @@ class _MagicStarterTimezoneSelectState
   @override
   Widget build(BuildContext context) {
     // Resolve the select slot recipe for semantic-token defaults.
-    final slots = selectRecipe();
+    final slots = selectRecipe(theme: MagicStarter.fieldTheme);
 
     if (_isInitializing) {
       return WDiv(

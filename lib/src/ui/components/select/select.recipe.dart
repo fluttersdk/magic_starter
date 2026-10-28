@@ -1,5 +1,7 @@
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_theme.dart';
+
 /// Builds the slot recipe for [MSSelect] from semantic tokens.
 ///
 /// Slots:
@@ -9,14 +11,20 @@ import 'package:magic/magic.dart';
 ///
 /// The recipe reads semantic token aliases (Step 7) so a `design:sync`-generated
 /// theme override re-skins the entire select without touching this file.
+///
+/// The padding, minimum height and type of the `trigger` come from [theme]
+/// ([MagicStarterFieldTheme.selectSizeClassName]); the widgets pass
+/// `MagicStarter.fieldTheme`, and the default is the stock look. The popup and
+/// the item slots do not read it.
 Map<String, String> selectRecipe({
+  MagicStarterFieldTheme theme = const MagicStarterFieldTheme(),
   Map<String, String?>? variants,
   Map<String, String>? classNames,
 }) {
-  const recipe = WindSlotRecipe(
+  final recipe = WindSlotRecipe(
     slots: {
       'trigger':
-          'w-full px-3 py-[9px] min-h-11 lg:min-h-0 rounded-lg bg-surface-container-high border '
+          'w-full px-3 ${theme.selectSizeClassName} rounded-lg bg-surface-container-high border '
           'border-color-border text-fg flex items-center justify-between gap-2 '
           'focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400',
       'popup':

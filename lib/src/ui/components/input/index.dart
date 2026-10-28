@@ -5,4 +5,4 @@
 // release barrel.
 
 export 'input.dart' show MSInput;
-export 'input.recipe.dart' show InputState, inputRecipe, kInputStateAxis;
+export 'input.recipe.dart' show InputState, buildInputRecipe, kInputStateAxis;

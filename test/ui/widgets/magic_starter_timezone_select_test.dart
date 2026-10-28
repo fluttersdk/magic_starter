@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
-import 'package:magic_starter/src/ui/widgets/magic_starter_timezone_select.dart';
+
+import '../components/field_theme_fixture.dart';
 
 class MockNetworkDriver implements NetworkDriver {
   final List<MagicResponse> _responses = [];
@@ -184,6 +185,49 @@ void main() {
       expect(select.options, hasLength(1));
       expect(select.options.first.value, equals('Europe/Istanbul'));
       expect(select.options.first.label, equals('Istanbul (GMT+3)'));
+    });
+
+    testWidgets('its trigger is the select trigger of the default theme', (
+      tester,
+    ) async {
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      mockDriver.queueResponse(statusCode: 200, data: {'data': []});
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final select = tester.widget<WFormSelect<String>>(
+        find.byType(WFormSelect<String>),
+      );
+
+      expect(select.className, selectRecipe()['trigger']);
+    });
+
+    testWidgets('its trigger follows the field theme like MSSelect', (
+      tester,
+    ) async {
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      MagicStarter.useFieldTheme(hostFieldTheme);
+      mockDriver.queueResponse(statusCode: 200, data: {'data': []});
+
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final select = tester.widget<WFormSelect<String>>(
+        find.byType(WFormSelect<String>),
+      );
+
+      expect(select.className, selectRecipe(theme: hostFieldTheme)['trigger']);
+      expect(select.className, contains('py-2.5 text-[17px] leading-[22px]'));
+      expect(select.className, isNot(contains('min-h-11')));
     });
 
     testWidgets('handles empty timezone results gracefully', (tester) async {

@@ -126,7 +126,7 @@ lib/src/ui/components/<name>/
   index.dart           # Barrel: re-exports the public API for this component
 ```
 
-The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`, `cardRecipe`) that accepts variant/state arguments and returns a Wind className string. The widget delegates its className derivation to the recipe so the visual contract is inspectable and testable in isolation.
+The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`, `buildInputRecipe`, `cardRecipe`) that accepts variant/state arguments and returns a Wind className string. The widget delegates its className derivation to the recipe so the visual contract is inspectable and testable in isolation.
 
 <a name="component-families"></a>
 ## Component Families
@@ -137,13 +137,13 @@ The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`,
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
 | `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buildButtonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`). Shape, the three sizes and the secondary border come from `MagicStarterButtonTheme` (`MagicStarter.useButtonTheme`). Below `lg`, every size keeps its painted size but takes a 44x44 hit area |
-| `MSInput` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`). A single-line field is 44px tall below `lg` and 40px from `lg` up (`py-3 lg:py-2.5` over a `leading-5` line) |
+| `MSInput` | `InputState` (idle/focused/error/disabled), `buildInputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`). A single-line field is 44px tall below `lg` and 40px from `lg` up (`py-3 lg:py-2.5` over a `leading-5` line); the padding and type of the text, placeholder and value come from `MagicStarterFieldTheme.inputSizeClassName` (`MagicStarter.useFieldTheme`) |
 | `MSTextarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `MSInput`; `fullWidth: true` fills the parent width (defaults `false`). On iOS a focused field carries a Done toolbar above the keyboard, since a multiline field's Return key inserts a newline and would otherwise leave the keyboard with no way out. One consequence for consumer TESTS: while that toolbar is up it schedules a frame callback every frame, so `pumpAndSettle` under `debugDefaultTargetPlatformOverride = TargetPlatform.iOS` never settles; pump explicitly instead |
 | `MSCheckbox` | | Boolean toggle; Wind-only, no Material dependency |
 | `MSSwitch` | | Toggle; replaces Flutter's `MSSwitch` in Wind layouts. An optional `label` renders beside the track and is part of the tap target; below `lg` the hit area is at least 44 px tall. Shows a focus ring on keyboard focus |
 | `MSRadio` | | Single-select option |
-| `MSSelect` | `selectRecipe` | Dropdown single-select backed by an item list; the trigger is the same height as `MSInput` (44px below `lg`, 40px from `lg` up) |
-| `MSCombobox` | `comboboxRecipe` | Searchable single-select with filter input; the trigger is the same height as `MSInput` (44px below `lg`, 40px from `lg` up). The search field's placeholder defaults to `trans('common.search_placeholder')` |
+| `MSSelect` | `selectRecipe` | Dropdown single-select backed by an item list; the trigger is the same height as `MSInput` (44px below `lg`, 40px from `lg` up), and its padding, minimum height and type come from `MagicStarterFieldTheme.selectSizeClassName` |
+| `MSCombobox` | `comboboxRecipe` | Searchable single-select with filter input; the trigger is the same height as `MSInput` (44px below `lg`, 40px from `lg` up) and shares `MagicStarterFieldTheme.selectSizeClassName` with `MSSelect`. The search field's placeholder defaults to `trans('common.search_placeholder')` |
 | `MSSwitchRow` | `switchRowRecipe` | An `MSSwitch` with its `label` beside it; the label doubles as the switch's accessibility name |
 | `MSKeyValueEditor` | `MSKeyValueRow`, `keyValueEditorRecipe` | Controlled editor for an ordered list of key/value pairs (e.g. HTTP headers); every mutation emits a fresh list |
 | `MSStringValueList` | `StringValueListTone`, `stringValueListRecipe` | Controlled editor for a short list of distinct strings rendered as chips; commits on Enter/IME-done, trims and de-duplicates |
@@ -167,7 +167,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`,
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `MSSegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher; below `lg` each segment is at least 44 px tall to tap, the painted pill unchanged. In a horizontal scroller (the `overflow-x-auto` root override, or your own scroll view that holds nothing but the control) it scrolls the selected segment into view on mount and when `selectedIndex` changes; a page view, a vertical list or a strip with padding or other content around the control is left alone, and the page's vertical scroll never moves |
+| `MSSegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher; below `lg` each segment is at least 44 px tall to tap, the painted pill unchanged. The pill's padding and type per size and the root's padding come from `MagicStarterFieldTheme` (`segmentedSmClassName`, `segmentedMdClassName`, `segmentedPaddingClassName`); the hit cell is not themed. In a horizontal scroller (the `overflow-x-auto` root override, or your own scroll view that holds nothing but the control) it scrolls the selected segment into view on mount and when `selectedIndex` changes; a page view, a vertical list or a strip with padding or other content around the control is left alone, and the page's vertical scroll never moves |
 | `MSTabs` | `tabsRecipe` | Full tab bar with content panels |
 | `MSAccordion` | `MSAccordionItem`, `accordionRecipe` | Collapsible section list |
 | `MSNavbar` | | Horizontal top navigation bar |

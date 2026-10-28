@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import 'select.recipe.dart';
 
 /// A styled single-select dropdown component for Magic Starter.
@@ -67,7 +68,10 @@ class MSSelect<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. Resolve slot classNames from the recipe.
-    final slots = selectRecipe(classNames: classNames);
+    final slots = selectRecipe(
+      theme: MagicStarter.fieldTheme,
+      classNames: classNames,
+    );
 
     // 2. Delegate to WSelect with recipe-driven classNames.
     return WSelect<T>(

@@ -107,6 +107,23 @@ void main() {
         expect(manager.theme.button.mdClassName, 'custom-md');
       });
 
+      test('setting theme distributes the field sub-theme', () {
+        manager.theme = const MagicStarterTheme(
+          field: MagicStarterFieldTheme(segmentedPaddingClassName: 'p-0'),
+        );
+
+        expect(manager.fieldTheme.segmentedPaddingClassName, 'p-0');
+        expect(manager.theme.field.segmentedPaddingClassName, 'p-0');
+      });
+
+      test('setting fieldTheme is reflected in theme.field', () {
+        manager.fieldTheme = const MagicStarterFieldTheme(
+          inputSizeClassName: 'custom-input-size',
+        );
+
+        expect(manager.theme.field.inputSizeClassName, 'custom-input-size');
+      });
+
       test('reset() clears all theme fields to const defaults', () {
         manager.theme = MagicStarterTheme(
           form: const MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -123,6 +140,9 @@ void main() {
             panelClassName: 'custom-panel',
           ),
           button: const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+          field: const MagicStarterFieldTheme(
+            inputSizeClassName: 'custom-input-size',
+          ),
         );
 
         manager.reset();
@@ -150,6 +170,10 @@ void main() {
           'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
         );
         expect(manager.buttonTheme.shapeClassName, 'rounded-lg');
+        expect(
+          manager.fieldTheme.inputSizeClassName,
+          'py-3 lg:py-2.5 text-sm leading-5',
+        );
       });
 
       test('convenience getters return correct sub-themes after theme set', () {

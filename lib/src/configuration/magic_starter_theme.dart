@@ -1162,14 +1162,134 @@ class MagicStarterButtonTheme {
 }
 
 // ---------------------------------------------------------------------------
+// Field theme
+// ---------------------------------------------------------------------------
+
+/// Theme configuration for the height and type of the form controls:
+/// [MSInput], [MSSelect], [MSCombobox] and [MSSegmentedControl].
+///
+/// Size only. The colours, the border and the corner radius stay in the control
+/// recipes, written as semantic aliases, so a host re-skins them through its
+/// alias map and [MagicStarter.useWindTheme] has nothing to derive here.
+///
+/// Each field is one run of tokens in a recipe: the padding, the minimum height
+/// if any, and the type (`text-*`, `leading-*`, `font-*`) of one control. The
+/// field REPLACES that run, so a host string states the whole size and a
+/// default it does not restate does not survive (the input's `lg:py-2.5` goes
+/// when `inputSizeClassName` is set). The side padding, the colours and the
+/// border sit outside the run and are kept.
+///
+/// This is its own sub-theme rather than more fields on another one on purpose:
+/// every `use*Theme` setter assigns its whole struct, so a field added to a
+/// theme a host refines later would go back to its constructor default.
+///
+/// All fields are optional; defaults are the classes the recipes wrote before
+/// they were configurable, so a host that never sets this theme sees no change.
+///
+/// ### One 44 px standard, 17 on 22 type
+///
+/// ```dart
+/// MagicStarter.useFieldTheme(
+///   MagicStarterFieldTheme(
+///     inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+///     selectSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+///     segmentedSmClassName: 'py-[7px] text-[17px] leading-[22px]',
+///     segmentedMdClassName: 'py-[7px] text-[17px] leading-[22px]',
+///     segmentedPaddingClassName: 'px-1 py-0 lg:py-1',
+///   ),
+/// );
+/// ```
+///
+/// Each control reaches 44 px its own way, because the boxes differ. A text
+/// input paints its border inside its padding, so `py-[11px]` around a 22 px
+/// line is the whole 44; the select and combobox triggers are Wind boxes whose
+/// border adds to the size, so `py-2.5` around the same line plus the two border
+/// pixels is 44. A segmented item is a 36 px pill (`py-[7px]` around the line)
+/// in a root with 4 px around it, which `px-1 py-0 lg:py-1` keeps: below `lg`
+/// the 44 px hit cell around the pill supplies those 4 px, from `lg` up the
+/// root does. Padding around a fixed `leading-*` also centres the text, which
+/// a bare `min-h-11` does not in every Wind box.
+///
+/// Call it after [MagicStarter.useWindTheme] and [MagicStarter.useTheme], which
+/// reset it with the rest of the unified theme.
+///
+/// A className handed to a control (`MSInput.className`, the `classNames` of
+/// the others) is appended after all of this and wins on any family it names.
+///
+/// ### What this theme does not reach
+///
+/// - The auth, profile and settings forms. They draw `WFormInput`s on
+///   [MagicStarterFormTheme.inputClassName], which carries its own `py-3`, so
+///   a host that wants its standard there writes it into that string.
+/// - [MSTextarea], and the option rows of the select and combobox menus, which
+///   are Wind's own.
+class MagicStarterFieldTheme {
+  /// Padding and type of the text in [MSInput].
+  ///
+  /// The placeholder and the typed value both read the type of the field, so
+  /// this one string sets both; the placeholder has no field of its own. The
+  /// recipe keeps `px-3` ahead of it: Wind drops the input's own side inset as
+  /// soon as a className sets any padding, so a string that leaves `px-*` out
+  /// keeps the 12 px inset. A text input paints its border inside the padding,
+  /// which adds nothing to its height.
+  ///
+  /// Defaults to `'py-3 lg:py-2.5 text-sm leading-5'`: 44 px tall below `lg`
+  /// and 40 px from `lg` up.
+  final String inputSizeClassName;
+
+  /// Padding and minimum height of the trigger of [MSSelect], [MSCombobox] and
+  /// the timezone select, and the type of the label in it.
+  ///
+  /// One field for the three because they are the same control: the combobox is
+  /// a searchable select, and a host that wants one standard never wants two
+  /// triggers of different heights. The border of a trigger adds to its height.
+  ///
+  /// Defaults to `'py-[9px] min-h-11 lg:min-h-0'`: 44 px tall below `lg` and
+  /// 40 px from `lg` up, in the type the surrounding text sets.
+  final String selectSizeClassName;
+
+  /// Padding and type of one `SegmentedControlSize.sm` segment (the pill).
+  ///
+  /// The recipe puts the pill's `px-3 py-1.5 text-sm` ahead of this, so a string
+  /// that names no `px-*` keeps `px-3`.
+  ///
+  /// Defaults to `'px-2 py-1 text-sm'`: a 28 px pill.
+  final String segmentedSmClassName;
+
+  /// Padding and type of one `SegmentedControlSize.md` segment (the pill), the
+  /// default size.
+  ///
+  /// Defaults to `'px-3 py-1.5 text-sm'`: a 32 px pill.
+  final String segmentedMdClassName;
+
+  /// Padding of the root of [MSSegmentedControl], around the segments.
+  ///
+  /// Below `lg` every segment sits in a 44 px hit cell, so with the default the
+  /// control is 52 px tall on a phone whatever the pill size, and 4 px more than
+  /// its pill from `lg` up. A host whose pill is 36 px and wants a 44 px control
+  /// at every width sets `'px-1 py-0 lg:py-1'`.
+  ///
+  /// Defaults to `'p-1'`.
+  final String segmentedPaddingClassName;
+
+  const MagicStarterFieldTheme({
+    this.inputSizeClassName = 'py-3 lg:py-2.5 text-sm leading-5',
+    this.selectSizeClassName = 'py-[9px] min-h-11 lg:min-h-0',
+    this.segmentedSmClassName = 'px-2 py-1 text-sm',
+    this.segmentedMdClassName = 'px-3 py-1.5 text-sm',
+    this.segmentedPaddingClassName = 'p-1',
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Unified theme wrapper
 // ---------------------------------------------------------------------------
 
 /// Unified theme configuration that aggregates all Magic Starter sub-themes.
 ///
 /// Provides a single entry point to configure navigation, modal, form, card,
-/// page header, layout, auth, dropdown, and button styling in one place. Each
-/// sub-theme defaults to its standard configuration when omitted.
+/// page header, layout, auth, dropdown, button, and field styling in one place.
+/// Each sub-theme defaults to its standard configuration when omitted.
 ///
 /// Use [copyWith] to create a modified copy with only the sub-themes you want
 /// to override.
@@ -1235,6 +1355,11 @@ class MagicStarterTheme {
   /// Defaults to `const MagicStarterButtonTheme()`.
   final MagicStarterButtonTheme button;
 
+  /// Form control height and type theme tokens.
+  ///
+  /// Defaults to `const MagicStarterFieldTheme()`.
+  final MagicStarterFieldTheme field;
+
   const MagicStarterTheme({
     this.navigation = const MagicStarterNavigationTheme(),
     this.modal = const MagicStarterModalTheme(),
@@ -1245,13 +1370,14 @@ class MagicStarterTheme {
     this.auth = const MagicStarterAuthTheme(),
     this.dropdown = const MagicStarterDropdownTheme(),
     this.button = const MagicStarterButtonTheme(),
+    this.field = const MagicStarterFieldTheme(),
   });
 
   /// Derives a full [MagicStarterTheme] from a [WindThemeData]'s semantic
   /// alias palette, so a consumer aligns all 8 colour-bearing magic_starter
   /// surfaces to their brand in one call instead of building up to 8 sub-theme
-  /// structs by hand. The button theme carries shape and size only and keeps its
-  /// defaults here: the button recipe writes its own semantic aliases.
+  /// structs by hand. The button and field themes carry shape and size only and
+  /// keep their defaults here: their recipes write their own semantic aliases.
   ///
   /// Every color-bearing className fragment in the sub-theme defaults is
   /// rebuilt from the 17 semantic roles ([MagicStarterTokens.defaultAliases]):
@@ -1450,6 +1576,7 @@ class MagicStarterTheme {
     MagicStarterAuthTheme? auth,
     MagicStarterDropdownTheme? dropdown,
     MagicStarterButtonTheme? button,
+    MagicStarterFieldTheme? field,
   }) {
     return MagicStarterTheme(
       navigation: navigation ?? this.navigation,
@@ -1461,6 +1588,7 @@ class MagicStarterTheme {
       auth: auth ?? this.auth,
       dropdown: dropdown ?? this.dropdown,
       button: button ?? this.button,
+      field: field ?? this.field,
     );
   }
 }

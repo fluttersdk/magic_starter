@@ -2,11 +2,12 @@
 
 `MagicStarter.useWindTheme(WindThemeData)` aligns every built-in magic_starter
 surface to a Wind semantic palette in a single call. Instead of constructing up
-to nine sub-theme structs by hand, you pass the same `WindThemeData` your app
+to ten sub-theme structs by hand, you pass the same `WindThemeData` your app
 already installs at its root and the starter kit derives the eight colour-bearing
 sub-themes (navigation, modal, form, card, page header, layout, auth, dropdown)
-from its semantic alias roles. The ninth, the button theme, is shape and size
-only and is set by hand; see [Button](#button).
+from its semantic alias roles. The ninth and tenth, the button theme and the
+field theme, are shape and size only and are set by hand; see
+[Button](#button) and [Field](#field).
 
 ## The one-call adoption path
 
@@ -236,6 +237,66 @@ Three things to know:
 Below `lg` every `MSButton` sits in a 44 x 44 hit area. A size the theme makes 44
 px tall or more is not widened by it, so there is no extra layout and no extra
 reach.
+
+### Field
+
+Nothing is derived either. The recipes of `MSInput`, `MSSelect`, `MSCombobox`
+and `MSSegmentedControl` write their colours, borders and radius as semantic
+aliases, and `MagicStarterFieldTheme` carries only the height and the type: one
+string per control, each the run of padding, minimum height and text size the
+recipe used to spell out. `useWindTheme()` and `useTheme()` reset it to its
+defaults, so set it after them.
+
+| Property | Control | Default |
+|----------|---------|---------|
+| `inputSizeClassName` | `MSInput`: text, placeholder and typed value | `py-3 lg:py-2.5 text-sm leading-5` (44 px, 40 px from `lg`) |
+| `selectSizeClassName` | trigger of `MSSelect`, `MSCombobox` and the timezone select | `py-[9px] min-h-11 lg:min-h-0` (44 px, 40 px from `lg`) |
+| `segmentedSmClassName` | `MSSegmentedControl` `sm` pill | `px-2 py-1 text-sm` (28 px) |
+| `segmentedMdClassName` | `MSSegmentedControl` `md` pill | `px-3 py-1.5 text-sm` (32 px) |
+| `segmentedPaddingClassName` | `MSSegmentedControl` root | `p-1` |
+
+One 44 px standard with 17 on 22 type for every control:
+
+```dart
+MagicStarter.useFieldTheme(
+  MagicStarterFieldTheme(
+    inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+    selectSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+    segmentedSmClassName: 'py-[7px] text-[17px] leading-[22px]',
+    segmentedMdClassName: 'py-[7px] text-[17px] leading-[22px]',
+    segmentedPaddingClassName: 'px-1 py-0 lg:py-1',
+  ),
+);
+```
+
+Four things to know:
+
+- **The string replaces the run, so state all of it.** The default input string
+  is `py-3 lg:py-2.5 text-sm leading-5`; a host string that names `py-[11px]` only
+  would leave `text-sm` and `leading-5` out of the box, not inherit them. The
+  side padding (`px-3`), the colours and the border stay in the recipe.
+- **Each control needs its own padding for 44 px.** A text input paints its
+  border inside its padding, so it adds no height: `py-[11px]` around
+  `leading-[22px]` is 44, and `py-2.5` is 42. A select or combobox trigger is a
+  Wind box whose border adds to its size, so `py-2.5` around the same line plus
+  the two border pixels is 44. Reach both with vertical padding around a fixed
+  `leading-*`, which also centres the text, rather than with `min-h-11` alone.
+- **The placeholder follows the input.** It inherits the field's text size and
+  line height, so `inputSizeClassName` sets the placeholder and the typed value
+  together and there is no placeholder field.
+- **The segmented root needs `segmentedPaddingClassName` for 44 px at every
+  width.** Below `lg` each segment sits in a 44 px hit cell, so a control with
+  the default `p-1` root is 52 px tall on a phone whatever the pill size. A 36 px
+  pill (`py-[7px]` around the line) in a root of `px-1 py-0 lg:py-1` is 44 px
+  everywhere: the hit cell supplies the 4 px above and below the pill on a phone,
+  and the root does from `lg` up.
+
+A `className` (or the `classNames` of a slot) handed to a control is appended
+after the theme and wins on any family it names. The auth, profile and settings
+forms draw `WFormInput`s on `MagicStarterFormTheme.inputClassName`, whose
+default carries `py-3`, so they follow only a string a host writes into that
+theme; `MSTextarea` and the option rows of the select and combobox menus are
+outside the field theme.
 
 ### Auth
 

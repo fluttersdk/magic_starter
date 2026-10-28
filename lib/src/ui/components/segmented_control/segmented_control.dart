@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import 'segmented_control.recipe.dart';
 
 /// A tab-bar-style segmented control component for Magic Starter.
@@ -174,6 +175,7 @@ class _MSSegmentedControlState<T> extends State<MSSegmentedControl<T>> {
   Widget build(BuildContext context) {
     // 1. Resolve slot classNames from the recipe for the requested size.
     final slots = segmentedControlRecipe(
+      theme: MagicStarter.fieldTheme,
       variants: {kSegmentedControlSizeAxis: widget.size.name},
       classNames: widget.classNames,
     );

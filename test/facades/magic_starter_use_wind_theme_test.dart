@@ -135,6 +135,43 @@ void main() {
       );
     });
 
+    test('leaves the field theme at its defaults', () {
+      // Height and type of the controls are the host's call, and the control
+      // recipes write their own semantic aliases for every colour.
+      MagicStarter.useWindTheme(windTheme);
+
+      const defaults = MagicStarterFieldTheme();
+      final field = MagicStarter.fieldTheme;
+
+      expect(field.inputSizeClassName, defaults.inputSizeClassName);
+      expect(field.selectSizeClassName, defaults.selectSizeClassName);
+      expect(field.segmentedSmClassName, defaults.segmentedSmClassName);
+      expect(field.segmentedMdClassName, defaults.segmentedMdClassName);
+      expect(
+        field.segmentedPaddingClassName,
+        defaults.segmentedPaddingClassName,
+      );
+    });
+
+    test('resets a field theme set before it, so the host sets it after', () {
+      MagicStarter.useFieldTheme(
+        const MagicStarterFieldTheme(inputSizeClassName: 'themed-input'),
+      );
+
+      MagicStarter.useWindTheme(windTheme);
+
+      expect(
+        MagicStarter.fieldTheme.inputSizeClassName,
+        const MagicStarterFieldTheme().inputSizeClassName,
+      );
+
+      MagicStarter.useFieldTheme(
+        const MagicStarterFieldTheme(inputSizeClassName: 'themed-input'),
+      );
+
+      expect(MagicStarter.fieldTheme.inputSizeClassName, 'themed-input');
+    });
+
     test('derives every dropdown role from the semantic palette', () {
       MagicStarter.useWindTheme(windTheme);
 

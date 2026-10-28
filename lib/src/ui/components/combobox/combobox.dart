@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import 'combobox.recipe.dart';
 
 /// A searchable single-select combobox component for Magic Starter.
@@ -73,7 +74,10 @@ class MSCombobox<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. Resolve slot classNames from the recipe.
-    final slots = comboboxRecipe(classNames: classNames);
+    final slots = comboboxRecipe(
+      theme: MagicStarter.fieldTheme,
+      classNames: classNames,
+    );
 
     // 2. Delegate to WSelect with searchable:true and recipe-driven classNames.
     return WSelect<T>(

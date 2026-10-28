@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
+import '../field_theme_fixture.dart';
+
 void main() {
   setUp(() {
     MagicApp.reset();
@@ -1087,6 +1089,319 @@ void main() {
         expect(strip.position.maxScrollExtent, greaterThan(0));
         expect(strip.offset, 0);
         expect(isFullyInside(tester, last, find.byType(Scrollable)), isFalse);
+      });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Field theme
+  // ---------------------------------------------------------------------------
+
+  group('segmented control recipe from a theme', () {
+    // The slots before the sizes and the root padding became theme fields,
+    // copied verbatim and not derived from the recipe: a refactor that moved a
+    // token cannot move this with it.
+    const legacyRoot =
+        'flex flex-row items-center rounded-lg bg-surface-container-high '
+        'p-1 gap-1';
+    const legacyItem =
+        'px-3 py-1.5 rounded-md text-sm font-medium text-center '
+        'text-fg-muted cursor-pointer selected:bg-surface selected:text-fg '
+        'selected:shadow-sm transition-colors focus:ring-2 focus:ring-offset-1 '
+        'focus:ring-primary-500 dark:focus:ring-primary-400';
+    const legacyHit =
+        'flex flex-col justify-center items-center min-h-11 min-w-11 '
+        'lg:min-h-0 lg:min-w-0';
+    const legacySize = {'sm': 'px-2 py-1 text-sm', 'md': 'px-3 py-1.5 text-sm'};
+
+    for (final size in SegmentedControlSize.values) {
+      test('the default theme emits the previous ${size.name} slots byte for '
+          'byte', () {
+        for (final slots in [
+          segmentedControlRecipe(variants: {'size': size.name}),
+          segmentedControlRecipe(
+            theme: const MagicStarterFieldTheme(),
+            variants: {'size': size.name},
+          ),
+        ]) {
+          expect(slots['root'], legacyRoot);
+          expect(slots['item'], '$legacyItem ${legacySize[size.name]}');
+          expect(slots['hit'], legacyHit);
+        }
+      });
+    }
+
+    test('the sizes land in their own item and no other', () {
+      const theme = MagicStarterFieldTheme(
+        segmentedSmClassName: 'sm-class',
+        segmentedMdClassName: 'md-class',
+      );
+
+      for (final size in SegmentedControlSize.values) {
+        final item = segmentedControlRecipe(
+          theme: theme,
+          variants: {'size': size.name},
+        )['item'];
+
+        expect(item, endsWith('${size.name}-class'));
+        for (final other in SegmentedControlSize.values.where(
+          (s) => s != size,
+        )) {
+          expect(item, isNot(contains('${other.name}-class')));
+        }
+      }
+    });
+
+    test('the padding lands where p-1 sat in the root and nowhere else', () {
+      final slots = segmentedControlRecipe(theme: hostFieldTheme);
+
+      expect(
+        slots['root'],
+        'flex flex-row items-center rounded-lg bg-surface-container-high '
+        'px-1 py-0 lg:py-1 gap-1',
+      );
+      expect(slots['hit'], legacyHit);
+      expect(slots['item'], startsWith(legacyItem));
+    });
+  });
+
+  group('segmented control measured', () {
+    Widget control({
+      SegmentedControlSize size = SegmentedControlSize.md,
+      Map<String, String>? classNames,
+      ValueChanged<int>? onChanged,
+    }) {
+      return MSSegmentedControl<String>(
+        size: size,
+        classNames: classNames,
+        options: const ['Monthly', 'Annual'],
+        selectedIndex: 0,
+        onChanged: onChanged ?? (_) {},
+      );
+    }
+
+    /// The painted pill of the segment labelled [label].
+    Finder pill(String label) => find
+        .ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is WDiv &&
+                (widget.className ?? '').contains('rounded-md'),
+          ),
+        )
+        .first;
+
+    group('with the default theme', () {
+      // Today's sizes, measured before the change: the root keeps 4 px around
+      // the cell, so below lg the 44 px hit cell makes the control 52 px tall.
+      const heights = {
+        SegmentedControlSize.md: (phone: 52.0, desktop: 40.0),
+        SegmentedControlSize.sm: (phone: 52.0, desktop: 36.0),
+      };
+
+      for (final size in SegmentedControlSize.values) {
+        testWidgets('${size.name} is ${heights[size]!.desktop} px tall from lg '
+            'up and ${heights[size]!.phone} on a phone', (tester) async {
+          await pumpControlAt(tester, kDesktop, control(size: size));
+          expect(
+            tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+            heights[size]!.desktop,
+          );
+
+          await pumpControlAt(tester, kPhone, control(size: size));
+          expect(
+            tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+            heights[size]!.phone,
+          );
+        });
+      }
+    });
+
+    group('with a host theme', () {
+      for (final brightness in Brightness.values) {
+        for (final entry in {'phone': kPhone, 'desktop': kDesktop}.entries) {
+          for (final size in SegmentedControlSize.values) {
+            final label = '${size.name} ${brightness.name} ${entry.key}';
+
+            testWidgets('is 44 px tall around a 36 px pill, $label', (
+              tester,
+            ) async {
+              MagicStarter.useFieldTheme(hostFieldTheme);
+              await pumpControlAt(
+                tester,
+                entry.value,
+                control(size: size),
+                brightness: brightness,
+              );
+
+              expect(
+                tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+                44,
+              );
+              expect(tester.getSize(pill('Monthly')).height, 36);
+            });
+
+            testWidgets('sets the label 17 on 22 and centres it, $label', (
+              tester,
+            ) async {
+              MagicStarter.useFieldTheme(hostFieldTheme);
+              await pumpControlAt(
+                tester,
+                entry.value,
+                control(size: size),
+                brightness: brightness,
+              );
+
+              final root = find.byType(MSSegmentedControl<String>);
+
+              expect(paintedStyle(tester, 'Monthly')?.fontSize, 17);
+              expect(lineHeightOf(tester, 'Monthly'), closeTo(22, 0.01));
+              expect(
+                glyphCentre(tester, 'Monthly'),
+                closeTo(tester.getCenter(root).dy, 1),
+              );
+              expect(
+                glyphCentre(tester, 'Annual'),
+                closeTo(tester.getCenter(root).dy, 1),
+              );
+            });
+          }
+        }
+      }
+
+      testWidgets('keeps a 44 px hit cell around the pill on a phone', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(tester, kPhone, control());
+
+        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+        handle.dispose();
+      });
+
+      testWidgets('a tap just above the pill still selects the segment', (
+        tester,
+      ) async {
+        int? changed;
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kPhone,
+          control(onChanged: (index) => changed = index),
+        );
+
+        final painted = tester.getRect(pill('Annual'));
+        await tester.tapAt(painted.topCenter - const Offset(0, 3));
+
+        expect(changed, 1);
+      });
+
+      testWidgets('a caller item className still wins over the theme', (
+        tester,
+      ) async {
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kDesktop,
+          control(classNames: const {'item': 'text-sm'}),
+        );
+
+        expect(paintedStyle(tester, 'Monthly')?.fontSize, 14);
+      });
+
+      testWidgets('a caller root className still wins over the padding', (
+        tester,
+      ) async {
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kDesktop,
+          control(classNames: const {'root': 'py-3'}),
+        );
+
+        expect(
+          tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+          12 + 36 + 12,
+        );
+      });
+
+      testWidgets('useWindTheme after useFieldTheme puts the defaults back', (
+        tester,
+      ) async {
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        MagicStarter.useWindTheme(WindThemeData());
+        await pumpControlAt(tester, kDesktop, control());
+
+        expect(
+          tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+          40,
+        );
+      });
+
+      testWidgets(
+        'the wrap root override still builds a Wrap and no Flexible',
+        (tester) async {
+          MagicStarter.useFieldTheme(hostFieldTheme);
+          await pumpControlAt(
+            tester,
+            kPhone,
+            SizedBox(
+              width: 200,
+              child: MSSegmentedControl<String>(
+                classNames: const {'root': 'wrap'},
+                options: const ['Monthly', 'Annual', 'Lifetime'],
+                selectedIndex: 0,
+                onChanged: (_) {},
+              ),
+            ),
+          );
+
+          expect(tester.takeException(), isNull);
+          expect(find.byType(Wrap), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(MSSegmentedControl<String>),
+              matching: find.byType(Flexible),
+            ),
+            findsNothing,
+          );
+        },
+      );
+
+      testWidgets('the selected segment is still revealed in a scroller', (
+        tester,
+      ) async {
+        const options = ['Day', 'Week', 'Month', 'Quarter', 'Year', 'Custom'];
+        const strip = ValueKey('strip');
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kPhone,
+          SizedBox(
+            width: 300,
+            child: SingleChildScrollView(
+              key: strip,
+              scrollDirection: Axis.horizontal,
+              child: MSSegmentedControl<String>(
+                options: options,
+                selectedIndex: options.length - 1,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        );
+
+        final cell = tester.getRect(
+          find
+              .ancestor(of: find.text('Custom'), matching: find.byType(WAnchor))
+              .last,
+        );
+        final view = tester.getRect(find.byKey(strip));
+
+        expect(cell.left, greaterThanOrEqualTo(view.left - 0.01));
+        expect(cell.right, lessThanOrEqualTo(view.right + 0.01));
       });
     });
   });

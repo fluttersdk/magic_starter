@@ -1,5 +1,7 @@
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_theme.dart';
+
 /// Builds the slot recipe for [MSCombobox] from semantic tokens.
 ///
 /// Shares the same slot shape as [selectRecipe] (trigger/popup/item) but the
@@ -11,14 +13,20 @@ import 'package:magic/magic.dart';
 /// - `trigger` — the closed-state trigger with search-ready padding.
 /// - `popup` — the dropdown overlay container.
 /// - `item` — each option row inside the dropdown.
+///
+/// The padding, minimum height and type of the `trigger` come from [theme]
+/// ([MagicStarterFieldTheme.selectSizeClassName], the same field as the select's
+/// trigger); the widget passes `MagicStarter.fieldTheme`, and the default is the
+/// stock look.
 Map<String, String> comboboxRecipe({
+  MagicStarterFieldTheme theme = const MagicStarterFieldTheme(),
   Map<String, String?>? variants,
   Map<String, String>? classNames,
 }) {
-  const recipe = WindSlotRecipe(
+  final recipe = WindSlotRecipe(
     slots: {
       'trigger':
-          'w-full px-3 py-[9px] min-h-11 lg:min-h-0 rounded-lg bg-surface-container-high border '
+          'w-full px-3 ${theme.selectSizeClassName} rounded-lg bg-surface-container-high border '
           'border-color-border text-fg flex items-center justify-between gap-2',
       'popup':
           'bg-surface border border-color-border rounded-lg shadow-md overflow-hidden',
