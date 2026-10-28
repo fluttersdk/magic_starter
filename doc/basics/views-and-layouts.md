@@ -320,6 +320,54 @@ MagicStarter.useNavigationTheme(
 );
 ```
 
+### A live count on a destination
+
+A `MagicStarterNavItem` takes a `badgeCount`, a `ValueListenable<int?>`. The shell listens to it, so the host moves the number by updating the notifier and never rebuilds the navigation config: the badge appears, changes and goes away on its own.
+
+```dart
+// Owned by whatever loads the number: a controller, a repository, a stream.
+final ValueNotifier<int?> unticked = ValueNotifier<int?>(null);
+
+MagicStarter.useNavigation(
+  mainItems: [
+    MagicStarterNavItem(
+      icon: Icons.shopping_cart_outlined,
+      labelKey: 'nav.shopping',
+      path: '/shopping',
+      badgeCount: unticked,
+      badgeLabelKey: 'nav.shopping_open',
+    ),
+  ],
+);
+
+unticked.value = 4; // the badge reads 4
+unticked.value = 0; // and is gone
+```
+
+The badge is hidden while the value is `null` or not above zero, and reads `99+` above 99. The sidebar and the drawer draw it at the trailing edge of the row, the compact rail and the bottom bar on the corner of the icon; it takes no room from the item, so nothing moves when it shows. The profile menu ignores it.
+
+A badge is not colour alone. The number is drawn, and a screen reader gets a sentence in place of it, added to the item's own label: `badgeLabelKey` names a catalogue line with both plural forms and a `:count` placeholder, read with the real count even above 99. It defaults to `nav.badge_count`, which the install stub ships (`"One item|:count items"`); name your own key when the number counts something specific:
+
+```json
+{
+  "nav": {
+    "shopping_open": "One line to buy|:count lines to buy"
+  }
+}
+```
+
+An item holding a notifier is not `const`, so the list that carries it is `final`; items without a badge stay `const`.
+
+The look is the neutral `MSBadge`. Recolour it through the navigation theme, whose tokens are appended to the badge's own, with a `dark:` peer on every colour (a semantic alias such as `bg-primary` already carries one):
+
+```dart
+MagicStarter.useNavigationTheme(
+  const MagicStarterNavigationTheme(
+    badgeClassName: 'bg-primary text-on-primary',
+  ),
+);
+```
+
 ### The box the route child is handed
 
 The shell wraps the route child in one `WDiv`, and two fields on `MagicStarterLayoutTheme` own it:

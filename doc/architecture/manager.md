@@ -179,6 +179,14 @@ The items are stored in `MagicStarterNavigationConfig`:
 | `bottomItems` | No | Mobile bottom navigation bar items (subset of main) |
 | `profileMenuItems` | No | Extra links in the profile dropdown, between "Profile Settings" and logout |
 
+Each `MagicStarterNavItem` takes `icon`, `labelKey` and `path`, plus these optional fields:
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `activeIcon` | `icon` | Icon drawn on the bottom bar while the item is active |
+| `badgeCount` | `null` | A `ValueListenable<int?>` drawn as a count badge on the item; see [A live count on a destination](https://magic.fluttersdk.com/packages/starter/basics/views-and-layouts#a-live-count-on-a-destination) |
+| `badgeLabelKey` | `'nav.badge_count'` | Translation key of the sentence a screen reader gets for the badge |
+
 <a name="navigation-theme"></a>
 ## Navigation Theme
 
