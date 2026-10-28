@@ -62,7 +62,7 @@ static MagicStarterManager get manager {
 
 Every accessor on the `MagicStarter` facade delegates through `manager`, so any code that reads a theme (e.g. `MSCard` via `MagicStarter.cardTheme`) previously threw `"Service [magic_starter] is not registered"` when rendered without `MagicStarterServiceProvider` bound — for instance, in a standalone widget test or a `/preview` catalog entry.
 
-`MagicStarter.manager` now checks `Magic.bound('magic_starter')` first. When unbound it falls back to a shared, lazily-created default `MagicStarterManager()` (its 7 sub-themes already hold `const` defaults, so every theme accessor resolves) instead of throwing. The fallback also emits a **one-time** `kDebugMode` warning — `"MagicStarterManager not bound; using defaults. Call MagicStarter... to configure."` — so a genuine forgot-to-bind bug in a real app still surfaces during development. A manager bound via the container always wins over the fallback.
+`MagicStarter.manager` now checks `Magic.bound('magic_starter')` first. When unbound it falls back to a shared, lazily-created default `MagicStarterManager()` (its 8 sub-themes already hold `const` defaults, so every theme accessor resolves) instead of throwing. The fallback also emits a **one-time** `kDebugMode` warning — `"MagicStarterManager not bound; using defaults. Call MagicStarter... to configure."` — so a genuine forgot-to-bind bug in a real app still surfaces during development. A manager bound via the container always wins over the fallback.
 
 For tests that need a specific manager configuration (custom theme, team resolver, etc.), bind one explicitly with `setUpMagicStarterForTests()`:
 
@@ -371,7 +371,7 @@ When `Auth.check()` is `false`, the user carries no `locale`, or the toggle is o
 <a name="unified-theme"></a>
 ## Unified Theme
 
-`MagicStarterTheme` wraps all 7 sub-theme objects into a single configuration. Host apps can set the entire visual identity in one call, then selectively override individual sub-themes afterward:
+`MagicStarterTheme` wraps all 8 sub-theme objects into a single configuration. Host apps can set the entire visual identity in one call, then selectively override individual sub-themes afterward:
 
 ```dart
 MagicStarter.useTheme(
@@ -403,7 +403,7 @@ final customTheme = MagicStarter.theme.copyWith(
 MagicStarter.useTheme(customTheme);
 ```
 
-The manager maintains bidirectional sync: the `theme` getter constructs a `MagicStarterTheme` from all 7 individual fields, while the `theme` setter distributes each sub-theme to its respective field. Both `useTheme()` and individual `use*Theme()` methods work together seamlessly.
+The manager maintains bidirectional sync: the `theme` getter constructs a `MagicStarterTheme` from all 8 individual fields, while the `theme` setter distributes each sub-theme to its respective field. Both `useTheme()` and individual `use*Theme()` methods work together seamlessly.
 
 | Sub-theme | Class | Facade getter/setter |
 |-----------|-------|---------------------|
@@ -414,6 +414,7 @@ The manager maintains bidirectional sync: the `theme` getter constructs a `Magic
 | Card | `MagicStarterCardTheme` | `useCardTheme()` / `cardTheme` |
 | Page Header | `MagicStarterPageHeaderTheme` | `usePageHeaderTheme()` / `pageHeaderTheme` |
 | Layout | `MagicStarterLayoutTheme` | `useLayoutTheme()` / `layoutTheme` |
+| Dropdown | `MagicStarterDropdownTheme` | `useDropdownTheme()` / `dropdownTheme` |
 
 All sub-theme classes live in `lib/src/configuration/magic_starter_theme.dart`.
 
@@ -637,7 +638,7 @@ Default layouts:
 | `MagicStarter.createUser(data)` | `manager.userFactory(data)` |
 | `MagicStarter.useTeamResolver(...)` | `manager.teamResolver = config` |
 | `MagicStarter.useNavigation(...)` | `manager.navigationConfig = config` |
-| `MagicStarter.useTheme(theme)` | `manager.theme = theme` (sets all 7 sub-themes) |
+| `MagicStarter.useTheme(theme)` | `manager.theme = theme` (sets all 8 sub-themes) |
 | `MagicStarter.useNavigationTheme(theme)` | `manager.navigationTheme = theme` |
 | `MagicStarter.useModalTheme(theme)` | `manager.modalTheme = theme` |
 | `MagicStarter.useFormTheme(theme)` | `manager.formTheme = theme` |

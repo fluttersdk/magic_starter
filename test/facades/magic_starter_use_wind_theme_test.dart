@@ -48,7 +48,7 @@ void main() {
       },
     );
 
-    test('derives a semantic alias into every one of the 7 sub-themes', () {
+    test('derives a semantic alias into every one of the 8 sub-themes', () {
       MagicStarter.useWindTheme(windTheme);
 
       // 1. Navigation: brand text follows the primary role.
@@ -102,6 +102,107 @@ void main() {
         isTrue,
         reason: 'auth card should carry the surface-container token',
       );
+
+      // 8. Dropdown: the popover panel follows the card/panel surface role.
+      expect(
+        hasToken(
+          MagicStarter.dropdownTheme.panelClassName,
+          'bg-surface-container',
+        ),
+        isTrue,
+        reason: 'dropdown panel should carry the surface-container token',
+      );
+    });
+
+    test('derives every dropdown role from the semantic palette', () {
+      MagicStarter.useWindTheme(windTheme);
+
+      final dropdown = MagicStarter.dropdownTheme;
+
+      expect(hasToken(dropdown.panelClassName, 'border-color-border'), isTrue);
+      expect(
+        hasToken(dropdown.dividerClassName, 'border-color-border'),
+        isTrue,
+      );
+      expect(
+        hasToken(dropdown.itemClassName, 'bg-surface-container-high'),
+        isTrue,
+      );
+      expect(dropdown.itemClassName, startsWith('hover:'));
+      // The hovered row is container-high, so the tile must not be.
+      expect(hasToken(dropdown.tileClassName, 'bg-surface'), isTrue);
+      expect(
+        hasToken(dropdown.tileClassName, 'bg-surface-container-high'),
+        isFalse,
+      );
+      expect(hasToken(dropdown.textClassName, 'text-fg'), isTrue);
+      expect(hasToken(dropdown.mutedTextClassName, 'text-fg-muted'), isTrue);
+      expect(dropdown.dangerTextClassName, 'danger:text-destructive');
+      expect(dropdown.dangerTileClassName, 'danger:bg-destructive-container');
+    });
+
+    test('leaves no raw palette utility in the derived dropdown theme', () {
+      MagicStarter.useWindTheme(windTheme);
+
+      final dropdown = MagicStarter.dropdownTheme;
+
+      for (final className in [
+        dropdown.panelClassName,
+        dropdown.dividerClassName,
+        dropdown.itemClassName,
+        dropdown.tileClassName,
+        dropdown.textClassName,
+        dropdown.mutedTextClassName,
+        dropdown.dangerTextClassName,
+        dropdown.dangerTileClassName,
+      ]) {
+        expect(
+          RegExp(r'(gray|red|white)').hasMatch(className),
+          isFalse,
+          reason: '"$className" still names a palette colour',
+        );
+      }
+    });
+
+    test('keeps the dropdown derivation when the navigation theme is set', () {
+      // A host refines the navigation theme after `useWindTheme` and replaces
+      // it whole (the setter has no merge), so the dropdown colours must not
+      // live there or that refinement would hand them back to the stock grey.
+      MagicStarter.useWindTheme(windTheme);
+      MagicStarter.useNavigationTheme(
+        const MagicStarterNavigationTheme(brandClassName: 'text-lg text-fg'),
+      );
+
+      expect(
+        hasToken(
+          MagicStarter.dropdownTheme.panelClassName,
+          'bg-surface-container',
+        ),
+        isTrue,
+      );
+    });
+
+    test('prefixes every token of a fallback pair with the variant', () {
+      // With no aliases the roles resolve to palette pairs. A variant written
+      // in front of the pair would reach only its first token, so the dark
+      // half of a hover or danger field would apply at rest.
+      MagicStarter.useWindTheme(WindThemeData());
+
+      final dropdown = MagicStarter.dropdownTheme;
+
+      for (final entry in {
+        'hover': dropdown.itemClassName,
+        'danger': dropdown.dangerTextClassName,
+      }.entries) {
+        for (final token in entry.value.split(RegExp(r'\s+'))) {
+          expect(
+            token,
+            startsWith('${entry.key}:'),
+            reason: '"$token" is not scoped to ${entry.key}',
+          );
+        }
+      }
+      expect(dropdown.panelClassName, contains('bg-'));
     });
 
     test('derives on-primary and border roles onto action buttons', () {

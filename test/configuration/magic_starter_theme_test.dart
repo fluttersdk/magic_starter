@@ -535,6 +535,82 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // MagicStarterDropdownTheme
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterDropdownTheme', () {
+    group('defaults', () {
+      test('panel keeps the white and gray-800 fill with a gray edge', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(
+          theme.panelClassName,
+          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+        );
+      });
+
+      test('divider is a border colour with no width or side', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(theme.dividerClassName, 'border-gray-100 dark:border-gray-700');
+      });
+
+      test('item fills a hovered row', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(
+          theme.itemClassName,
+          'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+        );
+      });
+
+      test('tile is a filled square that steps darker on hover', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(theme.tileClassName, contains('bg-gray-100 dark:bg-gray-700'));
+        expect(
+          theme.tileClassName,
+          contains('hover:bg-gray-200 dark:hover:bg-gray-600'),
+        );
+      });
+
+      test('text and muted text carry their own dark pair', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(theme.textClassName, 'text-gray-900 dark:text-white');
+        expect(theme.mutedTextClassName, 'text-gray-500 dark:text-gray-400');
+      });
+
+      test('danger fields apply under the danger state only', () {
+        const theme = MagicStarterDropdownTheme();
+
+        for (final className in [
+          theme.dangerTextClassName,
+          theme.dangerTileClassName,
+        ]) {
+          for (final token in className.split(RegExp(r'\s+'))) {
+            expect(
+              token.contains('danger:'),
+              isTrue,
+              reason:
+                  '"$token" would colour every row, not only the danger one',
+            );
+          }
+        }
+      });
+    });
+
+    group('custom overrides', () {
+      test('accepts a custom panelClassName', () {
+        const theme = MagicStarterDropdownTheme(panelClassName: 'custom-panel');
+
+        expect(theme.panelClassName, equals('custom-panel'));
+        expect(theme.itemClassName, contains('hover:'));
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // MagicStarterTheme (unified wrapper)
   // -------------------------------------------------------------------------
 
@@ -550,6 +626,7 @@ void main() {
         expect(theme.auth, isA<MagicStarterAuthTheme>());
         expect(theme.navigation, isA<MagicStarterNavigationTheme>());
         expect(theme.modal, isA<MagicStarterModalTheme>());
+        expect(theme.dropdown, isA<MagicStarterDropdownTheme>());
       });
 
       test('default form sub-theme has correct defaults', () {
@@ -611,6 +688,15 @@ void main() {
         expect(theme.auth.cardClassName, equals('custom-card'));
       });
 
+      test('stores custom dropdown sub-theme', () {
+        const customDropdown = MagicStarterDropdownTheme(
+          panelClassName: 'custom-panel',
+        );
+        const theme = MagicStarterTheme(dropdown: customDropdown);
+
+        expect(theme.dropdown.panelClassName, equals('custom-panel'));
+      });
+
       test('other sub-themes remain at defaults when one is customized', () {
         const theme = MagicStarterTheme(
           form: MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -655,6 +741,27 @@ void main() {
         expect(updated.auth.cardClassName, equals('custom-card'));
         expect(updated.form.inputClassName, contains('w-full'));
         expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('overrides dropdown sub-theme while keeping others unchanged', () {
+        const original = MagicStarterTheme();
+        final updated = original.copyWith(
+          dropdown: const MagicStarterDropdownTheme(
+            panelClassName: 'custom-panel',
+          ),
+        );
+
+        expect(updated.dropdown.panelClassName, equals('custom-panel'));
+        expect(updated.form.inputClassName, contains('w-full'));
+        expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('copyWith with no arguments keeps the dropdown sub-theme', () {
+        final updated = const MagicStarterTheme(
+          dropdown: MagicStarterDropdownTheme(panelClassName: 'custom-panel'),
+        ).copyWith();
+
+        expect(updated.dropdown.panelClassName, equals('custom-panel'));
       });
 
       test('overrides multiple sub-themes simultaneously', () {

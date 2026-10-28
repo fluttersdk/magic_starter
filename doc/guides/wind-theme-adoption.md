@@ -2,9 +2,9 @@
 
 `MagicStarter.useWindTheme(WindThemeData)` aligns every built-in magic_starter
 surface to a Wind semantic palette in a single call. Instead of constructing up
-to seven sub-theme structs by hand, you pass the same `WindThemeData` your app
-already installs at its root and the starter kit derives all seven sub-themes
-(navigation, modal, form, card, page header, layout, auth) from its semantic
+to eight sub-theme structs by hand, you pass the same `WindThemeData` your app
+already installs at its root and the starter kit derives all eight sub-themes
+(navigation, modal, form, card, page header, layout, auth, dropdown) from its semantic
 alias roles.
 
 ## The one-call adoption path
@@ -141,6 +141,29 @@ spacing, radius, and dimension tokens are preserved as-is.
 Numeric dimensions (`sidebarWidth`, `headerHeight`) and the `wColor()`
 content/drawer background color-key fields keep their defaults; they are not
 expressed as semantic className tokens.
+
+### Dropdown
+
+The panels of `MSTeamSelector` and `MSUserProfileDropdown`. This is its own
+sub-theme, not more fields on `navigation`, because a host that sets
+`useNavigationTheme()` after `useWindTheme()` replaces the navigation theme
+whole and would hand any field it omitted back to the stock grey.
+
+| Property | Roles used |
+|----------|-----------|
+| `panelClassName` | `bg-surface-container`, `border-color-border` |
+| `dividerClassName` | `border-color-border` |
+| `itemClassName` | `bg-surface-container-high` (hover) |
+| `tileClassName` | `bg-surface` |
+| `textClassName` | `text-fg` |
+| `mutedTextClassName` | `text-fg-muted` |
+| `dangerTextClassName` | `text-destructive` (danger state) |
+| `dangerTileClassName` | `bg-destructive-container` (danger state) |
+
+The tile takes `bg-surface` rather than `bg-surface-container-high` because the
+hovered row is already `bg-surface-container-high`; a tile with that fill would
+disappear into it. Geometry, including the `overflow-hidden` that keeps a hovered
+row inside the panel's rounded corners, stays in the widgets.
 
 ### Auth
 

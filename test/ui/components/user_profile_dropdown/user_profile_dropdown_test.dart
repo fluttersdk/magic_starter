@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -489,5 +490,252 @@ void main() {
 
     expect(themed.className, contains('hover:bg-accent'));
     expect(themed.states, isNotNull);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Panel: corner clipping and theme-supplied colour.
+  // ---------------------------------------------------------------------------
+
+  group('panel', () {
+    /// A host palette whose every role is a distinct hex, so a resolved colour
+    /// names the role it came from.
+    final hostTheme = WindThemeData(
+      aliases: const {
+        'bg-surface': 'bg-[#101012] dark:bg-[#101012]',
+        'bg-surface-container': 'bg-[#202024] dark:bg-[#202024]',
+        'bg-surface-container-high': 'bg-[#303036] dark:bg-[#303036]',
+        'text-fg': 'text-[#f0f0f4] dark:text-[#f0f0f4]',
+        'text-fg-muted': 'text-[#a0a0a8] dark:text-[#a0a0a8]',
+        'border-color-border': 'border-[#404048] dark:border-[#404048]',
+        'bg-destructive-container': 'bg-[#7f1d1d] dark:bg-[#7f1d1d]',
+        'text-destructive': 'text-[#dc2626] dark:text-[#dc2626]',
+      },
+    );
+
+    Future<void> open(WidgetTester tester, {WindThemeData? data}) async {
+      mockGuard.setUser(
+        MagicStarterAuthUser.fromMap({
+          'id': 1,
+          'name': 'John Doe',
+          'email': 'john@example.com',
+        }),
+      );
+
+      await tester.pumpWidget(
+        data == null
+            ? wrap(const MSUserProfileDropdown())
+            : MaterialApp(
+                home: WindTheme(
+                  data: data,
+                  child: const Scaffold(body: MSUserProfileDropdown()),
+                ),
+              ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(MSAvatar));
+      await tester.pumpAndSettle();
+    }
+
+    Finder panel() => find.byWidgetPredicate(
+      (widget) => widget is WDiv && (widget.className ?? '').contains('w-72'),
+    );
+
+    Finder rowOf(String label) => find
+        .ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is WDiv && (widget.className ?? '').contains('py-2.5'),
+          ),
+        )
+        .first;
+
+    /// The [WText] that draws [label]; `find.text` lands on the inner `Text`.
+    Finder wtext(String label) =>
+        find.ancestor(of: find.text(label), matching: find.byType(WText)).first;
+
+    /// Every fill painted under [owner], outermost first.
+    List<Color> fillsOf(WidgetTester tester, Finder owner) => [
+      for (final box in tester.widgetList<DecoratedBox>(
+        find.descendant(of: owner, matching: find.byType(DecoratedBox)),
+      ))
+        if (box.decoration is BoxDecoration &&
+            (box.decoration as BoxDecoration).color != null)
+          (box.decoration as BoxDecoration).color!,
+    ];
+
+    testWidgets('clips its rows to the rounded corners', (tester) async {
+      await open(tester);
+
+      expect(
+        tester.widget<WDiv>(panel()).className,
+        contains('overflow-hidden'),
+      );
+
+      // The class alone proves nothing if Wind draws no clip for it.
+      final clip = tester.widget<ClipRRect>(
+        find.descendant(of: panel(), matching: find.byType(ClipRRect)).first,
+      );
+      expect(clip.borderRadius, isNot(BorderRadius.zero));
+    });
+
+    testWidgets('keeps the shipped grey panel when the host sets no theme', (
+      tester,
+    ) async {
+      await open(tester);
+
+      expect(
+        tester.widget<WDiv>(panel()).className,
+        contains(
+          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+        ),
+      );
+    });
+
+    testWidgets('names no palette colour once the host theme supplies them', (
+      tester,
+    ) async {
+      MagicStarter.useWindTheme(hostTheme);
+      await open(tester, data: hostTheme);
+
+      final raw = RegExp(r'(gray|blue|red)-\d|\bwhite\b');
+      final classNames = [
+        tester.widget<WDiv>(panel()).className ?? '',
+        for (final div in tester.widgetList<WDiv>(
+          find.descendant(of: panel(), matching: find.byType(WDiv)),
+        ))
+          div.className ?? '',
+        for (final text in tester.widgetList<WText>(
+          find.descendant(of: panel(), matching: find.byType(WText)),
+        ))
+          text.className ?? '',
+        for (final icon in tester.widgetList<WIcon>(
+          find.descendant(of: panel(), matching: find.byType(WIcon)),
+        ))
+          icon.className ?? '',
+      ];
+
+      // A panel that rendered nothing would pass the loop below vacuously.
+      expect(classNames.length, greaterThan(10));
+      for (final className in classNames) {
+        expect(
+          raw.hasMatch(className),
+          isFalse,
+          reason: '"$className" hard-codes a palette colour',
+        );
+      }
+    });
+
+    testWidgets('reads panel, divider, row, tile and text from the theme', (
+      tester,
+    ) async {
+      MagicStarter.useDropdownTheme(
+        const MagicStarterDropdownTheme(
+          panelClassName: 'bg-amber-500 border border-amber-700',
+          dividerClassName: 'border-amber-300',
+          itemClassName: 'hover:bg-amber-100',
+          tileClassName: 'bg-amber-200',
+          textClassName: 'text-amber-900',
+          mutedTextClassName: 'text-amber-700',
+          dangerTextClassName: 'danger:text-rose-700',
+          dangerTileClassName: 'danger:bg-rose-100',
+        ),
+      );
+      await open(tester);
+
+      bool anyDiv(String token) => tester
+          .widgetList<WDiv>(
+            find.descendant(of: panel(), matching: find.byType(WDiv)),
+          )
+          .any((div) => (div.className ?? '').contains(token));
+
+      expect(
+        tester.widget<WDiv>(panel()).className,
+        contains('bg-amber-500 border border-amber-700'),
+      );
+      expect(
+        tester.widget<WDiv>(rowOf('auth.profile')).className,
+        contains('hover:bg-amber-100'),
+      );
+      expect(
+        tester.widget<WText>(wtext('John Doe')).className,
+        contains('text-amber-900'),
+      );
+      expect(
+        tester.widget<WText>(wtext('john@example.com')).className,
+        contains('text-amber-700'),
+      );
+      expect(
+        tester.widget<WText>(wtext('auth.logout')).className,
+        contains('danger:text-rose-700'),
+      );
+      expect(anyDiv('bg-amber-200'), isTrue, reason: 'tile fill not themed');
+      expect(anyDiv('danger:bg-rose-100'), isTrue, reason: 'danger tile');
+      expect(anyDiv('border-amber-300'), isTrue, reason: 'divider not themed');
+    });
+
+    testWidgets('colours the sign out row from the destructive role', (
+      tester,
+    ) async {
+      MagicStarter.useWindTheme(hostTheme);
+      await open(tester, data: hostTheme);
+
+      Color? colourOf(String label) =>
+          tester.widget<Text>(find.text(label)).style?.color;
+
+      // The danger fields come last, so the state beats the resting colour on
+      // the one row that carries it and leaves every other row alone.
+      expect(colourOf('auth.logout'), const Color(0xFFDC2626));
+      expect(colourOf('auth.profile'), const Color(0xFFF0F0F4));
+    });
+
+    testWidgets('draws the rules between its groups one pixel tall', (
+      tester,
+    ) async {
+      await open(tester);
+
+      final rules = find.byWidgetPredicate(
+        (widget) =>
+            widget is WDiv &&
+            (widget.className ?? '').contains('my-1 mx-2 w-full border-t'),
+      );
+
+      expect(rules, findsOneWidget);
+      // The rule is a border-only box: the old `h-[1px]` fill was one pixel
+      // tall, and so is this, inside the same `my-1` margins.
+      final line = find.descendant(
+        of: rules,
+        matching: find.byType(DecoratedBox),
+      );
+      expect(tester.getSize(line.first).height, 1);
+      expect(tester.getSize(rules).height, 9);
+    });
+
+    testWidgets('paints the host palette on the panel and a hovered row', (
+      tester,
+    ) async {
+      MagicStarter.useWindTheme(hostTheme);
+      await open(tester, data: hostTheme);
+
+      expect(fillsOf(tester, panel()).first, const Color(0xFF202024));
+
+      final resting = fillsOf(tester, rowOf('auth.profile'));
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.text('auth.profile')));
+      // The row animates its fill (`transition-colors`), so one frame in it is
+      // still the resting colour.
+      await tester.pumpAndSettle();
+
+      // The row gains its own fill, and the tile keeps a different one so it
+      // stays visible on the hovered row.
+      final hovered = fillsOf(tester, rowOf('auth.profile'));
+      expect(hovered.length, resting.length + 1);
+      expect(hovered.first, const Color(0xFF303036));
+      expect(hovered.last, const Color(0xFF101012));
+      expect(resting, [const Color(0xFF101012)]);
+    });
   });
 }

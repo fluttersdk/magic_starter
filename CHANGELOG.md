@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MagicStarterDropdownTheme`, the colours of the team switcher and the user menu.** The two panels hard-coded Tailwind greys (`dark:bg-gray-800`, `dark:hover:bg-gray-700/50`, `text-gray-700`), so a host with a warm dark palette got a navy-grey panel that no theme could reach. They now read `MagicStarter.dropdownTheme`: `panelClassName` (fill, border width and colour), `dividerClassName`, `itemClassName` (the hovered row), `tileClassName`, `textClassName`, `mutedTextClassName`, `dangerTextClassName` and `dangerTileClassName`. Set it with `MagicStarter.useDropdownTheme()` or as `MagicStarterTheme(dropdown:)`; the defaults are the previous grey look, and `MagicStarter.useWindTheme()` derives every field from the host's `bg-surface-container`, `bg-surface-container-high`, `bg-surface`, `text-fg`, `text-fg-muted`, `border-color-border` and destructive roles. It is a sub-theme of its own, not more fields on `MagicStarterNavigationTheme`, because a host replaces the navigation theme whole after `useWindTheme()` and would hand every field it omitted back to the stock grey. `MagicStarterTheme` now has eight sub-themes, and `copyWith` takes `dropdown`. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/magic_starter_manager.dart`, `lib/src/facades/magic_starter.dart`)
+
+### Fixed
+
+- **A hovered row no longer paints over the panel's rounded corners.** The team switcher panel and the user menu panel are rounded but did not clip, so the full-width hover fill of the bottom row (create team, sign out) drew a square over the curve. Both panels now carry `overflow-hidden`, which Wind renders as a clip at the padding box inside the border. The clip is fixed in the widget, not in the theme, so a host cannot lose it by re-skinning the panel. (`lib/src/ui/components/team_selector/team_selector.dart`, `lib/src/ui/components/user_profile_dropdown/user_profile_dropdown.dart`)
+- **The settings and create-team labels of the team switcher truncate.** They sat in the row without a flexible slot, so a translation longer than the 232 pt panel overflowed the row; they now take the remaining width and truncate like the team names above them. (`lib/src/ui/components/team_selector/team_selector.dart`)
+
+### Changed
+
+- **A few hairlines and text tones of the two panels moved by one step in the default theme.** Folding about a dozen ad-hoc greys into eight roles meant: the user menu's panel border and rules in light mode follow the team switcher's (`gray-200` for the panel edge, `gray-100` for dividers, where the menu used `gray-100` and `gray-200`); team and menu labels read `gray-900` / `white` (the team list used `gray-700` / `gray-300` and the menu `gray-100` in dark mode); secondary text reads `gray-500` / `gray-400`; the team switcher's icon tiles also step darker under the pointer, as the menu's did. Dark-mode panel fills, hover fills and borders are unchanged. The `active:bg-gray-100` pressed fill on a menu row is gone: no state in Wind sets `active` from a press, so it never painted.
+
 ## [0.0.59] - 2026-10-28
 
 ### Added

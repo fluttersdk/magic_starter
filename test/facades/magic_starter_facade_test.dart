@@ -392,6 +392,30 @@ void main() {
         expect(MagicStarter.layoutTheme.sidebarWidth, 280);
         expect(MagicStarter.authTheme.cardClassName, 'facade-auth-card');
       });
+
+      test('useDropdownTheme registers the dropdown sub-theme', () {
+        expect(
+          MagicStarter.dropdownTheme.panelClassName,
+          contains('bg-white dark:bg-gray-800'),
+        );
+
+        MagicStarter.useDropdownTheme(
+          const MagicStarterDropdownTheme(panelClassName: 'facade-panel'),
+        );
+
+        expect(MagicStarter.dropdownTheme.panelClassName, 'facade-panel');
+        expect(MagicStarter.theme.dropdown.panelClassName, 'facade-panel');
+      });
+
+      test('useTheme distributes the dropdown sub-theme', () {
+        MagicStarter.useTheme(
+          const MagicStarterTheme(
+            dropdown: MagicStarterDropdownTheme(textClassName: 'themed-text'),
+          ),
+        );
+
+        expect(MagicStarter.dropdownTheme.textClassName, 'themed-text');
+      });
     });
 
     group('modal registry defaults', () {

@@ -481,8 +481,9 @@ class MagicStarter {
   /// Register a unified theme configuration.
   ///
   /// Sets all sub-themes (navigation, modal, form, card, page header, layout,
-  /// auth) in a single call. Individual sub-themes can still be overridden
-  /// afterward via [useNavigationTheme], [useModalTheme], [useFormTheme], etc.
+  /// auth, dropdown) in a single call. Individual sub-themes can still be
+  /// overridden afterward via [useNavigationTheme], [useModalTheme],
+  /// [useFormTheme], etc.
   ///
   /// ```dart
   /// MagicStarter.useTheme(
@@ -500,15 +501,15 @@ class MagicStarter {
     manager.theme = theme;
   }
 
-  /// Adopt a whole [WindThemeData] palette across all 7 sub-themes in one call.
+  /// Adopt a whole [WindThemeData] palette across all 8 sub-themes in one call.
   ///
   /// Derives a [MagicStarterTheme] from the passed theme's semantic alias
   /// palette (surface / surface-container / fg / primary / on-primary / border
   /// / destructive, etc.) and delegates to [useTheme]. Every color-bearing
   /// className in the built-in navigation, modal, form, card, page header,
-  /// layout, and auth surfaces is rebuilt from those semantic roles, so a
-  /// consumer aligns the entire starter kit to their brand in a single call
-  /// instead of constructing up to 7 sub-theme structs by hand.
+  /// layout, auth, and dropdown surfaces is rebuilt from those semantic roles,
+  /// so a consumer aligns the entire starter kit to their brand in a single
+  /// call instead of constructing up to 8 sub-theme structs by hand.
   ///
   /// This is additive: [useTheme] and every individual `use*Theme()` setter
   /// still work and can override any sub-theme afterward.
@@ -585,6 +586,34 @@ class MagicStarter {
   /// Returns the theme registered via [useAuthTheme], or a default
   /// [MagicStarterAuthTheme] instance when not configured.
   static MagicStarterAuthTheme get authTheme => manager.authTheme;
+
+  /// Register a custom dropdown theme.
+  ///
+  /// When set, overrides the colour class names of the team switcher and user
+  /// menu panels: fill and edge, dividers, the hovered row, the icon tile, the
+  /// text and the destructive row.
+  ///
+  /// All fields in [MagicStarterDropdownTheme] are optional, pass only the
+  /// values you want to customise. [useWindTheme] already derives all of them
+  /// from the host palette, and the navigation theme does not reset them.
+  ///
+  /// ```dart
+  /// MagicStarter.useDropdownTheme(
+  ///   MagicStarterDropdownTheme(
+  ///     panelClassName: 'bg-zinc-900 border border-zinc-700',
+  ///     itemClassName: 'hover:bg-zinc-800',
+  ///   ),
+  /// );
+  /// ```
+  static void useDropdownTheme(MagicStarterDropdownTheme theme) {
+    manager.dropdownTheme = theme;
+  }
+
+  /// Get the active dropdown theme.
+  ///
+  /// Returns the theme registered via [useDropdownTheme], or a default
+  /// [MagicStarterDropdownTheme] instance when not configured.
+  static MagicStarterDropdownTheme get dropdownTheme => manager.dropdownTheme;
 
   /// Register a custom card theme.
   ///

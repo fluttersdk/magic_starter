@@ -73,6 +73,23 @@ void main() {
         },
       );
 
+      test('setting theme distributes the dropdown sub-theme', () {
+        manager.theme = const MagicStarterTheme(
+          dropdown: MagicStarterDropdownTheme(panelClassName: 'custom-panel'),
+        );
+
+        expect(manager.dropdownTheme.panelClassName, 'custom-panel');
+        expect(manager.theme.dropdown.panelClassName, 'custom-panel');
+      });
+
+      test('setting dropdownTheme is reflected in theme.dropdown', () {
+        manager.dropdownTheme = const MagicStarterDropdownTheme(
+          textClassName: 'custom-text',
+        );
+
+        expect(manager.theme.dropdown.textClassName, 'custom-text');
+      });
+
       test('reset() clears all theme fields to const defaults', () {
         manager.theme = MagicStarterTheme(
           form: const MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -85,6 +102,9 @@ void main() {
             titleClassName: 'custom-header',
           ),
           layout: const MagicStarterLayoutTheme(sidebarWidth: 300),
+          dropdown: const MagicStarterDropdownTheme(
+            panelClassName: 'custom-panel',
+          ),
         );
 
         manager.reset();
@@ -107,6 +127,10 @@ void main() {
           'text-2xl font-bold text-gray-900 dark:text-white line-clamp-2',
         );
         expect(manager.layoutTheme.sidebarWidth, 256);
+        expect(
+          manager.dropdownTheme.panelClassName,
+          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+        );
       });
 
       test('convenience getters return correct sub-themes after theme set', () {

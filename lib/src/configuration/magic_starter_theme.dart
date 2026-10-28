@@ -902,14 +902,119 @@ class MagicStarterAuthTheme {
 }
 
 // ---------------------------------------------------------------------------
+// Dropdown theme
+// ---------------------------------------------------------------------------
+
+/// Theme configuration for the popover panels of [MSTeamSelector] and
+/// [MSUserProfileDropdown].
+///
+/// Colour only. Geometry (width, radius, shadow, the clip that keeps a hovered
+/// row inside the rounded corners) stays in the widgets, so a host re-skins the
+/// panels without being able to lose the clip.
+///
+/// This is its own sub-theme rather than more fields on
+/// [MagicStarterNavigationTheme] on purpose: a host refines the navigation
+/// theme after [MagicStarter.useWindTheme] and replaces it whole, and a field it
+/// omitted would fall back to the stock grey instead of keeping the derived
+/// value. Nothing refines this one by accident.
+///
+/// All fields are optional; defaults preserve the current dark-mode-aware grey
+/// look. [MagicStarter.useWindTheme] rebuilds every field from the host's
+/// semantic roles.
+///
+/// ### Example
+/// ```dart
+/// MagicStarter.useDropdownTheme(
+///   MagicStarterDropdownTheme(
+///     panelClassName: 'bg-surface-container border border-color-border',
+///     itemClassName: 'hover:bg-surface-container-high',
+///   ),
+/// );
+/// ```
+class MagicStarterDropdownTheme {
+  /// Panel fill and edge: the background, the border width and the border
+  /// colour.
+  ///
+  /// Defaults to
+  /// `'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'`.
+  final String panelClassName;
+
+  /// Border colour of the rules inside the panel.
+  ///
+  /// Colour only: the widget supplies the side (`border-t`, `border-b`), so a
+  /// theme stays valid on either.
+  ///
+  /// Defaults to `'border-gray-100 dark:border-gray-700'`.
+  final String dividerClassName;
+
+  /// Fill of a row under the pointer.
+  ///
+  /// Must carry the `hover:` prefix on every token; a bare fill would paint
+  /// every row at rest.
+  ///
+  /// Defaults to `'hover:bg-gray-50 dark:hover:bg-gray-700/50'`.
+  final String itemClassName;
+
+  /// Fill of the square behind a row's icon or initial.
+  ///
+  /// The tile sits on the row, so its resting fill must differ from
+  /// [itemClassName]'s or it vanishes while the row is hovered. A `hover:` token
+  /// here reacts only while the pointer is on the tile itself: a `WDiv` carrying
+  /// one is its own hover target.
+  ///
+  /// Defaults to
+  /// `'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'`.
+  final String tileClassName;
+
+  /// Colour of a row's label, of the account name and of the team name in the
+  /// trigger.
+  ///
+  /// Defaults to `'text-gray-900 dark:text-white'`.
+  final String textClassName;
+
+  /// Colour of secondary text: the email, the section caption, the chevron and
+  /// the glyphs inside a tile.
+  ///
+  /// Defaults to `'text-gray-500 dark:text-gray-400'`.
+  final String mutedTextClassName;
+
+  /// Colour of the label and icon of a destructive row (sign out).
+  ///
+  /// Applied after [textClassName] and [mutedTextClassName] on an element in
+  /// the `danger` state, so every token must carry the `danger:` prefix.
+  ///
+  /// Defaults to `'danger:text-red-600 dark:danger:text-red-500'`.
+  final String dangerTextClassName;
+
+  /// Fill of the tile of a destructive row, applied after [tileClassName] and
+  /// prefixed with `danger:` for the same reason as [dangerTextClassName].
+  ///
+  /// Defaults to `'danger:bg-red-50 dark:danger:bg-red-900/20'`.
+  final String dangerTileClassName;
+
+  const MagicStarterDropdownTheme({
+    this.panelClassName =
+        'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+    this.dividerClassName = 'border-gray-100 dark:border-gray-700',
+    this.itemClassName = 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+    this.tileClassName =
+        'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600',
+    this.textClassName = 'text-gray-900 dark:text-white',
+    this.mutedTextClassName = 'text-gray-500 dark:text-gray-400',
+    this.dangerTextClassName = 'danger:text-red-600 dark:danger:text-red-500',
+    this.dangerTileClassName = 'danger:bg-red-50 dark:danger:bg-red-900/20',
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Unified theme wrapper
 // ---------------------------------------------------------------------------
 
 /// Unified theme configuration that aggregates all Magic Starter sub-themes.
 ///
 /// Provides a single entry point to configure navigation, modal, form, card,
-/// page header, layout, and auth styling in one place. Each sub-theme defaults
-/// to its standard configuration when omitted.
+/// page header, layout, auth, and dropdown styling in one place. Each
+/// sub-theme defaults to its standard configuration when omitted.
 ///
 /// Use [copyWith] to create a modified copy with only the sub-themes you want
 /// to override.
@@ -965,6 +1070,11 @@ class MagicStarterTheme {
   /// Defaults to `const MagicStarterAuthTheme()`.
   final MagicStarterAuthTheme auth;
 
+  /// Team switcher and user menu panel theme tokens.
+  ///
+  /// Defaults to `const MagicStarterDropdownTheme()`.
+  final MagicStarterDropdownTheme dropdown;
+
   const MagicStarterTheme({
     this.navigation = const MagicStarterNavigationTheme(),
     this.modal = const MagicStarterModalTheme(),
@@ -973,11 +1083,12 @@ class MagicStarterTheme {
     this.pageHeader = const MagicStarterPageHeaderTheme(),
     this.layout = const MagicStarterLayoutTheme(),
     this.auth = const MagicStarterAuthTheme(),
+    this.dropdown = const MagicStarterDropdownTheme(),
   });
 
   /// Derives a full [MagicStarterTheme] from a [WindThemeData]'s semantic
-  /// alias palette, so a consumer aligns all 7 magic_starter surfaces to their
-  /// brand in one call instead of building up to 7 sub-theme structs by hand.
+  /// alias palette, so a consumer aligns all 8 magic_starter surfaces to their
+  /// brand in one call instead of building up to 8 sub-theme structs by hand.
   ///
   /// Every color-bearing className fragment in the sub-theme defaults is
   /// rebuilt from the 17 semantic roles ([MagicStarterTokens.defaultAliases]):
@@ -1126,7 +1237,33 @@ class MagicStarterTheme {
         registrationLinkClassName: 'text-sm $fgMuted',
         registrationLinkTextClassName: 'text-sm font-semibold $textPrimary',
       ),
+      dropdown: MagicStarterDropdownTheme(
+        panelClassName: '$surfaceContainer border $border',
+        dividerClassName: border,
+        itemClassName: _withVariant('hover', surfaceContainerHigh),
+        // The page tone, not `surfaceContainerHigh`: the hovered row is
+        // `surfaceContainerHigh`, and a tile with that fill vanishes into it.
+        tileClassName: surface,
+        textClassName: fg,
+        mutedTextClassName: fgMuted,
+        dangerTextClassName: _withVariant('danger', textDestructive),
+        dangerTileClassName: _withVariant('danger', destructiveContainer),
+      ),
     );
+  }
+
+  /// Scopes every utility in [role] to [variant].
+  ///
+  /// A role the theme does not define resolves to a palette PAIR
+  /// (`bg-gray-100 dark:bg-gray-800`), and a variant written in front of the
+  /// pair reaches only its first token, leaving the dark half applied at rest.
+  /// Wind reads prefixes in any order, so `hover:dark:bg-gray-800` is valid.
+  static String _withVariant(String variant, String role) {
+    return role
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .map((token) => '$variant:$token')
+        .join(' ');
   }
 
   /// Returns a copy of this theme with the given sub-themes replaced.
@@ -1138,6 +1275,7 @@ class MagicStarterTheme {
     MagicStarterPageHeaderTheme? pageHeader,
     MagicStarterLayoutTheme? layout,
     MagicStarterAuthTheme? auth,
+    MagicStarterDropdownTheme? dropdown,
   }) {
     return MagicStarterTheme(
       navigation: navigation ?? this.navigation,
@@ -1147,6 +1285,7 @@ class MagicStarterTheme {
       pageHeader: pageHeader ?? this.pageHeader,
       layout: layout ?? this.layout,
       auth: auth ?? this.auth,
+      dropdown: dropdown ?? this.dropdown,
     );
   }
 }
