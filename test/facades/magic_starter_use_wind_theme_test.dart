@@ -172,6 +172,69 @@ void main() {
       expect(MagicStarter.fieldTheme.inputSizeClassName, 'themed-input');
     });
 
+    test('copyWith on the derived form theme changes one string only', () {
+      // The reason the setters take a whole struct and the theme has copyWith:
+      // a host that wants its own input string must not have to copy the other
+      // seven fields, nor lose the ones the palette derived.
+      MagicStarter.useWindTheme(windTheme);
+      final derived = MagicStarter.formTheme;
+      const stock = MagicStarterFormTheme();
+
+      MagicStarter.useFormTheme(derived.copyWith(inputClassName: 'x'));
+      final themed = MagicStarter.formTheme;
+
+      expect(themed.inputClassName, 'x');
+      expect(themed.labelClassName, derived.labelClassName);
+      expect(themed.errorClassName, derived.errorClassName);
+      expect(themed.placeholderClassName, derived.placeholderClassName);
+      expect(themed.primaryButtonClassName, derived.primaryButtonClassName);
+      expect(themed.secondaryButtonClassName, derived.secondaryButtonClassName);
+      expect(themed.linkClassName, derived.linkClassName);
+      expect(themed.checkboxLabelClassName, derived.checkboxLabelClassName);
+
+      // Derived from the palette, not the stock strings a copyWith built on
+      // the defaults would hand back.
+      expect(themed.labelClassName, isNot(stock.labelClassName));
+      expect(themed.placeholderClassName, isNot(stock.placeholderClassName));
+      expect(
+        themed.primaryButtonClassName,
+        isNot(stock.primaryButtonClassName),
+      );
+      expect(hasToken(themed.labelClassName, 'text-fg'), isTrue);
+    });
+
+    test('copyWith on the derived modal theme changes one string only', () {
+      MagicStarter.useWindTheme(windTheme);
+      final derived = MagicStarter.modalTheme;
+      const stock = MagicStarterModalTheme();
+
+      MagicStarter.useModalTheme(
+        derived.copyWith(inputClassName: 'x', maxWidth: 560),
+      );
+      final themed = MagicStarter.modalTheme;
+
+      expect(themed.inputClassName, 'x');
+      expect(themed.maxWidth, 560);
+      expect(themed.containerClassName, derived.containerClassName);
+      expect(themed.headerClassName, derived.headerClassName);
+      expect(themed.bodyClassName, derived.bodyClassName);
+      expect(themed.footerClassName, derived.footerClassName);
+      expect(themed.titleClassName, derived.titleClassName);
+      expect(themed.descriptionClassName, derived.descriptionClassName);
+      expect(themed.primaryButtonClassName, derived.primaryButtonClassName);
+      expect(themed.secondaryButtonClassName, derived.secondaryButtonClassName);
+      expect(themed.dangerButtonClassName, derived.dangerButtonClassName);
+      expect(themed.warningButtonClassName, derived.warningButtonClassName);
+      expect(themed.errorClassName, derived.errorClassName);
+
+      expect(themed.containerClassName, isNot(stock.containerClassName));
+      expect(themed.titleClassName, isNot(stock.titleClassName));
+      expect(
+        themed.primaryButtonClassName,
+        isNot(stock.primaryButtonClassName),
+      );
+    });
+
     test('derives every dropdown role from the semantic palette', () {
       MagicStarter.useWindTheme(windTheme);
 

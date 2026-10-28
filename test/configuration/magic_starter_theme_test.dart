@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/src/configuration/magic_starter_theme.dart';
@@ -963,4 +965,283 @@ void main() {
       });
     });
   });
+
+  // -------------------------------------------------------------------------
+  // copyWith on the form and modal themes
+  // -------------------------------------------------------------------------
+
+  // `useFormTheme` and `useModalTheme` assign the WHOLE struct, so changing one
+  // string used to mean copying every other field by hand, and a field added
+  // later went back to its default without a sound. `copyWith` is the supported
+  // way, and these tests are what keeps it complete: each theme is built with
+  // EVERY field distinct, so a field `copyWith` forgets comes back as its
+  // default and differs from the original.
+  group('copyWith on the whole-struct sub-themes', () {
+    /// The parameters the constructor of [className] declares, read from the
+    /// source, so a field added to the class cannot be left out of the table
+    /// below without a test failing.
+    Set<String> constructorFields(String className) {
+      final source = File(
+        'lib/src/configuration/magic_starter_theme.dart',
+      ).readAsStringSync();
+      final start = source.indexOf('  const $className({');
+      final end = source.indexOf('\n  });', start);
+
+      expect(start, isNonNegative, reason: 'no const $className constructor');
+
+      return RegExp(r'this\.(\w+)')
+          .allMatches(source.substring(start, end))
+          .map((m) => m.group(1)!)
+          .toSet();
+    }
+
+    /// A field of a theme: how to read it, and how to set it through
+    /// `copyWith` to a value no distinct theme below uses.
+    _Field<T> field<T>(
+      String name,
+      Object? Function(T) read,
+      T Function(T) change,
+    ) => _Field<T>(name, read, change);
+
+    final formFields = [
+      field<MagicStarterFormTheme>(
+        'inputClassName',
+        (t) => t.inputClassName,
+        (t) => t.copyWith(inputClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'labelClassName',
+        (t) => t.labelClassName,
+        (t) => t.copyWith(labelClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'errorClassName',
+        (t) => t.errorClassName,
+        (t) => t.copyWith(errorClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'placeholderClassName',
+        (t) => t.placeholderClassName,
+        (t) => t.copyWith(placeholderClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'primaryButtonClassName',
+        (t) => t.primaryButtonClassName,
+        (t) => t.copyWith(primaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'secondaryButtonClassName',
+        (t) => t.secondaryButtonClassName,
+        (t) => t.copyWith(secondaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'linkClassName',
+        (t) => t.linkClassName,
+        (t) => t.copyWith(linkClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'checkboxLabelClassName',
+        (t) => t.checkboxLabelClassName,
+        (t) => t.copyWith(checkboxLabelClassName: 'changed'),
+      ),
+    ];
+
+    const distinctForm = MagicStarterFormTheme(
+      inputClassName: 'form-input',
+      labelClassName: 'form-label',
+      errorClassName: 'form-error',
+      placeholderClassName: 'form-placeholder',
+      primaryButtonClassName: 'form-primary',
+      secondaryButtonClassName: 'form-secondary',
+      linkClassName: 'form-link',
+      checkboxLabelClassName: 'form-checkbox-label',
+    );
+
+    final modalFields = [
+      field<MagicStarterModalTheme>(
+        'containerClassName',
+        (t) => t.containerClassName,
+        (t) => t.copyWith(containerClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'headerClassName',
+        (t) => t.headerClassName,
+        (t) => t.copyWith(headerClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'bodyClassName',
+        (t) => t.bodyClassName,
+        (t) => t.copyWith(bodyClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'footerClassName',
+        (t) => t.footerClassName,
+        (t) => t.copyWith(footerClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'titleClassName',
+        (t) => t.titleClassName,
+        (t) => t.copyWith(titleClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'descriptionClassName',
+        (t) => t.descriptionClassName,
+        (t) => t.copyWith(descriptionClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'primaryButtonClassName',
+        (t) => t.primaryButtonClassName,
+        (t) => t.copyWith(primaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'secondaryButtonClassName',
+        (t) => t.secondaryButtonClassName,
+        (t) => t.copyWith(secondaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'dangerButtonClassName',
+        (t) => t.dangerButtonClassName,
+        (t) => t.copyWith(dangerButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'warningButtonClassName',
+        (t) => t.warningButtonClassName,
+        (t) => t.copyWith(warningButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'errorClassName',
+        (t) => t.errorClassName,
+        (t) => t.copyWith(errorClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'inputClassName',
+        (t) => t.inputClassName,
+        (t) => t.copyWith(inputClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'maxWidth',
+        (t) => t.maxWidth,
+        (t) => t.copyWith(maxWidth: 999.0),
+      ),
+    ];
+
+    const distinctModal = MagicStarterModalTheme(
+      containerClassName: 'modal-container',
+      headerClassName: 'modal-header',
+      bodyClassName: 'modal-body',
+      footerClassName: 'modal-footer',
+      titleClassName: 'modal-title',
+      descriptionClassName: 'modal-description',
+      primaryButtonClassName: 'modal-primary',
+      secondaryButtonClassName: 'modal-secondary',
+      dangerButtonClassName: 'modal-danger',
+      warningButtonClassName: 'modal-warning',
+      errorClassName: 'modal-error',
+      inputClassName: 'modal-input',
+      maxWidth: 321.0,
+    );
+
+    /// The same checks for both themes: [original] has every field distinct.
+    void expectCopyWithComplete<T>({
+      required String className,
+      required List<_Field<T>> fields,
+      required T original,
+      required T defaults,
+      required T Function(T) copy,
+    }) {
+      final names = fields.map((f) => f.name).toSet();
+
+      test('the field table lists every parameter of the constructor', () {
+        expect(
+          constructorFields(className),
+          names,
+          reason:
+              'a field was added to $className: add it to this table, and to '
+              'copyWith, which the checks below then hold to account',
+        );
+        expect(fields, hasLength(names.length));
+      });
+
+      test('the theme under test has every field distinct', () {
+        final values = fields.map((f) => f.read(original)).toList();
+
+        expect(values.toSet(), hasLength(values.length));
+      });
+
+      test('copyWith with no argument keeps every field', () {
+        final copied = copy(original);
+
+        for (final f in fields) {
+          expect(f.read(copied), f.read(original), reason: f.name);
+        }
+      });
+
+      test('copyWith with no argument keeps every default', () {
+        final copied = copy(defaults);
+
+        for (final f in fields) {
+          expect(f.read(copied), f.read(defaults), reason: f.name);
+        }
+      });
+
+      for (final changed in fields) {
+        test('copyWith of ${changed.name} changes it and nothing else', () {
+          final copied = changed.change(original);
+
+          for (final f in fields) {
+            if (f.name == changed.name) {
+              expect(f.read(copied), isNot(f.read(original)), reason: f.name);
+              expect(f.read(copied), isIn(['changed', 999.0]), reason: f.name);
+            } else {
+              expect(f.read(copied), f.read(original), reason: f.name);
+            }
+          }
+        });
+      }
+    }
+
+    group('MagicStarterFormTheme', () {
+      expectCopyWithComplete<MagicStarterFormTheme>(
+        className: 'MagicStarterFormTheme',
+        fields: formFields,
+        original: distinctForm,
+        defaults: const MagicStarterFormTheme(),
+        copy: (t) => t.copyWith(),
+      );
+
+      test(
+        'is not the same instance, so a setter never aliases the old one',
+        () {
+          expect(identical(distinctForm.copyWith(), distinctForm), isFalse);
+        },
+      );
+    });
+
+    group('MagicStarterModalTheme', () {
+      expectCopyWithComplete<MagicStarterModalTheme>(
+        className: 'MagicStarterModalTheme',
+        fields: modalFields,
+        original: distinctModal,
+        defaults: const MagicStarterModalTheme(),
+        copy: (t) => t.copyWith(),
+      );
+
+      test('keeps the width of a theme that sets one', () {
+        expect(
+          distinctModal.copyWith(inputClassName: 'changed').maxWidth,
+          321.0,
+        );
+      });
+    });
+  });
+}
+
+/// One field of a theme under test: how to read it, and how to set it through
+/// `copyWith` to a value no distinct test theme uses.
+class _Field<T> {
+  final String name;
+  final Object? Function(T) read;
+  final T Function(T) change;
+
+  const _Field(this.name, this.read, this.change);
 }

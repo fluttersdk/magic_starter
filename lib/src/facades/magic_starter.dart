@@ -468,6 +468,16 @@ class MagicStarter {
   ///   ),
   /// );
   /// ```
+  ///
+  /// The theme is assigned whole, so a field you leave out goes back to its
+  /// default, including one [useWindTheme] derived. To change one string and
+  /// keep the rest, copy the active theme:
+  ///
+  /// ```dart
+  /// MagicStarter.useModalTheme(
+  ///   MagicStarter.modalTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+  /// );
+  /// ```
   static void useModalTheme(MagicStarterModalTheme theme) {
     manager.modalTheme = theme;
   }
@@ -551,6 +561,16 @@ class MagicStarter {
   ///     inputClassName: 'w-full px-4 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white',
   ///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
   ///   ),
+  /// );
+  /// ```
+  ///
+  /// The theme is assigned whole, so a field you leave out goes back to its
+  /// default, including one [useWindTheme] derived. To change one string and
+  /// keep the rest, copy the active theme:
+  ///
+  /// ```dart
+  /// MagicStarter.useFormTheme(
+  ///   MagicStarter.formTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
   /// );
   /// ```
   static void useFormTheme(MagicStarterFormTheme theme) {

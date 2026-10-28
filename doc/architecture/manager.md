@@ -434,6 +434,17 @@ MagicStarter.useFormTheme(
 );
 ```
 
+`useFormTheme()` assigns the whole struct, so every field you leave out goes back to its default, including the ones `useWindTheme()` derived. To change one string and keep the rest, copy the active theme. `MagicStarterModalTheme` has the same `copyWith`:
+
+```dart
+MagicStarter.useFormTheme(
+  MagicStarter.formTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+);
+MagicStarter.useModalTheme(
+  MagicStarter.modalTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+);
+```
+
 <a name="auth-theme"></a>
 ## Auth Theme
 

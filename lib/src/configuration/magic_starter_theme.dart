@@ -262,6 +262,54 @@ class MagicStarterModalTheme {
         'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
     this.maxWidth = 448.0,
   });
+
+  /// Returns a copy of this theme with the given fields replaced.
+  ///
+  /// [MagicStarter.useModalTheme] assigns the whole struct, so changing one
+  /// string by building a new [MagicStarterModalTheme] hands every field you did
+  /// not repeat back to its default, including the ones [MagicStarter.useWindTheme]
+  /// derived and any field added later. Copy the active theme instead:
+  ///
+  /// ```dart
+  /// MagicStarter.useModalTheme(
+  ///   MagicStarter.modalTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+  /// );
+  /// ```
+  MagicStarterModalTheme copyWith({
+    String? containerClassName,
+    String? headerClassName,
+    String? bodyClassName,
+    String? footerClassName,
+    String? titleClassName,
+    String? descriptionClassName,
+    String? primaryButtonClassName,
+    String? secondaryButtonClassName,
+    String? dangerButtonClassName,
+    String? warningButtonClassName,
+    String? errorClassName,
+    String? inputClassName,
+    double? maxWidth,
+  }) {
+    return MagicStarterModalTheme(
+      containerClassName: containerClassName ?? this.containerClassName,
+      headerClassName: headerClassName ?? this.headerClassName,
+      bodyClassName: bodyClassName ?? this.bodyClassName,
+      footerClassName: footerClassName ?? this.footerClassName,
+      titleClassName: titleClassName ?? this.titleClassName,
+      descriptionClassName: descriptionClassName ?? this.descriptionClassName,
+      primaryButtonClassName:
+          primaryButtonClassName ?? this.primaryButtonClassName,
+      secondaryButtonClassName:
+          secondaryButtonClassName ?? this.secondaryButtonClassName,
+      dangerButtonClassName:
+          dangerButtonClassName ?? this.dangerButtonClassName,
+      warningButtonClassName:
+          warningButtonClassName ?? this.warningButtonClassName,
+      errorClassName: errorClassName ?? this.errorClassName,
+      inputClassName: inputClassName ?? this.inputClassName,
+      maxWidth: maxWidth ?? this.maxWidth,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -356,6 +404,43 @@ class MagicStarterFormTheme {
     this.checkboxLabelClassName =
         'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 ml-1',
   });
+
+  /// Returns a copy of this theme with the given fields replaced.
+  ///
+  /// [MagicStarter.useFormTheme] assigns the whole struct, so changing one
+  /// string by building a new [MagicStarterFormTheme] hands every field you did
+  /// not repeat back to its default, including the ones [MagicStarter.useWindTheme]
+  /// derived and any field added later. Copy the active theme instead:
+  ///
+  /// ```dart
+  /// MagicStarter.useFormTheme(
+  ///   MagicStarter.formTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+  /// );
+  /// ```
+  MagicStarterFormTheme copyWith({
+    String? inputClassName,
+    String? labelClassName,
+    String? errorClassName,
+    String? placeholderClassName,
+    String? primaryButtonClassName,
+    String? secondaryButtonClassName,
+    String? linkClassName,
+    String? checkboxLabelClassName,
+  }) {
+    return MagicStarterFormTheme(
+      inputClassName: inputClassName ?? this.inputClassName,
+      labelClassName: labelClassName ?? this.labelClassName,
+      errorClassName: errorClassName ?? this.errorClassName,
+      placeholderClassName: placeholderClassName ?? this.placeholderClassName,
+      primaryButtonClassName:
+          primaryButtonClassName ?? this.primaryButtonClassName,
+      secondaryButtonClassName:
+          secondaryButtonClassName ?? this.secondaryButtonClassName,
+      linkClassName: linkClassName ?? this.linkClassName,
+      checkboxLabelClassName:
+          checkboxLabelClassName ?? this.checkboxLabelClassName,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1108,7 +1193,10 @@ class MagicStarterDropdownTheme {
 ///   all of this and wins on any family it names, so a host that sets its OWN
 ///   [MagicStarterFormTheme] or [MagicStarterAuthTheme] button strings
 ///   (`useFormTheme`, `useAuthTheme`) keeps whatever shape, padding and label
-///   size it wrote in them. Leave those out of the strings to follow this theme.
+///   size it wrote in them. Leave those out of the strings to follow this theme,
+///   and change one string with [MagicStarterFormTheme.copyWith] on
+///   `MagicStarter.formTheme` rather than a new theme, which would hand the other
+///   fields back to their defaults.
 /// - The dialogs, and the team settings invite button, draw raw `WButton`s on the
 ///   strings of [MagicStarterModalTheme] and never read this theme.
 class MagicStarterButtonTheme {
@@ -1220,7 +1308,8 @@ class MagicStarterButtonTheme {
 ///
 /// - The auth, profile and settings forms. They draw `WFormInput`s on
 ///   [MagicStarterFormTheme.inputClassName], which carries its own `py-3`, so
-///   a host that wants its standard there writes it into that string.
+///   a host that wants its standard there writes it into that string, with
+///   `MagicStarter.formTheme.copyWith(inputClassName: ...)`.
 /// - [MSTextarea], and the option rows of the select and combobox menus, which
 ///   are Wind's own.
 class MagicStarterFieldTheme {

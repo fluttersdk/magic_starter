@@ -227,10 +227,12 @@ Three things to know:
   primary and the hover opacity of the secondary ones, so the auth screens
   follow the button theme. The first exception is a host's OWN strings: a
   `useFormTheme()` or `useAuthTheme()` call whose button strings name a shape, a
-  padding or a label size keeps it, because the string wins. Leave those out
-  (the sub-themes have no `copyWith`, so the call passes all 8 fields of
-  `MagicStarterFormTheme`, the ones you leave alone copied from
-  `MagicStarter.formTheme`). The second is the dialogs, and the invite button of
+  padding or a label size keeps it, because the string wins. Leave those out,
+  and change one string through `copyWith` rather than a new
+  `MagicStarterFormTheme`, which would hand the other seven fields back to their
+  defaults:
+  `MagicStarter.useFormTheme(MagicStarter.formTheme.copyWith(primaryButtonClassName: ...))`.
+  The second is the dialogs, and the invite button of
   the team settings page: they draw raw `WButton`s on the strings of
   `MagicStarterModalTheme` and do not read the button theme at all.
 
@@ -295,7 +297,8 @@ A `className` (or the `classNames` of a slot) handed to a control is appended
 after the theme and wins on any family it names. The auth, profile and settings
 forms draw `WFormInput`s on `MagicStarterFormTheme.inputClassName`, whose
 default carries `py-3`, so they follow only a string a host writes into that
-theme; `MSTextarea` and the option rows of the select and combobox menus are
+theme (`MagicStarter.useFormTheme(MagicStarter.formTheme.copyWith(inputClassName: ...))`);
+`MSTextarea` and the option rows of the select and combobox menus are
 outside the field theme.
 
 ### Auth
