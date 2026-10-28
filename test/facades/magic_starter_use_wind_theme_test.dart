@@ -211,15 +211,16 @@ void main() {
 
       final dropdown = MagicStarter.dropdownTheme;
 
-      for (final entry in {
-        'hover': dropdown.itemClassName,
-        'danger': dropdown.dangerTextClassName,
-      }.entries) {
-        for (final token in entry.value.split(RegExp(r'\s+'))) {
+      for (final (variant, className) in [
+        ('hover', dropdown.itemClassName),
+        ('danger', dropdown.dangerTextClassName),
+        ('hover', MagicStarter.navigationTheme.hoverItemClassName),
+      ]) {
+        for (final token in className.split(RegExp(r'\s+'))) {
           expect(
             token,
-            startsWith('${entry.key}:'),
-            reason: '"$token" is not scoped to ${entry.key}',
+            startsWith('$variant:'),
+            reason: '"$token" is not scoped to $variant',
           );
         }
       }

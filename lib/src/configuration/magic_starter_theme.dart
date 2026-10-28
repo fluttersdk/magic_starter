@@ -1257,7 +1257,7 @@ class MagicStarterTheme {
       navigation: MagicStarterNavigationTheme(
         activeItemClassName:
             'active:$textPrimary active:bg-primary/10 dark:active:bg-primary/10',
-        hoverItemClassName: 'hover:$surfaceContainerHigh',
+        hoverItemClassName: _withVariant('hover', surfaceContainerHigh),
         brandClassName: 'text-lg font-bold $textPrimary',
         bottomNavActiveClassName: 'active:$textPrimary',
         avatarClassName: 'bg-primary/10 dark:bg-primary/10',

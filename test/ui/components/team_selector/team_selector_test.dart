@@ -192,6 +192,61 @@ void main() {
       ];
     }
 
+    group('trigger', () {
+      /// A host theme that defines none of the semantic roles, so each one
+      /// resolves to a palette pair (`bg-gray-100 dark:bg-gray-800`).
+      Future<WindThemeData> pumpTrigger(
+        WidgetTester tester, {
+        Brightness brightness = Brightness.light,
+      }) async {
+        final data = WindThemeData(
+          brightness: brightness,
+          syncWithSystem: false,
+        );
+        MagicStarter.useWindTheme(data);
+        MagicStarter.useTeamResolver(
+          currentTeam: () => teams.first,
+          allTeams: () => teams,
+          onSwitch: (id) async {},
+        );
+
+        await tester.pumpWidget(wrapWith(data));
+        await tester.pump();
+
+        return data;
+      }
+
+      Finder trigger() => find.byWidgetPredicate(
+        (widget) => widget is WDiv && (widget.className ?? '').contains('mx-3'),
+      );
+
+      testWidgets('scopes both halves of a fallback pair to the hover', (
+        tester,
+      ) async {
+        await pumpTrigger(tester);
+
+        for (final token
+            in tester
+                .widget<WDiv>(trigger())
+                .className!
+                .split(RegExp(r'\s+'))) {
+          expect(
+            token,
+            isNot(startsWith('dark:')),
+            reason: '"$token" would fill the trigger at rest in dark mode',
+          );
+        }
+      });
+
+      testWidgets('is not filled at rest in dark mode', (tester) async {
+        await pumpTrigger(tester, brightness: Brightness.dark);
+
+        // The avatar tile (`bg-primary/10`) is the only fill at rest; a hover
+        // fill leaking out of the fallback pair would be a second one.
+        expect(fillsOf(tester, find.byType(MSTeamSelector)), hasLength(1));
+      });
+    });
+
     testWidgets('clips its rows to the rounded corners', (tester) async {
       await open(tester);
 
