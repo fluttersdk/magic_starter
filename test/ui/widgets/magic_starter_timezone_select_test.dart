@@ -132,6 +132,7 @@ void main() {
 
   group('MagicStarterTimezoneSelect', () {
     late MockNetworkDriver mockDriver;
+    var fieldTheme = const MagicStarterFieldTheme();
 
     setUp(() {
       MagicApp.reset();
@@ -228,6 +229,100 @@ void main() {
       expect(select.className, selectRecipe(theme: hostFieldTheme)['trigger']);
       expect(select.className, contains('py-2.5 text-[17px] leading-[22px]'));
       expect(select.className, isNot(contains('min-h-11')));
+    });
+
+    group('the loading box', () {
+      /// The trigger box the spinner sits in, then the loaded trigger, on a
+      /// surface of [size]: the select must not jump when the list arrives.
+      Future<({double loading, double loaded})> heights(
+        WidgetTester tester,
+        Size size,
+      ) async {
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.physicalSize = size;
+        addTearDown(tester.view.reset);
+
+        Magic.singleton('magic_starter', () => MagicStarterManager());
+        MagicStarter.useFieldTheme(fieldTheme);
+        final gate = Completer<void>();
+        mockDriver.gates.add(gate);
+        mockDriver.queueResponse(statusCode: 200, data: {'data': []});
+
+        await tester.pumpWidget(
+          wrapWithTheme(
+            Align(
+              alignment: Alignment.topLeft,
+              child: MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final loadingBox = find
+            .ancestor(
+              of: find.byType(CircularProgressIndicator),
+              matching: find.byType(WDiv),
+            )
+            .first;
+        final loading = tester.getSize(loadingBox).height;
+
+        gate.complete();
+        await tester.pumpAndSettle();
+
+        return (
+          loading: loading,
+          loaded: tester.getSize(find.byType(WSelect<String>)).height,
+        );
+      }
+
+      for (final entry in {'phone': kPhone, 'desktop': kDesktop}.entries) {
+        testWidgets('is as tall as the loaded trigger under the default field '
+            'theme, on a ${entry.key}', (tester) async {
+          fieldTheme = const MagicStarterFieldTheme();
+
+          final measured = await heights(tester, entry.value);
+
+          expect(measured.loading, measured.loaded);
+          expect(measured.loaded, entry.key == 'phone' ? 44 : 40);
+        });
+
+        testWidgets('is as tall as the loaded trigger under a host field theme '
+            'with 17 on 22 type, on a ${entry.key}', (tester) async {
+          fieldTheme = hostFieldTheme;
+
+          final measured = await heights(tester, entry.value);
+
+          expect(measured.loaded, 44);
+          expect(measured.loading, 44);
+        });
+      }
+
+      testWidgets('keeps the spinner 20 px and centres it in the taller box', (
+        tester,
+      ) async {
+        fieldTheme = hostFieldTheme;
+        Magic.singleton('magic_starter', () => MagicStarterManager());
+        MagicStarter.useFieldTheme(fieldTheme);
+        mockDriver.gates.add(Completer<void>());
+
+        await tester.pumpWidget(
+          wrapWithTheme(
+            MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+          ),
+        );
+        await tester.pump();
+
+        final spinner = find.byType(CircularProgressIndicator);
+        final box = find
+            .ancestor(of: spinner, matching: find.byType(WDiv))
+            .first;
+
+        expect(tester.getSize(spinner), const Size(20, 20));
+        expect(
+          tester.getCenter(spinner).dy,
+          closeTo(tester.getCenter(box).dy, 0.01),
+        );
+      });
     });
 
     testWidgets('handles empty timezone results gracefully', (tester) async {
