@@ -27,12 +27,16 @@ enum ToastVariant {
 
 /// A reusable inline toast notification widget.
 ///
-/// Renders a styled banner using semantic tokens via [buildToastRecipe].
-/// In-app transient toasts are typically triggered via `Magic.toast()`
-/// (the magic framework's overlay API); this widget is the presentational
-/// layer that can also be composed inline in previews or custom overlays. It
-/// does not present itself, time itself out or dismiss itself: the host that
-/// shows it decides how long it stays, and whether pressing the action closes it.
+/// Renders a styled banner using semantic tokens via [buildToastRecipe]. This
+/// widget is the presentational layer: it can be composed inline in previews or
+/// shown from a host's own overlay. It does not present itself, time itself out
+/// or dismiss itself: the host that shows it decides how long it stays, and
+/// whether pressing the action closes it.
+///
+/// The magic framework's `Magic.toast(String)` is not a way to show an action.
+/// It takes only a message, and the overlay it presents is an `IgnorePointer`,
+/// so nothing in it can be pressed. A host that wants an action presents the
+/// `MSToast` itself, through its own `OverlayEntry`.
 ///
 /// ### Example
 /// ```dart

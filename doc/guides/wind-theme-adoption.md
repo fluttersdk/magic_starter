@@ -297,12 +297,32 @@ Four things to know:
   and the root does from `lg` up.
 
 A `className` (or the `classNames` of a slot) handed to a control is appended
-after the theme and wins on any family it names. The auth, profile and settings
-forms draw `WFormInput`s on `MagicStarterFormTheme.inputClassName`, whose
-default carries `py-3`, so they follow only a string a host writes into that
-theme (`MagicStarter.useFormTheme(MagicStarter.formTheme.copyWith(inputClassName: ...))`);
-`MSTextarea` and the option rows of the select and combobox menus are
-outside the field theme.
+after the theme and wins on any family it names. `MSTextarea` and the option
+rows of the select and combobox menus are outside the field theme.
+
+The auth, profile and settings forms are outside it too. They draw `WFormInput`s
+on `MagicStarterFormTheme.inputClassName`, whose default carries `py-3`, and the
+starter's own `WFormSelect`s read the same string for their trigger: the role
+select of the team settings page (`magic_starter_team_settings_view.dart`), the
+language select of the profile settings view
+(`magic_starter_profile_settings_view.dart`) and the language preference view
+(`magic_starter_language_view.dart`). A host sets that one string with
+`MagicStarter.useFormTheme(MagicStarter.formTheme.copyWith(inputClassName: ...))`,
+and one string has to serve an input and a select, which reach 44 px differently:
+an input paints its border inside its padding and a select trigger adds it. With
+17 on 22 type:
+
+| `inputClassName` size run | `WFormInput` | `WFormSelect` |
+|---------------------------|--------------|---------------|
+| `py-[11px] text-[17px] leading-[22px]` | 44 | 46 |
+| `py-2.5 text-[17px] leading-[22px]` | 42 | 44 |
+| `py-[10px] min-h-11 text-[17px] leading-[22px]` | 44 | 44 |
+
+The third is the one string that gives both 44 px: the select is 10 + 22 + 10 + 2
+and the minimum height lifts the input from 42 to 44, where it centres its single
+line (the line box measures dead centre in the test font; a real font's glyphs can
+sit a pixel off the middle of a taller box). The heights are line boxes measured
+in a widget test.
 
 ### Auth
 

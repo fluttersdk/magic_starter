@@ -1307,9 +1307,17 @@ class MagicStarterButtonTheme {
 /// ### What this theme does not reach
 ///
 /// - The auth, profile and settings forms. They draw `WFormInput`s on
-///   [MagicStarterFormTheme.inputClassName], which carries its own `py-3`, so
-///   a host that wants its standard there writes it into that string, with
-///   `MagicStarter.formTheme.copyWith(inputClassName: ...)`.
+///   [MagicStarterFormTheme.inputClassName], which carries its own `py-3`, and
+///   the starter's own `WFormSelect`s (the role select of the team settings
+///   page, the language select of the profile settings view and the language
+///   preference view) read the same string for their trigger. A host that wants
+///   its standard there writes it into that string, with
+///   `MagicStarter.formTheme.copyWith(inputClassName: ...)`. One `py-*` cannot
+///   make both 44 px, because an input paints its border inside its padding and
+///   a select trigger adds it: with 17 on 22 type `py-[11px]` is 44 for the
+///   input and 46 for the select, `py-2.5` is 42 and 44, and
+///   `py-[10px] min-h-11 text-[17px] leading-[22px]` is 44 for both (the minimum
+///   height lifts the input to 44 and it centres its single line in the box).
 /// - [MSTextarea], and the option rows of the select and combobox menus, which
 ///   are Wind's own.
 class MagicStarterFieldTheme {

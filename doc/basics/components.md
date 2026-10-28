@@ -156,7 +156,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`,
 | `MSBadge` | `BadgeTone` (neutral/primary/success/warning/destructive) | Inline label chip |
 | `MSTypography` | `TypographyVariant` (h1-h6/body/caption/overline) | Semantic text wrapper |
 | `MSSkeleton` | `SkeletonShape` (line/rect/circle) | Placeholder loading block |
-| `MSToast` | `ToastVariant` (info/success/warning/error) | Transient feedback overlay; presents nothing itself, so the host decides how long it stays. `actionLabel` and `onAction` (both or neither) add a trailing text action such as Undo: a 44 px tall, at least 44 px wide cell at every width, named by `actionLabel` for assistive technology, with a ring inside the toast on keyboard focus. A long message wraps beside it and the action keeps its size; a one line toast is as tall with an action as without |
+| `MSToast` | `ToastVariant` (info/success/warning/error) | Transient feedback banner; presents nothing itself, so the host shows it (through its own `OverlayEntry`) and decides how long it stays. `Magic.toast(String)` cannot carry an action and its overlay ignores pointers, so an action needs the host's own overlay. `actionLabel` and `onAction` (both or neither) add a trailing text action such as Undo: a 44 px tall, at least 44 px wide cell at every width, named by `actionLabel` for assistive technology, with a ring inside the toast on keyboard focus. A long message wraps beside it and the action keeps its size; a one line toast is as tall with an action as without |
 | `MSTooltip` | | Hover/long-press hint bubble |
 | `MSEmptyState` | | Illustrated empty-list placeholder |
 | `MSErrorState` | | Full-screen or inline error with retry |
