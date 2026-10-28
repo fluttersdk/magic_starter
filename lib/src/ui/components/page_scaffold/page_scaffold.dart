@@ -136,6 +136,16 @@ class MSPageScaffold extends StatelessWidget {
   /// class wins within a family, so `pt-4` replaces the host's top padding.
   final String? containerClassName;
 
+  /// Optional className forwarded to the [MSPageHeader] the scaffold builds,
+  /// appended after the theme's header container class.
+  ///
+  /// For the same pushed screen as [containerClassName]: [containerClassName]
+  /// trims the host's padding above the header, this trims the header's own, so
+  /// `lg:pt-0` takes the header's top padding off from `lg` up. It reaches the
+  /// regular and the large header. The compact bar a large title collapses into
+  /// is not handed it: that bar keeps its own geometry.
+  final String? headerClassName;
+
   /// Creates a [MSPageScaffold].
   const MSPageScaffold({
     super.key,
@@ -149,6 +159,7 @@ class MSPageScaffold extends StatelessWidget {
     this.scrollController,
     this.largeTitle,
     this.containerClassName,
+    this.headerClassName,
   });
 
   /// Whether this scaffold uses the large title, resolving the theme default.
@@ -157,6 +168,8 @@ class MSPageScaffold extends StatelessWidget {
 
   /// The page header in [headerSize], keyed when the large-title frame needs
   /// to measure it.
+  ///
+  /// The compact bar is built without [headerClassName]: its geometry is its own.
   MSPageHeader _header(MSPageHeaderSize headerSize, {Key? key}) {
     return MSPageHeader(
       key: key,
@@ -166,6 +179,9 @@ class MSPageScaffold extends StatelessWidget {
       backLabel: backLabel,
       backFallback: backFallback,
       size: headerSize,
+      className: headerSize == MSPageHeaderSize.compact
+          ? null
+          : headerClassName,
     );
   }
 

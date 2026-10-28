@@ -236,6 +236,132 @@ void main() {
     );
   });
 
+  // The header's own top padding stacks on a bar the host puts above the
+  // scaffold, so the scaffold hands a className on to the headers it builds.
+  group('headerClassName', () {
+    const desktop = Size(1440, 900);
+
+    Future<void> pumpDesktop(WidgetTester tester, Widget scaffold) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = desktop;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(wrap(scaffold));
+      await tester.pump();
+    }
+
+    double titleTop(WidgetTester tester) =>
+        tester.getTopLeft(find.text('Profile')).dy;
+
+    testWidgets('is forwarded to the regular header', (tester) async {
+      await pumpDesktop(
+        tester,
+        const MSPageScaffold(
+          title: 'Profile',
+          headerClassName: 'lg:pt-0',
+          children: [],
+        ),
+      );
+
+      final MSPageHeader header = tester.widget<MSPageHeader>(
+        find.byType(MSPageHeader),
+      );
+      expect(header.className, 'lg:pt-0');
+      expect(header.size, MSPageHeaderSize.regular);
+    });
+
+    testWidgets('is null on the header when the scaffold has none', (
+      tester,
+    ) async {
+      await pumpDesktop(
+        tester,
+        const MSPageScaffold(title: 'Profile', children: []),
+      );
+
+      expect(
+        tester.widget<MSPageHeader>(find.byType(MSPageHeader)).className,
+        isNull,
+      );
+    });
+
+    testWidgets('lg:pt-0 takes the header top padding off from lg', (
+      tester,
+    ) async {
+      await pumpDesktop(
+        tester,
+        const MSPageScaffold(title: 'Profile', children: []),
+      );
+      final double padded = titleTop(tester);
+
+      await pumpDesktop(
+        tester,
+        const MSPageScaffold(
+          title: 'Profile',
+          headerClassName: 'lg:pt-0',
+          children: [],
+        ),
+      );
+
+      expect(padded - titleTop(tester), 16, reason: 'lg:p-4 loses its top');
+    });
+
+    testWidgets('is forwarded to the large header', (tester) async {
+      await pumpDesktop(
+        tester,
+        const MSPageScaffold(
+          title: 'Profile',
+          largeTitle: true,
+          headerClassName: 'lg:pt-0',
+          children: [],
+        ),
+      );
+
+      final MSPageHeader header = tester.widget<MSPageHeader>(
+        find.byType(MSPageHeader),
+      );
+      expect(header.size, MSPageHeaderSize.large);
+      expect(header.className, 'lg:pt-0');
+    });
+
+    testWidgets('is not handed to the compact bar, which keeps its geometry', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = desktop;
+      addTearDown(tester.view.reset);
+
+      // A bounded page, as the app shell gives one: the scaffold owns the
+      // scroll, so the wrapper that other tests here use is left out.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: WindTheme(
+            data: WindThemeData(),
+            child: const Scaffold(
+              body: MSPageScaffold(
+                title: 'Profile',
+                largeTitle: true,
+                headerClassName: 'lg:pt-0',
+                children: [SizedBox(height: 2000)],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+
+      final Finder bar = find.byWidgetPredicate(
+        (w) => w is MSPageHeader && w.size == MSPageHeaderSize.compact,
+      );
+      expect(bar, findsOneWidget);
+      expect(tester.widget<MSPageHeader>(bar).className, isNull);
+    });
+  });
+
   testWidgets('PageScaffold uses SingleChildScrollView with primary: false', (
     tester,
   ) async {

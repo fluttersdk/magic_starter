@@ -30,6 +30,14 @@ import '../../../facades/magic_starter.dart';
 /// itself needs a scroll position, so it lives in
 /// `MSPageScaffold(largeTitle: true)`, which renders both.
 ///
+/// ### Under a bar of its own
+///
+/// A pushed screen draws its own bar above the page, and the header's top
+/// padding (`p-2`, `lg:p-4` by default) then stacks on the bar's height. Pass
+/// [className] to take less: it is appended after the theme's container class,
+/// so `pt-0` (or `lg:pt-0`, from `lg` up) removes the top padding and keeps the
+/// other sides.
+///
 /// ### Example
 /// ```dart
 /// MSPageHeader(
@@ -121,6 +129,20 @@ class MSPageHeader extends StatelessWidget {
   /// otherwise. The compact bar is never a theme default; it is asked for.
   final MSPageHeaderSize? size;
 
+  /// Optional className appended to the header's container, after the theme's
+  /// `containerClassName` (or `containerInlineClassName`), the same way
+  /// [MSPageContainer.className] is appended to the host's page geometry.
+  ///
+  /// For a page that sits under a bar of its own (a pushed screen's back bar),
+  /// where the header's top padding would stack on the bar's height. Last class
+  /// wins within a family, so `pt-0` takes the top padding off and keeps the
+  /// other sides, and `lg:pt-0` does it from `lg` up only.
+  ///
+  /// It styles the regular and the large header. The compact bar is its own
+  /// layout, a 44 pt row under the safe area whose geometry is fixed, and
+  /// ignores it.
+  final String? className;
+
   /// The presentation this header renders, resolving the theme default.
   MSPageHeaderSize get effectiveSize =>
       size ??
@@ -141,6 +163,7 @@ class MSPageHeader extends StatelessWidget {
     this.backLabel,
     this.backFallback,
     this.size,
+    this.className,
   });
 
   /// Builds the back affordance control from [backLabel] and [backFallback].
@@ -272,10 +295,16 @@ class MSPageHeader extends StatelessWidget {
         ? MagicStarter.pageHeaderTheme.largeTitleClassName
         : MagicStarter.pageHeaderTheme.titleClassName;
 
-    return WDiv(
-      className: isInline
+    // 4. The caller's className goes last, so it wins within a family.
+    final String containerClassName = <String>[
+      isInline
           ? MagicStarter.pageHeaderTheme.containerInlineClassName
           : MagicStarter.pageHeaderTheme.containerClassName,
+      ?className,
+    ].where((String segment) => segment.isNotEmpty).join(' ');
+
+    return WDiv(
+      className: containerClassName,
       children: [
         // 1. Title row: optional leading + title column + optional titleSuffix.
         WDiv(
