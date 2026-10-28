@@ -2451,6 +2451,94 @@ void main() {
       });
     });
 
+    group('label room', () {
+      const stock = MagicStarterNavItem(
+        icon: Icons.inventory_2,
+        labelKey: 'Stock',
+        path: '/stock',
+      );
+
+      /// The width the label's own flex slot is given, which is what the row
+      /// has left for the text once its icon, gaps and badge are placed.
+      double labelRoom(WidgetTester tester, String label) {
+        return tester
+            .getSize(
+              find
+                  .ancestor(
+                    of: find.text(label),
+                    matching: find.byType(Expanded),
+                  )
+                  .first,
+            )
+            .width;
+      }
+
+      testWidgets('a hidden badge costs the label nothing', (tester) async {
+        useViewport(tester, 1280, 800);
+        final count = liveCount(tester, 0);
+        MagicStarter.useNavigation(mainItems: [shopping(count), stock]);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(labelRoom(tester, 'Shopping'), labelRoom(tester, 'Stock'));
+
+        count.value = null;
+        await tester.pump();
+        expect(labelRoom(tester, 'Shopping'), labelRoom(tester, 'Stock'));
+      });
+
+      testWidgets('a shown badge takes its pill and the space before it', (
+        tester,
+      ) async {
+        useViewport(tester, 1280, 800);
+        final count = liveCount(tester, 7);
+        MagicStarter.useNavigation(mainItems: [shopping(count), stock]);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final badge = tester.getRect(find.byType(MSBadge));
+        final label = tester.getRect(
+          find
+              .ancestor(
+                of: find.text('Shopping'),
+                matching: find.byType(Expanded),
+              )
+              .first,
+        );
+
+        // The badge's box is everything the row gave it, margin included.
+        expect(
+          labelRoom(tester, 'Shopping') + badge.width,
+          labelRoom(tester, 'Stock'),
+        );
+        expect(badge.left, label.right);
+        // 12 px of margin the pill brings, then the 8 px of its own padding.
+        expect(tester.getRect(find.text('7')).left - label.right, 12 + 8);
+      });
+
+      testWidgets('the room comes back when the count goes to zero', (
+        tester,
+      ) async {
+        useViewport(tester, 1280, 800);
+        final count = liveCount(tester, 7);
+        MagicStarter.useNavigation(mainItems: [shopping(count), stock]);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+        expect(
+          labelRoom(tester, 'Shopping'),
+          lessThan(labelRoom(tester, 'Stock')),
+        );
+
+        count.value = 0;
+        await tester.pump();
+
+        expect(labelRoom(tester, 'Shopping'), labelRoom(tester, 'Stock'));
+      });
+    });
+
     group('theme', () {
       test('leaves the badge on its own recipe by default', () {
         expect(const MagicStarterNavigationTheme().badgeClassName, isEmpty);
@@ -2465,6 +2553,30 @@ void main() {
         );
         MagicStarter.useNavigation(
           mainItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final badge = tester.widget<MSBadge>(find.byType(MSBadge));
+
+        // The labelled row adds the space that sets the pill off its label,
+        // ahead of the host's classes so theirs still win their families.
+        expect(badge.className, 'ml-3 bg-primary text-on-primary');
+      });
+
+      testWidgets('passes badgeClassName as it is where there is no row', (
+        tester,
+      ) async {
+        useViewport(tester, 390, 800);
+        MagicStarter.useNavigationTheme(
+          const MagicStarterNavigationTheme(
+            badgeClassName: 'bg-primary text-on-primary',
+          ),
+        );
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: [home, shopping(liveCount(tester, 4))],
         );
 
         await tester.pumpWidget(createApp(child: const SizedBox()));

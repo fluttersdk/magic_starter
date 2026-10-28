@@ -655,7 +655,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             onBeforeTap: onItemTap,
             isActive: _isActive(item.path, currentPath),
             compact: compact,
-            badge: _navBadge(item),
+            badge: _navBadge(item, inRow: !compact),
           ),
         ),
 
@@ -691,7 +691,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               onBeforeTap: onItemTap,
               isActive: _isActive(item.path, currentPath),
               compact: compact,
-              badge: _navBadge(item),
+              badge: _navBadge(item, inRow: !compact),
             ),
           ),
         ],
@@ -702,15 +702,20 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
   /// The count badge of [item], or `null` when the item carries no count.
   ///
   /// The badge listens to the item's notifier on its own, so the shell is not
-  /// rebuilt when the number moves.
-  Widget? _navBadge(MagicStarterNavItem item) {
+  /// rebuilt when the number moves. [inRow] is the labelled sidebar row, where
+  /// the pill brings the space that sets it off from the label: a margin on the
+  /// pill rather than a gap kept by the row, so that space exists only while
+  /// the badge shows.
+  Widget? _navBadge(MagicStarterNavItem item, {required bool inRow}) {
     final count = item.badgeCount;
     if (count == null) return null;
+
+    final themed = MagicStarter.navigationTheme.badgeClassName;
 
     return MagicStarterNavBadge(
       count: count,
       labelKey: item.badgeLabelKey,
-      className: MagicStarter.navigationTheme.badgeClassName,
+      className: inRow ? 'ml-3 $themed' : themed,
     );
   }
 
@@ -765,10 +770,27 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
           // The compact rail has no label column to put a count in, so the
           // badge rides the icon; the labelled row ends with it.
           compact ? _withCornerBadge(glyph, badge) : glyph,
-          if (!compact) Expanded(child: WText(label, className: 'truncate')),
-          if (!compact && badge != null) badge,
+          if (!compact) Expanded(child: _navLabel(label, badge)),
         ],
       ),
+    );
+  }
+
+  /// The label of a labelled row, with the badge after it when the item has one.
+  ///
+  /// The two share one flex slot instead of being siblings in the row. The row
+  /// keeps its `gap-3` for a zero-width child too, so a badge mounted beside
+  /// the label would cost it 12 px whenever the count is hidden.
+  Widget _navLabel(String label, Widget? badge) {
+    final text = WText(label, className: 'truncate');
+    if (badge == null) return text;
+
+    return WDiv(
+      className: 'flex flex-row items-center',
+      children: [
+        Expanded(child: text),
+        badge,
+      ],
     );
   }
 
@@ -819,7 +841,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                     label: trans(item.labelKey),
                     path: item.path,
                     isActive: _isActive(item.path, currentPath),
-                    badge: _navBadge(item),
+                    badge: _navBadge(item, inRow: false),
                   ),
                 ),
               )
