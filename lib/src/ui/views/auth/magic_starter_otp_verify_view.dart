@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart' show MSButton;
+import 'package:magic_starter/magic_starter.dart' show ButtonSize, MSButton;
 
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_otp_controller.dart';
@@ -133,6 +133,7 @@ class _MagicStarterOtpVerifyViewState
             MSButton(
               isLoading: isLoading,
               onPressed: _submitPhone,
+              size: ButtonSize.lg,
               className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('magic_starter.otp.send_code_button'),
@@ -206,6 +207,7 @@ class _MagicStarterOtpVerifyViewState
             MSButton(
               isLoading: isLoading,
               onPressed: _submitCode,
+              size: ButtonSize.lg,
               className: MagicStarter.formTheme.primaryButtonClassName,
               child: WText(
                 trans('magic_starter.otp.verify_button'),

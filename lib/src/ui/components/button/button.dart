@@ -28,9 +28,10 @@ import 'button.recipe.dart';
 /// `MagicStarter.buttonTheme` ([MagicStarterButtonTheme]), so a host sets one
 /// standard for every [MSButton] that is not handed a shape or a size of its
 /// own. The colours come from the intent and stay on the semantic aliases. A
-/// [className] is appended after both and wins on any family it names, which is
-/// why the auth screens do not follow the theme; see [MagicStarterButtonTheme]
-/// for them and for the dialogs, which do not use this widget.
+/// [className] is appended after both and wins on any family it names; the
+/// auth and form screens pass strings without a shape, padding or label size, so
+/// they follow the theme. See [MagicStarterButtonTheme] for a host's own strings
+/// and for the dialogs, which do not use this widget.
 ///
 /// ### Tap target
 ///

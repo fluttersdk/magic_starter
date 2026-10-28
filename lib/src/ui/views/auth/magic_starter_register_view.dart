@@ -2,7 +2,7 @@ import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart'
-    show MSButton, MSSocialDivider;
+    show ButtonSize, MSButton, MSSocialDivider;
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
@@ -210,6 +210,7 @@ class _MagicStarterRegisterViewState
               MSButton(
                 isLoading: isLoading,
                 onPressed: _submit,
+                size: ButtonSize.lg,
                 className: MagicStarter.formTheme.primaryButtonClassName,
                 child: WText(
                   trans('auth.register_title'),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart'
-    show MSButton, MSSocialDivider;
+    show ButtonIntent, ButtonSize, MSButton, MSSocialDivider;
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
@@ -160,6 +160,7 @@ class _MagicStarterLoginViewState
               MSButton(
                 isLoading: isLoading,
                 onPressed: _submit,
+                size: ButtonSize.lg,
                 className: MagicStarter.formTheme.primaryButtonClassName,
                 child: WText(
                   trans('auth.login_title'),
@@ -172,6 +173,8 @@ class _MagicStarterLoginViewState
                   onPressed:
                       MagicStarterGuestAuthController.instance.doGuestLogin,
                   isLoading: isLoading,
+                  intent: ButtonIntent.secondary,
+                  size: ButtonSize.md,
                   className: MagicStarter.authTheme.guestButtonClassName,
                   child: WText(
                     trans('magic_starter.auth.continue_as_guest'),

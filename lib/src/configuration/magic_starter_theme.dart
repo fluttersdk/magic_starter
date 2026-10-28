@@ -279,7 +279,7 @@ class MagicStarterModalTheme {
 /// ```dart
 /// MagicStarterFormTheme(
 ///   inputClassName: 'w-full px-4 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white',
-///   primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold',
+///   primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
 /// )
 /// ```
 class MagicStarterFormTheme {
@@ -306,14 +306,28 @@ class MagicStarterFormTheme {
 
   /// Primary submit button className (e.g. "Sign In", "Save").
   ///
+  /// Handed to an `MSButton` of `ButtonSize.lg`, so the shape, the vertical
+  /// padding and the label size come from [MagicStarterButtonTheme] and this
+  /// string carries only what is the form's own: the full width, the colours
+  /// and the label weight. A host string that names a shape or a size still
+  /// wins over the button theme.
+  ///
   /// Defaults to
-  /// `'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg'`.
+  /// `'w-full bg-primary hover:bg-primary/80 text-white font-semibold'`.
   final String primaryButtonClassName;
 
   /// Secondary/outline button className (e.g. social login, cancel).
   ///
+  /// Handed to a `ButtonIntent.secondary` `MSButton` of `ButtonSize.md`, so the
+  /// shape, the padding, the label size and the border come from
+  /// [MagicStarterButtonTheme]; the border is left out of this string because a
+  /// `border-*` token paints a one pixel border in Wind whatever the theme
+  /// says, which a borderless standard cannot undo. What is left is the full
+  /// width, the unfilled background, the label and hover colours, and the hover
+  /// opacity the button has always had.
+  ///
   /// Defaults to
-  /// `'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium'`.
+  /// `'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90'`.
   final String secondaryButtonClassName;
 
   /// Inline link text className (e.g. "Forgot password?").
@@ -335,9 +349,9 @@ class MagicStarterFormTheme {
     this.errorClassName = 'text-sm text-red-600 dark:text-red-400',
     this.placeholderClassName = 'text-gray-400 dark:text-gray-500',
     this.primaryButtonClassName =
-        'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+        'w-full bg-primary hover:bg-primary/80 text-white font-semibold',
     this.secondaryButtonClassName =
-        'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium',
+        'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
     this.linkClassName = 'text-sm font-medium text-primary',
     this.checkboxLabelClassName =
         'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 ml-1',
@@ -863,8 +877,13 @@ class MagicStarterAuthTheme {
 
   /// Guest action button className (e.g. "Continue as Guest").
   ///
+  /// Handed to a `ButtonIntent.secondary` `MSButton` of `ButtonSize.md`, like
+  /// [MagicStarterFormTheme.secondaryButtonClassName]: the shape, the padding,
+  /// the label size and the border are [MagicStarterButtonTheme]'s, and a host
+  /// string that names one of them still wins.
+  ///
   /// Defaults to
-  /// `'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium'`.
+  /// `'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90'`.
   final String guestButtonClassName;
 
   /// Registration link container text className (e.g. "Don't have an account?").
@@ -895,7 +914,7 @@ class MagicStarterAuthTheme {
     this.socialDividerTextClassName =
         'text-sm text-gray-500 dark:text-gray-400',
     this.guestButtonClassName =
-        'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium',
+        'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
     this.registrationLinkClassName = 'text-sm text-gray-500 dark:text-gray-400',
     this.registrationLinkTextClassName = 'text-sm font-semibold text-primary',
   });
@@ -1057,26 +1076,31 @@ class MagicStarterDropdownTheme {
 /// its width to the box and leaves the secondary button 2 px taller than the
 /// rest.
 ///
+/// ### The auth and form buttons
+///
+/// The submit button of the sign-in, register, forgot and reset password,
+/// two-factor challenge, phone code, email verification and team invitation
+/// screens is an [MSButton] of `ButtonSize.lg`. The social buttons, the guest
+/// button and the step-up provider button are `ButtonIntent.secondary` buttons of
+/// `ButtonSize.md`. Their classNames
+/// ([MagicStarterFormTheme.primaryButtonClassName],
+/// [MagicStarterFormTheme.secondaryButtonClassName] and
+/// [MagicStarterAuthTheme.guestButtonClassName]) carry no shape, padding or label
+/// size, so those come from this theme; what is left in them is the full width,
+/// the colours, the label weight of the primary and, on the secondary ones, the
+/// hover opacity. The secondary border is this theme's too: a `border-*` token
+/// paints a one pixel border in Wind even without a `border` width, so a string
+/// that named a border colour would keep a hairline on a borderless standard.
+///
 /// ### What this theme does not reach
 ///
-/// Two kinds of button keep their own shape and size, whatever is set here.
-///
-/// - A className handed to an [MSButton] is appended after all of this and wins
-///   on any family it names. The auth screens, the social buttons, the guest
-///   button and the step-up provider button hand it
-///   [MagicStarterFormTheme.primaryButtonClassName],
-///   [MagicStarterFormTheme.secondaryButtonClassName] or
-///   [MagicStarterAuthTheme.guestButtonClassName], and the stock strings (and
-///   the ones [MagicStarter.useWindTheme] derives) name `rounded-lg`, `py-3` and
-///   a label size and weight (`text-base font-semibold` on the primary). A host
-///   that wants its standard there sets those fields without a shape or a size.
-///   The sub-themes have no `copyWith`, so that is a `useFormTheme` call that
-///   passes all 8 fields of [MagicStarterFormTheme] (the ones it leaves alone
-///   copied from `MagicStarter.formTheme`) and a `useAuthTheme` call that does
-///   the same for the guest button, both after `useWindTheme`.
-/// - The dialogs, and the invite and session screens, draw raw `WButton`s on the
-///   strings of [MagicStarterModalTheme] or [MagicStarterFormTheme] and never
-///   read this theme.
+/// - A host's own strings. A className handed to an [MSButton] is appended after
+///   all of this and wins on any family it names, so a host that sets its OWN
+///   [MagicStarterFormTheme] or [MagicStarterAuthTheme] button strings
+///   (`useFormTheme`, `useAuthTheme`) keeps whatever shape, padding and label
+///   size it wrote in them. Leave those out of the strings to follow this theme.
+/// - The dialogs, and the team settings invite button, draw raw `WButton`s on the
+///   strings of [MagicStarterModalTheme] and never read this theme.
 class MagicStarterButtonTheme {
   /// Corner radius of every intent and size.
   ///
@@ -1139,7 +1163,7 @@ class MagicStarterButtonTheme {
 /// ```dart
 /// final theme = MagicStarterTheme(
 ///   form: MagicStarterFormTheme(
-///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl',
+///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
 ///   ),
 ///   card: MagicStarterCardTheme(
 ///     borderRadius: 'rounded-xl',
@@ -1310,9 +1334,9 @@ class MagicStarterTheme {
         errorClassName: 'text-sm $textDestructive',
         placeholderClassName: fgDisabled,
         primaryButtonClassName:
-            'w-full $bgPrimary hover:bg-primary/80 $onPrimary text-base font-semibold py-3 rounded-lg',
+            'w-full $bgPrimary hover:bg-primary/80 $onPrimary font-semibold',
         secondaryButtonClassName:
-            'w-full bg-transparent border $border $fgMuted hover:$surfaceContainer py-3 rounded-lg text-sm font-medium',
+            'w-full bg-transparent $fgMuted hover:$surfaceContainer hover:opacity-90',
         linkClassName: 'text-sm font-medium $textPrimary',
         checkboxLabelClassName: '$fgMuted hover:$fg ml-1',
       ),
@@ -1357,7 +1381,7 @@ class MagicStarterTheme {
         themeToggleIconClassName: 'text-2xl $fgMuted',
         socialDividerTextClassName: 'text-sm $fgMuted',
         guestButtonClassName:
-            'w-full bg-transparent border $border $fgMuted hover:$surfaceContainer py-3 rounded-lg text-sm font-medium',
+            'w-full bg-transparent $fgMuted hover:$surfaceContainer hover:opacity-90',
         registrationLinkClassName: 'text-sm $fgMuted',
         registrationLinkTextClassName: 'text-sm font-semibold $textPrimary',
       ),

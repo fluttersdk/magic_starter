@@ -549,7 +549,7 @@ class MagicStarter {
   /// MagicStarter.useFormTheme(
   ///   MagicStarterFormTheme(
   ///     inputClassName: 'w-full px-4 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white',
-  ///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl',
+  ///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
   ///   ),
   /// );
   /// ```

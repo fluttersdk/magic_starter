@@ -31,13 +31,16 @@ void main() {
         expect(theme.errorClassName, contains('text-red-600'));
       });
 
-      test('primaryButtonClassName contains w-full and rounded-lg', () {
-        const theme = MagicStarterFormTheme();
+      test(
+        'primaryButtonClassName contains w-full and leaves the shape out',
+        () {
+          const theme = MagicStarterFormTheme();
 
-        expect(theme.primaryButtonClassName, contains('w-full'));
-        expect(theme.primaryButtonClassName, contains('rounded-lg'));
-        expect(theme.primaryButtonClassName, contains('bg-primary'));
-      });
+          expect(theme.primaryButtonClassName, contains('w-full'));
+          expect(theme.primaryButtonClassName, isNot(contains('rounded')));
+          expect(theme.primaryButtonClassName, contains('bg-primary'));
+        },
+      );
 
       test('linkClassName contains text-primary', () {
         const theme = MagicStarterFormTheme();

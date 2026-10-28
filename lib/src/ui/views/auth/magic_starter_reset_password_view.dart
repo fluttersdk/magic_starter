@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart' show MSButton;
+import 'package:magic_starter/magic_starter.dart' show ButtonSize, MSButton;
 
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
@@ -223,6 +223,7 @@ class _MagicStarterResetPasswordViewState
               MSButton(
                 isLoading: isLoading,
                 onPressed: _submit,
+                size: ButtonSize.lg,
                 className: MagicStarter.formTheme.primaryButtonClassName,
                 child: WText(
                   trans('auth.reset_password_button'),

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -223,6 +224,69 @@ void main() {
       expect(find.text('Confirm with GitHub'), findsNothing);
       expect(providerRows, findsOneWidget);
       expect(find.byType(WFormInput), findsNothing);
+    });
+
+    group('provider row and the button theme', () {
+      // The row is a secondary `md` button with the form theme's secondary
+      // string, which names no shape, padding or label size.
+      const standardSize =
+          'px-5 py-[11px] text-[17px] leading-[22px] font-semibold';
+
+      Finder rowButton() =>
+          find.descendant(of: providerRows, matching: find.byType(WButton));
+
+      testWidgets('keeps the stock md look: 38 px, large radius, 14 medium', (
+        tester,
+      ) async {
+        signInAs(_user(accounts: [_google()]));
+
+        await open(tester);
+
+        final label = tester
+            .renderObject<RenderParagraph>(find.text('Confirm with Google'))
+            .text
+            .style!;
+
+        expect(tester.getSize(rowButton()).height, 38);
+        expect(label.fontSize, 14);
+        expect(label.fontWeight, FontWeight.w500);
+      });
+
+      testWidgets('follows a 44 px capsule button theme', (tester) async {
+        signInAs(_user(accounts: [_google()]));
+        MagicStarter.useButtonTheme(
+          const MagicStarterButtonTheme(
+            shapeClassName: 'rounded-full',
+            smClassName: standardSize,
+            mdClassName: standardSize,
+            lgClassName: standardSize,
+            secondaryBorderClassName: '',
+          ),
+        );
+
+        await open(tester);
+
+        final decoration = tester
+            .widgetList<Container>(
+              find.descendant(
+                of: rowButton(),
+                matching: find.byType(Container),
+              ),
+            )
+            .map((container) => container.decoration)
+            .whereType<BoxDecoration>()
+            .first;
+        final label = tester
+            .renderObject<RenderParagraph>(find.text('Confirm with Google'))
+            .text
+            .style!;
+
+        expect(tester.getSize(rowButton()).height, 44);
+        expect(decoration.borderRadius, BorderRadius.circular(9999));
+        expect(decoration.border, isNull);
+        expect(label.fontSize, 17);
+        expect(label.fontWeight, FontWeight.w600);
+      });
     });
 
     testWidgets('a provider tap calls confirm at once and returns its token', (
