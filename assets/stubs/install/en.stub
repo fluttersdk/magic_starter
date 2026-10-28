@@ -455,6 +455,7 @@
     }
   },
   "nav": {
+    "badge_count": "One item|:count items",
     "collapse_sidebar": "Collapse sidebar",
     "dashboard": "Dashboard",
     "expand_sidebar": "Expand sidebar",
