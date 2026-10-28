@@ -1,6 +1,6 @@
 name: magic_starter
 description: Starter kit for Magic Framework. Auth, Profile, Teams, Notifications — 14 opt-in features with overridable views.
-version: 0.0.58
+version: 0.0.59
 homepage: https://magic.fluttersdk.com/starter
 documentation: https://magic.fluttersdk.com/packages/starter/getting-started/installation
 repository: https://github.com/fluttersdk/magic_starter
@@ -88,8 +88,11 @@ dependencies:
   # `autofillHints` the auth forms pass, and it also switched platform autofill
   # off on every field that passes none; 1.8.4 restores that. 1.9.1 is the
   # first release whose `WSelect` lights `focus:` on keyboard focus, which the
-  # `MSSelect` focus ring needs; below it the ring never paints.
-  fluttersdk_wind: ^1.9.1
+  # `MSSelect` focus ring needs; below it the ring never paints. The floor itself
+  # names 1.10.0, the release 0.0.59 was verified against: it adds `WImage`
+  # object-position classes and a `decimalSeparator` for a number `WInput`, and
+  # this package calls neither, and the old range already admitted it.
+  fluttersdk_wind: ^1.10.0
   # Published, and carrying what the billing screen needs: magic_payments 0.0.2
   # is on pub.dev and ships both `BillingCycle` and `PlanStatus.isDunning`. This
   # comment used to say the package had no release at all and that those two
