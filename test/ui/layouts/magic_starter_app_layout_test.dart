@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
@@ -2285,6 +2286,168 @@ void main() {
         expect(node.getSemanticsData().flagsCollection.isButton, isTrue);
 
         handle.dispose();
+      });
+    });
+
+    // The layout tests above read rects, and a rect says where a pill is laid
+    // out, not what reached the screen. These render the real shell to an
+    // image and look for the pill's own pixels, so a clip that cuts the pill
+    // anywhere between the icon and the window fails them.
+    group('painted', () {
+      /// Pure magenta, set through `badgeClassName`: no other pixel of the
+      /// shell is this colour, and the default neutral tone resolves to nothing
+      /// under a bare `WindThemeData`, so only this fill can be searched for.
+      const fill = Color(0xFFFF00FF);
+      const fillClassName = 'bg-[#ff00ff]';
+
+      /// The bounding box of every pixel the shell painted in [fill], or null
+      /// when none was.
+      Future<Rect?> paintedExtent(WidgetTester tester, GlobalKey key) async {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(key),
+        );
+        final image = (await tester.runAsync(() => boundary.toImage()))!;
+        final bytes = (await tester.runAsync(image.toByteData))!;
+        final r = (fill.r * 255).round();
+        final g = (fill.g * 255).round();
+        final b = (fill.b * 255).round();
+
+        int? left, top, right, bottom;
+        for (var y = 0; y < image.height; y++) {
+          for (var x = 0; x < image.width; x++) {
+            final at = (y * image.width + x) * 4;
+            final drawn =
+                bytes.getUint8(at) == r &&
+                bytes.getUint8(at + 1) == g &&
+                bytes.getUint8(at + 2) == b &&
+                bytes.getUint8(at + 3) == 255;
+            if (!drawn) continue;
+
+            left = left == null ? x : (x < left ? x : left);
+            top = top == null ? y : (y < top ? y : top);
+            right = right == null ? x : (x > right ? x : right);
+            bottom = bottom == null ? y : (y > bottom ? y : bottom);
+          }
+        }
+
+        image.dispose();
+        if (left == null) return null;
+
+        return Rect.fromLTRB(
+          left.toDouble(),
+          top!.toDouble(),
+          right! + 1.0,
+          bottom! + 1.0,
+        );
+      }
+
+      /// Expects the pixels drawn in [fill] to cover [pill] edge to edge,
+      /// give or take the two pixels the rounded ends fade over.
+      void expectPaintedWhole(Rect pill, Rect? painted) {
+        expect(painted, isNotNull, reason: 'the pill painted no pixel');
+        expect(painted!.left, closeTo(pill.left, 2), reason: 'left edge');
+        expect(painted.right, closeTo(pill.right, 2), reason: 'right edge');
+        expect(painted.top, closeTo(pill.top, 2), reason: 'top edge');
+        expect(painted.bottom, closeTo(pill.bottom, 2), reason: 'bottom edge');
+      }
+
+      Future<void> mountPainted(WidgetTester tester, GlobalKey key) async {
+        MagicStarter.useNavigationTheme(
+          const MagicStarterNavigationTheme(badgeClassName: fillClassName),
+        );
+
+        await tester.pumpWidget(
+          RepaintBoundary(
+            key: key,
+            child: createApp(child: const SizedBox()),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      for (final railWidth in [64.0, 80.0]) {
+        testWidgets('a 99+ pill is painted whole on a ${railWidth}px rail', (
+          tester,
+        ) async {
+          useViewport(tester, 700, 800);
+          MagicStarter.useLayoutTheme(
+            MagicStarterLayoutTheme(
+              navigationBreakpoint: 'sm',
+              sidebarCompactWidth: railWidth,
+            ),
+          );
+          // First in the rail, so the pill rides the top of the scrolling
+          // column it is clipped by.
+          MagicStarter.useNavigation(
+            mainItems: [shopping(liveCount(tester, 120)), home],
+          );
+          final key = GlobalKey();
+
+          await mountPainted(tester, key);
+
+          final pill = tester.getRect(find.byType(MSBadge));
+          final icon = tester.getRect(find.byIcon(Icons.shopping_cart));
+
+          // Without an overhang there is nothing for a clip to cut.
+          expect(pill.right, greaterThan(icon.right));
+          expect(pill.left, lessThan(icon.left));
+          expect(pill.right, lessThanOrEqualTo(railWidth));
+          expectPaintedWhole(pill, await paintedExtent(tester, key));
+        });
+      }
+
+      testWidgets('a 99+ pill is painted whole on the last bottom bar slot', (
+        tester,
+      ) async {
+        useViewport(tester, 390, 800);
+        // Last in the bar, so the pill rides the right edge of the window and
+        // the slot's own clip.
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: [
+            home,
+            const MagicStarterNavItem(
+              icon: Icons.add,
+              labelKey: 'Add',
+              path: '/add',
+            ),
+            const MagicStarterNavItem(
+              icon: Icons.place,
+              labelKey: 'Places',
+              path: '/p',
+            ),
+            shopping(liveCount(tester, 120)),
+          ],
+        );
+        final key = GlobalKey();
+
+        await mountPainted(tester, key);
+
+        final pill = tester.getRect(find.byType(MSBadge));
+        final icon = tester.getRect(find.byIcon(Icons.shopping_cart));
+
+        expect(pill.right, greaterThan(icon.right));
+        expect(pill.left, lessThan(icon.left));
+        expect(pill.right, lessThanOrEqualTo(390));
+        expectPaintedWhole(pill, await paintedExtent(tester, key));
+      });
+
+      testWidgets('a single digit is painted whole on the bottom bar', (
+        tester,
+      ) async {
+        useViewport(tester, 390, 800);
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: [home, shopping(liveCount(tester, 4))],
+        );
+        final key = GlobalKey();
+
+        await mountPainted(tester, key);
+
+        expectPaintedWhole(
+          tester.getRect(find.byType(MSBadge)),
+          await paintedExtent(tester, key),
+        );
       });
     });
 
