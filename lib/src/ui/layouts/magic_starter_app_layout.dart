@@ -9,6 +9,7 @@ import 'package:magic_notifications/magic_notifications.dart';
 import '../../configuration/magic_starter_config.dart';
 import '../../facades/magic_starter.dart';
 import '../../magic_starter_manager.dart';
+import '../../models/magic_starter_nav_item.dart';
 import '../components/avatar/index.dart';
 import '../components/team_selector/team_selector.dart';
 import '../components/user_profile_dropdown/user_profile_dropdown.dart';
@@ -17,6 +18,7 @@ import '../widgets/magic_starter_app_update_banner.dart';
 import '../widgets/magic_starter_campaign_banner.dart';
 import '../widgets/magic_starter_hide_bottom_nav.dart';
 import '../widgets/magic_starter_hide_chrome.dart';
+import '../widgets/magic_starter_nav_badge.dart';
 
 /// Default App Layout for Magic Starter.
 ///
@@ -653,6 +655,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             onBeforeTap: onItemTap,
             isActive: _isActive(item.path, currentPath),
             compact: compact,
+            badge: _navBadge(item),
           ),
         ),
 
@@ -688,9 +691,42 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
               onBeforeTap: onItemTap,
               isActive: _isActive(item.path, currentPath),
               compact: compact,
+              badge: _navBadge(item),
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  /// The count badge of [item], or `null` when the item carries no count.
+  ///
+  /// The badge listens to the item's notifier on its own, so the shell is not
+  /// rebuilt when the number moves.
+  Widget? _navBadge(MagicStarterNavItem item) {
+    final count = item.badgeCount;
+    if (count == null) return null;
+
+    return MagicStarterNavBadge(
+      count: count,
+      labelKey: item.badgeLabelKey,
+      className: MagicStarter.navigationTheme.badgeClassName,
+    );
+  }
+
+  /// Lays [badge] over the top-right corner of [anchor].
+  ///
+  /// The badge is absolutely placed, so it takes no room from the item: the
+  /// icon stays where it is and the row keeps its height whether or not a count
+  /// is showing. Without a badge the anchor is returned as it is.
+  Widget _withCornerBadge(Widget anchor, Widget? badge) {
+    if (badge == null) return anchor;
+
+    return WDiv(
+      className: 'relative',
+      children: [
+        anchor,
+        WDiv(className: 'absolute -top-1 -right-4', child: badge),
       ],
     );
   }
@@ -703,9 +739,11 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     VoidCallback? onBeforeTap,
     bool isActive = false,
     bool compact = false,
+    Widget? badge,
   }) {
     final navTheme = MagicStarter.navigationTheme;
     final rowClassName = _navRowClassName(compact: compact);
+    final glyph = WIcon(icon, className: 'text-[20px]');
 
     return WAnchor(
       onTap: () {
@@ -724,8 +762,11 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                     ${navTheme.focusItemClassName}
                 ''',
         children: [
-          WIcon(icon, className: 'text-[20px]'),
+          // The compact rail has no label column to put a count in, so the
+          // badge rides the icon; the labelled row ends with it.
+          compact ? _withCornerBadge(glyph, badge) : glyph,
           if (!compact) Expanded(child: WText(label, className: 'truncate')),
+          if (!compact && badge != null) badge,
         ],
       ),
     );
@@ -778,6 +819,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
                     label: trans(item.labelKey),
                     path: item.path,
                     isActive: _isActive(item.path, currentPath),
+                    badge: _navBadge(item),
                   ),
                 ),
               )
@@ -796,6 +838,7 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     required String label,
     required String path,
     required bool isActive,
+    Widget? badge,
   }) {
     final navTheme = MagicStarter.navigationTheme;
     return WAnchor(
@@ -810,11 +853,14 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
             'py-2 flex flex-col items-center gap-1 '
             '${navTheme.focusItemClassName}',
         children: [
-          WIcon(
-            isActive ? activeIcon : icon,
-            states: isActive ? {'active'} : {},
-            className:
-                'text-2xl text-fg-muted ${navTheme.bottomNavActiveClassName}',
+          _withCornerBadge(
+            WIcon(
+              isActive ? activeIcon : icon,
+              states: isActive ? {'active'} : {},
+              className:
+                  'text-2xl text-fg-muted ${navTheme.bottomNavActiveClassName}',
+            ),
+            badge,
           ),
           WText(
             label,

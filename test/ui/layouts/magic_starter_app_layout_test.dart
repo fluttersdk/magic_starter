@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -234,6 +235,18 @@ class _CampaignCopyLoader implements TranslationLoader {
   Future<Map<String, dynamic>> load(Locale _) async => <String, dynamic>{
     'magic_starter.billing.campaign_see_plans': 'See plans',
     'magic_starter.billing.campaign_dismiss': 'Dismiss',
+  };
+}
+
+/// The catalogue lines a navigation badge reads, in their two plural forms:
+/// the package default and the one a host's item names for itself.
+class _NavBadgeCopyLoader implements TranslationLoader {
+  const _NavBadgeCopyLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(Locale _) async => <String, dynamic>{
+    'nav.badge_count': 'One item|:count items',
+    'nav.shopping_open': 'One line to buy|:count lines to buy',
   };
 }
 
@@ -1928,6 +1941,379 @@ void main() {
       expect(navigation.compactBrandBuilder, isNull);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // A live count on a navigation item
+  // ---------------------------------------------------------------------------
+
+  group('MagicStarterAppLayout navigation badge', () {
+    const home = MagicStarterNavItem(
+      icon: Icons.home,
+      labelKey: 'Home',
+      path: '/',
+    );
+
+    setUp(() async {
+      Translator.instance.setLoader(const _NavBadgeCopyLoader());
+      await Translator.instance.setLocale(const Locale('en'));
+    });
+
+    tearDown(Translator.reset);
+
+    void useViewport(WidgetTester tester, double width, double height) {
+      tester.view.physicalSize = Size(width, height);
+      tester.view.devicePixelRatio = 1.0;
+
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+    }
+
+    ValueNotifier<int?> liveCount(WidgetTester tester, int? initial) {
+      final count = ValueNotifier<int?>(initial);
+      addTearDown(count.dispose);
+
+      return count;
+    }
+
+    MagicStarterNavItem shopping(ValueListenable<int?> count) {
+      return MagicStarterNavItem(
+        icon: Icons.shopping_cart,
+        labelKey: 'Shopping',
+        path: '/shopping',
+        badgeCount: count,
+      );
+    }
+
+    Finder slotOf(String label) {
+      return find
+          .ancestor(of: find.text(label), matching: find.byType(WAnchor))
+          .first;
+    }
+
+    group('in the sidebar', () {
+      testWidgets('draws the count at the trailing edge of the row', (
+        tester,
+      ) async {
+        useViewport(tester, 1280, 800);
+        MagicStarter.useNavigation(
+          mainItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final label = tester.getRect(find.text('Shopping'));
+        final badge = tester.getRect(find.text('4'));
+
+        expect(find.byType(MSBadge), findsOneWidget);
+        expect(badge.left, greaterThan(label.right));
+        expect(badge.right, lessThanOrEqualTo(256));
+        expect((badge.center.dy - label.center.dy).abs(), lessThan(2));
+      });
+
+      testWidgets('draws no badge on an item without one', (tester) async {
+        useViewport(tester, 1280, 800);
+        MagicStarter.useNavigation(mainItems: const [home]);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MagicStarterNavBadge), findsNothing);
+        expect(find.byType(MSBadge), findsNothing);
+      });
+
+      testWidgets('hides at null and zero and returns with the count', (
+        tester,
+      ) async {
+        useViewport(tester, 1280, 800);
+        final count = liveCount(tester, null);
+        MagicStarter.useNavigation(mainItems: [home, shopping(count)]);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MSBadge), findsNothing);
+
+        count.value = 0;
+        await tester.pump();
+        expect(find.byType(MSBadge), findsNothing);
+
+        count.value = 12;
+        await tester.pump();
+        expect(find.text('12'), findsOneWidget);
+      });
+
+      testWidgets('follows the count without the shell rebuilding', (
+        tester,
+      ) async {
+        useViewport(tester, 1280, 800);
+        final count = liveCount(tester, 3);
+        MagicStarter.useNavigation(mainItems: [home, shopping(count)]);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        // The notifier is the only thing that moves: no `refreshNotifier`
+        // bump, no new `useNavigation`, no route change.
+        count.value = 5;
+        await tester.pump();
+
+        expect(find.text('3'), findsNothing);
+        expect(find.text('5'), findsOneWidget);
+      });
+
+      testWidgets('caps the number at 99+', (tester) async {
+        useViewport(tester, 1280, 800);
+        MagicStarter.useNavigation(
+          mainItems: [home, shopping(liveCount(tester, 240))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('99+'), findsOneWidget);
+      });
+
+      testWidgets('folds the count into the name of the item', (tester) async {
+        final handle = tester.ensureSemantics();
+        useViewport(tester, 1280, 800);
+        MagicStarter.useNavigation(
+          mainItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final node = tester.getSemantics(slotOf('Shopping'));
+
+        expect(node.label, contains('Shopping'));
+        expect(node.label, contains('4 items'));
+        // The drawn "4" is not read a second time beside the sentence.
+        expect(node.label, isNot(matches(RegExp(r'(^|\n)4(\n|$)'))));
+        expect(node.getSemanticsData().flagsCollection.isButton, isTrue);
+
+        handle.dispose();
+      });
+
+      testWidgets('reads the label key the item names', (tester) async {
+        final handle = tester.ensureSemantics();
+        useViewport(tester, 1280, 800);
+        MagicStarter.useNavigation(
+          mainItems: [
+            MagicStarterNavItem(
+              icon: Icons.shopping_cart,
+              labelKey: 'Shopping',
+              path: '/shopping',
+              badgeCount: liveCount(tester, 4),
+              badgeLabelKey: 'nav.shopping_open',
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(
+          tester.getSemantics(slotOf('Shopping')).label,
+          contains('4 lines to buy'),
+        );
+
+        handle.dispose();
+      });
+
+      testWidgets('draws on a system item too', (tester) async {
+        useViewport(tester, 1280, 800);
+        MagicStarter.useNavigation(
+          mainItems: const [home],
+          systemItems: [shopping(liveCount(tester, 6))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('6'), findsOneWidget);
+      });
+
+      testWidgets('draws in the drawer below the sidebar breakpoint', (
+        tester,
+      ) async {
+        useViewport(tester, 400, 800);
+        MagicStarter.useNavigation(
+          mainItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+        expect(find.byType(MSBadge), findsNothing);
+
+        await tester.tap(find.byIcon(Icons.menu));
+        await tester.pumpAndSettle();
+
+        expect(find.text('4'), findsOneWidget);
+      });
+    });
+
+    group('on the compact rail', () {
+      testWidgets('sits on the corner of the icon', (tester) async {
+        useViewport(tester, 700, 800);
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(
+            navigationBreakpoint: 'sm',
+            sidebarCompactWidth: 64,
+          ),
+        );
+        MagicStarter.useNavigation(
+          mainItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final icon = tester.getRect(find.byIcon(Icons.shopping_cart));
+        final badge = tester.getRect(find.text('4'));
+
+        expect(find.text('Shopping'), findsNothing);
+        expect(badge.center.dx, greaterThan(icon.center.dx));
+        expect(badge.center.dy, lessThan(icon.center.dy));
+        expect(badge.right, lessThanOrEqualTo(64));
+      });
+
+      testWidgets('does not move the icon', (tester) async {
+        useViewport(tester, 700, 800);
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(
+            navigationBreakpoint: 'sm',
+            sidebarCompactWidth: 64,
+          ),
+        );
+        final count = liveCount(tester, 0);
+        MagicStarter.useNavigation(mainItems: [home, shopping(count)]);
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final before = tester.getRect(find.byIcon(Icons.shopping_cart));
+
+        count.value = 4;
+        await tester.pump();
+
+        expect(tester.getRect(find.byIcon(Icons.shopping_cart)), before);
+      });
+    });
+
+    group('on the bottom bar', () {
+      testWidgets('sits on the corner of the icon inside its slot', (
+        tester,
+      ) async {
+        useViewport(tester, 400, 800);
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final icon = tester.getRect(find.byIcon(Icons.shopping_cart));
+        final badge = tester.getRect(find.text('4'));
+        final slot = tester.getRect(slotOf('Shopping'));
+
+        expect(badge.center.dx, greaterThan(icon.center.dx));
+        expect(badge.center.dy, lessThan(icon.center.dy));
+        expect(badge.right, lessThanOrEqualTo(slot.right));
+        expect(badge.top, greaterThanOrEqualTo(slot.top));
+      });
+
+      testWidgets('leaves the height of the bar as it was', (tester) async {
+        useViewport(tester, 400, 800);
+        final count = liveCount(tester, 0);
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: [home, shopping(count)],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final before = tester.getSize(slotOf('Shopping'));
+
+        count.value = 4;
+        await tester.pump();
+
+        expect(tester.getSize(slotOf('Shopping')), before);
+        expect(tester.getSize(slotOf('Home')), before);
+      });
+
+      testWidgets('follows the count and caps it', (tester) async {
+        useViewport(tester, 400, 800);
+        final count = liveCount(tester, 2);
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: [home, shopping(count)],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+        expect(find.text('2'), findsOneWidget);
+
+        count.value = 100;
+        await tester.pump();
+        expect(find.text('99+'), findsOneWidget);
+
+        count.value = null;
+        await tester.pump();
+        expect(find.byType(MSBadge), findsNothing);
+      });
+
+      testWidgets('folds the count into the name of the item', (tester) async {
+        final handle = tester.ensureSemantics();
+        useViewport(tester, 400, 800);
+        MagicStarter.useNavigation(
+          mainItems: const [],
+          bottomItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final node = tester.getSemantics(slotOf('Shopping'));
+
+        expect(node.label, contains('Shopping'));
+        expect(node.label, contains('4 items'));
+        expect(node.getSemanticsData().flagsCollection.isButton, isTrue);
+
+        handle.dispose();
+      });
+    });
+
+    group('theme', () {
+      test('leaves the badge on its own recipe by default', () {
+        expect(const MagicStarterNavigationTheme().badgeClassName, isEmpty);
+      });
+
+      testWidgets('appends badgeClassName to the badge', (tester) async {
+        useViewport(tester, 1280, 800);
+        MagicStarter.useNavigationTheme(
+          const MagicStarterNavigationTheme(
+            badgeClassName: 'bg-primary text-on-primary',
+          ),
+        );
+        MagicStarter.useNavigation(
+          mainItems: [home, shopping(liveCount(tester, 4))],
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final badge = tester.widget<MSBadge>(find.byType(MSBadge));
+
+        expect(badge.className, 'bg-primary text-on-primary');
+      });
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // A page left under a stacked route (#160)
   // ---------------------------------------------------------------------------
