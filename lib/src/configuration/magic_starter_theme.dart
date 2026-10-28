@@ -1298,11 +1298,21 @@ class MagicStarterTheme {
     final textDestructive = MagicStarterTokens.role(theme, 'text-destructive');
     final bgWarning = MagicStarterTokens.role(theme, 'bg-warning');
 
+    // The roles a field hovers to, scoped once. A role the theme does not
+    // define is a palette PAIR, and `hover:` written in front of it would reach
+    // only the first token, leaving the dark half applied at rest.
+    final hoverSurfaceContainer = _withVariant('hover', surfaceContainer);
+    final hoverSurfaceContainerHigh = _withVariant(
+      'hover',
+      surfaceContainerHigh,
+    );
+    final hoverFg = _withVariant('hover', fg);
+
     return MagicStarterTheme(
       navigation: MagicStarterNavigationTheme(
         activeItemClassName:
             'active:$textPrimary active:bg-primary/10 dark:active:bg-primary/10',
-        hoverItemClassName: _withVariant('hover', surfaceContainerHigh),
+        hoverItemClassName: hoverSurfaceContainerHigh,
         brandClassName: 'text-lg font-bold $textPrimary',
         bottomNavActiveClassName: 'active:$textPrimary',
         avatarClassName: 'bg-primary/10 dark:bg-primary/10',
@@ -1318,7 +1328,7 @@ class MagicStarterTheme {
         primaryButtonClassName:
             'px-4 py-2 rounded-lg $bgPrimary hover:bg-primary/80 $onPrimary text-sm font-medium',
         secondaryButtonClassName:
-            'px-4 py-2 rounded-lg $surfaceContainer border $border hover:$surfaceContainerHigh $fg text-sm font-medium',
+            'px-4 py-2 rounded-lg $surfaceContainer border $border $hoverSurfaceContainerHigh $fg text-sm font-medium',
         dangerButtonClassName:
             'px-4 py-2 rounded-lg $bgDestructive $onDestructive text-sm font-medium',
         warningButtonClassName:
@@ -1336,9 +1346,9 @@ class MagicStarterTheme {
         primaryButtonClassName:
             'w-full $bgPrimary hover:bg-primary/80 $onPrimary font-semibold',
         secondaryButtonClassName:
-            'w-full bg-transparent $fgMuted hover:$surfaceContainer hover:opacity-90',
+            'w-full bg-transparent $fgMuted $hoverSurfaceContainer hover:opacity-90',
         linkClassName: 'text-sm font-medium $textPrimary',
-        checkboxLabelClassName: '$fgMuted hover:$fg ml-1',
+        checkboxLabelClassName: '$fgMuted $hoverFg ml-1',
       ),
       card: MagicStarterCardTheme(
         surfaceClassName: '$surface border $border',
@@ -1354,7 +1364,7 @@ class MagicStarterTheme {
         titleClassName: 'text-2xl font-bold $fg line-clamp-2',
         subtitleClassName: 'text-sm $fgMuted line-clamp-2',
         backControlClassName:
-            'flex items-center justify-center size-9 text-2xl $fgMuted hover:$fg',
+            'flex items-center justify-center size-9 text-2xl $fgMuted $hoverFg',
         largeTitleClassName: 'text-4xl lg:text-3xl font-bold $fg line-clamp-2',
         // A semantic token carries no opacity step, so the bar is opaque here;
         // a host after glass themes it with its own translucent fill.
@@ -1377,18 +1387,18 @@ class MagicStarterTheme {
         errorBannerClassName:
             'p-3 rounded-xl $destructiveContainer border border-red-200 dark:border-red-800 $textDestructive text-sm text-center',
         themeToggleClassName:
-            'p-2 rounded-lg duration-150 bg-transparent hover:$surfaceContainerHigh flex items-center justify-center',
+            'p-2 rounded-lg duration-150 bg-transparent $hoverSurfaceContainerHigh flex items-center justify-center',
         themeToggleIconClassName: 'text-2xl $fgMuted',
         socialDividerTextClassName: 'text-sm $fgMuted',
         guestButtonClassName:
-            'w-full bg-transparent $fgMuted hover:$surfaceContainer hover:opacity-90',
+            'w-full bg-transparent $fgMuted $hoverSurfaceContainer hover:opacity-90',
         registrationLinkClassName: 'text-sm $fgMuted',
         registrationLinkTextClassName: 'text-sm font-semibold $textPrimary',
       ),
       dropdown: MagicStarterDropdownTheme(
         panelClassName: '$surfaceContainer border $border',
         dividerClassName: border,
-        itemClassName: _withVariant('hover', surfaceContainerHigh),
+        itemClassName: hoverSurfaceContainerHigh,
         // The page tone, not `surfaceContainerHigh`: the hovered row is
         // `surfaceContainerHigh`, and a tile with that fill vanishes into it.
         tileClassName: surface,

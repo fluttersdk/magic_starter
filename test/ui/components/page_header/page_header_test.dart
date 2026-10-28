@@ -422,6 +422,38 @@ void main() {
     expect(find.byIcon(Icons.chevron_left), findsNothing);
   });
 
+  // The derived hover tone is a pair when the host theme defines no `text-fg`
+  // alias; its dark half used to apply at rest and wash the chevron out.
+  testWidgets('the back control rests on the muted tone in dark mode', (
+    tester,
+  ) async {
+    final data = WindThemeData(
+      brightness: Brightness.dark,
+      syncWithSystem: false,
+    );
+    MagicStarter.useWindTheme(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WindTheme(
+          data: data,
+          child: const Scaffold(
+            body: MSPageHeader(
+              title: 'Profile',
+              backLabel: 'Settings',
+              backFallback: '/settings',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.widget<Icon>(find.byIcon(Icons.chevron_left)).color,
+      const Color(0xFF9CA3AF),
+    );
+  });
+
   testWidgets('no back leading when backLabel is null', (tester) async {
     await tester.pumpWidget(wrap(const MSPageHeader(title: 'Dashboard')));
     // Without backLabel the chevron must not appear.

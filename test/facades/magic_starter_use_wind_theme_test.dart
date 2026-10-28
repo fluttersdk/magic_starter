@@ -227,6 +227,102 @@ void main() {
       expect(dropdown.panelClassName, contains('bg-'));
     });
 
+    // Same defect as above, in the fields that hover to a role inside a longer
+    // string: with no aliases the role is a pair, and `hover:` in front of it
+    // reached only the first half, so the dark half (the hover fill or tone)
+    // applied at rest in dark mode. One test per field, so each fails alone.
+    final hoverFields = <(String, String Function(), String)>[
+      (
+        'modal secondary button',
+        () => MagicStarter.modalTheme.secondaryButtonClassName,
+        'bg-surface-container-high',
+      ),
+      (
+        'form secondary button',
+        () => MagicStarter.formTheme.secondaryButtonClassName,
+        'bg-surface-container',
+      ),
+      (
+        'checkbox label',
+        () => MagicStarter.formTheme.checkboxLabelClassName,
+        'text-fg',
+      ),
+      (
+        'back control',
+        () => MagicStarter.pageHeaderTheme.backControlClassName,
+        'text-fg',
+      ),
+      (
+        'theme toggle',
+        () => MagicStarter.authTheme.themeToggleClassName,
+        'bg-surface-container-high',
+      ),
+      (
+        'guest button',
+        () => MagicStarter.authTheme.guestButtonClassName,
+        'bg-surface-container',
+      ),
+    ];
+
+    for (final (field, className, role) in hoverFields) {
+      test('scopes the $field role to the hover when the theme omits it', () {
+        MagicStarter.useWindTheme(WindThemeData());
+
+        final tokens = className().split(RegExp(r'\s+'));
+
+        for (final token in MagicStarterTokens.defaultAliases[role]!.split(
+          ' ',
+        )) {
+          expect(
+            tokens,
+            contains('hover:$token'),
+            reason: 'the $field does not hover to "$token"',
+          );
+          expect(
+            tokens,
+            isNot(contains(token)),
+            reason: '"$token" would apply to the $field at rest',
+          );
+        }
+      });
+    }
+
+    test('keeps the hover strings of a host that defines the roles', () {
+      // A defined role is one bare token, so scoping it to the hover is the
+      // same string the derivation always wrote.
+      MagicStarter.useWindTheme(windTheme);
+
+      expect(
+        MagicStarter.modalTheme.secondaryButtonClassName,
+        'px-4 py-2 rounded-lg bg-surface-container border border-color-border '
+        'hover:bg-surface-container-high text-fg text-sm font-medium',
+      );
+      expect(
+        MagicStarter.formTheme.secondaryButtonClassName,
+        'w-full bg-transparent text-fg-muted hover:bg-surface-container '
+        'hover:opacity-90',
+      );
+      expect(
+        MagicStarter.formTheme.checkboxLabelClassName,
+        'text-fg-muted hover:text-fg ml-1',
+      );
+      expect(
+        MagicStarter.pageHeaderTheme.backControlClassName,
+        'flex items-center justify-center size-9 text-2xl text-fg-muted '
+        'hover:text-fg',
+      );
+      expect(
+        MagicStarter.authTheme.themeToggleClassName,
+        'p-2 rounded-lg duration-150 bg-transparent '
+        'hover:bg-surface-container-high flex items-center justify-center',
+      );
+      expect(
+        MagicStarter.authTheme.guestButtonClassName,
+        'w-full bg-transparent text-fg-muted hover:bg-surface-container '
+        'hover:opacity-90',
+      );
+    });
+
     test('derives on-primary and border roles onto action buttons', () {
       MagicStarter.useWindTheme(windTheme);
 
