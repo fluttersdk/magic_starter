@@ -146,6 +146,46 @@ const _capsuleLook = _Look(
   lineHeight: 22,
 );
 
+/// The className the secondary, social and guest buttons carried before they
+/// followed the button theme, handed to the default (primary, `md`) button as
+/// they were: `py-3` and a one pixel border of their own.
+const _secondaryBeforeClassName =
+    'w-full bg-transparent border border-gray-300 dark:border-gray-600 '
+    'text-gray-600 dark:text-gray-400 hover:bg-gray-50 '
+    'dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium';
+
+/// A theme whose three sizes differ in height and label size, for the one group
+/// that checks which size each button asks for: `_capsule` makes them equal, so
+/// a button that forgot its `size:` would measure the same there.
+const _tiered = MagicStarterButtonTheme(
+  shapeClassName: 'rounded-full',
+  smClassName: 'px-3 py-[5px] text-[13px] leading-[18px]',
+  mdClassName: 'px-4 py-[10px] text-[15px] leading-[20px]',
+  lgClassName: 'px-5 py-[14px] text-[19px] leading-[24px]',
+  secondaryBorderClassName: '',
+);
+
+/// What `lg` paints under [_tiered]: the submit buttons.
+const _tieredLg = _Look(
+  height: 52,
+  radius: 9999,
+  fontSize: 19,
+  weight: FontWeight.w600,
+  bordered: false,
+  lineHeight: 24,
+);
+
+/// What the secondary intent at `md` paints under [_tiered]: the social, guest
+/// and step-up provider buttons.
+const _tieredSecondaryMd = _Look(
+  height: 40,
+  radius: 9999,
+  fontSize: 15,
+  weight: FontWeight.w500,
+  bordered: false,
+  lineHeight: 20,
+);
+
 Widget _host(WindThemeData wind, Widget child) {
   return WindTheme(
     data: wind,
@@ -244,6 +284,16 @@ final List<_Screen> _screens = [
     const [_Target('magic_starter.otp.send_code_button', _Kind.primary)],
     (tester, wind) =>
         _mountPlain(tester, wind, const MagicStarterOtpVerifyView()),
+  ),
+  _Screen(
+    'phone code verification',
+    const [_Target('magic_starter.otp.verify_button', _Kind.primary)],
+    (tester, wind) async {
+      Http.fake((request) => Http.response(<String, dynamic>{'message': 'ok'}));
+      await MagicStarterOtpController.instance.sendOtp(phone: '+905551112233');
+
+      await _mountPlain(tester, wind, const MagicStarterOtpVerifyView());
+    },
   ),
   _Screen(
     'team invitation',
@@ -375,12 +425,38 @@ void main() {
       }
     }
 
-    test('the secondary buttons only moved by the vertical padding', () {
-      expect(_secondaryNow.radius, _secondaryBefore.radius);
-      expect(_secondaryNow.fontSize, _secondaryBefore.fontSize);
-      expect(_secondaryNow.weight, _secondaryBefore.weight);
-      expect(_secondaryNow.bordered, _secondaryBefore.bordered);
-      expect(_secondaryBefore.height - _secondaryNow.height, 8);
+    testWidgets('the secondary buttons only moved by the vertical padding', (
+      tester,
+    ) async {
+      useDesktopSurface(tester);
+
+      // Both are measured: the old className on the button it used to sit on,
+      // and the form theme's string on the secondary `md` that replaced it.
+      await _mountPlain(
+        tester,
+        _wind(Brightness.light),
+        Column(
+          children: [
+            const MSButton(
+              className: _secondaryBeforeClassName,
+              child: WText('Before'),
+            ),
+            MSButton(
+              intent: ButtonIntent.secondary,
+              size: ButtonSize.md,
+              className: MagicStarter.formTheme.secondaryButtonClassName,
+              child: const WText('Now'),
+            ),
+          ],
+        ),
+      );
+
+      final before = _measure(tester, 'Before');
+      final now = _measure(tester, 'Now');
+
+      _expectLook(before, _secondaryBefore, 'the old secondary string');
+      _expectLook(now, _secondaryNow, 'the secondary string now');
+      expect(before.height - now.height, 8);
     });
   });
 
@@ -523,6 +599,53 @@ void main() {
 
         expect(tester.getSize(button).height, 44, reason: label);
       }
+    });
+  });
+
+  group('a host whose button sizes differ', () {
+    for (final screen in _screens) {
+      testWidgets('${screen.name} asks for lg and the secondary md', (
+        tester,
+      ) async {
+        useDesktopSurface(tester);
+        MagicStarter.useButtonTheme(_tiered);
+
+        await screen.mount(tester, _wind(Brightness.light));
+
+        for (final target in screen.targets) {
+          _expectLook(_measure(tester, target.label), switch (target.kind) {
+            _Kind.primary => _tieredLg,
+            _Kind.secondary => _tieredSecondaryMd,
+          }, '${screen.name} / ${target.label}');
+        }
+      });
+    }
+
+    testWidgets('a weight in lgClassName does not reach the submit buttons', (
+      tester,
+    ) async {
+      useDesktopSurface(tester);
+      MagicStarter.useButtonTheme(
+        const MagicStarterButtonTheme(
+          lgClassName: 'px-5 py-3 text-base font-bold',
+        ),
+      );
+
+      await _mountPlain(
+        tester,
+        _wind(Brightness.light),
+        const Column(
+          children: [
+            MagicStarterForgotPasswordView(),
+            MSButton(size: ButtonSize.lg, child: WText('Plain')),
+          ],
+        ),
+      );
+
+      // The primary string keeps `font-semibold` and is appended after the
+      // size, so it wins the weight; a button without it takes the size's.
+      expect(_measure(tester, 'auth.send_reset_link').weight, FontWeight.w600);
+      expect(_measure(tester, 'Plain').weight, FontWeight.w700);
     });
   });
 
