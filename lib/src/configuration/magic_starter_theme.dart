@@ -1051,7 +1051,9 @@ class MagicStarterDropdownTheme {
 /// theme a host refines later would go back to its constructor default.
 ///
 /// All fields are optional; defaults are the classes the recipe wrote before
-/// they were configurable, so a host that never sets this theme sees no change.
+/// they were configurable, so a host that never sets this theme sees no change
+/// on a button of its own; the auth screens' buttons moved slightly, as
+/// described under "The auth and form buttons".
 ///
 /// ### One 44 px capsule
 ///
@@ -1092,6 +1094,14 @@ class MagicStarterDropdownTheme {
 /// paints a one pixel border in Wind even without a `border` width, so a string
 /// that named a border colour would keep a hairline on a borderless standard.
 ///
+/// With the default theme the submit buttons have the same height, radius and
+/// label as before; the side padding moved from `px-4` to `px-5`, which is what
+/// `lg` sets where the old string left the default `md`. A family a host's own
+/// string does not name now comes from `lg` and the secondary intent, not from
+/// the old `md` and primary intent: a string that names only `py-3 rounded-xl`
+/// takes its label size and side padding from `lg`, and a secondary string with
+/// no `bg-` or `text-` token takes the fill of the secondary intent.
+///
 /// ### What this theme does not reach
 ///
 /// - A host's own strings. A className handed to an [MSButton] is appended after
@@ -1121,6 +1131,11 @@ class MagicStarterButtonTheme {
   final String mdClassName;
 
   /// Padding, minimum size and label type of `ButtonSize.lg`.
+  ///
+  /// The auth submit buttons are `lg`, and the stock and derived
+  /// [MagicStarterFormTheme.primaryButtonClassName] they carry keeps
+  /// `font-semibold`, which is appended after this string: a weight set here
+  /// reaches every other `lg` button but not the auth submit buttons.
   ///
   /// Defaults to `'px-5 py-3 text-base'`.
   final String lgClassName;
