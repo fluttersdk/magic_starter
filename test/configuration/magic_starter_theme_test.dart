@@ -611,6 +611,43 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // MagicStarterButtonTheme
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterButtonTheme', () {
+    group('defaults', () {
+      test('shape is the large radius MSButton always had', () {
+        const theme = MagicStarterButtonTheme();
+
+        expect(theme.shapeClassName, 'rounded-lg');
+      });
+
+      test('sizes keep the padding and type of the previous recipe', () {
+        const theme = MagicStarterButtonTheme();
+
+        expect(theme.smClassName, 'px-3 py-1.5 text-sm');
+        expect(theme.mdClassName, 'px-4 py-2 text-sm');
+        expect(theme.lgClassName, 'px-5 py-3 text-base');
+      });
+
+      test('secondary keeps its one pixel border', () {
+        const theme = MagicStarterButtonTheme();
+
+        expect(theme.secondaryBorderClassName, 'border border-color-border');
+      });
+    });
+
+    group('custom overrides', () {
+      test('accepts a custom shapeClassName and keeps the other fields', () {
+        const theme = MagicStarterButtonTheme(shapeClassName: 'rounded-full');
+
+        expect(theme.shapeClassName, 'rounded-full');
+        expect(theme.mdClassName, 'px-4 py-2 text-sm');
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // MagicStarterTheme (unified wrapper)
   // -------------------------------------------------------------------------
 
@@ -627,6 +664,7 @@ void main() {
         expect(theme.navigation, isA<MagicStarterNavigationTheme>());
         expect(theme.modal, isA<MagicStarterModalTheme>());
         expect(theme.dropdown, isA<MagicStarterDropdownTheme>());
+        expect(theme.button, isA<MagicStarterButtonTheme>());
       });
 
       test('default form sub-theme has correct defaults', () {
@@ -697,6 +735,15 @@ void main() {
         expect(theme.dropdown.panelClassName, equals('custom-panel'));
       });
 
+      test('stores custom button sub-theme', () {
+        const customButton = MagicStarterButtonTheme(
+          shapeClassName: 'rounded-full',
+        );
+        const theme = MagicStarterTheme(button: customButton);
+
+        expect(theme.button.shapeClassName, equals('rounded-full'));
+      });
+
       test('other sub-themes remain at defaults when one is customized', () {
         const theme = MagicStarterTheme(
           form: MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -762,6 +809,25 @@ void main() {
         ).copyWith();
 
         expect(updated.dropdown.panelClassName, equals('custom-panel'));
+      });
+
+      test('overrides button sub-theme while keeping others unchanged', () {
+        const original = MagicStarterTheme();
+        final updated = original.copyWith(
+          button: const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+
+        expect(updated.button.shapeClassName, equals('rounded-full'));
+        expect(updated.dropdown.textClassName, contains('text-gray-900'));
+        expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('copyWith with no arguments keeps the button sub-theme', () {
+        final updated = const MagicStarterTheme(
+          button: MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        ).copyWith();
+
+        expect(updated.button.shapeClassName, equals('rounded-full'));
       });
 
       test('overrides multiple sub-themes simultaneously', () {

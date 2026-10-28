@@ -126,7 +126,7 @@ lib/src/ui/components/<name>/
   index.dart           # Barrel: re-exports the public API for this component
 ```
 
-The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `cardRecipe`) that accepts variant/state arguments and returns a Wind className string. The widget delegates its className derivation to the recipe so the visual contract is inspectable and testable in isolation.
+The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`, `cardRecipe`) that accepts variant/state arguments and returns a Wind className string. The widget delegates its className derivation to the recipe so the visual contract is inspectable and testable in isolation.
 
 <a name="component-families"></a>
 ## Component Families
@@ -136,7 +136,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buttonRecipe`, `car
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buttonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`). Below `lg`, every size keeps its painted size but takes a 44x44 hit area |
+| `MSButton` | `ButtonIntent` (primary/secondary/ghost/destructive), `ButtonSize` (sm/md/lg), `buildButtonRecipe` | Use `ButtonIntent.destructive` for delete / danger actions; `fullWidth: true` fills the parent width (wraps in `SizedBox`, defaults `false`). Shape, the three sizes and the secondary border come from `MagicStarterButtonTheme` (`MagicStarter.useButtonTheme`). Below `lg`, every size keeps its painted size but takes a 44x44 hit area |
 | `MSInput` | `InputState` (idle/focused/error/disabled), `inputRecipe` | Pairs with `MSFormField` for label + error display; `fullWidth: true` fills the parent width (defaults `false`). A single-line field is 44px tall below `lg` and 40px from `lg` up (`py-3 lg:py-2.5` over a `leading-5` line) |
 | `MSTextarea` | `TextareaState`, `textareaRecipe` | Multi-line input, same state model as `MSInput`; `fullWidth: true` fills the parent width (defaults `false`). On iOS a focused field carries a Done toolbar above the keyboard, since a multiline field's Return key inserts a newline and would otherwise leave the keyboard with no way out. One consequence for consumer TESTS: while that toolbar is up it schedules a frame callback every frame, so `pumpAndSettle` under `debugDefaultTargetPlatformOverride = TargetPlatform.iOS` never settles; pump explicitly instead |
 | `MSCheckbox` | | Boolean toggle; Wind-only, no Material dependency |

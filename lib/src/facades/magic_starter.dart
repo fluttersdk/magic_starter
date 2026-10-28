@@ -481,8 +481,8 @@ class MagicStarter {
   /// Register a unified theme configuration.
   ///
   /// Sets all sub-themes (navigation, modal, form, card, page header, layout,
-  /// auth, dropdown) in a single call. Individual sub-themes can still be
-  /// overridden afterward via [useNavigationTheme], [useModalTheme],
+  /// auth, dropdown, button) in a single call. Individual sub-themes can still
+  /// be overridden afterward via [useNavigationTheme], [useModalTheme],
   /// [useFormTheme], etc.
   ///
   /// ```dart
@@ -501,7 +501,8 @@ class MagicStarter {
     manager.theme = theme;
   }
 
-  /// Adopt a whole [WindThemeData] palette across all 8 sub-themes in one call.
+  /// Adopt a whole [WindThemeData] palette across all 8 colour-bearing
+  /// sub-themes in one call.
   ///
   /// Derives a [MagicStarterTheme] from the passed theme's semantic alias
   /// palette (surface / surface-container / fg / primary / on-primary / border
@@ -509,7 +510,9 @@ class MagicStarter {
   /// className in the built-in navigation, modal, form, card, page header,
   /// layout, auth, and dropdown surfaces is rebuilt from those semantic roles,
   /// so a consumer aligns the entire starter kit to their brand in a single
-  /// call instead of constructing up to 8 sub-theme structs by hand.
+  /// call instead of constructing up to 8 sub-theme structs by hand. The button
+  /// theme (shape and size) is not derived and resets to its defaults, so call
+  /// [useButtonTheme] after this.
   ///
   /// This is additive: [useTheme] and every individual `use*Theme()` setter
   /// still work and can override any sub-theme afterward.
@@ -614,6 +617,34 @@ class MagicStarter {
   /// Returns the theme registered via [useDropdownTheme], or a default
   /// [MagicStarterDropdownTheme] instance when not configured.
   static MagicStarterDropdownTheme get dropdownTheme => manager.dropdownTheme;
+
+  /// Register a custom button theme.
+  ///
+  /// When set, overrides the shape, the three sizes (padding, minimum height
+  /// and label type) and the secondary border of every [MSButton]. A className
+  /// passed to a button is appended after these and wins.
+  ///
+  /// All fields in [MagicStarterButtonTheme] are optional, pass only the values
+  /// you want to customise. [useWindTheme] and [useTheme] set the whole unified
+  /// theme and reset this one, so call this after them.
+  ///
+  /// ```dart
+  /// MagicStarter.useButtonTheme(
+  ///   MagicStarterButtonTheme(
+  ///     shapeClassName: 'rounded-full',
+  ///     mdClassName: 'px-5 py-[11px] text-[17px] leading-[22px] font-semibold',
+  ///   ),
+  /// );
+  /// ```
+  static void useButtonTheme(MagicStarterButtonTheme theme) {
+    manager.buttonTheme = theme;
+  }
+
+  /// Get the active button theme.
+  ///
+  /// Returns the theme registered via [useButtonTheme], or a default
+  /// [MagicStarterButtonTheme] instance when not configured.
+  static MagicStarterButtonTheme get buttonTheme => manager.buttonTheme;
 
   /// Register a custom card theme.
   ///

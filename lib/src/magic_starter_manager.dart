@@ -297,6 +297,10 @@ class MagicStarterManager {
   /// team switcher and user menu popover panels.
   MagicStarterDropdownTheme dropdownTheme = const MagicStarterDropdownTheme();
 
+  /// Button theme configuration. Holds the className overrides for the shape,
+  /// the three sizes and the secondary border of [MSButton].
+  MagicStarterButtonTheme buttonTheme = const MagicStarterButtonTheme();
+
   /// Page header theme configuration. Holds className overrides for the
   /// page header container, title, subtitle, and action container.
   MagicStarterPageHeaderTheme pageHeaderTheme =
@@ -334,7 +338,8 @@ class MagicStarterManager {
   ///
   /// Reading this constructs a [MagicStarterTheme] from the current values of
   /// [navigationTheme], [modalTheme], [formTheme], [cardTheme],
-  /// [pageHeaderTheme], [layoutTheme], [authTheme], and [dropdownTheme].
+  /// [pageHeaderTheme], [layoutTheme], [authTheme], [dropdownTheme], and
+  /// [buttonTheme].
   MagicStarterTheme get theme => MagicStarterTheme(
     navigation: navigationTheme,
     modal: modalTheme,
@@ -344,13 +349,14 @@ class MagicStarterManager {
     layout: layoutTheme,
     auth: authTheme,
     dropdown: dropdownTheme,
+    button: buttonTheme,
   );
 
   /// Set the unified theme, distributing each sub-theme to its individual field.
   ///
   /// This is equivalent to setting [navigationTheme], [modalTheme],
   /// [formTheme], [cardTheme], [pageHeaderTheme], [layoutTheme], [authTheme],
-  /// and [dropdownTheme] separately.
+  /// [dropdownTheme], and [buttonTheme] separately.
   set theme(MagicStarterTheme value) {
     navigationTheme = value.navigation;
     modalTheme = value.modal;
@@ -360,6 +366,7 @@ class MagicStarterManager {
     layoutTheme = value.layout;
     authTheme = value.auth;
     dropdownTheme = value.dropdown;
+    buttonTheme = value.button;
   }
 
   /// Native language names for common locale codes.
@@ -771,6 +778,7 @@ class MagicStarterManager {
     pageHeaderTheme = const MagicStarterPageHeaderTheme();
     layoutTheme = const MagicStarterLayoutTheme();
     dropdownTheme = const MagicStarterDropdownTheme();
+    buttonTheme = const MagicStarterButtonTheme();
     _localeOptions = null;
     _pendingLocale = null;
     _applyingLocale = null;

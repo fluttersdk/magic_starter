@@ -416,6 +416,44 @@ void main() {
 
         expect(MagicStarter.dropdownTheme.textClassName, 'themed-text');
       });
+
+      test('useButtonTheme registers the button sub-theme', () {
+        expect(MagicStarter.buttonTheme.shapeClassName, 'rounded-lg');
+
+        MagicStarter.useButtonTheme(
+          const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+
+        expect(MagicStarter.buttonTheme.shapeClassName, 'rounded-full');
+        expect(MagicStarter.theme.button.shapeClassName, 'rounded-full');
+      });
+
+      test('useTheme distributes the button sub-theme', () {
+        MagicStarter.useTheme(
+          const MagicStarterTheme(
+            button: MagicStarterButtonTheme(mdClassName: 'themed-md'),
+          ),
+        );
+
+        expect(MagicStarter.buttonTheme.mdClassName, 'themed-md');
+      });
+
+      test('useButtonTheme survives a later dropdown theme', () {
+        // Why the button is a sub-theme of its own: every setter assigns its
+        // whole struct, so a field living inside a theme the host refines later
+        // would go back to its constructor default.
+        MagicStarter.useButtonTheme(
+          const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+        MagicStarter.useDropdownTheme(
+          const MagicStarterDropdownTheme(textClassName: 'themed-text'),
+        );
+        MagicStarter.useNavigationTheme(
+          const MagicStarterNavigationTheme(brandClassName: 'text-lg'),
+        );
+
+        expect(MagicStarter.buttonTheme.shapeClassName, 'rounded-full');
+      });
     });
 
     group('modal registry defaults', () {

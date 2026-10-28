@@ -1007,13 +1007,108 @@ class MagicStarterDropdownTheme {
 }
 
 // ---------------------------------------------------------------------------
+// Button theme
+// ---------------------------------------------------------------------------
+
+/// Theme configuration for the shape, size and label type of [MSButton].
+///
+/// Geometry only. The colours stay in the button recipe, written as the semantic
+/// aliases (`bg-primary`, `text-on-primary`, `border-color-border`), so a host
+/// re-skins them through its alias map and [MagicStarter.useWindTheme] has
+/// nothing to derive here.
+///
+/// Each size class carries the padding, the minimum height if any, and the label
+/// type of that size (`text-*`, `leading-*`, `font-*`), so one string says how a
+/// `md` button looks. The recipe puts `font-medium` ahead of them, and Wind's
+/// per-family last-wins lets a size class set another weight.
+///
+/// This is its own sub-theme rather than more fields on another one on purpose:
+/// every `use*Theme` setter assigns its whole struct, so a field added to a
+/// theme a host refines later would go back to its constructor default.
+///
+/// All fields are optional; defaults are the classes the recipe wrote before
+/// they were configurable, so a host that never sets this theme sees no change.
+///
+/// ### One 44 px capsule
+///
+/// ```dart
+/// const standard = 'px-5 py-[11px] text-[17px] leading-[22px] font-semibold';
+///
+/// MagicStarter.useButtonTheme(
+///   MagicStarterButtonTheme(
+///     shapeClassName: 'rounded-full',
+///     smClassName: standard,
+///     mdClassName: standard,
+///     lgClassName: standard,
+///     secondaryBorderClassName: '',
+///   ),
+/// );
+/// ```
+///
+/// Reach 44 px with vertical padding around a fixed `leading-*`, as above,
+/// rather than with `min-h-11`: a Wind button gives its box the minimum height
+/// but no alignment, so the label sits at the top of it. Drop
+/// [secondaryBorderClassName] in a fixed-height design too, since a border adds
+/// its width to the box and leaves the secondary button 2 px taller than the
+/// rest.
+///
+/// A className handed to an [MSButton] is appended after all of this and wins on
+/// any family it names. The auth screens hand it the form theme's button
+/// strings, so a host that wants its standard there too keeps shape and size out
+/// of those strings.
+class MagicStarterButtonTheme {
+  /// Corner radius of every intent and size.
+  ///
+  /// Written where `rounded-lg` sat in the recipe base, so it is a radius token
+  /// (`rounded-full` for a capsule).
+  ///
+  /// Defaults to `'rounded-lg'`.
+  final String shapeClassName;
+
+  /// Padding, minimum size and label type of `ButtonSize.sm`.
+  ///
+  /// Defaults to `'px-3 py-1.5 text-sm'`, 32 px tall.
+  final String smClassName;
+
+  /// Padding, minimum size and label type of `ButtonSize.md`, the default size.
+  ///
+  /// Defaults to `'px-4 py-2 text-sm'`, 36 px tall.
+  final String mdClassName;
+
+  /// Padding, minimum size and label type of `ButtonSize.lg`.
+  ///
+  /// Defaults to `'px-5 py-3 text-base'`.
+  final String lgClassName;
+
+  /// Width and colour of the edge of a `ButtonIntent.secondary` button.
+  ///
+  /// The one colour-bearing field, because the border is the only part of an
+  /// intent that costs layout: it adds its width to the box. An empty string
+  /// leaves the secondary button borderless, which is not the same as
+  /// `border-0` (Flutter paints a zero-width border as a hairline).
+  /// [buttonDangerOutlineClassName] only recolours this border, so it reads as
+  /// plain red text on a borderless secondary button.
+  ///
+  /// Defaults to `'border border-color-border'`.
+  final String secondaryBorderClassName;
+
+  const MagicStarterButtonTheme({
+    this.shapeClassName = 'rounded-lg',
+    this.smClassName = 'px-3 py-1.5 text-sm',
+    this.mdClassName = 'px-4 py-2 text-sm',
+    this.lgClassName = 'px-5 py-3 text-base',
+    this.secondaryBorderClassName = 'border border-color-border',
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Unified theme wrapper
 // ---------------------------------------------------------------------------
 
 /// Unified theme configuration that aggregates all Magic Starter sub-themes.
 ///
 /// Provides a single entry point to configure navigation, modal, form, card,
-/// page header, layout, auth, and dropdown styling in one place. Each
+/// page header, layout, auth, dropdown, and button styling in one place. Each
 /// sub-theme defaults to its standard configuration when omitted.
 ///
 /// Use [copyWith] to create a modified copy with only the sub-themes you want
@@ -1075,6 +1170,11 @@ class MagicStarterTheme {
   /// Defaults to `const MagicStarterDropdownTheme()`.
   final MagicStarterDropdownTheme dropdown;
 
+  /// Button shape, size and label type theme tokens.
+  ///
+  /// Defaults to `const MagicStarterButtonTheme()`.
+  final MagicStarterButtonTheme button;
+
   const MagicStarterTheme({
     this.navigation = const MagicStarterNavigationTheme(),
     this.modal = const MagicStarterModalTheme(),
@@ -1084,11 +1184,14 @@ class MagicStarterTheme {
     this.layout = const MagicStarterLayoutTheme(),
     this.auth = const MagicStarterAuthTheme(),
     this.dropdown = const MagicStarterDropdownTheme(),
+    this.button = const MagicStarterButtonTheme(),
   });
 
   /// Derives a full [MagicStarterTheme] from a [WindThemeData]'s semantic
-  /// alias palette, so a consumer aligns all 8 magic_starter surfaces to their
-  /// brand in one call instead of building up to 8 sub-theme structs by hand.
+  /// alias palette, so a consumer aligns all 8 colour-bearing magic_starter
+  /// surfaces to their brand in one call instead of building up to 8 sub-theme
+  /// structs by hand. The button theme carries shape and size only and keeps its
+  /// defaults here: the button recipe writes its own semantic aliases.
   ///
   /// Every color-bearing className fragment in the sub-theme defaults is
   /// rebuilt from the 17 semantic roles ([MagicStarterTokens.defaultAliases]):
@@ -1276,6 +1379,7 @@ class MagicStarterTheme {
     MagicStarterLayoutTheme? layout,
     MagicStarterAuthTheme? auth,
     MagicStarterDropdownTheme? dropdown,
+    MagicStarterButtonTheme? button,
   }) {
     return MagicStarterTheme(
       navigation: navigation ?? this.navigation,
@@ -1286,6 +1390,7 @@ class MagicStarterTheme {
       layout: layout ?? this.layout,
       auth: auth ?? this.auth,
       dropdown: dropdown ?? this.dropdown,
+      button: button ?? this.button,
     );
   }
 }

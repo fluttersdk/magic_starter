@@ -2,10 +2,11 @@
 
 `MagicStarter.useWindTheme(WindThemeData)` aligns every built-in magic_starter
 surface to a Wind semantic palette in a single call. Instead of constructing up
-to eight sub-theme structs by hand, you pass the same `WindThemeData` your app
-already installs at its root and the starter kit derives all eight sub-themes
-(navigation, modal, form, card, page header, layout, auth, dropdown) from its semantic
-alias roles.
+to nine sub-theme structs by hand, you pass the same `WindThemeData` your app
+already installs at its root and the starter kit derives the eight colour-bearing
+sub-themes (navigation, modal, form, card, page header, layout, auth, dropdown)
+from its semantic alias roles. The ninth, the button theme, is shape and size
+only and is set by hand; see [Button](#button).
 
 ## The one-call adoption path
 
@@ -164,6 +165,61 @@ The tile takes `bg-surface` rather than `bg-surface-container-high` because the
 hovered row is already `bg-surface-container-high`; a tile with that fill would
 disappear into it. Geometry, including the `overflow-hidden` that keeps a hovered
 row inside the panel's rounded corners, stays in the widgets.
+
+### Button
+
+Nothing is derived. `MSButton`'s recipe already writes the semantic aliases
+(`bg-primary`, `text-on-primary`, `border-color-border`, ...) itself, so an alias
+map re-skins every button, and `MagicStarterButtonTheme` carries only what an
+alias cannot: the corner radius, the padding, minimum height and label type of
+each size, and the secondary border. `useWindTheme()` and `useTheme()` reset it
+to its defaults, so set it after them.
+
+| Property | Default |
+|----------|---------|
+| `shapeClassName` | `rounded-lg` |
+| `smClassName` | `px-3 py-1.5 text-sm` (32 px) |
+| `mdClassName` | `px-4 py-2 text-sm` (36 px) |
+| `lgClassName` | `px-5 py-3 text-base` (47 px) |
+| `secondaryBorderClassName` | `border border-color-border` |
+
+One 44 px capsule for every intent and size:
+
+```dart
+const standard = 'px-5 py-[11px] text-[17px] leading-[22px] font-semibold';
+
+MagicStarter.useButtonTheme(
+  MagicStarterButtonTheme(
+    shapeClassName: 'rounded-full',
+    smClassName: standard,
+    mdClassName: standard,
+    lgClassName: standard,
+    secondaryBorderClassName: '',
+  ),
+);
+```
+
+Three things to know:
+
+- **Use vertical padding around a fixed line height, not `min-h-11`.** A Wind
+  button gives its box the minimum height and no alignment (`items-center` is
+  ignored for a single child, and `justify-center` would stretch the button to
+  fill its parent), so the label sits at the top of a `min-h-11` box. `py-[11px]`
+  around `leading-[22px]` is 44 px with the label centred, and still grows with
+  the platform text size.
+- **Drop the secondary border in a fixed-height design.** A border adds its width
+  to the box, so a secondary that keeps it is 2 px taller than the rest.
+  `''` removes it; `border-0` would leave a hairline.
+  `buttonDangerOutlineClassName` only recolours that border.
+- **A `className` on a button wins.** It is appended after the theme. The auth
+  screens pass the form theme's `primaryButtonClassName` (and the guest and
+  social buttons their own strings) as that `className`, and the stock strings
+  name `py-3` and `rounded-lg`, so a host that wants its standard there keeps
+  shape and size out of those strings.
+
+Below `lg` every `MSButton` sits in a 44 x 44 hit area. A size the theme makes 44
+px tall or more is not widened by it, so there is no extra layout and no extra
+reach.
 
 ### Auth
 

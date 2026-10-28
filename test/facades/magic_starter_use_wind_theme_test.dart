@@ -114,6 +114,27 @@ void main() {
       );
     });
 
+    test('leaves the button theme at its defaults', () {
+      // The recipe already writes the semantic aliases (`bg-primary`,
+      // `text-on-primary`, `border-color-border`) itself, so there is no colour
+      // to derive here, and shape and size are the host's call. Deriving the
+      // border from the role would also hand a fallback palette pair to a host
+      // whose theme does not define it, which the recipe never did.
+      MagicStarter.useWindTheme(windTheme);
+
+      const defaults = MagicStarterButtonTheme();
+      final button = MagicStarter.buttonTheme;
+
+      expect(button.shapeClassName, defaults.shapeClassName);
+      expect(button.smClassName, defaults.smClassName);
+      expect(button.mdClassName, defaults.mdClassName);
+      expect(button.lgClassName, defaults.lgClassName);
+      expect(
+        button.secondaryBorderClassName,
+        defaults.secondaryBorderClassName,
+      );
+    });
+
     test('derives every dropdown role from the semantic palette', () {
       MagicStarter.useWindTheme(windTheme);
 

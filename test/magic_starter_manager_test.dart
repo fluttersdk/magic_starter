@@ -90,6 +90,23 @@ void main() {
         expect(manager.theme.dropdown.textClassName, 'custom-text');
       });
 
+      test('setting theme distributes the button sub-theme', () {
+        manager.theme = const MagicStarterTheme(
+          button: MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+
+        expect(manager.buttonTheme.shapeClassName, 'rounded-full');
+        expect(manager.theme.button.shapeClassName, 'rounded-full');
+      });
+
+      test('setting buttonTheme is reflected in theme.button', () {
+        manager.buttonTheme = const MagicStarterButtonTheme(
+          mdClassName: 'custom-md',
+        );
+
+        expect(manager.theme.button.mdClassName, 'custom-md');
+      });
+
       test('reset() clears all theme fields to const defaults', () {
         manager.theme = MagicStarterTheme(
           form: const MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -105,6 +122,7 @@ void main() {
           dropdown: const MagicStarterDropdownTheme(
             panelClassName: 'custom-panel',
           ),
+          button: const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
         );
 
         manager.reset();
@@ -131,6 +149,7 @@ void main() {
           manager.dropdownTheme.panelClassName,
           'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
         );
+        expect(manager.buttonTheme.shapeClassName, 'rounded-lg');
       });
 
       test('convenience getters return correct sub-themes after theme set', () {

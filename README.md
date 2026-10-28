@@ -506,7 +506,7 @@ MagicStarter.useTheme(
 );
 ```
 
-`MagicStarterTheme` has 8 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`, `dropdown`. All fields are optional.
+`MagicStarterTheme` has 9 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`, `dropdown`, `button`. All fields are optional.
 
 #### One-call adoption from a `WindThemeData`
 
@@ -521,7 +521,27 @@ MagicStarter.useWindTheme(
 );
 ```
 
-`useWindTheme()` derives all 8 sub-themes from the theme's semantic roles (`bg-surface`, `text-fg`, `bg-primary`, `border-color-border`, `bg-destructive`, ...) and delegates to `useTheme()`. Each alias carries its own `dark:` pair, so one token re-skins both light and dark. It is additive: `useTheme()` and any `use*Theme()` setter still override afterward. A role you do not define keeps the shipped default (never an invisible surface). See [doc/guides/wind-theme-adoption.md](doc/guides/wind-theme-adoption.md) for the full alias-to-property mapping.
+`useWindTheme()` derives the 8 colour-bearing sub-themes from the theme's semantic roles (`bg-surface`, `text-fg`, `bg-primary`, `border-color-border`, `bg-destructive`, ...) and delegates to `useTheme()`. Each alias carries its own `dark:` pair, so one token re-skins both light and dark. It is additive: `useTheme()` and any `use*Theme()` setter still override afterward. A role you do not define keeps the shipped default (never an invisible surface). See [doc/guides/wind-theme-adoption.md](doc/guides/wind-theme-adoption.md) for the full alias-to-property mapping.
+
+#### One button standard
+
+`MSButton` reads its corner radius, the padding, minimum height and label type of each size, and the secondary border from `MagicStarterButtonTheme`. It is not derived by `useWindTheme()` (shape and size are the host's call), and `useWindTheme()` and `useTheme()` reset it, so set it after them:
+
+```dart
+const standard = 'px-5 py-[11px] text-[17px] leading-[22px] font-semibold';
+
+MagicStarter.useButtonTheme(
+  MagicStarterButtonTheme(
+    shapeClassName: 'rounded-full',
+    smClassName: standard,
+    mdClassName: standard,
+    lgClassName: standard,
+    secondaryBorderClassName: '',
+  ),
+);
+```
+
+The defaults are the previous `rounded-lg`, 32 / 36 / 47 px sizes and bordered secondary. Reach 44 px with vertical padding around a fixed line height, not `min-h-11`, which leaves the label at the top of the box. A `className` passed to a button, including the form theme's submit button strings on the auth screens, is appended after the theme and wins.
 
 ### Level 3: Builder Slots
 

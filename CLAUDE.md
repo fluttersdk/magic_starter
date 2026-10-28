@@ -39,7 +39,7 @@ lib/
 ├── config/
 │   └── magic_starter.dart          # Configuration template stub
 └── src/
-    ├── magic_starter_manager.dart  # Singleton registry: user model, team resolver, nav, 8 sub-themes, views, slots
+    ├── magic_starter_manager.dart  # Singleton registry: user model, team resolver, nav, 9 sub-themes, views, slots
     ├── configuration/              # 14 feature toggles (all default false, opt-in)
     ├── providers/                  # IoC registration, 9 Gate abilities, boot logic
     ├── facades/                    # Static API: MagicStarter.useUserModel(), .useTheme(), .view.make(), .view.slot()
@@ -129,11 +129,12 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | `brandBuilder` + `brandClassName` both set | `brandBuilder` wins — `brandClassName` is ignored when a builder is registered |
 | Modal theme not affecting dialogs | `MagicStarter.useModalTheme()` must be called before any dialog is shown — ideally in `AppServiceProvider.boot()` |
 | Hardcoding dialog classNames | All modal classNames must come from `MagicStarter.manager.modalTheme` — never hardcode in widget build methods |
-| Theme sub-theme ordering | `useTheme()` sets all 8 sub-themes at once; individual `useFormTheme()` etc. can override after. Call unified first if using both |
+| Theme sub-theme ordering | `useTheme()` sets all 9 sub-themes at once; individual `useFormTheme()` etc. can override after. Call unified first if using both |
 | Slot not rendering | `MagicStarter.view.slot(viewKey, slotName, builder)` must be called before the view is built. Views call `buildSlot()` at build time |
 | Published view not loading | `dart run <app>:artisan starter:publish` copies views to `lib/resources/views/starter/`. Auto-wire adds `MagicStarter.view.register()` to AppServiceProvider |
 | `Icons.*` in `build()` | Extract as `static const _iconName = Icons.xxx` — required for Flutter web tree-shaking |
 | A page building its own container | Every authenticated page goes through `MSPageScaffold` (or `MSPageContainer` for a bare page). A page that opens with `WDiv(className: 'p-4 lg:p-6 ...')` has invented its own width and padding and will not line up with its neighbours |
+| `MSButton` radius or height hardcoded in a view | Shape, the three sizes and the secondary border come from `MagicStarter.buttonTheme` (`useButtonTheme()`, after `useWindTheme()`, which resets it). A `className: 'py-3 ...'` on a button is appended after the theme and wins, so it breaks a host's standard. Reach 44 px with `py-[11px]` around `leading-[22px]`, never `min-h-11` alone: the label then sits at the top of the box |
 | Hardcoding a page width | Page geometry comes from `MagicStarter.manager.pageContainerClassName`, which the HOST sets once. Never put a `max-w-*` or `px-*` on a page root |
 
 ## Skills & Extensions
