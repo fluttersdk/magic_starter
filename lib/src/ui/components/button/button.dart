@@ -26,8 +26,11 @@ import 'button.recipe.dart';
 /// The corner radius, the padding, minimum height and label type of each
 /// [ButtonSize], and the secondary border come from
 /// `MagicStarter.buttonTheme` ([MagicStarterButtonTheme]), so a host sets one
-/// standard for every button. The colours come from the intent and stay on the
-/// semantic aliases. A [className] is appended after both and wins.
+/// standard for every [MSButton] that is not handed a shape or a size of its
+/// own. The colours come from the intent and stay on the semantic aliases. A
+/// [className] is appended after both and wins on any family it names, which is
+/// why the auth screens do not follow the theme; see [MagicStarterButtonTheme]
+/// for them and for the dialogs, which do not use this widget.
 ///
 /// ### Tap target
 ///

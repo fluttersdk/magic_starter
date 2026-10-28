@@ -541,7 +541,7 @@ MagicStarter.useButtonTheme(
 );
 ```
 
-The defaults are the previous `rounded-lg`, 32 / 36 / 47 px sizes and bordered secondary. Reach 44 px with vertical padding around a fixed line height, not `min-h-11`, which leaves the label at the top of the box. A `className` passed to a button, including the form theme's submit button strings on the auth screens, is appended after the theme and wins.
+The defaults are the previous `rounded-lg`, 32 / 36 / 47 px sizes and bordered secondary. Reach 44 px with vertical padding around a fixed line height, not `min-h-11`, which leaves the label at the top of the box. A `className` passed to a button is appended after the theme and wins, and two kinds of button never follow it. The auth screens, the social buttons, the guest button and the step-up provider button pass the form theme's or the auth theme's button strings as that `className`, and the stock strings (and the ones `useWindTheme()` derives) name `rounded-lg`, `py-3` and a label size and weight, so those buttons keep the stock shape and size until you set strings without them. The sub-themes have no `copyWith`, so that is a `useFormTheme()` call that passes all 8 fields of `MagicStarterFormTheme` (copy the ones you leave alone from `MagicStarter.formTheme`), plus the same for `useAuthTheme()` if you want the guest button, both after `useWindTheme()`. The dialogs, and the invite and session screens, draw raw `WButton`s on the modal and form themes' strings and ignore the button theme.
 
 ### Level 3: Builder Slots
 

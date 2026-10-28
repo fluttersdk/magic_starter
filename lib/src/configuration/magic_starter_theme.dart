@@ -1057,10 +1057,26 @@ class MagicStarterDropdownTheme {
 /// its width to the box and leaves the secondary button 2 px taller than the
 /// rest.
 ///
-/// A className handed to an [MSButton] is appended after all of this and wins on
-/// any family it names. The auth screens hand it the form theme's button
-/// strings, so a host that wants its standard there too keeps shape and size out
-/// of those strings.
+/// ### What this theme does not reach
+///
+/// Two kinds of button keep their own shape and size, whatever is set here.
+///
+/// - A className handed to an [MSButton] is appended after all of this and wins
+///   on any family it names. The auth screens, the social buttons, the guest
+///   button and the step-up provider button hand it
+///   [MagicStarterFormTheme.primaryButtonClassName],
+///   [MagicStarterFormTheme.secondaryButtonClassName] or
+///   [MagicStarterAuthTheme.guestButtonClassName], and the stock strings (and
+///   the ones [MagicStarter.useWindTheme] derives) name `rounded-lg`, `py-3` and
+///   a label size and weight (`text-base font-semibold` on the primary). A host
+///   that wants its standard there sets those fields without a shape or a size.
+///   The sub-themes have no `copyWith`, so that is a `useFormTheme` call that
+///   passes all 8 fields of [MagicStarterFormTheme] (the ones it leaves alone
+///   copied from `MagicStarter.formTheme`) and a `useAuthTheme` call that does
+///   the same for the guest button, both after `useWindTheme`.
+/// - The dialogs, and the invite and session screens, draw raw `WButton`s on the
+///   strings of [MagicStarterModalTheme] or [MagicStarterFormTheme] and never
+///   read this theme.
 class MagicStarterButtonTheme {
   /// Corner radius of every intent and size.
   ///
