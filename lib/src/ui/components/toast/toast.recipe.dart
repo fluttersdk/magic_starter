@@ -55,10 +55,12 @@ WindRecipe buildToastRecipe([WindThemeData? theme]) {
 ///
 /// The action is a 44 px cell, so it cannot sit inside the box's `py-3` without
 /// making the toast 24 px taller than one without an action. The vertical
-/// padding moves to the message (see [toastActionRecipe]) and the box gives the
-/// cell the room it needs on the right: the cell's own `px-2` and this `pr-2`
-/// add up to the `px-4` the toast had.
-const String kToastWithActionClassName = 'py-0 pr-2';
+/// padding moves to the message (see [toastActionRecipe]). The side padding
+/// halves, `px-4` to `px-2`, and the message column and the cell each carry the
+/// other half: the message edge and the label edge are 16 px from the box either
+/// way, and the same in a right to left locale, where a physical `pr-2` would
+/// have left the message 8 px from its edge against 16.
+const String kToastWithActionClassName = 'py-0 px-2';
 
 /// The tone axis key for the toast action recipe.
 const String kToastToneAxis = 'tone';
@@ -67,16 +69,18 @@ const String kToastToneAxis = 'tone';
 ///
 /// Slots:
 /// - `message` - the message column. It takes the box's vertical padding and
-///   shrinks to its content while the text fits, and wraps in the width left
-///   beside the action once it does not. `flex-initial` is a loose fit, so a
-///   short message does not stretch the toast, and `min-w-0` lets the text
-///   shrink instead of pushing the action out.
-/// - `cell` - the tap target around the label, 44 px tall and at least 44 px
-///   wide at every width, whose focus ring is `ring-inset`: the cell is as tall
-///   as a one line toast, so an outside ring would paint beyond the box, white
-///   on white. Its height is fixed rather than a minimum because the cell
-///   centres its label with a column, and a column with only a minimum height
-///   grows to the whole height an overlay offers it.
+///   half of its side padding, and shrinks to its content while the text fits
+///   and wraps in the width left beside the action once it does not.
+///   `flex-initial` is a loose fit, so a short message does not stretch the
+///   toast, and `min-w-0` lets the text shrink instead of pushing the action out.
+/// - `cell` - the tap target around the label: at least 44 px each way at every
+///   width, and as tall as the label asks once large text outgrows that. Its
+///   focus ring is `ring-inset`: the cell is as tall as a one line toast, so an
+///   outside ring would paint beyond the box. The minimum height does not
+///   expand: the widget centres the label in the cell with a `Center` of factor
+///   1, which is the label's size raised to the minimum, where a `flex-col`
+///   would grow to the whole height an overlay offers it and a fixed `h-11`
+///   would overflow at a large text scale.
 /// - `label` - the action text.
 ///
 /// A toned toast passes [onRole], the on-colour role of its fill (already
@@ -95,10 +99,10 @@ Map<String, String> toastActionRecipe({String? onRole, Color? onColour}) {
 
   final recipe = WindSlotRecipe(
     slots: const {
-      'message': 'flex-initial min-w-0 py-3',
+      'message': 'flex-initial min-w-0 px-2 py-3',
       'cell':
-          'flex flex-col justify-center items-center h-11 min-w-11 px-2 '
-          'rounded-md transition-colors focus:ring-2 focus:ring-inset',
+          'min-h-11 min-w-11 px-2 rounded-md transition-colors '
+          'focus:ring-2 focus:ring-inset',
       'label': 'text-sm font-semibold',
     },
     variants: {

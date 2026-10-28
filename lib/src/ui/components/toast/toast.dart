@@ -71,12 +71,14 @@ enum ToastVariant {
 ///
 /// The action is a text button in the tone of the variant (a primary label on
 /// the info surface, the on-colour role of the fill on the three coloured
-/// ones), in a cell at least 44 px each way at every width, so it is a hit target on a phone and under a
+/// ones), in a cell at least 44 px each way at every width (it grows with the
+/// label at a large text size), so it is a hit target on a phone and under a
 /// pointer alike. The cell is named for assistive technology by [actionLabel],
 /// takes keyboard focus (Tab) and shows a ring inside the toast when it has it,
 /// and Enter or Space presses it. A one line toast is as tall with an action as
 /// without. A long message wraps in the width beside the action; the action
-/// keeps its size.
+/// keeps its size. The padding is logical, so a right to left toast keeps the
+/// same distances from its edges.
 @immutable
 class MSToast extends StatelessWidget {
   /// The message text to display in the toast.
@@ -163,7 +165,13 @@ class MSToast extends StatelessWidget {
           semanticLabel: label,
           child: WDiv(
             className: action['cell'],
-            child: WText(label, className: action['label']),
+            // The label's size raised to the cell's minimum, so it is centred
+            // in 44 px and never taller than that asks for.
+            child: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: WText(label, className: action['label']),
+            ),
           ),
         ),
       ],

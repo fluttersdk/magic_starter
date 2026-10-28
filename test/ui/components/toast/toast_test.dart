@@ -1,4 +1,5 @@
 import 'dart:math' show max, min;
+import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
@@ -134,6 +135,8 @@ void main() {
     Size size = phone,
     Brightness brightness = Brightness.light,
     Map<String, String> aliases = MagicStarterTokens.defaultAliases,
+    ui.TextDirection textDirection = ui.TextDirection.ltr,
+    double textScale = 1.0,
   }) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = size;
@@ -148,7 +151,17 @@ void main() {
             syncWithSystem: false,
           ),
           child: Scaffold(
-            body: Align(alignment: Alignment.topLeft, child: toast),
+            body: Directionality(
+              textDirection: textDirection,
+              child: Builder(
+                builder: (context) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(textScale)),
+                  child: Align(alignment: Alignment.topLeft, child: toast),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -409,6 +422,105 @@ void main() {
 
       expect(box.className, startsWith('flex flex-row items-center gap-3'));
       expect(box.className, endsWith(' mt-10'));
+    });
+  });
+
+  group('toast action at a large text size', () {
+    for (final scale in [1.0, 2.0, 2.5]) {
+      testWidgets('lays out without an overflow at a text scale of $scale', (
+        tester,
+      ) async {
+        await pumpToast(tester, undoToast(), textScale: scale);
+
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('keeps the label inside the cell and the cell inside the '
+          'toast at a text scale of $scale', (tester) async {
+        await pumpToast(
+          tester,
+          undoToast(variant: ToastVariant.success),
+          textScale: scale,
+        );
+
+        final label = tester.getRect(find.text('Undo'));
+        final cell = tester.getRect(actionCell());
+        final box = tester.getRect(toastBox());
+
+        expect(cell.height, greaterThanOrEqualTo(44));
+        expect(cell.top, lessThanOrEqualTo(label.top));
+        expect(cell.bottom, greaterThanOrEqualTo(label.bottom));
+        expect(box.top, lessThanOrEqualTo(cell.top));
+        expect(box.bottom, greaterThanOrEqualTo(cell.bottom));
+        expect(cell.center.dy, closeTo(label.center.dy, 0.01));
+      });
+    }
+
+    testWidgets('the cell is exactly 44 tall at the default size', (
+      tester,
+    ) async {
+      await pumpToast(tester, undoToast());
+
+      expect(tester.getSize(actionCell()).height, 44);
+    });
+
+    testWidgets('the cell grows to the label and no further at 2.5', (
+      tester,
+    ) async {
+      await pumpToast(
+        tester,
+        undoToast(variant: ToastVariant.success),
+        textScale: 2.5,
+      );
+
+      // A cell that took the whole height an overlay offers it (the bounded
+      // 844 px of the surface) would be far taller than its label.
+      expect(
+        tester.getSize(actionCell()).height,
+        lessThan(tester.getSize(find.text('Undo')).height + 1),
+      );
+      expect(tester.getSize(toastBox()).height, lessThan(300));
+    });
+  });
+
+  group('toast action in a right to left locale', () {
+    testWidgets('pads the message and the label the same from their edges', (
+      tester,
+    ) async {
+      // The success toast, which has no border to add to the padding.
+      final toast = undoToast(variant: ToastVariant.success);
+
+      await pumpToast(tester, toast);
+      final ltr = (
+        start:
+            tester.getRect(find.text('Moved to Kitchen')).left -
+            tester.getRect(toastBox()).left,
+        end:
+            tester.getRect(toastBox()).right -
+            tester.getRect(find.text('Undo')).right,
+      );
+
+      await pumpToast(tester, toast, textDirection: ui.TextDirection.rtl);
+      final box = tester.getRect(toastBox());
+      final rtl = (
+        start: box.right - tester.getRect(find.text('Moved to Kitchen')).right,
+        end: tester.getRect(find.text('Undo')).left - box.left,
+      );
+
+      expect(ltr.start, 16);
+      expect(ltr.end, closeTo(16, 0.01));
+      expect(rtl.start, ltr.start, reason: 'the message edge mirrors');
+      expect(rtl.end, closeTo(ltr.end, 0.01), reason: 'the label edge mirrors');
+    });
+
+    testWidgets('puts the action at the leading edge of the right to left '
+        'toast', (tester) async {
+      await pumpToast(tester, undoToast(), textDirection: ui.TextDirection.rtl);
+
+      expect(
+        tester.getRect(actionCell()).right,
+        lessThanOrEqualTo(tester.getRect(find.text('Moved to Kitchen')).left),
+      );
     });
   });
 
