@@ -957,6 +957,53 @@ void main() {
       handle.dispose();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Heading semantics: heading navigation finds the page title in every size.
+  // ---------------------------------------------------------------------------
+
+  group('title semantics', () {
+    for (final MSPageHeaderSize size in [
+      MSPageHeaderSize.regular,
+      MSPageHeaderSize.large,
+    ]) {
+      testWidgets('the ${size.name} title is a heading', (tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(wrap(MSPageHeader(title: 'Heard', size: size)));
+
+        expect(
+          tester.getSemantics(find.text('Heard')),
+          matchesSemantics(label: 'Heard', isHeader: true),
+        );
+        handle.dispose();
+      });
+    }
+
+    testWidgets('the subtitle and the actions are not headings', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrap(
+          MSPageHeader(
+            title: 'Heard',
+            subtitle: 'Not a heading',
+            actions: [TextButton(onPressed: () {}, child: const Text('Save'))],
+          ),
+        ),
+      );
+
+      expect(
+        _headerNodes(
+          tester,
+        ).map((SemanticsNode n) => n.getSemanticsData().label),
+        ['Heard'],
+      );
+      handle.dispose();
+    });
+  });
 }
 
 /// Every button node the platform would receive.
@@ -969,6 +1016,30 @@ List<SemanticsNode> _buttonNodes(WidgetTester tester) {
   void walk(SemanticsNode node) {
     if (!node.isMergedIntoParent &&
         node.getSemanticsData().flagsCollection.isButton) {
+      found.add(node);
+    }
+    node.visitChildren((SemanticsNode child) {
+      walk(child);
+      return true;
+    });
+  }
+
+  walk(tester.getSemantics(find.byType(MaterialApp)));
+
+  return found;
+}
+
+/// Every heading node the platform would receive, in tree order.
+///
+/// A node folded into its parent, or flagged hidden because a scroll view has
+/// moved it out of the viewport, is never sent to assistive technology, so
+/// counting one reports a heading nobody can reach.
+List<SemanticsNode> _headerNodes(WidgetTester tester) {
+  final List<SemanticsNode> found = <SemanticsNode>[];
+
+  void walk(SemanticsNode node) {
+    final SemanticsFlags flags = node.getSemanticsData().flagsCollection;
+    if (!node.isMergedIntoParent && flags.isHeader && !flags.isHidden) {
       found.add(node);
     }
     node.visitChildren((SemanticsNode child) {

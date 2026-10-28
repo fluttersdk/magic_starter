@@ -47,7 +47,9 @@ import 'page_scaffold.recipe.dart';
 /// bar spans the page edge to edge, outside the container, and is unmounted
 /// while hidden, so the title and actions exist once in the tree whenever the
 /// bar is not on screen. While it is, they exist twice: an action carrying a
-/// `GlobalKey` cannot be used here.
+/// `GlobalKey` cannot be used here. For assistive technology only one of the
+/// two exists at a time: the large header is left out of the semantics tree
+/// while the bar shows, and the bar while it fades out.
 ///
 /// ### Example: sub-page with back
 /// ```dart
@@ -171,9 +173,16 @@ class MSPageScaffold extends StatelessWidget {
     final Widget content = isLargeTitle
         ? _LargeTitleFrame(
             compactBar: _header(MSPageHeaderSize.compact),
-            scrollAreaBuilder: (Key headerKey) => _buildScrollArea(
-              _header(MSPageHeaderSize.large, key: headerKey),
-            ),
+            scrollAreaBuilder: (Key headerKey, bool collapsed) =>
+                _buildScrollArea(
+                  // The bar speaks for the page once it shows. The header is
+                  // still in the tree, partly on screen behind the bar until
+                  // it scrolls clear, and would read as a second heading.
+                  ExcludeSemantics(
+                    excluding: collapsed,
+                    child: _header(MSPageHeaderSize.large, key: headerKey),
+                  ),
+                ),
           )
         : _buildScrollArea(_header(MSPageHeaderSize.regular));
 
@@ -228,8 +237,9 @@ class _LargeTitleFrame extends StatefulWidget {
   final Widget compactBar;
 
   /// Builds the scroll area around a large header carrying the given key,
-  /// which the frame measures to know when the header has gone.
-  final Widget Function(Key headerKey) scrollAreaBuilder;
+  /// which the frame measures to know when the header has gone. [collapsed] is
+  /// whether the bar has taken over.
+  final Widget Function(Key headerKey, bool collapsed) scrollAreaBuilder;
 
   const _LargeTitleFrame({
     required this.compactBar,
@@ -317,7 +327,7 @@ class _LargeTitleFrameState extends State<_LargeTitleFrame>
       children: [
         NotificationListener<ScrollNotification>(
           onNotification: _onScroll,
-          child: widget.scrollAreaBuilder(_headerKey),
+          child: widget.scrollAreaBuilder(_headerKey, _collapsed),
         ),
         Positioned(
           top: 0,
@@ -330,9 +340,14 @@ class _LargeTitleFrameState extends State<_LargeTitleFrame>
               // otherwise sit in the tree twice, once invisible.
               if (_fade.isDismissed) return const SizedBox.shrink();
 
+              // While it fades out the bar is still mounted, but the large
+              // header is back: one of the two speaks for the page, not both.
               return IgnorePointer(
                 ignoring: !_collapsed,
-                child: FadeTransition(opacity: _opacity, child: bar),
+                child: ExcludeSemantics(
+                  excluding: !_collapsed,
+                  child: FadeTransition(opacity: _opacity, child: bar),
+                ),
               );
             },
             child: widget.compactBar,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/src/facades/magic_starter.dart';
@@ -762,6 +763,131 @@ void main() {
       expect(bar(), findsNothing);
     });
 
+    // Heading navigation reads the semantics tree, so the invariant is one
+    // heading per title the reader can see: the large title while it is on
+    // screen, the bar's once the bar has taken over, never both.
+    group('heading semantics', () {
+      Finder largeHeader() => find.byWidgetPredicate(
+        (w) => w is MSPageHeader && w.size == MSPageHeaderSize.large,
+      );
+
+      List<String> headings(WidgetTester tester) => _headerNodes(
+        tester,
+      ).map((SemanticsNode n) => n.getSemanticsData().label).toList();
+
+      testWidgets('the large title is the page heading', (tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          page(
+            const MSPageScaffold(
+              title: 'Stock',
+              largeTitle: true,
+              children: tallBody,
+            ),
+          ),
+        );
+
+        expect(headings(tester), ['Stock']);
+        handle.dispose();
+      });
+
+      testWidgets('the regular title is the page heading', (tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          page(const MSPageScaffold(title: 'Plain', children: tallBody)),
+        );
+
+        expect(headings(tester), ['Plain']);
+        handle.dispose();
+      });
+
+      testWidgets('the bar is the only heading once it has taken over', (
+        tester,
+      ) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          page(
+            const MSPageScaffold(
+              title: 'Stock',
+              largeTitle: true,
+              children: tallBody,
+            ),
+          ),
+        );
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, -400),
+        );
+        await tester.pumpAndSettle();
+
+        expect(bar(), findsOneWidget);
+        expect(headings(tester), ['Stock']);
+        handle.dispose();
+      });
+
+      testWidgets('a large title still partly on screen behind the bar is not '
+          'a second heading', (tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+        final ScrollController controller = ScrollController();
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          page(
+            MSPageScaffold(
+              title: 'Stock',
+              largeTitle: true,
+              scrollController: controller,
+              children: tallBody,
+            ),
+          ),
+        );
+
+        // Park the header's bottom edge 4 px under the bar's: collapsed, while
+        // the header's own box still reaches into the viewport.
+        final double headerBottom = tester.getBottomLeft(largeHeader()).dy;
+        controller.jumpTo(headerBottom - (MSPageHeader.compactBarHeight - 4));
+        await tester.pumpAndSettle();
+
+        expect(bar(), findsOneWidget);
+        expect(tester.getBottomLeft(largeHeader()).dy, greaterThan(0));
+        expect(headings(tester), ['Stock']);
+        handle.dispose();
+      });
+
+      testWidgets('a bar fading out is not a second heading', (tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          page(
+            const MSPageScaffold(
+              title: 'Stock',
+              largeTitle: true,
+              children: tallBody,
+            ),
+          ),
+        );
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, -400),
+        );
+        await tester.pumpAndSettle();
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, 400),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // Mid-fade: the bar is still mounted and the large title is back.
+        expect(bar(), findsOneWidget);
+        expect(largeHeader(), findsOneWidget);
+        expect(headings(tester), ['Stock']);
+        handle.dispose();
+      });
+    });
+
     testWidgets('a docked footer stays below the collapsing page', (
       tester,
     ) async {
@@ -790,4 +916,28 @@ void main() {
       );
     });
   });
+}
+
+/// Every heading node the platform would receive, in tree order.
+///
+/// A node folded into its parent, or flagged hidden because a scroll view has
+/// moved it out of the viewport, is never sent to assistive technology, so
+/// counting one reports a heading nobody can reach.
+List<SemanticsNode> _headerNodes(WidgetTester tester) {
+  final List<SemanticsNode> found = <SemanticsNode>[];
+
+  void walk(SemanticsNode node) {
+    final SemanticsFlags flags = node.getSemanticsData().flagsCollection;
+    if (!node.isMergedIntoParent && flags.isHeader && !flags.isHidden) {
+      found.add(node);
+    }
+    node.visitChildren((SemanticsNode child) {
+      walk(child);
+      return true;
+    });
+  }
+
+  walk(tester.getSemantics(find.byType(MaterialApp)));
+
+  return found;
 }

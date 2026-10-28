@@ -170,6 +170,14 @@ class MSPageHeader extends StatelessWidget {
     );
   }
 
+  /// Builds the title text as the page heading, in [className].
+  ///
+  /// The header role is what lets a screen reader's heading navigation land on
+  /// the page title, in every [MSPageHeaderSize].
+  Widget _buildTitle(String className) {
+    return Semantics(header: true, child: WText(title, className: className));
+  }
+
   /// Builds the subtitle line: the text alone, or the text followed by
   /// [subtitleSuffix], which wraps under the text when the line is too narrow
   /// for both (a phone header leaves the title column under 100 px).
@@ -208,10 +216,7 @@ class MSPageHeader extends StatelessWidget {
           height: compactBarHeight,
           child: NavigationToolbar(
             leading: effectiveLeading,
-            middle: Semantics(
-              header: true,
-              child: WText(title, className: theme.compactTitleClassName),
-            ),
+            middle: _buildTitle(theme.compactTitleClassName),
             trailing: trailing != null && trailing.isNotEmpty
                 ? WDiv(
                     className: theme.actionContainerClassName,
@@ -283,7 +288,7 @@ class MSPageHeader extends StatelessWidget {
             WDiv(
               className: 'flex flex-col gap-1 flex-initial min-w-0',
               children: [
-                WText(title, className: titleClassName),
+                _buildTitle(titleClassName),
                 if (subtitle != null) _buildSubtitle(subtitle!),
               ],
             ),
