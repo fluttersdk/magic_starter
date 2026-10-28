@@ -109,7 +109,7 @@ spacing, radius, and dimension tokens are preserved as-is.
 | `errorClassName` | `text-destructive` |
 | `placeholderClassName` | `text-fg-disabled` |
 | `primaryButtonClassName` | `bg-primary`, `text-on-primary` |
-| `secondaryButtonClassName` | `border-color-border`, `text-fg-muted`, `bg-surface-container` |
+| `secondaryButtonClassName` | `text-fg-muted`, `bg-surface-container` (hover); the border is the button theme's |
 | `linkClassName` | `text-primary` |
 | `checkboxLabelClassName` | `text-fg-muted`, `text-fg` |
 
@@ -216,19 +216,22 @@ Three things to know:
   to the box, so a secondary that keeps it is 2 px taller than the rest.
   `''` removes it; `border-0` would leave a hairline.
   `buttonDangerOutlineClassName` only recolours that border.
-- **A `className` on a button wins, and two kinds of button never follow the
-  theme.** The `className` is appended after it. The auth screens pass the form
-  theme's `primaryButtonClassName` as that `className` (the social and step-up
-  buttons its `secondaryButtonClassName`, the guest button the auth theme's
-  `guestButtonClassName`), and the stock strings, like the ones `useWindTheme()`
-  derives, name `rounded-lg`, `py-3` and a label size and weight. Those buttons
-  keep that shape and size until the host sets strings without them. The
-  sub-themes have no `copyWith`, so that is a `useFormTheme()` call that passes
-  all 8 fields of `MagicStarterFormTheme` (copy the ones it leaves alone from
-  `MagicStarter.formTheme`), and a `useAuthTheme()` call that does the same for
-  the guest button, both after `useWindTheme()`. The dialogs, and the invite and
-  session screens, draw raw `WButton`s on the strings of `MagicStarterModalTheme`
-  or `MagicStarterFormTheme` and do not read the button theme at all.
+- **A `className` on a button wins, so two things never follow the theme.** The
+  `className` is appended after it. The auth screens pass the form theme's
+  `primaryButtonClassName` to an `lg` button, and the social and step-up
+  buttons its `secondaryButtonClassName` and the guest button the auth theme's
+  `guestButtonClassName` to a `secondary` `md` one. Those strings, stock and as
+  `useWindTheme()` derives them, carry no `rounded-*`, `py-*`, `text-<size>` or
+  border token, only the full width, the colours, the label weight of the
+  primary and the hover opacity of the secondary ones, so the auth screens
+  follow the button theme. The first exception is a host's OWN strings: a
+  `useFormTheme()` or `useAuthTheme()` call whose button strings name a shape, a
+  padding or a label size keeps it, because the string wins. Leave those out
+  (the sub-themes have no `copyWith`, so the call passes all 8 fields of
+  `MagicStarterFormTheme`, the ones you leave alone copied from
+  `MagicStarter.formTheme`). The second is the dialogs, and the invite button of
+  the team settings page: they draw raw `WButton`s on the strings of
+  `MagicStarterModalTheme` and do not read the button theme at all.
 
 Below `lg` every `MSButton` sits in a 44 x 44 hit area. A size the theme makes 44
 px tall or more is not widened by it, so there is no extra layout and no extra
@@ -245,7 +248,7 @@ reach.
 | `themeToggleClassName` | `bg-surface-container-high` (hover) |
 | `themeToggleIconClassName` | `text-fg-muted` |
 | `socialDividerTextClassName` | `text-fg-muted` |
-| `guestButtonClassName` | `border-color-border`, `text-fg-muted`, `bg-surface-container` |
+| `guestButtonClassName` | `text-fg-muted`, `bg-surface-container` (hover); the border is the button theme's |
 | `registrationLinkClassName` | `text-fg-muted` |
 | `registrationLinkTextClassName` | `text-primary` |
 

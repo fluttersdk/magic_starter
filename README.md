@@ -497,7 +497,7 @@ MagicStarter.useTheme(
   MagicStarterTheme(
     form: MagicStarterFormTheme(
       inputClassName: 'w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700',
-      primaryButtonClassName: 'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+      primaryButtonClassName: 'w-full bg-primary hover:bg-primary/80 text-white font-semibold',
     ),
     card: MagicStarterCardTheme(
       surfaceClassName: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
@@ -541,7 +541,7 @@ MagicStarter.useButtonTheme(
 );
 ```
 
-The defaults are the previous `rounded-lg`, 32 / 36 / 47 px sizes and bordered secondary. Reach 44 px with vertical padding around a fixed line height, not `min-h-11`, which leaves the label at the top of the box. A `className` passed to a button is appended after the theme and wins, and two kinds of button never follow it. The auth screens, the social buttons, the guest button and the step-up provider button pass the form theme's or the auth theme's button strings as that `className`, and the stock strings (and the ones `useWindTheme()` derives) name `rounded-lg`, `py-3` and a label size and weight, so those buttons keep the stock shape and size until you set strings without them. The sub-themes have no `copyWith`, so that is a `useFormTheme()` call that passes all 8 fields of `MagicStarterFormTheme` (copy the ones you leave alone from `MagicStarter.formTheme`), plus the same for `useAuthTheme()` if you want the guest button, both after `useWindTheme()`. The dialogs, and the invite and session screens, draw raw `WButton`s on the modal and form themes' strings and ignore the button theme.
+The defaults are the previous `rounded-lg`, 32 / 36 / 47 px sizes and bordered secondary. Reach 44 px with vertical padding around a fixed line height, not `min-h-11`, which leaves the label at the top of the box. The auth screens follow this theme too: their submit buttons are `lg` and the social, guest and step-up provider buttons are `secondary` and `md`, and the form and auth themes' button strings (stock and derived by `useWindTheme()`) carry only the full width, the colours and the label weight, so the shape, the vertical padding, the label size and the secondary border are the button theme's. A `className` passed to a button is appended after the theme and wins, so two things never follow it. The first is your own button strings: a `useFormTheme()` or `useAuthTheme()` call that sets `primaryButtonClassName`, `secondaryButtonClassName` or `guestButtonClassName` keeps whatever shape, padding and label size you wrote in them, so leave those out. The second is the dialogs, and the invite button of the team settings page, which draw raw `WButton`s on the modal theme's strings and ignore the button theme.
 
 ### Level 3: Builder Slots
 
