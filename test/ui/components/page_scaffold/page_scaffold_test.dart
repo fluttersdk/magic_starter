@@ -201,6 +201,40 @@ void main() {
     expect(constrainedDivs, isNotEmpty);
   });
 
+  // A pushed screen puts its own bar above the scaffold, so the host's top
+  // padding stacks on the bar's height and the title sits far under it. The
+  // scaffold therefore takes a className for its container, appended after the
+  // host's geometry like MSPageContainer's own.
+  testWidgets('PageScaffold containerClassName replaces the host top padding', (
+    tester,
+  ) async {
+    MagicStarter.manager.pageContainerClassName = 'max-w-6xl pt-8';
+
+    double titleTop() => tester.getTopLeft(find.text('Profile')).dy;
+
+    await tester.pumpWidget(
+      wrap(const MSPageScaffold(title: 'Profile', children: [])),
+    );
+    final double hostTop = titleTop();
+
+    await tester.pumpWidget(
+      wrap(
+        const MSPageScaffold(
+          title: 'Profile',
+          containerClassName: 'pt-4',
+          children: [],
+        ),
+      ),
+    );
+    final double overriddenTop = titleTop();
+
+    expect(
+      hostTop - overriddenTop,
+      16,
+      reason: 'pt-4 (16) replaces the host pt-8 (32) at every width',
+    );
+  });
+
   testWidgets('PageScaffold uses SingleChildScrollView with primary: false', (
     tester,
   ) async {

@@ -124,6 +124,15 @@ class MSPageScaffold extends StatelessWidget {
   /// titles once.
   final bool? largeTitle;
 
+  /// Optional className appended to the scrolling area's [MSPageContainer], the
+  /// same way [MSPageContainer.className] is appended to the host's page
+  /// geometry.
+  ///
+  /// For a page that sits under a bar of its own (a pushed screen's back bar),
+  /// where the host's top padding would stack on the bar's own height. Last
+  /// class wins within a family, so `pt-4` replaces the host's top padding.
+  final String? containerClassName;
+
   /// Creates a [MSPageScaffold].
   const MSPageScaffold({
     super.key,
@@ -136,6 +145,7 @@ class MSPageScaffold extends StatelessWidget {
     this.footer,
     this.scrollController,
     this.largeTitle,
+    this.containerClassName,
   });
 
   /// Whether this scaffold uses the large title, resolving the theme default.
@@ -197,6 +207,7 @@ class MSPageScaffold extends StatelessWidget {
       // 3. Width, edge margins, and vertical rhythm come from the host's one
       //    page geometry, shared with every other page in the app.
       child: MSPageContainer(
+        className: containerClassName,
         children: [
           // 4. Unified page header: back affordance and actions compose here.
           header,
