@@ -48,8 +48,9 @@ import 'page_scaffold.recipe.dart';
 /// while hidden, so the title and actions exist once in the tree whenever the
 /// bar is not on screen. While it is, they exist twice: an action carrying a
 /// `GlobalKey` cannot be used here. For assistive technology only one of the
-/// two exists at a time: the large header is left out of the semantics tree
-/// while the bar shows, and the bar while it fades out.
+/// two is the page heading at a time: the large title gives up the role while
+/// the bar shows (its text and the subtitle stay readable, as the bar has no
+/// subtitle), and the bar is left out of the semantics tree while it fades out.
 ///
 /// ### Example: sub-page with back
 /// ```dart
@@ -175,11 +176,13 @@ class MSPageScaffold extends StatelessWidget {
             compactBar: _header(MSPageHeaderSize.compact),
             scrollAreaBuilder: (Key headerKey, bool collapsed) =>
                 _buildScrollArea(
-                  // The bar speaks for the page once it shows. The header is
+                  // The bar is the page heading once it shows. The header is
                   // still in the tree, partly on screen behind the bar until
-                  // it scrolls clear, and would read as a second heading.
-                  ExcludeSemantics(
-                    excluding: collapsed,
+                  // it scrolls clear, and would read as a second heading. Only
+                  // the role comes off: the bar has no subtitle, so the large
+                  // header's stays readable.
+                  MSPageHeaderHeadingScope(
+                    isHeading: !collapsed,
                     child: _header(MSPageHeaderSize.large, key: headerKey),
                   ),
                 ),

@@ -5,6 +5,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/components/page_header/page_header.dart'
+    show MSPageHeaderHeadingScope;
 import 'package:magic_starter/src/ui/components/page_header/page_header.preview.dart';
 
 void main() {
@@ -1000,6 +1002,53 @@ void main() {
           tester,
         ).map((SemanticsNode n) => n.getSemanticsData().label),
         ['Heard'],
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a heading scope takes the role off the title and no more', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrap(
+          const MSPageHeaderHeadingScope(
+            isHeading: false,
+            child: MSPageHeader(title: 'Heard', subtitle: 'Still read'),
+          ),
+        ),
+      );
+
+      expect(_headerNodes(tester), isEmpty);
+      expect(
+        tester.getSemantics(find.text('Heard')),
+        matchesSemantics(label: 'Heard'),
+      );
+      expect(
+        tester.getSemantics(find.text('Still read')),
+        matchesSemantics(label: 'Still read'),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a heading scope that says so leaves the title a heading', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrap(
+          const MSPageHeaderHeadingScope(
+            isHeading: true,
+            child: MSPageHeader(title: 'Heard'),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.text('Heard')),
+        matchesSemantics(label: 'Heard', isHeader: true),
       );
       handle.dispose();
     });

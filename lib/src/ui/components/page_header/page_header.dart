@@ -173,9 +173,13 @@ class MSPageHeader extends StatelessWidget {
   /// Builds the title text as the page heading, in [className].
   ///
   /// The header role is what lets a screen reader's heading navigation land on
-  /// the page title, in every [MSPageHeaderSize].
-  Widget _buildTitle(String className) {
-    return Semantics(header: true, child: WText(title, className: className));
+  /// the page title, in every [MSPageHeaderSize]. The text itself is always
+  /// read; only a [MSPageHeaderHeadingScope] above can take the role off.
+  Widget _buildTitle(BuildContext context, String className) {
+    return Semantics(
+      header: MSPageHeaderHeadingScope.isHeadingOf(context),
+      child: WText(title, className: className),
+    );
   }
 
   /// Builds the subtitle line: the text alone, or the text followed by
@@ -216,7 +220,7 @@ class MSPageHeader extends StatelessWidget {
           height: compactBarHeight,
           child: NavigationToolbar(
             leading: effectiveLeading,
-            middle: _buildTitle(theme.compactTitleClassName),
+            middle: _buildTitle(context, theme.compactTitleClassName),
             trailing: trailing != null && trailing.isNotEmpty
                 ? WDiv(
                     className: theme.actionContainerClassName,
@@ -288,7 +292,7 @@ class MSPageHeader extends StatelessWidget {
             WDiv(
               className: 'flex flex-col gap-1 flex-initial min-w-0',
               children: [
-                _buildTitle(titleClassName),
+                _buildTitle(context, titleClassName),
                 if (subtitle != null) _buildSubtitle(subtitle!),
               ],
             ),
@@ -304,6 +308,41 @@ class MSPageHeader extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+/// Whether the title of every [MSPageHeader] below is the page's heading.
+///
+/// Package-internal: `page_header/index.dart` does not export it. A page has
+/// one heading, and `MSPageScaffold(largeTitle: true)` draws its title twice
+/// (the large header and the compact bar) while the bar shows. The frame takes
+/// the role off the large title then, so the title text and the subtitle stay
+/// readable and only the bar is a heading. It is a scope rather than a
+/// constructor argument so that no host can strip its own page of a heading.
+///
+/// Absent, a title is a heading.
+class MSPageHeaderHeadingScope extends InheritedWidget {
+  /// Whether a title below carries the heading role.
+  final bool isHeading;
+
+  /// Creates a [MSPageHeaderHeadingScope].
+  const MSPageHeaderHeadingScope({
+    super.key,
+    required this.isHeading,
+    required super.child,
+  });
+
+  /// Whether a title built under [context] carries the heading role.
+  static bool isHeadingOf(BuildContext context) {
+    return context
+            .dependOnInheritedWidgetOfExactType<MSPageHeaderHeadingScope>()
+            ?.isHeading ??
+        true;
+  }
+
+  @override
+  bool updateShouldNotify(MSPageHeaderHeadingScope oldWidget) {
+    return isHeading != oldWidget.isHeading;
   }
 }
 

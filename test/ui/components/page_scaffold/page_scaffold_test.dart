@@ -886,6 +886,71 @@ void main() {
         expect(headings(tester), ['Stock']);
         handle.dispose();
       });
+
+      testWidgets('Reduce Motion keeps one heading at both ends', (
+        tester,
+      ) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          page(
+            const MSPageScaffold(
+              title: 'Stock',
+              largeTitle: true,
+              children: tallBody,
+            ),
+            media: const MediaQueryData(
+              size: Size(800, 600),
+              disableAnimations: true,
+            ),
+          ),
+        );
+        expect(headings(tester), ['Stock']);
+
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, -400),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        expect(bar(), findsOneWidget);
+        expect(headings(tester), ['Stock']);
+        handle.dispose();
+      });
+
+      // The bar has no subtitle, so the subtitle is the one thing only the
+      // large header says; it must not leave the tree with the heading role.
+      testWidgets(
+        'the subtitle stays in the tree once the bar has taken over',
+        (tester) async {
+          final SemanticsHandle handle = tester.ensureSemantics();
+          final ScrollController controller = ScrollController();
+          addTearDown(controller.dispose);
+
+          await tester.pumpWidget(
+            page(
+              MSPageScaffold(
+                title: 'Stock',
+                subtitle: 'Everything you own',
+                largeTitle: true,
+                scrollController: controller,
+                children: tallBody,
+              ),
+            ),
+          );
+          expect(_visibleLabels(tester), contains('Everything you own'));
+
+          final double headerBottom = tester.getBottomLeft(largeHeader()).dy;
+          controller.jumpTo(headerBottom - (MSPageHeader.compactBarHeight - 4));
+          await tester.pumpAndSettle();
+
+          expect(bar(), findsOneWidget);
+          expect(_visibleLabels(tester), contains('Everything you own'));
+          expect(headings(tester), ['Stock']);
+          handle.dispose();
+        },
+      );
     });
 
     testWidgets('a docked footer stays below the collapsing page', (
@@ -916,6 +981,28 @@ void main() {
       );
     });
   });
+}
+
+/// The label of every node the platform would receive, in tree order.
+///
+/// Folded and hidden nodes are skipped for the reason [_headerNodes] gives.
+List<String> _visibleLabels(WidgetTester tester) {
+  final List<String> found = <String>[];
+
+  void walk(SemanticsNode node) {
+    final SemanticsData data = node.getSemanticsData();
+    if (!node.isMergedIntoParent && !data.flagsCollection.isHidden) {
+      found.add(data.label);
+    }
+    node.visitChildren((SemanticsNode child) {
+      walk(child);
+      return true;
+    });
+  }
+
+  walk(tester.getSemantics(find.byType(MaterialApp)));
+
+  return found;
 }
 
 /// Every heading node the platform would receive, in tree order.
