@@ -166,6 +166,11 @@ hovered row is already `bg-surface-container-high`; a tile with that fill would
 disappear into it. Geometry, including the `overflow-hidden` that keeps a hovered
 row inside the panel's rounded corners, stays in the widgets.
 
+Keep a border in `panelClassName`, even an invisible one
+(`border border-transparent`), for the panel's shadow to survive: Wind clips a
+bordered box inside the border, while a borderless one gets a `ClipRRect` around
+the decorated container, which cuts the box shadow off.
+
 ### Button
 
 Nothing is derived. `MSButton`'s recipe already writes the semantic aliases

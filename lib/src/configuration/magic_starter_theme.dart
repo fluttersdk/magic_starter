@@ -935,6 +935,11 @@ class MagicStarterDropdownTheme {
   /// Panel fill and edge: the background, the border width and the border
   /// colour.
   ///
+  /// Keep a border, even an invisible one (`border border-transparent`): Wind
+  /// clips a bordered box inside the border, while a borderless one gets a
+  /// `ClipRRect` around the decorated container, which cuts off the panel's
+  /// shadow.
+  ///
   /// Defaults to
   /// `'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'`.
   final String panelClassName;
