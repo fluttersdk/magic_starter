@@ -167,7 +167,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`,
 
 | Component | Enums / Helpers | Notes |
 |-----------|----------------|-------|
-| `MSSegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher; below `lg` each segment is at least 44 px tall to tap, the painted pill unchanged. In a horizontal scroller (the `overflow-x-auto` root override or your own scroll view) it scrolls the selected segment into view on mount and when `selectedIndex` changes, and never moves the page's vertical scroll |
+| `MSSegmentedControl` | `SegmentedControlSize`, `segmentedControlRecipe` | Inline tab switcher; below `lg` each segment is at least 44 px tall to tap, the painted pill unchanged. In a horizontal scroller (the `overflow-x-auto` root override, or your own scroll view that holds nothing but the control) it scrolls the selected segment into view on mount and when `selectedIndex` changes; a page view, a vertical list or a strip with padding or other content around the control is left alone, and the page's vertical scroll never moves |
 | `MSTabs` | `tabsRecipe` | Full tab bar with content panels |
 | `MSAccordion` | `MSAccordionItem`, `accordionRecipe` | Collapsible section list |
 | `MSNavbar` | | Horizontal top navigation bar |

@@ -893,5 +893,201 @@ void main() {
         );
       });
     });
+
+    group('inside a scroller that is not the control\'s own', () {
+      testWidgets('a vertical list between the control and the strip leaves the '
+          'strip where it was', (tester) async {
+        final ScrollController strip = ScrollController(
+          initialScrollOffset: 40,
+        );
+        final ScrollController list = ScrollController(
+          initialScrollOffset: 150,
+        );
+        addTearDown(strip.dispose);
+        addTearDown(list.dispose);
+
+        // The control sits 300 px down a list that is scrolled to show it, in a
+        // 700 px wide strip. The offset that reveals it in the LIST is a
+        // vertical one and must never reach the strip.
+        await tester.pumpWidget(
+          wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                height: 200,
+                child: SingleChildScrollView(
+                  controller: strip,
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: 700,
+                    child: ListView(
+                      controller: list,
+                      children: [
+                        const SizedBox(height: 300),
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: MSSegmentedControl<String>(
+                            options: options,
+                            selectedIndex: options.length - 1,
+                            onChanged: (_) {},
+                          ),
+                        ),
+                        const SizedBox(height: 1000),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text(last), findsOneWidget);
+        expect(strip.offset, 40);
+        expect(list.offset, 150);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a page view page is not snapped, and a drag in progress is '
+          'not cancelled, when the selection changes', (tester) async {
+        final PageController pages = PageController(initialPage: 1);
+        addTearDown(pages.dispose);
+
+        Widget onSecondPage(int selectedIndex) {
+          return wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                height: 200,
+                child: PageView(
+                  controller: pages,
+                  children: [
+                    const SizedBox.shrink(),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: MSSegmentedControl<String>(
+                        options: options,
+                        selectedIndex: selectedIndex,
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        await tester.pumpWidget(onSecondPage(0));
+        await tester.pump();
+        expect(pages.position.pixels, 300);
+
+        // The user is dragging the page back toward the first one.
+        final TestGesture drag = await tester.startGesture(
+          tester.getCenter(find.byType(PageView)),
+        );
+        await drag.moveBy(const Offset(60, 0));
+        await tester.pump();
+        await drag.moveBy(const Offset(20, 0));
+        await tester.pump();
+        final double dragged = pages.position.pixels;
+        expect(dragged, inExclusiveRange(0, 300));
+        expect(pages.position.isScrollingNotifier.value, isTrue);
+
+        // The selection changes under the finger.
+        await tester.pumpWidget(onSecondPage(options.length - 1));
+        await tester.pump();
+
+        expect(pages.position.pixels, dragged);
+        expect(pages.position.isScrollingNotifier.value, isTrue);
+
+        await drag.up();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a vertical list is never moved, even when its extent is the '
+          'control\'s width', (tester) async {
+        final ScrollController list = ScrollController();
+        addTearDown(list.dispose);
+
+        // 700 px of content under a 200 px viewport, and a control exactly
+        // 700 px wide below the fold: the width check alone would pass.
+        await tester.pumpWidget(
+          wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 700,
+                height: 200,
+                child: ListView(
+                  controller: list,
+                  children: [
+                    const SizedBox(height: 300),
+                    SizedBox(
+                      height: 400,
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: SizedBox(
+                          width: 700,
+                          child: MSSegmentedControl<String>(
+                            options: options,
+                            selectedIndex: options.length - 1,
+                            onChanged: (_) {},
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(list.position.maxScrollExtent + 200, 700);
+        expect(list.offset, 0);
+      });
+
+      testWidgets('a strip that holds more than the control is left to the '
+          'host', (tester) async {
+        final ScrollController strip = ScrollController();
+        addTearDown(strip.dispose);
+
+        await tester.pumpWidget(
+          wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                child: SingleChildScrollView(
+                  controller: strip,
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MSSegmentedControl<String>(
+                        options: options,
+                        selectedIndex: options.length - 1,
+                        onChanged: (_) {},
+                      ),
+                      const SizedBox(width: 400),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(strip.position.maxScrollExtent, greaterThan(0));
+        expect(strip.offset, 0);
+        expect(isFullyInside(tester, last, find.byType(Scrollable)), isFalse);
+      });
+    });
   });
 }

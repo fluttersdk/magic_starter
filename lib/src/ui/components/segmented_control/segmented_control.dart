@@ -36,17 +36,24 @@ import 'segmented_control.recipe.dart';
 /// A row wider than a horizontal scroller around it (the `overflow-x-auto` root
 /// override, or a `SingleChildScrollView` the host wraps it in) can leave the
 /// active segment clipped or out of sight. When the control first mounts, and
-/// whenever [selectedIndex] changes, it scrolls the nearest horizontal scroller
-/// just far enough to show that segment whole, once the frame is laid out and
-/// without animation. Nothing moves when the segment is already in view, on a
-/// rebuild that keeps the same [selectedIndex] (the user's own scrolling is not
-/// undone), without a horizontal scroller above the control, or for an index
-/// that names no segment.
+/// whenever [selectedIndex] changes, it scrolls that scroller just far enough to
+/// show the segment whole, once the frame is laid out and without animation.
+/// Nothing moves when the segment is already in view, on a rebuild that keeps
+/// the same [selectedIndex] (the user's own scrolling is not undone), without a
+/// horizontal scroller above the control, or for an index that names no segment.
 ///
-/// Only a horizontal scroller moves, and only that one. `Scrollable.ensureVisible`
-/// is not used because it walks every scrollable above the segment: it would
-/// also put the control at the top edge of the page's vertical scroll view, or
-/// pull the page down to a control that sits below the fold.
+/// Only one scroller is ever asked: the one nearest to the segment, of either
+/// axis, and only when it is horizontal. Under a vertical list or page nothing
+/// moves, because the reveal would measure against that vertical viewport. A
+/// horizontal scroller moves when it is the root's own `overflow-x-auto`, or
+/// when the control is everything it scrolls (its content is as wide as the
+/// control: no padding, no sibling beside it). A page view that holds the
+/// control, or a strip several controls share, belongs to the host, and the
+/// reveal would snap a page mid-drag or drag a whole table along.
+/// `Scrollable.ensureVisible` is not used because it walks every scrollable
+/// above the segment: it would also put the control at the top edge of the
+/// page's vertical scroll view, or pull the page down to a control that sits
+/// below the fold.
 ///
 /// ### Example Usage:
 ///
@@ -208,30 +215,35 @@ class _MSSegmentedControlState<T> extends State<MSSegmentedControl<T>> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _revealSelected());
   }
 
-  /// Shows the selected segment whole in the nearest horizontal [Scrollable].
+  /// Shows the selected segment whole in the horizontal [Scrollable] around it.
   ///
-  /// Does nothing when there is no horizontal scroller above the segment, when
-  /// the index names no segment, or when the segment is already in view.
+  /// Does nothing when the scroller nearest to the segment is not a horizontal
+  /// one this control may move, when the index names no segment, or when the
+  /// segment is already in view.
   void _revealSelected() {
     // 1. The control may be gone, or the index may name no segment (-1 is a
     //    row with nothing selected).
     final int index = widget.selectedIndex;
     if (!mounted || index < 0 || index >= _segmentKeys.length) return;
 
-    // 2. Only a horizontal scroller is asked: Scrollable.ensureVisible walks
-    //    every scrollable above the segment, so it would also move the page's
-    //    vertical scroll view to put the control at its top edge.
     final BuildContext? segment = _segmentKeys[index].currentContext;
     if (segment == null) return;
 
-    final ScrollableState? scroller = Scrollable.maybeOf(
-      segment,
-      axis: Axis.horizontal,
-    );
+    // 2. Ask the nearest scroller of EITHER axis, and go on only when it is
+    //    horizontal. ScrollPosition.ensureVisible measures against the viewport
+    //    nearest to the segment, whatever the position's axis: past a vertical
+    //    list, `Scrollable.maybeOf(axis: horizontal)` would hand back the strip
+    //    beyond it and the list's vertical offset would be jumped onto the
+    //    strip.
+    final ScrollableState? scroller = Scrollable.maybeOf(segment);
     final RenderObject? target = segment.findRenderObject();
     if (scroller == null || target == null) return;
+    if (scroller.position.axis != Axis.horizontal) return;
 
-    // 3. Each keep-visible policy moves the strip in one direction only, and
+    // 3. Leave a scroller that is the host's own business alone.
+    if (!_mayMove(scroller)) return;
+
+    // 4. Each keep-visible policy moves the strip in one direction only, and
     //    only when the segment lies past that edge, so a segment already in view
     //    stays where it is. Without a duration the jump happens right here, and
     //    the second call sees the position the first one left.
@@ -241,6 +253,29 @@ class _MSSegmentedControlState<T> extends State<MSSegmentedControl<T>> {
     ]) {
       scroller.position.ensureVisible(target, alignmentPolicy: policy);
     }
+  }
+
+  /// Whether this control may move [scroller]: it is the control's own, or the
+  /// control is all it scrolls.
+  ///
+  /// A scroller inside the control is the root's `overflow-x-auto`, and moving
+  /// it is the point. One outside is the host's, and jumping it would also
+  /// snap a page view page mid-drag, or drag a table strip along each time one
+  /// of its rows changes its selection. What tells a strip wrapped around the
+  /// control from those is its content: the control fills it when its extent
+  /// (the scrollable range plus the viewport) is the control's own width, within
+  /// a pixel of rounding. A strip that pads the control or holds a sibling has a
+  /// larger extent and counts as the host's.
+  bool _mayMove(ScrollableState scroller) {
+    final bool isOwn =
+        context.findAncestorStateOfType<ScrollableState>() != scroller;
+    if (isOwn) return true;
+
+    final ScrollPosition position = scroller.position;
+    final double content =
+        position.maxScrollExtent + position.viewportDimension;
+
+    return (content - context.size!.width).abs() <= 1;
   }
 
   /// Builds a single segment at [index], activating the `selected:` state for
