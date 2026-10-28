@@ -599,6 +599,8 @@ dart run <app>:artisan starter:doctor
 
 The publish command copies the view to `lib/resources/views/starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run <app>:artisan starter:doctor` to confirm registration status.
 
+A published copy is a snapshot: a later release that changes a view does not reach it. When a release changes the view you published, its CHANGELOG entry names the edits to make by hand, or you re-publish with `--force` and re-apply yours.
+
 ---
 
 ## CLI Tools
