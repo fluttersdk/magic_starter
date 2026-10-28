@@ -192,6 +192,16 @@ void main() {
       .descendant(of: find.byType(MSToast), matching: find.byType(WDiv))
       .first;
 
+  /// The size and weight the action label paints with.
+  (double?, FontWeight?) paintedLabel(WidgetTester tester) {
+    final style = tester
+        .renderObject<RenderParagraph>(find.text('Undo'))
+        .text
+        .style;
+
+    return (style?.fontSize, style?.fontWeight);
+  }
+
   Color? colourOf(WidgetTester tester, String text) =>
       tester.renderObject<RenderParagraph>(find.text(text)).text.style?.color;
 
@@ -422,6 +432,123 @@ void main() {
 
       expect(box.className, startsWith('flex flex-row items-center gap-3'));
       expect(box.className, endsWith(' mt-10'));
+    });
+  });
+
+  group('toast message class', () {
+    // What a host with a 15 on 20 body sets: the default is 14 medium.
+    const hostMessage = 'text-[15px] leading-5 font-normal';
+
+    TextStyle? messageStyle(WidgetTester tester) =>
+        tester.renderObject<RenderParagraph>(find.text('Saved')).text.style;
+
+    double lineOf(TextStyle? style) => style!.fontSize! * style.height!;
+
+    WText messageWidget(WidgetTester tester) => tester.widget<WText>(
+      find.byWidgetPredicate((w) => w is WText && w.data == 'Saved'),
+    );
+
+    Widget withAction({String? messageClassName}) => MSToast(
+      message: 'Saved',
+      actionLabel: 'Undo',
+      onAction: () {},
+      messageClassName: messageClassName,
+    );
+
+    Widget messageOnly({String? messageClassName}) =>
+        MSToast(message: 'Saved', messageClassName: messageClassName);
+
+    testWidgets('a toast without one keeps the default message class', (
+      tester,
+    ) async {
+      await pumpToast(tester, messageOnly());
+      expect(messageWidget(tester).className, 'text-sm font-medium');
+
+      await pumpToast(tester, withAction());
+      expect(messageWidget(tester).className, 'text-sm font-medium');
+    });
+
+    testWidgets('an empty class adds nothing to the default', (tester) async {
+      await pumpToast(tester, messageOnly(messageClassName: ''));
+
+      expect(messageWidget(tester).className, 'text-sm font-medium');
+    });
+
+    testWidgets('is appended after the default message class', (tester) async {
+      await pumpToast(tester, messageOnly(messageClassName: hostMessage));
+      expect(
+        messageWidget(tester).className,
+        'text-sm font-medium $hostMessage',
+      );
+
+      await pumpToast(tester, withAction(messageClassName: hostMessage));
+      expect(
+        messageWidget(tester).className,
+        'text-sm font-medium $hostMessage',
+      );
+    });
+
+    for (final brightness in Brightness.values) {
+      testWidgets('the default paints 14 on 20 at weight 500, '
+          '${brightness.name}', (tester) async {
+        await pumpToast(tester, messageOnly(), brightness: brightness);
+        final style = messageStyle(tester);
+
+        expect(style?.fontSize, 14);
+        expect(style?.fontWeight, FontWeight.w500);
+      });
+
+      for (final entry in {
+        'message only': false,
+        'with an action': true,
+      }.entries) {
+        testWidgets('a host class sets 15 on 20 at weight 400, ${entry.key}, '
+            '${brightness.name}', (tester) async {
+          await pumpToast(
+            tester,
+            entry.value
+                ? withAction(messageClassName: hostMessage)
+                : messageOnly(messageClassName: hostMessage),
+            brightness: brightness,
+          );
+          final style = messageStyle(tester);
+
+          expect(style?.fontSize, 15);
+          expect(lineOf(style), closeTo(20, 0.01));
+          expect(style?.fontWeight, FontWeight.w400);
+          expect(
+            tester.getSize(find.text('Saved')).height,
+            closeTo(20, 0.01),
+            reason: 'the laid out line is the 20 px the class asks for',
+          );
+        });
+      }
+
+      testWidgets('leaves the colour of the message to the toast, '
+          '${brightness.name}', (tester) async {
+        await pumpToast(tester, messageOnly(), brightness: brightness);
+        final plain = colourOf(tester, 'Saved');
+
+        await pumpToast(
+          tester,
+          messageOnly(messageClassName: hostMessage),
+          brightness: brightness,
+        );
+
+        expect(colourOf(tester, 'Saved'), plain);
+      });
+    }
+
+    testWidgets('a host class changes the message and not the action', (
+      tester,
+    ) async {
+      await pumpToast(tester, withAction());
+      final label = paintedLabel(tester);
+
+      await pumpToast(tester, withAction(messageClassName: hostMessage));
+
+      expect(paintedLabel(tester), label);
+      expect(messageStyle(tester)?.fontSize, 15);
     });
   });
 

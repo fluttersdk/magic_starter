@@ -7,6 +7,11 @@ import 'toast.dart' show ToastVariant;
 /// The variant axis key for the toast recipe (`ToastVariant.<value>.name`).
 const String kToastVariantAxis = 'variant';
 
+/// The text classes of the message: the size and weight [MSToast] has always
+/// set. A host's `messageClassName` is appended after them, so the last class of
+/// a family wins.
+const String kToastMessageClassName = 'text-sm font-medium';
+
 /// The on-colour role that reads on the fill of each toned [ToastVariant], by
 /// variant name, or `null` for the neutral `info` toast, which has no fill of
 /// its own to read against.

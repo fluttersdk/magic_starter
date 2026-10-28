@@ -56,6 +56,13 @@ enum ToastVariant {
 /// and warning fills (it reads on the stock green and amber) and to the alias
 /// map's white on the destructive one.
 ///
+/// ### The message type
+///
+/// The message is `text-sm font-medium`, 14 px medium. A host whose body text is
+/// something else passes [messageClassName], appended after those classes so the
+/// last class of a family wins: `'text-[15px] leading-5 font-normal'` is 15 on 20
+/// at weight 400, with or without an action. The colour is the toast's.
+///
 /// ### An action
 ///
 /// [actionLabel] and [onAction] add a text action at the trailing side, for a
@@ -93,6 +100,15 @@ class MSToast extends StatelessWidget {
   /// matching recipe classes while every non-overridden base class survives.
   final String? className;
 
+  /// Optional className appended after the message's own text classes
+  /// (`text-sm font-medium`), so the last class of a family wins.
+  ///
+  /// For a host whose body text is not 14 px medium: `messageClassName:
+  /// 'text-[15px] leading-5 font-normal'` sets 15 on 20 at weight 400. It styles
+  /// the message text only, with or without an action; the colour stays the
+  /// toast's, and the action keeps its own type.
+  final String? messageClassName;
+
   /// Label of the trailing text action, already translated. It is also the
   /// action's accessible name.
   ///
@@ -110,6 +126,7 @@ class MSToast extends StatelessWidget {
     required this.message,
     this.variant = ToastVariant.info,
     this.className,
+    this.messageClassName,
     this.actionLabel,
     this.onAction,
   }) : assert(
@@ -122,6 +139,10 @@ class MSToast extends StatelessWidget {
     final String? label = actionLabel;
     final VoidCallback? onPressed = onAction;
     final WindThemeData? windTheme = WindTheme.maybeDataOf(context);
+    final String messageClass = <String>[
+      kToastMessageClassName,
+      ?messageClassName,
+    ].where((String segment) => segment.isNotEmpty).join(' ');
 
     // 1. Without an action the toast is the banner it always was.
     if (label == null || onPressed == null) {
@@ -130,7 +151,7 @@ class MSToast extends StatelessWidget {
           variants: {kToastVariantAxis: variant.name},
           className: className,
         ),
-        child: WText(message, className: 'text-sm font-medium'),
+        child: WText(message, className: messageClass),
       );
     }
 
@@ -158,7 +179,7 @@ class MSToast extends StatelessWidget {
       children: [
         WDiv(
           className: action['message'],
-          child: WText(message, className: 'text-sm font-medium'),
+          child: WText(message, className: messageClass),
         ),
         WAnchor(
           onTap: onPressed,
