@@ -344,7 +344,7 @@ unticked.value = 4; // the badge reads 4
 unticked.value = 0; // and is gone
 ```
 
-The badge is hidden while the value is `null` or not above zero, and reads `99+` above 99. The sidebar and the drawer draw it at the trailing edge of the row, the compact rail and the bottom bar on the corner of the icon; it takes no room from the item, so nothing moves when it shows. The profile menu ignores it.
+The badge is hidden while the value is `null` or not above zero, and reads `99+` above 99. The sidebar and the drawer draw it at the trailing edge of the row, the compact rail and the bottom bar on the corner of the icon; it takes no room from the item, so nothing moves when it shows. On the compact rail the pill overhangs the icon by 16 px, so a `sidebarCompactWidth` under 52 would cut it at the edge of the rail; the default is 80. The profile menu ignores it.
 
 A badge is not colour alone. The number is drawn, and a screen reader gets a sentence in place of it, added to the item's own label: `badgeLabelKey` names a catalogue line with both plural forms and a `:count` placeholder, read with the real count even above 99. It defaults to `nav.badge_count`, which the install stub ships (`"One item|:count items"`); name your own key when the number counts something specific:
 
