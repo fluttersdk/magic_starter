@@ -159,8 +159,11 @@ final class MagicStarterTokens {
   /// near-black `gray-950` by WCAG contrast is returned (`text-white` or
   /// `text-gray-950`, one mode at a time; the context depends on the theme, so
   /// a brightness change rebuilds it). On the stock fills that is the near-black
-  /// they have always had here. With no fill to measure (the theme resolves
-  /// [fill] to nothing) the answer is [role]'s fallback pair.
+  /// they have always had here. A translucent fill is measured over the
+  /// `bg-surface` it is painted on, since its own colour alone says nothing about
+  /// what the text sits on. With no fill to measure (the theme resolves [fill]
+  /// or, for a translucent one, `bg-surface` to nothing) the answer is [role]'s
+  /// fallback pair.
   static String readableOn(
     BuildContext context, {
     required String fill,
@@ -171,7 +174,7 @@ final class MagicStarterTokens {
       return role;
     }
 
-    final Color? fillColour = WindParser.parse(fill, context).decoration?.color;
+    final Color? fillColour = _opaqueFill(fill, context);
     final Color? light = WindParser.parse('text-white', context).color;
     final Color? dark = WindParser.parse('text-gray-950', context).color;
     if (fillColour == null || light == null || dark == null) {
@@ -181,6 +184,22 @@ final class MagicStarterTokens {
     return _contrast(light, fillColour) >= _contrast(dark, fillColour)
         ? 'text-white'
         : 'text-gray-950';
+  }
+
+  /// The colour [fill] paints, laid over `bg-surface` when it is translucent, or
+  /// null when the theme resolves it (or the surface it needs) to nothing.
+  static Color? _opaqueFill(String fill, BuildContext context) {
+    final Color? colour = WindParser.parse(fill, context).decoration?.color;
+    if (colour == null || colour.a >= 1) {
+      return colour;
+    }
+
+    final Color? surface = WindParser.parse(
+      'bg-surface',
+      context,
+    ).decoration?.color;
+
+    return surface == null ? null : Color.alphaBlend(colour, surface);
   }
 
   /// WCAG contrast ratio of two colours, from their relative luminance.

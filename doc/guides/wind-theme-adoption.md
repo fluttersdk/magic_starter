@@ -327,7 +327,10 @@ which pins all three rows of the table, and the 22 px line centred in the 44 px
 box at 390 and 1440 in light and dark. A bare `min-h-11` does pin the label of a
 `WButton` to the top of its box, which is why buttons reach 44 px with padding
 around a fixed line height; a `WInput` and a `WFormSelect` trigger centre their
-one line, so for them the minimum height is safe.
+one line, so for them the minimum height is safe. The two agree at the default
+text size only: once a larger text setting lifts the line past the minimum
+height, the select trigger is 2 px taller than the input, because its border adds
+to the padding where the input's sits inside it.
 
 ### Auth
 

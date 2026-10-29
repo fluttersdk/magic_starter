@@ -1087,6 +1087,26 @@ void main() {
       );
     });
 
+    testWidgets('a translucent host fill is measured over the surface it '
+        'paints on', (tester) async {
+      // A 20 percent tint of a dark green over the light surface is a pale
+      // green: the opaque colour alone would call for white and put it on a
+      // pale fill at about 1.3:1.
+      await pumpToast(
+        tester,
+        undoToast(variant: ToastVariant.success),
+        aliases: <String, String>{
+          ...MagicStarterTokens.defaultAliases,
+          'bg-success': 'bg-[#2E6B45]/20',
+        },
+      );
+
+      expect(
+        colourOf(tester, 'Moved to Kitchen'),
+        WindThemeData().getColor('gray', 950),
+      );
+    });
+
     testWidgets('a message-only toned toast reads the role too', (
       tester,
     ) async {

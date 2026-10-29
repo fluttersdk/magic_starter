@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -31,6 +33,12 @@ void main() {
   tearDown(() {
     MagicApp.reset();
     Magic.flush();
+  });
+
+  test('the adoption guide quotes the same string', () {
+    final guide = File('doc/guides/wind-theme-adoption.md').readAsStringSync();
+
+    expect(guide, contains(_sizeRun));
   });
 
   test('the host string carries the size run and keeps the rest', () {
@@ -120,9 +128,8 @@ void main() {
     }
   }
 
-  testWidgets('the two are the same height, so one string serves both', (
-    tester,
-  ) async {
+  testWidgets('the two are the same height at the default text size, so one '
+      'string serves both', (tester) async {
     await pumpControlAt(
       tester,
       kPhone,
