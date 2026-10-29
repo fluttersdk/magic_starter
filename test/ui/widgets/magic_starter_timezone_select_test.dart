@@ -236,8 +236,9 @@ void main() {
       /// surface of [size]: the select must not jump when the list arrives.
       Future<({double loading, double loaded})> heights(
         WidgetTester tester,
-        Size size,
-      ) async {
+        Size size, {
+        double textScale = 1.0,
+      }) async {
         tester.view.devicePixelRatio = 1.0;
         tester.view.physicalSize = size;
         addTearDown(tester.view.reset);
@@ -250,20 +251,30 @@ void main() {
 
         await tester.pumpWidget(
           wrapWithTheme(
-            Align(
-              alignment: Alignment.topLeft,
-              child: MagicStarterTimezoneSelect(value: null, onChanged: (_) {}),
+            Builder(
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(textScale)),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: MagicStarterTimezoneSelect(
+                    value: null,
+                    onChanged: (_) {},
+                  ),
+                ),
+              ),
             ),
           ),
         );
         await tester.pump();
 
-        final loadingBox = find
-            .ancestor(
-              of: find.byType(CircularProgressIndicator),
-              matching: find.byType(WDiv),
-            )
-            .first;
+        final loadingBox = find.ancestor(
+          of: find.byType(CircularProgressIndicator),
+          matching: find.byWidgetPredicate(
+            (w) => w is WDiv && (w.className ?? '').contains('rounded-lg'),
+          ),
+        );
         final loading = tester.getSize(loadingBox).height;
 
         gate.complete();
@@ -297,6 +308,52 @@ void main() {
         });
       }
 
+      // The loaded line scales with the text size and the box has to follow it:
+      // at 1.3 the 22 px line is 28.6 and the trigger about 51, not 44.
+      for (final scale in [1.3, 2.0]) {
+        testWidgets('is as tall as the loaded trigger at a text scale of '
+            '$scale under a 17 on 22 host theme', (tester) async {
+          fieldTheme = hostFieldTheme;
+
+          final measured = await heights(tester, kPhone, textScale: scale);
+
+          expect(measured.loaded, greaterThan(44));
+          expect(measured.loading, measured.loaded);
+        });
+
+        testWidgets('is as tall as the loaded trigger at a text scale of '
+            '$scale under the default field theme', (tester) async {
+          fieldTheme = const MagicStarterFieldTheme();
+
+          final measured = await heights(tester, kDesktop, textScale: scale);
+
+          expect(measured.loading, measured.loaded);
+        });
+      }
+
+      testWidgets('follows a line height set as a factor (leading-normal), '
+          'scaled too', (tester) async {
+        fieldTheme = const MagicStarterFieldTheme(
+          selectSizeClassName: 'py-2.5 text-[17px] leading-normal',
+        );
+
+        final measured = await heights(tester, kPhone, textScale: 1.3);
+
+        expect(measured.loading, measured.loaded);
+        expect(measured.loaded, greaterThan(44));
+      });
+
+      testWidgets('follows a line height set as a factor at the default text '
+          'scale', (tester) async {
+        fieldTheme = const MagicStarterFieldTheme(
+          selectSizeClassName: 'py-2.5 text-[17px] leading-normal',
+        );
+
+        final measured = await heights(tester, kPhone);
+
+        expect(measured.loading, measured.loaded);
+      });
+
       testWidgets('keeps the spinner 20 px and centres it in the taller box', (
         tester,
       ) async {
@@ -313,9 +370,12 @@ void main() {
         await tester.pump();
 
         final spinner = find.byType(CircularProgressIndicator);
-        final box = find
-            .ancestor(of: spinner, matching: find.byType(WDiv))
-            .first;
+        final box = find.ancestor(
+          of: spinner,
+          matching: find.byWidgetPredicate(
+            (w) => w is WDiv && (w.className ?? '').contains('rounded-lg'),
+          ),
+        );
 
         expect(tester.getSize(spinner), const Size(20, 20));
         expect(

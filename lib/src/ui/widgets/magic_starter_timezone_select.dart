@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
@@ -449,28 +448,12 @@ class _MagicStarterTimezoneSelectState
   /// loaded trigger draws beside its text.
   static const double _spinnerSize = 20;
 
-  /// The height of the content row of the trigger once it has loaded: its text
-  /// line or its 20 px arrow, whichever is taller.
-  ///
-  /// The loading box has to be as tall as that, or the select jumps when the
-  /// list arrives. A bare spinner is only 20 px, which is the loaded row when
-  /// the trigger sets no line height of its own; a theme that sets one
-  /// (`leading-[22px]`) makes the row taller, so the spinner is centred in a box
-  /// of that height.
-  double _loadingContentHeight(BuildContext context, String triggerClassName) {
-    final double? line = WindParser.parse(triggerClassName, context).heightLine;
-
-    return line == null ? _spinnerSize : math.max(_spinnerSize, line);
-  }
-
   @override
   Widget build(BuildContext context) {
     // Resolve the select slot recipe for semantic-token defaults.
     final slots = selectRecipe(theme: MagicStarter.fieldTheme);
 
     if (_isInitializing) {
-      final String triggerClassName = widget.className ?? slots['trigger']!;
-
       return WDiv(
         children: [
           if (widget.label != null)
@@ -481,18 +464,28 @@ class _MagicStarterTimezoneSelectState
                   'text-sm font-medium text-fg-muted mb-1',
             ),
           WDiv(
-            className: triggerClassName,
-            child: SizedBox(
-              width: _spinnerSize,
-              height: _loadingContentHeight(context, triggerClassName),
-              child: const Center(
-                child: SizedBox(
-                  width: _spinnerSize,
-                  height: _spinnerSize,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+            className: widget.className ?? slots['trigger'],
+            children: [
+              // The same row the loaded trigger draws (a flexible text slot
+              // and a 20 px glyph), with the spinner for the glyph and an empty
+              // line for the text. The line takes the trigger's own type, so
+              // the box is as tall as the loaded one at any line height, text
+              // scale or `leading-*`, without this widget knowing which.
+              WDiv(
+                className: 'flex items-center gap-2',
+                children: [
+                  const SizedBox(
+                    width: _spinnerSize,
+                    height: _spinnerSize,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  WDiv(
+                    className: 'flex-1',
+                    child: const WText('\u200B', className: 'truncate'),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
         ],
       );
