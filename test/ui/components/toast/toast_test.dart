@@ -713,7 +713,7 @@ void main() {
       expect(
         box.right - tester.getRect(actionCell()).right,
         8,
-        reason: 'the cell has its own px-2 beside the box pr-2',
+        reason: 'the cell has its own px-2 beside the box px-2',
       );
     });
   });

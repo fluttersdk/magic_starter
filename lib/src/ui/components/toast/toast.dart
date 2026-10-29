@@ -34,9 +34,9 @@ enum ToastVariant {
 /// whether pressing the action closes it.
 ///
 /// The magic framework's `Magic.toast(String)` is not a way to show an action.
-/// It takes only a message, and the overlay it presents is an `IgnorePointer`,
-/// so nothing in it can be pressed. A host that wants an action presents the
-/// `MSToast` itself, through its own `OverlayEntry`.
+/// It takes a message and a duration, no widget, and the overlay it presents is
+/// an `IgnorePointer`, so nothing in it can be pressed. A host that wants an
+/// action presents the `MSToast` itself, through its own `OverlayEntry`.
 ///
 /// ### Example
 /// ```dart
