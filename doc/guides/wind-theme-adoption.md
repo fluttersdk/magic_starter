@@ -322,7 +322,12 @@ The third is the one string that gives both 44 px: the select is 10 + 22 + 10 + 
 and the minimum height lifts the input from 42 to 44, where it centres its single
 line (the line box measures dead centre in the test font; a real font's glyphs can
 sit a pixel off the middle of a taller box). The heights are line boxes measured
-in a widget test.
+in a widget test (`test/configuration/magic_starter_form_theme_input_test.dart`),
+which pins all three rows of the table, and the 22 px line centred in the 44 px
+box at 390 and 1440 in light and dark. A bare `min-h-11` does pin the label of a
+`WButton` to the top of its box, which is why buttons reach 44 px with padding
+around a fixed line height; a `WInput` and a `WFormSelect` trigger centre their
+one line, so for them the minimum height is safe.
 
 ### Auth
 
