@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart' show BuildContext;
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_theme.dart';
 import '../../theme/magic_starter_tokens.dart';
 
 /// The intent axis key for the button recipe.
@@ -12,8 +13,10 @@ const String kButtonSizeAxis = 'size';
 /// The smallest hit area, in logical pixels, every [MSButton] gets below `lg`:
 /// the iOS minimum tap target.
 ///
-/// `sm` paints 32 px and `md` about 36 px tall, so this is a hit area around
-/// the button and not a bigger button; see [MSButton] for how it is laid out.
+/// By default `sm` paints 32 px and `md` about 36 px tall, so this is a hit area
+/// around the button and not a bigger button; see [MSButton] for how it is laid
+/// out. A [MagicStarterButtonTheme] that makes a size 44 px or taller leaves the
+/// area exactly the size of the button.
 const double kButtonMinTapExtent = 44;
 
 /// Caller className that turns a [ButtonIntent.secondary] button into an
@@ -71,39 +74,53 @@ enum ButtonSize {
   lg,
 }
 
-/// The button [WindRecipe] (const — no theme override hook needed for this
-/// component; styling is token-driven via semantic aliases).
+/// Builds the button [WindRecipe] from a [MagicStarterButtonTheme].
+///
+/// The recipe is theme-driven (not a top-level const) because the shape, the
+/// three size classes and the secondary border are overridable through
+/// `MagicStarter.useButtonTheme()`. The colour classes stay in here, written as
+/// semantic aliases, so a `DESIGN.md` alias map re-skins every button without
+/// the theme. With the default theme the output is byte-identical to the const
+/// recipe this replaced.
 ///
 /// Emission order: `base ++ intent-classes ++ size-classes ++ compound`.
-const WindRecipe buttonRecipe = WindRecipe(
-  // No `justify-center`: in Wind that maps to WButton's Container alignment,
-  // which forces the button to expand and fill its constraints (full-width).
-  // A default Button shrinks to its content (the `inline-flex` intent); the
-  // single-child label is centered by the shrink-wrapped padding box. A caller
-  // `className` APPENDS after this base (parser last-wins resolves conflicts
-  // per family), so it refines the base rather than replacing it; full-width is
-  // the dedicated `fullWidth` prop (a SizedBox wrapper), not a className token.
-  base:
-      'inline-flex items-center font-medium rounded-lg '
-      'transition-colors disabled:opacity-50 disabled:cursor-not-allowed '
-      'focus:outline-none focus:ring-2 focus:ring-offset-1',
-  variants: {
-    kButtonIntentAxis: {
-      'primary':
-          'bg-primary text-on-primary hover:opacity-90 focus:ring-color-border',
-      'secondary':
-          'bg-surface-container-high text-fg border border-color-border '
+///
+/// There is no `justify-center` in the base: in Wind that maps to WButton's
+/// Container alignment, which forces the button to expand and fill its
+/// constraints (full-width). A default Button shrinks to its content (the
+/// `inline-flex` intent); the single-child label is centred by the shrink-wrapped
+/// padding box. A caller `className` APPENDS after this recipe (parser last-wins
+/// resolves conflicts per family), so it refines the recipe rather than replacing
+/// it; full-width is the dedicated `fullWidth` prop (a SizedBox wrapper), not a
+/// className token.
+WindRecipe buildButtonRecipe(MagicStarterButtonTheme theme) {
+  return WindRecipe(
+    base:
+        'inline-flex items-center font-medium ${theme.shapeClassName} '
+        'transition-colors disabled:opacity-50 disabled:cursor-not-allowed '
+        'focus:outline-none focus:ring-2 focus:ring-offset-1',
+    variants: {
+      kButtonIntentAxis: {
+        'primary':
+            'bg-primary text-on-primary hover:opacity-90 focus:ring-color-border',
+        // The border is dropped from the string, not blanked in place, so an
+        // empty theme field leaves no doubled space between the other tokens.
+        'secondary': [
+          'bg-surface-container-high text-fg',
+          theme.secondaryBorderClassName,
           'hover:bg-surface-container-high hover:opacity-80',
-      'ghost': 'bg-transparent text-fg hover:bg-surface-container-high',
-      'destructive':
-          'bg-destructive text-on-destructive hover:opacity-90 '
-          'focus:ring-bg-destructive',
+        ].where((part) => part.isNotEmpty).join(' '),
+        'ghost': 'bg-transparent text-fg hover:bg-surface-container-high',
+        'destructive':
+            'bg-destructive text-on-destructive hover:opacity-90 '
+            'focus:ring-bg-destructive',
+      },
+      kButtonSizeAxis: {
+        'sm': theme.smClassName,
+        'md': theme.mdClassName,
+        'lg': theme.lgClassName,
+      },
     },
-    kButtonSizeAxis: {
-      'sm': 'px-3 py-1.5 text-sm',
-      'md': 'px-4 py-2 text-sm',
-      'lg': 'px-5 py-3 text-base',
-    },
-  },
-  defaultVariants: {kButtonIntentAxis: 'primary', kButtonSizeAxis: 'md'},
-);
+    defaultVariants: {kButtonIntentAxis: 'primary', kButtonSizeAxis: 'md'},
+  );
+}

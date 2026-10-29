@@ -30,6 +30,14 @@ import '../../../facades/magic_starter.dart';
 /// itself needs a scroll position, so it lives in
 /// `MSPageScaffold(largeTitle: true)`, which renders both.
 ///
+/// ### Under a bar of its own
+///
+/// A pushed screen draws its own bar above the page, and the header's top
+/// padding (`p-2`, `lg:p-4` by default) then stacks on the bar's height. Pass
+/// [className] to take less: it is appended after the theme's container class,
+/// so `pt-0` (or `lg:pt-0`, from `lg` up) removes the top padding and keeps the
+/// other sides.
+///
 /// ### Example
 /// ```dart
 /// MSPageHeader(
@@ -121,6 +129,20 @@ class MSPageHeader extends StatelessWidget {
   /// otherwise. The compact bar is never a theme default; it is asked for.
   final MSPageHeaderSize? size;
 
+  /// Optional className appended to the header's container, after the theme's
+  /// `containerClassName` (or `containerInlineClassName`), the same way
+  /// [MSPageContainer.className] is appended to the host's page geometry.
+  ///
+  /// For a page that sits under a bar of its own (a pushed screen's back bar),
+  /// where the header's top padding would stack on the bar's height. Last class
+  /// wins within a family, so `pt-0` takes the top padding off and keeps the
+  /// other sides, and `lg:pt-0` does it from `lg` up only.
+  ///
+  /// It styles the regular and the large header. The compact bar is its own
+  /// layout, a 44 pt row under the safe area whose geometry is fixed, and
+  /// ignores it.
+  final String? className;
+
   /// The presentation this header renders, resolving the theme default.
   MSPageHeaderSize get effectiveSize =>
       size ??
@@ -141,6 +163,7 @@ class MSPageHeader extends StatelessWidget {
     this.backLabel,
     this.backFallback,
     this.size,
+    this.className,
   });
 
   /// Builds the back affordance control from [backLabel] and [backFallback].
@@ -167,6 +190,18 @@ class MSPageHeader extends StatelessWidget {
         className: MagicStarter.pageHeaderTheme.backControlClassName,
         child: WIcon(_chevronLeft),
       ),
+    );
+  }
+
+  /// Builds the title text as the page heading, in [className].
+  ///
+  /// The header role is what lets a screen reader's heading navigation land on
+  /// the page title, in every [MSPageHeaderSize]. The text itself is always
+  /// read; only a [MSPageHeaderHeadingScope] above can take the role off.
+  Widget _buildTitle(BuildContext context, String className) {
+    return Semantics(
+      header: MSPageHeaderHeadingScope.isHeadingOf(context),
+      child: WText(title, className: className),
     );
   }
 
@@ -208,10 +243,7 @@ class MSPageHeader extends StatelessWidget {
           height: compactBarHeight,
           child: NavigationToolbar(
             leading: effectiveLeading,
-            middle: Semantics(
-              header: true,
-              child: WText(title, className: theme.compactTitleClassName),
-            ),
+            middle: _buildTitle(context, theme.compactTitleClassName),
             trailing: trailing != null && trailing.isNotEmpty
                 ? WDiv(
                     className: theme.actionContainerClassName,
@@ -263,10 +295,16 @@ class MSPageHeader extends StatelessWidget {
         ? MagicStarter.pageHeaderTheme.largeTitleClassName
         : MagicStarter.pageHeaderTheme.titleClassName;
 
-    return WDiv(
-      className: isInline
+    // 4. The caller's className goes last, so it wins within a family.
+    final String containerClassName = <String>[
+      isInline
           ? MagicStarter.pageHeaderTheme.containerInlineClassName
           : MagicStarter.pageHeaderTheme.containerClassName,
+      ?className,
+    ].where((String segment) => segment.isNotEmpty).join(' ');
+
+    return WDiv(
+      className: containerClassName,
       children: [
         // 1. Title row: optional leading + title column + optional titleSuffix.
         WDiv(
@@ -283,7 +321,7 @@ class MSPageHeader extends StatelessWidget {
             WDiv(
               className: 'flex flex-col gap-1 flex-initial min-w-0',
               children: [
-                WText(title, className: titleClassName),
+                _buildTitle(context, titleClassName),
                 if (subtitle != null) _buildSubtitle(subtitle!),
               ],
             ),
@@ -299,6 +337,41 @@ class MSPageHeader extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+/// Whether the title of every [MSPageHeader] below is the page's heading.
+///
+/// Package-internal: `page_header/index.dart` does not export it. A page has
+/// one heading, and `MSPageScaffold(largeTitle: true)` draws its title twice
+/// (the large header and the compact bar) while the bar shows. The frame takes
+/// the role off the large title then, so the title text and the subtitle stay
+/// readable and only the bar is a heading. It is a scope rather than a
+/// constructor argument so that no host can strip its own page of a heading.
+///
+/// Absent, a title is a heading.
+class MSPageHeaderHeadingScope extends InheritedWidget {
+  /// Whether a title below carries the heading role.
+  final bool isHeading;
+
+  /// Creates a [MSPageHeaderHeadingScope].
+  const MSPageHeaderHeadingScope({
+    super.key,
+    required this.isHeading,
+    required super.child,
+  });
+
+  /// Whether a title built under [context] carries the heading role.
+  static bool isHeadingOf(BuildContext context) {
+    return context
+            .dependOnInheritedWidgetOfExactType<MSPageHeaderHeadingScope>()
+            ?.isHeading ??
+        true;
+  }
+
+  @override
+  bool updateShouldNotify(MSPageHeaderHeadingScope oldWidget) {
+    return isHeading != oldWidget.isHeading;
   }
 }
 

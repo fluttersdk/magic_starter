@@ -253,6 +253,9 @@ dart run magic_starter publish --force
 > [!NOTE]
 > Without `--force`, existing files are skipped with a warning. The command reports the total number of published files at the end.
 
+> [!NOTE]
+> A published file is a snapshot of the release that published it. A later release that changes a view or a layout does not reach your copy: read the CHANGELOG entry for the edits it names, or re-publish with `--force` and re-apply your own changes.
+
 <a name="uninstall-command"></a>
 ## Uninstall Command
 

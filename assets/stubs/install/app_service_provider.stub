@@ -79,7 +79,7 @@ class AppServiceProvider extends ServiceProvider {
         //   MagicStarterTheme(
         //     form: MagicStarterFormTheme(
         //       inputClassName: 'w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700',
-        //       primaryButtonClassName: 'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+        //       primaryButtonClassName: 'w-full bg-primary hover:bg-primary/80 text-white font-semibold',
         //     ),
         //     card: MagicStarterCardTheme(
         //       surfaceClassName: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',

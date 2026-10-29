@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/src/configuration/magic_starter_theme.dart';
@@ -31,13 +33,16 @@ void main() {
         expect(theme.errorClassName, contains('text-red-600'));
       });
 
-      test('primaryButtonClassName contains w-full and rounded-lg', () {
-        const theme = MagicStarterFormTheme();
+      test(
+        'primaryButtonClassName contains w-full and leaves the shape out',
+        () {
+          const theme = MagicStarterFormTheme();
 
-        expect(theme.primaryButtonClassName, contains('w-full'));
-        expect(theme.primaryButtonClassName, contains('rounded-lg'));
-        expect(theme.primaryButtonClassName, contains('bg-primary'));
-      });
+          expect(theme.primaryButtonClassName, contains('w-full'));
+          expect(theme.primaryButtonClassName, isNot(contains('rounded')));
+          expect(theme.primaryButtonClassName, contains('bg-primary'));
+        },
+      );
 
       test('linkClassName contains text-primary', () {
         const theme = MagicStarterFormTheme();
@@ -535,6 +540,170 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // MagicStarterDropdownTheme
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterDropdownTheme', () {
+    group('defaults', () {
+      test('panel keeps the white and gray-800 fill with a gray edge', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(
+          theme.panelClassName,
+          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+        );
+      });
+
+      test('divider is a border colour with no width or side', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(theme.dividerClassName, 'border-gray-100 dark:border-gray-700');
+      });
+
+      test('item fills a hovered row', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(
+          theme.itemClassName,
+          'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+        );
+      });
+
+      test('tile is a filled square that steps darker on hover', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(theme.tileClassName, contains('bg-gray-100 dark:bg-gray-700'));
+        expect(
+          theme.tileClassName,
+          contains('hover:bg-gray-200 dark:hover:bg-gray-600'),
+        );
+      });
+
+      test('text and muted text carry their own dark pair', () {
+        const theme = MagicStarterDropdownTheme();
+
+        expect(theme.textClassName, 'text-gray-900 dark:text-white');
+        expect(theme.mutedTextClassName, 'text-gray-500 dark:text-gray-400');
+      });
+
+      test('danger fields apply under the danger state only', () {
+        const theme = MagicStarterDropdownTheme();
+
+        for (final className in [
+          theme.dangerTextClassName,
+          theme.dangerTileClassName,
+        ]) {
+          for (final token in className.split(RegExp(r'\s+'))) {
+            expect(
+              token.contains('danger:'),
+              isTrue,
+              reason:
+                  '"$token" would colour every row, not only the danger one',
+            );
+          }
+        }
+      });
+    });
+
+    group('custom overrides', () {
+      test('accepts a custom panelClassName', () {
+        const theme = MagicStarterDropdownTheme(panelClassName: 'custom-panel');
+
+        expect(theme.panelClassName, equals('custom-panel'));
+        expect(theme.itemClassName, contains('hover:'));
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // MagicStarterButtonTheme
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterButtonTheme', () {
+    group('defaults', () {
+      test('shape is the large radius MSButton always had', () {
+        const theme = MagicStarterButtonTheme();
+
+        expect(theme.shapeClassName, 'rounded-lg');
+      });
+
+      test('sizes keep the padding and type of the previous recipe', () {
+        const theme = MagicStarterButtonTheme();
+
+        expect(theme.smClassName, 'px-3 py-1.5 text-sm');
+        expect(theme.mdClassName, 'px-4 py-2 text-sm');
+        expect(theme.lgClassName, 'px-5 py-3 text-base');
+      });
+
+      test('secondary keeps its one pixel border', () {
+        const theme = MagicStarterButtonTheme();
+
+        expect(theme.secondaryBorderClassName, 'border border-color-border');
+      });
+    });
+
+    group('custom overrides', () {
+      test('accepts a custom shapeClassName and keeps the other fields', () {
+        const theme = MagicStarterButtonTheme(shapeClassName: 'rounded-full');
+
+        expect(theme.shapeClassName, 'rounded-full');
+        expect(theme.mdClassName, 'px-4 py-2 text-sm');
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // MagicStarterFieldTheme
+  // -------------------------------------------------------------------------
+
+  group('MagicStarterFieldTheme', () {
+    group('defaults', () {
+      test('the input keeps the padding and type of the previous recipe', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.inputSizeClassName, 'py-3 lg:py-2.5 text-sm leading-5');
+      });
+
+      test('the select and combobox triggers keep their 44 px floor', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.selectSizeClassName, 'py-[9px] min-h-11 lg:min-h-0');
+      });
+
+      test('the segmented items keep the padding and type of both sizes', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.segmentedSmClassName, 'px-2 py-1 text-sm');
+        expect(theme.segmentedMdClassName, 'px-3 py-1.5 text-sm');
+      });
+
+      test('the segmented root keeps its one step of padding', () {
+        const theme = MagicStarterFieldTheme();
+
+        expect(theme.segmentedPaddingClassName, 'p-1');
+      });
+    });
+
+    group('custom overrides', () {
+      test(
+        'accepts a custom inputSizeClassName and keeps the other fields',
+        () {
+          const theme = MagicStarterFieldTheme(
+            inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+          );
+
+          expect(
+            theme.inputSizeClassName,
+            'py-[11px] text-[17px] leading-[22px]',
+          );
+          expect(theme.selectSizeClassName, 'py-[9px] min-h-11 lg:min-h-0');
+          expect(theme.segmentedMdClassName, 'px-3 py-1.5 text-sm');
+        },
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // MagicStarterTheme (unified wrapper)
   // -------------------------------------------------------------------------
 
@@ -550,6 +719,9 @@ void main() {
         expect(theme.auth, isA<MagicStarterAuthTheme>());
         expect(theme.navigation, isA<MagicStarterNavigationTheme>());
         expect(theme.modal, isA<MagicStarterModalTheme>());
+        expect(theme.dropdown, isA<MagicStarterDropdownTheme>());
+        expect(theme.button, isA<MagicStarterButtonTheme>());
+        expect(theme.field, isA<MagicStarterFieldTheme>());
       });
 
       test('default form sub-theme has correct defaults', () {
@@ -611,6 +783,36 @@ void main() {
         expect(theme.auth.cardClassName, equals('custom-card'));
       });
 
+      test('stores custom dropdown sub-theme', () {
+        const customDropdown = MagicStarterDropdownTheme(
+          panelClassName: 'custom-panel',
+        );
+        const theme = MagicStarterTheme(dropdown: customDropdown);
+
+        expect(theme.dropdown.panelClassName, equals('custom-panel'));
+      });
+
+      test('stores custom button sub-theme', () {
+        const customButton = MagicStarterButtonTheme(
+          shapeClassName: 'rounded-full',
+        );
+        const theme = MagicStarterTheme(button: customButton);
+
+        expect(theme.button.shapeClassName, equals('rounded-full'));
+      });
+
+      test('stores custom field sub-theme', () {
+        const customField = MagicStarterFieldTheme(
+          inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+        );
+        const theme = MagicStarterTheme(field: customField);
+
+        expect(
+          theme.field.inputSizeClassName,
+          equals('py-[11px] text-[17px] leading-[22px]'),
+        );
+      });
+
       test('other sub-themes remain at defaults when one is customized', () {
         const theme = MagicStarterTheme(
           form: MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -657,6 +859,70 @@ void main() {
         expect(updated.layout.headerHeight, equals(64));
       });
 
+      test('overrides dropdown sub-theme while keeping others unchanged', () {
+        const original = MagicStarterTheme();
+        final updated = original.copyWith(
+          dropdown: const MagicStarterDropdownTheme(
+            panelClassName: 'custom-panel',
+          ),
+        );
+
+        expect(updated.dropdown.panelClassName, equals('custom-panel'));
+        expect(updated.form.inputClassName, contains('w-full'));
+        expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('copyWith with no arguments keeps the dropdown sub-theme', () {
+        final updated = const MagicStarterTheme(
+          dropdown: MagicStarterDropdownTheme(panelClassName: 'custom-panel'),
+        ).copyWith();
+
+        expect(updated.dropdown.panelClassName, equals('custom-panel'));
+      });
+
+      test('overrides button sub-theme while keeping others unchanged', () {
+        const original = MagicStarterTheme();
+        final updated = original.copyWith(
+          button: const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+
+        expect(updated.button.shapeClassName, equals('rounded-full'));
+        expect(updated.dropdown.textClassName, contains('text-gray-900'));
+        expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('overrides field sub-theme while keeping others unchanged', () {
+        const original = MagicStarterTheme();
+        final updated = original.copyWith(
+          field: const MagicStarterFieldTheme(
+            selectSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+          ),
+        );
+
+        expect(
+          updated.field.selectSizeClassName,
+          equals('py-2.5 text-[17px] leading-[22px]'),
+        );
+        expect(updated.button.shapeClassName, equals('rounded-lg'));
+        expect(updated.layout.headerHeight, equals(64));
+      });
+
+      test('copyWith with no arguments keeps the field sub-theme', () {
+        final updated = const MagicStarterTheme(
+          field: MagicStarterFieldTheme(segmentedPaddingClassName: 'p-0'),
+        ).copyWith();
+
+        expect(updated.field.segmentedPaddingClassName, equals('p-0'));
+      });
+
+      test('copyWith with no arguments keeps the button sub-theme', () {
+        final updated = const MagicStarterTheme(
+          button: MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        ).copyWith();
+
+        expect(updated.button.shapeClassName, equals('rounded-full'));
+      });
+
       test('overrides multiple sub-themes simultaneously', () {
         const original = MagicStarterTheme();
         final updated = original.copyWith(
@@ -699,4 +965,283 @@ void main() {
       });
     });
   });
+
+  // -------------------------------------------------------------------------
+  // copyWith on the form and modal themes
+  // -------------------------------------------------------------------------
+
+  // `useFormTheme` and `useModalTheme` assign the WHOLE struct, so changing one
+  // string used to mean copying every other field by hand, and a field added
+  // later went back to its default without a sound. `copyWith` is the supported
+  // way, and these tests are what keeps it complete: each theme is built with
+  // EVERY field distinct, so a field `copyWith` forgets comes back as its
+  // default and differs from the original.
+  group('copyWith on the whole-struct sub-themes', () {
+    /// The parameters the constructor of [className] declares, read from the
+    /// source, so a field added to the class cannot be left out of the table
+    /// below without a test failing.
+    Set<String> constructorFields(String className) {
+      final source = File(
+        'lib/src/configuration/magic_starter_theme.dart',
+      ).readAsStringSync();
+      final start = source.indexOf('  const $className({');
+      final end = source.indexOf('\n  });', start);
+
+      expect(start, isNonNegative, reason: 'no const $className constructor');
+
+      return RegExp(r'this\.(\w+)')
+          .allMatches(source.substring(start, end))
+          .map((m) => m.group(1)!)
+          .toSet();
+    }
+
+    /// A field of a theme: how to read it, and how to set it through
+    /// `copyWith` to a value no distinct theme below uses.
+    _Field<T> field<T>(
+      String name,
+      Object? Function(T) read,
+      T Function(T) change,
+    ) => _Field<T>(name, read, change);
+
+    final formFields = [
+      field<MagicStarterFormTheme>(
+        'inputClassName',
+        (t) => t.inputClassName,
+        (t) => t.copyWith(inputClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'labelClassName',
+        (t) => t.labelClassName,
+        (t) => t.copyWith(labelClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'errorClassName',
+        (t) => t.errorClassName,
+        (t) => t.copyWith(errorClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'placeholderClassName',
+        (t) => t.placeholderClassName,
+        (t) => t.copyWith(placeholderClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'primaryButtonClassName',
+        (t) => t.primaryButtonClassName,
+        (t) => t.copyWith(primaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'secondaryButtonClassName',
+        (t) => t.secondaryButtonClassName,
+        (t) => t.copyWith(secondaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'linkClassName',
+        (t) => t.linkClassName,
+        (t) => t.copyWith(linkClassName: 'changed'),
+      ),
+      field<MagicStarterFormTheme>(
+        'checkboxLabelClassName',
+        (t) => t.checkboxLabelClassName,
+        (t) => t.copyWith(checkboxLabelClassName: 'changed'),
+      ),
+    ];
+
+    const distinctForm = MagicStarterFormTheme(
+      inputClassName: 'form-input',
+      labelClassName: 'form-label',
+      errorClassName: 'form-error',
+      placeholderClassName: 'form-placeholder',
+      primaryButtonClassName: 'form-primary',
+      secondaryButtonClassName: 'form-secondary',
+      linkClassName: 'form-link',
+      checkboxLabelClassName: 'form-checkbox-label',
+    );
+
+    final modalFields = [
+      field<MagicStarterModalTheme>(
+        'containerClassName',
+        (t) => t.containerClassName,
+        (t) => t.copyWith(containerClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'headerClassName',
+        (t) => t.headerClassName,
+        (t) => t.copyWith(headerClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'bodyClassName',
+        (t) => t.bodyClassName,
+        (t) => t.copyWith(bodyClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'footerClassName',
+        (t) => t.footerClassName,
+        (t) => t.copyWith(footerClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'titleClassName',
+        (t) => t.titleClassName,
+        (t) => t.copyWith(titleClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'descriptionClassName',
+        (t) => t.descriptionClassName,
+        (t) => t.copyWith(descriptionClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'primaryButtonClassName',
+        (t) => t.primaryButtonClassName,
+        (t) => t.copyWith(primaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'secondaryButtonClassName',
+        (t) => t.secondaryButtonClassName,
+        (t) => t.copyWith(secondaryButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'dangerButtonClassName',
+        (t) => t.dangerButtonClassName,
+        (t) => t.copyWith(dangerButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'warningButtonClassName',
+        (t) => t.warningButtonClassName,
+        (t) => t.copyWith(warningButtonClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'errorClassName',
+        (t) => t.errorClassName,
+        (t) => t.copyWith(errorClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'inputClassName',
+        (t) => t.inputClassName,
+        (t) => t.copyWith(inputClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
+        'maxWidth',
+        (t) => t.maxWidth,
+        (t) => t.copyWith(maxWidth: 999.0),
+      ),
+    ];
+
+    const distinctModal = MagicStarterModalTheme(
+      containerClassName: 'modal-container',
+      headerClassName: 'modal-header',
+      bodyClassName: 'modal-body',
+      footerClassName: 'modal-footer',
+      titleClassName: 'modal-title',
+      descriptionClassName: 'modal-description',
+      primaryButtonClassName: 'modal-primary',
+      secondaryButtonClassName: 'modal-secondary',
+      dangerButtonClassName: 'modal-danger',
+      warningButtonClassName: 'modal-warning',
+      errorClassName: 'modal-error',
+      inputClassName: 'modal-input',
+      maxWidth: 321.0,
+    );
+
+    /// The same checks for both themes: [original] has every field distinct.
+    void expectCopyWithComplete<T>({
+      required String className,
+      required List<_Field<T>> fields,
+      required T original,
+      required T defaults,
+      required T Function(T) copy,
+    }) {
+      final names = fields.map((f) => f.name).toSet();
+
+      test('the field table lists every parameter of the constructor', () {
+        expect(
+          constructorFields(className),
+          names,
+          reason:
+              'a field was added to $className: add it to this table, and to '
+              'copyWith, which the checks below then hold to account',
+        );
+        expect(fields, hasLength(names.length));
+      });
+
+      test('the theme under test has every field distinct', () {
+        final values = fields.map((f) => f.read(original)).toList();
+
+        expect(values.toSet(), hasLength(values.length));
+      });
+
+      test('copyWith with no argument keeps every field', () {
+        final copied = copy(original);
+
+        for (final f in fields) {
+          expect(f.read(copied), f.read(original), reason: f.name);
+        }
+      });
+
+      test('copyWith with no argument keeps every default', () {
+        final copied = copy(defaults);
+
+        for (final f in fields) {
+          expect(f.read(copied), f.read(defaults), reason: f.name);
+        }
+      });
+
+      for (final changed in fields) {
+        test('copyWith of ${changed.name} changes it and nothing else', () {
+          final copied = changed.change(original);
+
+          for (final f in fields) {
+            if (f.name == changed.name) {
+              expect(f.read(copied), isNot(f.read(original)), reason: f.name);
+              expect(f.read(copied), isIn(['changed', 999.0]), reason: f.name);
+            } else {
+              expect(f.read(copied), f.read(original), reason: f.name);
+            }
+          }
+        });
+      }
+    }
+
+    group('MagicStarterFormTheme', () {
+      expectCopyWithComplete<MagicStarterFormTheme>(
+        className: 'MagicStarterFormTheme',
+        fields: formFields,
+        original: distinctForm,
+        defaults: const MagicStarterFormTheme(),
+        copy: (t) => t.copyWith(),
+      );
+
+      test(
+        'is not the same instance, so a setter never aliases the old one',
+        () {
+          expect(identical(distinctForm.copyWith(), distinctForm), isFalse);
+        },
+      );
+    });
+
+    group('MagicStarterModalTheme', () {
+      expectCopyWithComplete<MagicStarterModalTheme>(
+        className: 'MagicStarterModalTheme',
+        fields: modalFields,
+        original: distinctModal,
+        defaults: const MagicStarterModalTheme(),
+        copy: (t) => t.copyWith(),
+      );
+
+      test('keeps the width of a theme that sets one', () {
+        expect(
+          distinctModal.copyWith(inputClassName: 'changed').maxWidth,
+          321.0,
+        );
+      });
+    });
+  });
+}
+
+/// One field of a theme under test: how to read it, and how to set it through
+/// `copyWith` to a value no distinct test theme uses.
+class _Field<T> {
+  final String name;
+  final Object? Function(T) read;
+  final T Function(T) change;
+
+  const _Field(this.name, this.read, this.change);
 }

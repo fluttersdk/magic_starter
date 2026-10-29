@@ -392,6 +392,125 @@ void main() {
         expect(MagicStarter.layoutTheme.sidebarWidth, 280);
         expect(MagicStarter.authTheme.cardClassName, 'facade-auth-card');
       });
+
+      test('useDropdownTheme registers the dropdown sub-theme', () {
+        expect(
+          MagicStarter.dropdownTheme.panelClassName,
+          contains('bg-white dark:bg-gray-800'),
+        );
+
+        MagicStarter.useDropdownTheme(
+          const MagicStarterDropdownTheme(panelClassName: 'facade-panel'),
+        );
+
+        expect(MagicStarter.dropdownTheme.panelClassName, 'facade-panel');
+        expect(MagicStarter.theme.dropdown.panelClassName, 'facade-panel');
+      });
+
+      test('useTheme distributes the dropdown sub-theme', () {
+        MagicStarter.useTheme(
+          const MagicStarterTheme(
+            dropdown: MagicStarterDropdownTheme(textClassName: 'themed-text'),
+          ),
+        );
+
+        expect(MagicStarter.dropdownTheme.textClassName, 'themed-text');
+      });
+
+      test('useButtonTheme registers the button sub-theme', () {
+        expect(MagicStarter.buttonTheme.shapeClassName, 'rounded-lg');
+
+        MagicStarter.useButtonTheme(
+          const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+
+        expect(MagicStarter.buttonTheme.shapeClassName, 'rounded-full');
+        expect(MagicStarter.theme.button.shapeClassName, 'rounded-full');
+      });
+
+      test('useTheme distributes the button sub-theme', () {
+        MagicStarter.useTheme(
+          const MagicStarterTheme(
+            button: MagicStarterButtonTheme(mdClassName: 'themed-md'),
+          ),
+        );
+
+        expect(MagicStarter.buttonTheme.mdClassName, 'themed-md');
+      });
+
+      test('useFieldTheme registers the field sub-theme', () {
+        expect(
+          MagicStarter.fieldTheme.inputSizeClassName,
+          'py-3 lg:py-2.5 text-sm leading-5',
+        );
+
+        MagicStarter.useFieldTheme(
+          const MagicStarterFieldTheme(inputSizeClassName: 'themed-input'),
+        );
+
+        expect(MagicStarter.fieldTheme.inputSizeClassName, 'themed-input');
+        expect(MagicStarter.theme.field.inputSizeClassName, 'themed-input');
+      });
+
+      test('useTheme distributes the field sub-theme', () {
+        MagicStarter.useTheme(
+          const MagicStarterTheme(
+            field: MagicStarterFieldTheme(selectSizeClassName: 'themed-select'),
+          ),
+        );
+
+        expect(MagicStarter.fieldTheme.selectSizeClassName, 'themed-select');
+      });
+
+      test('useTheme resets the field sub-theme a theme leaves out', () {
+        MagicStarter.useFieldTheme(
+          const MagicStarterFieldTheme(inputSizeClassName: 'themed-input'),
+        );
+
+        MagicStarter.useTheme(const MagicStarterTheme());
+
+        expect(
+          MagicStarter.fieldTheme.inputSizeClassName,
+          const MagicStarterFieldTheme().inputSizeClassName,
+        );
+      });
+
+      test('useFieldTheme survives a later dropdown and button theme', () {
+        // Why the controls are a sub-theme of their own: every setter assigns
+        // its whole struct, so a field living inside a theme the host refines
+        // later would go back to its constructor default.
+        MagicStarter.useFieldTheme(
+          const MagicStarterFieldTheme(inputSizeClassName: 'themed-input'),
+        );
+        MagicStarter.useDropdownTheme(
+          const MagicStarterDropdownTheme(textClassName: 'themed-text'),
+        );
+        MagicStarter.useButtonTheme(
+          const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+        MagicStarter.useFormTheme(
+          const MagicStarterFormTheme(inputClassName: 'themed-form-input'),
+        );
+
+        expect(MagicStarter.fieldTheme.inputSizeClassName, 'themed-input');
+      });
+
+      test('useButtonTheme survives a later dropdown theme', () {
+        // Why the button is a sub-theme of its own: every setter assigns its
+        // whole struct, so a field living inside a theme the host refines later
+        // would go back to its constructor default.
+        MagicStarter.useButtonTheme(
+          const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+        MagicStarter.useDropdownTheme(
+          const MagicStarterDropdownTheme(textClassName: 'themed-text'),
+        );
+        MagicStarter.useNavigationTheme(
+          const MagicStarterNavigationTheme(brandClassName: 'text-lg'),
+        );
+
+        expect(MagicStarter.buttonTheme.shapeClassName, 'rounded-full');
+      });
     });
 
     group('modal registry defaults', () {

@@ -47,7 +47,10 @@ import 'page_scaffold.recipe.dart';
 /// bar spans the page edge to edge, outside the container, and is unmounted
 /// while hidden, so the title and actions exist once in the tree whenever the
 /// bar is not on screen. While it is, they exist twice: an action carrying a
-/// `GlobalKey` cannot be used here.
+/// `GlobalKey` cannot be used here. For assistive technology only one of the
+/// two is the page heading at a time: the large title gives up the role while
+/// the bar shows (its text and the subtitle stay readable, as the bar has no
+/// subtitle), and the bar is left out of the semantics tree while it fades out.
 ///
 /// ### Example: sub-page with back
 /// ```dart
@@ -124,6 +127,25 @@ class MSPageScaffold extends StatelessWidget {
   /// titles once.
   final bool? largeTitle;
 
+  /// Optional className appended to the scrolling area's [MSPageContainer], the
+  /// same way [MSPageContainer.className] is appended to the host's page
+  /// geometry.
+  ///
+  /// For a page that sits under a bar of its own (a pushed screen's back bar),
+  /// where the host's top padding would stack on the bar's own height. Last
+  /// class wins within a family, so `pt-4` replaces the host's top padding.
+  final String? containerClassName;
+
+  /// Optional className forwarded to the [MSPageHeader] the scaffold builds,
+  /// appended after the theme's header container class.
+  ///
+  /// For the same pushed screen as [containerClassName]: [containerClassName]
+  /// trims the host's padding above the header, this trims the header's own, so
+  /// `lg:pt-0` takes the header's top padding off from `lg` up. It reaches the
+  /// regular and the large header. The compact bar a large title collapses into
+  /// is not handed it: that bar keeps its own geometry.
+  final String? headerClassName;
+
   /// Creates a [MSPageScaffold].
   const MSPageScaffold({
     super.key,
@@ -136,6 +158,8 @@ class MSPageScaffold extends StatelessWidget {
     this.footer,
     this.scrollController,
     this.largeTitle,
+    this.containerClassName,
+    this.headerClassName,
   });
 
   /// Whether this scaffold uses the large title, resolving the theme default.
@@ -144,6 +168,8 @@ class MSPageScaffold extends StatelessWidget {
 
   /// The page header in [headerSize], keyed when the large-title frame needs
   /// to measure it.
+  ///
+  /// The compact bar is built without [headerClassName]: its geometry is its own.
   MSPageHeader _header(MSPageHeaderSize headerSize, {Key? key}) {
     return MSPageHeader(
       key: key,
@@ -153,6 +179,9 @@ class MSPageScaffold extends StatelessWidget {
       backLabel: backLabel,
       backFallback: backFallback,
       size: headerSize,
+      className: headerSize == MSPageHeaderSize.compact
+          ? null
+          : headerClassName,
     );
   }
 
@@ -161,9 +190,18 @@ class MSPageScaffold extends StatelessWidget {
     final Widget content = isLargeTitle
         ? _LargeTitleFrame(
             compactBar: _header(MSPageHeaderSize.compact),
-            scrollAreaBuilder: (Key headerKey) => _buildScrollArea(
-              _header(MSPageHeaderSize.large, key: headerKey),
-            ),
+            scrollAreaBuilder: (Key headerKey, bool collapsed) =>
+                _buildScrollArea(
+                  // The bar is the page heading once it shows. The header is
+                  // still in the tree, partly on screen behind the bar until
+                  // it scrolls clear, and would read as a second heading. Only
+                  // the role comes off: the bar has no subtitle, so the large
+                  // header's stays readable.
+                  MSPageHeaderHeadingScope(
+                    isHeading: !collapsed,
+                    child: _header(MSPageHeaderSize.large, key: headerKey),
+                  ),
+                ),
           )
         : _buildScrollArea(_header(MSPageHeaderSize.regular));
 
@@ -197,6 +235,7 @@ class MSPageScaffold extends StatelessWidget {
       // 3. Width, edge margins, and vertical rhythm come from the host's one
       //    page geometry, shared with every other page in the app.
       child: MSPageContainer(
+        className: containerClassName,
         children: [
           // 4. Unified page header: back affordance and actions compose here.
           header,
@@ -217,8 +256,9 @@ class _LargeTitleFrame extends StatefulWidget {
   final Widget compactBar;
 
   /// Builds the scroll area around a large header carrying the given key,
-  /// which the frame measures to know when the header has gone.
-  final Widget Function(Key headerKey) scrollAreaBuilder;
+  /// which the frame measures to know when the header has gone. [collapsed] is
+  /// whether the bar has taken over.
+  final Widget Function(Key headerKey, bool collapsed) scrollAreaBuilder;
 
   const _LargeTitleFrame({
     required this.compactBar,
@@ -306,7 +346,7 @@ class _LargeTitleFrameState extends State<_LargeTitleFrame>
       children: [
         NotificationListener<ScrollNotification>(
           onNotification: _onScroll,
-          child: widget.scrollAreaBuilder(_headerKey),
+          child: widget.scrollAreaBuilder(_headerKey, _collapsed),
         ),
         Positioned(
           top: 0,
@@ -319,9 +359,14 @@ class _LargeTitleFrameState extends State<_LargeTitleFrame>
               // otherwise sit in the tree twice, once invisible.
               if (_fade.isDismissed) return const SizedBox.shrink();
 
+              // While it fades out the bar is still mounted, but the large
+              // header is back: one of the two speaks for the page, not both.
               return IgnorePointer(
                 ignoring: !_collapsed,
-                child: FadeTransition(opacity: _opacity, child: bar),
+                child: ExcludeSemantics(
+                  excluding: !_collapsed,
+                  child: FadeTransition(opacity: _opacity, child: bar),
+                ),
               );
             },
             child: widget.compactBar,

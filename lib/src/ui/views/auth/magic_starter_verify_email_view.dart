@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' show CircularProgressIndicator, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
-import 'package:magic_starter/magic_starter.dart' show MSButton;
+import 'package:magic_starter/magic_starter.dart' show ButtonSize, MSButton;
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
@@ -163,6 +163,7 @@ class _MagicStarterVerifyEmailViewState
                 ? MagicStarterConfig.homeRoute()
                 : MagicStarterConfig.loginRoute(),
           ),
+          size: ButtonSize.lg,
           className: MagicStarter.formTheme.primaryButtonClassName,
           child: WText(
             trans(

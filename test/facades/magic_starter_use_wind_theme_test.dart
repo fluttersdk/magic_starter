@@ -48,7 +48,7 @@ void main() {
       },
     );
 
-    test('derives a semantic alias into every one of the 7 sub-themes', () {
+    test('derives a semantic alias into every one of the 8 sub-themes', () {
       MagicStarter.useWindTheme(windTheme);
 
       // 1. Navigation: brand text follows the primary role.
@@ -101,6 +101,325 @@ void main() {
         hasToken(MagicStarter.authTheme.cardClassName, 'bg-surface-container'),
         isTrue,
         reason: 'auth card should carry the surface-container token',
+      );
+
+      // 8. Dropdown: the popover panel follows the card/panel surface role.
+      expect(
+        hasToken(
+          MagicStarter.dropdownTheme.panelClassName,
+          'bg-surface-container',
+        ),
+        isTrue,
+        reason: 'dropdown panel should carry the surface-container token',
+      );
+    });
+
+    test('leaves the button theme at its defaults', () {
+      // The recipe already writes the semantic aliases (`bg-primary`,
+      // `text-on-primary`, `border-color-border`) itself, so there is no colour
+      // to derive here, and shape and size are the host's call. Deriving the
+      // border from the role would also hand a fallback palette pair to a host
+      // whose theme does not define it, which the recipe never did.
+      MagicStarter.useWindTheme(windTheme);
+
+      const defaults = MagicStarterButtonTheme();
+      final button = MagicStarter.buttonTheme;
+
+      expect(button.shapeClassName, defaults.shapeClassName);
+      expect(button.smClassName, defaults.smClassName);
+      expect(button.mdClassName, defaults.mdClassName);
+      expect(button.lgClassName, defaults.lgClassName);
+      expect(
+        button.secondaryBorderClassName,
+        defaults.secondaryBorderClassName,
+      );
+    });
+
+    test('leaves the field theme at its defaults', () {
+      // Height and type of the controls are the host's call, and the control
+      // recipes write their own semantic aliases for every colour.
+      MagicStarter.useWindTheme(windTheme);
+
+      const defaults = MagicStarterFieldTheme();
+      final field = MagicStarter.fieldTheme;
+
+      expect(field.inputSizeClassName, defaults.inputSizeClassName);
+      expect(field.selectSizeClassName, defaults.selectSizeClassName);
+      expect(field.segmentedSmClassName, defaults.segmentedSmClassName);
+      expect(field.segmentedMdClassName, defaults.segmentedMdClassName);
+      expect(
+        field.segmentedPaddingClassName,
+        defaults.segmentedPaddingClassName,
+      );
+    });
+
+    test('resets a field theme set before it, so the host sets it after', () {
+      MagicStarter.useFieldTheme(
+        const MagicStarterFieldTheme(inputSizeClassName: 'themed-input'),
+      );
+
+      MagicStarter.useWindTheme(windTheme);
+
+      expect(
+        MagicStarter.fieldTheme.inputSizeClassName,
+        const MagicStarterFieldTheme().inputSizeClassName,
+      );
+
+      MagicStarter.useFieldTheme(
+        const MagicStarterFieldTheme(inputSizeClassName: 'themed-input'),
+      );
+
+      expect(MagicStarter.fieldTheme.inputSizeClassName, 'themed-input');
+    });
+
+    test('copyWith on the derived form theme changes one string only', () {
+      // The reason the setters take a whole struct and the theme has copyWith:
+      // a host that wants its own input string must not have to copy the other
+      // seven fields, nor lose the ones the palette derived.
+      MagicStarter.useWindTheme(windTheme);
+      final derived = MagicStarter.formTheme;
+      const stock = MagicStarterFormTheme();
+
+      MagicStarter.useFormTheme(derived.copyWith(inputClassName: 'x'));
+      final themed = MagicStarter.formTheme;
+
+      expect(themed.inputClassName, 'x');
+      expect(themed.labelClassName, derived.labelClassName);
+      expect(themed.errorClassName, derived.errorClassName);
+      expect(themed.placeholderClassName, derived.placeholderClassName);
+      expect(themed.primaryButtonClassName, derived.primaryButtonClassName);
+      expect(themed.secondaryButtonClassName, derived.secondaryButtonClassName);
+      expect(themed.linkClassName, derived.linkClassName);
+      expect(themed.checkboxLabelClassName, derived.checkboxLabelClassName);
+
+      // Derived from the palette, not the stock strings a copyWith built on
+      // the defaults would hand back.
+      expect(themed.labelClassName, isNot(stock.labelClassName));
+      expect(themed.placeholderClassName, isNot(stock.placeholderClassName));
+      expect(
+        themed.primaryButtonClassName,
+        isNot(stock.primaryButtonClassName),
+      );
+      expect(hasToken(themed.labelClassName, 'text-fg'), isTrue);
+    });
+
+    test('copyWith on the derived modal theme changes one string only', () {
+      MagicStarter.useWindTheme(windTheme);
+      final derived = MagicStarter.modalTheme;
+      const stock = MagicStarterModalTheme();
+
+      MagicStarter.useModalTheme(
+        derived.copyWith(inputClassName: 'x', maxWidth: 560),
+      );
+      final themed = MagicStarter.modalTheme;
+
+      expect(themed.inputClassName, 'x');
+      expect(themed.maxWidth, 560);
+      expect(themed.containerClassName, derived.containerClassName);
+      expect(themed.headerClassName, derived.headerClassName);
+      expect(themed.bodyClassName, derived.bodyClassName);
+      expect(themed.footerClassName, derived.footerClassName);
+      expect(themed.titleClassName, derived.titleClassName);
+      expect(themed.descriptionClassName, derived.descriptionClassName);
+      expect(themed.primaryButtonClassName, derived.primaryButtonClassName);
+      expect(themed.secondaryButtonClassName, derived.secondaryButtonClassName);
+      expect(themed.dangerButtonClassName, derived.dangerButtonClassName);
+      expect(themed.warningButtonClassName, derived.warningButtonClassName);
+      expect(themed.errorClassName, derived.errorClassName);
+
+      expect(themed.containerClassName, isNot(stock.containerClassName));
+      expect(themed.titleClassName, isNot(stock.titleClassName));
+      expect(
+        themed.primaryButtonClassName,
+        isNot(stock.primaryButtonClassName),
+      );
+    });
+
+    test('derives every dropdown role from the semantic palette', () {
+      MagicStarter.useWindTheme(windTheme);
+
+      final dropdown = MagicStarter.dropdownTheme;
+
+      expect(hasToken(dropdown.panelClassName, 'border-color-border'), isTrue);
+      expect(
+        hasToken(dropdown.dividerClassName, 'border-color-border'),
+        isTrue,
+      );
+      expect(
+        hasToken(dropdown.itemClassName, 'bg-surface-container-high'),
+        isTrue,
+      );
+      expect(dropdown.itemClassName, startsWith('hover:'));
+      // The hovered row is container-high, so the tile must not be.
+      expect(hasToken(dropdown.tileClassName, 'bg-surface'), isTrue);
+      expect(
+        hasToken(dropdown.tileClassName, 'bg-surface-container-high'),
+        isFalse,
+      );
+      expect(hasToken(dropdown.textClassName, 'text-fg'), isTrue);
+      expect(hasToken(dropdown.mutedTextClassName, 'text-fg-muted'), isTrue);
+      expect(dropdown.dangerTextClassName, 'danger:text-destructive');
+      expect(dropdown.dangerTileClassName, 'danger:bg-destructive-container');
+    });
+
+    test('leaves no raw palette utility in the derived dropdown theme', () {
+      MagicStarter.useWindTheme(windTheme);
+
+      final dropdown = MagicStarter.dropdownTheme;
+
+      for (final className in [
+        dropdown.panelClassName,
+        dropdown.dividerClassName,
+        dropdown.itemClassName,
+        dropdown.tileClassName,
+        dropdown.textClassName,
+        dropdown.mutedTextClassName,
+        dropdown.dangerTextClassName,
+        dropdown.dangerTileClassName,
+      ]) {
+        expect(
+          RegExp(r'(gray|red|white)').hasMatch(className),
+          isFalse,
+          reason: '"$className" still names a palette colour',
+        );
+      }
+    });
+
+    test('keeps the dropdown derivation when the navigation theme is set', () {
+      // A host refines the navigation theme after `useWindTheme` and replaces
+      // it whole (the setter has no merge), so the dropdown colours must not
+      // live there or that refinement would hand them back to the stock grey.
+      MagicStarter.useWindTheme(windTheme);
+      MagicStarter.useNavigationTheme(
+        const MagicStarterNavigationTheme(brandClassName: 'text-lg text-fg'),
+      );
+
+      expect(
+        hasToken(
+          MagicStarter.dropdownTheme.panelClassName,
+          'bg-surface-container',
+        ),
+        isTrue,
+      );
+    });
+
+    test('prefixes every token of a fallback pair with the variant', () {
+      // With no aliases the roles resolve to palette pairs. A variant written
+      // in front of the pair would reach only its first token, so the dark
+      // half of a hover or danger field would apply at rest.
+      MagicStarter.useWindTheme(WindThemeData());
+
+      final dropdown = MagicStarter.dropdownTheme;
+
+      for (final (variant, className) in [
+        ('hover', dropdown.itemClassName),
+        ('danger', dropdown.dangerTextClassName),
+        ('hover', MagicStarter.navigationTheme.hoverItemClassName),
+      ]) {
+        for (final token in className.split(RegExp(r'\s+'))) {
+          expect(
+            token,
+            startsWith('$variant:'),
+            reason: '"$token" is not scoped to $variant',
+          );
+        }
+      }
+      expect(dropdown.panelClassName, contains('bg-'));
+    });
+
+    // Same defect as above, in the fields that hover to a role inside a longer
+    // string: with no aliases the role is a pair, and `hover:` in front of it
+    // reached only the first half, so the dark half (the hover fill or tone)
+    // applied at rest in dark mode. One test per field, so each fails alone.
+    final hoverFields = <(String, String Function(), String)>[
+      (
+        'modal secondary button',
+        () => MagicStarter.modalTheme.secondaryButtonClassName,
+        'bg-surface-container-high',
+      ),
+      (
+        'form secondary button',
+        () => MagicStarter.formTheme.secondaryButtonClassName,
+        'bg-surface-container',
+      ),
+      (
+        'checkbox label',
+        () => MagicStarter.formTheme.checkboxLabelClassName,
+        'text-fg',
+      ),
+      (
+        'back control',
+        () => MagicStarter.pageHeaderTheme.backControlClassName,
+        'text-fg',
+      ),
+      (
+        'theme toggle',
+        () => MagicStarter.authTheme.themeToggleClassName,
+        'bg-surface-container-high',
+      ),
+      (
+        'guest button',
+        () => MagicStarter.authTheme.guestButtonClassName,
+        'bg-surface-container',
+      ),
+    ];
+
+    for (final (field, className, role) in hoverFields) {
+      test('scopes the $field role to the hover when the theme omits it', () {
+        MagicStarter.useWindTheme(WindThemeData());
+
+        final tokens = className().split(RegExp(r'\s+'));
+
+        for (final token in MagicStarterTokens.defaultAliases[role]!.split(
+          ' ',
+        )) {
+          expect(
+            tokens,
+            contains('hover:$token'),
+            reason: 'the $field does not hover to "$token"',
+          );
+          expect(
+            tokens,
+            isNot(contains(token)),
+            reason: '"$token" would apply to the $field at rest',
+          );
+        }
+      });
+    }
+
+    test('keeps the hover strings of a host that defines the roles', () {
+      // A defined role is one bare token, so scoping it to the hover is the
+      // same string the derivation always wrote.
+      MagicStarter.useWindTheme(windTheme);
+
+      expect(
+        MagicStarter.modalTheme.secondaryButtonClassName,
+        'px-4 py-2 rounded-lg bg-surface-container border border-color-border '
+        'hover:bg-surface-container-high text-fg text-sm font-medium',
+      );
+      expect(
+        MagicStarter.formTheme.secondaryButtonClassName,
+        'w-full bg-transparent text-fg-muted hover:bg-surface-container '
+        'hover:opacity-90',
+      );
+      expect(
+        MagicStarter.formTheme.checkboxLabelClassName,
+        'text-fg-muted hover:text-fg ml-1',
+      );
+      expect(
+        MagicStarter.pageHeaderTheme.backControlClassName,
+        'flex items-center justify-center size-9 text-2xl text-fg-muted '
+        'hover:text-fg',
+      );
+      expect(
+        MagicStarter.authTheme.themeToggleClassName,
+        'p-2 rounded-lg duration-150 bg-transparent '
+        'hover:bg-surface-container-high flex items-center justify-center',
+      );
+      expect(
+        MagicStarter.authTheme.guestButtonClassName,
+        'w-full bg-transparent text-fg-muted hover:bg-surface-container '
+        'hover:opacity-90',
       );
     });
 

@@ -5,9 +5,9 @@ import 'toast.dart';
 
 /// Static variant-matrix preview for [MSToast].
 ///
-/// Renders each [ToastVariant] in sequence so the preview catalog can show
-/// the full tone surface in light and dark. One preview class per file is
-/// the canonical Wave 4 contract.
+/// Renders each [ToastVariant] in sequence, then again with a trailing action,
+/// so the preview catalog can show the full tone surface in light and dark.
+/// One preview class per file is the canonical Wave 4 contract.
 class ToastPreview extends StatelessWidget {
   /// Creates the toast variant-matrix preview.
   const ToastPreview({super.key});
@@ -22,7 +22,16 @@ class ToastPreview extends StatelessWidget {
             message: '${variant.name}: example toast notification',
             variant: variant,
           ),
+        for (final variant in ToastVariant.values)
+          MSToast(
+            message: '${variant.name}: moved to Kitchen',
+            variant: variant,
+            actionLabel: 'Undo',
+            onAction: _noop,
+          ),
       ],
     );
   }
+
+  static void _noop() {}
 }

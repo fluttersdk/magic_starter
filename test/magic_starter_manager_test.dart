@@ -73,6 +73,57 @@ void main() {
         },
       );
 
+      test('setting theme distributes the dropdown sub-theme', () {
+        manager.theme = const MagicStarterTheme(
+          dropdown: MagicStarterDropdownTheme(panelClassName: 'custom-panel'),
+        );
+
+        expect(manager.dropdownTheme.panelClassName, 'custom-panel');
+        expect(manager.theme.dropdown.panelClassName, 'custom-panel');
+      });
+
+      test('setting dropdownTheme is reflected in theme.dropdown', () {
+        manager.dropdownTheme = const MagicStarterDropdownTheme(
+          textClassName: 'custom-text',
+        );
+
+        expect(manager.theme.dropdown.textClassName, 'custom-text');
+      });
+
+      test('setting theme distributes the button sub-theme', () {
+        manager.theme = const MagicStarterTheme(
+          button: MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+        );
+
+        expect(manager.buttonTheme.shapeClassName, 'rounded-full');
+        expect(manager.theme.button.shapeClassName, 'rounded-full');
+      });
+
+      test('setting buttonTheme is reflected in theme.button', () {
+        manager.buttonTheme = const MagicStarterButtonTheme(
+          mdClassName: 'custom-md',
+        );
+
+        expect(manager.theme.button.mdClassName, 'custom-md');
+      });
+
+      test('setting theme distributes the field sub-theme', () {
+        manager.theme = const MagicStarterTheme(
+          field: MagicStarterFieldTheme(segmentedPaddingClassName: 'p-0'),
+        );
+
+        expect(manager.fieldTheme.segmentedPaddingClassName, 'p-0');
+        expect(manager.theme.field.segmentedPaddingClassName, 'p-0');
+      });
+
+      test('setting fieldTheme is reflected in theme.field', () {
+        manager.fieldTheme = const MagicStarterFieldTheme(
+          inputSizeClassName: 'custom-input-size',
+        );
+
+        expect(manager.theme.field.inputSizeClassName, 'custom-input-size');
+      });
+
       test('reset() clears all theme fields to const defaults', () {
         manager.theme = MagicStarterTheme(
           form: const MagicStarterFormTheme(inputClassName: 'custom-input'),
@@ -85,6 +136,13 @@ void main() {
             titleClassName: 'custom-header',
           ),
           layout: const MagicStarterLayoutTheme(sidebarWidth: 300),
+          dropdown: const MagicStarterDropdownTheme(
+            panelClassName: 'custom-panel',
+          ),
+          button: const MagicStarterButtonTheme(shapeClassName: 'rounded-full'),
+          field: const MagicStarterFieldTheme(
+            inputSizeClassName: 'custom-input-size',
+          ),
         );
 
         manager.reset();
@@ -107,6 +165,15 @@ void main() {
           'text-2xl font-bold text-gray-900 dark:text-white line-clamp-2',
         );
         expect(manager.layoutTheme.sidebarWidth, 256);
+        expect(
+          manager.dropdownTheme.panelClassName,
+          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+        );
+        expect(manager.buttonTheme.shapeClassName, 'rounded-lg');
+        expect(
+          manager.fieldTheme.inputSizeClassName,
+          'py-3 lg:py-2.5 text-sm leading-5',
+        );
       });
 
       test('convenience getters return correct sub-themes after theme set', () {

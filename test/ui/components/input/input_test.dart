@@ -4,6 +4,8 @@ import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 import 'package:magic_starter/src/ui/components/input/input.preview.dart';
 
+import '../field_theme_fixture.dart';
+
 void main() {
   setUp(() {
     MagicApp.reset();
@@ -30,6 +32,8 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('input recipe', () {
+    final inputRecipe = buildInputRecipe(const MagicStarterFieldTheme());
+
     test('default state emits bg-surface-container-high token', () {
       final cls = inputRecipe(variants: {'state': InputState.normal.name});
       expect(cls, contains('bg-surface-container-high'));
@@ -204,6 +208,273 @@ void main() {
       await pumpAt(tester, desktop);
 
       expect(tester.getSize(find.byType(WInput)).height, 40);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Field theme
+  // ---------------------------------------------------------------------------
+
+  // The recipe before the size became a theme field, copied verbatim and not
+  // derived from the builder: a refactor that moved a token cannot move this
+  // with it.
+  const legacyBase =
+      'rounded-lg border px-3 py-3 lg:py-2.5 text-fg text-sm leading-5 '
+      'focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const legacyState = {
+    'normal':
+        'bg-surface-container-high border-color-border '
+        'focus:border-color-border focus:ring-bg-primary',
+    'error':
+        'bg-surface-container-high border-bg-destructive '
+        'focus:ring-bg-destructive',
+  };
+
+  // The previous recipe with `text-fg` moved ahead of the size, so the size is
+  // one run of tokens a theme can replace: `text-fg` sat between the padding
+  // and the type, and a host's string has no business restating the colour.
+  const defaultBase =
+      'rounded-lg border px-3 text-fg py-3 lg:py-2.5 text-sm leading-5 '
+      'focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed';
+
+  group('input recipe from a theme', () {
+    for (final state in InputState.values) {
+      test('the default theme emits the previous ${state.name} className '
+          'with only text-fg moved', () {
+        final cls = buildInputRecipe(const MagicStarterFieldTheme())(
+          variants: {kInputStateAxis: state.name},
+        );
+
+        expect(cls, '$defaultBase ${legacyState[state.name]}');
+        expect(
+          cls.split(' ')..sort(),
+          '$legacyBase ${legacyState[state.name]}'.split(' ')..sort(),
+        );
+      });
+
+      testWidgets(
+        'the moved text-fg leaves the ${state.name} style as it was',
+        (tester) async {
+          for (final brightness in Brightness.values) {
+            late BuildContext context;
+            await tester.pumpWidget(
+              MaterialApp(
+                home: WindTheme(
+                  data: WindThemeData(
+                    brightness: brightness,
+                    syncWithSystem: false,
+                  ),
+                  child: Builder(
+                    builder: (inner) {
+                      context = inner;
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+              ),
+            );
+
+            expect(
+              WindParser.parse(
+                '$defaultBase ${legacyState[state.name]}',
+                context,
+              ),
+              WindParser.parse(
+                '$legacyBase ${legacyState[state.name]}',
+                context,
+              ),
+            );
+          }
+        },
+      );
+    }
+
+    test('the size replaces the padding and type run and nothing else', () {
+      final cls = buildInputRecipe(hostFieldTheme)();
+
+      expect(
+        cls,
+        startsWith(
+          'rounded-lg border px-3 text-fg py-[11px] text-[17px] '
+          'leading-[22px] focus:ring-2 disabled:opacity-50',
+        ),
+      );
+      for (final gone in ['py-3', 'lg:py-2.5', 'text-sm', 'leading-5']) {
+        expect(cls.split(' '), isNot(contains(gone)));
+      }
+    });
+  });
+
+  group('input default theme', () {
+    testWidgets('paints 44 px below lg and 40 px from lg up, 14 on 20', (
+      tester,
+    ) async {
+      await pumpControlAt(
+        tester,
+        kPhone,
+        const MSInput(placeholder: 'Enter text'),
+      );
+      expect(tester.getSize(find.byType(WInput)).height, 44);
+      expect(paintedStyle(tester, 'Enter text')?.fontSize, 14);
+
+      await pumpControlAt(
+        tester,
+        kDesktop,
+        const MSInput(placeholder: 'Enter text'),
+      );
+      expect(tester.getSize(find.byType(WInput)).height, 40);
+    });
+  });
+
+  group('input host theme', () {
+    for (final brightness in Brightness.values) {
+      for (final entry in {'phone': kPhone, 'desktop': kDesktop}.entries) {
+        final label = '${brightness.name} ${entry.key}';
+
+        testWidgets('is 44 px tall with a 17 on 22 placeholder, $label', (
+          tester,
+        ) async {
+          MagicStarter.useFieldTheme(hostFieldTheme);
+          await pumpControlAt(
+            tester,
+            entry.value,
+            const MSInput(placeholder: 'Enter text'),
+            brightness: brightness,
+          );
+
+          final style = paintedStyle(tester, 'Enter text');
+
+          expect(tester.getSize(find.byType(WInput)).height, 44);
+          expect(style?.fontSize, 17);
+          expect(lineHeightOf(tester, 'Enter text'), closeTo(22, 0.01));
+        });
+
+        testWidgets('types the value at 17 on 22 and centres it, $label', (
+          tester,
+        ) async {
+          MagicStarter.useFieldTheme(hostFieldTheme);
+          await pumpControlAt(
+            tester,
+            entry.value,
+            const MSInput(value: 'Typed', placeholder: 'Enter text'),
+            brightness: brightness,
+          );
+
+          final style = tester.widget<EditableText>(find.byType(EditableText));
+
+          expect(tester.getSize(find.byType(WInput)).height, 44);
+          expect(style.style.fontSize, 17);
+          expect(
+            style.style.fontSize! * style.style.height!,
+            closeTo(22, 0.01),
+          );
+          // The editable's own box is the one 22 px line the value is painted
+          // in. Its glyph boxes are not compared: they follow the font's
+          // ascent and descent, which sit off the middle of a line in the test
+          // font whatever the theme.
+          expect(tester.getSize(find.byType(EditableText)).height, 22);
+          expect(
+            tester.getCenter(find.byType(EditableText)).dy,
+            closeTo(tester.getCenter(find.byType(WInput)).dy, 1),
+          );
+        });
+
+        testWidgets('centres the placeholder in the box, $label', (
+          tester,
+        ) async {
+          MagicStarter.useFieldTheme(hostFieldTheme);
+          await pumpControlAt(
+            tester,
+            entry.value,
+            const MSInput(placeholder: 'Enter text'),
+            brightness: brightness,
+          );
+
+          expect(
+            glyphCentre(tester, 'Enter text'),
+            closeTo(tester.getCenter(find.byType(WInput)).dy, 1),
+          );
+        });
+      }
+    }
+
+    testWidgets('keeps the 12 px inset the recipe sets beside the size', (
+      tester,
+    ) async {
+      MagicStarter.useFieldTheme(hostFieldTheme);
+      await pumpControlAt(
+        tester,
+        kPhone,
+        const MSInput(placeholder: 'Enter text'),
+      );
+
+      expect(
+        tester.getTopLeft(find.text('Enter text')).dx -
+            tester.getTopLeft(find.byType(WInput)).dx,
+        12,
+      );
+    });
+
+    testWidgets('py-2.5 around a 22 px line is 42, as the border adds nothing', (
+      tester,
+    ) async {
+      // Pinned because it decides which padding the docs recommend. WInput
+      // paints its border in a DecoratedBox inside the padding, so unlike a
+      // select trigger (a Wind box, where the border adds to the size) the two
+      // border pixels are not on top of 10 + 22 + 10. If Wind starts insetting
+      // the child, this fails and the docs go with it.
+      MagicStarter.useFieldTheme(
+        const MagicStarterFieldTheme(
+          inputSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+        ),
+      );
+      await pumpControlAt(
+        tester,
+        kPhone,
+        const MSInput(placeholder: 'Enter text'),
+      );
+
+      expect(tester.getSize(find.byType(WInput)).height, 42);
+    });
+
+    testWidgets('a caller className still wins over the theme', (tester) async {
+      MagicStarter.useFieldTheme(hostFieldTheme);
+      await pumpControlAt(
+        tester,
+        kPhone,
+        const MSInput(placeholder: 'Enter text', className: 'py-3 text-sm'),
+      );
+
+      expect(tester.getSize(find.byType(WInput)).height, 12 + 22 + 12);
+      expect(paintedStyle(tester, 'Enter text')?.fontSize, 14);
+    });
+
+    testWidgets('useWindTheme after useFieldTheme puts the defaults back', (
+      tester,
+    ) async {
+      MagicStarter.useFieldTheme(hostFieldTheme);
+      MagicStarter.useWindTheme(WindThemeData());
+      await pumpControlAt(
+        tester,
+        kDesktop,
+        const MSInput(placeholder: 'Enter text'),
+      );
+
+      expect(tester.getSize(find.byType(WInput)).height, 40);
+    });
+
+    testWidgets('useFieldTheme after useWindTheme keeps the host standard', (
+      tester,
+    ) async {
+      MagicStarter.useWindTheme(WindThemeData());
+      MagicStarter.useFieldTheme(hostFieldTheme);
+      await pumpControlAt(
+        tester,
+        kDesktop,
+        const MSInput(placeholder: 'Enter text'),
+      );
+
+      expect(tester.getSize(find.byType(WInput)).height, 44);
     });
   });
 }

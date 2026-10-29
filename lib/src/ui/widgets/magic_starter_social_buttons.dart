@@ -47,6 +47,8 @@ class MagicStarterSocialButtons extends StatelessWidget {
           MSButton(
             onPressed: () => onSelected(provider),
             disabled: isLoading,
+            intent: ButtonIntent.secondary,
+            size: ButtonSize.md,
             className: MagicStarter.formTheme.secondaryButtonClassName,
             child: WDiv(
               className: 'flex flex-row items-center justify-center gap-2',

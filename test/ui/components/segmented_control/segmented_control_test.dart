@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
+import '../field_theme_fixture.dart';
+
 void main() {
   setUp(() {
     MagicApp.reset();
@@ -567,6 +569,840 @@ void main() {
 
       expect(tester.getRect(find.byType(MSSegmentedControl<String>)), before);
       expect(tester.getRect(find.text('Monthly')), firstBefore);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Selected segment in a scroller
+  // ---------------------------------------------------------------------------
+
+  group('SegmentedControl inside a scroller', () {
+    /// Wide enough that the row is several times a 300 px viewport.
+    const List<String> options = [
+      'Day',
+      'Week',
+      'Month',
+      'Quarter',
+      'Year',
+      'All time',
+      'Custom',
+    ];
+    const String last = 'Custom';
+
+    /// The row in a 300 px wide horizontal scroll view, as a host wraps it.
+    Widget inScroller({
+      required int selectedIndex,
+      ScrollController? controller,
+      ValueChanged<int>? onChanged,
+    }) {
+      return wrap(
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 300,
+            child: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              child: MSSegmentedControl<String>(
+                options: options,
+                selectedIndex: selectedIndex,
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    /// The segment's tap cell, which is what has to be reachable: the outermost
+    /// anchor around the label.
+    Finder segment(String label) => find
+        .ancestor(of: find.text(label), matching: find.byType(WAnchor))
+        .last;
+
+    /// Whether the whole segment lies inside the horizontal [viewport].
+    bool isFullyInside(WidgetTester tester, String label, Finder viewport) {
+      final Rect cell = tester.getRect(segment(label));
+      final Rect view = tester.getRect(viewport);
+
+      return cell.left >= view.left - 0.01 && cell.right <= view.right + 0.01;
+    }
+
+    double pixelsOf(WidgetTester tester, Finder scrollable) =>
+        tester.state<ScrollableState>(scrollable).position.pixels;
+
+    testWidgets('mounted with the last segment selected, it is in view after '
+        'the first frame', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: options.length - 1));
+
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('mounted with the first segment selected, it leaves the scroll '
+        'position alone', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      await tester.pump();
+
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('mounted with a selection already in view, nothing scrolls', (
+      tester,
+    ) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 1));
+      await tester.pump();
+
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('a root that scrolls itself reveals the selection too', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 300,
+              child: MSSegmentedControl<String>(
+                classNames: const {'root': 'overflow-x-auto'},
+                options: options,
+                selectedIndex: options.length - 1,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a selectedIndex change to an off-screen segment scrolls to '
+        'it', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isFalse);
+
+      await tester.pumpWidget(inScroller(selectedIndex: options.length - 1));
+      await tester.pump();
+
+      expect(isFullyInside(tester, last, find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a selectedIndex change back to the start scrolls back', (
+      tester,
+    ) async {
+      await tester.pumpWidget(inScroller(selectedIndex: options.length - 1));
+      await tester.pump();
+      expect(isFullyInside(tester, 'Day', find.byType(Scrollable)), isFalse);
+
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      await tester.pump();
+
+      expect(isFullyInside(tester, 'Day', find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a segment half out of view is brought fully in', (
+      tester,
+    ) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+      // 'Quarter' starts inside the 300 px viewport and ends past it.
+      final Rect cell = tester.getRect(segment('Quarter'));
+      expect(cell.left, lessThan(300));
+      expect(cell.right, greaterThan(300));
+
+      await tester.pumpWidget(inScroller(selectedIndex: 3));
+      await tester.pump();
+
+      expect(isFullyInside(tester, 'Quarter', find.byType(Scrollable)), isTrue);
+    });
+
+    testWidgets('a selectedIndex change between visible segments scrolls '
+        'nothing', (tester) async {
+      await tester.pumpWidget(inScroller(selectedIndex: 0));
+
+      await tester.pumpWidget(inScroller(selectedIndex: 1));
+      await tester.pump();
+
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('a tap on a visible segment moves the selection and not the '
+        'strip', (tester) async {
+      int selected = 0;
+      late StateSetter rebuild;
+
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+
+            return inScroller(
+              selectedIndex: selected,
+              onChanged: (index) => selected = index,
+            );
+          },
+        ),
+      );
+
+      await tester.tap(find.text('Week'));
+      rebuild(() {});
+      await tester.pump();
+
+      expect(selected, 1);
+      expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+    });
+
+    testWidgets('a rebuild with the same selectedIndex leaves the position the '
+        'user chose', (tester) async {
+      final ScrollController controller = ScrollController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        inScroller(selectedIndex: options.length - 1, controller: controller),
+      );
+      await tester.pump();
+      expect(controller.offset, greaterThan(0));
+
+      // The user scrolls back to the start, away from the selection.
+      controller.jumpTo(0);
+      await tester.pump();
+
+      // A parent rebuild hands the control a new widget with the same index.
+      await tester.pumpWidget(
+        inScroller(
+          selectedIndex: options.length - 1,
+          controller: controller,
+          onChanged: (_) {},
+        ),
+      );
+      await tester.pump();
+
+      expect(controller.offset, 0);
+    });
+
+    testWidgets('with no scrollable above it, nothing throws', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          Align(
+            alignment: Alignment.topLeft,
+            child: MSSegmentedControl<String>(
+              options: options,
+              selectedIndex: options.length - 1,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(Scrollable), findsNothing);
+      expect(tester.takeException(), isNull);
+      expect(find.text(last), findsOneWidget);
+    });
+
+    for (final int index in [-1, options.length, options.length + 5]) {
+      testWidgets('a selectedIndex of $index, which names no segment, reveals '
+          'nothing', (tester) async {
+        await tester.pumpWidget(inScroller(selectedIndex: index));
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+        expect(pixelsOf(tester, find.byType(Scrollable)), 0);
+      });
+    }
+
+    group('inside the page\'s vertical scroll view', () {
+      /// The control in its horizontal strip, in a tall page scrolled by
+      /// [page]: [above] px of content over it and a long tail below.
+      Widget onPage({
+        required int selectedIndex,
+        required ScrollController page,
+        required double above,
+      }) {
+        return wrap(
+          SingleChildScrollView(
+            controller: page,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: above),
+                SizedBox(
+                  width: 300,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: MSSegmentedControl<String>(
+                      options: options,
+                      selectedIndex: selectedIndex,
+                      onChanged: (_) {},
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2000),
+              ],
+            ),
+          ),
+        );
+      }
+
+      Finder strip() => find.byType(Scrollable).last;
+
+      testWidgets('a visible segment keeps the page\'s vertical offset on '
+          'mount', (tester) async {
+        final ScrollController page = ScrollController(initialScrollOffset: 50);
+        addTearDown(page.dispose);
+
+        await tester.pumpWidget(
+          onPage(selectedIndex: options.length - 1, page: page, above: 100),
+        );
+        await tester.pump();
+
+        expect(page.offset, 50);
+        expect(isFullyInside(tester, last, strip()), isTrue);
+      });
+
+      testWidgets('a visible segment keeps the page\'s vertical offset when '
+          'the selection changes', (tester) async {
+        final ScrollController page = ScrollController(initialScrollOffset: 50);
+        addTearDown(page.dispose);
+
+        await tester.pumpWidget(
+          onPage(selectedIndex: 0, page: page, above: 100),
+        );
+        await tester.pumpWidget(
+          onPage(selectedIndex: options.length - 1, page: page, above: 100),
+        );
+        await tester.pump();
+
+        expect(page.offset, 50);
+        expect(isFullyInside(tester, last, strip()), isTrue);
+      });
+
+      testWidgets('a control below the fold does not pull the page down to '
+          'it', (tester) async {
+        final ScrollController page = ScrollController();
+        addTearDown(page.dispose);
+
+        await tester.pumpWidget(
+          onPage(selectedIndex: options.length - 1, page: page, above: 1500),
+        );
+        await tester.pump();
+
+        expect(page.offset, 0);
+        expect(
+          tester.state<ScrollableState>(strip()).position.pixels,
+          greaterThan(0),
+        );
+      });
+    });
+
+    group('inside a scroller that is not the control\'s own', () {
+      testWidgets('a vertical list between the control and the strip leaves the '
+          'strip where it was', (tester) async {
+        final ScrollController strip = ScrollController(
+          initialScrollOffset: 40,
+        );
+        final ScrollController list = ScrollController(
+          initialScrollOffset: 150,
+        );
+        addTearDown(strip.dispose);
+        addTearDown(list.dispose);
+
+        // The control sits 300 px down a list that is scrolled to show it, in a
+        // 700 px wide strip. The offset that reveals it in the LIST is a
+        // vertical one and must never reach the strip.
+        await tester.pumpWidget(
+          wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                height: 200,
+                child: SingleChildScrollView(
+                  controller: strip,
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: 700,
+                    child: ListView(
+                      controller: list,
+                      children: [
+                        const SizedBox(height: 300),
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: MSSegmentedControl<String>(
+                            options: options,
+                            selectedIndex: options.length - 1,
+                            onChanged: (_) {},
+                          ),
+                        ),
+                        const SizedBox(height: 1000),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text(last), findsOneWidget);
+        expect(strip.offset, 40);
+        expect(list.offset, 150);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a page view page is not snapped, and a drag in progress is '
+          'not cancelled, when the selection changes', (tester) async {
+        final PageController pages = PageController(initialPage: 1);
+        addTearDown(pages.dispose);
+
+        Widget onSecondPage(int selectedIndex) {
+          return wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                height: 200,
+                child: PageView(
+                  controller: pages,
+                  children: [
+                    const SizedBox.shrink(),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: MSSegmentedControl<String>(
+                        options: options,
+                        selectedIndex: selectedIndex,
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        await tester.pumpWidget(onSecondPage(0));
+        await tester.pump();
+        expect(pages.position.pixels, 300);
+
+        // The user is dragging the page back toward the first one.
+        final TestGesture drag = await tester.startGesture(
+          tester.getCenter(find.byType(PageView)),
+        );
+        await drag.moveBy(const Offset(60, 0));
+        await tester.pump();
+        await drag.moveBy(const Offset(20, 0));
+        await tester.pump();
+        final double dragged = pages.position.pixels;
+        expect(dragged, inExclusiveRange(0, 300));
+        expect(pages.position.isScrollingNotifier.value, isTrue);
+
+        // The selection changes under the finger.
+        await tester.pumpWidget(onSecondPage(options.length - 1));
+        await tester.pump();
+
+        expect(pages.position.pixels, dragged);
+        expect(pages.position.isScrollingNotifier.value, isTrue);
+
+        await drag.up();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a vertical list is never moved, even when its extent is the '
+          'control\'s width', (tester) async {
+        final ScrollController list = ScrollController();
+        addTearDown(list.dispose);
+
+        // 700 px of content under a 200 px viewport, and a control exactly
+        // 700 px wide below the fold: the width check alone would pass.
+        await tester.pumpWidget(
+          wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 700,
+                height: 200,
+                child: ListView(
+                  controller: list,
+                  children: [
+                    const SizedBox(height: 300),
+                    SizedBox(
+                      height: 400,
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: SizedBox(
+                          width: 700,
+                          child: MSSegmentedControl<String>(
+                            options: options,
+                            selectedIndex: options.length - 1,
+                            onChanged: (_) {},
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(list.position.maxScrollExtent + 200, 700);
+        expect(list.offset, 0);
+      });
+
+      testWidgets('a strip that holds more than the control is left to the '
+          'host', (tester) async {
+        final ScrollController strip = ScrollController();
+        addTearDown(strip.dispose);
+
+        await tester.pumpWidget(
+          wrap(
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                child: SingleChildScrollView(
+                  controller: strip,
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MSSegmentedControl<String>(
+                        options: options,
+                        selectedIndex: options.length - 1,
+                        onChanged: (_) {},
+                      ),
+                      const SizedBox(width: 400),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(strip.position.maxScrollExtent, greaterThan(0));
+        expect(strip.offset, 0);
+        expect(isFullyInside(tester, last, find.byType(Scrollable)), isFalse);
+      });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Field theme
+  // ---------------------------------------------------------------------------
+
+  group('segmented control recipe from a theme', () {
+    // The slots before the sizes and the root padding became theme fields,
+    // copied verbatim and not derived from the recipe: a refactor that moved a
+    // token cannot move this with it.
+    const legacyRoot =
+        'flex flex-row items-center rounded-lg bg-surface-container-high '
+        'p-1 gap-1';
+    const legacyItem =
+        'px-3 py-1.5 rounded-md text-sm font-medium text-center '
+        'text-fg-muted cursor-pointer selected:bg-surface selected:text-fg '
+        'selected:shadow-sm transition-colors focus:ring-2 focus:ring-offset-1 '
+        'focus:ring-primary-500 dark:focus:ring-primary-400';
+    const legacyHit =
+        'flex flex-col justify-center items-center min-h-11 min-w-11 '
+        'lg:min-h-0 lg:min-w-0';
+    const legacySize = {'sm': 'px-2 py-1 text-sm', 'md': 'px-3 py-1.5 text-sm'};
+
+    for (final size in SegmentedControlSize.values) {
+      test('the default theme emits the previous ${size.name} slots byte for '
+          'byte', () {
+        for (final slots in [
+          segmentedControlRecipe(variants: {'size': size.name}),
+          segmentedControlRecipe(
+            theme: const MagicStarterFieldTheme(),
+            variants: {'size': size.name},
+          ),
+        ]) {
+          expect(slots['root'], legacyRoot);
+          expect(slots['item'], '$legacyItem ${legacySize[size.name]}');
+          expect(slots['hit'], legacyHit);
+        }
+      });
+    }
+
+    test('the sizes land in their own item and no other', () {
+      const theme = MagicStarterFieldTheme(
+        segmentedSmClassName: 'sm-class',
+        segmentedMdClassName: 'md-class',
+      );
+
+      for (final size in SegmentedControlSize.values) {
+        final item = segmentedControlRecipe(
+          theme: theme,
+          variants: {'size': size.name},
+        )['item'];
+
+        expect(item, endsWith('${size.name}-class'));
+        for (final other in SegmentedControlSize.values.where(
+          (s) => s != size,
+        )) {
+          expect(item, isNot(contains('${other.name}-class')));
+        }
+      }
+    });
+
+    test('the padding lands where p-1 sat in the root and nowhere else', () {
+      final slots = segmentedControlRecipe(theme: hostFieldTheme);
+
+      expect(
+        slots['root'],
+        'flex flex-row items-center rounded-lg bg-surface-container-high '
+        'px-1 py-0 lg:py-1 gap-1',
+      );
+      expect(slots['hit'], legacyHit);
+      expect(slots['item'], startsWith(legacyItem));
+    });
+  });
+
+  group('segmented control measured', () {
+    Widget control({
+      SegmentedControlSize size = SegmentedControlSize.md,
+      Map<String, String>? classNames,
+      ValueChanged<int>? onChanged,
+    }) {
+      return MSSegmentedControl<String>(
+        size: size,
+        classNames: classNames,
+        options: const ['Monthly', 'Annual'],
+        selectedIndex: 0,
+        onChanged: onChanged ?? (_) {},
+      );
+    }
+
+    /// The painted pill of the segment labelled [label].
+    Finder pill(String label) => find
+        .ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is WDiv &&
+                (widget.className ?? '').contains('rounded-md'),
+          ),
+        )
+        .first;
+
+    group('with the default theme', () {
+      // Today's sizes, measured before the change: the root keeps 4 px around
+      // the cell, so below lg the 44 px hit cell makes the control 52 px tall.
+      const heights = {
+        SegmentedControlSize.md: (phone: 52.0, desktop: 40.0),
+        SegmentedControlSize.sm: (phone: 52.0, desktop: 36.0),
+      };
+
+      for (final size in SegmentedControlSize.values) {
+        testWidgets('${size.name} is ${heights[size]!.desktop} px tall from lg '
+            'up and ${heights[size]!.phone} on a phone', (tester) async {
+          await pumpControlAt(tester, kDesktop, control(size: size));
+          expect(
+            tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+            heights[size]!.desktop,
+          );
+
+          await pumpControlAt(tester, kPhone, control(size: size));
+          expect(
+            tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+            heights[size]!.phone,
+          );
+        });
+      }
+    });
+
+    group('with a host theme', () {
+      for (final brightness in Brightness.values) {
+        for (final entry in {'phone': kPhone, 'desktop': kDesktop}.entries) {
+          for (final size in SegmentedControlSize.values) {
+            final label = '${size.name} ${brightness.name} ${entry.key}';
+
+            testWidgets('is 44 px tall around a 36 px pill, $label', (
+              tester,
+            ) async {
+              MagicStarter.useFieldTheme(hostFieldTheme);
+              await pumpControlAt(
+                tester,
+                entry.value,
+                control(size: size),
+                brightness: brightness,
+              );
+
+              expect(
+                tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+                44,
+              );
+              expect(tester.getSize(pill('Monthly')).height, 36);
+            });
+
+            testWidgets('sets the label 17 on 22 and centres it, $label', (
+              tester,
+            ) async {
+              MagicStarter.useFieldTheme(hostFieldTheme);
+              await pumpControlAt(
+                tester,
+                entry.value,
+                control(size: size),
+                brightness: brightness,
+              );
+
+              final root = find.byType(MSSegmentedControl<String>);
+
+              expect(paintedStyle(tester, 'Monthly')?.fontSize, 17);
+              expect(lineHeightOf(tester, 'Monthly'), closeTo(22, 0.01));
+              expect(
+                glyphCentre(tester, 'Monthly'),
+                closeTo(tester.getCenter(root).dy, 1),
+              );
+              expect(
+                glyphCentre(tester, 'Annual'),
+                closeTo(tester.getCenter(root).dy, 1),
+              );
+            });
+          }
+        }
+      }
+
+      testWidgets('keeps a 44 px hit cell around the pill on a phone', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(tester, kPhone, control());
+
+        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+        handle.dispose();
+      });
+
+      testWidgets('a tap just above the pill still selects the segment', (
+        tester,
+      ) async {
+        int? changed;
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kPhone,
+          control(onChanged: (index) => changed = index),
+        );
+
+        final painted = tester.getRect(pill('Annual'));
+        await tester.tapAt(painted.topCenter - const Offset(0, 3));
+
+        expect(changed, 1);
+      });
+
+      testWidgets('a caller item className still wins over the theme', (
+        tester,
+      ) async {
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kDesktop,
+          control(classNames: const {'item': 'text-sm'}),
+        );
+
+        expect(paintedStyle(tester, 'Monthly')?.fontSize, 14);
+      });
+
+      testWidgets('a caller root className still wins over the padding', (
+        tester,
+      ) async {
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kDesktop,
+          control(classNames: const {'root': 'py-3'}),
+        );
+
+        expect(
+          tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+          12 + 36 + 12,
+        );
+      });
+
+      testWidgets('useWindTheme after useFieldTheme puts the defaults back', (
+        tester,
+      ) async {
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        MagicStarter.useWindTheme(WindThemeData());
+        await pumpControlAt(tester, kDesktop, control());
+
+        expect(
+          tester.getSize(find.byType(MSSegmentedControl<String>)).height,
+          40,
+        );
+      });
+
+      testWidgets(
+        'the wrap root override still builds a Wrap and no Flexible',
+        (tester) async {
+          MagicStarter.useFieldTheme(hostFieldTheme);
+          await pumpControlAt(
+            tester,
+            kPhone,
+            SizedBox(
+              width: 200,
+              child: MSSegmentedControl<String>(
+                classNames: const {'root': 'wrap'},
+                options: const ['Monthly', 'Annual', 'Lifetime'],
+                selectedIndex: 0,
+                onChanged: (_) {},
+              ),
+            ),
+          );
+
+          expect(tester.takeException(), isNull);
+          expect(find.byType(Wrap), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(MSSegmentedControl<String>),
+              matching: find.byType(Flexible),
+            ),
+            findsNothing,
+          );
+        },
+      );
+
+      testWidgets('the selected segment is still revealed in a scroller', (
+        tester,
+      ) async {
+        const options = ['Day', 'Week', 'Month', 'Quarter', 'Year', 'Custom'];
+        const strip = ValueKey('strip');
+        MagicStarter.useFieldTheme(hostFieldTheme);
+        await pumpControlAt(
+          tester,
+          kPhone,
+          SizedBox(
+            width: 300,
+            child: SingleChildScrollView(
+              key: strip,
+              scrollDirection: Axis.horizontal,
+              child: MSSegmentedControl<String>(
+                options: options,
+                selectedIndex: options.length - 1,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        );
+
+        final cell = tester.getRect(
+          find
+              .ancestor(of: find.text('Custom'), matching: find.byType(WAnchor))
+              .last,
+        );
+        final view = tester.getRect(find.byKey(strip));
+
+        expect(cell.left, greaterThanOrEqualTo(view.left - 0.01));
+        expect(cell.right, lessThanOrEqualTo(view.right + 0.01));
+      });
     });
   });
 }

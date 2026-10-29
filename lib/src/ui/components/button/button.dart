@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import 'button.recipe.dart';
 
 /// A reusable button component for Magic Starter views.
@@ -20,15 +21,28 @@ import 'button.recipe.dart';
 /// )
 /// ```
 ///
+/// ### Shape and size
+///
+/// The corner radius, the padding, minimum height and label type of each
+/// [ButtonSize], and the secondary border come from
+/// `MagicStarter.buttonTheme` ([MagicStarterButtonTheme]), so a host sets one
+/// standard for every [MSButton] that is not handed a shape or a size of its
+/// own. The colours come from the intent and stay on the semantic aliases. A
+/// [className] is appended after both and wins on any family it names; the
+/// auth and form screens pass strings without a shape, padding or label size, so
+/// they follow the theme. See [MagicStarterButtonTheme] for a host's own strings
+/// and for the dialogs, which do not use this widget.
+///
 /// ### Tap target
 ///
-/// [ButtonSize.sm] paints 32 px tall and [ButtonSize.md] about 36 px, short of
-/// the 44 px a thumb needs. Below `lg` every size sits in a
+/// By default [ButtonSize.sm] paints 32 px tall and [ButtonSize.md] about 36 px,
+/// short of the 44 px a thumb needs. Below `lg` every size sits in a
 /// [kButtonMinTapExtent] hit area, centred on the button, whose size the
-/// painted button keeps; a size already that tall ([ButtonSize.lg]) is not
-/// widened by it. The area presses the button, and is inert while it is
-/// loading, disabled or has no [onPressed]. From `lg` up the button is laid out
-/// exactly as before.
+/// painted button keeps; a size already that tall (the default
+/// [ButtonSize.lg], or any size a theme makes 44 px) is not widened by it, so
+/// the area adds neither layout nor reach there. The area presses the button,
+/// and is inert while it is loading, disabled or has no [onPressed]. From `lg`
+/// up the button is laid out exactly as before.
 ///
 /// ### Loading state
 ///
@@ -111,7 +125,7 @@ class MSButton extends StatelessWidget {
       onTap: onPressed,
       isLoading: isLoading,
       disabled: disabled,
-      className: buttonRecipe(
+      className: buildButtonRecipe(MagicStarter.buttonTheme)(
         variants: {kButtonIntentAxis: intent.name, kButtonSizeAxis: size.name},
         // `justify-center` ONLY when stretched, which is the one case the
         // recipe's base deliberately cannot cover. Its comment explains why the

@@ -4,4 +4,4 @@
 // `previews:refresh` discovers `*.preview.dart` files directly.
 
 export 'toast.dart' show MSToast, ToastVariant;
-export 'toast.recipe.dart';
+export 'toast.recipe.dart' show buildToastRecipe, kToastVariantAxis;

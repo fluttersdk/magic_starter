@@ -300,6 +300,8 @@ class _MagicStarterStepUpDialogState extends State<MagicStarterStepUpDialog> {
 
     return MSButton(
       onPressed: _isLoading ? null : () => _confirmWith(provider),
+      intent: ButtonIntent.secondary,
+      size: ButtonSize.md,
       className: MagicStarter.formTheme.secondaryButtonClassName,
       child: WDiv(
         className: 'flex flex-row items-center justify-center gap-2',

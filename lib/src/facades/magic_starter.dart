@@ -468,6 +468,16 @@ class MagicStarter {
   ///   ),
   /// );
   /// ```
+  ///
+  /// The theme is assigned whole, so a field you leave out goes back to its
+  /// default, including one [useWindTheme] derived. To change one string and
+  /// keep the rest, copy the active theme:
+  ///
+  /// ```dart
+  /// MagicStarter.useModalTheme(
+  ///   MagicStarter.modalTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+  /// );
+  /// ```
   static void useModalTheme(MagicStarterModalTheme theme) {
     manager.modalTheme = theme;
   }
@@ -481,8 +491,9 @@ class MagicStarter {
   /// Register a unified theme configuration.
   ///
   /// Sets all sub-themes (navigation, modal, form, card, page header, layout,
-  /// auth) in a single call. Individual sub-themes can still be overridden
-  /// afterward via [useNavigationTheme], [useModalTheme], [useFormTheme], etc.
+  /// auth, dropdown, button, field) in a single call. Individual sub-themes can
+  /// still be overridden afterward via [useNavigationTheme], [useModalTheme],
+  /// [useFormTheme], etc.
   ///
   /// ```dart
   /// MagicStarter.useTheme(
@@ -500,15 +511,18 @@ class MagicStarter {
     manager.theme = theme;
   }
 
-  /// Adopt a whole [WindThemeData] palette across all 7 sub-themes in one call.
+  /// Adopt a whole [WindThemeData] palette across all 8 colour-bearing
+  /// sub-themes in one call.
   ///
   /// Derives a [MagicStarterTheme] from the passed theme's semantic alias
   /// palette (surface / surface-container / fg / primary / on-primary / border
   /// / destructive, etc.) and delegates to [useTheme]. Every color-bearing
   /// className in the built-in navigation, modal, form, card, page header,
-  /// layout, and auth surfaces is rebuilt from those semantic roles, so a
-  /// consumer aligns the entire starter kit to their brand in a single call
-  /// instead of constructing up to 7 sub-theme structs by hand.
+  /// layout, auth, and dropdown surfaces is rebuilt from those semantic roles,
+  /// so a consumer aligns the entire starter kit to their brand in a single
+  /// call instead of constructing up to 8 sub-theme structs by hand. The button
+  /// theme and the field theme (shape and size) are not derived and reset to
+  /// their defaults, so call [useButtonTheme] and [useFieldTheme] after this.
   ///
   /// This is additive: [useTheme] and every individual `use*Theme()` setter
   /// still work and can override any sub-theme afterward.
@@ -545,8 +559,18 @@ class MagicStarter {
   /// MagicStarter.useFormTheme(
   ///   MagicStarterFormTheme(
   ///     inputClassName: 'w-full px-4 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white',
-  ///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl',
+  ///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
   ///   ),
+  /// );
+  /// ```
+  ///
+  /// The theme is assigned whole, so a field you leave out goes back to its
+  /// default, including one [useWindTheme] derived. To change one string and
+  /// keep the rest, copy the active theme:
+  ///
+  /// ```dart
+  /// MagicStarter.useFormTheme(
+  ///   MagicStarter.formTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
   /// );
   /// ```
   static void useFormTheme(MagicStarterFormTheme theme) {
@@ -585,6 +609,91 @@ class MagicStarter {
   /// Returns the theme registered via [useAuthTheme], or a default
   /// [MagicStarterAuthTheme] instance when not configured.
   static MagicStarterAuthTheme get authTheme => manager.authTheme;
+
+  /// Register a custom dropdown theme.
+  ///
+  /// When set, overrides the colour class names of the team switcher and user
+  /// menu panels: fill and edge, dividers, the hovered row, the icon tile, the
+  /// text and the destructive row.
+  ///
+  /// All fields in [MagicStarterDropdownTheme] are optional, pass only the
+  /// values you want to customise. [useWindTheme] already derives all of them
+  /// from the host palette, and the navigation theme does not reset them.
+  ///
+  /// ```dart
+  /// MagicStarter.useDropdownTheme(
+  ///   MagicStarterDropdownTheme(
+  ///     panelClassName: 'bg-zinc-900 border border-zinc-700',
+  ///     itemClassName: 'hover:bg-zinc-800',
+  ///   ),
+  /// );
+  /// ```
+  static void useDropdownTheme(MagicStarterDropdownTheme theme) {
+    manager.dropdownTheme = theme;
+  }
+
+  /// Get the active dropdown theme.
+  ///
+  /// Returns the theme registered via [useDropdownTheme], or a default
+  /// [MagicStarterDropdownTheme] instance when not configured.
+  static MagicStarterDropdownTheme get dropdownTheme => manager.dropdownTheme;
+
+  /// Register a custom button theme.
+  ///
+  /// When set, overrides the shape, the three sizes (padding, minimum height
+  /// and label type) and the secondary border of every [MSButton]. A className
+  /// passed to a button is appended after these and wins.
+  ///
+  /// All fields in [MagicStarterButtonTheme] are optional, pass only the values
+  /// you want to customise. [useWindTheme] and [useTheme] set the whole unified
+  /// theme and reset this one, so call this after them.
+  ///
+  /// ```dart
+  /// MagicStarter.useButtonTheme(
+  ///   MagicStarterButtonTheme(
+  ///     shapeClassName: 'rounded-full',
+  ///     mdClassName: 'px-5 py-[11px] text-[17px] leading-[22px] font-semibold',
+  ///   ),
+  /// );
+  /// ```
+  static void useButtonTheme(MagicStarterButtonTheme theme) {
+    manager.buttonTheme = theme;
+  }
+
+  /// Get the active button theme.
+  ///
+  /// Returns the theme registered via [useButtonTheme], or a default
+  /// [MagicStarterButtonTheme] instance when not configured.
+  static MagicStarterButtonTheme get buttonTheme => manager.buttonTheme;
+
+  /// Register a custom field theme.
+  ///
+  /// When set, overrides the padding, minimum height and type of [MSInput] (its
+  /// placeholder and value), of the [MSSelect] and [MSCombobox] triggers, and of
+  /// the [MSSegmentedControl] segments and root padding. A className passed to
+  /// a control is appended after these and wins.
+  ///
+  /// All fields in [MagicStarterFieldTheme] are optional, pass only the values
+  /// you want to customise. [useWindTheme] and [useTheme] set the whole unified
+  /// theme and reset this one, so call this after them.
+  ///
+  /// ```dart
+  /// MagicStarter.useFieldTheme(
+  ///   MagicStarterFieldTheme(
+  ///     inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+  ///     selectSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+  ///   ),
+  /// );
+  /// ```
+  static void useFieldTheme(MagicStarterFieldTheme theme) {
+    manager.fieldTheme = theme;
+  }
+
+  /// Get the active field theme.
+  ///
+  /// Returns the theme registered via [useFieldTheme], or a default
+  /// [MagicStarterFieldTheme] instance when not configured.
+  static MagicStarterFieldTheme get fieldTheme => manager.fieldTheme;
 
   /// Register a custom card theme.
   ///

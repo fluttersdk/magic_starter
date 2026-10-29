@@ -262,6 +262,54 @@ class MagicStarterModalTheme {
         'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
     this.maxWidth = 448.0,
   });
+
+  /// Returns a copy of this theme with the given fields replaced.
+  ///
+  /// [MagicStarter.useModalTheme] assigns the whole struct, so changing one
+  /// string by building a new [MagicStarterModalTheme] hands every field you did
+  /// not repeat back to its default, including the ones [MagicStarter.useWindTheme]
+  /// derived and any field added later. Copy the active theme instead:
+  ///
+  /// ```dart
+  /// MagicStarter.useModalTheme(
+  ///   MagicStarter.modalTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+  /// );
+  /// ```
+  MagicStarterModalTheme copyWith({
+    String? containerClassName,
+    String? headerClassName,
+    String? bodyClassName,
+    String? footerClassName,
+    String? titleClassName,
+    String? descriptionClassName,
+    String? primaryButtonClassName,
+    String? secondaryButtonClassName,
+    String? dangerButtonClassName,
+    String? warningButtonClassName,
+    String? errorClassName,
+    String? inputClassName,
+    double? maxWidth,
+  }) {
+    return MagicStarterModalTheme(
+      containerClassName: containerClassName ?? this.containerClassName,
+      headerClassName: headerClassName ?? this.headerClassName,
+      bodyClassName: bodyClassName ?? this.bodyClassName,
+      footerClassName: footerClassName ?? this.footerClassName,
+      titleClassName: titleClassName ?? this.titleClassName,
+      descriptionClassName: descriptionClassName ?? this.descriptionClassName,
+      primaryButtonClassName:
+          primaryButtonClassName ?? this.primaryButtonClassName,
+      secondaryButtonClassName:
+          secondaryButtonClassName ?? this.secondaryButtonClassName,
+      dangerButtonClassName:
+          dangerButtonClassName ?? this.dangerButtonClassName,
+      warningButtonClassName:
+          warningButtonClassName ?? this.warningButtonClassName,
+      errorClassName: errorClassName ?? this.errorClassName,
+      inputClassName: inputClassName ?? this.inputClassName,
+      maxWidth: maxWidth ?? this.maxWidth,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -279,7 +327,7 @@ class MagicStarterModalTheme {
 /// ```dart
 /// MagicStarterFormTheme(
 ///   inputClassName: 'w-full px-4 py-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white',
-///   primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold',
+///   primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
 /// )
 /// ```
 class MagicStarterFormTheme {
@@ -306,14 +354,28 @@ class MagicStarterFormTheme {
 
   /// Primary submit button className (e.g. "Sign In", "Save").
   ///
+  /// Handed to an `MSButton` of `ButtonSize.lg`, so the shape, the vertical
+  /// padding and the label size come from [MagicStarterButtonTheme] and this
+  /// string carries only what is the form's own: the full width, the colours
+  /// and the label weight. A host string that names a shape or a size still
+  /// wins over the button theme.
+  ///
   /// Defaults to
-  /// `'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg'`.
+  /// `'w-full bg-primary hover:bg-primary/80 text-white font-semibold'`.
   final String primaryButtonClassName;
 
   /// Secondary/outline button className (e.g. social login, cancel).
   ///
+  /// Handed to a `ButtonIntent.secondary` `MSButton` of `ButtonSize.md`, so the
+  /// shape, the padding, the label size and the border come from
+  /// [MagicStarterButtonTheme]; the border is left out of this string because a
+  /// `border-*` token paints a one pixel border in Wind whatever the theme
+  /// says, which a borderless standard cannot undo. What is left is the full
+  /// width, the unfilled background, the label and hover colours, and the hover
+  /// opacity the button has always had.
+  ///
   /// Defaults to
-  /// `'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium'`.
+  /// `'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90'`.
   final String secondaryButtonClassName;
 
   /// Inline link text className (e.g. "Forgot password?").
@@ -335,13 +397,50 @@ class MagicStarterFormTheme {
     this.errorClassName = 'text-sm text-red-600 dark:text-red-400',
     this.placeholderClassName = 'text-gray-400 dark:text-gray-500',
     this.primaryButtonClassName =
-        'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+        'w-full bg-primary hover:bg-primary/80 text-white font-semibold',
     this.secondaryButtonClassName =
-        'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium',
+        'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
     this.linkClassName = 'text-sm font-medium text-primary',
     this.checkboxLabelClassName =
         'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 ml-1',
   });
+
+  /// Returns a copy of this theme with the given fields replaced.
+  ///
+  /// [MagicStarter.useFormTheme] assigns the whole struct, so changing one
+  /// string by building a new [MagicStarterFormTheme] hands every field you did
+  /// not repeat back to its default, including the ones [MagicStarter.useWindTheme]
+  /// derived and any field added later. Copy the active theme instead:
+  ///
+  /// ```dart
+  /// MagicStarter.useFormTheme(
+  ///   MagicStarter.formTheme.copyWith(inputClassName: 'w-full py-[11px] ...'),
+  /// );
+  /// ```
+  MagicStarterFormTheme copyWith({
+    String? inputClassName,
+    String? labelClassName,
+    String? errorClassName,
+    String? placeholderClassName,
+    String? primaryButtonClassName,
+    String? secondaryButtonClassName,
+    String? linkClassName,
+    String? checkboxLabelClassName,
+  }) {
+    return MagicStarterFormTheme(
+      inputClassName: inputClassName ?? this.inputClassName,
+      labelClassName: labelClassName ?? this.labelClassName,
+      errorClassName: errorClassName ?? this.errorClassName,
+      placeholderClassName: placeholderClassName ?? this.placeholderClassName,
+      primaryButtonClassName:
+          primaryButtonClassName ?? this.primaryButtonClassName,
+      secondaryButtonClassName:
+          secondaryButtonClassName ?? this.secondaryButtonClassName,
+      linkClassName: linkClassName ?? this.linkClassName,
+      checkboxLabelClassName:
+          checkboxLabelClassName ?? this.checkboxLabelClassName,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -863,8 +962,13 @@ class MagicStarterAuthTheme {
 
   /// Guest action button className (e.g. "Continue as Guest").
   ///
+  /// Handed to a `ButtonIntent.secondary` `MSButton` of `ButtonSize.md`, like
+  /// [MagicStarterFormTheme.secondaryButtonClassName]: the shape, the padding,
+  /// the label size and the border are [MagicStarterButtonTheme]'s, and a host
+  /// string that names one of them still wins.
+  ///
   /// Defaults to
-  /// `'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium'`.
+  /// `'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90'`.
   final String guestButtonClassName;
 
   /// Registration link container text className (e.g. "Don't have an account?").
@@ -895,9 +999,382 @@ class MagicStarterAuthTheme {
     this.socialDividerTextClassName =
         'text-sm text-gray-500 dark:text-gray-400',
     this.guestButtonClassName =
-        'w-full bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 py-3 rounded-lg text-sm font-medium',
+        'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
     this.registrationLinkClassName = 'text-sm text-gray-500 dark:text-gray-400',
     this.registrationLinkTextClassName = 'text-sm font-semibold text-primary',
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Dropdown theme
+// ---------------------------------------------------------------------------
+
+/// Theme configuration for the popover panels of [MSTeamSelector] and
+/// [MSUserProfileDropdown].
+///
+/// Colour only. Geometry (width, radius, shadow, the clip that keeps a hovered
+/// row inside the rounded corners) stays in the widgets, so a host re-skins the
+/// panels without being able to lose the clip.
+///
+/// This is its own sub-theme rather than more fields on
+/// [MagicStarterNavigationTheme] on purpose: a host refines the navigation
+/// theme after [MagicStarter.useWindTheme] and replaces it whole, and a field it
+/// omitted would fall back to the stock grey instead of keeping the derived
+/// value. Nothing refines this one by accident.
+///
+/// All fields are optional; defaults preserve the current dark-mode-aware grey
+/// look. [MagicStarter.useWindTheme] rebuilds every field from the host's
+/// semantic roles.
+///
+/// ### Example
+/// ```dart
+/// MagicStarter.useDropdownTheme(
+///   MagicStarterDropdownTheme(
+///     panelClassName: 'bg-surface-container border border-color-border',
+///     itemClassName: 'hover:bg-surface-container-high',
+///   ),
+/// );
+/// ```
+class MagicStarterDropdownTheme {
+  /// Panel fill and edge: the background, the border width and the border
+  /// colour.
+  ///
+  /// Keep a border, even an invisible one (`border border-transparent`): Wind
+  /// clips a bordered box inside the border, while a borderless one gets a
+  /// `ClipRRect` around the decorated container, which cuts off the panel's
+  /// shadow.
+  ///
+  /// Defaults to
+  /// `'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'`.
+  final String panelClassName;
+
+  /// Border colour of the rules inside the panel.
+  ///
+  /// Colour only: the widget supplies the side (`border-t`, `border-b`), so a
+  /// theme stays valid on either.
+  ///
+  /// Defaults to `'border-gray-100 dark:border-gray-700'`.
+  final String dividerClassName;
+
+  /// Fill of a row under the pointer.
+  ///
+  /// Must carry the `hover:` prefix on every token; a bare fill would paint
+  /// every row at rest.
+  ///
+  /// Defaults to `'hover:bg-gray-50 dark:hover:bg-gray-700/50'`.
+  final String itemClassName;
+
+  /// Fill of the square behind a row's icon or initial.
+  ///
+  /// The tile sits on the row, so its resting fill must differ from
+  /// [itemClassName]'s or it vanishes while the row is hovered. A `hover:` token
+  /// here reacts only while the pointer is on the tile itself: a `WDiv` carrying
+  /// one is its own hover target.
+  ///
+  /// Defaults to
+  /// `'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'`.
+  final String tileClassName;
+
+  /// Colour of a row's label, of the account name and of the team name in the
+  /// trigger.
+  ///
+  /// Defaults to `'text-gray-900 dark:text-white'`.
+  final String textClassName;
+
+  /// Colour of secondary text: the email, the section caption, the chevron and
+  /// the glyphs inside a tile.
+  ///
+  /// Defaults to `'text-gray-500 dark:text-gray-400'`.
+  final String mutedTextClassName;
+
+  /// Colour of the label and icon of a destructive row (sign out).
+  ///
+  /// Applied after [textClassName] and [mutedTextClassName] on an element in
+  /// the `danger` state, so every token must carry the `danger:` prefix.
+  ///
+  /// Defaults to `'danger:text-red-600 dark:danger:text-red-500'`.
+  final String dangerTextClassName;
+
+  /// Fill of the tile of a destructive row, applied after [tileClassName] and
+  /// prefixed with `danger:` for the same reason as [dangerTextClassName].
+  ///
+  /// Defaults to `'danger:bg-red-50 dark:danger:bg-red-900/20'`.
+  final String dangerTileClassName;
+
+  const MagicStarterDropdownTheme({
+    this.panelClassName =
+        'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+    this.dividerClassName = 'border-gray-100 dark:border-gray-700',
+    this.itemClassName = 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+    this.tileClassName =
+        'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600',
+    this.textClassName = 'text-gray-900 dark:text-white',
+    this.mutedTextClassName = 'text-gray-500 dark:text-gray-400',
+    this.dangerTextClassName = 'danger:text-red-600 dark:danger:text-red-500',
+    this.dangerTileClassName = 'danger:bg-red-50 dark:danger:bg-red-900/20',
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Button theme
+// ---------------------------------------------------------------------------
+
+/// Theme configuration for the shape, size and label type of [MSButton].
+///
+/// Geometry only. The colours stay in the button recipe, written as the semantic
+/// aliases (`bg-primary`, `text-on-primary`, `border-color-border`), so a host
+/// re-skins them through its alias map and [MagicStarter.useWindTheme] has
+/// nothing to derive here.
+///
+/// Each size class carries the padding, the minimum height if any, and the label
+/// type of that size (`text-*`, `leading-*`, `font-*`), so one string says how a
+/// `md` button looks. The recipe puts `font-medium` ahead of them, and Wind's
+/// per-family last-wins lets a size class set another weight.
+///
+/// This is its own sub-theme rather than more fields on another one on purpose:
+/// every `use*Theme` setter assigns its whole struct, so a field added to a
+/// theme a host refines later would go back to its constructor default.
+///
+/// All fields are optional; defaults are the classes the recipe wrote before
+/// they were configurable, so a host that never sets this theme sees no change
+/// on a button of its own; the auth screens' buttons moved slightly, as
+/// described under "The auth and form buttons".
+///
+/// ### One 44 px capsule
+///
+/// ```dart
+/// const standard = 'px-5 py-[11px] text-[17px] leading-[22px] font-semibold';
+///
+/// MagicStarter.useButtonTheme(
+///   MagicStarterButtonTheme(
+///     shapeClassName: 'rounded-full',
+///     smClassName: standard,
+///     mdClassName: standard,
+///     lgClassName: standard,
+///     secondaryBorderClassName: '',
+///   ),
+/// );
+/// ```
+///
+/// Reach 44 px with vertical padding around a fixed `leading-*`, as above,
+/// rather than with `min-h-11`: a Wind button gives its box the minimum height
+/// but no alignment, so the label sits at the top of it. Drop
+/// [secondaryBorderClassName] in a fixed-height design too, since a border adds
+/// its width to the box and leaves the secondary button 2 px taller than the
+/// rest.
+///
+/// ### The auth and form buttons
+///
+/// The submit button of the sign-in, register, forgot and reset password,
+/// two-factor challenge, phone code, email verification and team invitation
+/// screens is an [MSButton] of `ButtonSize.lg`. The social buttons, the guest
+/// button and the step-up provider button are `ButtonIntent.secondary` buttons of
+/// `ButtonSize.md`. Their classNames
+/// ([MagicStarterFormTheme.primaryButtonClassName],
+/// [MagicStarterFormTheme.secondaryButtonClassName] and
+/// [MagicStarterAuthTheme.guestButtonClassName]) carry no shape, padding or label
+/// size, so those come from this theme; what is left in them is the full width,
+/// the colours, the label weight of the primary and, on the secondary ones, the
+/// hover opacity. The secondary border is this theme's too: a `border-*` token
+/// paints a one pixel border in Wind even without a `border` width, so a string
+/// that named a border colour would keep a hairline on a borderless standard.
+///
+/// With the default theme the submit buttons have the same height, radius and
+/// label as before; the side padding moved from `px-4` to `px-5`, which is what
+/// `lg` sets where the old string left the default `md`. A family a host's own
+/// string does not name now comes from `lg` and the secondary intent, not from
+/// the old `md` and primary intent: a string that names only `py-3 rounded-xl`
+/// takes its label size and side padding from `lg`, and a secondary string with
+/// no `bg-` or `text-` token takes the fill of the secondary intent.
+///
+/// ### What this theme does not reach
+///
+/// - A host's own strings. A className handed to an [MSButton] is appended after
+///   all of this and wins on any family it names, so a host that sets its OWN
+///   [MagicStarterFormTheme] or [MagicStarterAuthTheme] button strings
+///   (`useFormTheme`, `useAuthTheme`) keeps whatever shape, padding and label
+///   size it wrote in them. Leave those out of the strings to follow this theme,
+///   and change one string with [MagicStarterFormTheme.copyWith] on
+///   `MagicStarter.formTheme` rather than a new theme, which would hand the other
+///   fields back to their defaults.
+/// - The dialogs, and the team settings invite button, draw raw `WButton`s on the
+///   strings of [MagicStarterModalTheme] and never read this theme.
+class MagicStarterButtonTheme {
+  /// Corner radius of every intent and size.
+  ///
+  /// Written where `rounded-lg` sat in the recipe base, so it is a radius token
+  /// (`rounded-full` for a capsule).
+  ///
+  /// Defaults to `'rounded-lg'`.
+  final String shapeClassName;
+
+  /// Padding, minimum size and label type of `ButtonSize.sm`.
+  ///
+  /// Defaults to `'px-3 py-1.5 text-sm'`, 32 px tall.
+  final String smClassName;
+
+  /// Padding, minimum size and label type of `ButtonSize.md`, the default size.
+  ///
+  /// Defaults to `'px-4 py-2 text-sm'`, 36 px tall.
+  final String mdClassName;
+
+  /// Padding, minimum size and label type of `ButtonSize.lg`.
+  ///
+  /// The auth submit buttons are `lg`, and the stock and derived
+  /// [MagicStarterFormTheme.primaryButtonClassName] they carry keeps
+  /// `font-semibold`, which is appended after this string: a weight set here
+  /// reaches every other `lg` button but not the auth submit buttons.
+  ///
+  /// Defaults to `'px-5 py-3 text-base'`.
+  final String lgClassName;
+
+  /// Width and colour of the edge of a `ButtonIntent.secondary` button.
+  ///
+  /// The one colour-bearing field, because the border is the only part of an
+  /// intent that costs layout: it adds its width to the box. An empty string
+  /// leaves the secondary button borderless, which is not the same as
+  /// `border-0` (Flutter paints a zero-width border as a hairline).
+  /// [buttonDangerOutlineClassName] only recolours this border, so it reads as
+  /// plain red text on a borderless secondary button.
+  ///
+  /// Defaults to `'border border-color-border'`.
+  final String secondaryBorderClassName;
+
+  const MagicStarterButtonTheme({
+    this.shapeClassName = 'rounded-lg',
+    this.smClassName = 'px-3 py-1.5 text-sm',
+    this.mdClassName = 'px-4 py-2 text-sm',
+    this.lgClassName = 'px-5 py-3 text-base',
+    this.secondaryBorderClassName = 'border border-color-border',
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Field theme
+// ---------------------------------------------------------------------------
+
+/// Theme configuration for the height and type of the form controls:
+/// [MSInput], [MSSelect], [MSCombobox] and [MSSegmentedControl].
+///
+/// Size only. The colours, the border and the corner radius stay in the control
+/// recipes, written as semantic aliases, so a host re-skins them through its
+/// alias map and [MagicStarter.useWindTheme] has nothing to derive here.
+///
+/// Each field is one run of tokens in a recipe: the padding, the minimum height
+/// if any, and the type (`text-*`, `leading-*`, `font-*`) of one control. The
+/// field REPLACES that run, so a host string states the whole size and a
+/// default it does not restate does not survive (the input's `lg:py-2.5` goes
+/// when `inputSizeClassName` is set). The side padding, the colours and the
+/// border sit outside the run and are kept.
+///
+/// This is its own sub-theme rather than more fields on another one on purpose:
+/// every `use*Theme` setter assigns its whole struct, so a field added to a
+/// theme a host refines later would go back to its constructor default.
+///
+/// All fields are optional; defaults are the classes the recipes wrote before
+/// they were configurable, so a host that never sets this theme sees no change.
+///
+/// ### One 44 px standard, 17 on 22 type
+///
+/// ```dart
+/// MagicStarter.useFieldTheme(
+///   MagicStarterFieldTheme(
+///     inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+///     selectSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+///     segmentedSmClassName: 'py-[7px] text-[17px] leading-[22px]',
+///     segmentedMdClassName: 'py-[7px] text-[17px] leading-[22px]',
+///     segmentedPaddingClassName: 'px-1 py-0 lg:py-1',
+///   ),
+/// );
+/// ```
+///
+/// Each control reaches 44 px its own way, because the boxes differ. A text
+/// input paints its border inside its padding, so `py-[11px]` around a 22 px
+/// line is the whole 44; the select and combobox triggers are Wind boxes whose
+/// border adds to the size, so `py-2.5` around the same line plus the two border
+/// pixels is 44. A segmented item is a 36 px pill (`py-[7px]` around the line)
+/// in a root with 4 px around it, which `px-1 py-0 lg:py-1` keeps: below `lg`
+/// the 44 px hit cell around the pill supplies those 4 px, from `lg` up the
+/// root does. Padding around a fixed `leading-*` also centres the text, which
+/// a bare `min-h-11` does not in every Wind box.
+///
+/// Call it after [MagicStarter.useWindTheme] and [MagicStarter.useTheme], which
+/// reset it with the rest of the unified theme.
+///
+/// A className handed to a control (`MSInput.className`, the `classNames` of
+/// the others) is appended after all of this and wins on any family it names.
+///
+/// ### What this theme does not reach
+///
+/// - The auth, profile and settings forms. They draw `WFormInput`s on
+///   [MagicStarterFormTheme.inputClassName], which carries its own `py-3`, and
+///   the starter's own `WFormSelect`s (the role select of the team settings
+///   page, the language select of the profile settings view and the language
+///   preference view) read the same string for their trigger. A host that wants
+///   its standard there writes it into that string, with
+///   `MagicStarter.formTheme.copyWith(inputClassName: ...)`. One `py-*` cannot
+///   make both 44 px, because an input paints its border inside its padding and
+///   a select trigger adds it: with 17 on 22 type `py-[11px]` is 44 for the
+///   input and 46 for the select, `py-2.5` is 42 and 44, and
+///   `py-[10px] min-h-11 text-[17px] leading-[22px]` is 44 for both (the minimum
+///   height lifts the input to 44 and it centres its single line in the box).
+/// - [MSTextarea], and the option rows of the select and combobox menus, which
+///   are Wind's own.
+class MagicStarterFieldTheme {
+  /// Padding and type of the text in [MSInput].
+  ///
+  /// The placeholder and the typed value both read the type of the field, so
+  /// this one string sets both; the placeholder has no field of its own. The
+  /// recipe keeps `px-3` ahead of it: Wind drops the input's own side inset as
+  /// soon as a className sets any padding, so a string that leaves `px-*` out
+  /// keeps the 12 px inset. A text input paints its border inside the padding,
+  /// which adds nothing to its height.
+  ///
+  /// Defaults to `'py-3 lg:py-2.5 text-sm leading-5'`: 44 px tall below `lg`
+  /// and 40 px from `lg` up.
+  final String inputSizeClassName;
+
+  /// Padding and minimum height of the trigger of [MSSelect], [MSCombobox] and
+  /// the timezone select, and the type of the label in it.
+  ///
+  /// One field for the three because they are the same control: the combobox is
+  /// a searchable select, and a host that wants one standard never wants two
+  /// triggers of different heights. The border of a trigger adds to its height.
+  ///
+  /// Defaults to `'py-[9px] min-h-11 lg:min-h-0'`: 44 px tall below `lg` and
+  /// 40 px from `lg` up, in the type the surrounding text sets.
+  final String selectSizeClassName;
+
+  /// Padding and type of one `SegmentedControlSize.sm` segment (the pill).
+  ///
+  /// The recipe puts the pill's `px-3 py-1.5 text-sm` ahead of this, so a string
+  /// that names no `px-*` keeps `px-3`.
+  ///
+  /// Defaults to `'px-2 py-1 text-sm'`: a 28 px pill.
+  final String segmentedSmClassName;
+
+  /// Padding and type of one `SegmentedControlSize.md` segment (the pill), the
+  /// default size.
+  ///
+  /// Defaults to `'px-3 py-1.5 text-sm'`: a 32 px pill.
+  final String segmentedMdClassName;
+
+  /// Padding of the root of [MSSegmentedControl], around the segments.
+  ///
+  /// Below `lg` every segment sits in a 44 px hit cell, so with the default the
+  /// control is 52 px tall on a phone whatever the pill size, and 4 px more than
+  /// its pill from `lg` up. A host whose pill is 36 px and wants a 44 px control
+  /// at every width sets `'px-1 py-0 lg:py-1'`.
+  ///
+  /// Defaults to `'p-1'`.
+  final String segmentedPaddingClassName;
+
+  const MagicStarterFieldTheme({
+    this.inputSizeClassName = 'py-3 lg:py-2.5 text-sm leading-5',
+    this.selectSizeClassName = 'py-[9px] min-h-11 lg:min-h-0',
+    this.segmentedSmClassName = 'px-2 py-1 text-sm',
+    this.segmentedMdClassName = 'px-3 py-1.5 text-sm',
+    this.segmentedPaddingClassName = 'p-1',
   });
 }
 
@@ -908,8 +1385,8 @@ class MagicStarterAuthTheme {
 /// Unified theme configuration that aggregates all Magic Starter sub-themes.
 ///
 /// Provides a single entry point to configure navigation, modal, form, card,
-/// page header, layout, and auth styling in one place. Each sub-theme defaults
-/// to its standard configuration when omitted.
+/// page header, layout, auth, dropdown, button, and field styling in one place.
+/// Each sub-theme defaults to its standard configuration when omitted.
 ///
 /// Use [copyWith] to create a modified copy with only the sub-themes you want
 /// to override.
@@ -918,7 +1395,7 @@ class MagicStarterAuthTheme {
 /// ```dart
 /// final theme = MagicStarterTheme(
 ///   form: MagicStarterFormTheme(
-///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl',
+///     primaryButtonClassName: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold',
 ///   ),
 ///   card: MagicStarterCardTheme(
 ///     borderRadius: 'rounded-xl',
@@ -965,6 +1442,21 @@ class MagicStarterTheme {
   /// Defaults to `const MagicStarterAuthTheme()`.
   final MagicStarterAuthTheme auth;
 
+  /// Team switcher and user menu panel theme tokens.
+  ///
+  /// Defaults to `const MagicStarterDropdownTheme()`.
+  final MagicStarterDropdownTheme dropdown;
+
+  /// Button shape, size and label type theme tokens.
+  ///
+  /// Defaults to `const MagicStarterButtonTheme()`.
+  final MagicStarterButtonTheme button;
+
+  /// Form control height and type theme tokens.
+  ///
+  /// Defaults to `const MagicStarterFieldTheme()`.
+  final MagicStarterFieldTheme field;
+
   const MagicStarterTheme({
     this.navigation = const MagicStarterNavigationTheme(),
     this.modal = const MagicStarterModalTheme(),
@@ -973,11 +1465,16 @@ class MagicStarterTheme {
     this.pageHeader = const MagicStarterPageHeaderTheme(),
     this.layout = const MagicStarterLayoutTheme(),
     this.auth = const MagicStarterAuthTheme(),
+    this.dropdown = const MagicStarterDropdownTheme(),
+    this.button = const MagicStarterButtonTheme(),
+    this.field = const MagicStarterFieldTheme(),
   });
 
   /// Derives a full [MagicStarterTheme] from a [WindThemeData]'s semantic
-  /// alias palette, so a consumer aligns all 7 magic_starter surfaces to their
-  /// brand in one call instead of building up to 7 sub-theme structs by hand.
+  /// alias palette, so a consumer aligns all 8 colour-bearing magic_starter
+  /// surfaces to their brand in one call instead of building up to 8 sub-theme
+  /// structs by hand. The button and field themes carry shape and size only and
+  /// keep their defaults here: their recipes write their own semantic aliases.
   ///
   /// Every color-bearing className fragment in the sub-theme defaults is
   /// rebuilt from the 17 semantic roles ([MagicStarterTokens.defaultAliases]):
@@ -1039,11 +1536,21 @@ class MagicStarterTheme {
     final textDestructive = MagicStarterTokens.role(theme, 'text-destructive');
     final bgWarning = MagicStarterTokens.role(theme, 'bg-warning');
 
+    // The roles a field hovers to, scoped once. A role the theme does not
+    // define is a palette PAIR, and `hover:` written in front of it would reach
+    // only the first token, leaving the dark half applied at rest.
+    final hoverSurfaceContainer = _withVariant('hover', surfaceContainer);
+    final hoverSurfaceContainerHigh = _withVariant(
+      'hover',
+      surfaceContainerHigh,
+    );
+    final hoverFg = _withVariant('hover', fg);
+
     return MagicStarterTheme(
       navigation: MagicStarterNavigationTheme(
         activeItemClassName:
             'active:$textPrimary active:bg-primary/10 dark:active:bg-primary/10',
-        hoverItemClassName: 'hover:$surfaceContainerHigh',
+        hoverItemClassName: hoverSurfaceContainerHigh,
         brandClassName: 'text-lg font-bold $textPrimary',
         bottomNavActiveClassName: 'active:$textPrimary',
         avatarClassName: 'bg-primary/10 dark:bg-primary/10',
@@ -1059,7 +1566,7 @@ class MagicStarterTheme {
         primaryButtonClassName:
             'px-4 py-2 rounded-lg $bgPrimary hover:bg-primary/80 $onPrimary text-sm font-medium',
         secondaryButtonClassName:
-            'px-4 py-2 rounded-lg $surfaceContainer border $border hover:$surfaceContainerHigh $fg text-sm font-medium',
+            'px-4 py-2 rounded-lg $surfaceContainer border $border $hoverSurfaceContainerHigh $fg text-sm font-medium',
         dangerButtonClassName:
             'px-4 py-2 rounded-lg $bgDestructive $onDestructive text-sm font-medium',
         warningButtonClassName:
@@ -1075,11 +1582,11 @@ class MagicStarterTheme {
         errorClassName: 'text-sm $textDestructive',
         placeholderClassName: fgDisabled,
         primaryButtonClassName:
-            'w-full $bgPrimary hover:bg-primary/80 $onPrimary text-base font-semibold py-3 rounded-lg',
+            'w-full $bgPrimary hover:bg-primary/80 $onPrimary font-semibold',
         secondaryButtonClassName:
-            'w-full bg-transparent border $border $fgMuted hover:$surfaceContainer py-3 rounded-lg text-sm font-medium',
+            'w-full bg-transparent $fgMuted $hoverSurfaceContainer hover:opacity-90',
         linkClassName: 'text-sm font-medium $textPrimary',
-        checkboxLabelClassName: '$fgMuted hover:$fg ml-1',
+        checkboxLabelClassName: '$fgMuted $hoverFg ml-1',
       ),
       card: MagicStarterCardTheme(
         surfaceClassName: '$surface border $border',
@@ -1095,7 +1602,7 @@ class MagicStarterTheme {
         titleClassName: 'text-2xl font-bold $fg line-clamp-2',
         subtitleClassName: 'text-sm $fgMuted line-clamp-2',
         backControlClassName:
-            'flex items-center justify-center size-9 text-2xl $fgMuted hover:$fg',
+            'flex items-center justify-center size-9 text-2xl $fgMuted $hoverFg',
         largeTitleClassName: 'text-4xl lg:text-3xl font-bold $fg line-clamp-2',
         // A semantic token carries no opacity step, so the bar is opaque here;
         // a host after glass themes it with its own translucent fill.
@@ -1118,15 +1625,41 @@ class MagicStarterTheme {
         errorBannerClassName:
             'p-3 rounded-xl $destructiveContainer border border-red-200 dark:border-red-800 $textDestructive text-sm text-center',
         themeToggleClassName:
-            'p-2 rounded-lg duration-150 bg-transparent hover:$surfaceContainerHigh flex items-center justify-center',
+            'p-2 rounded-lg duration-150 bg-transparent $hoverSurfaceContainerHigh flex items-center justify-center',
         themeToggleIconClassName: 'text-2xl $fgMuted',
         socialDividerTextClassName: 'text-sm $fgMuted',
         guestButtonClassName:
-            'w-full bg-transparent border $border $fgMuted hover:$surfaceContainer py-3 rounded-lg text-sm font-medium',
+            'w-full bg-transparent $fgMuted $hoverSurfaceContainer hover:opacity-90',
         registrationLinkClassName: 'text-sm $fgMuted',
         registrationLinkTextClassName: 'text-sm font-semibold $textPrimary',
       ),
+      dropdown: MagicStarterDropdownTheme(
+        panelClassName: '$surfaceContainer border $border',
+        dividerClassName: border,
+        itemClassName: hoverSurfaceContainerHigh,
+        // The page tone, not `surfaceContainerHigh`: the hovered row is
+        // `surfaceContainerHigh`, and a tile with that fill vanishes into it.
+        tileClassName: surface,
+        textClassName: fg,
+        mutedTextClassName: fgMuted,
+        dangerTextClassName: _withVariant('danger', textDestructive),
+        dangerTileClassName: _withVariant('danger', destructiveContainer),
+      ),
     );
+  }
+
+  /// Scopes every utility in [role] to [variant].
+  ///
+  /// A role the theme does not define resolves to a palette PAIR
+  /// (`bg-gray-100 dark:bg-gray-800`), and a variant written in front of the
+  /// pair reaches only its first token, leaving the dark half applied at rest.
+  /// Wind reads prefixes in any order, so `hover:dark:bg-gray-800` is valid.
+  static String _withVariant(String variant, String role) {
+    return role
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .map((token) => '$variant:$token')
+        .join(' ');
   }
 
   /// Returns a copy of this theme with the given sub-themes replaced.
@@ -1138,6 +1671,9 @@ class MagicStarterTheme {
     MagicStarterPageHeaderTheme? pageHeader,
     MagicStarterLayoutTheme? layout,
     MagicStarterAuthTheme? auth,
+    MagicStarterDropdownTheme? dropdown,
+    MagicStarterButtonTheme? button,
+    MagicStarterFieldTheme? field,
   }) {
     return MagicStarterTheme(
       navigation: navigation ?? this.navigation,
@@ -1147,6 +1683,9 @@ class MagicStarterTheme {
       pageHeader: pageHeader ?? this.pageHeader,
       layout: layout ?? this.layout,
       auth: auth ?? this.auth,
+      dropdown: dropdown ?? this.dropdown,
+      button: button ?? this.button,
+      field: field ?? this.field,
     );
   }
 }

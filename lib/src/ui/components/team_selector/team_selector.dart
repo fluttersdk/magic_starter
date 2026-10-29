@@ -39,17 +39,21 @@ class MSTeamSelector extends StatelessWidget {
 
     if (allTeams.isEmpty) return const SizedBox.shrink();
 
+    final dropdownTheme = MagicStarter.dropdownTheme;
+
+    // The geometry comes after the theme's colours, and `overflow-hidden` is
+    // not a theme field: a hovered row fills its full width, and without the
+    // clip its square corners paint over the panel's rounded ones.
     return WPopover(
       alignment: PopoverAlignment.bottomCenter,
-      className: '''
-        w-58
-        bg-white dark:bg-gray-800
-        border border-gray-200 dark:border-gray-700
-        rounded-xl shadow-xl
+      className:
+          '''
+        ${dropdownTheme.panelClassName}
+        w-58 rounded-xl shadow-xl overflow-hidden
       ''',
       triggerBuilder: (context, isOpen, isHovering) => WDiv(
         className:
-            'flex flex-row items-center gap-2 mx-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800',
+            'flex flex-row items-center gap-2 mx-3 p-2 rounded-lg ${MagicStarter.navigationTheme.hoverItemClassName}',
         children: [
           WDiv(
             className:
@@ -64,12 +68,12 @@ class MSTeamSelector extends StatelessWidget {
               child: WText(
                 currentTeam?.name ?? trans('teams.select_team'),
                 className:
-                    'text-sm font-medium text-gray-900 dark:text-white truncate',
+                    'text-sm font-medium ${dropdownTheme.textClassName} truncate',
               ),
             ),
             WIcon(
               isOpen ? _iconCollapse : _iconExpand,
-              className: 'text-gray-400 text-lg',
+              className: '${dropdownTheme.mutedTextClassName} text-lg',
             ),
           ],
         ],
@@ -85,6 +89,8 @@ class MSTeamSelector extends StatelessWidget {
     MagicStarterTeamResolverConfig resolver,
     VoidCallback close,
   ) {
+    final theme = MagicStarter.dropdownTheme;
+
     return WDiv(
       className: 'py-2',
       children: [
@@ -93,7 +99,7 @@ class MSTeamSelector extends StatelessWidget {
           child: WText(
             trans('teams.team').toUpperCase(),
             className:
-                'text-xs font-bold tracking-wide text-gray-400 dark:text-gray-500',
+                'text-xs font-bold tracking-wide ${theme.mutedTextClassName}',
           ),
         ),
         ...teams.map((team) {
@@ -106,22 +112,22 @@ class MSTeamSelector extends StatelessWidget {
             child: WDiv(
               states: {if (isActive) 'active'},
               className:
-                  'w-full px-3 py-2.5 flex flex-row items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-primary/5',
+                  'w-full px-3 py-2.5 flex flex-row items-center gap-3 ${theme.itemClassName} active:bg-primary/5',
               children: [
                 WDiv(
                   className:
-                      'w-8 h-8 rounded-lg ${isActive ? "bg-primary/15" : "bg-gray-100 dark:bg-gray-700"} flex items-center justify-center',
+                      'w-8 h-8 rounded-lg ${isActive ? "bg-primary/15" : theme.tileClassName} flex items-center justify-center',
                   child: WText(
                     (team.name ?? '?')[0].toUpperCase(),
                     className:
-                        'text-xs font-bold ${isActive ? "text-primary" : "text-gray-500 dark:text-gray-400"}',
+                        'text-xs font-bold ${isActive ? "text-primary" : theme.mutedTextClassName}',
                   ),
                 ),
                 Expanded(
                   child: WText(
                     team.name ?? '',
                     className:
-                        'text-sm ${isActive ? "font-semibold text-gray-900 dark:text-white" : "font-medium text-gray-700 dark:text-gray-300"} truncate',
+                        'text-sm ${isActive ? "font-semibold" : "font-medium"} ${theme.textClassName} truncate',
                   ),
                 ),
                 if (isActive)
@@ -130,10 +136,7 @@ class MSTeamSelector extends StatelessWidget {
             ),
           );
         }),
-        WDiv(
-          className:
-              'my-1.5 mx-3 border-t border-gray-100 dark:border-gray-700',
-        ),
+        WDiv(className: 'my-1.5 mx-3 border-t ${theme.dividerClassName}'),
         WAnchor(
           onTap: () {
             close();
@@ -141,20 +144,22 @@ class MSTeamSelector extends StatelessWidget {
           },
           child: WDiv(
             className:
-                'w-full px-3 py-2.5 flex flex-row items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50',
+                'w-full px-3 py-2.5 flex flex-row items-center gap-3 ${theme.itemClassName}',
             children: [
               WDiv(
                 className:
-                    'w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center',
-                child: const WIcon(
+                    'w-8 h-8 rounded-lg ${theme.tileClassName} flex items-center justify-center',
+                child: WIcon(
                   Icons.settings_outlined,
-                  className: 'text-base text-gray-500 dark:text-gray-400',
+                  className: 'text-base ${theme.mutedTextClassName}',
                 ),
               ),
-              WText(
-                trans('teams.settings'),
-                className:
-                    'text-sm font-medium text-gray-700 dark:text-gray-300',
+              Expanded(
+                child: WText(
+                  trans('teams.settings'),
+                  className:
+                      'text-sm font-medium ${theme.textClassName} truncate',
+                ),
               ),
             ],
           ),
@@ -166,7 +171,7 @@ class MSTeamSelector extends StatelessWidget {
           },
           child: WDiv(
             className:
-                'w-full px-3 py-2.5 flex flex-row items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50',
+                'w-full px-3 py-2.5 flex flex-row items-center gap-3 ${theme.itemClassName}',
             children: [
               WDiv(
                 className:
@@ -176,10 +181,12 @@ class MSTeamSelector extends StatelessWidget {
                   className: 'text-base text-primary',
                 ),
               ),
-              WText(
-                trans('teams.create_team'),
-                className:
-                    'text-sm font-medium text-gray-700 dark:text-gray-300',
+              Expanded(
+                child: WText(
+                  trans('teams.create_team'),
+                  className:
+                      'text-sm font-medium ${theme.textClassName} truncate',
+                ),
               ),
             ],
           ),

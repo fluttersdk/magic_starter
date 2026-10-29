@@ -293,6 +293,19 @@ class MagicStarterManager {
   /// variant backgrounds, border radius, padding, and title styles.
   MagicStarterCardTheme cardTheme = const MagicStarterCardTheme();
 
+  /// Dropdown theme configuration. Holds the colour className overrides for the
+  /// team switcher and user menu popover panels.
+  MagicStarterDropdownTheme dropdownTheme = const MagicStarterDropdownTheme();
+
+  /// Button theme configuration. Holds the className overrides for the shape,
+  /// the three sizes and the secondary border of [MSButton].
+  MagicStarterButtonTheme buttonTheme = const MagicStarterButtonTheme();
+
+  /// Field theme configuration. Holds the className overrides for the height
+  /// and type of [MSInput], the [MSSelect] and [MSCombobox] triggers, and the
+  /// [MSSegmentedControl] segments and root padding.
+  MagicStarterFieldTheme fieldTheme = const MagicStarterFieldTheme();
+
   /// Page header theme configuration. Holds className overrides for the
   /// page header container, title, subtitle, and action container.
   MagicStarterPageHeaderTheme pageHeaderTheme =
@@ -330,7 +343,8 @@ class MagicStarterManager {
   ///
   /// Reading this constructs a [MagicStarterTheme] from the current values of
   /// [navigationTheme], [modalTheme], [formTheme], [cardTheme],
-  /// [pageHeaderTheme], [layoutTheme], and [authTheme].
+  /// [pageHeaderTheme], [layoutTheme], [authTheme], [dropdownTheme],
+  /// [buttonTheme], and [fieldTheme].
   MagicStarterTheme get theme => MagicStarterTheme(
     navigation: navigationTheme,
     modal: modalTheme,
@@ -339,13 +353,16 @@ class MagicStarterManager {
     pageHeader: pageHeaderTheme,
     layout: layoutTheme,
     auth: authTheme,
+    dropdown: dropdownTheme,
+    button: buttonTheme,
+    field: fieldTheme,
   );
 
   /// Set the unified theme, distributing each sub-theme to its individual field.
   ///
   /// This is equivalent to setting [navigationTheme], [modalTheme],
-  /// [formTheme], [cardTheme], [pageHeaderTheme], [layoutTheme], and
-  /// [authTheme] separately.
+  /// [formTheme], [cardTheme], [pageHeaderTheme], [layoutTheme], [authTheme],
+  /// [dropdownTheme], [buttonTheme], and [fieldTheme] separately.
   set theme(MagicStarterTheme value) {
     navigationTheme = value.navigation;
     modalTheme = value.modal;
@@ -354,6 +371,9 @@ class MagicStarterManager {
     pageHeaderTheme = value.pageHeader;
     layoutTheme = value.layout;
     authTheme = value.auth;
+    dropdownTheme = value.dropdown;
+    buttonTheme = value.button;
+    fieldTheme = value.field;
   }
 
   /// Native language names for common locale codes.
@@ -764,6 +784,9 @@ class MagicStarterManager {
     cardTheme = const MagicStarterCardTheme();
     pageHeaderTheme = const MagicStarterPageHeaderTheme();
     layoutTheme = const MagicStarterLayoutTheme();
+    dropdownTheme = const MagicStarterDropdownTheme();
+    buttonTheme = const MagicStarterButtonTheme();
+    fieldTheme = const MagicStarterFieldTheme();
     _localeOptions = null;
     _pendingLocale = null;
     _applyingLocale = null;

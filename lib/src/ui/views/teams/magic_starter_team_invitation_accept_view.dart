@@ -5,6 +5,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
 import '../../../http/controllers/magic_starter_team_controller.dart';
+import '../../components/button/index.dart';
 import '../../components/page_container/page_container.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
 
@@ -103,9 +104,10 @@ class _MagicStarterTeamInvitationAcceptViewState
               className: 'text-[32px] text-primary',
             ),
           ),
-          WButton(
-            onTap: _accept,
+          MSButton(
+            onPressed: _accept,
             isLoading: controller.isLoading,
+            size: ButtonSize.lg,
             className: formTheme.primaryButtonClassName,
             child: WText(
               trans('teams.accept_invitation'),

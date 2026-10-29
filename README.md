@@ -497,7 +497,7 @@ MagicStarter.useTheme(
   MagicStarterTheme(
     form: MagicStarterFormTheme(
       inputClassName: 'w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700',
-      primaryButtonClassName: 'w-full bg-primary hover:bg-primary/80 text-white text-base font-semibold py-3 rounded-lg',
+      primaryButtonClassName: 'w-full bg-primary hover:bg-primary/80 text-white font-semibold',
     ),
     card: MagicStarterCardTheme(
       surfaceClassName: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
@@ -506,7 +506,7 @@ MagicStarter.useTheme(
 );
 ```
 
-`MagicStarterTheme` has 7 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`. All fields are optional.
+`MagicStarterTheme` has 10 sub-themes: `form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`, `dropdown`, `button`, `field`. All fields are optional.
 
 #### One-call adoption from a `WindThemeData`
 
@@ -521,7 +521,45 @@ MagicStarter.useWindTheme(
 );
 ```
 
-`useWindTheme()` derives all 7 sub-themes from the theme's semantic roles (`bg-surface`, `text-fg`, `bg-primary`, `border-color-border`, `bg-destructive`, ...) and delegates to `useTheme()`. Each alias carries its own `dark:` pair, so one token re-skins both light and dark. It is additive: `useTheme()` and any `use*Theme()` setter still override afterward. A role you do not define keeps the shipped default (never an invisible surface). See [doc/guides/wind-theme-adoption.md](doc/guides/wind-theme-adoption.md) for the full alias-to-property mapping.
+`useWindTheme()` derives the 8 colour-bearing sub-themes from the theme's semantic roles (`bg-surface`, `text-fg`, `bg-primary`, `border-color-border`, `bg-destructive`, ...) and delegates to `useTheme()`. Each alias carries its own `dark:` pair, so one token re-skins both light and dark. It is additive: `useTheme()` and any `use*Theme()` setter still override afterward. A role you do not define keeps the shipped default (never an invisible surface). See [doc/guides/wind-theme-adoption.md](doc/guides/wind-theme-adoption.md) for the full alias-to-property mapping.
+
+#### One button standard
+
+`MSButton` reads its corner radius, the padding, minimum height and label type of each size, and the secondary border from `MagicStarterButtonTheme`. It is not derived by `useWindTheme()` (shape and size are the host's call), and `useWindTheme()` and `useTheme()` reset it, so set it after them:
+
+```dart
+const standard = 'px-5 py-[11px] text-[17px] leading-[22px] font-semibold';
+
+MagicStarter.useButtonTheme(
+  MagicStarterButtonTheme(
+    shapeClassName: 'rounded-full',
+    smClassName: standard,
+    mdClassName: standard,
+    lgClassName: standard,
+    secondaryBorderClassName: '',
+  ),
+);
+```
+
+The defaults are the previous `rounded-lg`, 32 / 36 / 47 px sizes and bordered secondary. Reach 44 px with vertical padding around a fixed line height, not `min-h-11`, which leaves the label at the top of the box. The auth screens follow this theme too: their submit buttons are `lg` and the social, guest and step-up provider buttons are `secondary` and `md`, and the form and auth themes' button strings (stock and derived by `useWindTheme()`) carry only the full width, the colours and the label weight, so the shape, the vertical padding, the label size and the secondary border are the button theme's. A `className` passed to a button is appended after the theme and wins, so two things never follow it. The first is your own button strings: a `useFormTheme()` or `useAuthTheme()` call that sets `primaryButtonClassName`, `secondaryButtonClassName` or `guestButtonClassName` keeps whatever shape, padding and label size you wrote in them, so leave those out (`MagicStarter.useFormTheme(MagicStarter.formTheme.copyWith(primaryButtonClassName: ...))` changes one string and keeps the other seven). The second is the dialogs, and the invite button of the team settings page, which draw raw `WButton`s on the modal theme's strings and ignore the button theme.
+
+#### One control standard
+
+`MSInput`, `MSSelect`, `MSCombobox` and `MSSegmentedControl` read their padding, minimum height and text type from `MagicStarterFieldTheme`: `inputSizeClassName` (the text, the placeholder and the typed value), `selectSizeClassName` (the trigger of the select, the combobox and the timezone select), `segmentedSmClassName` and `segmentedMdClassName` (the pill) and `segmentedPaddingClassName` (the root around the pills). Like the button theme it is not derived by `useWindTheme()`, and `useWindTheme()` and `useTheme()` reset it, so set it after them:
+
+```dart
+MagicStarter.useFieldTheme(
+  MagicStarterFieldTheme(
+    inputSizeClassName: 'py-[11px] text-[17px] leading-[22px]',
+    selectSizeClassName: 'py-2.5 text-[17px] leading-[22px]',
+    segmentedSmClassName: 'py-[7px] text-[17px] leading-[22px]',
+    segmentedMdClassName: 'py-[7px] text-[17px] leading-[22px]',
+    segmentedPaddingClassName: 'px-1 py-0 lg:py-1',
+  ),
+);
+```
+
+The defaults are the previous classes: an input and a select trigger 44 px tall below `lg` and 40 px from `lg` up, a 32 px (`md`) or 28 px (`sm`) pill in a root with 4 px of padding. Each control reaches 44 px with its own arithmetic: a text input paints its border inside its padding (11 + 22 + 11), a select trigger adds the border to its size (10 + 22 + 10 + 2), and a segmented pill is 36 px (7 + 22 + 7) in a root that keeps 4 px around it from `lg` up while the 44 px hit cell supplies them below it. A `className` passed to a control is appended after the theme and wins. The auth, profile and settings forms draw `WFormInput`s on `MagicStarterFormTheme.inputClassName` (which carries `py-3`), and the starter's own `WFormSelect`s (the team role select, the profile and preference language selects) read the same string for their trigger, so they follow only a string you write into that theme: `MagicStarter.useFormTheme(MagicStarter.formTheme.copyWith(inputClassName: ...))`. An input paints its border inside its padding and a select trigger adds it, so one `py-*` cannot make both 44 px; `py-[10px] min-h-11 text-[17px] leading-[22px]` does (see [doc/guides/wind-theme-adoption.md](doc/guides/wind-theme-adoption.md)).
 
 ### Level 3: Builder Slots
 
@@ -578,6 +616,8 @@ dart run <app>:artisan starter:doctor
 ```
 
 The publish command copies the view to `lib/resources/views/starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run <app>:artisan starter:doctor` to confirm registration status.
+
+A published copy is a snapshot: a later release that changes a view does not reach it. When a release changes the view you published, its CHANGELOG entry names the edits to make by hand, or you re-publish with `--force` and re-apply yours.
 
 ---
 

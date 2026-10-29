@@ -53,15 +53,19 @@ class MSUserProfileDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The geometry comes after the theme's colours, and `overflow-hidden` is
+    // not a theme field: the panel is rounded and a row's hover fill must not
+    // paint over its corners.
     return WPopover(
       alignment: alignment,
-      className: '''
+      className:
+          '''
+                ${MagicStarter.dropdownTheme.panelClassName}
                 w-72
-                bg-white dark:bg-gray-800
                 rounded-2xl
                 shadow-lg
                 mt-2
-                border border-gray-100 dark:border-gray-700
+                overflow-hidden
             ''',
       // The trigger listens to the session itself. A shell that rebuilds on an
       // auth change mounts this widget const, and a const child is not rebuilt
@@ -150,28 +154,30 @@ class MSUserProfileDropdown extends StatelessWidget {
     // settings hub's upgrade row opens, so the guest keeps its own data.
     final isGuest = Auth.user()?.get<bool>('is_guest') == true;
     final canSendFeedback = !isGuest && _hasVerifiedEmail();
+    final theme = MagicStarter.dropdownTheme;
 
     return WDiv(
       className: 'flex flex-col py-2 w-full',
       children: [
         WDiv(
           className:
-              'w-full flex flex-col px-4 py-2 mb-1 border-b border-gray-100 dark:border-gray-700',
+              'w-full flex flex-col px-4 py-2 mb-1 border-b ${theme.dividerClassName}',
           children: [
             WText(
               trans('auth.signed_in_as').toUpperCase(),
-              className: 'text-[10px] font-bold tracking-widest text-gray-400',
+              className:
+                  'text-[10px] font-bold tracking-widest ${theme.mutedTextClassName}',
             ),
             const WSpacer(className: 'h-1'),
             WText(
               userName,
               className:
-                  'text-sm font-semibold text-gray-900 dark:text-white truncate',
+                  'text-sm font-semibold ${theme.textClassName} truncate',
             ),
             if (userEmail.isNotEmpty)
               WText(
                 userEmail,
-                className: 'text-xs text-gray-500 dark:text-gray-400 truncate',
+                className: 'text-xs ${theme.mutedTextClassName} truncate',
               ),
           ],
         ),
@@ -194,7 +200,7 @@ class MSUserProfileDropdown extends StatelessWidget {
             },
           ),
           WDiv(
-            className: 'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full',
+            className: 'my-1 mx-2 w-full border-t ${theme.dividerClassName}',
           ),
         ],
         WDiv(
@@ -276,9 +282,7 @@ class MSUserProfileDropdown extends StatelessWidget {
             ),
           ],
         ),
-        WDiv(
-          className: 'h-[1px] bg-gray-200 dark:bg-gray-700 my-1 mx-2 w-full',
-        ),
+        WDiv(className: 'my-1 mx-2 w-full border-t ${theme.dividerClassName}'),
         _buildMenuItem(
           icon: Icons.logout,
           label: trans('auth.logout'),
@@ -306,15 +310,19 @@ class MSUserProfileDropdown extends StatelessWidget {
     required VoidCallback onTap,
     bool isDanger = false,
   }) {
+    final theme = MagicStarter.dropdownTheme;
+
+    // The danger fields come last in each className so the danger state wins
+    // over the resting colour (Wind resolves a family last-wins).
     return WAnchor(
       onTap: onTap,
       child: WDiv(
         states: {if (isDanger) 'danger'},
-        className: '''
+        className:
+            '''
                     mx-2 px-3 py-2.5 w-full
                     rounded-lg
-                    hover:bg-gray-50 dark:hover:bg-gray-700/50
-                    active:bg-gray-100 dark:active:bg-gray-700
+                    ${theme.itemClassName}
                     flex items-center gap-3
                     cursor-pointer
                     transition-colors duration-150
@@ -322,22 +330,23 @@ class MSUserProfileDropdown extends StatelessWidget {
         children: [
           WDiv(
             states: {if (isDanger) 'danger'},
-            className: '''
+            className:
+                '''
                             w-8 h-8
                             rounded-lg
-                            bg-gray-100 dark:bg-gray-700
-                            hover:bg-gray-200 dark:hover:bg-gray-600
-                            danger:bg-red-50 dark:danger:bg-red-900/20
+                            ${theme.tileClassName}
+                            ${theme.dangerTileClassName}
                             flex items-center justify-center
                             transition-colors duration-150
                         ''',
             child: WIcon(
               icon,
               states: {if (isDanger) 'danger'},
-              className: '''
+              className:
+                  '''
                                 text-lg
-                                text-gray-600 dark:text-gray-400
-                                danger:text-red-600 dark:danger:text-red-500
+                                ${theme.mutedTextClassName}
+                                ${theme.dangerTextClassName}
                             ''',
             ),
           ),
@@ -346,10 +355,11 @@ class MSUserProfileDropdown extends StatelessWidget {
             child: WText(
               label,
               states: {if (isDanger) 'danger'},
-              className: '''
+              className:
+                  '''
                               text-sm font-medium truncate
-                              text-gray-900 dark:text-gray-100
-                              danger:text-red-600 dark:danger:text-red-500
+                              ${theme.textClassName}
+                              ${theme.dangerTextClassName}
                           ''',
             ),
           ),

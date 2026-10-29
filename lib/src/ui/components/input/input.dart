@@ -2,12 +2,20 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../facades/magic_starter.dart';
 import 'input.recipe.dart';
 
 /// A reusable text input component for Magic Starter forms.
 ///
 /// Wraps [WInput] with a [WindRecipe] that applies semantic tokens for
 /// background and border. Use [state] to signal validation errors.
+///
+/// ### Height and type
+///
+/// The padding and the type of the text, placeholder and typed value alike, come
+/// from `MagicStarter.fieldTheme` ([MagicStarterFieldTheme.inputSizeClassName]),
+/// so a host sets one standard for every input. A [className] is appended after
+/// the theme and wins.
 ///
 /// ### Basic usage
 ///
@@ -137,7 +145,7 @@ class MSInput extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       type: type,
-      className: inputRecipe(
+      className: buildInputRecipe(MagicStarter.fieldTheme)(
         variants: {kInputStateAxis: state.name},
         className: className,
       ),

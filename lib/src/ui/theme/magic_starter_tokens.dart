@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart' show BuildContext, Color;
 import 'package:magic/magic.dart';
 
 /// **Semantic Token Alias Convention**
@@ -95,6 +96,13 @@ import 'package:magic/magic.dart';
 /// it (typically as its brand red). [role] resolves such a token against
 /// the active theme: the host's own definition when it has one, the red text
 /// pair otherwise.
+///
+/// `text-on-success` and `text-on-warning` are the same kind of role: the text
+/// and icon colour that reads on `bg-success` and `bg-warning`. A host that
+/// defines its own fills defines these beside them (a host whose dark fills are
+/// light needs dark text there). Without them [role] answers with near-black,
+/// which reads on the stock fills, and [readableOn] measures the fill a
+/// component paints and picks white or near-black by contrast instead.
 final class MagicStarterTokens {
   MagicStarterTokens._();
 
@@ -105,9 +113,21 @@ final class MagicStarterTokens {
   /// available, so its fallback is only a safety net. `text-destructive` has no
   /// canonical alias (the contract ships `bg-destructive` / `text-on-destructive`
   /// only), so it falls back to the red text pair.
+  ///
+  /// `text-on-success` and `text-on-warning` are the text and icon colours that
+  /// read on `bg-success` and `bg-warning`. The contract ships the two fills but
+  /// no such roles, so a host that defines its own fills defines them beside
+  /// them (a host whose dark fills are light needs dark text there). The pair
+  /// here is only what [role] answers with no fill to measure: the near-black
+  /// `gray-950`, which reads on the STOCK fills (green and amber, 600 in light
+  /// and 500 in dark) at about 6:1 to 9:1 where white reads at 3.3:1 and 3.2:1.
+  /// [readableOn] is what a component uses when it has a build context: it
+  /// measures the fill instead of assuming the stock one.
   static const Map<String, String> _roleFallbacks = {
     'text-primary': 'text-primary',
     'text-destructive': 'text-red-600 dark:text-red-400',
+    'text-on-success': 'text-gray-950 dark:text-gray-950',
+    'text-on-warning': 'text-gray-950 dark:text-gray-950',
   };
 
   /// Resolves a semantic role [token] against [theme].
@@ -126,6 +146,69 @@ final class MagicStarterTokens {
     }
 
     return defaultAliases[token] ?? _roleFallbacks[token] ?? token;
+  }
+
+  /// The text class that reads on the [fill] a component paints, for the
+  /// on-colour [role] of that fill.
+  ///
+  /// A role the host defines is returned as it is: the host's word is final,
+  /// poor contrast included. Otherwise the fallback cannot assume the stock
+  /// fill, because a host may redefine `bg-success` as a dark green and define
+  /// no `text-on-success`: near-black on it is about 3:1. So the fill is resolved
+  /// from the theme in the current brightness and the better of white and the
+  /// near-black `gray-950` by WCAG contrast is returned (`text-white` or
+  /// `text-gray-950`, one mode at a time; the context depends on the theme, so
+  /// a brightness change rebuilds it). On the stock fills that is the near-black
+  /// they have always had here. A translucent fill is measured over the
+  /// `bg-surface` it is painted on, since its own colour alone says nothing about
+  /// what the text sits on. With no fill to measure (the theme resolves [fill]
+  /// or, for a translucent one, `bg-surface` to nothing) the answer is [role]'s
+  /// fallback pair.
+  static String readableOn(
+    BuildContext context, {
+    required String fill,
+    required String role,
+  }) {
+    final WindThemeData? theme = WindTheme.maybeDataOf(context);
+    if (theme != null && _themeDefines(theme, role)) {
+      return role;
+    }
+
+    final Color? fillColour = _opaqueFill(fill, context);
+    final Color? light = WindParser.parse('text-white', context).color;
+    final Color? dark = WindParser.parse('text-gray-950', context).color;
+    if (fillColour == null || light == null || dark == null) {
+      return MagicStarterTokens.role(theme, role);
+    }
+
+    return _contrast(light, fillColour) >= _contrast(dark, fillColour)
+        ? 'text-white'
+        : 'text-gray-950';
+  }
+
+  /// The colour [fill] paints, laid over `bg-surface` when it is translucent, or
+  /// null when the theme resolves it (or the surface it needs) to nothing.
+  static Color? _opaqueFill(String fill, BuildContext context) {
+    final Color? colour = WindParser.parse(fill, context).decoration?.color;
+    if (colour == null || colour.a >= 1) {
+      return colour;
+    }
+
+    final Color? surface = WindParser.parse(
+      'bg-surface',
+      context,
+    ).decoration?.color;
+
+    return surface == null ? null : Color.alphaBlend(colour, surface);
+  }
+
+  /// WCAG contrast ratio of two colours, from their relative luminance.
+  static double _contrast(Color a, Color b) {
+    final double la = a.computeLuminance();
+    final double lb = b.computeLuminance();
+
+    return (la > lb ? la + 0.05 : lb + 0.05) /
+        (la > lb ? lb + 0.05 : la + 0.05);
   }
 
   static bool _themeDefines(WindThemeData theme, String token) {

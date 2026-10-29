@@ -17,7 +17,7 @@ enum TextareaState {
 
 /// The textarea [WindRecipe] (const — no theme override hook needed).
 ///
-/// Mirrors [inputRecipe] but does not set `maxLines` (the [MSTextarea] widget
+/// Mirrors [buildInputRecipe] but does not set `maxLines` (the [MSTextarea] widget
 /// configures multiline on [WInput] separately). Width-agnostic: full-width
 /// is the dedicated [MSTextarea.fullWidth] prop (a `SizedBox` wrapper), not a
 /// baked-in `w-full` token, so the default renders at content width.

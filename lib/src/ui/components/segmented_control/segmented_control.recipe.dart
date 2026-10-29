@@ -1,5 +1,7 @@
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_theme.dart';
+
 /// Size axis key for [MSSegmentedControl].
 const String kSegmentedControlSizeAxis = 'size';
 
@@ -21,15 +23,23 @@ enum SegmentedControlSize {
 ///
 /// Variant axes:
 /// - `size`: `sm` | `md` (default `md`).
+///
+/// The padding of the `root` and the padding and type of an `item` per size come
+/// from [theme] ([MagicStarterFieldTheme.segmentedPaddingClassName],
+/// [MagicStarterFieldTheme.segmentedSmClassName] and
+/// [MagicStarterFieldTheme.segmentedMdClassName]); the widget passes
+/// `MagicStarter.fieldTheme`, and the default is the stock look. The `hit` cell
+/// is the touch target and never reads it.
 Map<String, String> segmentedControlRecipe({
+  MagicStarterFieldTheme theme = const MagicStarterFieldTheme(),
   Map<String, String?>? variants,
   Map<String, String>? classNames,
 }) {
-  const recipe = WindSlotRecipe(
+  final recipe = WindSlotRecipe(
     slots: {
       'root':
           'flex flex-row items-center rounded-lg bg-surface-container-high '
-          'p-1 gap-1',
+          '${theme.segmentedPaddingClassName} gap-1',
       // `text-center` keeps a label that wrapped onto a second line (the
       // segment is capped at an equal share of a row too narrow for its
       // labels) centred under the first, whatever the caller aligns.
@@ -47,8 +57,8 @@ Map<String, String> segmentedControlRecipe({
     },
     variants: {
       kSegmentedControlSizeAxis: {
-        'sm': {'root': '', 'item': 'px-2 py-1 text-sm'},
-        'md': {'root': '', 'item': 'px-3 py-1.5 text-sm'},
+        'sm': {'root': '', 'item': theme.segmentedSmClassName},
+        'md': {'root': '', 'item': theme.segmentedMdClassName},
       },
     },
     defaultVariants: {kSegmentedControlSizeAxis: 'md'},

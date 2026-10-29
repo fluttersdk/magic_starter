@@ -5,6 +5,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/components/page_header/page_header.dart'
+    show MSPageHeaderHeadingScope;
 import 'package:magic_starter/src/ui/components/page_header/page_header.preview.dart';
 
 void main() {
@@ -320,6 +322,190 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // className
+  // ---------------------------------------------------------------------------
+
+  // A pushed screen puts its own bar above the scaffold, so the header's own
+  // top padding stacks on the bar's height. The header takes a className for
+  // its container, appended after the theme's like MSPageContainer.className.
+  group('className', () {
+    const phone = Size(390, 844);
+    const desktop = Size(1440, 900);
+
+    Future<void> pumpAt(WidgetTester tester, Size size, Widget header) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        wrap(Align(alignment: Alignment.topLeft, child: header)),
+      );
+      await tester.pump();
+    }
+
+    double titleTop(WidgetTester tester) =>
+        tester.getTopLeft(find.text('Settings')).dy;
+
+    testWidgets(
+      'a header without one keeps the theme container byte for byte',
+      (tester) async {
+        await tester.pumpWidget(wrap(const MSPageHeader(title: 'Settings')));
+
+        expect(
+          tester.widget<WDiv>(find.byType(WDiv).first).className,
+          const MagicStarterPageHeaderTheme().containerClassName,
+        );
+      },
+    );
+
+    testWidgets('an empty className adds nothing to the theme container', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(const MSPageHeader(title: 'Settings', className: '')),
+      );
+
+      expect(
+        tester.widget<WDiv>(find.byType(WDiv).first).className,
+        const MagicStarterPageHeaderTheme().containerClassName,
+      );
+    });
+
+    testWidgets('is appended after the theme container class', (tester) async {
+      await tester.pumpWidget(
+        wrap(const MSPageHeader(title: 'Settings', className: 'pt-0')),
+      );
+
+      expect(
+        tester.widget<WDiv>(find.byType(WDiv).first).className,
+        '${const MagicStarterPageHeaderTheme().containerClassName} pt-0',
+      );
+    });
+
+    testWidgets('is appended after the inline container class too', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSPageHeader(
+            title: 'Settings',
+            inlineActions: true,
+            className: 'pt-0',
+          ),
+        ),
+      );
+
+      expect(
+        tester.widget<WDiv>(find.byType(WDiv).first).className,
+        '${const MagicStarterPageHeaderTheme().containerInlineClassName} pt-0',
+      );
+    });
+
+    testWidgets('pt-0 takes the top padding off and keeps the other sides', (
+      tester,
+    ) async {
+      await pumpAt(tester, phone, const MSPageHeader(title: 'Settings'));
+      final double padded = titleTop(tester);
+      final double bottom = tester.getBottomLeft(find.byType(MSPageHeader)).dy;
+
+      await pumpAt(
+        tester,
+        phone,
+        const MSPageHeader(title: 'Settings', className: 'pt-0'),
+      );
+
+      expect(padded, 8, reason: 'the theme container is p-2 below lg');
+      expect(titleTop(tester), 0);
+      expect(
+        tester.getBottomLeft(find.byType(MSPageHeader)).dy,
+        bottom - 8,
+        reason: 'only the top padding went',
+      );
+      expect(tester.getTopLeft(find.text('Settings')).dx, 8);
+    });
+
+    testWidgets('lg:pt-0 leaves a phone header alone and clears it from lg', (
+      tester,
+    ) async {
+      const header = MSPageHeader(title: 'Settings', className: 'lg:pt-0');
+
+      await pumpAt(tester, phone, header);
+      expect(titleTop(tester), 8);
+
+      await pumpAt(tester, desktop, header);
+      expect(titleTop(tester), 0, reason: 'lg:p-4 loses its top to lg:pt-0');
+    });
+
+    testWidgets('applies to a large title header too', (tester) async {
+      await pumpAt(
+        tester,
+        phone,
+        const MSPageHeader(
+          title: 'Settings',
+          size: MSPageHeaderSize.large,
+          className: 'pt-0',
+        ),
+      );
+
+      expect(titleTop(tester), 0);
+    });
+
+    testWidgets('a caller className wins over a themed container', (
+      tester,
+    ) async {
+      MagicStarter.usePageHeaderTheme(
+        const MagicStarterPageHeaderTheme(
+          containerClassName:
+              'w-full flex flex-col sm:flex-row items-start sm:items-center '
+              'sm:justify-between gap-4 py-2 lg:py-3',
+        ),
+      );
+
+      await pumpAt(
+        tester,
+        desktop,
+        const MSPageHeader(title: 'Settings', className: 'lg:pt-0'),
+      );
+
+      expect(titleTop(tester), 0);
+      expect(
+        tester.getBottomLeft(find.byType(MSPageHeader)).dy -
+            tester.getBottomLeft(find.text('Settings')).dy,
+        12,
+        reason: 'lg:py-3 still pads the bottom',
+      );
+    });
+
+    testWidgets('the compact bar keeps its own geometry and ignores it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          const MSPageHeader(
+            title: 'Settings',
+            size: MSPageHeaderSize.compact,
+            className: 'pt-0 bg-red-500',
+          ),
+        ),
+      );
+
+      final String barClassName = tester
+          .widget<WDiv>(find.byType(WDiv).first)
+          .className!;
+
+      expect(
+        barClassName,
+        const MagicStarterPageHeaderTheme().compactBarClassName,
+      );
+      expect(barClassName, isNot(contains('pt-0')));
+      expect(
+        tester.getSize(find.byType(SizedBox).last).height,
+        MSPageHeader.compactBarHeight,
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Theme consumption
   // ---------------------------------------------------------------------------
 
@@ -418,6 +604,38 @@ void main() {
     );
 
     expect(find.byIcon(Icons.chevron_left), findsNothing);
+  });
+
+  // The derived hover tone is a pair when the host theme defines no `text-fg`
+  // alias; its dark half used to apply at rest and wash the chevron out.
+  testWidgets('the back control rests on the muted tone in dark mode', (
+    tester,
+  ) async {
+    final data = WindThemeData(
+      brightness: Brightness.dark,
+      syncWithSystem: false,
+    );
+    MagicStarter.useWindTheme(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WindTheme(
+          data: data,
+          child: const Scaffold(
+            body: MSPageHeader(
+              title: 'Profile',
+              backLabel: 'Settings',
+              backFallback: '/settings',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.widget<Icon>(find.byIcon(Icons.chevron_left)).color,
+      const Color(0xFF9CA3AF),
+    );
   });
 
   testWidgets('no back leading when backLabel is null', (tester) async {
@@ -957,6 +1175,100 @@ void main() {
       handle.dispose();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Heading semantics: heading navigation finds the page title in every size.
+  // ---------------------------------------------------------------------------
+
+  group('title semantics', () {
+    for (final MSPageHeaderSize size in [
+      MSPageHeaderSize.regular,
+      MSPageHeaderSize.large,
+    ]) {
+      testWidgets('the ${size.name} title is a heading', (tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(wrap(MSPageHeader(title: 'Heard', size: size)));
+
+        expect(
+          tester.getSemantics(find.text('Heard')),
+          matchesSemantics(label: 'Heard', isHeader: true),
+        );
+        handle.dispose();
+      });
+    }
+
+    testWidgets('the subtitle and the actions are not headings', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrap(
+          MSPageHeader(
+            title: 'Heard',
+            subtitle: 'Not a heading',
+            actions: [TextButton(onPressed: () {}, child: const Text('Save'))],
+          ),
+        ),
+      );
+
+      expect(
+        _headerNodes(
+          tester,
+        ).map((SemanticsNode n) => n.getSemanticsData().label),
+        ['Heard'],
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a heading scope takes the role off the title and no more', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrap(
+          const MSPageHeaderHeadingScope(
+            isHeading: false,
+            child: MSPageHeader(title: 'Heard', subtitle: 'Still read'),
+          ),
+        ),
+      );
+
+      expect(_headerNodes(tester), isEmpty);
+      expect(
+        tester.getSemantics(find.text('Heard')),
+        matchesSemantics(label: 'Heard'),
+      );
+      expect(
+        tester.getSemantics(find.text('Still read')),
+        matchesSemantics(label: 'Still read'),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a heading scope that says so leaves the title a heading', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrap(
+          const MSPageHeaderHeadingScope(
+            isHeading: true,
+            child: MSPageHeader(title: 'Heard'),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.text('Heard')),
+        matchesSemantics(label: 'Heard', isHeader: true),
+      );
+      handle.dispose();
+    });
+  });
 }
 
 /// Every button node the platform would receive.
@@ -969,6 +1281,30 @@ List<SemanticsNode> _buttonNodes(WidgetTester tester) {
   void walk(SemanticsNode node) {
     if (!node.isMergedIntoParent &&
         node.getSemanticsData().flagsCollection.isButton) {
+      found.add(node);
+    }
+    node.visitChildren((SemanticsNode child) {
+      walk(child);
+      return true;
+    });
+  }
+
+  walk(tester.getSemantics(find.byType(MaterialApp)));
+
+  return found;
+}
+
+/// Every heading node the platform would receive, in tree order.
+///
+/// A node folded into its parent, or flagged hidden because a scroll view has
+/// moved it out of the viewport, is never sent to assistive technology, so
+/// counting one reports a heading nobody can reach.
+List<SemanticsNode> _headerNodes(WidgetTester tester) {
+  final List<SemanticsNode> found = <SemanticsNode>[];
+
+  void walk(SemanticsNode node) {
+    final SemanticsFlags flags = node.getSemanticsData().flagsCollection;
+    if (!node.isMergedIntoParent && flags.isHeader && !flags.isHidden) {
       found.add(node);
     }
     node.visitChildren((SemanticsNode child) {
