@@ -221,11 +221,13 @@ void main() {
       'error': 'bg-destructive text-white dark:text-white',
     };
     // Under the stock alias map, which defines `text-on-destructive` and no
-    // on-colour role for the success and warning fills.
+    // on-colour role for the success and warning fills: those two measure the
+    // fill they paint and take the better of white and near-black, which on the
+    // stock green and amber is the near-black.
     const stockVariant = {
       'info': 'bg-surface border border-color-border text-fg',
-      'success': 'bg-success text-gray-950 dark:text-gray-950',
-      'warning': 'bg-warning text-gray-950 dark:text-gray-950',
+      'success': 'bg-success text-gray-950',
+      'warning': 'bg-warning text-gray-950',
       'error': 'bg-destructive text-on-destructive',
     };
 
@@ -965,6 +967,125 @@ void main() {
         });
       }
     }
+
+    // A host that redefines the fills and defines no on-colour role for them.
+    // The fallback cannot assume the stock light fill: it measures the fill the
+    // variant paints in the current mode and takes the better of white and the
+    // near-black. These are depools-shaped: a mid-dark green in light mode and
+    // a pale one in dark, which is where near-black alone drops to 3.1:1.
+    final undefinedRoles = <String, String>{
+      ...MagicStarterTokens.defaultAliases,
+      'bg-success': 'bg-[#2E6B45] dark:bg-[#8FD1A3]',
+      'bg-warning': 'bg-[#9A5B00] dark:bg-[#F2B65C]',
+    };
+
+    for (final brightness in Brightness.values) {
+      for (final variant in [ToastVariant.success, ToastVariant.warning]) {
+        final label = '${variant.name} ${brightness.name}';
+
+        testWidgets('undefined role on host fills: the fallback is chosen by '
+            'contrast and clears 4.5:1 and 3:1, $label', (tester) async {
+          await pumpToast(
+            tester,
+            undoToast(variant: variant),
+            brightness: brightness,
+            aliases: undefinedRoles,
+          );
+
+          final fill = fillOf(tester);
+          final message = colourOf(tester, 'Moved to Kitchen')!;
+          final action = colourOf(tester, 'Undo')!;
+
+          expect(contrast(message, fill), greaterThanOrEqualTo(4.5));
+          expect(contrast(action, fill), greaterThanOrEqualTo(4.5));
+          expect(contrast(await ringOf(tester), fill), greaterThanOrEqualTo(3));
+        });
+      }
+    }
+
+    testWidgets(
+      'undefined role: white on the dark fill, near-black on the pale '
+      'one, whichever reads better',
+      (tester) async {
+        await pumpToast(
+          tester,
+          undoToast(variant: ToastVariant.success),
+          aliases: undefinedRoles,
+        );
+        expect(colourOf(tester, 'Moved to Kitchen'), const Color(0xFFFFFFFF));
+
+        await pumpToast(
+          tester,
+          undoToast(variant: ToastVariant.success),
+          brightness: Brightness.dark,
+          aliases: undefinedRoles,
+        );
+        expect(
+          colourOf(tester, 'Moved to Kitchen'),
+          WindThemeData().getColor('gray', 950),
+        );
+      },
+    );
+
+    for (final brightness in Brightness.values) {
+      for (final variant in [ToastVariant.success, ToastVariant.warning]) {
+        testWidgets('stock fills keep the near-black pair, ${variant.name} '
+            '${brightness.name}', (tester) async {
+          await pumpToast(
+            tester,
+            undoToast(variant: variant),
+            brightness: brightness,
+          );
+
+          expect(
+            colourOf(tester, 'Moved to Kitchen'),
+            WindThemeData().getColor('gray', 950),
+          );
+          expect(
+            colourOf(tester, 'Undo'),
+            WindThemeData().getColor('gray', 950),
+          );
+        });
+      }
+    }
+
+    for (final brightness in Brightness.values) {
+      testWidgets('a role the host defines is used as it is, even where '
+          'another colour would read better, ${brightness.name}', (
+        tester,
+      ) async {
+        await pumpToast(
+          tester,
+          undoToast(variant: ToastVariant.success),
+          brightness: brightness,
+          aliases: <String, String>{
+            ...undefinedRoles,
+            // Poor on both fills; the host's word is final.
+            'text-on-success': 'text-[#123456] dark:text-[#123456]',
+          },
+        );
+
+        expect(colourOf(tester, 'Moved to Kitchen'), const Color(0xFF123456));
+        expect(colourOf(tester, 'Undo'), const Color(0xFF123456));
+      });
+    }
+
+    testWidgets('a fill the theme cannot resolve falls back to the role pair', (
+      tester,
+    ) async {
+      // No alias map at all: `bg-success` resolves to nothing, so there is no
+      // fill to measure and the role's own fallback applies.
+      await pumpToast(
+        tester,
+        undoToast(variant: ToastVariant.success),
+        aliases: const <String, String>{},
+      );
+
+      expect(
+        colourOf(tester, 'Moved to Kitchen'),
+        WindThemeData().getColor('gray', 950),
+      );
+    });
 
     testWidgets('a message-only toned toast reads the role too', (
       tester,

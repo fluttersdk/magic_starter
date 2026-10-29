@@ -68,11 +68,11 @@ The role tokens match the `MagicStarterTokens.defaultAliases` contract:
 | `bg-destructive-container` | Tinted danger surface (error banners) |
 | `text-destructive` | Inline error text (falls back to red when undefined) |
 | `bg-warning` | Warning action surface |
-| `text-on-success` / `text-on-warning` | Text and icons on `bg-success` / `bg-warning` (falls back to near-black when undefined) |
+| `text-on-success` / `text-on-warning` | Text and icons on `bg-success` / `bg-warning` (when undefined, `MSToast` picks white or near-black by measured contrast against the fill) |
 
 A host that defines `text-destructive` (as an alias, or through a `destructive` colour) re-skins the outlined danger buttons, the destructive `MSSettingsRow` title and the inline error text; without it they fall back to the red pair. `MagicStarterTokens.role(theme, token)` is the lookup they share.
 
-`MSToast` is the one place that reads `text-on-success` and `text-on-warning`: its success and warning variants paint the message, the action label and the focus ring in them (the error variant reads `text-on-destructive`). The alias contract ships the fills and not these two roles, so a host that defines its own `bg-success` and `bg-warning` defines them beside the fills, and a host whose dark fills are light (a pale green on a dark surface) writes dark text for the dark half, or the toast fails 4.5:1 there. Without them the toast falls back to near-black on both fills, which reads on the stock green and amber.
+`MSToast` is the one place that reads `text-on-success` and `text-on-warning`: its success and warning variants paint the message, the action label and the focus ring in them (the error variant reads `text-on-destructive`). The alias contract ships the fills and not these two roles, so a host that defines its own `bg-success` and `bg-warning` defines them beside the fills, and a host whose dark fills are light (a pale green on a dark surface) writes dark text for the dark half. A role the host does not define is not assumed to suit the stock fills: the toast resolves the fill it paints in the current mode and takes the better of white and near-black by WCAG contrast, so the stock green and amber get near-black and a mid-dark green gets white. A role the host defines is used as written, poor contrast included.
 
 ## Alias-to-property mapping
 

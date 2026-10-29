@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart' show BuildContext, Color;
 import 'package:magic/magic.dart';
 
 /// **Semantic Token Alias Convention**
@@ -99,8 +100,9 @@ import 'package:magic/magic.dart';
 /// `text-on-success` and `text-on-warning` are the same kind of role: the text
 /// and icon colour that reads on `bg-success` and `bg-warning`. A host that
 /// defines its own fills defines these beside them (a host whose dark fills are
-/// light needs dark text there); without them [role] falls back to near-black,
-/// which reads on the stock fills.
+/// light needs dark text there). Without them [role] answers with near-black,
+/// which reads on the stock fills, and [readableOn] measures the fill a
+/// component paints and picks white or near-black by contrast instead.
 final class MagicStarterTokens {
   MagicStarterTokens._();
 
@@ -115,10 +117,12 @@ final class MagicStarterTokens {
   /// `text-on-success` and `text-on-warning` are the text and icon colours that
   /// read on `bg-success` and `bg-warning`. The contract ships the two fills but
   /// no such roles, so a host that defines its own fills defines them beside
-  /// them (a host whose dark fills are light needs dark text there). Without
-  /// them the fallback is the near-black `gray-950` in both modes, because it
-  /// reads on the STOCK fills (green and amber, 600 in light and 500 in dark) at
-  /// about 6:1 to 9:1 where white reads at 3.3:1 and 3.2:1 on the light ones.
+  /// them (a host whose dark fills are light needs dark text there). The pair
+  /// here is only what [role] answers with no fill to measure: the near-black
+  /// `gray-950`, which reads on the STOCK fills (green and amber, 600 in light
+  /// and 500 in dark) at about 6:1 to 9:1 where white reads at 3.3:1 and 3.2:1.
+  /// [readableOn] is what a component uses when it has a build context: it
+  /// measures the fill instead of assuming the stock one.
   static const Map<String, String> _roleFallbacks = {
     'text-primary': 'text-primary',
     'text-destructive': 'text-red-600 dark:text-red-400',
@@ -142,6 +146,50 @@ final class MagicStarterTokens {
     }
 
     return defaultAliases[token] ?? _roleFallbacks[token] ?? token;
+  }
+
+  /// The text class that reads on the [fill] a component paints, for the
+  /// on-colour [role] of that fill.
+  ///
+  /// A role the host defines is returned as it is: the host's word is final,
+  /// poor contrast included. Otherwise the fallback cannot assume the stock
+  /// fill, because a host may redefine `bg-success` as a dark green and define
+  /// no `text-on-success`: near-black on it is about 3:1. So the fill is resolved
+  /// from the theme in the current brightness and the better of white and the
+  /// near-black `gray-950` by WCAG contrast is returned (`text-white` or
+  /// `text-gray-950`, one mode at a time; the context depends on the theme, so
+  /// a brightness change rebuilds it). On the stock fills that is the near-black
+  /// they have always had here. With no fill to measure (the theme resolves
+  /// [fill] to nothing) the answer is [role]'s fallback pair.
+  static String readableOn(
+    BuildContext context, {
+    required String fill,
+    required String role,
+  }) {
+    final WindThemeData? theme = WindTheme.maybeDataOf(context);
+    if (theme != null && _themeDefines(theme, role)) {
+      return role;
+    }
+
+    final Color? fillColour = WindParser.parse(fill, context).decoration?.color;
+    final Color? light = WindParser.parse('text-white', context).color;
+    final Color? dark = WindParser.parse('text-gray-950', context).color;
+    if (fillColour == null || light == null || dark == null) {
+      return MagicStarterTokens.role(theme, role);
+    }
+
+    return _contrast(light, fillColour) >= _contrast(dark, fillColour)
+        ? 'text-white'
+        : 'text-gray-950';
+  }
+
+  /// WCAG contrast ratio of two colours, from their relative luminance.
+  static double _contrast(Color a, Color b) {
+    final double la = a.computeLuminance();
+    final double lb = b.computeLuminance();
+
+    return (la > lb ? la + 0.05 : lb + 0.05) /
+        (la > lb ? lb + 0.05 : la + 0.05);
   }
 
   static bool _themeDefines(WindThemeData theme, String token) {

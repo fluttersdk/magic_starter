@@ -52,9 +52,11 @@ enum ToastVariant {
 /// on-colour role of their fill for the message, the action label and the focus
 /// ring: `text-on-success`, `text-on-warning` and `text-on-destructive`. A host
 /// whose dark fills are light defines them dark there, so the text keeps 4.5:1
-/// on the fill; without a role the toast falls back to near-black on the success
-/// and warning fills (it reads on the stock green and amber) and to the alias
-/// map's white on the destructive one.
+/// on the fill. A role the host does not define is not assumed: the toast
+/// measures the fill it paints in the current mode and takes the better of white
+/// and near-black (the stock green and amber get near-black, a mid-dark green
+/// gets white), and the alias map's own white stands in for the destructive one
+/// when the map defines it.
 ///
 /// ### The message type
 ///
@@ -139,6 +141,14 @@ class MSToast extends StatelessWidget {
     final String? label = actionLabel;
     final VoidCallback? onPressed = onAction;
     final WindThemeData? windTheme = WindTheme.maybeDataOf(context);
+    final String? role = toastOnRole(variant.name);
+    final String? onClassName = role == null
+        ? null
+        : MagicStarterTokens.readableOn(
+            context,
+            fill: toastFill(variant.name)!,
+            role: role,
+          );
     final String messageClass = <String>[
       kToastMessageClassName,
       ?messageClassName,
@@ -147,7 +157,7 @@ class MSToast extends StatelessWidget {
     // 1. Without an action the toast is the banner it always was.
     if (label == null || onPressed == null) {
       return WDiv(
-        className: buildToastRecipe(windTheme)(
+        className: buildToastRecipe(theme: windTheme, onClassName: onClassName)(
           variants: {kToastVariantAxis: variant.name},
           className: className,
         ),
@@ -155,24 +165,19 @@ class MSToast extends StatelessWidget {
       );
     }
 
-    // 2. A toned toast hands its action the on-colour role of the fill, and the
-    //    colour that role paints now, for the ring and the hover fill.
-    final String? baseRole = toastOnRole(variant.name);
-    final String? onRole = baseRole == null
-        ? null
-        : MagicStarterTokens.role(windTheme, baseRole);
-    final Color? onColour = onRole == null
-        ? null
-        : WindParser.parse(onRole, context).color;
+    // 2. A toned toast hands its action the text class that reads on its fill,
+    //    and the colour that class paints now, for the ring and the hover fill.
     final Map<String, String> action = toastActionRecipe(
-      onRole: onRole,
-      onColour: onColour,
+      onRole: onClassName,
+      onColour: onClassName == null
+          ? null
+          : WindParser.parse(onClassName, context).color,
     );
 
     // 3. The message column takes the vertical padding and the 44 px cell sits
     //    at the trailing edge; the caller's className still comes last.
     return WDiv(
-      className: buildToastRecipe(windTheme)(
+      className: buildToastRecipe(theme: windTheme, onClassName: onClassName)(
         variants: {kToastVariantAxis: variant.name},
         className: <String>[kToastWithActionClassName, ?className].join(' '),
       ),

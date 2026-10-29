@@ -24,22 +24,35 @@ String? toastOnRole(String variant) {
   };
 }
 
+/// The semantic fill token each toned [ToastVariant] paints, by variant name, or
+/// `null` for the neutral `info` toast.
+String? toastFill(String variant) {
+  return switch (variant) {
+    'success' => 'bg-success',
+    'warning' => 'bg-warning',
+    'error' => 'bg-destructive',
+    _ => null,
+  };
+}
+
 /// Builds the toast [WindRecipe] using semantic tokens.
 ///
 /// The recipe maps each [ToastVariant] to a bg-* semantic token so the toast
 /// tone follows the design-system color ramp without hardcoded hex values.
 ///
-/// The text of a toned variant is the on-colour role of its fill
-/// ([toastOnRole]) and never a literal `text-white`: a host's dark fills can be
-/// light, and white on them fails 4.5:1. [theme] is the active Wind theme, so a
-/// role the host defines stays a bare token that its alias map expands, and one
-/// it does not define resolves to the role's fallback pair (see
-/// [MagicStarterTokens.role]). With no theme every role takes its fallback.
+/// The text of a toned variant is never a literal `text-white`: a host's dark
+/// fills can be light, and white on them fails 4.5:1. It is [onClassName] when
+/// the caller measured one (the widget does, with
+/// [MagicStarterTokens.readableOn]), and otherwise the on-colour role of the
+/// fill ([toastOnRole]) resolved against [theme]: a role the host defines stays
+/// a bare token that its alias map expands, and one it does not define resolves
+/// to the role's fallback pair (see [MagicStarterTokens.role]). With neither,
+/// every role takes its fallback.
 ///
 /// Emission order: `base ++ variant ++ caller` — no compound variants.
-WindRecipe buildToastRecipe([WindThemeData? theme]) {
+WindRecipe buildToastRecipe({WindThemeData? theme, String? onClassName}) {
   String on(String variant) =>
-      MagicStarterTokens.role(theme, toastOnRole(variant)!);
+      onClassName ?? MagicStarterTokens.role(theme, toastOnRole(variant)!);
 
   return WindRecipe(
     base: 'flex flex-row items-center gap-3 px-4 py-3 rounded-lg shadow-md',
