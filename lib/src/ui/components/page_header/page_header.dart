@@ -42,6 +42,10 @@ import 'page_header.recipe.dart';
 /// the host's bar carries all of them. [className] does not apply there.
 /// Without a predicate the header is exactly the one described above.
 ///
+/// It reports only while its route is the current one: a page under a pushed
+/// route, or one being popped, withdraws its entry, so a pushed page without a
+/// header leaves the host's bar empty rather than showing the page below.
+///
 /// ### Under a bar of its own
 ///
 /// A pushed screen draws its own bar above the page, and the header's top
@@ -381,7 +385,8 @@ class MSPageHeader extends StatefulWidget {
 }
 
 /// Reports this header to `MagicStarter.pageChrome` while the host owns the
-/// chrome, and picks the presentation accordingly.
+/// chrome and its route is current, and picks the presentation from the host
+/// predicate alone, so a page below a pushed one still draws only its actions.
 class _MSPageHeaderState extends State<MSPageHeader> {
   /// The chrome this header's entry sits in, null while it reports none. Kept
   /// so the withdraw reaches the same instance even when the manager has been
@@ -390,6 +395,10 @@ class _MSPageHeaderState extends State<MSPageHeader> {
 
   /// Whether the host drew this header's chrome at the last check.
   bool _hostOwned = false;
+
+  /// The enclosing route whose pop this header listens for, so each route is
+  /// listened to once however often the dependencies change.
+  ModalRoute<Object?>? _watchedRoute;
 
   @override
   void didChangeDependencies() {
@@ -408,27 +417,58 @@ class _MSPageHeaderState extends State<MSPageHeader> {
 
   @override
   void dispose() {
-    _reportedTo?.withdraw(this);
+    _withdraw();
     super.dispose();
   }
 
-  /// Reports the current entry while the host owns the chrome and withdraws
-  /// it once the host does not. The chrome defers its notification past the
-  /// frame, so this is safe from the lifecycle methods above.
+  /// Reports the current entry while the host owns the chrome and this
+  /// header's route is the current one, and withdraws it otherwise. The chrome
+  /// defers its notification past the frame, so this is safe from the
+  /// lifecycle methods above.
+  ///
+  /// A header under no route at all (a bare widget test, a host that mounts
+  /// it outside a navigator) reports whenever the host owns the chrome.
   void _syncChrome() {
     final MagicStarterPageChrome chrome = MagicStarter.pageChrome;
     _hostOwned = chrome.hostOwns(context);
 
+    // ModalRoute.of depends on the route's status, so a page that a push
+    // covers or a pop uncovers runs didChangeDependencies again and stops or
+    // resumes reporting in that frame. The live isCurrent getter is read
+    // rather than the inherited snapshot because the popped route's own
+    // status is never rebuilt; its pop is caught by _watchPop instead.
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    _watchPop(route);
+    final bool reports = _hostOwned && (route?.isCurrent ?? true);
+
     final MagicStarterPageChrome? previous = _reportedTo;
-    if (previous != null && (!_hostOwned || !identical(previous, chrome))) {
-      previous.withdraw(this);
-      _reportedTo = null;
+    if (previous != null && (!reports || !identical(previous, chrome))) {
+      _withdraw();
     }
 
-    if (!_hostOwned) return;
+    if (!reports) return;
 
     chrome.report(this, widget._chromeEntry);
     _reportedTo = chrome;
+  }
+
+  /// Withdraws this header's entry when [route] is popped, at the pop rather
+  /// than when the exit transition ends and the route is disposed: the page
+  /// below is current from the pop on, and the popped page must not hold the
+  /// host's bar through its exit.
+  void _watchPop(ModalRoute<Object?>? route) {
+    if (route == null || identical(route, _watchedRoute)) return;
+
+    _watchedRoute = route;
+    route.popped.then((Object? _) {
+      if (!mounted || !identical(route, _watchedRoute)) return;
+      _withdraw();
+    });
+  }
+
+  void _withdraw() {
+    _reportedTo?.withdraw(this);
+    _reportedTo = null;
   }
 
   @override

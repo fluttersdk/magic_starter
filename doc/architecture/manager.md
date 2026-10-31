@@ -558,7 +558,12 @@ nothing at all without them, no heading role) and reports a
 value equality) keyed by its own state; `MSPageScaffold` then builds neither the
 large title nor the compact bar. The predicate gets a context inside the page and
 is asked again when its dependencies (the `MediaQuery` it reads) or the header's
-widget change.
+widget change. A header reports only while its `ModalRoute` is the current one:
+it withdraws when a route is pushed over it and the moment its own route is
+popped, before the exit transition ends, and reports again when the page above
+is popped. So `current` names the top page, and is null when that page has no
+`MSPageHeader`. A header under no route reports whenever the predicate answers
+true.
 
 Every starter page follows it, the two `magic_notifications` screens included:
 the starter mounts the inbox and the preferences with a `headerBuilder` that
@@ -570,7 +575,7 @@ preferences report the settings hub as their `backFallback`.
 |--------|----------|
 | `hostOwns(context)` | The predicate's answer; `false` while none is registered |
 | `current` | The entry of the owner whose first report is the most recent; an update keeps its place, so the older of two pages mounted together under an instant swap neither takes over nor clears the newer one when it withdraws |
-| `report(owner, entry)` / `withdraw(owner)` | Called by the header from `didChangeDependencies`, `didUpdateWidget` and `dispose` |
+| `report(owner, entry)` / `withdraw(owner)` | Called by the header from `didChangeDependencies`, `didUpdateWidget` and `dispose`, and `withdraw` also when its route is popped; it reports only while its route is current |
 | listeners | Notified after the frame in which `current` changed, never during a build; a change undone within the frame notifies nobody |
 
 The host's bar listens and goes back with the fallback the page reported:
