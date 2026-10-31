@@ -8,6 +8,7 @@ export 'src/contracts/magic_starter_social_auth.dart';
 export 'src/testing/magic_starter_test_utils.dart';
 export 'src/providers/magic_starter_service_provider.dart';
 export 'src/ui/magic_starter_view_registry.dart';
+export 'src/ui/magic_starter_page_chrome.dart';
 export 'src/configuration/magic_starter_config.dart';
 export 'src/configuration/magic_starter_theme.dart';
 export 'src/models/magic_starter_team.dart';

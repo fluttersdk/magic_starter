@@ -17,6 +17,7 @@ import 'ui/layouts/magic_starter_guest_layout.dart';
 import 'ui/widgets/magic_starter_confirm_dialog.dart';
 import 'ui/widgets/magic_starter_password_confirm_dialog.dart';
 import 'ui/widgets/magic_starter_two_factor_modal.dart';
+import 'ui/magic_starter_page_chrome.dart';
 import 'ui/magic_starter_view_registry.dart';
 import 'ui/views/auth/magic_starter_forgot_password_view.dart';
 import 'ui/views/auth/magic_starter_login_view.dart';
@@ -310,6 +311,11 @@ class MagicStarterManager {
   /// page header container, title, subtitle, and action container.
   MagicStarterPageHeaderTheme pageHeaderTheme =
       const MagicStarterPageHeaderTheme();
+
+  /// The page chrome a host can claim, and the entries the mounted page
+  /// headers report to it. One instance for the manager's lifetime, so a
+  /// host's bar keeps listening to the same notifier across [reset].
+  final MagicStarterPageChrome pageChrome = MagicStarterPageChrome();
 
   /// Layout shell theme configuration. Holds className/dimension overrides for
   /// the sidebar, header, content background, drawer, and brand bar.
@@ -783,6 +789,7 @@ class MagicStarterManager {
     authTheme = const MagicStarterAuthTheme();
     cardTheme = const MagicStarterCardTheme();
     pageHeaderTheme = const MagicStarterPageHeaderTheme();
+    pageChrome.reset();
     layoutTheme = const MagicStarterLayoutTheme();
     dropdownTheme = const MagicStarterDropdownTheme();
     buttonTheme = const MagicStarterButtonTheme();

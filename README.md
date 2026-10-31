@@ -315,6 +315,23 @@ MSPageHeader(
 
 `size: MSPageHeaderSize.large` renders a large title, and `MSPageScaffold(largeTitle: true)` collapses it into a compact bar (`MSPageHeaderSize.compact`) pinned over the page once it scrolls away. `MagicStarterPageHeaderTheme(largeTitle: true)` turns it on for every page, the starter's own included.
 
+#### Host-owned page chrome
+
+A host whose own bar shows the page title and back control (a phone top bar, say) claims them with `MagicStarter.useHostPageChrome`. Wherever the predicate answers true, every `MSPageHeader` and `MSPageScaffold`, the starter's pages included, draws only its actions and reports a `MagicStarterPageChromeEntry` (title, subtitle, back label and fallback) to `MagicStarter.pageChrome`; a large title does not collapse there, as there is no title to collapse. Register nothing and every page is unchanged.
+
+```dart
+// In a service provider's boot():
+MagicStarter.useHostPageChrome((context) => MediaQuery.sizeOf(context).width < 768);
+
+// In the host's top bar:
+ListenableBuilder(listenable: MagicStarter.pageChrome, builder: (context, _) {
+  final entry = MagicStarter.pageChrome.current;
+  return TopBar(title: entry?.title, onBack: entry?.backFallback == null ? null : () => MagicRoute.back(fallback: entry!.backFallback));
+});
+```
+
+The chrome notifies after the frame in which the current entry changed, never during a build, and keeps the newer page's entry while two pages are briefly mounted together.
+
 ### MSMasterDetail
 
 A list beside its selected item from `lg` up, and one of the two below it. Keep the selection in the route and a row tap is push navigation on a phone:

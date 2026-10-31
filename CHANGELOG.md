@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Host-owned page chrome: `MagicStarter.useHostPageChrome` and `MagicStarter.pageChrome`.** A host whose own bar shows the page title and back control saw them a second time inside every page. Register a predicate (`(context) => MediaQuery.sizeOf(context).width < 768`) and, wherever it answers true, `MSPageHeader` draws only its actions, right aligned, with no title, subtitle, back control, suffix or heading role, and reports a `MagicStarterPageChromeEntry` (`title`, `subtitle`, `backLabel`, `backFallback`) to `MagicStarter.pageChrome`, a `ChangeNotifier` the host's bar listens to; `MSPageScaffold` builds neither the large title nor the compact bar there. `current` keeps the newer page's entry while two pages are mounted together under an instant route swap, and listeners are notified after the frame in which it changed, never during a build. A host that registers nothing sees no change. (`lib/src/ui/magic_starter_page_chrome.dart`, `lib/src/ui/components/page_header/page_header.dart`, `lib/src/ui/components/page_scaffold/page_scaffold.dart`)
+
 ## [0.0.60] - 2026-10-29
 
 ### Added
