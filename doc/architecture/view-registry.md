@@ -12,6 +12,7 @@
 - [Default Layout Keys](#default-layout-keys)
 - [Default Modal Keys](#default-modal-keys)
 - [Overriding Views](#overriding-views)
+    - [Composing a Settings Page](#composing-a-settings-page)
 - [Overriding Layouts](#overriding-layouts)
 - [Overriding Modals](#overriding-modals)
 - [Builder Slots](#builder-slots)
@@ -198,6 +199,51 @@ Because `registerDefaultViews()` uses "register if absent" logic, overrides regi
 
 > [!TIP]
 > You only need to override the views you want to change. All other views continue using the plugin defaults.
+
+<a name="composing-a-settings-page"></a>
+### Composing a Settings Page
+
+The settings hub (`settings.hub`, routed at `/settings`) is three sections: Account, Security and Preferences. Each is a public widget that carries its own header, rows and gating, so a host that wants one settings page with sections of its own registers its view under `settings.hub` and places the starter's groups beside its sections, without copying a feature or ability check:
+
+```dart
+class AppSettingsView extends StatelessWidget {
+  const AppSettingsView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MSPageScaffold(
+      title: trans('magic_starter.nav.settings'),
+      children: [
+        MSSettingsSection(
+          header: 'Playback',
+          children: [
+            MSSettingsNavRow(title: 'Player', to: '/settings/player'),
+          ],
+        ),
+        MagicStarterSettingsAccountGroup(),
+        if (MagicStarterSettingsSecurityGroup.hasRows)
+          MagicStarterSettingsSecurityGroup(),
+        MagicStarterSettingsPreferencesGroup(),
+        if (MagicStarterConfig.hasReleasesFeatures())
+          const MagicStarterAppVersion(),
+      ],
+    );
+  }
+}
+
+// In AppServiceProvider.boot()
+MagicStarter.view.register('settings.hub', () => const AppSettingsView());
+```
+
+| Widget | Rows and their gates |
+|--------|----------------------|
+| `MagicStarterSettingsAccountGroup` | Profile (always); for a guest (denied `starter.delete-account`) also the upgrade and sign-in rows |
+| `MagicStarterSettingsSecurityGroup` | Two-factor (`two_factor` and `starter.manage-two-factor`), Password (`starter.update-password`), Browser sessions (`sessions`), Connected accounts (`social_login` and a `MagicStarter.useSocialAuth` bridge) |
+| `MagicStarterSettingsPreferencesGroup` | Appearance (always), Notifications (`notifications`), Language (`extended_profile`), Timezone (`timezones`), Newsletter (`newsletter` and `starter.manage-newsletter`), What's new (`releases`) |
+
+- The Security group renders a zero-size box when none of its rows is reachable. `MSPageScaffold` still puts a gap around a zero-size child, so guard the group with `hasRows`; the other two always have a row.
+- The groups read the user, the abilities and the flags when they build and listen to none of them. Leave them non-const when the page is rebuilt on an auth change, or the Profile subtitle and the two-factor value keep what they read first.
+- The version caption is not part of a group: place `MagicStarterAppVersion` yourself, as above, to close the page the way the hub does.
 
 <a name="overriding-layouts"></a>
 ## Overriding Layouts

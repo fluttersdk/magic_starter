@@ -422,6 +422,7 @@ final success = await MagicStarterTwoFactorModal.show(
 | `MagicStarterAuthFormCard` | Centered card wrapper for auth-adjacent screens (invite accept, onboarding) |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
 | `MagicStarterFeedbackCard` | The occasional 0 to 10 feedback card behind `support_feedback`; renders nothing until the backend says the account is due |
+| `MagicStarterSettingsAccountGroup`, `MagicStarterSettingsSecurityGroup`, `MagicStarterSettingsPreferencesGroup` | The settings hub's three sections with their feature and ability checks, for a host that composes its own settings page (see [Composing a settings page](doc/architecture/view-registry.md#composing-a-settings-page)) |
 | `MSTeamSelector` | Current-team switcher dropdown with create/settings links |
 | `MSAvatar` | Photo with an initials or glyph fallback, clipped to the shape you pass |
 | `MSUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |
