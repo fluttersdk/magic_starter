@@ -505,4 +505,145 @@ void main() {
       expect(find.byType(NotificationPreferencesView), findsNothing);
     });
   });
+
+  group('the page header', () {
+    /// Answers the inbox with one unread row, so its mark-all-as-read action
+    /// has a reason to show, and the preferences with one type.
+    void fakeInboxWithUnread() {
+      Http.fake((MagicRequest request) {
+        if (request.url.contains('notification-preferences')) {
+          return MagicResponse(
+            data: <String, dynamic>{
+              'data': <String, dynamic>{
+                'incident_opened': <String, dynamic>{
+                  'label': 'Incident opened',
+                  'channels': <String, dynamic>{
+                    'push': <String, dynamic>{
+                      'enabled': false,
+                      'locked': false,
+                    },
+                  },
+                },
+              },
+              'meta': <String, dynamic>{'push_provisioned': true},
+            },
+            statusCode: 200,
+          );
+        }
+
+        return MagicResponse(
+          data: <String, dynamic>{
+            'data': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 'n-1',
+                'type': 'incident_opened',
+                'data': <String, dynamic>{'title': 'Down', 'body': 'Body'},
+                'read_at': null,
+                'created_at': DateTime.now().toIso8601String(),
+              },
+            ],
+            'meta': <String, dynamic>{
+              'current_page': 1,
+              'last_page': 1,
+              'per_page': 15,
+              'total': 1,
+            },
+          },
+          statusCode: 200,
+        );
+      });
+    }
+
+    Future<void> mount(WidgetTester tester, String path) async {
+      await tester.pumpWidget(wrap(routeFor(path)!.buildWidget(const {})));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    group('under host-owned page chrome', () {
+      setUp(() {
+        MagicStarter.useHostPageChrome((BuildContext context) => true);
+      });
+
+      testWidgets('the inbox reports its title and still draws its action', (
+        tester,
+      ) async {
+        fakeInboxWithUnread();
+        registerMagicStarterNotificationRoutes();
+
+        await mount(tester, MagicStarterConfig.notificationsRoute());
+
+        expect(
+          MagicStarter.pageChrome.current?.title,
+          trans('notifications.title'),
+        );
+        expect(
+          MagicStarter.pageChrome.current?.subtitle,
+          trans('notifications.list_subtitle'),
+        );
+        expect(find.text(trans('notifications.title')), findsNothing);
+        expect(find.text(trans('notifications.mark_all_read')), findsOneWidget);
+      });
+
+      testWidgets('the preferences page reports its back to the settings hub', (
+        tester,
+      ) async {
+        fakeInboxWithUnread();
+        registerMagicStarterNotificationRoutes();
+
+        await mount(tester, MagicStarterConfig.notificationPreferencesRoute());
+
+        final MagicStarterPageChromeEntry? entry =
+            MagicStarter.pageChrome.current;
+        expect(entry?.title, trans('notifications.preferences_title'));
+        expect(entry?.backLabel, trans('common.back'));
+        expect(entry?.backFallback, MagicStarterConfig.settingsHubRoute());
+        expect(
+          find.text(trans('notifications.preferences_title')),
+          findsNothing,
+        );
+        expect(find.byIcon(Icons.chevron_left), findsNothing);
+      });
+    });
+
+    group('without host-owned page chrome', () {
+      testWidgets('the inbox draws its own title and action', (tester) async {
+        // A wide layout, where a host leaves the chrome to the page. The test
+        // font draws the untranslated keys far wider than any real label, and
+        // the default 800 px surface cannot hold title and action on one row.
+        tester.view.physicalSize = const Size(1440, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        fakeInboxWithUnread();
+        registerMagicStarterNotificationRoutes();
+
+        await mount(tester, MagicStarterConfig.notificationsRoute());
+
+        expect(MagicStarter.pageChrome.current, isNull);
+        expect(find.byType(MSPageHeader), findsOneWidget);
+        expect(find.text(trans('notifications.title')), findsOneWidget);
+        expect(find.text(trans('notifications.mark_all_read')), findsOneWidget);
+      });
+
+      testWidgets('the preferences page draws its title and back control', (
+        tester,
+      ) async {
+        fakeInboxWithUnread();
+        registerMagicStarterNotificationRoutes();
+
+        await mount(tester, MagicStarterConfig.notificationPreferencesRoute());
+
+        expect(MagicStarter.pageChrome.current, isNull);
+        expect(find.byType(MSPageHeader), findsOneWidget);
+        expect(
+          find.text(trans('notifications.preferences_title')),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+      });
+    });
+  });
 }

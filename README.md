@@ -317,7 +317,7 @@ MSPageHeader(
 
 #### Host-owned page chrome
 
-A host whose own bar shows the page title and back control (a phone top bar, say) claims them with `MagicStarter.useHostPageChrome`. Wherever the predicate answers true, every `MSPageHeader` and `MSPageScaffold`, the starter's pages included, draws only its actions and reports a `MagicStarterPageChromeEntry` (title, subtitle, back label and fallback) to `MagicStarter.pageChrome`; a large title does not collapse there, as there is no title to collapse. Register nothing and every page is unchanged.
+A host whose own bar shows the page title and back control (a phone top bar, say) claims them with `MagicStarter.useHostPageChrome`. Wherever the predicate answers true, every `MSPageHeader` and `MSPageScaffold`, the starter's pages included (the notification inbox and preferences too, whose headers the starter draws as `MSPageHeader` through `magic_notifications`' `headerBuilder`), draws only its actions and reports a `MagicStarterPageChromeEntry` (title, subtitle, back label and fallback) to `MagicStarter.pageChrome`; a large title does not collapse there, as there is no title to collapse. Register nothing and every page is unchanged.
 
 ```dart
 // In a service provider's boot():

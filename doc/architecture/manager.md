@@ -560,6 +560,12 @@ large title nor the compact bar. The predicate gets a context inside the page an
 is asked again when its dependencies (the `MediaQuery` it reads) or the header's
 widget change.
 
+Every starter page follows it, the two `magic_notifications` screens included:
+the starter mounts the inbox and the preferences with a `headerBuilder` that
+draws their header as an `MSPageHeader` (`lib/src/routes/notification_routes.dart`),
+so the inbox reports its title and keeps its mark-all-as-read action, and the
+preferences report the settings hub as their `backFallback`.
+
 | Member | Contract |
 |--------|----------|
 | `hostOwns(context)` | The predicate's answer; `false` while none is registered |
