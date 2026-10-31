@@ -74,10 +74,11 @@ dependencies:
   # error at `notification_routes.dart` instead of a version-solve message
   # naming the package. Raising it is the difference between a readable refusal
   # and a broken build. `Notify.pushState`, which the provider registers as a
-  # before-logout hook, first ships in 0.3.5. The floor itself names 0.3.11, the
-  # release 0.0.60 was verified against (a web push fix, nothing this package
-  # calls).
-  magic_notifications: ^0.3.11
+  # before-logout hook, first ships in 0.3.5. Then ^0.3.12, because
+  # `notification_routes.dart` also passes `headerBuilder` and takes a
+  # `NotificationsPageHeader`, both of which 0.3.12 adds: a lower floor would
+  # resolve an adopter onto a release this package does not compile against.
+  magic_notifications: ^0.3.12
   # Direct rather than transitive, and this is the point of declaring it:
   # `fluttersdk_wind` reaches this package through `magic`, so without an entry
   # here there is no floor to raise when this package starts calling a new Wind
