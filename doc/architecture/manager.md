@@ -541,6 +541,52 @@ Under high contrast (`MediaQuery.highContrast`, iOS Increase Contrast) it paints
 step, so `MagicStarterTheme.fromWind` sets both fills to the opaque
 `bg-surface-container`; a host after glass passes its own translucent fill.
 
+<a name="host-page-chrome"></a>
+### Host-owned page chrome
+
+`manager.pageChrome` is a `MagicStarterPageChrome`, a `ChangeNotifier` that lives
+as long as the manager (`reset()` clears it, it does not replace it). A host that
+draws the page title and back control in its own bar registers a predicate:
+
+```dart
+MagicStarter.useHostPageChrome((context) => MediaQuery.sizeOf(context).width < 768);
+```
+
+Wherever it answers true, `MSPageHeader` draws only its `actions` (right aligned,
+nothing at all without them, no heading role) and reports a
+`MagicStarterPageChromeEntry` (`title`, `subtitle`, `backLabel`, `backFallback`,
+value equality) keyed by its own state; `MSPageScaffold` then builds neither the
+large title nor the compact bar. The predicate gets a context inside the page and
+is asked again when its dependencies (the `MediaQuery` it reads) or the header's
+widget change. A header reports only while its `ModalRoute` is the current one:
+it withdraws when a route is pushed over it and the moment its own route is
+popped, before the exit transition ends, and reports again when the page above
+is popped. So `current` names the top page, and is null when that page has no
+`MSPageHeader`. A header under no route reports whenever the predicate answers
+true.
+
+Every starter page follows it, the two `magic_notifications` screens included:
+the starter mounts the inbox and the preferences with a `headerBuilder` that
+draws their header as an `MSPageHeader` (`lib/src/routes/notification_routes.dart`),
+so the inbox reports its title and keeps its mark-all-as-read action, and the
+preferences report the settings hub as their `backFallback`.
+
+| Member | Contract |
+|--------|----------|
+| `hostOwns(context)` | The predicate's answer; `false` while none is registered |
+| `current` | The entry of the owner whose first report is the most recent; an update keeps its place, so the older of two pages mounted together under an instant swap neither takes over nor clears the newer one when it withdraws |
+| `report(owner, entry)` / `withdraw(owner)` | Called by the header from `didChangeDependencies`, `didUpdateWidget` and `dispose`, and `withdraw` also when its route is popped; it reports only while its route is current |
+| listeners | Notified after the frame in which `current` changed, never during a build; a change undone within the frame notifies nobody |
+
+The host's bar listens and goes back with the fallback the page reported:
+
+```dart
+ListenableBuilder(listenable: MagicStarter.pageChrome, builder: (context, _) {
+  final MagicStarterPageChromeEntry? entry = MagicStarter.pageChrome.current;
+  return TopBar(title: entry?.title, onBack: () => MagicRoute.back(fallback: entry?.backFallback));
+});
+```
+
 <a name="layout-theme"></a>
 ## Layout Theme
 
@@ -658,6 +704,8 @@ Default layouts:
 | `MagicStarter.useAuthTheme(theme)` | `manager.authTheme = theme` |
 | `MagicStarter.useCardTheme(theme)` | `manager.cardTheme = theme` |
 | `MagicStarter.usePageHeaderTheme(theme)` | `manager.pageHeaderTheme = theme` |
+| `MagicStarter.useHostPageChrome(owns)` | `manager.pageChrome.ownsWhen = owns` |
+| `MagicStarter.pageChrome` | `manager.pageChrome` |
 | `MagicStarter.useLayoutTheme(theme)` | `manager.layoutTheme = theme` |
 | `MagicStarter.useDropdownTheme(theme)` | `manager.dropdownTheme = theme` |
 | `MagicStarter.useButtonTheme(theme)` | `manager.buttonTheme = theme` |

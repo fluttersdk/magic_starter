@@ -6,6 +6,7 @@ import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../ui/components/confirm_dialog/confirm_dialog.dart';
 import '../ui/components/page_container/page_container.recipe.dart';
+import '../ui/components/page_header/page_header.dart';
 import '../ui/components/page_scaffold/page_scaffold.recipe.dart';
 import 'layout_ids.dart';
 
@@ -96,6 +97,7 @@ void _mountNotificationViews() {
       (String geometry) => NotificationsListView(
         onDelete: _confirmThenDelete,
         contentClassName: geometry,
+        headerBuilder: _pageHeader,
       ),
     ),
   );
@@ -105,8 +107,27 @@ void _mountNotificationViews() {
       (String geometry) => NotificationPreferencesView(
         backRoute: MagicStarterConfig.settingsHubRoute(),
         contentClassName: geometry,
+        headerBuilder: _pageHeader,
       ),
     ),
+  );
+}
+
+/// Draws a notification screen's header as this package's [MSPageHeader].
+///
+/// The screens would otherwise draw a header of their own, which
+/// `MagicStarter.useHostPageChrome` cannot reach: on a host whose bar owns the
+/// page title and back control, both pages showed them a second time. Through
+/// [MSPageHeader] they report them to `MagicStarter.pageChrome` like every
+/// other page and keep only the actions (the inbox's mark-all-as-read), and
+/// without a host predicate they draw the same header every other page does.
+Widget _pageHeader(BuildContext context, NotificationsPageHeader header) {
+  return MSPageHeader(
+    title: header.title,
+    subtitle: header.subtitle,
+    actions: header.actions.isEmpty ? null : header.actions,
+    backLabel: header.backLabel,
+    backFallback: header.backRoute,
   );
 }
 

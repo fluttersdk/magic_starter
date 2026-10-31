@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../facades/magic_starter.dart';
+import '../../magic_starter_page_chrome.dart';
+import 'page_header.recipe.dart';
 
 /// Reusable page header for Magic Starter views.
 ///
@@ -30,6 +32,20 @@ import '../../../facades/magic_starter.dart';
 /// itself needs a scroll position, so it lives in
 /// `MSPageScaffold(largeTitle: true)`, which renders both.
 ///
+/// ### Host-owned chrome
+///
+/// Where `MagicStarter.pageChrome.hostOwns(context)` is true (the host called
+/// `MagicStarter.useHostPageChrome`), the header reports its [title],
+/// [subtitle], [backLabel] and [backFallback] to `MagicStarter.pageChrome`
+/// and draws only its [actions], right aligned, in every size. No title, no
+/// subtitle, no back control or [leading], no suffixes and no heading role:
+/// the host's bar carries all of them. [className] does not apply there.
+/// Without a predicate the header is exactly the one described above.
+///
+/// It reports only while its route is the current one: a page under a pushed
+/// route, or one being popped, withdraws its entry, so a pushed page without a
+/// header leaves the host's bar empty rather than showing the page below.
+///
 /// ### Under a bar of its own
 ///
 /// A pushed screen draws its own bar above the page, and the header's top
@@ -54,7 +70,7 @@ import '../../../facades/magic_starter.dart';
 /// )
 /// ```
 @immutable
-class MSPageHeader extends StatelessWidget {
+class MSPageHeader extends StatefulWidget {
   // Icon reference extracted as a static const for Flutter web tree-shaking.
   static const IconData _chevronLeft = Icons.chevron_left;
 
@@ -269,7 +285,35 @@ class MSPageHeader extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  State<MSPageHeader> createState() => _MSPageHeaderState();
+
+  /// What this header reports when the host owns the page chrome.
+  MagicStarterPageChromeEntry get _chromeEntry => MagicStarterPageChromeEntry(
+    title: title,
+    subtitle: subtitle,
+    backLabel: backLabel,
+    backFallback: backFallback,
+  );
+
+  /// The header under host-owned chrome: the actions alone, right aligned,
+  /// and nothing at all without them. The title, subtitle, back control,
+  /// [leading] and both suffixes are the host's to draw, and there is no
+  /// heading here, so the page offers the host's title as its only one.
+  Widget _buildHostOwned() {
+    final List<Widget>? trailing = actions;
+    if (trailing == null || trailing.isEmpty) return const SizedBox.shrink();
+
+    return WDiv(
+      className: pageHeaderHostActionsClassName,
+      child: WDiv(
+        className: MagicStarter.pageHeaderTheme.actionContainerClassName,
+        children: trailing,
+      ),
+    );
+  }
+
+  /// The header drawn by the page itself, in [effectiveSize].
+  Widget _buildPresentation(BuildContext context) {
     // 1. Resolve the effective leading: an explicit widget takes priority;
     //    when both back arguments are set, auto-build the unified back control.
     //
@@ -337,6 +381,101 @@ class MSPageHeader extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+/// Reports this header to `MagicStarter.pageChrome` while the host owns the
+/// chrome and its route is current, and picks the presentation from the host
+/// predicate alone, so a page below a pushed one still draws only its actions.
+class _MSPageHeaderState extends State<MSPageHeader> {
+  /// The chrome this header's entry sits in, null while it reports none. Kept
+  /// so the withdraw reaches the same instance even when the manager has been
+  /// replaced since.
+  MagicStarterPageChrome? _reportedTo;
+
+  /// Whether the host drew this header's chrome at the last check.
+  bool _hostOwned = false;
+
+  /// The enclosing route whose pop this header listens for, so each route is
+  /// listened to once however often the dependencies change.
+  ModalRoute<Object?>? _watchedRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Here rather than in initState: the predicate reads the page's
+    // MediaQuery, which a State may not depend on before initState returns,
+    // and depending on it here asks again when the width changes.
+    _syncChrome();
+  }
+
+  @override
+  void didUpdateWidget(MSPageHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncChrome();
+  }
+
+  @override
+  void dispose() {
+    _withdraw();
+    super.dispose();
+  }
+
+  /// Reports the current entry while the host owns the chrome and this
+  /// header's route is the current one, and withdraws it otherwise. The chrome
+  /// defers its notification past the frame, so this is safe from the
+  /// lifecycle methods above.
+  ///
+  /// A header under no route at all (a bare widget test, a host that mounts
+  /// it outside a navigator) reports whenever the host owns the chrome.
+  void _syncChrome() {
+    final MagicStarterPageChrome chrome = MagicStarter.pageChrome;
+    _hostOwned = chrome.hostOwns(context);
+
+    // ModalRoute.of depends on the route's status, so a page that a push
+    // covers or a pop uncovers runs didChangeDependencies again and stops or
+    // resumes reporting in that frame. The live isCurrent getter is read
+    // rather than the inherited snapshot because the popped route's own
+    // status is never rebuilt; its pop is caught by _watchPop instead.
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    _watchPop(route);
+    final bool reports = _hostOwned && (route?.isCurrent ?? true);
+
+    final MagicStarterPageChrome? previous = _reportedTo;
+    if (previous != null && (!reports || !identical(previous, chrome))) {
+      _withdraw();
+    }
+
+    if (!reports) return;
+
+    chrome.report(this, widget._chromeEntry);
+    _reportedTo = chrome;
+  }
+
+  /// Withdraws this header's entry when [route] is popped, at the pop rather
+  /// than when the exit transition ends and the route is disposed: the page
+  /// below is current from the pop on, and the popped page must not hold the
+  /// host's bar through its exit.
+  void _watchPop(ModalRoute<Object?>? route) {
+    if (route == null || identical(route, _watchedRoute)) return;
+
+    _watchedRoute = route;
+    route.popped.then((Object? _) {
+      if (!mounted || !identical(route, _watchedRoute)) return;
+      _withdraw();
+    });
+  }
+
+  void _withdraw() {
+    _reportedTo?.withdraw(this);
+    _reportedTo = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _hostOwned
+        ? widget._buildHostOwned()
+        : widget._buildPresentation(context);
   }
 }
 

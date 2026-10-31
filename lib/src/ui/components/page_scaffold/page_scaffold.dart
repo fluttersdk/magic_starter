@@ -52,6 +52,13 @@ import 'page_scaffold.recipe.dart';
 /// the bar shows (its text and the subtitle stay readable, as the bar has no
 /// subtitle), and the bar is left out of the semantics tree while it fades out.
 ///
+/// ### Host-owned chrome
+///
+/// Where `MagicStarter.pageChrome.hostOwns(context)` is true the header draws
+/// only its actions and the host's bar shows the title and back control, so
+/// the scaffold builds the regular scroll area and neither the large title
+/// nor the compact bar, whatever [largeTitle] says.
+///
 /// ### Example: sub-page with back
 /// ```dart
 /// MSPageScaffold(
@@ -187,7 +194,10 @@ class MSPageScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget content = isLargeTitle
+    // Under host-owned chrome the header draws no title, so there is nothing
+    // for a large title to show or for the compact bar to collapse into.
+    final bool hostOwnsChrome = MagicStarter.pageChrome.hostOwns(context);
+    final Widget content = isLargeTitle && !hostOwnsChrome
         ? _LargeTitleFrame(
             compactBar: _header(MSPageHeaderSize.compact),
             scrollAreaBuilder: (Key headerKey, bool collapsed) =>

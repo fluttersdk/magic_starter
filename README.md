@@ -315,6 +315,23 @@ MSPageHeader(
 
 `size: MSPageHeaderSize.large` renders a large title, and `MSPageScaffold(largeTitle: true)` collapses it into a compact bar (`MSPageHeaderSize.compact`) pinned over the page once it scrolls away. `MagicStarterPageHeaderTheme(largeTitle: true)` turns it on for every page, the starter's own included.
 
+#### Host-owned page chrome
+
+A host whose own bar shows the page title and back control (a phone top bar, say) claims them with `MagicStarter.useHostPageChrome`. Wherever the predicate answers true, every `MSPageHeader` and `MSPageScaffold`, the starter's pages included (the notification inbox and preferences too, whose headers the starter draws as `MSPageHeader` through `magic_notifications`' `headerBuilder`), draws only its actions and reports a `MagicStarterPageChromeEntry` (title, subtitle, back label and fallback) to `MagicStarter.pageChrome`; a large title does not collapse there, as there is no title to collapse. Only the page whose route is current reports, so `current` is the page on top, and null when that page has no `MSPageHeader`. Register nothing and every page is unchanged.
+
+```dart
+// In a service provider's boot():
+MagicStarter.useHostPageChrome((context) => MediaQuery.sizeOf(context).width < 768);
+
+// In the host's top bar:
+ListenableBuilder(listenable: MagicStarter.pageChrome, builder: (context, _) {
+  final entry = MagicStarter.pageChrome.current;
+  return TopBar(title: entry?.title, onBack: entry?.backFallback == null ? null : () => MagicRoute.back(fallback: entry!.backFallback));
+});
+```
+
+The chrome notifies after the frame in which the current entry changed, never during a build, and keeps the newer page's entry while two pages are briefly mounted together.
+
 ### MSMasterDetail
 
 A list beside its selected item from `lg` up, and one of the two below it. Keep the selection in the route and a row tap is push navigation on a phone:
@@ -405,6 +422,7 @@ final success = await MagicStarterTwoFactorModal.show(
 | `MagicStarterAuthFormCard` | Centered card wrapper for auth-adjacent screens (invite accept, onboarding) |
 | `MagicStarterTimezoneSelect` | Searchable timezone dropdown backed by `GET /timezones` |
 | `MagicStarterFeedbackCard` | The occasional 0 to 10 feedback card behind `support_feedback`; renders nothing until the backend says the account is due |
+| `MagicStarterSettingsAccountGroup`, `MagicStarterSettingsSecurityGroup`, `MagicStarterSettingsPreferencesGroup` | The settings hub's three sections with their feature and ability checks, for a host that composes its own settings page (see [Composing a settings page](doc/architecture/view-registry.md#composing-a-settings-page)) |
 | `MSTeamSelector` | Current-team switcher dropdown with create/settings links |
 | `MSAvatar` | Photo with an initials or glyph fallback, clipped to the shape you pass |
 | `MSUserProfileDropdown` | User avatar menu with profile links, theme toggle, and logout |

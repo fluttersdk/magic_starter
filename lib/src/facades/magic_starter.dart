@@ -8,6 +8,7 @@ import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 import '../models/magic_starter_team.dart';
 import '../models/magic_starter_nav_item.dart';
+import '../ui/magic_starter_page_chrome.dart';
 import '../ui/magic_starter_view_registry.dart';
 
 /// Static facade for Magic Starter.
@@ -746,6 +747,30 @@ class MagicStarter {
   /// [MagicStarterPageHeaderTheme] instance when not configured.
   static MagicStarterPageHeaderTheme get pageHeaderTheme =>
       manager.pageHeaderTheme;
+
+  /// Let the host draw the page title and back control wherever [owns]
+  /// answers true.
+  ///
+  /// There, `MSPageHeader` (and every `MSPageScaffold`, the starter's own
+  /// pages included) draws only its actions and reports a
+  /// [MagicStarterPageChromeEntry] to [pageChrome], which the host's bar
+  /// listens to. [owns] receives a context inside the page, so it can answer
+  /// from the viewport width. Register it in a provider's `boot()`, before the
+  /// first page builds: a header already on screen asks again only when its
+  /// dependencies or its widget change.
+  ///
+  /// ```dart
+  /// MagicStarter.useHostPageChrome(
+  ///   (context) => MediaQuery.sizeOf(context).width < 768,
+  /// );
+  /// ```
+  static void useHostPageChrome(MagicStarterPageChromeOwnership owns) {
+    manager.pageChrome.ownsWhen = owns;
+  }
+
+  /// The page chrome a host claims with [useHostPageChrome]: whether it owns
+  /// a page's chrome, and the entry of the page currently mounted.
+  static MagicStarterPageChrome get pageChrome => manager.pageChrome;
 
   /// Register a custom layout theme.
   ///

@@ -104,6 +104,8 @@ Notify.view.register(
 );
 ```
 
+Both mounts also pass `headerBuilder`, which draws each screen's header as an `MSPageHeader` inside the screen's own scroll view, so the two pages follow [host-owned page chrome](../architecture/manager.md#host-page-chrome) like every other starter page: under `MagicStarter.useHostPageChrome` the inbox reports its title and keeps only its mark-all-as-read action, and the preferences report the settings hub as their back fallback. A screen you register yourself draws its own header unless you pass a `headerBuilder` too.
+
 The matrix structure returned by the API:
 
 ```json
