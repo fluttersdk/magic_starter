@@ -337,6 +337,11 @@ class MagicStarterBillingController extends MagicController
       const <String, StoreProductOffer>{};
   MagicStarterEntitlementSnapshot _entitlementSnapshot = _emptySnapshot;
 
+  /// Whether an entitlement read has landed in this session, so the next one
+  /// can tell a plan that MOVED from the first answer, which [load] already
+  /// pairs with its own usage read.
+  bool _entitlementRead = false;
+
   /// Bumped by [cancelWait], so a poll that was inside a read when it was
   /// cancelled can tell on resuming that it no longer has anyone to answer to.
   int _waitEpoch = 0;
@@ -859,6 +864,7 @@ class MagicStarterBillingController extends MagicController
     _endAwaiting();
     _storeOffers = const <String, StoreProductOffer>{};
     _entitlementSnapshot = _emptySnapshot;
+    _entitlementRead = false;
     cancelWait();
     refreshUI();
 
@@ -950,6 +956,12 @@ class MagicStarterBillingController extends MagicController
   /// to publish: a screen that cannot see it tells a customer who has already
   /// cancelled that their plan renews.
   ///
+  /// A read that names a different plan than the one before it re-reads
+  /// [usage] too, because the limits a meter shows belong to the plan. That is
+  /// the one place every path that moves a plan passes through (a store
+  /// purchase, a restore, a web swap, a lapse), so none of them has to
+  /// remember to refresh the meters itself.
+  ///
   /// Deliberate degradation on failure: [currentPlanId] keeps whatever it held
   /// (for a first read, `null`) instead of throwing, and no plan id is ever
   /// fabricated.
@@ -962,6 +974,9 @@ class MagicStarterBillingController extends MagicController
       if (!_latestRead.isCurrent(readToken, _entitlementKey)) return;
 
       final String? plan = entitlement.plan;
+      final bool planMoved =
+          _entitlementRead && plan != _entitlementSnapshot.plan;
+      _entitlementRead = true;
       _manageVia = entitlement.manageVia;
       _manageUrl = entitlement.manageUrl;
       _renews = entitlement.renews;
@@ -985,6 +1000,7 @@ class MagicStarterBillingController extends MagicController
         _entitlementLoaded = true;
       }
       refreshUI();
+      if (planMoved) unawaited(loadUsage());
     } catch (error) {
       if (session != _sessionGeneration) return;
       if (!_latestRead.isCurrent(readToken, _entitlementKey)) return;
