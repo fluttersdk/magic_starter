@@ -1730,6 +1730,86 @@ void main() {
     });
   });
 
+  group('MagicStarterBillingController, a team that holds nothing', () {
+    // The backend answers `plan: null` for a team nobody pays for: every
+    // revocation writes one (a store expiry, a refund, a deleted subscription).
+    // The catalogue's floor is where that team sits, and a screen that read the
+    // null as "not loaded yet" drew its current-plan card as a skeleton for good.
+
+    test('a lapsed plan resolves to the catalogue floor', () async {
+      billing.entitlementPlan = null;
+      billing.entitlementStatus = PlanStatus.expired;
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.entitlementLoaded, isTrue);
+      expect(controller.currentPlanId, 'tier-a');
+      controller.dispose();
+    });
+
+    test('a plan that lapses mid-session stops naming the old tier', () async {
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+
+      expect(controller.currentPlanId, 'tier-b');
+
+      billing.entitlementPlan = null;
+      billing.entitlementStatus = PlanStatus.canceled;
+      await controller.loadEntitlement();
+
+      expect(controller.currentPlanId, 'tier-a');
+      controller.dispose();
+    });
+
+    test('a plan bought after holding nothing replaces the floor', () async {
+      billing.entitlementPlan = null;
+      billing.entitlementStatus = PlanStatus.expired;
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+
+      billing.entitlementPlan = 'tier-b';
+      billing.entitlementStatus = PlanStatus.active;
+      await controller.loadEntitlement();
+
+      expect(controller.currentPlanId, 'tier-b');
+      controller.dispose();
+    });
+
+    test('a granting subscription the catalogue cannot name stays '
+        'unresolved', () async {
+      billing.entitlementPlan = null;
+      billing.entitlementStatus = PlanStatus.active;
+      billing.entitlementProvider = BillingProvider.stripe;
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+
+      expect(controller.entitlementLoaded, isFalse);
+      expect(controller.currentPlanId, isNull);
+      controller.dispose();
+    });
+
+    test('a session reset forgets that the team held nothing', () async {
+      billing.entitlementPlan = null;
+      billing.entitlementStatus = PlanStatus.expired;
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+
+      final Completer<void> hold = Completer<void>();
+      billing.entitlementGate = hold;
+      final Future<void> reset = controller.resetForSession();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.entitlementLoaded, isFalse);
+      expect(controller.currentPlanId, isNull);
+
+      hold.complete();
+      await reset;
+      controller.dispose();
+    });
+  });
+
   group('MagicStarterBillingController, usage follows the plan', () {
     int usageReads() => billing.started.where((r) => r == _usageRead).length;
 
