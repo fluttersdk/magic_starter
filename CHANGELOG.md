@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A team whose plan lapsed to none no longer leaves the current-plan card a skeleton.** The producer answers `plan: null` for a team nobody pays for (a store expiry, a refund, a deleted subscription). `loadEntitlement` read that as "not loaded", so `currentPlanId` stayed `null` for good, the name row stayed a skeleton and every plan card said "Compare"; and a plan that lapsed mid-session kept naming the old tier as current. A null plan whose status grants nothing is now an answer: the old tier is dropped, `entitlementLoaded` is true, and `currentPlanId` reads as the catalogue's floor, its first row, when that row sells nothing. A null plan with a status that still grants (a Stripe price the catalogue cannot name) stays unresolved, as before, and a catalogue that starts at a paid tier has no floor to sit on. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+
 ## [0.0.62] - 2026-11-01
 
 ### Fixed

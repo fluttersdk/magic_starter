@@ -307,6 +307,10 @@ class MagicStarterBillingController extends MagicController
   static const String _storeProductsKey = 'storeProducts';
 
   String? _currentPlanId;
+
+  /// Whether the last entitlement read answered that the team holds nothing:
+  /// no plan, and a status that grants none. See [currentPlanId].
+  bool _holdsNothing = false;
   bool _entitlementLoaded = false;
   ManageVia? _manageVia;
   String? _manageUrl;
@@ -386,10 +390,28 @@ class MagicStarterBillingController extends MagicController
   /// Never a guess. There is no fixture to fall back to, so an unresolved
   /// current plan reads as unresolved and the current-plan card stays in its
   /// loading state until a retry succeeds.
-  String? get currentPlanId => _currentPlanId;
+  ///
+  /// The one answer that is not the producer's `plan` word is the floor. The
+  /// producer sends `plan: null` for a team nobody pays for (a store expiry, a
+  /// refund, a deleted subscription), and that team sits on the catalogue's
+  /// first row, the tier its adopter declared as free. It is read as that row
+  /// only when the row sells nothing, because a catalogue that starts at a paid
+  /// tier has no floor to sit on. `null` stays the answer while the catalogue is
+  /// still loading.
+  String? get currentPlanId => _currentPlanId ?? _floorPlanId;
 
-  /// Whether the live entitlement read has resolved a plan, so [currentPlanId]
-  /// is the customer's real tier rather than an unanswered read.
+  /// The catalogue's floor tier when the team holds nothing, otherwise `null`.
+  String? get _floorPlanId {
+    if (!_holdsNothing || _plans.isEmpty) return null;
+
+    final MagicStarterPlan floor = _plans.first;
+
+    return floor.sellableProducts.isEmpty ? floor.id : null;
+  }
+
+  /// Whether the live entitlement read has answered, so [currentPlanId] is the
+  /// customer's real tier, or the floor for a team that holds nothing, rather
+  /// than an unanswered read.
   bool get entitlementLoaded => _entitlementLoaded;
 
   /// The management surface the server computed from the rail, or `null` while
@@ -608,7 +630,13 @@ class MagicStarterBillingController extends MagicController
   bool get holdsWebSubscription {
     if (_entitlementSnapshot.provider != BillingProvider.stripe) return false;
 
-    return switch (_planStatus) {
+    return _statusGrants(_planStatus);
+  }
+
+  /// Whether [status] still grants the plan: the backend's own
+  /// `PlanStatus::grants()`, trialing, active and both dunning states.
+  static bool _statusGrants(PlanStatus status) {
+    return switch (status) {
       PlanStatus.trialing ||
       PlanStatus.active ||
       PlanStatus.pastDue ||
@@ -844,6 +872,7 @@ class MagicStarterBillingController extends MagicController
     _sessionGeneration++;
 
     _currentPlanId = null;
+    _holdsNothing = false;
     _entitlementLoaded = false;
     _manageVia = null;
     _manageUrl = null;
@@ -995,10 +1024,19 @@ class MagicStarterBillingController extends MagicController
                   _entitlementSnapshot != _awaitingBaseline))) {
         _endAwaiting();
       }
+      // A null plan with a status that still grants is a subscription the
+      // catalogue cannot name, which stays unresolved. Without one it is a team
+      // that holds nothing, so the old tier is dropped rather than kept as if
+      // the plan were still held.
+      final bool holdsNothing = plan == null && !_statusGrants(_planStatus);
       if (plan != null) {
         _currentPlanId = plan;
         _entitlementLoaded = true;
+      } else if (holdsNothing) {
+        _currentPlanId = null;
+        _entitlementLoaded = true;
       }
+      _holdsNothing = holdsNothing;
       refreshUI();
       if (planMoved) unawaited(loadUsage());
     } catch (error) {

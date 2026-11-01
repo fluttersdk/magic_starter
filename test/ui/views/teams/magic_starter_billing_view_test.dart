@@ -871,6 +871,26 @@ class _UnsubscribedRailBillingService extends _RailBillingService {
   }
 }
 
+/// A team whose store subscription ran out: the producer writes `plan: null`
+/// with a finished status and keeps the rail's provenance, which is what every
+/// revocation leaves behind.
+class _LapsedStoreBillingService extends _RailBillingService {
+  @override
+  Future<BillingEntitlement> currentEntitlement() async {
+    return BillingEntitlement.fromMap(<String, dynamic>{
+      'plan': null,
+      'plan_status': 'expired',
+      'subscribed': false,
+      'renews': false,
+      'cycle': null,
+      'provider': 'app_store',
+      'manage_via': 'app_store',
+      'manage_url': null,
+      'ai_analysis_trials_remaining': null,
+    });
+  }
+}
+
 /// A Stripe subscriber on `pro` whose tier MOVES to `business` after a swap
 /// succeeds, once the rail's webhook lands, counting the three reads a plan
 /// change has to refresh.
@@ -3716,6 +3736,34 @@ void main() {
       expect(
         find.text(trans('magic_starter.billing.payment_header')),
         findsOneWidget,
+      );
+    });
+  });
+
+  group('a team whose plan lapsed to none', () {
+    testWidgets('the current-plan card shows the floor instead of a skeleton', (
+      tester,
+    ) async {
+      await mount(tester, _LapsedStoreBillingService(), isOwner: true);
+
+      expect(tester.takeException(), isNull);
+      // The defect: the producer's `plan: null` was read as "not loaded", so the
+      // name row stayed a skeleton for good. The floor is the tier a team that
+      // pays nobody sits on, and the card names it and claims it as current.
+      expect(
+        find.descendant(
+          of: find.byType(MSCard).first,
+          matching: find.byType(MSSkeleton),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_current_badge')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_unresolved')),
+        findsNothing,
       );
     });
   });
