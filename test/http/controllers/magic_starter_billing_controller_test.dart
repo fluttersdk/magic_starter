@@ -1730,6 +1730,85 @@ void main() {
     });
   });
 
+  group('MagicStarterBillingController, usage follows the plan', () {
+    int usageReads() => billing.started.where((r) => r == _usageRead).length;
+
+    test('an entitlement read that moves the plan re-reads usage', () async {
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+      billing.started.clear();
+
+      // The limits a meter shows belong to the plan, so a plan the server moved
+      // (a store purchase, a restore, a webhook) must not leave the previous
+      // plan's limits on screen until the next load.
+      billing.entitlementPlan = 'tier-a';
+      await controller.loadEntitlement();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.currentPlanId, 'tier-a');
+      expect(usageReads(), 1);
+      controller.dispose();
+    });
+
+    test('a plan that lapses to none re-reads usage', () async {
+      final MagicStarterBillingController controller = build();
+      await controller.load();
+      billing.started.clear();
+
+      billing.entitlementPlan = null;
+      billing.entitlementStatus = PlanStatus.expired;
+      await controller.loadEntitlement();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(usageReads(), 1);
+      controller.dispose();
+    });
+
+    test(
+      'an entitlement read that keeps the plan leaves usage alone',
+      () async {
+        final MagicStarterBillingController controller = build();
+        await controller.load();
+        billing.started.clear();
+
+        await controller.loadEntitlement();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(usageReads(), 0);
+        controller.dispose();
+      },
+    );
+
+    test(
+      'the first read after a session reset leaves usage to the reload',
+      () async {
+        final MagicStarterBillingController controller = build();
+        await controller.load();
+        billing.started.clear();
+
+        // A team switch resets the controller and refetches: the answer for the
+        // new team names another plan, and that is a first read, not a move.
+        billing.entitlementPlan = 'tier-a';
+        await controller.resetForSession();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.currentPlanId, 'tier-a');
+        expect(usageReads(), 1);
+        controller.dispose();
+      },
+    );
+
+    test('the first entitlement read does not double the usage read', () async {
+      final MagicStarterBillingController controller = build();
+
+      await controller.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(usageReads(), 1);
+      controller.dispose();
+    });
+  });
+
   group('MagicStarterBillingController, the store prices come from the '
       'store', () {
     test('every product this store can sell is priced by one products() read '

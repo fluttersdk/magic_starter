@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The billing meters follow a plan that moves.** After a store purchase the plan badge read the new tier while the usage meters kept the previous plan's limits, until the screen was left and entered again: `loadEntitlement` re-read only the entitlement, and `loadUsage` ran on the first load, a session reset and a language change. An entitlement read that names a different plan than the one before it (a purchase, a restore, a web swap, a lapse to no plan) now re-reads usage too; a read that keeps the plan, and the first read of a session, leave usage alone. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+
 ## [0.0.61] - 2026-11-01
 
 ### Added
