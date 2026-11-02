@@ -748,7 +748,11 @@ class MagicStarterBillingController extends MagicController
   bool get canPurchaseViaWeb =>
       webRail != null && !storeManaged && isOwner != false;
 
-  /// Whether this screen may offer to buy through the STORE rail.
+  /// Whether a tap may START a purchase through the STORE rail right now.
+  ///
+  /// [offersStorePurchase] while no purchase is waiting. A screen that draws its
+  /// buttons from this one loses them for the length of the wait; draw them from
+  /// [offersStorePurchase] and let this decide only whether a tap goes through.
   ///
   /// Seven refusals. Six of them are the rail's own: no store rail in this
   /// build; a member who is not the owner; the web rail already charging this
@@ -785,21 +789,33 @@ class MagicStarterBillingController extends MagicController
   /// from a real owner who wants to pay, and the server would have refused a
   /// non-owner anyway, while an unasked transfer check hides nothing and permits
   /// a move the customer cannot undo.
-  bool get canPurchaseViaStore {
+  bool get canPurchaseViaStore =>
+      offersStorePurchase && _awaitingProductKey == null;
+
+  /// Whether the store rail sells to this customer at all, ignoring a purchase
+  /// that is still waiting for the backend ([awaitingProductKey]).
+  ///
+  /// [canPurchaseViaStore] minus the one refusal that is about TIME rather than
+  /// about the customer. The two answer different questions: "may a tap start a
+  /// purchase" is false for as long as one is unconfirmed, while "does this
+  /// customer buy here" stays true through that wait. A screen that hides its
+  /// buttons on the first makes the control the customer just pressed vanish; one
+  /// that keeps them on the second can show it busy and the others inert.
+  bool get offersStorePurchase {
     final StoreBillingService? store = storeRail;
     if (store == null) return false;
 
     return isOwner != false &&
         _manageVia != ManageVia.portal &&
         !(storeManaged && _manageVia != store.store) &&
-        _awaitingProductKey == null &&
         storeCheckRegistered &&
         _storeFundedTeam == null;
   }
 
-  /// Whether this screen may offer to start or change a paid plan on ANY rail.
+  /// Whether a tap may start or change a paid plan on ANY rail right now.
   ///
-  /// The plan grid's CTA gate. No build serves both rails, so this is a union of
+  /// The gate for starting a purchase, not for drawing the plan grid's buttons
+  /// (see [offersStorePurchase]). No build serves both rails, so this is a union of
   /// two mutually exclusive answers rather than a choice between them; which one
   /// is live decides what a tap does.
   bool get canPurchase => canPurchaseViaWeb || canPurchaseViaStore;

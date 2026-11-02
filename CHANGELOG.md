@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MagicStarterBillingController.offersStorePurchase`.** The store gate without the wait on an unconfirmed purchase: whether the store rail sells to this customer at all. `canPurchaseViaStore` is now `offersStorePurchase && awaitingProductKey == null`, unchanged in value. A custom plan grid that hides its buttons on `canPurchaseViaStore` can read this one to keep them through the wait, and disable them while `awaitingProductKey` is set: a tap that reaches `purchaseInStore` during the wait is refused with `BillingErrorCode.pending`. (`lib/src/http/controllers/magic_starter_billing_controller.dart`)
+
+### Fixed
+
+- **A plan button no longer vanishes while a store purchase is being confirmed.** Pressing Upgrade on a store build shut the purchase gate (`canPurchaseViaStore`, so no second tap can start a second charge), and the grid read that gate to decide whether to draw its buttons at all: the pressed button, and every other purchase button with it, disappeared for as long as the backend took to confirm, with nothing on screen to say the tap was taken. The grid now keeps its buttons through the wait. The card holding the product being bought shows its button busy from the tap (including the transfer re-ask before the sheet opens), the other purchase buttons stay on the grid but cannot be pressed, and a sales handoff or the floor's exit stays live. Everything is given back when the purchase ends: a confirmed plan, a dismissed sheet, a refusal, a failure, a change booked for renewal or the wait running out. Starting a purchase is no less gated than before. (`lib/src/ui/views/teams/magic_starter_billing_view.dart`)
+
 ## [0.0.63] - 2026-11-02
 
 ### Fixed

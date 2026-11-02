@@ -34,6 +34,7 @@
 // 5. Everything the original held in `State` now lives in
 //    [MagicStarterBillingController], so a case that used to reach into private
 //    widget state drives a collaborator instead.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -4883,6 +4884,135 @@ void main() {
       await tester.pump(const Duration(seconds: 120));
       expect(store.entitlementReads, mountReads + 3, reason: 'polling stopped');
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('the tapped plan keeps its button, loading, and the other '
+        'purchase buttons stay but cannot be pressed', (tester) async {
+      // Held on the floor, so two tiers above it are both an Upgrade.
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        heldPlan: 'free',
+      );
+
+      await mount(tester, store, isOwner: true, withToasts: true);
+      final String upgrade = trans('magic_starter.billing.plan_button_upgrade');
+      final Finder loading = find.byWidgetPredicate(
+        (Widget widget) => widget is MSButton && widget.isLoading,
+      );
+      final Finder inert = find.byWidgetPredicate(
+        (Widget widget) => widget is MSButton && widget.disabled,
+      );
+
+      expect(find.text(upgrade), findsNWidgets(2));
+      expect(loading, findsNothing);
+      expect(inert, findsNothing);
+
+      await tester.tap(find.text(upgrade).first);
+      await tester.pump();
+
+      expect(store.purchasedKeys, hasLength(1));
+      expect(
+        loading,
+        findsOneWidget,
+        reason:
+            'the button the customer pressed turns busy, it does not vanish',
+      );
+      expect(
+        inert,
+        findsOneWidget,
+        reason:
+            'the other tier is still on the grid, but a second purchase '
+            'cannot start while the first is being confirmed',
+      );
+      expect(find.text(upgrade), findsOneWidget);
+
+      // Pressing either one starts nothing.
+      await tester.tap(loading, warnIfMissed: false);
+      await tester.tap(find.text(upgrade), warnIfMissed: false);
+      await tester.pump();
+
+      expect(
+        store.purchasedKeys,
+        hasLength(1),
+        reason: 'no second purchase while the first is being confirmed',
+      );
+
+      // The backend confirms: the wait ends and nothing is left busy.
+      store
+        ..changeOnRead = store.entitlementReads + 1
+        ..changeTo = store.purchasedKeys.single;
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 120));
+      await tester.pumpAndSettle();
+
+      expect(loading, findsNothing);
+      expect(inert, findsNothing);
+    });
+
+    testWidgets('the button is busy from the tap, before the sheet opens', (
+      tester,
+    ) async {
+      final Completer<String?> fundedTeam = Completer<String?>();
+      final _StoreRailBillingService store = _StoreRailBillingService();
+
+      await mount(
+        tester,
+        store,
+        isOwner: true,
+        withToasts: true,
+        storeFundedTeam: () => fundedTeam.future,
+      );
+      final Finder loading = find.byWidgetPredicate(
+        (Widget widget) => widget is MSButton && widget.isLoading,
+      );
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+
+      expect(store.purchasedKeys, isEmpty, reason: 'the re-ask is still out');
+      expect(
+        loading,
+        findsOneWidget,
+        reason: 'the re-ask is a request: the tap has to show it was taken',
+      );
+
+      fundedTeam.complete(null);
+      await tester.pump();
+      await tester.pump();
+
+      expect(store.purchasedKeys, hasLength(1));
+      expect(loading, findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 120));
+      await tester.pumpAndSettle();
+
+      expect(loading, findsNothing, reason: 'the wait ran out, so it is idle');
+    });
+
+    testWidgets('a dismissed sheet gives the button back', (tester) async {
+      final _StoreRailBillingService store = _StoreRailBillingService(
+        purchaseResult: false,
+      );
+
+      await mount(tester, store, isOwner: true, withToasts: true);
+
+      await tester.tap(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.byWidgetPredicate(
+          (Widget widget) => widget is MSButton && widget.isLoading,
+        ),
+        findsNothing,
+      );
+      expect(
+        find.text(trans('magic_starter.billing.plan_button_upgrade')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a change the rail times at renewal reads nothing and says '
