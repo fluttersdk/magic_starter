@@ -860,6 +860,15 @@ void main() {
       expect(unregistered.canPurchaseViaStore, isFalse);
       expect(funded.canPurchaseViaStore, isFalse);
 
+      // `offersStorePurchase` is the same gate minus the wait on an unconfirmed
+      // purchase, so every refusal above is shared.
+      expect(open.offersStorePurchase, isTrue);
+      expect(noRail.offersStorePurchase, isFalse);
+      expect(member.offersStorePurchase, isFalse);
+      expect(webCharging.offersStorePurchase, isFalse);
+      expect(unregistered.offersStorePurchase, isFalse);
+      expect(funded.offersStorePurchase, isFalse);
+
       open.dispose();
       noRail.dispose();
       member.dispose();
@@ -1017,6 +1026,13 @@ void main() {
       // team holds pro_annual, a second tap would be a second charge.
       expect(controller.awaitingProductKey, 'pro_annual');
       expect(controller.canPurchaseViaStore, isFalse);
+      expect(
+        controller.offersStorePurchase,
+        isTrue,
+        reason:
+            'the rail still sells; the screen keeps the buttons and shows the '
+            'tapped one busy instead of taking them away',
+      );
 
       await controller.loadEntitlement();
       expect(

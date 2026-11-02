@@ -282,6 +282,21 @@ class _MagicStarterBillingViewState
   final ValueNotifier<BillingCycle?> _cycleOverride =
       ValueNotifier<BillingCycle?>(null);
 
+  /// The catalogue key of the store purchase this screen has started and not yet
+  /// finished, or `null` when none is.
+  ///
+  /// It covers the stretch the controller cannot: from the tap until the sheet
+  /// opens, a request is out (the transfer re-ask in [_purchaseInStore]) and
+  /// [MagicStarterBillingController.awaitingProductKey] is still unset, so
+  /// without this the button would sit unchanged under a tap that was taken.
+  /// Once the sheet opens the controller holds the same key, and holds it past
+  /// this screen's lifetime; this one is the screen's own and is dropped in the
+  /// `finally` of the purchase.
+  ///
+  /// A [ValueNotifier] for the reason [_cycleOverride] is one: a purchase repaints
+  /// the plan buttons, not the screen.
+  final ValueNotifier<String?> _startedPurchase = ValueNotifier<String?>(null);
+
   /// The billing cycle every price on this screen is shown for, and the one a
   /// purchase is made on.
   ///
@@ -487,7 +502,7 @@ class _MagicStarterBillingViewState
     // The controller's own `onInit` ran once, for the lifetime of the session
     // singleton, so a screen opened again after closing mid-wait would never
     // read the entitlement the store purchase is waiting on and would keep the
-    // purchase buttons hidden. The read clears the wait when the entitlement
+    // purchase buttons inert. The read clears the wait when the entitlement
     // now names the product.
     if (controller.awaitingProductKey != null) {
       unawaited(controller.loadEntitlement());
@@ -503,6 +518,7 @@ class _MagicStarterBillingViewState
     // keep its timer, after nobody is left to be told the answer.
     controller.cancelWait();
     _cycleOverride.dispose();
+    _startedPurchase.dispose();
   }
 
   void _loadCampaign() {
@@ -531,6 +547,23 @@ class _MagicStarterBillingViewState
   /// answers rather than a choice between them; which one is live decides what a
   /// tap does (see [_selectPlan]).
   bool get _canPurchase => _canPurchaseViaWeb || controller.canPurchaseViaStore;
+
+  /// Whether the plan grid shows its purchase buttons, which is [_canPurchase]
+  /// except for a store purchase that is still being confirmed.
+  ///
+  /// That wait shuts [_canPurchase] on purpose, so no tap can start a second
+  /// charge, but a button that vanishes the moment it is pressed reads as the tap
+  /// being lost. The grid keeps its buttons through the wait instead: the pressed
+  /// one is busy, the others are inert ([_buildPlanAction]). Starting a purchase
+  /// is still gated by [_canPurchase] and by the controller.
+  bool get _offersPurchase =>
+      _canPurchaseViaWeb || controller.offersStorePurchase;
+
+  /// The catalogue key of the purchase in flight, whether this screen has just
+  /// started it ([_startedPurchase]) or the controller is waiting on it, or
+  /// `null` when nothing is.
+  String? get _purchaseInFlight =>
+      _startedPurchase.value ?? controller.awaitingProductKey;
 
   /// The active plan, or `null` while the catalogue or the entitlement has not
   /// resolved, and permanently when the held tier is one the catalogue no longer
@@ -1067,13 +1100,13 @@ class _MagicStarterBillingViewState
     final bool showsStoreDisclosure =
         !isCurrent &&
         !isCustom &&
-        controller.canPurchaseViaStore &&
+        controller.offersStorePurchase &&
         _saleProduct(plan) != null;
     // A priced tier this build sells nothing on (a tier priced in a store only,
     // seen on the web) gets no button: checkout would refuse it after the tap.
     // The floor sells nothing anywhere, so it is never a purchase; its button
     // leads to where the paid plan is cancelled, or does not render.
-    final bool offersPurchase = _canPurchase && _saleProduct(plan) != null;
+    final bool offersPurchase = _offersPurchase && _saleProduct(plan) != null;
     final VoidCallback? floorExit = isFloor ? _floorExit(plan) : null;
     final Widget? highlight = _buildPlanHighlight(plan);
 
@@ -1216,8 +1249,10 @@ class _MagicStarterBillingViewState
         //    than by the entitlement, so it survives both gates and spends
         //    nothing), an actual purchase, which needs a rail and the
         //    membership to allow it, and the floor's way out of the paid plan
-        //    ([_floorExit]). Which of the four emphases it takes is
-        //    [_ctaIntent]'s decision, not this slot's.
+        //    ([_floorExit]). A purchase button is busy or inert, never gone,
+        //    while a store purchase waits for the backend ([_buildPlanAction]).
+        //    Which of the four emphases it takes is [_ctaIntent]'s decision,
+        //    not this slot's.
         if (isCurrent)
           WDiv(
             className:
@@ -1250,13 +1285,31 @@ class _MagicStarterBillingViewState
   ///
   /// What the button DOES is unchanged: [_selectPlan] buys the same product the
   /// card was priced from, and only the words on it move.
+  ///
+  /// While a store purchase is in flight ([_purchaseInFlight]) the button stays
+  /// where it is. The card holding the product being bought shows it busy, the
+  /// way every other submit in this package does, and the other purchase
+  /// buttons stay inert: a button that disappears on the press reads as a lost
+  /// tap, and the customer is left with no sign that anything is happening for
+  /// as long as the backend takes to confirm. A sales handoff and the floor's
+  /// exit spend nothing, so they stay live.
   Widget _buildPlanAction(MagicStarterPlan plan, {VoidCallback? floorExit}) {
-    return ValueListenableBuilder<BillingCycle?>(
-      valueListenable: _cycleOverride,
-      builder: (_, _, _) {
+    return ListenableBuilder(
+      listenable: Listenable.merge(<Listenable>[
+        _cycleOverride,
+        _startedPurchase,
+      ]),
+      builder: (_, _) {
         final ({String period, String price, String cycle})? trial = _webTrial(
           plan,
         );
+        final String? inFlight = _purchaseInFlight;
+        final bool sells = floorExit == null && !_isCustom(plan);
+        final bool isBuying =
+            sells &&
+            inFlight != null &&
+            plan.products.any((MagicStarterProduct p) => p.key == inFlight);
+        final bool isInert = sells && inFlight != null && !isBuying;
 
         return WDiv(
           className: 'flex flex-col gap-2',
@@ -1284,6 +1337,8 @@ class _MagicStarterBillingViewState
               child: MSButton(
                 intent: _ctaIntent(plan),
                 fullWidth: true,
+                isLoading: isBuying,
+                disabled: isInert,
                 onPressed: floorExit ?? () => _selectPlan(plan),
                 // `text-center` because the stretched button centres the
                 // label BOX, not its lines: in a four-column grid "Start free
@@ -2536,9 +2591,24 @@ class _MagicStarterBillingViewState
   /// [MagicStarterBillingController.purchaseInStoreAndWait]), and what it says
   /// depends on how the wait ended: confirmed, applying at the end of the
   /// current period, or still processing when the minute ran out.
+  ///
+  /// The plan's button is busy for the whole of it ([_startedPurchase] from the
+  /// tap, then the controller's own wait), and is given back when it ends, on
+  /// every path: a refusal, a dismissed sheet, a failure, a confirmed plan, a
+  /// change booked for renewal, the wait running out.
   Future<void> _purchaseInStore(MagicStarterProduct product) async {
     if (controller.storeRail == null) return;
 
+    _startedPurchase.value = product.key;
+    try {
+      await _runStorePurchase(product);
+    } finally {
+      // A screen closed mid-wait has disposed the notifier with it.
+      if (mounted) _startedPurchase.value = null;
+    }
+  }
+
+  Future<void> _runStorePurchase(MagicStarterProduct product) async {
     await controller.loadStoreFundedTeam();
     if (!mounted) return;
 
@@ -2749,13 +2819,13 @@ class _MagicStarterBillingViewState
       }
 
       // 2. The first one with a trial takes the fill outright.
-      if (_webTrial(plan) != null) return _canPurchase ? plan.id : null;
+      if (_webTrial(plan) != null) return _offersPurchase ? plan.id : null;
 
       cheapest ??= plan.id;
     }
 
     // 3. Otherwise the cheapest upgrade keeps it.
-    return _canPurchase ? cheapest : null;
+    return _offersPurchase ? cheapest : null;
   }
 
   /// The tier distance of [plan] from the current plan: positive when [plan] is
