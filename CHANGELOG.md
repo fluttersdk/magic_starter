@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.67] - 2026-11-04
+
 ### Added
 
 - **`MSBottomSheet.show(canDismiss:, onDismissBlocked:)` holds a sheet with unsaved input open.** `canDismiss` is a `ValueListenable<bool>` read when the gesture lands, so a field that turns dirty after the sheet opened holds the next one. While it is false the sheet takes no drag down (its handle stays drawn), and a scrim tap or a screen reader's dismiss on it, Back and Escape leave it open and call `onDismissBlocked(sheetContext)`, where the app asks whether to discard (the package draws no such question); the dialog `dialogBreakpoint` swaps in is held the same way, barrier included. After a confirmed discard the caller closes it with `Navigator.of(sheetContext).pop()`, which skips the guard, so the guard need not be flipped; the opener's context would pop the wrong navigator, since the sheet sits on the root one. A `Navigator.pop` from the footer closes either too. Without the arguments nothing changes. Every starter sheet is now pushed on a package-internal `ModalBottomSheetRoute` subclass with the frame `showModalBottomSheet` built, because a sheet's drag closes through `Navigator.pop`, which a `PopScope` cannot refuse. (`lib/src/ui/components/bottom_sheet/`, `lib/src/ui/components/dialog/modal_presenter.dart`)
@@ -1087,26 +1089,6 @@ This is the only manual step.
 - **Manager**: Added unified theme section, 5 new sub-theme sections (form, auth, card, page header, layout), updated facade methods table with all theme accessors
 - **View Registry**: Added Builder Slots section documenting slot/hasSlot/buildSlot API
 - **CLAUDE.md**: Added publish/uninstall commands, updated manager description, added customization gotchas, updated test count
-
-## [0.0.1-alpha.13] - 2026-04-09
-
-### 🐛 Bug Fixes
-- **Icon Tree-Shaking**: Extracted all runtime-conditional `Icons.*` references into `static const` fields for Flutter web tree-shaking compatibility — fixes 11+ broken icon usages across 10 files (#37)
-
-## [0.0.1-alpha.12] - 2026-04-09
-
-### ✨ New Features
-- **Sidebar Footer**: Added `sidebarFooterBuilder` slot via `MagicStarter.useSidebarFooter()` — renders custom widget between navigation and user menu in both desktop sidebar and mobile drawer (#27)
-- **MagicStarterUserProfileDropdown**: Moved theme toggle from sidebar bottom bar into user profile dropdown menu — sidebar now shows only avatar, name, and notification bell (#30)
-
-### 🐛 Bug Fixes
-- **MagicStarterUserProfileDropdown**: Fixed menu overflow when many profile menu items are registered — wrapped menu items in scrollable `overflow-y-auto` WDiv, keeping header and logout footer fixed (#28)
-- **Sidebar Navigation**: Fixed overflow when many nav items exceed viewport height — added `overflow-y-auto` to navigation WDiv so items scroll while brand, team selector, and user menu remain fixed (#29)
-
-### 📚 Documentation
-- **Manager**: Added `useSidebarFooter()` section and facade entry to manager doc
-- **Views & Layouts**: Updated theme toggle location from sidebar to user profile dropdown
-- **README**: Added layout customization section with `useHeader()` and `useSidebarFooter()` examples
 
 ## [0.0.1-alpha.1] - 2026-03-25
 
