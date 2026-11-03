@@ -269,10 +269,7 @@ void main() {
 
       auth.assertLoggedOut();
       expect(MagicRouter.instance.currentLocation, '/auth/login');
-      expect(
-        find.text(trans('magic_starter.handoff.expired')),
-        findsOneWidget,
-      );
+      expect(find.text(trans('magic_starter.handoff.expired')), findsOneWidget);
       expect(MagicRouter.instance.hasIntendedUrl, isFalse);
       expectNeverEchoed();
       await tester.pump(const Duration(seconds: 3));
