@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.65] - 2026-11-03
+
 ### Added
 
 - **`MagicStarterLayoutTheme` styles the shell's notification bell.** `notificationTriggerClassName`, `notificationTriggerIconClassName`, `notificationPanelClassName`, `notificationBadgeClassName` and `notificationBadgeTextClassName` reach the `NotificationDropdown` the sidebar and the mobile header mount. The bell shipped Wind's own palette (`dark:bg-gray-800` is a cool slate), and the layout offered a host no way to restyle it, so a host with its own dark palette saw a panel that matched nothing beside it. A null field keeps the widget's default, so a host that sets none sees no change. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`)
@@ -1147,19 +1149,6 @@ This is the only manual step.
 ### Fixed
 - **MagicStarterConfirmDialog** and **MagicStarterPasswordConfirmDialog**: Buttons are now compact and right-aligned (`justify-end gap-2 wrap`) — previously rendered as full-width (`flex-1`) buttons that stretched across the footer
 - **MagicStarterDialogShell**: Body no longer creates a gap between scrollable content and the footer when content is shorter than the available height — switched from `SingleChildScrollView` to `ListView(shrinkWrap: true)`
-
-## [0.0.1-alpha.4] - 2026-03-29
-
-### ✨ New Features
-- **MagicStarterModalTheme**: Added configurable modal theme system via `MagicStarter.useModalTheme()` with 13 Wind UI className token fields (containerClassName, headerClassName, bodyClassName, footerClassName, titleClassName, descriptionClassName, primaryButtonClassName, secondaryButtonClassName, dangerButtonClassName, warningButtonClassName, errorClassName, inputClassName, maxWidth). All fields optional — zero breaking changes.
-- **MagicStarterConfirmDialog**: Generic confirmation dialog with `ConfirmDialogVariant` enum (`primary`, `danger`, `warning`). Static `show()` factory supports async `onConfirm` callback, custom labels, and description. Exported from barrel.
-- **Modal View Registry**: Extended `MagicStarterViewRegistry` with `registerModal(key, builder)`, `hasModal(key)`, and `makeModal(key)`. Three default modals auto-registered: `modal.confirm`, `modal.password_confirm`, `modal.two_factor`.
-- **MagicStarterDialogShell**: Internal composition widget with sticky header/footer and scrollable body. Uses Material Dialog shell + Wind UI content. Not exported — internal use only.
-
-### 🔧 Improvements
-- **PasswordConfirmDialog**: Now reads theme tokens from `MagicStarter.manager.modalTheme` instead of hardcoded classNames
-- **TwoFactorModal**: Now reads theme tokens from `MagicStarter.manager.modalTheme` instead of hardcoded classNames
-- **Team Settings**: Replaced Material `AlertDialog` with `MagicStarterConfirmDialog.show()` using `ConfirmDialogVariant.danger`
 
 ## [0.0.1-alpha.1] - 2026-03-25
 
