@@ -864,6 +864,33 @@ class MagicStarterLayoutTheme {
   /// goes silently wrong the first time Wind reorders it.
   final bool contentScrollPrimary;
 
+  /// Trigger className of the shell's notification bell, or null for the
+  /// package's own (`kNotificationDropdownTriggerClassName`).
+  ///
+  /// The five `notification*` fields reach the `NotificationDropdown` the
+  /// sidebar and the mobile header mount, so a host that styles the bell in its
+  /// own vocabulary answers once here and the control matches the rest of its
+  /// shell at every width. Each one REPLACES its default outright, layout tokens
+  /// included, as the widget's own overrides do; null keeps that default.
+  final String? notificationTriggerClassName;
+
+  /// Glyph className of the bell, or null for the package's own
+  /// (`kNotificationDropdownTriggerIconClassName`).
+  final String? notificationTriggerIconClassName;
+
+  /// Feed panel className, or null for the package's own
+  /// (`kNotificationDropdownPanelClassName`, whose `dark:bg-gray-800` is a cool
+  /// slate beside a warm dark palette).
+  final String? notificationPanelClassName;
+
+  /// Unread-count pill className, or null for the package's own
+  /// (`kNotificationDropdownBadgeClassName`).
+  final String? notificationBadgeClassName;
+
+  /// Unread-count text className, or null for the package's own
+  /// (`kNotificationDropdownBadgeTextClassName`).
+  final String? notificationBadgeTextClassName;
+
   const MagicStarterLayoutTheme({
     this.sidebarClassName =
         'h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700',
@@ -889,6 +916,11 @@ class MagicStarterLayoutTheme {
     this.bottomNavClassName = '',
     this.contentClassName = 'flex-1 min-h-0',
     this.contentScrollPrimary = false,
+    this.notificationTriggerClassName,
+    this.notificationTriggerIconClassName,
+    this.notificationPanelClassName,
+    this.notificationBadgeClassName,
+    this.notificationBadgeTextClassName,
   });
 }
 

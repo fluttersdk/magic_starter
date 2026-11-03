@@ -1014,7 +1014,10 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
     }
 
     // The widget belongs to `magic_notifications` now; its five callbacks are
-    // the same ones this shell has always passed.
+    // the same ones this shell has always passed. The classNames come from the
+    // layout theme, and a null one keeps the widget's own default.
+    final theme = MagicStarter.manager.layoutTheme;
+
     return NotificationDropdown(
       notificationStream: Notify.notifications(),
       onMarkAsRead: (id) => Notify.markAsRead(id),
@@ -1022,6 +1025,21 @@ class _MagicStarterAppLayoutState extends State<MagicStarterAppLayout> {
       onNotificationTap: (notification) =>
           MagicRoute.to(notification.actionUrl ?? '/'),
       onViewAll: () => MagicRoute.to(MagicStarterConfig.notificationsRoute()),
+      triggerClassName:
+          theme.notificationTriggerClassName ??
+          kNotificationDropdownTriggerClassName,
+      triggerIconClassName:
+          theme.notificationTriggerIconClassName ??
+          kNotificationDropdownTriggerIconClassName,
+      panelClassName:
+          theme.notificationPanelClassName ??
+          kNotificationDropdownPanelClassName,
+      badgeClassName:
+          theme.notificationBadgeClassName ??
+          kNotificationDropdownBadgeClassName,
+      badgeTextClassName:
+          theme.notificationBadgeTextClassName ??
+          kNotificationDropdownBadgeTextClassName,
     );
   }
 }

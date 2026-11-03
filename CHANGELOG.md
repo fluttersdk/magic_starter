@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MagicStarterLayoutTheme` styles the shell's notification bell.** `notificationTriggerClassName`, `notificationTriggerIconClassName`, `notificationPanelClassName`, `notificationBadgeClassName` and `notificationBadgeTextClassName` reach the `NotificationDropdown` the sidebar and the mobile header mount. The bell shipped Wind's own palette (`dark:bg-gray-800` is a cool slate), and the layout offered a host no way to restyle it, so a host with its own dark palette saw a panel that matched nothing beside it. A null field keeps the widget's default, so a host that sets none sees no change. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/layouts/magic_starter_app_layout.dart`)
+
 ## [0.0.64] - 2026-11-03
 
 ### Added
