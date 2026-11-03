@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../facades/magic_starter.dart';
+import '../components/dialog/dialog.dart';
+import '../components/dialog/modal_presenter.dart';
 import 'magic_starter_confirm_dialog.dart';
 
 /// A reusable dialog widget that prompts the user to confirm their password.
@@ -54,9 +57,9 @@ class MagicStarterPasswordConfirmDialog extends StatefulWidget {
     Future<String?> Function(String password)? onConfirm,
     ConfirmDialogVariant variant = ConfirmDialogVariant.primary,
   }) {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
+    return ModalPresenter.show<bool>(
+      context,
+      dismissible: false,
       builder: (_) => MagicStarterPasswordConfirmDialog(
         title: title,
         description: description,
@@ -129,92 +132,54 @@ class _MagicStarterPasswordConfirmDialogState
   @override
   Widget build(BuildContext context) {
     final theme = MagicStarter.manager.modalTheme;
-    final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight =
-        (MediaQuery.sizeOf(context).height -
-                viewPadding.top -
-                viewPadding.bottom)
-            .clamp(0.0, double.infinity);
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: theme.maxWidth,
-          maxHeight: safeHeight * 0.85,
-        ),
-        child: SingleChildScrollView(
-          child: WDiv(
-            className:
-                '${theme.containerClassName} flex flex-col w-full overflow-hidden',
-            children: [
-              // Header
-              WDiv(
-                className: theme.headerClassName,
-                children: [
-                  WText(
-                    widget.title ?? trans('profile.confirm_password'),
-                    className: theme.titleClassName,
-                  ),
-                  WText(
-                    widget.description ??
-                        trans('profile.confirm_password_description'),
-                    className: theme.descriptionClassName,
-                  ),
-                ],
+    // On the shared MSDialog shell, so the sheet presentation draws the sheet
+    // panel here too.
+    final Widget dialog = MSDialog(
+      title: widget.title ?? trans('profile.confirm_password'),
+      description:
+          widget.description ?? trans('profile.confirm_password_description'),
+      body: WDiv(
+        className: 'flex flex-col gap-4',
+        children: [
+          WFormInput(
+            controller: _passwordController,
+            type: _obscure ? InputType.password : InputType.text,
+            suffix: WAnchor(
+              onTap: () => setState(() => _obscure = !_obscure),
+              child: WIcon(
+                _obscure ? _iconVisible : _iconHidden,
+                className: 'text-fg-muted text-xl',
               ),
-
-              // Body
-              WDiv(
-                className: theme.bodyClassName,
-                children: [
-                  WFormInput(
-                    controller: _passwordController,
-                    type: _obscure ? InputType.password : InputType.text,
-                    suffix: WAnchor(
-                      onTap: () => setState(() => _obscure = !_obscure),
-                      child: WIcon(
-                        _obscure ? _iconVisible : _iconHidden,
-                        className: 'text-fg-muted text-xl',
-                      ),
-                    ),
-                    className: '${theme.inputClassName} error:border-red-500',
-                  ),
-                ],
-              ),
-
-              // Inline error message (from async onConfirm)
-              if (_errorMessage != null)
-                WDiv(
-                  className: theme.bodyClassName,
-                  child: WText(_errorMessage!, className: theme.errorClassName),
-                ),
-
-              // Footer
-              WDiv(
-                className:
-                    '${theme.footerClassName} flex flex-row w-full justify-end gap-2 wrap',
-                children: [
-                  WAnchor(
-                    onTap: _isLoading ? null : _onCancel,
-                    child: WDiv(
-                      className: theme.secondaryButtonClassName,
-                      child: WText(trans('common.cancel')),
-                    ),
-                  ),
-                  WButton(
-                    onTap: _isLoading ? null : _onConfirm,
-                    isLoading: _isLoading,
-                    className: _resolveConfirmClassName(),
-                    child: WText(trans('common.confirm')),
-                  ),
-                ],
-              ),
-            ],
+            ),
+            className: '${theme.inputClassName} error:border-red-500',
           ),
-        ),
+          // Inline error message (from async onConfirm).
+          if (_errorMessage != null)
+            WText(_errorMessage!, className: theme.errorClassName),
+        ],
+      ),
+      footerBuilder: (_) => WDiv(
+        className: 'flex flex-row w-full justify-end gap-2 wrap',
+        children: [
+          WAnchor(
+            onTap: _isLoading ? null : _onCancel,
+            child: WDiv(
+              className: theme.secondaryButtonClassName,
+              child: WText(trans('common.cancel')),
+            ),
+          ),
+          WButton(
+            onTap: _isLoading ? null : _onConfirm,
+            isLoading: _isLoading,
+            className: _resolveConfirmClassName(),
+            child: WText(trans('common.confirm')),
+          ),
+        ],
       ),
     );
+
+    // Back follows Cancel: off while the request is in flight.
+    return PopScope(canPop: !_isLoading, child: dialog);
   }
 }

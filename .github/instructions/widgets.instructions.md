@@ -7,7 +7,7 @@ applyTo: 'lib/src/ui/widgets/**/*.dart'
 # UI Widgets
 
 - Class hierarchy: `extends StatefulWidget` or `extends StatelessWidget` — NOT MagicStatefulView
-- Dialog factory: `static Future<T?> show(BuildContext context, ...)` with `showDialog()` or `showModalBottomSheet()`
+- Dialog factory: `static Future<T?> show(BuildContext context, ...)` wrapping `ModalPresenter.show()` on an `MSDialog` body
 - Password confirm dialog: inline error handling via `setState()` — never auto-close on error
 - Card widget: `noPadding` option for full-bleed list content inside card body; `variant` enum (`CardVariant.surface` default, `CardVariant.inset`, `CardVariant.elevated`) controls background/border/shadow; title in `noPadding` mode gets `px-6 pt-6 pb-3` so it aligns with row content
 - Auth form card: wraps `WDiv` + `WText` title + child, reusable across login/register/forgot/reset

@@ -275,11 +275,11 @@ void main() {
         findsOneWidget,
       );
 
-      // ListView must be present for scrolling.
+      // The scroll view the header and body share must be present.
       final shellFinder = find.byType(MagicStarterDialogShell);
       final listViewFinder = find.descendant(
         of: shellFinder,
-        matching: find.byType(ListView),
+        matching: find.byType(CustomScrollView),
       );
       expect(listViewFinder, findsOneWidget);
 

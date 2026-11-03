@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../facades/magic_starter.dart';
 import '../components/button/index.dart';
+import '../components/dialog/dialog.dart';
+import '../components/dialog/modal_presenter.dart';
 
 /// A multi-step wizard modal widget for Two-Factor Authentication (2FA) setup.
 ///
@@ -26,20 +28,48 @@ class MagicStarterTwoFactorModal extends StatefulWidget {
 
   /// Helper method to display the 2FA setup modal.
   ///
-  /// Returns a `Future<bool>` which resolves to `true` if the wizard was
-  /// completed successfully, or `false`/`null` if cancelled.
+  /// Returns a `Future<bool>` which resolves to `true` once [onConfirm] has
+  /// accepted a code, however the modal is closed afterwards (Done, a scrim
+  /// tap, back, a drag down): the server enabled two-factor at that point, and
+  /// the caller must not report it as off. Before that it resolves `false`.
+  ///
+  /// Closed while a code is still being checked (a sheet dragged down), the
+  /// Future resolves only when that [onConfirm] call settles, however long it
+  /// takes: `true` if it accepted the code, `false` if it refused or threw.
   static Future<bool> show(
     BuildContext context, {
     required Map<String, dynamic> setupData,
     required Future<bool> Function(String code) onConfirm,
   }) {
-    return showDialog<bool>(
-      context: context,
+    bool enabled = false;
+    Future<bool>? inFlight;
+
+    return ModalPresenter.show<bool>(
+      context,
       builder: (_) => MagicStarterTwoFactorModal(
         setupData: setupData,
-        onConfirm: onConfirm,
+        onConfirm: (code) {
+          final Future<bool> attempt = onConfirm(code).then((accepted) {
+            enabled = accepted || enabled;
+
+            return accepted;
+          });
+          inFlight = attempt;
+
+          return attempt;
+        },
       ),
-    ).then((value) => value ?? false);
+    ).then((value) async {
+      // A sheet dragged down while a code is being checked closes before the
+      // server answers, and the answer decides whether two-factor is on. A
+      // failed check enables nothing; the wizard's own handler logs it.
+      final Future<bool>? pending = inFlight;
+      if (pending != null) {
+        await pending.catchError((Object _) => false);
+      }
+
+      return (value ?? false) || enabled;
+    });
   }
 
   @override
@@ -55,8 +85,7 @@ class _MagicStarterTwoFactorModalState
   bool _isLoading = false;
   String? _errorMessage;
 
-  static const _footerClassName =
-      'flex flex-row w-full justify-end gap-2 wrap mt-2';
+  static const _footerClassName = 'flex flex-row w-full justify-end gap-2 wrap';
 
   @override
   void dispose() {
@@ -106,6 +135,7 @@ class _MagicStarterTwoFactorModalState
   }
 
   void _handleCancel() {
+    if (_isLoading) return;
     Navigator.of(context).pop(false);
   }
 
@@ -119,7 +149,7 @@ class _MagicStarterTwoFactorModalState
     final secret = widget.setupData['secret'] as String?;
 
     return WDiv(
-      className: 'flex flex-col gap-5 px-6 pb-6',
+      className: 'flex flex-col gap-5',
       children: [
         WText(
           trans('profile.two_factor_setup_description'),
@@ -157,23 +187,28 @@ class _MagicStarterTwoFactorModalState
         ),
         if (_errorMessage != null)
           WText(_errorMessage!, className: theme.errorClassName),
-        WDiv(
-          className: _footerClassName,
-          children: [
-            WAnchor(
-              onTap: _handleCancel,
-              child: WDiv(
-                className: theme.secondaryButtonClassName,
-                child: WText(trans('common.cancel')),
-              ),
-            ),
-            WButton(
-              onTap: _isLoading ? null : _handleConfirm,
-              isLoading: _isLoading,
-              className: theme.primaryButtonClassName,
-              child: WText(trans('common.confirm')),
-            ),
-          ],
+      ],
+    );
+  }
+
+  Widget _buildSetupFooter() {
+    final theme = MagicStarter.manager.modalTheme;
+
+    return WDiv(
+      className: _footerClassName,
+      children: [
+        WAnchor(
+          onTap: _isLoading ? null : _handleCancel,
+          child: WDiv(
+            className: theme.secondaryButtonClassName,
+            child: WText(trans('common.cancel')),
+          ),
+        ),
+        WButton(
+          onTap: _isLoading ? null : _handleConfirm,
+          isLoading: _isLoading,
+          className: theme.primaryButtonClassName,
+          child: WText(trans('common.confirm')),
         ),
       ],
     );
@@ -188,7 +223,7 @@ class _MagicStarterTwoFactorModalState
         [];
 
     return WDiv(
-      className: 'flex flex-col gap-5 px-6 pb-6',
+      className: 'flex flex-col gap-5',
       children: [
         WText(
           trans('profile.two_factor_recovery_codes_description'),
@@ -224,15 +259,20 @@ class _MagicStarterTwoFactorModalState
             ),
           ],
         ),
-        WDiv(
-          className: _footerClassName,
-          children: [
-            WButton(
-              onTap: _handleDone,
-              className: theme.primaryButtonClassName,
-              child: WText(trans('common.done')),
-            ),
-          ],
+      ],
+    );
+  }
+
+  Widget _buildRecoveryFooter() {
+    final theme = MagicStarter.manager.modalTheme;
+
+    return WDiv(
+      className: _footerClassName,
+      children: [
+        WButton(
+          onTap: _handleDone,
+          className: theme.primaryButtonClassName,
+          child: WText(trans('common.done')),
         ),
       ],
     );
@@ -240,40 +280,18 @@ class _MagicStarterTwoFactorModalState
 
   @override
   Widget build(BuildContext context) {
-    final theme = MagicStarter.manager.modalTheme;
-    final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight =
-        (MediaQuery.sizeOf(context).height -
-                viewPadding.top -
-                viewPadding.bottom)
-            .clamp(0.0, double.infinity);
+    final bool setup = _currentStep == 0;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: theme.maxWidth,
-          maxHeight: safeHeight * 0.85,
-        ),
-        child: SingleChildScrollView(
-          child: WDiv(
-            className:
-                '${theme.containerClassName} flex flex-col w-full overflow-hidden',
-            children: [
-              WDiv(
-                className: theme.headerClassName,
-                children: [
-                  WText(
-                    trans('profile.two_factor_auth'),
-                    className: theme.titleClassName,
-                  ),
-                ],
-              ),
-              _currentStep == 0 ? _buildSetupStep() : _buildRecoveryStep(),
-            ],
-          ),
-        ),
+    // On the shared MSDialog shell, so the sheet presentation draws the sheet
+    // panel here too; each step's actions sit in the sticky footer. Back and a
+    // scrim tap follow Cancel, off while a code is being checked.
+    return PopScope(
+      canPop: !_isLoading,
+      child: MSDialog(
+        title: trans('profile.two_factor_auth'),
+        body: setup ? _buildSetupStep() : _buildRecoveryStep(),
+        footerBuilder: (_) =>
+            setup ? _buildSetupFooter() : _buildRecoveryFooter(),
       ),
     );
   }

@@ -1,19 +1,33 @@
-import 'package:flutter/material.dart' as m show Colors, showDialog, Dialog;
+import 'package:flutter/material.dart'
+    as m
+    show Colors, Dialog, ModalBottomSheetRoute;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
+import '../../../configuration/magic_starter_theme.dart';
 import '../../../facades/magic_starter.dart';
+import '../bottom_sheet/bottom_sheet_panel.dart';
+import 'modal_presenter.dart';
+import 'modal_sections.dart';
 
 /// A reusable dialog component providing consistent Wind UI chrome driven by
 /// `MagicStarter.manager.modalTheme` tokens.
 ///
-/// Wraps the Material dialog shell with a sticky header (title + description),
-/// a scrollable body, and an optional sticky footer. Safe-area computation
+/// Wraps the Material dialog shell with a header (title + description), a
+/// scrollable body and an optional fixed footer. The header shares the body's
+/// scroll view: it stays pinned while it takes at most half of it and scrolls
+/// with the body above that. Safe-area computation
 /// subtracts system insets so the dialog never clips behind notches or home
 /// indicators on mobile.
 ///
 /// All classNames are read from the modal theme at build time; override via
 /// `MagicStarter.useModalTheme()` before the first dialog is shown.
+///
+/// Built inside a bottom-sheet route, which [show] opens when the modal
+/// theme's `presentation` is [MagicStarterModalPresentation.sheet], the widget
+/// draws the `MSBottomSheet` panel (drag handle, full width, keyboard and
+/// home-indicator insets) with the same header, body and footer instead of
+/// the dialog shell.
 ///
 /// ### Example
 /// ```dart
@@ -29,7 +43,7 @@ import '../../../facades/magic_starter.dart';
 /// ```
 @immutable
 class MSDialog extends StatelessWidget {
-  /// Optional heading rendered in the sticky header section.
+  /// Optional heading rendered in the header section.
   final String? title;
 
   /// Optional sub-heading rendered below [title].
@@ -62,6 +76,10 @@ class MSDialog extends StatelessWidget {
   });
 
   /// Opens the dialog and resolves when it is dismissed.
+  ///
+  /// With `MagicStarterModalTheme.presentation` set to
+  /// [MagicStarterModalPresentation.sheet] the same content opens as a bottom
+  /// sheet instead; a scrim tap or a drag down closes it with `null`.
   static Future<T?> show<T>(
     BuildContext context, {
     String? title,
@@ -70,8 +88,8 @@ class MSDialog extends StatelessWidget {
     Widget Function(BuildContext dialogContext)? footerBuilder,
     bool scrollable = true,
   }) {
-    return m.showDialog<T>(
-      context: context,
+    return ModalPresenter.show<T>(
+      context,
       builder: (_) => MSDialog(
         title: title,
         description: description,
@@ -84,9 +102,25 @@ class MSDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Inside a bottom-sheet route (the sheet presentation), draw the sheet
+    //    panel rather than a dialog shell inside a sheet. The route decides,
+    //    not the theme, so a dialog a host opens itself keeps its shell.
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    if (route is m.ModalBottomSheetRoute) {
+      return MSBottomSheetPanel(
+        showHandle: route.enableDrag,
+        title: title,
+        description: description,
+        body: body,
+        footerBuilder: footerBuilder,
+        scrollable: scrollable,
+        footerKey: const Key('magic_starter_dialog_shell_footer'),
+      );
+    }
+
     final theme = MagicStarter.manager.modalTheme;
 
-    // 1. Compute safe height, subtracting system insets.
+    // 2. Compute safe height, subtracting system insets.
     final viewPadding = MediaQuery.viewPaddingOf(context);
     final safeHeight =
         (MediaQuery.sizeOf(context).height -
@@ -94,7 +128,7 @@ class MSDialog extends StatelessWidget {
                 viewPadding.bottom)
             .clamp(0.0, double.infinity);
 
-    // 2. Build Material dialog shell with Wind UI content inside.
+    // 3. Build Material dialog shell with Wind UI content inside.
     return m.Dialog(
       backgroundColor: m.Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -105,48 +139,37 @@ class MSDialog extends StatelessWidget {
         ),
         child: WDiv(
           className: '${theme.containerClassName} w-full overflow-hidden',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 3. Header section: title + description.
-              if (title != null || description != null)
-                WDiv(
-                  className: theme.headerClassName,
-                  children: [
-                    if (title != null)
-                      WText(title!, className: theme.titleClassName),
-                    if (description != null)
-                      WText(
-                        description!,
-                        className: theme.descriptionClassName,
-                      ),
-                  ],
-                ),
-              // 4. Body: a ListView that collapses to content height, or the
-              //    bounded height handed to a body that scrolls itself.
-              Flexible(
-                child: scrollable
-                    ? ListView(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        children: [
-                          WDiv(className: theme.bodyClassName, child: body),
-                        ],
-                      )
-                    : WDiv(className: theme.bodyClassName, child: body),
-              ),
-              // 5. Sticky footer: Builder gives footer access to dialog
-              //    context so Navigator.of(dialogContext) works correctly.
-              if (footerBuilder != null)
-                Builder(
-                  builder: (dialogContext) => WDiv(
-                    key: const Key('magic_starter_dialog_shell_footer'),
-                    className: theme.footerClassName,
-                    child: footerBuilder!(dialogContext),
-                  ),
-                ),
-            ],
+          child: ModalSections(
+            scrollable: scrollable,
+            // 4. Header section: title + description.
+            header: title != null || description != null
+                ? WDiv(
+                    className: theme.headerClassName,
+                    children: [
+                      if (title != null)
+                        WText(title!, className: theme.titleClassName),
+                      if (description != null)
+                        WText(
+                          description!,
+                          className: theme.descriptionClassName,
+                        ),
+                    ],
+                  )
+                : null,
+            // 5. Body: in the scroll view it shares with the header, or the
+            //    bounded height handed to a body that scrolls itself.
+            body: WDiv(className: theme.bodyClassName, child: body),
+            // 6. Sticky footer: Builder gives footer access to dialog
+            //    context so Navigator.of(dialogContext) works correctly.
+            footer: footerBuilder != null
+                ? Builder(
+                    builder: (dialogContext) => WDiv(
+                      key: const Key('magic_starter_dialog_shell_footer'),
+                      className: theme.footerClassName,
+                      child: footerBuilder!(dialogContext),
+                    ),
+                  )
+                : null,
           ),
         ),
       ),

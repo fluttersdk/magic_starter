@@ -151,10 +151,24 @@ class MagicStarterNavigationTheme {
 // Modal theme
 // ---------------------------------------------------------------------------
 
-/// Theme configuration for modal/dialog colors and styling.
+/// How every modal the starter opens is presented.
+enum MagicStarterModalPresentation {
+  /// A centered dialog at every width, capped at
+  /// [MagicStarterModalTheme.maxWidth]. The default.
+  dialog,
+
+  /// A bottom sheet at every width, capped by Flutter's Material 3 sheet width
+  /// (640 px) on a wide screen. `MSBottomSheet.show(dialogBreakpoint:)` then
+  /// never swaps to a dialog.
+  sheet,
+}
+
+/// Theme configuration for modal/dialog colors, styling and presentation.
 ///
 /// Allows consumer apps to override the default Wind UI class names used for
-/// modal containers, headers, bodies, footers, buttons, inputs, and typography.
+/// modal containers, headers, bodies, footers, buttons, inputs, and typography,
+/// the dialog width ([maxWidth]) and whether the starter's modals open as a
+/// dialog or a bottom sheet ([presentation]).
 ///
 /// All fields are optional; defaults preserve a sensible dark-mode-aware style
 /// with no breaking changes.
@@ -241,6 +255,14 @@ class MagicStarterModalTheme {
   /// Defaults to `448.0`.
   final double maxWidth;
 
+  /// Whether `MSDialog.show`, `MSConfirmDialog.show` and the starter's own
+  /// dialogs (password confirm, step up, two factor) open as a centered dialog
+  /// or as the same bottom sheet `MSBottomSheet` draws, at every width.
+  ///
+  /// Read when a modal is opened. Defaults to
+  /// [MagicStarterModalPresentation.dialog].
+  final MagicStarterModalPresentation presentation;
+
   const MagicStarterModalTheme({
     this.containerClassName = 'bg-white dark:bg-gray-800 rounded-2xl',
     this.headerClassName = 'px-6 pt-6 pb-4',
@@ -261,6 +283,7 @@ class MagicStarterModalTheme {
     this.inputClassName =
         'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
     this.maxWidth = 448.0,
+    this.presentation = MagicStarterModalPresentation.dialog,
   });
 
   /// Returns a copy of this theme with the given fields replaced.
@@ -289,6 +312,7 @@ class MagicStarterModalTheme {
     String? errorClassName,
     String? inputClassName,
     double? maxWidth,
+    MagicStarterModalPresentation? presentation,
   }) {
     return MagicStarterModalTheme(
       containerClassName: containerClassName ?? this.containerClassName,
@@ -308,6 +332,7 @@ class MagicStarterModalTheme {
       errorClassName: errorClassName ?? this.errorClassName,
       inputClassName: inputClassName ?? this.inputClassName,
       maxWidth: maxWidth ?? this.maxWidth,
+      presentation: presentation ?? this.presentation,
     );
   }
 }
