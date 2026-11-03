@@ -368,6 +368,76 @@ void main() {
   });
 
   group('layout theme', () {
+    testWidgets(
+      'the notification bell takes its classNames from the LayoutTheme',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Config.set('magic_starter.features.notifications', true);
+        MagicStarter.useLayoutTheme(
+          const MagicStarterLayoutTheme(
+            notificationTriggerClassName: 'w-9 h-9 rounded-md',
+            notificationTriggerIconClassName: 'text-[18px] text-fg-muted',
+            notificationPanelClassName: 'w-80 bg-surface-container',
+            notificationBadgeClassName: 'min-w-[16px] h-4 bg-destructive',
+            notificationBadgeTextClassName: 'text-[10px] text-on-destructive',
+          ),
+        );
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final bell = tester.widget<NotificationDropdown>(
+          find.byType(NotificationDropdown).first,
+        );
+
+        expect(bell.triggerClassName, 'w-9 h-9 rounded-md');
+        expect(bell.triggerIconClassName, 'text-[18px] text-fg-muted');
+        expect(bell.panelClassName, 'w-80 bg-surface-container');
+        expect(bell.badgeClassName, 'min-w-[16px] h-4 bg-destructive');
+        expect(bell.badgeTextClassName, 'text-[10px] text-on-destructive');
+      },
+    );
+
+    testWidgets(
+      'the notification bell keeps the widget defaults when the LayoutTheme names none',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Config.set('magic_starter.features.notifications', true);
+        MagicStarter.useLayoutTheme(const MagicStarterLayoutTheme());
+
+        await tester.pumpWidget(createApp(child: const SizedBox()));
+        await tester.pumpAndSettle();
+
+        final bell = tester.widget<NotificationDropdown>(
+          find.byType(NotificationDropdown).first,
+        );
+
+        expect(bell.triggerClassName, kNotificationDropdownTriggerClassName);
+        expect(
+          bell.triggerIconClassName,
+          kNotificationDropdownTriggerIconClassName,
+        );
+        expect(bell.panelClassName, kNotificationDropdownPanelClassName);
+        expect(bell.badgeClassName, kNotificationDropdownBadgeClassName);
+        expect(
+          bell.badgeTextClassName,
+          kNotificationDropdownBadgeTextClassName,
+        );
+      },
+    );
+
     testWidgets('sidebar renders with custom sidebarWidth from LayoutTheme', (
       tester,
     ) async {
