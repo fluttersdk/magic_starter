@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -838,6 +839,190 @@ void main() {
       await flingFrom(tester, tester.getCenter(find.text('Move')));
 
       expect(find.byType(MSBottomSheet), findsNothing);
+    });
+  });
+
+  // A pinned header has no background of its own (`headerClassName` carries
+  // padding only), so a body scrolled under it must be clipped, or its
+  // content shows through the title. Checked by pixels, not finders.
+  group('a body scrolled under the pinned header', () {
+    const Color marker = Color(0xFFFF00FF);
+    final GlobalKey boundary = GlobalKey();
+
+    Future<void> pumpBoundary(
+      WidgetTester tester,
+      Future<Object?> Function(BuildContext) open,
+    ) async {
+      final themeData = WindThemeData(colors: {'primary': Colors.indigo});
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: boundary,
+          child: WindTheme(
+            data: themeData,
+            child: MaterialApp(
+              theme: themeData.toThemeData(),
+              home: Scaffold(
+                body: Builder(
+                  builder: (context) => TextButton(
+                    onPressed: () => open(context),
+                    child: const Text('Open'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+    }
+
+    /// Marker pixels inside [rect], read off the rendered frame.
+    Future<int> markerPixels(WidgetTester tester, Rect rect) async {
+      final RenderRepaintBoundary render =
+          boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final ByteData bytes = (await tester.runAsync<ByteData?>(() async {
+        final image = await render.toImage();
+        final ByteData? data = await image.toByteData();
+        image.dispose();
+
+        return data;
+      }))!;
+      final int width = render.size.width.toInt();
+      int count = 0;
+      for (int y = rect.top.ceil(); y < rect.bottom.floor(); y++) {
+        for (int x = rect.left.ceil(); x < rect.right.floor(); x++) {
+          final int i = (y * width + x) * 4;
+          if (bytes.getUint8(i) > 200 &&
+              bytes.getUint8(i + 1) < 60 &&
+              bytes.getUint8(i + 2) > 200) {
+            count++;
+          }
+        }
+      }
+
+      return count;
+    }
+
+    Widget body() => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const ColoredBox(color: marker, child: SizedBox(height: 60)),
+        for (int i = 0; i < 40; i++) Text('row $i'),
+      ],
+    );
+
+    final Map<String, Future<Object?> Function(BuildContext)> openers = {
+      'MSDialog.show': (context) =>
+          MSDialog.show<void>(context, title: 'Header', body: body()),
+      'MSBottomSheet.show': (context) =>
+          MSBottomSheet.show<void>(context, title: 'Header', body: body()),
+    };
+
+    /// The header block: the padded box around the title.
+    Rect headerRect(WidgetTester tester) => tester.getRect(
+      find.ancestor(of: find.text('Header'), matching: find.byType(WDiv)).first,
+    );
+
+    Future<void> scrollBy(WidgetTester tester, double pixels) async {
+      tester
+          .state<ScrollableState>(
+            find.ancestor(
+              of: find.text('row 0'),
+              matching: find.byType(Scrollable),
+            ),
+          )
+          .position
+          .jumpTo(pixels);
+      await tester.pump();
+    }
+
+    for (final presentation in MagicStarterModalPresentation.values) {
+      for (final entry in openers.entries) {
+        testWidgets(
+          '${presentation.name}: ${entry.key} hides the body under the header',
+          (tester) async {
+            setSize(tester, const Size(400, 900));
+            usePresentation(presentation);
+            await pumpBoundary(tester, entry.value);
+            final Rect header = headerRect(tester);
+            expect(await markerPixels(tester, header), 0);
+
+            await scrollBy(tester, 40);
+
+            expect(headerRect(tester), header, reason: 'the header is pinned');
+            expect(await markerPixels(tester, header), 0);
+            expect(
+              await markerPixels(
+                tester,
+                Rect.fromLTRB(
+                  header.left,
+                  header.bottom,
+                  header.right,
+                  header.bottom + 15,
+                ),
+              ),
+              greaterThan(0),
+              reason: 'the marker shows right under the header',
+            );
+          },
+        );
+      }
+    }
+
+    for (final presentation in MagicStarterModalPresentation.values) {
+      testWidgets(
+        '${presentation.name}: focusing a field under the header reveals it',
+        (tester) async {
+          setSize(tester, const Size(400, 900));
+          usePresentation(presentation);
+          await pumpBoundary(
+            tester,
+            (context) => MSDialog.show<void>(
+              context,
+              title: 'Header',
+              body: Column(
+                children: [
+                  WFormInput(controller: TextEditingController()),
+                  for (int i = 0; i < 40; i++) Text('row $i'),
+                ],
+              ),
+            ),
+          );
+          await scrollBy(tester, 30);
+          final Finder field = find.descendant(
+            of: find.byType(WFormInput),
+            matching: find.byType(EditableText),
+          );
+          expect(
+            tester.getRect(field).top,
+            lessThan(headerRect(tester).bottom),
+          );
+
+          await tester.showKeyboard(field);
+          await tester.pumpAndSettle();
+
+          expect(
+            tester.getRect(field).top,
+            greaterThanOrEqualTo(headerRect(tester).bottom - 0.5),
+          );
+        },
+      );
+    }
+
+    testWidgets('an unpinned header scrolls away and shows the body', (
+      tester,
+    ) async {
+      setSize(tester, const Size(844, 390));
+      tester.view.viewInsets = const FakeViewPadding(bottom: 200);
+      addTearDown(tester.view.resetViewInsets);
+      await pumpBoundary(tester, openers['MSDialog.show']!);
+      final Rect header = headerRect(tester);
+
+      await scrollBy(tester, 40);
+
+      expect(headerRect(tester).top, header.top - 40);
+      expect(await markerPixels(tester, header), greaterThan(0));
     });
   });
 

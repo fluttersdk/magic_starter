@@ -73,7 +73,7 @@ class ModalSections extends StatelessWidget {
                   shrinkWrap: true,
                   slivers: [
                     if (header != null) _ModalHeaderSliver(child: header),
-                    SliverToBoxAdapter(child: body),
+                    _ModalBodySliver(child: body),
                   ],
                 )
               : body,
@@ -82,6 +82,53 @@ class ModalSections extends StatelessWidget {
         ?bottom,
       ],
     );
+  }
+}
+
+/// The body sliver: a box adapter that paints nothing under a pinned header.
+///
+/// The header has no background of its own (`headerClassName` is padding), so
+/// the part of the body the header overlaps (the viewport's `overlap`) is
+/// clipped away instead of painted over, whatever the theme's colours.
+class _ModalBodySliver extends SingleChildRenderObjectWidget {
+  const _ModalBodySliver({required Widget super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderModalBodySliver();
+}
+
+class _RenderModalBodySliver extends RenderSliverToBoxAdapter {
+  final LayerHandle<ClipRectLayer> _clip = LayerHandle<ClipRectLayer>();
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final double overlap = constraints.overlap;
+    if (overlap <= 0 || geometry == null) {
+      _clip.layer = null;
+      super.paint(context, offset);
+
+      return;
+    }
+
+    _clip.layer = context.pushClipRect(
+      needsCompositing,
+      offset,
+      Rect.fromLTWH(
+        0,
+        overlap,
+        constraints.crossAxisExtent,
+        math.max(0, geometry!.paintExtent - overlap),
+      ),
+      super.paint,
+      oldLayer: _clip.layer,
+    );
+  }
+
+  @override
+  void dispose() {
+    _clip.layer = null;
+    super.dispose();
   }
 }
 
