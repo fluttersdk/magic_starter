@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.68] - 2026-11-04
+
 ### Added
 
 - **Sign-in handoff: `/auth/handoff?code=&next=` behind the `handoff` feature (default off).** Another surface that has authenticated the visitor gets a one-time code from `magic-starter-laravel`'s `POST auth/handoff`; the page trades it at `POST auth/handoff/exchange` for the answer a login gives plus `data.next`, so no bearer token travels in a url. The page asks "Sign in as <email or name>?" before anything changes, with or without an open session: without one the question stops a login CSRF (a link carrying an attacker's own code signing the visitor in to the attacker's account). `handoff.confirm_without_session` (default `true`) is the one knob, for an app that accepts that risk to skip the tap; over an open session the page always asks. Continue signs any open session out through `MagicStarterAuthController.logout()`, then concludes through `completeSignIn` (a two-factor answer opens the challenge) and lands on `data.next` (the query `next` is ignored once a code is exchanged, since it is not bound to the code). Cancel goes home over a session, to the sign-in screen without one. A declined or abandoned answer's token is revoked with `POST auth/logout` presenting it, best effort and never touching the open session. A refused code changes nothing and shows one toast (`magic_starter.handoff.expired`) that never tells why. The exchange mints the token before the visitor confirms, so closing the tab on the question leaves that token until it is revoked by hand (Sanctum tokens do not expire here). The code stays in the browser history entry; removing it is the app's job. Without a code a valid `next` is carried: there when signed in, to `handoff.signed_out_route` (default `routes.login`) with `?next=` when not. The route has neither `guest` nor `auth` middleware, title key `magic_starter.titles.handoff`, view key `auth.handoff` (`MagicStarterHandoffView`), controller `MagicStarterHandoffController`. The exchange goes out on a bare driver without the facade's interceptors, so the auth interceptor's 401 refresh-or-logout path cannot fire for it and no recorder keeps the token; the code, the token and the email are never logged. New `en.stub` keys: `magic_starter.handoff.*`, `magic_starter.titles.handoff`. (`lib/src/http/controllers/magic_starter_handoff_controller.dart`, `lib/src/ui/views/auth/magic_starter_handoff_view.dart`, `lib/src/routes/auth_routes.dart`, `lib/src/configuration/magic_starter_config.dart`)
@@ -1070,65 +1072,3 @@ This is the only manual step.
 
 ### Fixed
 - **Notification-preference toggles now carry an accessible name and expose a single Semantics node.** Each channel toggle (`MSSwitch`) had no `semanticLabel` and sat beside a visible `WText` of the same channel name, so a screen reader announced a bare "switch" while the row exposed TWO nodes sharing the label. The switch now takes `semanticLabel: <channel name>` and the visible label is wrapped in `ExcludeSemantics`, so the row exposes one correctly named toggle. This also gives an accessibility / E2E lookup a single stable target instead of resolving the inert text first. Touches `lib/src/ui/views/notifications/magic_starter_notification_preferences_view.dart`.
-
-## [0.0.1-alpha.14] - 2026-04-16
-
-### ✨ New Features
-- **Unified Theme System**: Added `MagicStarterTheme` with 7 sub-themes (`form`, `card`, `navigation`, `modal`, `layout`, `pageHeader`, `auth`) set all theme tokens in one call via `MagicStarter.useTheme()`
-- **Builder Slots**: Added `MagicStarter.view.slot()` for partial view customization — override specific sections (header, footer, sidebar) without replacing the entire view
-- **Granular Publish Command**: `dart run magic_starter:publish --tag=views:auth.login` publishes a single view file to the host app for full ownership
-- **Auto-wire Published Views**: Published views are automatically wired into `AppServiceProvider` so they take effect immediately without manual registration
-- **Doctor: Published View Detection**: `dart run magic_starter:doctor` now detects published views and reports wiring status — flags views that are published but not registered
-- **Layout Theme Drawer Shade**: Added `drawerBackgroundLightShade` to `MagicStarterLayoutTheme` for consistent drawer background customization
-
-### 🐛 Bug Fixes
-- **CLI: Cross-platform paths**: Replaced POSIX string manipulation with `package:path` in publish and doctor commands for Windows compatibility
-- **CLI: boot() injection**: Publish auto-wire now locates the `boot()` method by signature and brace-depth tracking instead of fragile second-to-last `}` heuristic
-- **Team Settings**: Invite button now reads className from `MagicStarter.modalTheme.primaryButtonClassName` instead of hardcoded Wind UI tokens
-
-### 🧪 Tests
-- Added slot injection widget tests for 7 views: `forgot_password`, `reset_password`, `two_factor_challenge`, `otp_verify`, `teams.create`, `teams.invitation_accept`, `notifications.preferences`
-- Added `drawerBackgroundLightShade` default value test to theme test suite
-
-### 📚 Documentation
-- **Manager**: Added unified theme section, 5 new sub-theme sections (form, auth, card, page header, layout), updated facade methods table with all theme accessors
-- **View Registry**: Added Builder Slots section documenting slot/hasSlot/buildSlot API
-- **CLAUDE.md**: Added publish/uninstall commands, updated manager description, added customization gotchas, updated test count
-
-## [0.0.1-alpha.1] - 2026-03-25
-
-### ✨ Core Features
-- **Authentication**: Login, register, forgot/reset password with email and phone identity modes
-- **Guest Auth**: OTP-based phone login with send and verify flow
-- **Two-Factor Authentication**: Enable/disable 2FA with QR code setup, OTP confirmation, and recovery codes
-- **Social Login**: OAuth integration with configurable providers
-- **Profile Management**: Photo upload, email/password change, email verification, session management, timezone selection
-- **Extended Profile**: Additional profile fields with locale and timezone defaults
-- **Teams**: Create teams, switch active team, invite members, manage roles
-- **Notifications**: Real-time polling, mark read/unread, notification preference matrix
-- **Newsletter**: Simple subscribe/unsubscribe controller
-- **13 Feature Toggles**: All opt-in — teams, profile_photos, registration, two_factor, sessions, guest_auth, phone_otp, newsletter, email_verification, extended_profile, social_login, notifications, timezones
-- **9 Gate Abilities**: Authorization checks for profile sections (photo, email, phone, password, verify-email, two-factor, newsletter, sessions, delete-account)
-- **View Registry**: String-keyed view factory — host app can override any screen or layout
-- **Wind UI**: Tailwind-like className system — no Material widgets in layouts
-- **CLI Tools**: install, configure, doctor, publish, uninstall commands with stub templates
-- **2 Layouts**: AppLayout (authenticated) and GuestLayout (auth pages)
-- **12 Views**: 6 auth, 1 profile, 3 teams, 2 notifications
-- **10 Widgets**: Reusable Wind UI components (auth form card, card, password confirm dialog, team selector, notification dropdown, two-factor modal, timezone select, user profile dropdown, social divider, page header)
-
-### 🐛 Bug Fixes
-- **Timezone**: Fix API field name and add comprehensive null safety checks
-- **Auth**: Correct register endpoint from `/auth/login` to `/auth/register`
-- **UI**: Remove flex Row from password confirm dialog buttons to prevent overflow
-
-### 🔧 Improvements
-- **Auth Events**: Add auth restored listener for app reload on team switch
-- **Validation**: Add input validation and network error handling to auth controllers
-- **Config**: Add HTTP timeout and retry configuration
-- **i18n**: Add notification and network error translation keys to en.stub
-
-### 📚 Documentation
-- **README**: Full pub.dev-ready README with badges, features table, quick start guide
-- **doc/ folder**: Comprehensive documentation (installation, configuration, authentication, profile, teams, notifications, views, CLI, architecture)
-- **CLAUDE.md**: Rewrite to match Magic ecosystem format
-- **Publishing**: Package metadata, CI/CD workflows, issue templates, LICENSE
