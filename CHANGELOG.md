@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MSBottomSheet.show(canDismiss:, onDismissBlocked:)` holds a sheet with unsaved input open.** `canDismiss` is a `ValueListenable<bool>` read when the gesture lands, so a field that turns dirty after the sheet opened holds the next one. While it is false the sheet takes no drag down (its handle stays drawn), and a scrim tap or a screen reader's dismiss on it, Back and Escape leave it open and call `onDismissBlocked(sheetContext)`, where the app asks whether to discard (the package draws no such question); the dialog `dialogBreakpoint` swaps in is held the same way, barrier included. After a confirmed discard the caller closes it with `Navigator.of(sheetContext).pop()`, which skips the guard, so the guard need not be flipped; the opener's context would pop the wrong navigator, since the sheet sits on the root one. A `Navigator.pop` from the footer closes either too. Without the arguments nothing changes. Every starter sheet is now pushed on a package-internal `ModalBottomSheetRoute` subclass with the frame `showModalBottomSheet` built, because a sheet's drag closes through `Navigator.pop`, which a `PopScope` cannot refuse. (`lib/src/ui/components/bottom_sheet/`, `lib/src/ui/components/dialog/modal_presenter.dart`)
+
 ## [0.0.66] - 2026-11-03
 
 ### Added

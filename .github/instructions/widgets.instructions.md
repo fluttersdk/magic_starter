@@ -8,6 +8,7 @@ applyTo: 'lib/src/ui/widgets/**/*.dart'
 
 - Class hierarchy: `extends StatefulWidget` or `extends StatelessWidget` — NOT MagicStatefulView
 - Dialog factory: `static Future<T?> show(BuildContext context, ...)` wrapping `ModalPresenter.show()` on an `MSDialog` body
+- A modal that must not close on a gesture while its input is unsaved passes `canDismiss` and `onDismissBlocked` to `ModalPresenter.show()` / `showSheet()`; a `PopScope` of its own cannot stop a sheet's drag, which closes through `Navigator.pop`. `onDismissBlocked` gets the modal's context; a confirmed discard pops with it, never with the opener's (the modal sits on the root navigator).
 - Password confirm dialog: inline error handling via `setState()` — never auto-close on error
 - Card widget: `noPadding` option for full-bleed list content inside card body; `variant` enum (`CardVariant.surface` default, `CardVariant.inset`, `CardVariant.elevated`) controls background/border/shadow; title in `noPadding` mode gets `px-6 pt-6 pb-3` so it aligns with row content
 - Auth form card: wraps `WDiv` + `WText` title + child, reusable across login/register/forgot/reset

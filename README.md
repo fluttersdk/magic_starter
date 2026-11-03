@@ -351,6 +351,24 @@ MSPageScaffold(
 
 `MSBottomSheet.show(context, ..., dialogBreakpoint: 'lg')` follows the same idea for overlays: a sheet on a phone, an `MSDialog` from `lg`, from one call. A modal theme with `presentation: MagicStarterModalPresentation.sheet` ignores the breakpoint and keeps the sheet at every width.
 
+A sheet holding unsaved input passes `canDismiss` (a `ValueListenable<bool>`, read when the gesture lands) and `onDismissBlocked`: while the value is false a drag down is off, and a scrim tap (or a screen reader's dismiss on it), Back and Escape leave the sheet (or its dialog) open and call `onDismissBlocked` with the sheet's own context, where the app asks whether to discard. The handle stays drawn but does not drag while the guard refuses. The sheet sits on the root navigator, so once the person confirms, close it with `Navigator.of(sheetContext).pop()`: a `pop` skips the guard, so it need not be flipped, while a `maybePop` stays refused. The opener's `context` would pop the wrong navigator. The footer's own `Navigator.pop` closes it too.
+
+```dart
+final canDismiss = ValueNotifier<bool>(true);
+
+await MSBottomSheet.show(
+  context,
+  title: 'Edit item',
+  body: WFormInput(onChanged: (_) => canDismiss.value = false),
+  canDismiss: canDismiss,
+  onDismissBlocked: (sheetContext) async {
+    if (await askToDiscard(sheetContext) && sheetContext.mounted) {
+      Navigator.of(sheetContext).pop();
+    }
+  },
+);
+```
+
 ### MSCard
 
 Card wrapper with optional `title` slot, `noPadding` mode for full-bleed content, and three visual `variant` styles:

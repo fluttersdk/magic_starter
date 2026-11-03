@@ -12,7 +12,7 @@ Two files here are thin aliases kept for existing callers: `MagicStarterConfirmD
 ## Shape
 
 - Class hierarchy: `extends StatefulWidget` or `extends StatelessWidget`, NEVER `MagicStatefulView`.
-- Dialog factory: `static Future<T?> show(BuildContext context, ...)` wrapping `ModalPresenter.show()` on an `MSDialog` body (see `components.md`, Modal openers).
+- Dialog factory: `static Future<T?> show(BuildContext context, ...)` wrapping `ModalPresenter.show()` on an `MSDialog` body (see `components.md`, Modal openers). A modal holding unsaved input passes `canDismiss` and `onDismissBlocked` to it (see `components.md`, Dismiss guard).
 - Wind UI exclusively. No Material widgets, except `Icons.*` for icon data and the Material `Dialog` shell reached through `MSDialog`.
 - Dark mode: every colour token needs its `dark:` pair in the same className.
 - Never hardcode a dialog className. All modals read `MagicStarter.manager.modalTheme` at build time (`titleClassName`, `primaryButtonClassName`, `dangerButtonClassName`, ...).
