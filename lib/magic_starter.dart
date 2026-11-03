@@ -23,6 +23,7 @@ export 'src/http/controllers/magic_starter_profile_controller.dart';
 export 'src/http/controllers/magic_starter_team_controller.dart';
 export 'src/http/controllers/magic_starter_otp_controller.dart';
 export 'src/http/controllers/magic_starter_guest_auth_controller.dart';
+export 'src/http/controllers/magic_starter_handoff_controller.dart';
 export 'src/http/controllers/magic_starter_billing_controller.dart';
 
 /// `BillingCycle` is re-exported because `MagicStarterBillingController.cycle`
@@ -52,6 +53,7 @@ export 'src/ui/views/auth/magic_starter_reset_password_view.dart';
 export 'src/ui/views/auth/magic_starter_verify_email_view.dart';
 export 'src/ui/views/auth/magic_starter_two_factor_challenge_view.dart';
 export 'src/ui/views/auth/magic_starter_otp_verify_view.dart';
+export 'src/ui/views/auth/magic_starter_handoff_view.dart';
 export 'src/ui/views/profile/magic_starter_profile_settings_view.dart';
 export 'src/ui/views/support/magic_starter_feedback_view.dart';
 export 'src/ui/views/support/magic_starter_support_create_view.dart';

@@ -247,6 +247,16 @@
       "description": "Create a permanent account to keep your data and unlock all features.",
       "title": "Upgrade Your Guest Account"
     },
+    "handoff": {
+      "cancel_button": "Cancel",
+      "confirm_description": "You are signed in with another account on this device. Continue signs it out first.",
+      "confirm_description_signed_out": "You are about to sign in on this device.",
+      "confirm_title": "Sign in as :identity?",
+      "confirm_title_unknown": "Continue this sign-in?",
+      "continue_button": "Continue",
+      "expired": "This sign-in link has expired or was already used.",
+      "signing_in": "One moment while we sign you in."
+    },
     "nav": {
       "feedback": "Send feedback",
       "rate_us": "Rate us",
@@ -429,6 +439,7 @@
       "changelog": "What's new",
       "connected_accounts": "Connected Accounts",
       "forgot_password": "Forgot Password",
+      "handoff": "Signing In",
       "language": "Language",
       "login": "Sign In",
       "newsletter": "Newsletter",

@@ -248,4 +248,65 @@ void main() {
       expect(find.byType(EditableText), findsNWidgets(2));
     });
   });
+
+  _nextQueryTests();
+}
+
+/// The `?next=` handling, behind a real router so the page has a query.
+void _nextQueryTests() {
+  group('MagicStarterLoginView: ?next=', () {
+    setUp(() {
+      MagicApp.reset();
+      Magic.flush();
+      MagicRouter.reset();
+      Magic.singleton('log', () => LogManager());
+      Magic.singleton('magic_starter', () => MagicStarterManager());
+      Magic.put(MagicStarterAuthController());
+    });
+
+    tearDown(() {
+      MagicRouter.instance.pullIntendedUrl();
+      MagicRouter.reset();
+    });
+
+    Future<void> mount(WidgetTester tester, String location) async {
+      MagicRoute.page('/auth/login', () => const MagicStarterLoginView());
+      MagicRouter.instance.setInitialLocation(location);
+
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: MagicRouter.instance.routerConfig,
+          builder: (context, child) => WindTheme(
+            data: WindThemeData(),
+            child: Scaffold(body: SingleChildScrollView(child: child)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('stores a valid next as where the sign-in lands', (
+      tester,
+    ) async {
+      await mount(tester, '/auth/login?next=%2Fmonitors%2F42%3Ftab%3Dchecks');
+
+      expect(MagicRouter.instance.pullIntendedUrl(), '/monitors/42?tab=checks');
+    });
+
+    testWidgets('ignores an unsafe next', (tester) async {
+      await mount(tester, '/auth/login?next=%2F%2Fevil.example');
+
+      expect(MagicRouter.instance.hasIntendedUrl, isFalse);
+    });
+
+    testWidgets('without next it records nothing and keeps an earlier intent', (
+      tester,
+    ) async {
+      MagicRouter.instance.setIntendedUrl('/teams');
+
+      await mount(tester, '/auth/login');
+
+      expect(MagicRouter.instance.pullIntendedUrl(), '/teams');
+    });
+  });
 }

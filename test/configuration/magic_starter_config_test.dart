@@ -61,6 +61,10 @@ void main() {
         expect(MagicStarterConfig.hasAppUpdateFeatures(), isFalse);
       });
 
+      test('hasHandoffFeatures() returns false by default', () {
+        expect(MagicStarterConfig.hasHandoffFeatures(), isFalse);
+      });
+
       test('hasEmailVerificationFeatures() returns false by default', () {
         expect(MagicStarterConfig.hasEmailVerificationFeatures(), isFalse);
       });
@@ -163,6 +167,27 @@ void main() {
           );
         },
       );
+
+      test('handoffRoute() returns "/auth/handoff" by default', () {
+        expect(MagicStarterConfig.handoffRoute(), equals('/auth/handoff'));
+      });
+
+      test('handoffConfirmsWithoutSession() returns true by default', () {
+        expect(MagicStarterConfig.handoffConfirmsWithoutSession(), isTrue);
+      });
+
+      test('handoffConfirmsWithoutSession() can be turned off', () {
+        Config.set('magic_starter.handoff.confirm_without_session', false);
+
+        expect(MagicStarterConfig.handoffConfirmsWithoutSession(), isFalse);
+      });
+
+      test('handoffSignedOutRoute() returns the login route by default', () {
+        expect(
+          MagicStarterConfig.handoffSignedOutRoute(),
+          equals('/auth/login'),
+        );
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -240,6 +265,12 @@ void main() {
         Config.set('magic_starter.features.app_update', true);
 
         expect(MagicStarterConfig.hasAppUpdateFeatures(), isTrue);
+      });
+
+      test('hasHandoffFeatures() returns true when config is set', () {
+        Config.set('magic_starter.features.handoff', true);
+
+        expect(MagicStarterConfig.hasHandoffFeatures(), isTrue);
       });
 
       test(
@@ -326,6 +357,22 @@ void main() {
         Config.set('magic_starter.routes.login', '/sign-in');
 
         expect(MagicStarterConfig.loginRoute(), equals('/sign-in'));
+      });
+
+      test('handoffSignedOutRoute() returns configured value', () {
+        Config.set('magic_starter.handoff.signed_out_route', '/auth/register');
+
+        expect(
+          MagicStarterConfig.handoffSignedOutRoute(),
+          equals('/auth/register'),
+        );
+      });
+
+      test('handoffSignedOutRoute() follows the login route when blank', () {
+        Config.set('magic_starter.routes.login', '/sign-in');
+        Config.set('magic_starter.handoff.signed_out_route', '');
+
+        expect(MagicStarterConfig.handoffSignedOutRoute(), equals('/sign-in'));
       });
 
       test('authPrefix() returns configured value', () {

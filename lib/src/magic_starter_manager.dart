@@ -20,6 +20,7 @@ import 'ui/widgets/magic_starter_two_factor_modal.dart';
 import 'ui/magic_starter_page_chrome.dart';
 import 'ui/magic_starter_view_registry.dart';
 import 'ui/views/auth/magic_starter_forgot_password_view.dart';
+import 'ui/views/auth/magic_starter_handoff_view.dart';
 import 'ui/views/auth/magic_starter_login_view.dart';
 import 'ui/views/auth/magic_starter_register_view.dart';
 import 'ui/views/auth/magic_starter_reset_password_view.dart';
@@ -566,6 +567,10 @@ class MagicStarterManager {
         'auth.two_factor_challenge',
         () => const MagicStarterTwoFactorChallengeView(),
       );
+    }
+
+    if (MagicStarterConfig.hasHandoffFeatures()) {
+      _registerDefault('auth.handoff', () => const MagicStarterHandoffView());
     }
 
     // Phone OTP — conditional on feature flag.

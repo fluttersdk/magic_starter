@@ -45,6 +45,7 @@ class MagicStarterConfig {
   static const bool _defaultStoreReview = false;
   static const bool _defaultReleases = false;
   static const bool _defaultAppUpdate = false;
+  static const bool _defaultHandoff = false;
   static const bool _defaultEmailIdentity = true;
   static const bool _defaultPhoneIdentity = false;
 
@@ -307,6 +308,16 @@ class MagicStarterConfig {
           _defaultAppUpdate,
         ) ??
         _defaultAppUpdate;
+  }
+
+  /// Returns whether the sign-in handoff page (`/auth/handoff`) is enabled
+  /// (`magic_starter.features.handoff`).
+  static bool hasHandoffFeatures() {
+    return Config.get<bool>(
+          'magic_starter.features.handoff',
+          _defaultHandoff,
+        ) ??
+        _defaultHandoff;
   }
 
   /// Returns how many files one support message can carry
@@ -685,6 +696,36 @@ class MagicStarterConfig {
   /// Full path for the two-factor challenge page.
   static String twoFactorChallengeRoute() =>
       '${authPrefix()}/two-factor-challenge';
+
+  /// Full path for the sign-in handoff page.
+  static String handoffRoute() => '${authPrefix()}/handoff';
+
+  /// Returns whether a handoff asks "Sign in as ...?" when no session is open
+  /// (`magic_starter.handoff.confirm_without_session`, default `true`).
+  ///
+  /// The question is what stops a login CSRF: an attacker mints a code for
+  /// their own account and links a signed-out victim, who would otherwise land
+  /// signed in to the attacker's workspace. An app turns it off only to save
+  /// that tap; over an open session the handoff asks whatever this says.
+  static bool handoffConfirmsWithoutSession() {
+    return Config.get<bool>(
+          'magic_starter.handoff.confirm_without_session',
+          true,
+        ) ??
+        true;
+  }
+
+  /// Returns where a signed-out handoff visit without a code goes, carrying
+  /// its `next` (`magic_starter.handoff.signed_out_route`): the login route
+  /// when unset or blank.
+  static String handoffSignedOutRoute() {
+    final String? route = Config.get<String?>(
+      'magic_starter.handoff.signed_out_route',
+      null,
+    );
+
+    return route == null || route.trim().isEmpty ? loginRoute() : route;
+  }
 
   /// Returns the configured billing route (e.g. `/teams/billing`).
   static String billingRoute() {

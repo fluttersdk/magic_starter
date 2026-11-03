@@ -6,6 +6,7 @@ import 'package:magic_starter/magic_starter.dart'
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
+import '../../../http/controllers/concerns/navigates_routes.dart';
 import '../../../http/controllers/magic_starter_auth_controller.dart';
 import '../../../http/controllers/magic_starter_guest_auth_controller.dart';
 import '../../widgets/magic_starter_auth_form_card.dart';
@@ -51,6 +52,25 @@ class _MagicStarterLoginViewState
   void onInit() {
     controller.clearErrors();
     controller.setEmpty();
+  }
+
+  bool _nextRead = false;
+
+  // A link may send the visitor here with `?next=`; any sign-in from this page
+  // then ends there. Read once, here because initState has no route state.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_nextRead) return;
+    _nextRead = true;
+
+    // A host may pump the view with no router above it, and the query reader
+    // throws there.
+    if (GoRouter.maybeOf(context) == null) return;
+
+    MagicStarterNextPath.remember(
+      MagicRouter.instance.queryParameterOf(context, 'next'),
+    );
   }
 
   @override

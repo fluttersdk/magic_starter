@@ -132,6 +132,7 @@ These are registered by `MagicStarterManager.registerDefaultViews()` at construc
 | `auth.verify_email` | `MagicStarterVerifyEmailView` | `hasEmailVerificationFeatures()` |
 | `auth.two_factor_challenge` | `MagicStarterTwoFactorChallengeView` | `hasTwoFactorFeatures()` |
 | `auth.otp_verify` | `MagicStarterOtpVerifyView` | `hasPhoneOtpFeatures()` |
+| `auth.handoff` | `MagicStarterHandoffView` | `hasHandoffFeatures()` |
 | `settings.security.connected_accounts` | `MagicStarterConnectedAccountsView` | `hasSocialLoginFeatures()`; the hub row also needs a bridge from `MagicStarter.useSocialAuth` |
 
 **Settings views** (feature-gated):

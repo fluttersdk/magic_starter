@@ -3,6 +3,7 @@ import 'package:magic/magic.dart';
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/magic_starter_auth_controller.dart';
+import '../http/controllers/magic_starter_handoff_controller.dart';
 import '../http/controllers/magic_starter_otp_controller.dart';
 
 /// Registers auth routes provided by Magic Starter plugin.
@@ -80,6 +81,25 @@ void registerMagicStarterAuthRoutes() {
               MagicStarterAuthController.instance.verifyEmail,
             )
             .title('magic_starter.titles.verify_email')
+            .transition(RouteTransition.none);
+      },
+    );
+  }
+
+  // Outside the guest group for the same reason, and without `auth`: a
+  // handoff link over an open session must reach its confirmation, and a
+  // signed-out visit is the ordinary case.
+  if (MagicStarterConfig.hasHandoffFeatures()) {
+    MagicRoute.group(
+      prefix: MagicStarterConfig.authPrefix(),
+      layout: (child) =>
+          MagicStarter.view.makeLayout('layout.guest', child: child),
+      routes: () {
+        MagicRoute.page(
+              '/handoff',
+              MagicStarterHandoffController.instance.handoff,
+            )
+            .title('magic_starter.titles.handoff')
             .transition(RouteTransition.none);
       },
     );

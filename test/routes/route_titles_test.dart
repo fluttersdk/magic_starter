@@ -55,6 +55,7 @@ void enableEveryRoutedFeature() {
   Config.set('magic_starter.features.support_feedback', true);
   Config.set('magic_starter.features.support', true);
   Config.set('magic_starter.features.releases', true);
+  Config.set('magic_starter.features.handoff', true);
 }
 
 /// The `magic_starter.titles` block shipped by the install stub.

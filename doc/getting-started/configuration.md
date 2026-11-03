@@ -47,6 +47,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'support': false,
       'releases': false,
       'app_update': false,
+      'handoff': false,
     },
     'auth': {
       'email': true,
@@ -77,6 +78,10 @@ Map<String, dynamic> get magicStarterConfig => {
     },
     'notifications': {
       'external_id_prefix': 'user_',
+    },
+    'handoff': {
+      'confirm_without_session': true,
+      'signed_out_route': null,
     },
     'legal': {
       'terms_url': null,
@@ -123,6 +128,7 @@ Every feature defaults to `false` and must be explicitly enabled. Each toggle co
 | `support` | `false` | Support desk screens (`/support`, `/support/new`, `/support/:id`), the Support profile-menu item and the Contact sales conversation. The host registers the routes with `registerMagicStarterSupportRoutes()`; see [Support](../basics/support.md). |
 | `releases` | `false` | The "What's new" changelog page (`/settings/changelog`), its settings hub row and the `MagicStarterAppVersion` caption, read from the backend's `GET releases`. Needs `Features::releases()` on `magic-starter-laravel`; see [Releases](../basics/releases.md). |
 | `app_update` | `false` | `MagicStarterAppUpdateBanner` in the app layout: Reload when a new web deploy appears in `version.json`, Update when the store has a newer build than a store-installed release build. The store path reads `GET releases` and needs `Features::releases()` on the backend; see [Releases](../basics/releases.md). |
+| `handoff` | `false` | The sign-in handoff page `/auth/handoff?code=&next=`: trades a one-time code for a session, after asking "Sign in as ...?", and opens `next`. `handoff.confirm_without_session` (default `true`) keeps that question when nobody is signed in, which is what stops a link carrying an attacker's own code from signing a visitor in to the attacker's account; `false` only saves the tap. `handoff.signed_out_route` (default `null`, meaning `routes.login`) is where a signed-out visit without a code goes, carrying `?next=`. See [Sign-in handoff](../basics/authentication.md#handoff). |
 
 To enable features, set their values to `true` in `lib/config/magic_starter.dart`:
 
