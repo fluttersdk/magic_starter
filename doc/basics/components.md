@@ -179,7 +179,7 @@ The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`,
 | Component | Notes |
 |-----------|-------|
 | `MSDialog` | Modal dialog shell; reads `MagicStarterModalTheme` tokens. `scrollable: false` hands a body that scrolls itself the bounded height, as on `MSBottomSheet`. With the modal theme's `presentation: MagicStarterModalPresentation.sheet`, `MSDialog.show` opens the same content as a bottom sheet, and the widget draws the sheet panel inside a bottom sheet route |
-| `MSBottomSheet` | Slide-up sheet; reads `MagicStarterModalTheme` tokens. `MSBottomSheet.show(..., dialogBreakpoint: 'lg')` presents an `MSDialog` from that Wind breakpoint up, with the same title, description, body, footer and `scrollable`, so one call serves a phone and a desktop; the width is read when the call is made. Null (the default) always presents a sheet, and so does the `sheet` presentation, which ignores the breakpoint |
+| `MSBottomSheet` | Slide-up sheet; reads `MagicStarterModalTheme` tokens. `MSBottomSheet.show(..., dialogBreakpoint: 'lg')` presents an `MSDialog` from that Wind breakpoint up, with the same title, description, body, footer and `scrollable`, so one call serves a phone and a desktop; the width is read when the call is made. Null (the default) always presents a sheet, and so does the `sheet` presentation, which ignores the breakpoint. `canDismiss` (a `ValueListenable<bool>`, read at the gesture) holds a sheet with unsaved input open: while false a drag down is off, and a scrim tap, Back and Escape leave it open and call `onDismissBlocked`, where the app asks the person; the dialog from `dialogBreakpoint` is held the same way |
 
 <a name="composition-and-app-chrome"></a>
 ### Composition and App Chrome

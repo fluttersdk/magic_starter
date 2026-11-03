@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide BottomSheet;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
+import 'package:magic_starter/src/ui/components/bottom_sheet/bottom_sheet_panel.dart';
 
 void main() {
   setUp(() {
@@ -431,6 +432,235 @@ void main() {
         (error! as StateError).message,
         contains('MSBottomSheet.show(dialogBreakpoint:)'),
       );
+    });
+  });
+
+  // A sheet holding unsaved input stays open on a drag, a scrim tap and Back
+  // while its guard refuses, and tells the caller so it can ask the person.
+  group('canDismiss', () {
+    late int blocked;
+    late Object? result;
+
+    setUp(() {
+      blocked = 0;
+      result = #unset;
+    });
+
+    void setWidth(WidgetTester tester, double width) {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
+
+    /// Opens a sheet whose text field turns [canDismiss] false on its first
+    /// keystroke, the way a form reports itself dirty.
+    Future<void> open(
+      WidgetTester tester, {
+      ValueNotifier<bool>? canDismiss,
+      String? dialogBreakpoint,
+    }) async {
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                result = await MSBottomSheet.show<String>(
+                  context,
+                  title: 'Edit',
+                  body: TextField(onChanged: (_) => canDismiss?.value = false),
+                  dialogBreakpoint: dialogBreakpoint,
+                  canDismiss: canDismiss,
+                  onDismissBlocked: () => blocked++,
+                  footerBuilder: (sheetContext) => ElevatedButton(
+                    onPressed: () => Navigator.of(sheetContext).pop('saved'),
+                    child: const Text('Save'),
+                  ),
+                );
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> scrimTap(WidgetTester tester) async {
+      await tester.tapAt(const Offset(8, 8));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> back(WidgetTester tester) async {
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+    }
+
+    // On the drag handle: the body is a scroll view that may take a vertical
+    // drag for itself.
+    Future<void> dragDown(WidgetTester tester) async {
+      final Rect panel = tester.getRect(find.byType(MSBottomSheetPanel));
+      await tester.flingFrom(
+        Offset(panel.center.dx, panel.top + 8),
+        const Offset(0, 600),
+        3000,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    final Map<String, Future<void> Function(WidgetTester)> gestures = {
+      'a scrim tap': scrimTap,
+      'Back': back,
+      'a drag down': dragDown,
+    };
+
+    for (final gesture in gestures.entries) {
+      testWidgets('without a guard ${gesture.key} closes it', (tester) async {
+        setWidth(tester, 390);
+
+        await open(tester);
+        await gesture.value(tester);
+
+        expect(result, isNull);
+        expect(find.byType(MSBottomSheet), findsNothing);
+        expect(blocked, 0);
+      });
+
+      testWidgets('an allowing guard lets ${gesture.key} close it', (
+        tester,
+      ) async {
+        setWidth(tester, 390);
+
+        await open(tester, canDismiss: ValueNotifier<bool>(true));
+        await gesture.value(tester);
+
+        expect(result, isNull);
+        expect(find.byType(MSBottomSheet), findsNothing);
+        expect(blocked, 0);
+      });
+
+      testWidgets('a refusing guard keeps it open on ${gesture.key}', (
+        tester,
+      ) async {
+        setWidth(tester, 390);
+
+        await open(tester, canDismiss: ValueNotifier<bool>(false));
+        await gesture.value(tester);
+
+        expect(result, #unset);
+        expect(find.byType(MSBottomSheet), findsOneWidget);
+        // A drag is switched off rather than refused, so only a scrim tap
+        // and Back reach the caller.
+        expect(blocked, gesture.key == 'a drag down' ? 0 : 1);
+      });
+
+      testWidgets('a guard that refuses after opening holds on '
+          '${gesture.key}, and lets go once it allows again', (tester) async {
+        setWidth(tester, 390);
+        final canDismiss = ValueNotifier<bool>(true);
+
+        await open(tester, canDismiss: canDismiss);
+        await tester.enterText(find.byType(TextField), 'dirty');
+        await tester.pump();
+        expect(canDismiss.value, isFalse);
+
+        await gesture.value(tester);
+        expect(find.byType(MSBottomSheet), findsOneWidget);
+        expect(blocked, gesture.key == 'a drag down' ? 0 : 1);
+        expect(find.text('dirty'), findsOneWidget);
+
+        canDismiss.value = true;
+        await tester.pump();
+        await gesture.value(tester);
+
+        expect(result, isNull);
+        expect(find.byType(MSBottomSheet), findsNothing);
+      });
+    }
+
+    testWidgets('a refusing guard still lets the footer close the sheet', (
+      tester,
+    ) async {
+      setWidth(tester, 390);
+
+      await open(tester, canDismiss: ValueNotifier<bool>(false));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(result, 'saved');
+      expect(blocked, 0);
+    });
+
+    group('as a dialog', () {
+      final Map<String, Future<void> Function(WidgetTester)> dismissals = {
+        'a barrier tap': scrimTap,
+        'Back': back,
+      };
+
+      for (final dismissal in dismissals.entries) {
+        testWidgets('a refusing guard keeps it open on ${dismissal.key} and '
+            'reports it', (tester) async {
+          setWidth(tester, 1440);
+          final canDismiss = ValueNotifier<bool>(false);
+
+          await open(tester, canDismiss: canDismiss, dialogBreakpoint: 'lg');
+          expect(find.byType(Dialog), findsOneWidget);
+
+          await dismissal.value(tester);
+          expect(result, #unset);
+          expect(find.byType(MSDialog), findsOneWidget);
+          expect(blocked, 1);
+
+          canDismiss.value = true;
+          await tester.pump();
+          await dismissal.value(tester);
+
+          expect(result, isNull);
+          expect(find.byType(MSDialog), findsNothing);
+          expect(blocked, 1);
+        });
+      }
+
+      testWidgets('a guard that refuses after opening holds the barrier', (
+        tester,
+      ) async {
+        setWidth(tester, 1440);
+        final canDismiss = ValueNotifier<bool>(true);
+
+        await open(tester, canDismiss: canDismiss, dialogBreakpoint: 'lg');
+        await tester.enterText(find.byType(TextField), 'dirty');
+        await tester.pump();
+        await scrimTap(tester);
+
+        expect(find.byType(MSDialog), findsOneWidget);
+        expect(blocked, 1);
+      });
+    });
+
+    testWidgets('the sheet presentation honours the guard at every width', (
+      tester,
+    ) async {
+      setWidth(tester, 1440);
+      MagicStarter.useModalTheme(
+        MagicStarter.manager.modalTheme.copyWith(
+          presentation: MagicStarterModalPresentation.sheet,
+        ),
+      );
+
+      await open(
+        tester,
+        canDismiss: ValueNotifier<bool>(false),
+        dialogBreakpoint: 'lg',
+      );
+      expect(find.byType(MSDialog), findsNothing);
+
+      await dragDown(tester);
+      await scrimTap(tester);
+      await back(tester);
+
+      expect(find.byType(MSBottomSheet), findsOneWidget);
+      expect(blocked, 2);
     });
   });
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../configuration/magic_starter_theme.dart';
@@ -80,6 +81,16 @@ class MSBottomSheet extends StatelessWidget {
   /// does a modal theme whose `presentation` is
   /// [MagicStarterModalPresentation.sheet], which ignores [dialogBreakpoint].
   ///
+  /// [canDismiss] holds the sheet open for a body with unsaved input: while
+  /// its value is false a drag down is off, and a scrim tap, Back and Escape
+  /// leave the sheet open and call [onDismissBlocked], where the caller can
+  /// ask the person whether to discard (the sheet draws no such question).
+  /// The value is read when the gesture lands, so a field that turns dirty
+  /// after the sheet opened holds the next gesture. The dialog
+  /// [dialogBreakpoint] presents is held the same way, barrier tap included.
+  /// A `Navigator.pop` from [footerBuilder] still closes either. Null (the
+  /// default) lets every gesture close it.
+  ///
   /// Throws a [StateError] when [dialogBreakpoint] names a breakpoint the Wind
   /// theme does not carry, rather than silently never presenting a dialog.
   static Future<T?> show<T>(
@@ -90,6 +101,8 @@ class MSBottomSheet extends StatelessWidget {
     Widget Function(BuildContext sheetContext)? footerBuilder,
     bool scrollable = true,
     String? dialogBreakpoint,
+    ValueListenable<bool>? canDismiss,
+    VoidCallback? onDismissBlocked,
   }) {
     final String? breakpoint = dialogBreakpoint;
     final bool sheetEverywhere =
@@ -102,18 +115,26 @@ class MSBottomSheet extends StatelessWidget {
           breakpoint,
           setting: 'MSBottomSheet.show(dialogBreakpoint:)',
         )) {
-      return MSDialog.show<T>(
+      // What `MSDialog.show` does, with the guard it does not take; the
+      // presentation here is `dialog`, so the presenter shows a dialog.
+      return ModalPresenter.show<T>(
         context,
-        title: title,
-        description: description,
-        body: body,
-        footerBuilder: footerBuilder,
-        scrollable: scrollable,
+        canDismiss: canDismiss,
+        onDismissBlocked: onDismissBlocked,
+        builder: (_) => MSDialog(
+          title: title,
+          description: description,
+          body: body,
+          footerBuilder: footerBuilder,
+          scrollable: scrollable,
+        ),
       );
     }
 
     return ModalPresenter.showSheet<T>(
       context,
+      canDismiss: canDismiss,
+      onDismissBlocked: onDismissBlocked,
       builder: (_) => MSBottomSheet(
         title: title,
         description: description,
