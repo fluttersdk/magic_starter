@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.66] - 2026-11-03
+
 ### Added
 
 - **`MagicStarterModalTheme.presentation` opens the starter's modals as a bottom sheet.** `MagicStarterModalPresentation.sheet` presents `MSDialog.show`, `MSConfirmDialog.show` (and `MagicStarterConfirmDialog.show`), `MagicStarterPasswordConfirmDialog.show`, `MagicStarterStepUpDialog.show` and `MagicStarterTwoFactorModal.show` as the same sheet `MSBottomSheet` draws, at every width, so the sessions, team settings, two factor, step up and support attachment flows follow one setting. The plan upgrade prompt opens through magic's `MagicFeedback.showCustomDialog` and stays a dialog. In that mode `MSBottomSheet.show(dialogBreakpoint:)` ignores its argument and presents a sheet at every width (with `dialog` it still swaps to an `MSDialog` from the breakpoint). Return values do not change; the confirm, password confirm and step up modals still refuse a scrim tap and, as sheets, a drag down, and draw no drag handle. A sheet is capped at 640 px on a wide screen by Flutter's Material 3 default, which holds with `useMaterial3` and no host `bottomSheetTheme.constraints`. The default, `dialog`, keeps a centered dialog (see Changed for what its shared shell draws differently). Set it with `MagicStarter.useModalTheme(MagicStarter.modalTheme.copyWith(presentation: MagicStarterModalPresentation.sheet))`. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/components/dialog/modal_presenter.dart`, `lib/src/ui/components/dialog/dialog.dart`, `lib/src/ui/components/bottom_sheet/`)
@@ -13,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - **`MSConfirmDialog`, `MagicStarterPasswordConfirmDialog` and `MagicStarterTwoFactorModal` render on the `MSDialog` shell.** They built their own `Dialog`, so a sheet would have drawn a dialog inside it. The confirm dialog draws the same header, body and footer as before, and its footer now carries the `magic_starter_dialog_shell_footer` key (a key-based finder sees it). The password confirm dialog's error now sits in its body under the field. The two factor wizard's actions moved into the shell's footer band, and its body takes the modal theme's `bodyClassName` padding (16 px at the bottom where it had 24). The password confirm and two factor dialogs used to scroll as one card; their footer now stays fixed under the scrolling body. (`lib/src/ui/components/confirm_dialog/confirm_dialog.dart`, `lib/src/ui/widgets/magic_starter_password_confirm_dialog.dart`, `lib/src/ui/widgets/magic_starter_two_factor_modal.dart`)
 - **A modal's header scrolls away when it would crowd out the body.** `MSDialog` (so `MSConfirmDialog` and the starter's dialogs) and `MSBottomSheet`, in both presentations, keep the footer fixed and the header pinned above the scrolling body while the header takes at most half of the room the body scrolls in; past that (a landscape phone, where a sheet has about 313 px before any keyboard, the keyboard up, a large text size) the header scrolls with the body. It is measured at layout, so the keyboard rising rebuilds nothing: a focused field keeps its focus and the body its scroll offset. A body passed with `scrollable: false` keeps a fixed header and gets the height between header and footer. The header and body now share one `CustomScrollView` where the body had a `ListView`. A pinned header holds still while the body bounces or stretches under it; a header past the half mark moves with the body, overscroll included. On an `MSBottomSheet` (or a sheet presentation) whose content overflows, a drag that starts on the title now scrolls the content instead of dragging the sheet down: only the handle and the footer drag it then. When the content fits, a drag anywhere on the sheet, the body included, drags it down. (`lib/src/ui/components/dialog/modal_sections.dart`)
 - **An `MSDialog` is drawn by the route it is in.** A host's own `showModalBottomSheet(builder: (_) => MSDialog(...))` now gets the sheet panel instead of a `Dialog` shell inside the sheet; a host's own `showDialog` keeps the shell. (`lib/src/ui/components/dialog/dialog.dart`)
+- **Every sibling floor names a release this package is verified against.** `magic` moves `^0.0.35` to `^0.0.38` and `fluttersdk_wind` `^1.10.0` to `^1.11.0`; `magic_notifications ^0.3.12`, `magic_payments ^0.0.12` and `fluttersdk_artisan ^0.0.20` already name the newest releases. The old ranges already admitted the new versions, so a fresh `pub get` resolves nothing differently. magic 0.0.38 makes `MagicVaultService.macOsUsesDataProtectionKeychain` a `bool?` (BREAKING), a field this package does not read; the rest of magic 0.0.36 to 0.0.38 and wind 1.11.0 only adds and fixes. The issue template's magic version placeholder names 0.0.38. (`pubspec.yaml`, `.github/ISSUE_TEMPLATE/bug_report.yml`)
 
 ### Fixed
 
@@ -1100,70 +1103,6 @@ This is the only manual step.
 - **Manager**: Added `useSidebarFooter()` section and facade entry to manager doc
 - **Views & Layouts**: Updated theme toggle location from sidebar to user profile dropdown
 - **README**: Added layout customization section with `useHeader()` and `useSidebarFooter()` examples
-
-## [0.0.1-alpha.11] - 2026-04-07
-
-### ✨ New Features
-- **MagicStarterPageHeader**: Added `titleSuffix` (Widget?) for inline widgets after title (e.g. status badges) and `inlineActions` (bool) to force single-row layout on all screen sizes (#24)
-
-### 📚 Documentation
-- **Release Command**: Added critical tag format warning — `publish.yml` requires tags without `v` prefix (#23)
-
-## [0.0.1-alpha.10] - 2026-04-07
-
-### 🐛 Bug Fixes
-- **MagicStarterDialogShell**: Fixed bottom overflow when body content exceeds viewport — removed `flex flex-col` from outer WDiv that broke constraint propagation to inner Column; body now scrolls correctly with sticky header/footer (#21)
-
-### 🔧 Improvements
-- **Dependencies**: Bumped minimum `magic` to `^1.0.0-alpha.7` — updated all test setUp blocks to bind `AuthManager` in the IoC container, matching the new container-resolved `Auth` facade
-
-## [0.0.1-alpha.9] - 2026-04-04
-
-### ✨ New Features
-- **MagicStarterHideBottomNav**: New `InheritedWidget` that signals `MagicStarterAppLayout` to hide the mobile bottom navigation bar for fullscreen routes — wired into layout and exported from barrel (#19)
-
-### 📚 Documentation
-- **State/Controller Registration Guide**: New architecture reference (`doc/architecture/controllers.md`) covering the lazy singleton pattern, `MagicController + MagicStateMixin` usage, controller lifecycle, view binding, and a decision tree for eager vs lazy vs per-view registration (#18)
-- **State Management Getting-Started Guide**: New practical guide (`doc/guides/state-management.md`) with end-to-end examples — state class, view integration, and testing patterns for consumer apps (#18)
-- **Scaffolded Stub**: `app_service_provider.stub` now includes state registration guidance comments showing the recommended `Magic.findOrPut()` pattern (#18)
-- **Cross-References**: `doc/architecture/service-provider.md` now links to the new controllers doc (#18)
-
-### 🔧 Improvements
-- **CI**: Bumped `codecov/codecov-action` from v5 to v6 (#16)
-
-## [0.0.1-alpha.8] - 2026-03-31
-
-### 🐛 Bug Fixes
-- **MagicStarterDialogShell**: Fixed mobile overflow — `maxHeight` now computed from safe area (`MediaQuery.viewPaddingOf`) instead of raw screen height; added vertical `insetPadding` (24px) to prevent dialog from extending to screen edges (#13)
-- **MagicStarterPasswordConfirmDialog**: Same safe area fix — replaced hardcoded `maxHeight: 600` with `safeHeight * 0.85`; added vertical `insetPadding`
-- **MagicStarterTwoFactorModal**: Same safe area fix — replaced hardcoded `maxHeight: 800` with `safeHeight * 0.85`; added vertical `insetPadding`
-
-## [0.0.1-alpha.7] - 2026-03-29
-
-### ✨ New Features
-- **MagicStarterPasswordConfirmDialog**: Added `ConfirmDialogVariant` support (`primary`, `danger`, `warning`) — confirm button now resolves color from variant via `_resolveConfirmClassName()`, matching `MagicStarterConfirmDialog` behavior. Both constructor and `show()` accept optional `variant` parameter, defaults to `ConfirmDialogVariant.primary` for backwards compatibility.
-
-### 🔧 Improvements
-- **Profile Settings**: Standardized dialog variants across all password-confirm call sites — `danger` for session revocation, `warning` for 2FA disable and recovery code regeneration, `primary` for neutral confirmations (enable 2FA, view codes)
-
-## [0.0.1-alpha.6] - 2026-03-29
-
-### 🐛 Bug Fixes
-- **MagicStarterPasswordConfirmDialog**: Footer buttons now right-aligned — added `w-full` to footer WDiv so `justify-end` stretches to container width
-- **MagicStarterTwoFactorModal**: Footer buttons now right-aligned in both setup and recovery steps — same `w-full` fix applied to both footer locations
-
-### 🔧 Improvements
-- **MagicStarterTwoFactorModal**: Extracted duplicated footer className to shared `_footerClassName` const — reduces divergence risk
-
-## [0.0.1-alpha.5] - 2026-03-29
-
-### Changed
-- **MagicStarterDialogShell**: Now exported publicly from the barrel (`package:magic_starter/magic_starter.dart`) — consumer apps can compose custom dialogs on top of it
-- **MagicStarterDialogShell**: `footer` parameter replaced with `footerBuilder` (`Widget Function(BuildContext dialogContext)?`) — provides the dialog's own `BuildContext` so callers can call `Navigator.pop(dialogContext)` without needing an outer context
-
-### Fixed
-- **MagicStarterConfirmDialog** and **MagicStarterPasswordConfirmDialog**: Buttons are now compact and right-aligned (`justify-end gap-2 wrap`) — previously rendered as full-width (`flex-1`) buttons that stretched across the footer
-- **MagicStarterDialogShell**: Body no longer creates a gap between scrollable content and the footer when content is shorter than the available height — switched from `SingleChildScrollView` to `ListView(shrinkWrap: true)`
 
 ## [0.0.1-alpha.1] - 2026-03-25
 
