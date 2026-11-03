@@ -117,6 +117,34 @@ Registered with `features.email_verification`. The verification mail of `magic-s
 
 The route sits outside the `guest` group: the link is opened signed in as often as signed out, and `guest` would send a signed-in reader home before the link was replayed.
 
+<a name="next"></a>
+## Landing After Sign-In (`?next=`)
+
+`MagicStarterLoginView` and `MagicStarterRegisterView` read a `next` query once when they open. A valid in-app path becomes the router's intended url (`MagicRouter.setIntendedUrl`), so the sign-in or sign-up that follows from that screen (password, social, two-factor, OTP, registration) lands there through `navigateHome()`. Without `next`, or with one that is not valid, the screens record nothing and leave an intent `EnsureAuthenticated` recorded alone.
+
+A valid `next` has exactly one leading `/` (`//host` is another origin), at most 512 characters, no backslash, no whitespace, separator or other `\p{C}` character (controls, format characters such as U+202E, private use, unassigned), the same rule as the backend's `SameAppPath`, no `..` path segment (percent-encoded included). Anything else is ignored silently.
+
+<a name="handoff"></a>
+## Sign-In Handoff
+
+Registered with `features.handoff`. Another surface that has already authenticated the visitor (a landing page, a mail) asks `magic-starter-laravel` for a one-time code (`POST auth/handoff`, authenticated) and opens the app at `/auth/handoff?code=<code>&next=<path>`, on the web or through a Universal Link or App Link that resolves to the same route. No bearer token travels in a url.
+
+`MagicStarterHandoffView` reads `code` and `next` once and calls `MagicStarterHandoffController.handOff`:
+
+1. **With a code**, the controller posts it to `POST auth/handoff/exchange`. The answer is a login answer plus `data.next`, held in memory only.
+   - The page asks "Sign in as <email or name>?" with Continue and Cancel before anything changes, with or without an open session. Without one the question is what stops a login CSRF: a link carrying an attacker's own code would otherwise sign the visitor in to the attacker's account. `handoff.confirm_without_session` (default `true`) is the one knob: an app may set it to `false` to skip that tap when no session is open; over an open session the page always asks.
+   - Continue signs any open session out through `MagicStarterAuthController.logout()` (before-logout hooks included), records `data.next` (validated like `?next=`; the query `next` is ignored once a code is exchanged, since it is not bound to the code) as the intended url and concludes through `completeSignIn`, so a two-factor answer opens the challenge and its success lands on `next` too.
+   - Cancel goes home with an open session untouched, or to the sign-in screen without one. The exchange already minted a token on the server (and cancelled a scheduled account deletion), so a declined answer, one dropped by leaving the page, and one that lands after the page closed are revoked with `POST auth/logout` presenting that token on the same bare driver: best effort, never logged, never touching the open session. A two-factor answer carries no token and revokes nothing.
+   - A refused code (the backend's one 422 shape, `code: handoff_expired`), a transport failure or an answer that is neither a session nor a challenge changes nothing: home over a session, the sign-in screen without one, with one toast (`magic_starter.handoff.expired`) that never tells which of those it was.
+2. **Without a code** but with a valid `next`: signed in, the visitor goes to `next`; signed out, to `handoff.signed_out_route` (default `routes.login`) carrying `?next=`, which the login and register screens honour.
+3. **With neither**: home when signed in, the sign-in screen otherwise.
+
+The route sits outside the `guest` group and carries no `auth` middleware: a visitor with an open session has to reach the confirmation. The exchange goes out on a bare `DioNetworkDriver` with the `Http` facade driver's origin, timeout and default headers but none of its interceptors, so magic's `AuthInterceptor` neither attaches the open session's bearer nor answers a 401 with its refresh-or-logout path, and no devtools recorder keeps the answer, which carries the new token. The code, the token and the handed email are never logged; the email (or name) appears only on the confirmation. An app overrides the page through the registry key `auth.handoff`.
+
+The code stays in the browser history entry of `/auth/handoff?code=...`. It is single use, but removing it from history is the app's job; the starter does not rewrite the address bar. A web host should also send `<meta name="referrer" content="strict-origin">` so the code never rides a same-origin `Referer` into a server log.
+
+The exchange mints its token before the visitor confirms. A visitor who closes the tab on "Sign in as ...?" leaves that token alive until it is revoked by hand, because the page can only revoke on Cancel or when it is left through the app.
+
 <a name="reset-password"></a>
 ## Reset Password
 
@@ -406,6 +434,7 @@ Authentication features are controlled by these configuration toggles. All defau
 | `magic_starter.features.phone_otp` | `hasPhoneOtpFeatures()` | Phone OTP send/verify |
 | `magic_starter.features.newsletter` | `hasNewsletterFeatures()` | Newsletter checkbox on registration |
 | `magic_starter.features.email_verification` | `hasEmailVerificationFeatures()` | Email verification flow |
+| `magic_starter.features.handoff` | `hasHandoffFeatures()` | Sign-in handoff route and view |
 | `magic_starter.auth.email` | `emailIdentity()` | Email field in login/register (default `true`) |
 | `magic_starter.auth.phone` | `phoneIdentity()` | Phone field in login/register (default `false`) |
 
@@ -420,6 +449,7 @@ Authentication features are controlled by these configuration toggles. All defau
 | `MagicStarterAuthController` | `.instance` | `doLogin()`, `doRegister()`, `doForgotPassword()`, `doResetPassword()`, `doTwoFactorChallenge()`, `logout()` |
 | `MagicStarterGuestAuthController` | `.instance` | `doGuestLogin()`, `openGuestSession()`, `isGuestUser`, `getStoredDeviceId()` |
 | `MagicStarterOtpController` | `.instance` | `sendOtp()`, `verifyOtp()`, `resetToPhoneInput()`, `step`, `phoneNumber` |
+| `MagicStarterHandoffController` | `.instance` | `handOff()`, `confirm()`, `cancel()`, `forget()`, `isConfirming`, `confirmingAs` |
 
 All controllers use the `NavigatesRoutes` mixin for safe navigation. Never call `context.go()` directly in a controller — the navigator context may not be mounted. The mixin checks `MagicRouter.instance.navigatorKey.currentContext` and no-ops when unavailable.
 
@@ -439,6 +469,7 @@ All views extend `MagicStatefulView<ControllerType>` and are registered in the v
 | `auth.verify_email` | `VerifyEmailView` | `GuestLayout` |
 | `auth.two_factor_challenge` | `TwoFactorChallengeView` | `GuestLayout` |
 | `auth.otp_verify` | `OtpVerifyView` | `GuestLayout` |
+| `auth.handoff` | `HandoffView` | `GuestLayout` |
 
 Views are instantiated through the registry (`MagicStarter.view.make('auth.login')`) and wrapped in the appropriate layout (`MagicStarter.view.makeLayout('layout.guest', child: view)`). The host app can override any view by registering a custom builder under the same key.
 

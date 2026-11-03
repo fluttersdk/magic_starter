@@ -55,3 +55,47 @@ mixin NavigatesRoutes {
     navigateTo(target);
   }
 }
+
+/// The `next` a link carries into a sign-in: where [NavigatesRoutes.navigateHome]
+/// lands once the visitor is signed in.
+///
+/// A `next` arrives in a url anyone can craft, so it is held to one in-app path
+/// before it becomes the intended url: exactly one leading slash (`//host` is
+/// another origin), at most [maxLength] characters, no backslash (a browser
+/// reads `/\host` as `//host`), no whitespace, separator (`\p{Z}`) or other
+/// character (`\p{C}`: controls, format characters such as U+202E, private
+/// use, unassigned), and no `..` path segment, percent-encoded or not. The
+/// same rule as the backend's `SameAppPath`.
+abstract final class MagicStarterNextPath {
+  /// The longest `next` accepted.
+  static const int maxLength = 512;
+
+  static final RegExp _forbidden = RegExp(r'[\\\s\p{Z}\p{C}]', unicode: true);
+
+  /// [value] when it is a safe in-app path, otherwise `null`.
+  static String? parse(String? value) {
+    if (value == null || value.length > maxLength) return null;
+    if (!value.startsWith('/') || value.startsWith('//')) return null;
+    if (_forbidden.hasMatch(value)) return null;
+
+    final String path = value.split(RegExp('[?#]')).first;
+    final bool climbs = path
+        .split('/')
+        .any(
+          (String segment) =>
+              segment.toLowerCase().replaceAll('%2e', '.') == '..',
+        );
+
+    return climbs ? null : value;
+  }
+
+  /// Stores [value] as the router's intended url when [parse] accepts it, so
+  /// the next sign-in or sign-up of any kind ends there. Anything else is
+  /// ignored silently and leaves a stored intent alone.
+  static void remember(String? value) {
+    final String? next = parse(value);
+    if (next == null) return;
+
+    MagicRouter.instance.setIntendedUrl(next);
+  }
+}

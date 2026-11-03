@@ -30,6 +30,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'store_review': false,
       'releases': false,
       'app_update': false,
+      'handoff': false,
     },
     'auth': {'email': true, 'phone': false},
     'defaults': {'locale': 'en', 'timezone': 'UTC'},
@@ -55,6 +56,11 @@ Map<String, dynamic> get magicStarterConfig => {
     // `HasNotifications` composes `user_<id>`, so leave this alone unless you
     // changed that side too. OneSignal rejects a bare numeric id outright.
     'notifications': {'external_id_prefix': 'user_'},
+    // confirm_without_session: asks "Sign in as ...?" even when nobody is
+    // signed in, so an attacker's own code cannot sign a visitor in to the
+    // attacker's account; off only saves one tap. signed_out_route: where a
+    // signed-out visit without a code goes, carrying `next` (null: routes.login).
+    'handoff': {'confirm_without_session': true, 'signed_out_route': null},
     'legal': {'terms_url': null, 'privacy_url': null},
     // Where a card-billed subscription is cancelled and the account deleted.
     // A refused account deletion offers it as its one action; null offers none.

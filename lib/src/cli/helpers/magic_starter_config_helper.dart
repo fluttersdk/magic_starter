@@ -40,6 +40,7 @@ abstract class MagicStarterConfigHelper {
     'store_review',
     'releases',
     'app_update',
+    'handoff',
   ];
 
   /// Parses feature toggles from config content.

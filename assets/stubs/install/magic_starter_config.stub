@@ -28,6 +28,7 @@ Map<String, dynamic> get magicStarterConfig => {
       'store_review': {{ feature_store_review }},
       'releases': {{ feature_releases }},
       'app_update': {{ feature_app_update }},
+      'handoff': {{ feature_handoff }},
     },
     'auth': {
       'email': true,
@@ -70,6 +71,15 @@ Map<String, dynamic> get magicStarterConfig => {
     // changed that side too. OneSignal rejects a bare numeric id outright.
     'notifications': {
       'external_id_prefix': 'user_',
+    },
+    'handoff': {
+      // Asks "Sign in as ...?" even when nobody is signed in. Leave it on: a
+      // link carrying an attacker's own code would otherwise sign a visitor
+      // in to the attacker's account. Turning it off only saves one tap.
+      'confirm_without_session': true,
+      // Where a signed-out visit to /auth/handoff without a code goes,
+      // carrying its `next`. Null uses routes.login.
+      'signed_out_route': null,
     },
     'legal': {
       'terms_url': null,

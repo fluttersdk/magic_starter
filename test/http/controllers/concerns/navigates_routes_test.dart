@@ -98,4 +98,86 @@ void main() {
       },
     );
   });
+
+  group('MagicStarterNextPath', () {
+    tearDown(() => MagicRouter.instance.pullIntendedUrl());
+
+    test('accepts an in-app path, its query and its fragment', () {
+      final List<String> accepted = [
+        '/',
+        '/monitors',
+        '/monitors/42/edit',
+        '/connect?code=clm_abc',
+        '/search?q=a..b',
+        '/docs#install',
+        '/a.b/c..d/...',
+        '/şirket/ayarlar?q=çğü',
+        '/日本',
+        '/${'a' * 511}',
+      ];
+
+      for (final String path in accepted) {
+        expect(MagicStarterNextPath.parse(path), path, reason: path);
+      }
+    });
+
+    test('refuses anything that is not one in-app path', () {
+      final List<String?> refused = [
+        null,
+        '',
+        'monitors',
+        'https://evil.example/x',
+        '//evil.example/x',
+        '///evil.example',
+        r'/\evil.example',
+        r'/a\b',
+        '/a b',
+        '/a\tb',
+        '/a\nb',
+        '/a\u0000b',
+        '/a\u007fb',
+        // What the server's `SameAppPath` refuses as `\p{C}` and `\p{Z}`:
+        // a C1 control, bidi and zero-width format characters, a BOM, a
+        // private-use and an unassigned code point, and Unicode separators.
+        for (final int codePoint in [
+          0x0085,
+          0x202E,
+          0x200B,
+          0xFEFF,
+          0xE000,
+          0x0378,
+          0x00A0,
+          0x2028,
+          0x3000,
+        ])
+          '/a${String.fromCharCode(codePoint)}b',
+        ' /monitors',
+        '/../admin',
+        '/a/../b',
+        '/a/..',
+        '/a/%2e%2e/b',
+        '/a/.%2E/b',
+        '/${'a' * 512}',
+      ];
+
+      for (final String? path in refused) {
+        expect(MagicStarterNextPath.parse(path), isNull, reason: path);
+      }
+    });
+
+    test('remember stores a valid path as the intended url', () {
+      MagicStarterNextPath.remember('/monitors/42');
+
+      expect(MagicRouter.instance.pullIntendedUrl(), '/monitors/42');
+    });
+
+    test('remember ignores an invalid path and keeps any stored intent', () {
+      MagicRouter.instance.setIntendedUrl('/teams');
+
+      MagicStarterNextPath.remember('//evil.example');
+      MagicStarterNextPath.remember(null);
+
+      expect(MagicRouter.instance.pullIntendedUrl(), '/teams');
+    });
+  });
 }

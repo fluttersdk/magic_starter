@@ -142,7 +142,7 @@ All values are read at runtime via `ConfigRepository` — no hardcoded strings s
 
 ## Feature Toggles
 
-All 22 features default to `false` (opt-in). Enable only what your app needs:
+All 23 features default to `false` (opt-in). Enable only what your app needs:
 
 | Toggle | Description |
 |--------|-------------|
@@ -168,6 +168,9 @@ All 22 features default to `false` (opt-in). Enable only what your app needs:
 | `store_review` | The native store review prompt (`MagicStarterStoreReview.maybeRequest()` at a host milestone, never on the web) and the "Rate us" menu item |
 | `releases` | A "What's new" changelog page at `/settings/changelog` (view key `settings.changelog`), its settings hub row and the `MagicStarterAppVersion` caption, over `magic-starter-laravel`'s `GET releases`. Needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
 | `app_update` | `MagicStarterAppUpdateBanner`, mounted by the shipped app layout: on the web it offers Reload when a new deploy appears in `version.json`, on a store-installed release build it offers Update when the backend's latest build is higher. The web banner reads only `version.json`; the store banner reads `GET releases` and needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
+| `handoff` | The sign-in handoff page `/auth/handoff?code=&next=` (view key `auth.handoff`): trades a one-time code from `magic-starter-laravel`'s `POST auth/handoff` for a session, asks "Sign in as ...?" first (also with no session open, unless `handoff.confirm_without_session` is `false`), then opens `next`; see [Sign-in handoff](doc/basics/authentication.md#handoff) |
+
+The login and register screens also honour `?next=<path>` with every feature set: a valid in-app path becomes where the sign-in or sign-up lands.
 
 ---
 
@@ -626,7 +629,7 @@ MagicStarter.view.registerLayout('layout.guest', (child) {
 });
 ```
 
-All overridable `MagicStarter.view` keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.verify_email`, `auth.two_factor_challenge`, `auth.otp_verify`, `profile.settings`, `teams.create`, `teams.settings`, `teams.invitation_accept`, `layout.app`, `layout.guest`.
+All overridable `MagicStarter.view` keys: `auth.login`, `auth.register`, `auth.forgot_password`, `auth.reset_password`, `auth.verify_email`, `auth.two_factor_challenge`, `auth.otp_verify`, `auth.handoff`, `profile.settings`, `teams.create`, `teams.settings`, `teams.invitation_accept`, `layout.app`, `layout.guest`.
 
 The two notification screens moved to `magic_notifications`, which owns the data path they render, so they are overridden through **`Notify.view`** rather than through `MagicStarter.view`. The keys are unchanged (`notifications.list`, `notifications.preferences`) and this package still owns the routes and the shell they mount into:
 
