@@ -82,14 +82,21 @@ class MSBottomSheet extends StatelessWidget {
   /// [MagicStarterModalPresentation.sheet], which ignores [dialogBreakpoint].
   ///
   /// [canDismiss] holds the sheet open for a body with unsaved input: while
-  /// its value is false a drag down is off, and a scrim tap, Back and Escape
-  /// leave the sheet open and call [onDismissBlocked], where the caller can
-  /// ask the person whether to discard (the sheet draws no such question).
-  /// The value is read when the gesture lands, so a field that turns dirty
-  /// after the sheet opened holds the next gesture. The dialog
-  /// [dialogBreakpoint] presents is held the same way, barrier tap included.
-  /// A `Navigator.pop` from [footerBuilder] still closes either. Null (the
-  /// default) lets every gesture close it.
+  /// its value is false a drag down is off (the handle stays drawn), and a
+  /// scrim tap or its semantics dismiss, Back and Escape leave the sheet open
+  /// and call [onDismissBlocked], where the caller can ask the person whether
+  /// to discard (the sheet draws no such question). The value is read when
+  /// the gesture lands, so a field that turns dirty after the sheet opened
+  /// holds the next gesture. The dialog [dialogBreakpoint] presents is held
+  /// the same way, barrier tap included.
+  ///
+  /// [onDismissBlocked] receives the sheet's own context. The sheet sits on
+  /// the root navigator, so close it with `Navigator.of(sheetContext).pop()`
+  /// once the person confirms the discard: a `pop` skips the guard, so it
+  /// need not be flipped first, while a `maybePop` stays refused. The opener's
+  /// context would pop the wrong navigator. A `Navigator.pop` from
+  /// [footerBuilder] closes either too. Null [canDismiss] (the default) lets
+  /// every gesture close it.
   ///
   /// Throws a [StateError] when [dialogBreakpoint] names a breakpoint the Wind
   /// theme does not carry, rather than silently never presenting a dialog.
@@ -102,7 +109,7 @@ class MSBottomSheet extends StatelessWidget {
     bool scrollable = true,
     String? dialogBreakpoint,
     ValueListenable<bool>? canDismiss,
-    VoidCallback? onDismissBlocked,
+    void Function(BuildContext sheetContext)? onDismissBlocked,
   }) {
     final String? breakpoint = dialogBreakpoint;
     final bool sheetEverywhere =

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide BottomSheet;
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -454,33 +455,46 @@ void main() {
     }
 
     /// Opens a sheet whose text field turns [canDismiss] false on its first
-    /// keystroke, the way a form reports itself dirty.
+    /// keystroke, the way a form reports itself dirty. [nested] opens it from
+    /// a page of a nested navigator, as an app shell's content area does.
     Future<void> open(
       WidgetTester tester, {
       ValueNotifier<bool>? canDismiss,
       String? dialogBreakpoint,
+      bool nested = false,
+      void Function(BuildContext sheetContext)? onBlocked,
     }) async {
+      final Widget opener = Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () async {
+            result = await MSBottomSheet.show<String>(
+              context,
+              title: 'Edit',
+              body: TextField(onChanged: (_) => canDismiss?.value = false),
+              dialogBreakpoint: dialogBreakpoint,
+              canDismiss: canDismiss,
+              onDismissBlocked: (sheetContext) {
+                blocked++;
+                onBlocked?.call(sheetContext);
+              },
+              footerBuilder: (sheetContext) => ElevatedButton(
+                onPressed: () => Navigator.of(sheetContext).pop('saved'),
+                child: const Text('Save'),
+              ),
+            );
+          },
+          child: const Text('Open'),
+        ),
+      );
+
       await tester.pumpWidget(
         wrap(
-          Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                result = await MSBottomSheet.show<String>(
-                  context,
-                  title: 'Edit',
-                  body: TextField(onChanged: (_) => canDismiss?.value = false),
-                  dialogBreakpoint: dialogBreakpoint,
-                  canDismiss: canDismiss,
-                  onDismissBlocked: () => blocked++,
-                  footerBuilder: (sheetContext) => ElevatedButton(
-                    onPressed: () => Navigator.of(sheetContext).pop('saved'),
-                    child: const Text('Save'),
-                  ),
-                );
-              },
-              child: const Text('Open'),
-            ),
-          ),
+          nested
+              ? Navigator(
+                  onGenerateRoute: (_) =>
+                      MaterialPageRoute<void>(builder: (_) => opener),
+                )
+              : opener,
         ),
       );
       await tester.tap(find.text('Open'));
@@ -509,9 +523,28 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    Future<void> escape(WidgetTester tester) async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+    }
+
+    /// The dismiss action a screen reader sends to the barrier labelled
+    /// [label]: `Scrim` on a sheet, `Dismiss` on a dialog.
+    Future<void> Function(WidgetTester) semanticsDismiss(String label) {
+      return (tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+        await tester.pump();
+        tester.semantics.dismiss(find.semantics.byLabel(label));
+        handle.dispose();
+        await tester.pumpAndSettle();
+      };
+    }
+
     final Map<String, Future<void> Function(WidgetTester)> gestures = {
       'a scrim tap': scrimTap,
+      'a semantics dismiss on the scrim': semanticsDismiss('Scrim'),
       'Back': back,
+      'Escape': escape,
       'a drag down': dragDown,
     };
 
@@ -592,10 +625,75 @@ void main() {
       expect(blocked, 0);
     });
 
+    for (final dialog in [false, true]) {
+      testWidgets(
+        'a confirmed discard closes the ${dialog ? 'dialog' : 'sheet'} '
+        'with the context the blocked callback gets',
+        (tester) async {
+          // Opened from a nested navigator: the modal sits on the root one, so
+          // only the modal's own context pops it.
+          setWidth(tester, dialog ? 1440 : 390);
+          final canDismiss = ValueNotifier<bool>(false);
+
+          await open(
+            tester,
+            canDismiss: canDismiss,
+            dialogBreakpoint: dialog ? 'lg' : null,
+            nested: true,
+            onBlocked: (sheetContext) =>
+                Navigator.of(sheetContext).pop('discarded'),
+          );
+          await scrimTap(tester);
+
+          expect(blocked, 1);
+          expect(result, 'discarded');
+          expect(find.byType(MSBottomSheet), findsNothing);
+          expect(find.byType(MSDialog), findsNothing);
+          expect(find.text('Open'), findsOneWidget);
+          expect(canDismiss.value, isFalse);
+        },
+      );
+    }
+
+    testWidgets('a sheet without a guard keeps the showModalBottomSheet frame '
+        'on the root navigator', (tester) async {
+      setWidth(tester, 390);
+
+      await open(tester, nested: true);
+
+      final route =
+          ModalRoute.of(tester.element(find.byType(MSBottomSheet)))!
+              as ModalBottomSheetRoute<Object?>;
+      final NavigatorState root = tester.state<NavigatorState>(
+        find.byType(Navigator).first,
+      );
+      final localizations = MaterialLocalizations.of(
+        tester.element(find.byType(MSBottomSheet)),
+      );
+
+      expect(route.navigator, same(root));
+      expect(
+        tester.state<NavigatorState>(find.byType(Navigator).at(1)),
+        isNot(same(root)),
+      );
+      expect(route.barrierLabel, localizations.scrimLabel);
+      expect(
+        route.barrierOnTapHint,
+        localizations.scrimOnTapHint(localizations.bottomSheetLabel),
+      );
+      expect(route.backgroundColor, Colors.transparent);
+      expect(route.isScrollControlled, isTrue);
+      expect(route.isDismissible, isTrue);
+      expect(route.enableDrag, isTrue);
+      expect(route.useSafeArea, isFalse);
+    });
+
     group('as a dialog', () {
       final Map<String, Future<void> Function(WidgetTester)> dismissals = {
         'a barrier tap': scrimTap,
+        'a semantics dismiss on the barrier': semanticsDismiss('Dismiss'),
         'Back': back,
+        'Escape': escape,
       };
 
       for (final dismissal in dismissals.entries) {
