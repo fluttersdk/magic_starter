@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart' as m show BuildContext, showDialog;
+import 'package:flutter/widgets.dart' as m show BuildContext;
 
 import '../components/confirm_dialog/confirm_dialog.dart';
+import '../components/dialog/modal_presenter.dart';
 
 export '../components/confirm_dialog/confirm_dialog.dart'
     show ConfirmDialogVariant;
@@ -40,19 +41,17 @@ class MagicStarterConfirmDialog extends MSConfirmDialog {
     ConfirmDialogVariant variant = ConfirmDialogVariant.primary,
     Future<void> Function()? onConfirm,
   }) {
-    return m
-        .showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => MagicStarterConfirmDialog(
-            title: title,
-            description: description,
-            confirmLabel: confirmLabel,
-            cancelLabel: cancelLabel,
-            variant: variant,
-            onConfirm: onConfirm,
-          ),
-        )
-        .then((v) => v ?? false);
+    return ModalPresenter.show<bool>(
+      context,
+      dismissible: false,
+      builder: (_) => MagicStarterConfirmDialog(
+        title: title,
+        description: description,
+        confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
+        variant: variant,
+        onConfirm: onConfirm,
+      ),
+    ).then((v) => v ?? false);
   }
 }

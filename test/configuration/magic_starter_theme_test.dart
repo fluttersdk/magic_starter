@@ -1123,6 +1123,11 @@ void main() {
         (t) => t.maxWidth,
         (t) => t.copyWith(maxWidth: 999.0),
       ),
+      field<MagicStarterModalTheme>(
+        'presentation',
+        (t) => t.presentation,
+        (t) => t.copyWith(presentation: MagicStarterModalPresentation.dialog),
+      ),
     ];
 
     const distinctModal = MagicStarterModalTheme(
@@ -1139,6 +1144,7 @@ void main() {
       errorClassName: 'modal-error',
       inputClassName: 'modal-input',
       maxWidth: 321.0,
+      presentation: MagicStarterModalPresentation.sheet,
     );
 
     /// The same checks for both themes: [original] has every field distinct.
@@ -1191,7 +1197,11 @@ void main() {
           for (final f in fields) {
             if (f.name == changed.name) {
               expect(f.read(copied), isNot(f.read(original)), reason: f.name);
-              expect(f.read(copied), isIn(['changed', 999.0]), reason: f.name);
+              expect(
+                f.read(copied),
+                isIn(['changed', 999.0, MagicStarterModalPresentation.dialog]),
+                reason: f.name,
+              );
             } else {
               expect(f.read(copied), f.read(original), reason: f.name);
             }
@@ -1225,6 +1235,17 @@ void main() {
         defaults: const MagicStarterModalTheme(),
         copy: (t) => t.copyWith(),
       );
+
+      test('presents as a dialog by default and from fromWind', () {
+        expect(
+          const MagicStarterModalTheme().presentation,
+          MagicStarterModalPresentation.dialog,
+        );
+        expect(
+          MagicStarterTheme.fromWind(WindThemeData()).modal.presentation,
+          MagicStarterModalPresentation.dialog,
+        );
+      });
 
       test('keeps the width of a theme that sets one', () {
         expect(

@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart' as m show Colors, showDialog, Dialog;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../facades/magic_starter.dart';
+import '../dialog/dialog.dart';
+import '../dialog/modal_presenter.dart';
 import 'confirm_dialog.recipe.dart';
 
 /// Visual style variants for [MSConfirmDialog].
@@ -21,7 +22,8 @@ enum ConfirmDialogVariant {
   warning,
 }
 
-/// A reusable confirm/cancel dialog built on the Material dialog shell.
+/// A reusable confirm/cancel dialog built on the [MSDialog] shell, so it is a
+/// bottom sheet in the modal theme's sheet presentation.
 ///
 /// Supports three visual variants ([ConfirmDialogVariant]) and an optional
 /// async [onConfirm] callback with double-click protection via `_isLoading`.
@@ -78,20 +80,18 @@ class MSConfirmDialog extends StatefulWidget {
     ConfirmDialogVariant variant = ConfirmDialogVariant.primary,
     Future<void> Function()? onConfirm,
   }) {
-    return m
-        .showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => MSConfirmDialog(
-            title: title,
-            description: description,
-            confirmLabel: confirmLabel,
-            cancelLabel: cancelLabel,
-            variant: variant,
-            onConfirm: onConfirm,
-          ),
-        )
-        .then((v) => v ?? false);
+    return ModalPresenter.show<bool>(
+      context,
+      dismissible: false,
+      builder: (_) => MSConfirmDialog(
+        title: title,
+        description: description,
+        confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
+        variant: variant,
+        onConfirm: onConfirm,
+      ),
+    ).then((v) => v ?? false);
   }
 
   @override
@@ -135,79 +135,29 @@ class _ConfirmDialogState extends State<MSConfirmDialog> {
       theme,
     );
 
-    // 1. Compute safe height, subtracting system insets.
-    final viewPadding = MediaQuery.viewPaddingOf(context);
-    final safeHeight =
-        (MediaQuery.sizeOf(context).height -
-                viewPadding.top -
-                viewPadding.bottom)
-            .clamp(0.0, double.infinity);
-
-    // 2. Build dialog shell with footer carrying compact right-aligned buttons.
-    return m.Dialog(
-      backgroundColor: m.Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: theme.maxWidth,
-          maxHeight: safeHeight * 0.85,
-        ),
-        child: WDiv(
-          className: '${theme.containerClassName} w-full overflow-hidden',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 3. Header: title + optional description.
-              WDiv(
-                className: theme.headerClassName,
-                children: [
-                  WText(widget.title, className: theme.titleClassName),
-                  if (widget.description != null)
-                    WText(
-                      widget.description!,
-                      className: theme.descriptionClassName,
-                    ),
-                ],
-              ),
-              // 4. Empty body (SizedBox.shrink keeps the slot present).
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  children: [
-                    WDiv(
-                      className: theme.bodyClassName,
-                      child: const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
-              ),
-              // 5. Footer: compact right-aligned cancel + confirm buttons.
-              WDiv(
-                className: theme.footerClassName,
-                child: WDiv(
-                  className: 'flex flex-row justify-end gap-2 wrap',
-                  children: [
-                    WAnchor(
-                      onTap: _isLoading ? null : _onCancel,
-                      child: WDiv(
-                        className: theme.secondaryButtonClassName,
-                        child: WText(cancelLabel),
-                      ),
-                    ),
-                    WButton(
-                      onTap: _isLoading ? null : _onConfirm,
-                      isLoading: _isLoading,
-                      className: confirmClassName,
-                      child: WText(confirmLabel),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    // On the shared MSDialog shell, so the sheet presentation draws the sheet
+    // panel here too. The empty body keeps the slot (and its padding) present.
+    return MSDialog(
+      title: widget.title,
+      description: widget.description,
+      body: const SizedBox.shrink(),
+      footerBuilder: (_) => WDiv(
+        className: 'flex flex-row justify-end gap-2 wrap',
+        children: [
+          WAnchor(
+            onTap: _isLoading ? null : _onCancel,
+            child: WDiv(
+              className: theme.secondaryButtonClassName,
+              child: WText(cancelLabel),
+            ),
           ),
-        ),
+          WButton(
+            onTap: _isLoading ? null : _onConfirm,
+            isLoading: _isLoading,
+            className: confirmClassName,
+            child: WText(confirmLabel),
+          ),
+        ],
       ),
     );
   }

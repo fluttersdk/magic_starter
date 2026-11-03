@@ -349,7 +349,7 @@ MSPageScaffold(
 )
 ```
 
-`MSBottomSheet.show(context, ..., dialogBreakpoint: 'lg')` follows the same idea for overlays: a sheet on a phone, an `MSDialog` from `lg`, from one call.
+`MSBottomSheet.show(context, ..., dialogBreakpoint: 'lg')` follows the same idea for overlays: a sheet on a phone, an `MSDialog` from `lg`, from one call. A modal theme with `presentation: MagicStarterModalPresentation.sheet` ignores the breakpoint and keeps the sheet at every width.
 
 ### MSCard
 
@@ -486,6 +486,8 @@ MagicStarter.useModalTheme(
 ```
 
 All theme fields are optional — omitted fields fall back to sensible defaults. Call both `useNavigationTheme()` and `useModalTheme()` in `AppServiceProvider.boot()` before any UI is painted.
+
+`presentation: MagicStarterModalPresentation.sheet` opens the starter's modals (`MSDialog.show`, `MSConfirmDialog.show`, the password confirm, step up and two factor dialogs) as the same bottom sheet at every width instead of a centered dialog, with the same return values. The plan upgrade prompt is the exception: it opens through magic's `MagicFeedback.showCustomDialog` and stays a dialog. The default, `dialog`, keeps a centered dialog, now drawn by one shared shell: the footer stays fixed and the header stays pinned above the scrolling body while it takes at most half of the room the body scrolls in, and scrolls away with the body when it would take more (a landscape phone, the keyboard up, a large text size), and the two factor wizard's actions sit in the shell's footer band. See [Modal Theme](doc/architecture/manager.md#modal-theme).
 
 ---
 

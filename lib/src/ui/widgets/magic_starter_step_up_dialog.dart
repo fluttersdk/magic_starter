@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' show showDialog;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -9,6 +8,7 @@ import '../../support/social_failure_message.dart';
 import '../components/button/index.dart';
 import '../components/confirm_dialog/confirm_dialog.dart';
 import '../components/dialog/dialog.dart';
+import '../components/dialog/modal_presenter.dart';
 
 /// Asks an account with no password to prove who is calling.
 ///
@@ -66,9 +66,9 @@ class MagicStarterStepUpDialog extends StatefulWidget {
     Future<String?> Function(Map<String, String> proof)? onProof,
     ConfirmDialogVariant variant = ConfirmDialogVariant.primary,
   }) {
-    return showDialog<Map<String, String>>(
-      context: context,
-      barrierDismissible: false,
+    return ModalPresenter.show<Map<String, String>>(
+      context,
+      dismissible: false,
       builder: (_) => MagicStarterStepUpDialog(
         title: title,
         description: description,
@@ -240,7 +240,7 @@ class _MagicStarterStepUpDialogState extends State<MagicStarterStepUpDialog> {
     final providers = _offeredProviders(accepts);
     final offersNothing = !offersCode && providers.isEmpty;
 
-    return MSDialog(
+    final Widget dialog = MSDialog(
       title: widget.title ?? trans('social.confirm_identity'),
       description: widget.description ?? trans('social.step_up_required'),
       body: WDiv(
@@ -293,6 +293,9 @@ class _MagicStarterStepUpDialogState extends State<MagicStarterStepUpDialog> {
         ],
       ),
     );
+
+    // Back follows Cancel: off while a proof is being checked.
+    return PopScope(canPop: _canCancel, child: dialog);
   }
 
   Widget _buildProviderRow(String provider) {

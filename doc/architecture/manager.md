@@ -267,7 +267,27 @@ All fields are optional — omitted fields fall back to the current defaults.
 | `warningButtonClassName` | Default warning | Warning action button |
 | `errorClassName` | Default error | Inline error message text style |
 | `inputClassName` | Default input | Text input fields inside dialogs |
-| `maxWidth` | `448.0` | Maximum dialog width in logical pixels |
+| `maxWidth` | `448.0` | Maximum dialog width in logical pixels (a dialog only) |
+| `presentation` | `MagicStarterModalPresentation.dialog` | Whether the starter's modals open as a dialog or as a bottom sheet |
+
+### Presentation
+
+`presentation: MagicStarterModalPresentation.sheet` opens the starter's modals as the same bottom sheet `MSBottomSheet` draws, at every width (the plan upgrade prompt, which opens through magic's `MagicFeedback.showCustomDialog`, stays a dialog): `MSDialog.show`, `MSConfirmDialog.show` (and its `MagicStarterConfirmDialog` alias), `MagicStarterPasswordConfirmDialog.show`, `MagicStarterStepUpDialog.show` and `MagicStarterTwoFactorModal.show`, so the sessions, team settings, two factor, step up and support attachment flows too. `MSBottomSheet.show(dialogBreakpoint:)` then ignores its breakpoint and stays a sheet.
+
+```dart
+MagicStarter.useModalTheme(
+  MagicStarter.modalTheme.copyWith(
+    presentation: MagicStarterModalPresentation.sheet,
+  ),
+);
+```
+
+- Return values do not change: `true` / `false` from a confirm, the proof map or `null` from the step up. The two factor wizard resolves `true` once a code was accepted, however it is closed, and `false` when closed before that; closed while a code is being checked, it resolves only when that `onConfirm` call settles, with no time limit. Cancel, a scrim tap and back are off during the check.
+- The confirm, password confirm and step up modals cannot be closed by a scrim tap, as their dialogs cannot, and as sheets they refuse a drag down too and draw no drag handle. Back cancels them while idle; while the password confirm or step up request is in flight, back is off like their Cancel button. `MSDialog.show` and the two factor wizard close on a scrim tap or a drag.
+- A sheet is full width on a phone. On a wide screen it is capped at 640 px by Flutter's Material 3 default, which holds only with `useMaterial3` and no `bottomSheetTheme.constraints` of the host's; `maxWidth` applies to the dialog only. The sheet lifts clear of the keyboard and the home indicator.
+- In both presentations the footer, with the actions, stays fixed. The header stays pinned above the scrolling body while it takes at most half of the room the body scrolls in, measured at layout, and scrolls away with the body when it would take more (a landscape phone, where a sheet already has about 313 px, the keyboard up, a large text size). Crossing that line rebuilds nothing, so a focused field keeps its focus and the body its scroll offset. A body passed with `scrollable: false` keeps the header fixed and gets the height left between header and footer. A pinned header holds still while the body bounces or stretches under it; a header past the half mark moves with the body, overscroll included. On a sheet whose content overflows, a drag that starts on the header scrolls the content, so only the handle and the footer drag the sheet down; when the content fits, a drag anywhere on the sheet drags it.
+- The setting is read when a modal opens. An `MSDialog` widget draws the sheet panel when it is built inside a bottom sheet route, and its dialog shell otherwise: a dialog a host opens with its own `showDialog` keeps the shell, and its own `showModalBottomSheet(builder: (_) => MSDialog(...))` gets the sheet panel.
+- `useWindTheme()` and `useTheme()` reset the modal theme, `presentation` included, so set it after them.
 
 The theme is stored on `MagicStarterManager` as `modalTheme` and reset to defaults by `manager.reset()`. The active theme is read at widget build time, so `useModalTheme()` can be called at any point before a dialog is shown.
 
