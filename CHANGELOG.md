@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.69] - 2026-11-04
+
+### Changed
+
+- **Every sibling floor names a release this package is verified against.** `magic` moves `^0.0.38` to `^0.0.39`; `fluttersdk_wind ^1.11.0`, `magic_notifications ^0.3.12`, `magic_payments ^0.0.12` and `fluttersdk_artisan ^0.0.20` already name the newest releases. The old range already admitted the new version, so a fresh `pub get` resolves nothing differently. Nothing between the old and the new floor is breaking: magic 0.0.39 only fixes an overlay sheet that stayed shut after a refused drag when the guard's own question closed, which the starter's sheets depend on. The issue template's magic version placeholder names 0.0.39. (`pubspec.yaml`, `.github/ISSUE_TEMPLATE/bug_report.yml`)
+
 ## [0.0.68] - 2026-11-04
 
 ### Added
