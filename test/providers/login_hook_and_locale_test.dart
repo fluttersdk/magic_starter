@@ -275,6 +275,48 @@ void main() {
 
       expect(mounts(), 2);
     });
+
+    testWidgets(
+      'a changed user does not reload while a handoff holds the screen',
+      (tester) async {
+        // The boot sync of an already signed-in visitor answers about a second
+        // after the first frame. A remount then runs `/auth/handoff` a second
+        // time over a code the first run already spent, and the visitor reads
+        // "expired" instead of being asked "Sign in as ...?".
+        final mounts = await pumpCountedApp(tester);
+        final answer = Completer<MagicResponse>();
+        final controller = MagicStarterHandoffController(
+          driver: () =>
+              FakeNetworkDriver(stubs: (MagicRequest request) => answer.future),
+        );
+        Magic.put<MagicStarterHandoffController>(controller);
+
+        final pending = controller.handOff(code: 'hnd_code');
+        await tester.pump();
+
+        await Event.dispatch(AuthRestored(_fakeUser(), changed: true));
+        await tester.pump();
+
+        expect(mounts(), 1);
+
+        // Once the screen has let go, the same event reloads as before.
+        controller.forget();
+        answer.complete(
+          Http.response({
+            'data': {
+              'token': '1|token',
+              'user': {'id': 1},
+            },
+          }),
+        );
+        await pending;
+
+        await Event.dispatch(AuthRestored(_fakeUser(), changed: true));
+        await tester.pump();
+
+        expect(mounts(), 2);
+      },
+    );
   });
 
   group('applying a saved locale', () {
