@@ -584,6 +584,22 @@ void main() {
       expect(controller.holdsHandoff, isFalse);
     });
 
+    test('through the sign-out and sign-in Continue confirmed', () async {
+      arrange();
+      signInBob();
+      await controller.handOff(code: _code);
+
+      bool? heldDuringSignOut;
+      MagicStarter.manager.beforeLogout(() async {
+        heldDuringSignOut = controller.holdsHandoff;
+      });
+
+      await controller.confirm();
+
+      expect(heldDuringSignOut, isTrue);
+      expect(controller.holdsHandoff, isFalse);
+    });
+
     test('until Cancel', () async {
       arrange();
       signInBob();

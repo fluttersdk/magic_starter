@@ -66,8 +66,9 @@ class MagicStarterHandoffController extends MagicController
   /// left is dropped instead of parking an answer nobody can confirm.
   int _generation = 0;
 
-  /// Exchanges that have gone out and not answered yet.
-  int _exchanging = 0;
+  /// Steps of a handoff that are mid-air: an exchange that has not answered, a
+  /// confirmed sign-out, a sign-in being concluded.
+  int _working = 0;
 
   /// Render the handoff view via registry key.
   Widget handoff() => MagicStarter.view.make('auth.handoff');
@@ -81,8 +82,9 @@ class MagicStarterHandoffController extends MagicController
   /// names nobody.
   String? get confirmingAs => _awaiting?.identity;
 
-  /// Whether a handed code is mid-air: its exchange has not answered, or its
-  /// answer waits on the confirmation.
+  /// Whether a handed code is mid-air: its exchange has not answered, its
+  /// answer waits on the confirmation, or the confirmed sign-out and sign-in
+  /// have not finished.
   ///
   /// The app must not remount while this is true. A code is single use and the
   /// exchange spends it, so a second run of the screen over the same code (what
@@ -90,7 +92,7 @@ class MagicStarterHandoffController extends MagicController
   /// having changed the user) is refused as expired, and the first run's answer
   /// is dropped and revoked with it: the visitor lands on the open session with
   /// an "expired" toast instead of being asked "Sign in as ...?".
-  bool get holdsHandoff => _exchanging > 0 || _awaiting != null;
+  bool get holdsHandoff => _working > 0 || _awaiting != null;
 
   // -------------------------------------------------------------------------
   // Public actions
@@ -115,11 +117,11 @@ class MagicStarterHandoffController extends MagicController
     //    server has answered for it.
     final int generation = _generation;
     final Map<String, dynamic>? body;
-    _exchanging++;
+    _working++;
     try {
       body = await _exchange(code);
     } finally {
-      _exchanging--;
+      _working--;
     }
     if (generation != _generation) {
       if (body != null) _revoke(body);
@@ -161,12 +163,19 @@ class MagicStarterHandoffController extends MagicController
   /// concludes the handed sign-in.
   Future<void> confirm() async {
     final _HandedSignIn? signIn = _awaiting;
-    _awaiting = null;
     if (signIn == null) return;
 
-    refreshUI();
-    if (Auth.check()) await MagicStarterAuthController.instance.logout();
-    await _signIn(signIn);
+    // Counted before the answer stops waiting, so the handoff is held without
+    // a gap between the question and the sign-in it asked for.
+    _working++;
+    try {
+      _awaiting = null;
+      refreshUI();
+      if (Auth.check()) await MagicStarterAuthController.instance.logout();
+      await _signIn(signIn);
+    } finally {
+      _working--;
+    }
   }
 
   /// Declines the handed account: an open session stays and home opens, else
@@ -242,10 +251,15 @@ class MagicStarterHandoffController extends MagicController
   /// Records where the sign-in lands, then concludes it. Recorded after any
   /// sign-out, whose auth-state listener in the starter drops the intended url.
   Future<void> _signIn(_HandedSignIn signIn) async {
-    final String? next = signIn.next;
-    if (next != null) MagicRouter.instance.setIntendedUrl(next);
+    _working++;
+    try {
+      final String? next = signIn.next;
+      if (next != null) MagicRouter.instance.setIntendedUrl(next);
 
-    await completeSignIn(signIn.body);
+      await completeSignIn(signIn.body);
+    } finally {
+      _working--;
+    }
   }
 
   /// Revokes the token a dropped answer [body] carries, without waiting; a
