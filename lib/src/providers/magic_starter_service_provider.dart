@@ -7,6 +7,7 @@ import 'package:magic_payments/magic_payments.dart';
 
 import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
+import '../http/controllers/magic_starter_handoff_controller.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 import '../support/app_build.dart';
@@ -29,10 +30,17 @@ import '../support/app_build.dart';
 /// here: it applies the switch answer's user, which flips magic's
 /// `SessionScope` identity synchronously and resets the scoped screens with no
 /// remount, so a "switched team" toast survives.
+///
+/// Nothing reloads while a handoff holds the screen
+/// ([MagicStarterHandoffController.holdsHandoff]): the visitor that opens
+/// `/auth/handoff` over a stored session is about to be asked who to continue
+/// as, and the remount would run the screen a second time over a code the
+/// first run already spent.
 class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   @override
   Future<void> handle(AuthRestored event) async {
     if (!event.changed) return;
+    if (MagicStarterHandoffController.instance.holdsHandoff) return;
 
     // Soft reload the app to refresh all team-scoped data
     Magic.reload();

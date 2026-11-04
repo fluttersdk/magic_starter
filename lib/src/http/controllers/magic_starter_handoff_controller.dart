@@ -66,6 +66,9 @@ class MagicStarterHandoffController extends MagicController
   /// left is dropped instead of parking an answer nobody can confirm.
   int _generation = 0;
 
+  /// Exchanges that have gone out and not answered yet.
+  int _exchanging = 0;
+
   /// Render the handoff view via registry key.
   Widget handoff() => MagicStarter.view.make('auth.handoff');
 
@@ -77,6 +80,17 @@ class MagicStarterHandoffController extends MagicController
   /// `null` when nothing waits or the answer is a two-factor challenge, which
   /// names nobody.
   String? get confirmingAs => _awaiting?.identity;
+
+  /// Whether a handed code is mid-air: its exchange has not answered, or its
+  /// answer waits on the confirmation.
+  ///
+  /// The app must not remount while this is true. A code is single use and the
+  /// exchange spends it, so a second run of the screen over the same code (what
+  /// `Magic.reload()` causes, the boot sync of an already signed-in visitor
+  /// having changed the user) is refused as expired, and the first run's answer
+  /// is dropped and revoked with it: the visitor lands on the open session with
+  /// an "expired" toast instead of being asked "Sign in as ...?".
+  bool get holdsHandoff => _exchanging > 0 || _awaiting != null;
 
   // -------------------------------------------------------------------------
   // Public actions
@@ -100,7 +114,13 @@ class MagicStarterHandoffController extends MagicController
     // 1. Trade the code first: nothing about the session moves before the
     //    server has answered for it.
     final int generation = _generation;
-    final Map<String, dynamic>? body = await _exchange(code);
+    final Map<String, dynamic>? body;
+    _exchanging++;
+    try {
+      body = await _exchange(code);
+    } finally {
+      _exchanging--;
+    }
     if (generation != _generation) {
       if (body != null) _revoke(body);
 
