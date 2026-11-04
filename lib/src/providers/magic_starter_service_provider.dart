@@ -40,7 +40,10 @@ class _ReloadOnAuthRestored extends MagicListener<AuthRestored> {
   @override
   Future<void> handle(AuthRestored event) async {
     if (!event.changed) return;
-    if (MagicStarterHandoffController.instance.holdsHandoff) return;
+    if (Magic.isRegistered<MagicStarterHandoffController>() &&
+        MagicStarterHandoffController.instance.holdsHandoff) {
+      return;
+    }
 
     // Soft reload the app to refresh all team-scoped data
     Magic.reload();

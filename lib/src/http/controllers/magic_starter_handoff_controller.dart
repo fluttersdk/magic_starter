@@ -70,6 +70,12 @@ class MagicStarterHandoffController extends MagicController
   /// confirmed sign-out, a sign-in being concluded.
   int _working = 0;
 
+  /// Who was signed in when the code was handed over, `null` for nobody. A
+  /// session reset that keeps this user (a team switch, which is what the
+  /// claim the landing just made does to its account) is no reason to drop a
+  /// handoff that is mid-air.
+  Object? _openedAs;
+
   /// Render the handoff view via registry key.
   Widget handoff() => MagicStarter.view.make('auth.handoff');
 
@@ -117,6 +123,7 @@ class MagicStarterHandoffController extends MagicController
     //    server has answered for it.
     final int generation = _generation;
     final Map<String, dynamic>? body;
+    _openedAs = Auth.id();
     _working++;
     try {
       body = await _exchange(code);
@@ -201,6 +208,16 @@ class MagicStarterHandoffController extends MagicController
 
   @override
   Future<void> resetForSession() async {
+    // The session scope resets on a team switch as well as on another user,
+    // and the boot sync of a stored session lands exactly there when the claim
+    // behind the code moved this very account's current team: dropping the
+    // handoff then revokes the answer the visitor is about to be asked about.
+    if (holdsHandoff && Auth.id() == _openedAs) {
+      refreshUI();
+
+      return;
+    }
+
     forget();
     refreshUI();
   }

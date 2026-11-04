@@ -286,9 +286,8 @@ void main() {
         final mounts = await pumpCountedApp(tester);
         final answer = Completer<MagicResponse>();
         final controller = MagicStarterHandoffController(
-          driver: () => FakeNetworkDriver(
-            stubs: (MagicRequest request) => answer.future,
-          ),
+          driver: () =>
+              FakeNetworkDriver(stubs: (MagicRequest request) => answer.future),
         );
         Magic.put<MagicStarterHandoffController>(controller);
 

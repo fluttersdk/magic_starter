@@ -522,7 +522,29 @@ void main() {
       expect(server.recorded.last.$1.url, '/auth/logout');
     });
 
-    test('a new session drops a confirmation still waiting', () async {
+    test('a new user drops a confirmation still waiting', () async {
+      arrange();
+      signInBob();
+      await controller.handOff(code: _code);
+
+      auth = Auth.fake(
+        user: MagicStarter.createUser({
+          'id': 'user-carol',
+          'name': 'Carol',
+          'email': 'carol@example.com',
+        }),
+      );
+      await controller.resetForSession();
+      await pumpEventQueue();
+
+      expect(controller.isConfirming, isFalse);
+      expect(server.recorded.last.$1.url, '/auth/logout');
+    });
+
+    test('a reset that keeps the signed-in user (a team switch) leaves the '
+        'confirmation waiting', () async {
+      // The claim behind the code moves the claimant's current team, and the
+      // session scope resets on a team switch as well as on another user.
       arrange();
       signInBob();
       await controller.handOff(code: _code);
@@ -530,9 +552,32 @@ void main() {
       await controller.resetForSession();
       await pumpEventQueue();
 
-      expect(controller.isConfirming, isFalse);
-      expect(server.recorded.last.$1.url, '/auth/logout');
+      expect(controller.isConfirming, isTrue);
+      server.assertSentCount(1);
     });
+
+    test(
+      'a reset that keeps the user does not drop an exchange in flight',
+      () async {
+        final Completer<MagicResponse> answer = Completer<MagicResponse>();
+        server = FakeNetworkDriver(
+          stubs: (MagicRequest request) => answer.future,
+        );
+        controller = MagicStarterHandoffController(driver: () => server);
+        Magic.put<MagicStarterHandoffController>(controller);
+        signInBob();
+
+        final Future<void> pending = controller.handOff(code: _code);
+        await pumpEventQueue();
+
+        await controller.resetForSession();
+        answer.complete(Http.response(_session()));
+        await pending;
+
+        expect(controller.isConfirming, isTrue);
+        server.assertSentCount(1);
+      },
+    );
 
     test(
       'Continue revokes nothing: the handed token is the new session',
