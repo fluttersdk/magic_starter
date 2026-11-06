@@ -1,6 +1,6 @@
 name: magic_starter
 description: Starter kit for Magic Framework. Auth, Profile, Teams, Notifications — 14 opt-in features with overridable views.
-version: 0.0.70
+version: 0.0.71
 homepage: https://magic.fluttersdk.com/starter
 documentation: https://magic.fluttersdk.com/packages/starter/getting-started/installation
 repository: https://github.com/fluttersdk/magic_starter
@@ -35,11 +35,13 @@ dependencies:
   # first ship in 0.0.22, and the restore listener reads `AuthRestored.changed`,
   # which first ships in 0.0.24. The real requirement is 0.0.29: the views read
   # route values through `pathParameterOf` and `queryParameterOf`, which first
-  # ship there. The floor itself names 0.0.39, the release 0.0.70 was verified
-  # against, and the old range already admitted it. The one breaking entry in
-  # 0.0.30 to 0.0.39, `MagicVaultService.macOsUsesDataProtectionKeychain`
+  # ship there. The floor itself names 0.0.40, the release 0.0.71 was verified
+  # against, and the old range already admitted it; 0.0.40 adds
+  # `MagicRoute.useOverlayPresentation` and `MagicOverlayPresentation`, which
+  # the provider calls to frame an overlay route by the modal theme. The one
+  # breaking entry in 0.0.30 to 0.0.39, `MagicVaultService.macOsUsesDataProtectionKeychain`
   # becoming `bool?` in 0.0.38, is a field this package never reads.
-  magic: ^0.0.39
+  magic: ^0.0.40
   fluttersdk_artisan: ^0.0.20
   # This is a FLOOR for an API, not an upper-bound fix, and the API is
   # `Notify.view`: the notification screens, the bell dropdown and the
@@ -94,7 +96,7 @@ dependencies:
   # off on every field that passes none; 1.8.4 restores that. 1.9.1 is the
   # first release whose `WSelect` lights `focus:` on keyboard focus, which the
   # `MSSelect` focus ring needs; below it the ring never paints. The floor itself
-  # names 1.11.0, the release 0.0.70 was verified against: 1.10.0 adds `WImage`
+  # names 1.11.0, the release 0.0.71 was verified against: 1.10.0 adds `WImage`
   # object-position classes and a `decimalSeparator` for a number `WInput`, and
   # 1.11.0 adds `wWindowClassOf`, this package calls none of them, and the old
   # range already admitted both.
