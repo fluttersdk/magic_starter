@@ -268,9 +268,13 @@ All fields are optional — omitted fields fall back to the current defaults.
 | `errorClassName` | Default error | Inline error message text style |
 | `inputClassName` | Default input | Text input fields inside dialogs |
 | `maxWidth` | `448.0` | Maximum dialog width in logical pixels (a dialog only) |
-| `presentation` | `MagicStarterModalPresentation.dialog` | Whether the starter's modals open as a dialog or as a bottom sheet |
+| `presentation` | `MagicStarterModalPresentation.dialog` | Whether the starter's modals open as a dialog, as a bottom sheet, or as a sheet below `dialogBreakpoint` and a dialog from it (`adaptive`) |
+| `dialogBreakpoint` | `'lg'` | The Wind breakpoint `adaptive` swaps to a dialog from; read by `adaptive` only |
+| `headlessBodyClassName` | `'pt-6'` | Top padding of the body of an `MSBottomSheet` drawn as a dialog with no title and no description (an overlay route under `adaptive`), where the sheet had its drag handle |
 
 ### Presentation
+
+`presentation: MagicStarterModalPresentation.adaptive` opens every modal the starter opens, and every `MSBottomSheet.show`, as a bottom sheet below `dialogBreakpoint` and as a centered `MSDialog` (at most `maxWidth`) from it: a phone gets the sheet, a desktop window the dialog, from one setting. The screen width is read when a modal opens, so one that is already open keeps its form through a resize; `MSBottomSheet.show(dialogBreakpoint:)` is ignored, and a breakpoint the Wind theme does not carry throws a `StateError` naming `MagicStarterModalTheme.dialogBreakpoint`. Overlay routes (`RouteDefinition.overlay`) follow too: the provider installs a resolver on magic's router (`MagicRoute.useOverlayPresentation`), an `MSBottomSheet` built in a dialog route draws the dialog shell, and under `dialog` or `sheet` an overlay route stays the sheet it has always been.
 
 `presentation: MagicStarterModalPresentation.sheet` opens the starter's modals as the same bottom sheet `MSBottomSheet` draws, at every width (the plan upgrade prompt, which opens through magic's `MagicFeedback.showCustomDialog`, stays a dialog): `MSDialog.show`, `MSConfirmDialog.show` (and its `MagicStarterConfirmDialog` alias), `MagicStarterPasswordConfirmDialog.show`, `MagicStarterStepUpDialog.show` and `MagicStarterTwoFactorModal.show`, so the sessions, team settings, two factor, step up and support attachment flows too. `MSBottomSheet.show(dialogBreakpoint:)` then ignores its breakpoint and stays a sheet.
 

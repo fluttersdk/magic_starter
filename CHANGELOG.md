@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`MagicStarterModalPresentation.adaptive` opens every modal as a bottom sheet on a phone and a centered dialog on a desktop window, from one setting.** Below `MagicStarterModalTheme.dialogBreakpoint` (a Wind breakpoint name, default `'lg'`) the starter's modals (`MSDialog.show`, `MSConfirmDialog.show`, the password confirm, step up and two factor dialogs) and `MSBottomSheet.show` are the sheet `sheet` draws; from it they are an `MSDialog` of at most `maxWidth`, with the same title, description, body, footer, `scrollable` contract and dismiss guard. The width is read when a modal opens, so one already open keeps its form through a resize. In this mode `MSBottomSheet.show(dialogBreakpoint:)` is ignored, as it is in `sheet`: the theme's breakpoint governs, and a name the Wind theme does not carry throws a `StateError` naming `MagicStarterModalTheme.dialogBreakpoint`. `dialogBreakpoint` is read by `adaptive` only. (`lib/src/configuration/magic_starter_theme.dart`, `lib/src/ui/components/dialog/modal_presenter.dart`, `lib/src/ui/components/bottom_sheet/bottom_sheet.dart`)
+- **An `MSBottomSheet` built in a dialog route draws the dialog shell.** An overlay route (`RouteDefinition.overlay`) builds its page's `MSBottomSheet` itself, so the widget follows the route it sits in, as `MSDialog` already does in a sheet route: in a dialog route the same title, body and footer are the dialog shell, and a body with `scrollable: false` gets the dialog's bounded height. With no title and no description that dialog body takes the new `MagicStarterModalTheme.headlessBodyClassName` (default `'pt-6'`, the header's top padding), so a page's own header (a close button, a count) is not flush against the card's top edge where the sheet had its drag handle; a plain `MSDialog` is unchanged. (`lib/src/ui/components/bottom_sheet/bottom_sheet.dart`, `lib/src/configuration/magic_starter_theme.dart`)
+- **The starter provider frames an overlay route by the modal theme.** `boot()` installs a resolver through magic's `MagicRoute.useOverlayPresentation`: under `adaptive` an overlay route opens as a dialog from `dialogBreakpoint` up; under `dialog` and `sheet` it stays the sheet it has always been. A host that wants another rule calls `MagicRoute.useOverlayPresentation` after the provider boots. Needs a `magic` release that carries the overlay presentation seam. (`lib/src/providers/magic_starter_service_provider.dart`)
+
 ## [0.0.70] - 2026-11-05
 
 ### Fixed

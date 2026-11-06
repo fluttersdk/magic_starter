@@ -161,6 +161,14 @@ enum MagicStarterModalPresentation {
   /// (640 px) on a wide screen. `MSBottomSheet.show(dialogBreakpoint:)` then
   /// never swaps to a dialog.
   sheet,
+
+  /// A bottom sheet below [MagicStarterModalTheme.dialogBreakpoint] and a
+  /// centered dialog, capped at [MagicStarterModalTheme.maxWidth], from it: a
+  /// phone gets the sheet and a desktop window the dialog from one setting.
+  /// The width is read when a modal is opened, so one already open keeps the
+  /// form it opened in. `MSBottomSheet.show(dialogBreakpoint:)` is ignored: the
+  /// theme's breakpoint governs every modal.
+  adaptive,
 }
 
 /// Theme configuration for modal/dialog colors, styling and presentation.
@@ -199,6 +207,16 @@ class MagicStarterModalTheme {
   ///
   /// Defaults to `'px-6 pb-4'`.
   final String bodyClassName;
+
+  /// Padding className around the body of an `MSBottomSheet` drawn as a dialog
+  /// (an overlay route under [MagicStarterModalPresentation.adaptive]) that has
+  /// no title and no description.
+  ///
+  /// The sheet has a drag handle above such a body; the dialog has none, so a
+  /// page's own header would sit flush against the card's top edge. Read only
+  /// there: a plain `MSDialog` is unchanged. Defaults to `'pt-6'`, the header's
+  /// top padding.
+  final String headlessBodyClassName;
 
   /// Footer section className (action buttons row).
   ///
@@ -263,10 +281,19 @@ class MagicStarterModalTheme {
   /// [MagicStarterModalPresentation.dialog].
   final MagicStarterModalPresentation presentation;
 
+  /// The Wind breakpoint, by name, from which
+  /// [MagicStarterModalPresentation.adaptive] opens a dialog instead of a
+  /// sheet.
+  ///
+  /// Read when a modal is opened, and only by `adaptive`. A name the Wind theme
+  /// does not carry throws a [StateError] naming this field. Defaults to `'lg'`.
+  final String dialogBreakpoint;
+
   const MagicStarterModalTheme({
     this.containerClassName = 'bg-white dark:bg-gray-800 rounded-2xl',
     this.headerClassName = 'px-6 pt-6 pb-4',
     this.bodyClassName = 'px-6 pb-4',
+    this.headlessBodyClassName = 'pt-6',
     this.footerClassName = 'px-6 py-4 bg-gray-50 dark:bg-gray-800/50',
     this.titleClassName =
         'text-xl font-semibold text-gray-900 dark:text-white mb-2',
@@ -284,6 +311,7 @@ class MagicStarterModalTheme {
         'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
     this.maxWidth = 448.0,
     this.presentation = MagicStarterModalPresentation.dialog,
+    this.dialogBreakpoint = 'lg',
   });
 
   /// Returns a copy of this theme with the given fields replaced.
@@ -302,6 +330,7 @@ class MagicStarterModalTheme {
     String? containerClassName,
     String? headerClassName,
     String? bodyClassName,
+    String? headlessBodyClassName,
     String? footerClassName,
     String? titleClassName,
     String? descriptionClassName,
@@ -313,11 +342,14 @@ class MagicStarterModalTheme {
     String? inputClassName,
     double? maxWidth,
     MagicStarterModalPresentation? presentation,
+    String? dialogBreakpoint,
   }) {
     return MagicStarterModalTheme(
       containerClassName: containerClassName ?? this.containerClassName,
       headerClassName: headerClassName ?? this.headerClassName,
       bodyClassName: bodyClassName ?? this.bodyClassName,
+      headlessBodyClassName:
+          headlessBodyClassName ?? this.headlessBodyClassName,
       footerClassName: footerClassName ?? this.footerClassName,
       titleClassName: titleClassName ?? this.titleClassName,
       descriptionClassName: descriptionClassName ?? this.descriptionClassName,
@@ -333,6 +365,7 @@ class MagicStarterModalTheme {
       inputClassName: inputClassName ?? this.inputClassName,
       maxWidth: maxWidth ?? this.maxWidth,
       presentation: presentation ?? this.presentation,
+      dialogBreakpoint: dialogBreakpoint ?? this.dialogBreakpoint,
     );
   }
 }

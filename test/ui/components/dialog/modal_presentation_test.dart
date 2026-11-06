@@ -214,7 +214,7 @@ void main() {
   }
 
   for (final presentation in MagicStarterModalPresentation.values) {
-    final bool sheet = presentation == MagicStarterModalPresentation.sheet;
+    final bool sheet = presentation != MagicStarterModalPresentation.dialog;
 
     group('${presentation.name} presentation', () {
       for (final opener in _openers) {
@@ -349,6 +349,393 @@ void main() {
 
       expectDialog();
       expect(find.byType(MSDialog), findsOneWidget);
+    });
+  });
+
+  // `adaptive` is one setting for a phone and a desktop window: the sheet below
+  // `dialogBreakpoint`, a centred dialog from it, for every opener.
+  group('adaptive presentation', () {
+    for (final opener in _openers) {
+      group(opener.name, () {
+        testWidgets('opens as a dialog at 1440 px', (tester) async {
+          setSize(tester, const Size(1440, 900));
+          usePresentation(MagicStarterModalPresentation.adaptive);
+
+          await pumpOpener(tester, opener.open, (_) {});
+
+          expectDialog();
+        });
+
+        testWidgets('opens as a sheet at 390 px', (tester) async {
+          setSize(tester, const Size(390, 844));
+          usePresentation(MagicStarterModalPresentation.adaptive);
+
+          await pumpOpener(tester, opener.open, (_) {});
+
+          expectSheet();
+        });
+
+        testWidgets('resolves the confirm value as a dialog', (tester) async {
+          setSize(tester, const Size(1440, 900));
+          usePresentation(MagicStarterModalPresentation.adaptive);
+          Object? result = #unset;
+
+          await pumpOpener(tester, opener.open, (v) => result = v);
+          await opener.confirm(tester);
+
+          expect(result, opener.confirmed);
+          expect(find.byType(Dialog), findsNothing);
+        });
+
+        testWidgets(
+          opener.dismissible
+              ? 'a scrim tap closes the dialog'
+              : 'a scrim tap leaves the dialog open',
+          (tester) async {
+            setSize(tester, const Size(1440, 900));
+            usePresentation(MagicStarterModalPresentation.adaptive);
+            Object? result = #unset;
+
+            await pumpOpener(tester, opener.open, (v) => result = v);
+            await tester.tapAt(const Offset(8, 8));
+            await tester.pumpAndSettle();
+
+            if (opener.dismissible) {
+              expect(result, opener.dismissedValue!());
+              expect(find.byType(Dialog), findsNothing);
+            } else {
+              expect(result, #unset);
+              expectDialog();
+            }
+          },
+        );
+      });
+    }
+
+    testWidgets('switches exactly at the breakpoint width', (tester) async {
+      usePresentation(MagicStarterModalPresentation.adaptive);
+
+      setSize(tester, const Size(1023, 800));
+      await pumpOpener(
+        tester,
+        (c) => MSDialog.show<void>(c, body: const Text('x')),
+        (_) {},
+      );
+      expectSheet();
+
+      setSize(tester, const Size(1024, 800));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await pumpOpener(
+        tester,
+        (c) => MSDialog.show<void>(c, body: const Text('x')),
+        (_) {},
+      );
+      expectDialog();
+    });
+
+    testWidgets('follows a theme that names another breakpoint', (
+      tester,
+    ) async {
+      setSize(tester, const Size(800, 900));
+      MagicStarter.useModalTheme(
+        MagicStarter.manager.modalTheme.copyWith(
+          presentation: MagicStarterModalPresentation.adaptive,
+          dialogBreakpoint: 'md',
+        ),
+      );
+
+      await pumpOpener(
+        tester,
+        (c) => MSDialog.show<void>(c, body: const Text('x')),
+        (_) {},
+      );
+
+      expectDialog();
+    });
+
+    testWidgets('names the theme field when the breakpoint is unknown', (
+      tester,
+    ) async {
+      setSize(tester, const Size(1440, 900));
+      MagicStarter.useModalTheme(
+        MagicStarter.manager.modalTheme.copyWith(
+          presentation: MagicStarterModalPresentation.adaptive,
+          dialogBreakpoint: 'desktop',
+        ),
+      );
+      Object? error;
+
+      await pumpOpener(tester, (context) async {
+        try {
+          await MSDialog.show<void>(context, body: const Text('x'));
+        } on StateError catch (e) {
+          error = e;
+        }
+
+        return null;
+      }, (_) {});
+
+      expect(error, isA<StateError>());
+      expect(
+        (error! as StateError).message,
+        contains('MagicStarterModalTheme.dialogBreakpoint'),
+      );
+    });
+
+    // An overlay route draws its page's `MSBottomSheet` itself, so the widget
+    // follows the route it sits in: a dialog route gets the dialog shell.
+    group('an MSBottomSheet built in a dialog route', () {
+      Future<Object?> openInDialogRoute(
+        BuildContext context, {
+        bool scrollable = true,
+        Widget body = const Text('panel body'),
+      }) {
+        return showDialog<void>(
+          context: context,
+          builder: (_) => MSBottomSheet(
+            title: 'Page',
+            body: body,
+            scrollable: scrollable,
+            footerBuilder: (_) => const Text('panel footer'),
+          ),
+        );
+      }
+
+      testWidgets('draws the dialog shell, not the sheet panel', (
+        tester,
+      ) async {
+        setSize(tester, const Size(1440, 900));
+
+        await pumpOpener(tester, openInDialogRoute, (_) {});
+
+        expect(find.byType(Dialog), findsOneWidget);
+        expect(find.byType(MSBottomSheetPanel), findsNothing);
+        expect(find.text('Page'), findsOneWidget);
+        expect(find.text('panel body'), findsOneWidget);
+        expect(find.text('panel footer'), findsOneWidget);
+      });
+
+      testWidgets('hands a body that scrolls itself the dialog height', (
+        tester,
+      ) async {
+        setSize(tester, const Size(1440, 900));
+        double? maxHeight;
+
+        await pumpOpener(
+          tester,
+          (context) => openInDialogRoute(
+            context,
+            scrollable: false,
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                maxHeight = constraints.maxHeight;
+
+                return const SizedBox(height: 40);
+              },
+            ),
+          ),
+          (_) {},
+        );
+
+        expect(maxHeight, isNotNull);
+        expect(maxHeight!.isFinite, isTrue);
+        expect(maxHeight, lessThanOrEqualTo(900 * 0.85));
+      });
+
+      // A page's own header (the print queue, the capture review) stands in
+      // for the title, so with none given the body must not sit flush against
+      // the card's top edge, where the sheet had its drag handle.
+      testWidgets('leaves room above a body that has no title', (tester) async {
+        setSize(tester, const Size(1440, 900));
+        const Key bodyKey = Key('own-header');
+
+        await pumpOpener(
+          tester,
+          (context) => showDialog<void>(
+            context: context,
+            builder: (_) => const MSBottomSheet(
+              body: SizedBox(key: bodyKey, height: 40, width: 200),
+            ),
+          ),
+          (_) {},
+        );
+
+        final double card = tester
+            .getRect(
+              find
+                  .descendant(
+                    of: find.byType(Dialog),
+                    matching: find.byType(WDiv),
+                  )
+                  .first,
+            )
+            .top;
+
+        expect(tester.getRect(find.byKey(bodyKey)).top - card, 24);
+      });
+
+      testWidgets('takes the headless padding from the modal theme', (
+        tester,
+      ) async {
+        setSize(tester, const Size(1440, 900));
+        MagicStarter.useModalTheme(
+          MagicStarter.manager.modalTheme.copyWith(
+            headlessBodyClassName: 'pt-10',
+          ),
+        );
+        const Key bodyKey = Key('own-header');
+
+        await pumpOpener(
+          tester,
+          (context) => showDialog<void>(
+            context: context,
+            builder: (_) => const MSBottomSheet(
+              body: SizedBox(key: bodyKey, height: 40, width: 200),
+            ),
+          ),
+          (_) {},
+        );
+
+        final double card = tester
+            .getRect(
+              find
+                  .descendant(
+                    of: find.byType(Dialog),
+                    matching: find.byType(WDiv),
+                  )
+                  .first,
+            )
+            .top;
+
+        expect(tester.getRect(find.byKey(bodyKey)).top - card, 40);
+      });
+
+      testWidgets('leaves a title-less MSDialog as it was', (tester) async {
+        setSize(tester, const Size(1440, 900));
+        const Key bodyKey = Key('plain-dialog');
+
+        await pumpOpener(
+          tester,
+          (context) => MSDialog.show<void>(
+            context,
+            body: const SizedBox(key: bodyKey, height: 40, width: 200),
+          ),
+          (_) {},
+        );
+
+        final double card = tester
+            .getRect(
+              find
+                  .descendant(
+                    of: find.byType(Dialog),
+                    matching: find.byType(WDiv),
+                  )
+                  .first,
+            )
+            .top;
+
+        expect(tester.getRect(find.byKey(bodyKey)).top - card, 0);
+      });
+
+      testWidgets('keeps the sheet panel in a bottom sheet route', (
+        tester,
+      ) async {
+        setSize(tester, const Size(1440, 900));
+
+        await pumpOpener(
+          tester,
+          (context) => showModalBottomSheet<void>(
+            context: context,
+            builder: (_) =>
+                const MSBottomSheet(title: 'Page', body: Text('panel body')),
+          ),
+          (_) {},
+        );
+
+        expect(find.byType(MSBottomSheetPanel), findsOneWidget);
+        expect(find.byType(Dialog), findsNothing);
+      });
+    });
+
+    group('MSBottomSheet.show without a dialogBreakpoint', () {
+      Future<Object?> openSheet(BuildContext context) {
+        return MSBottomSheet.show<void>(
+          context,
+          title: 'Move',
+          body: const Text('sheet body'),
+        );
+      }
+
+      testWidgets('presents an MSDialog at 1440 px', (tester) async {
+        setSize(tester, const Size(1440, 900));
+        usePresentation(MagicStarterModalPresentation.adaptive);
+
+        await pumpOpener(tester, openSheet, (_) {});
+
+        expectDialog();
+        expect(find.byType(MSDialog), findsOneWidget);
+        expect(find.byType(MSBottomSheet), findsNothing);
+      });
+
+      testWidgets('stays an MSBottomSheet at 390 px', (tester) async {
+        setSize(tester, const Size(390, 844));
+        usePresentation(MagicStarterModalPresentation.adaptive);
+
+        await pumpOpener(tester, openSheet, (_) {});
+
+        expectSheet();
+        expect(find.byType(MSBottomSheet), findsOneWidget);
+      });
+
+      testWidgets('ignores its own dialogBreakpoint, as a sheet theme does', (
+        tester,
+      ) async {
+        setSize(tester, const Size(1440, 900));
+        usePresentation(MagicStarterModalPresentation.adaptive);
+
+        await pumpOpener(
+          tester,
+          (context) => MSBottomSheet.show<void>(
+            context,
+            body: const Text('sheet body'),
+            dialogBreakpoint: '2xl',
+          ),
+          (_) {},
+        );
+
+        expectDialog();
+      });
+
+      testWidgets('holds the dialog open through canDismiss', (tester) async {
+        setSize(tester, const Size(1440, 900));
+        usePresentation(MagicStarterModalPresentation.adaptive);
+        final ValueNotifier<bool> canDismiss = ValueNotifier<bool>(false);
+        addTearDown(canDismiss.dispose);
+        int blocked = 0;
+
+        await pumpOpener(
+          tester,
+          (context) => MSBottomSheet.show<void>(
+            context,
+            body: const Text('sheet body'),
+            canDismiss: canDismiss,
+            onDismissBlocked: (_) => blocked++,
+          ),
+          (_) {},
+        );
+        await tester.tapAt(const Offset(8, 8));
+        await tester.pumpAndSettle();
+
+        expect(blocked, 1);
+        expectDialog();
+
+        canDismiss.value = true;
+        await tester.pump();
+        await tester.tapAt(const Offset(8, 8));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(Dialog), findsNothing);
+      });
     });
   });
 
@@ -646,7 +1033,7 @@ void main() {
 
   group('back and Escape on the non-dismissible openers', () {
     for (final presentation in MagicStarterModalPresentation.values) {
-      final bool sheet = presentation == MagicStarterModalPresentation.sheet;
+      final bool sheet = presentation != MagicStarterModalPresentation.dialog;
 
       for (final opener in _openers.where((o) => !o.dismissible)) {
         // Idle, back acts as Cancel, as it always has: `barrierDismissible:
@@ -710,7 +1097,7 @@ void main() {
     };
 
     for (final presentation in MagicStarterModalPresentation.values) {
-      final bool sheet = presentation == MagicStarterModalPresentation.sheet;
+      final bool sheet = presentation != MagicStarterModalPresentation.dialog;
       final Map<String, Future<void> Function(WidgetTester)> all = {
         ...attempts,
         if (sheet)
@@ -1200,7 +1587,7 @@ void main() {
     }
 
     for (final presentation in MagicStarterModalPresentation.values) {
-      final bool sheet = presentation == MagicStarterModalPresentation.sheet;
+      final bool sheet = presentation != MagicStarterModalPresentation.dialog;
       final closes = <String, Future<void> Function(WidgetTester)>{
         'a scrim tap': scrimTap,
         'back': back,

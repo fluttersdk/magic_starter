@@ -11,6 +11,7 @@ import '../http/controllers/magic_starter_handoff_controller.dart';
 import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 import '../support/app_build.dart';
+import '../ui/components/dialog/modal_presenter.dart';
 
 /// Reloads the app when `Auth.restore()`'s background user sync CHANGED the
 /// user: after a write that calls `Auth.restore()` (team rename, invitation
@@ -189,6 +190,12 @@ class MagicStarterServiceProvider extends ServiceProvider {
     // 2. If not, register 'indigo' as the fallback primary color.
     // 3. Emit info log to notify about the fallback.
     _bootPrimaryColorFallback();
+
+    // An overlay route follows the modal theme: a dialog from its breakpoint up
+    // under `adaptive`, the sheet it has always been otherwise. A host that
+    // wants another rule calls `MagicRoute.useOverlayPresentation` after this
+    // provider boots.
+    MagicRoute.useOverlayPresentation(ModalPresenter.overlayPresentation);
 
     // package_info_plus reads `version.json` once and caches the answer for
     // the process. Reading it at boot pins the build of the bundle that is
