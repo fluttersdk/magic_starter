@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:magic/magic.dart' show WDiv;
 
 import '../../../configuration/magic_starter_theme.dart';
 import '../../../facades/magic_starter.dart';
@@ -168,10 +169,21 @@ class MSBottomSheet extends StatelessWidget {
     // draw as the dialog shell (what `MSDialog` does in a sheet route, the
     // other way round). Anywhere else, the sheet panel.
     if (ModalRoute.of(context) is RawDialogRoute) {
+      // With no title or description the body is the top of the card, where
+      // the sheet had its drag handle: a page's own header would sit flush
+      // against the edge, so the body takes the theme's headless padding.
+      final bool headless = title == null && description == null;
+
       return MSDialog(
         title: title,
         description: description,
-        body: body,
+        body: headless
+            ? WDiv(
+                className:
+                    MagicStarter.manager.modalTheme.headlessBodyClassName,
+                child: body,
+              )
+            : body,
         footerBuilder: footerBuilder,
         scrollable: scrollable,
       );

@@ -158,15 +158,7 @@ class MSDialog extends StatelessWidget {
                 : null,
             // 5. Body: in the scroll view it shares with the header, or the
             //    bounded height handed to a body that scrolls itself.
-            //    With no header the body is the top of the card, so it takes the
-            //    header's top padding (the last class of a family wins) rather
-            //    than sit flush against the edge.
-            body: WDiv(
-              className: title == null && description == null
-                  ? '${theme.bodyClassName} pt-6'
-                  : theme.bodyClassName,
-              child: body,
-            ),
+            body: WDiv(className: theme.bodyClassName, child: body),
             // 6. Sticky footer: Builder gives footer access to dialog
             //    context so Navigator.of(dialogContext) works correctly.
             footer: footerBuilder != null

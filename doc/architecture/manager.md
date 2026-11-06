@@ -270,6 +270,7 @@ All fields are optional — omitted fields fall back to the current defaults.
 | `maxWidth` | `448.0` | Maximum dialog width in logical pixels (a dialog only) |
 | `presentation` | `MagicStarterModalPresentation.dialog` | Whether the starter's modals open as a dialog, as a bottom sheet, or as a sheet below `dialogBreakpoint` and a dialog from it (`adaptive`) |
 | `dialogBreakpoint` | `'lg'` | The Wind breakpoint `adaptive` swaps to a dialog from; read by `adaptive` only |
+| `headlessBodyClassName` | `'pt-6'` | Top padding of the body of an `MSBottomSheet` drawn as a dialog with no title and no description (an overlay route under `adaptive`), where the sheet had its drag handle |
 
 ### Presentation
 

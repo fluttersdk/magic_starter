@@ -574,6 +574,69 @@ void main() {
         expect(tester.getRect(find.byKey(bodyKey)).top - card, 24);
       });
 
+      testWidgets('takes the headless padding from the modal theme', (
+        tester,
+      ) async {
+        setSize(tester, const Size(1440, 900));
+        MagicStarter.useModalTheme(
+          MagicStarter.manager.modalTheme.copyWith(
+            headlessBodyClassName: 'pt-10',
+          ),
+        );
+        const Key bodyKey = Key('own-header');
+
+        await pumpOpener(
+          tester,
+          (context) => showDialog<void>(
+            context: context,
+            builder: (_) => const MSBottomSheet(
+              body: SizedBox(key: bodyKey, height: 40, width: 200),
+            ),
+          ),
+          (_) {},
+        );
+
+        final double card = tester
+            .getRect(
+              find
+                  .descendant(
+                    of: find.byType(Dialog),
+                    matching: find.byType(WDiv),
+                  )
+                  .first,
+            )
+            .top;
+
+        expect(tester.getRect(find.byKey(bodyKey)).top - card, 40);
+      });
+
+      testWidgets('leaves a title-less MSDialog as it was', (tester) async {
+        setSize(tester, const Size(1440, 900));
+        const Key bodyKey = Key('plain-dialog');
+
+        await pumpOpener(
+          tester,
+          (context) => MSDialog.show<void>(
+            context,
+            body: const SizedBox(key: bodyKey, height: 40, width: 200),
+          ),
+          (_) {},
+        );
+
+        final double card = tester
+            .getRect(
+              find
+                  .descendant(
+                    of: find.byType(Dialog),
+                    matching: find.byType(WDiv),
+                  )
+                  .first,
+            )
+            .top;
+
+        expect(tester.getRect(find.byKey(bodyKey)).top - card, 0);
+      });
+
       testWidgets('keeps the sheet panel in a bottom sheet route', (
         tester,
       ) async {

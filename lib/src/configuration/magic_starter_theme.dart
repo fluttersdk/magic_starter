@@ -208,6 +208,16 @@ class MagicStarterModalTheme {
   /// Defaults to `'px-6 pb-4'`.
   final String bodyClassName;
 
+  /// Padding className around the body of an `MSBottomSheet` drawn as a dialog
+  /// (an overlay route under [MagicStarterModalPresentation.adaptive]) that has
+  /// no title and no description.
+  ///
+  /// The sheet has a drag handle above such a body; the dialog has none, so a
+  /// page's own header would sit flush against the card's top edge. Read only
+  /// there: a plain `MSDialog` is unchanged. Defaults to `'pt-6'`, the header's
+  /// top padding.
+  final String headlessBodyClassName;
+
   /// Footer section className (action buttons row).
   ///
   /// Defaults to `'px-6 py-4 bg-gray-50 dark:bg-gray-800/50'`.
@@ -283,6 +293,7 @@ class MagicStarterModalTheme {
     this.containerClassName = 'bg-white dark:bg-gray-800 rounded-2xl',
     this.headerClassName = 'px-6 pt-6 pb-4',
     this.bodyClassName = 'px-6 pb-4',
+    this.headlessBodyClassName = 'pt-6',
     this.footerClassName = 'px-6 py-4 bg-gray-50 dark:bg-gray-800/50',
     this.titleClassName =
         'text-xl font-semibold text-gray-900 dark:text-white mb-2',
@@ -319,6 +330,7 @@ class MagicStarterModalTheme {
     String? containerClassName,
     String? headerClassName,
     String? bodyClassName,
+    String? headlessBodyClassName,
     String? footerClassName,
     String? titleClassName,
     String? descriptionClassName,
@@ -336,6 +348,8 @@ class MagicStarterModalTheme {
       containerClassName: containerClassName ?? this.containerClassName,
       headerClassName: headerClassName ?? this.headerClassName,
       bodyClassName: bodyClassName ?? this.bodyClassName,
+      headlessBodyClassName:
+          headlessBodyClassName ?? this.headlessBodyClassName,
       footerClassName: footerClassName ?? this.footerClassName,
       titleClassName: titleClassName ?? this.titleClassName,
       descriptionClassName: descriptionClassName ?? this.descriptionClassName,

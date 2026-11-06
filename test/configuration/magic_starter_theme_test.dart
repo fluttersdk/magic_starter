@@ -1074,6 +1074,11 @@ void main() {
         (t) => t.copyWith(bodyClassName: 'changed'),
       ),
       field<MagicStarterModalTheme>(
+        'headlessBodyClassName',
+        (t) => t.headlessBodyClassName,
+        (t) => t.copyWith(headlessBodyClassName: 'changed'),
+      ),
+      field<MagicStarterModalTheme>(
         'footerClassName',
         (t) => t.footerClassName,
         (t) => t.copyWith(footerClassName: 'changed'),
@@ -1139,6 +1144,7 @@ void main() {
       containerClassName: 'modal-container',
       headerClassName: 'modal-header',
       bodyClassName: 'modal-body',
+      headlessBodyClassName: 'modal-headless',
       footerClassName: 'modal-footer',
       titleClassName: 'modal-title',
       descriptionClassName: 'modal-description',
