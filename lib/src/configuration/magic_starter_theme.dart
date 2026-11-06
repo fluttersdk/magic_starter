@@ -161,6 +161,14 @@ enum MagicStarterModalPresentation {
   /// (640 px) on a wide screen. `MSBottomSheet.show(dialogBreakpoint:)` then
   /// never swaps to a dialog.
   sheet,
+
+  /// A bottom sheet below [MagicStarterModalTheme.dialogBreakpoint] and a
+  /// centered dialog, capped at [MagicStarterModalTheme.maxWidth], from it: a
+  /// phone gets the sheet and a desktop window the dialog from one setting.
+  /// The width is read when a modal is opened, so one already open keeps the
+  /// form it opened in. `MSBottomSheet.show(dialogBreakpoint:)` is ignored: the
+  /// theme's breakpoint governs every modal.
+  adaptive,
 }
 
 /// Theme configuration for modal/dialog colors, styling and presentation.
@@ -263,6 +271,14 @@ class MagicStarterModalTheme {
   /// [MagicStarterModalPresentation.dialog].
   final MagicStarterModalPresentation presentation;
 
+  /// The Wind breakpoint, by name, from which
+  /// [MagicStarterModalPresentation.adaptive] opens a dialog instead of a
+  /// sheet.
+  ///
+  /// Read when a modal is opened, and only by `adaptive`. A name the Wind theme
+  /// does not carry throws a [StateError] naming this field. Defaults to `'lg'`.
+  final String dialogBreakpoint;
+
   const MagicStarterModalTheme({
     this.containerClassName = 'bg-white dark:bg-gray-800 rounded-2xl',
     this.headerClassName = 'px-6 pt-6 pb-4',
@@ -284,6 +300,7 @@ class MagicStarterModalTheme {
         'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
     this.maxWidth = 448.0,
     this.presentation = MagicStarterModalPresentation.dialog,
+    this.dialogBreakpoint = 'lg',
   });
 
   /// Returns a copy of this theme with the given fields replaced.
@@ -313,6 +330,7 @@ class MagicStarterModalTheme {
     String? inputClassName,
     double? maxWidth,
     MagicStarterModalPresentation? presentation,
+    String? dialogBreakpoint,
   }) {
     return MagicStarterModalTheme(
       containerClassName: containerClassName ?? this.containerClassName,
@@ -333,6 +351,7 @@ class MagicStarterModalTheme {
       inputClassName: inputClassName ?? this.inputClassName,
       maxWidth: maxWidth ?? this.maxWidth,
       presentation: presentation ?? this.presentation,
+      dialogBreakpoint: dialogBreakpoint ?? this.dialogBreakpoint,
     );
   }
 }

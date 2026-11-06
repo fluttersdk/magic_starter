@@ -3,9 +3,11 @@ import 'package:flutter/material.dart'
     as m
     show Colors, MaterialLocalizations, Theme, showDialog;
 import 'package:flutter/widgets.dart';
+import 'package:magic/magic.dart' show MagicOverlayPresentation;
 
 import '../../../configuration/magic_starter_theme.dart';
 import '../../../facades/magic_starter.dart';
+import '../../theme/magic_starter_breakpoints.dart';
 import '../bottom_sheet/guarded_sheet_route.dart';
 
 /// The one place a starter modal chooses between a dialog and a bottom sheet.
@@ -24,8 +26,49 @@ import '../bottom_sheet/guarded_sheet_route.dart';
 /// not when the modal opens. A `Navigator.pop` with a context inside the
 /// modal skips the guard and closes it.
 abstract final class ModalPresenter {
+  /// Whether the active modal theme presents a dialog at [context]'s width:
+  /// always for `dialog`, never for `sheet`, and for `adaptive` from the
+  /// theme's `dialogBreakpoint` up.
+  ///
+  /// Throws a [StateError] naming `MagicStarterModalTheme.dialogBreakpoint`
+  /// when `adaptive` is set with a breakpoint the Wind theme does not carry.
+  static bool presentsDialog(BuildContext context) {
+    final MagicStarterModalTheme theme = MagicStarter.manager.modalTheme;
+
+    return switch (theme.presentation) {
+      MagicStarterModalPresentation.dialog => true,
+      MagicStarterModalPresentation.sheet => false,
+      MagicStarterModalPresentation.adaptive =>
+        MagicStarterBreakpoints.isAtLeast(
+          context,
+          theme.dialogBreakpoint,
+          setting: 'MagicStarterModalTheme.dialogBreakpoint',
+        ),
+    };
+  }
+
+  /// How magic's router frames an overlay route (`RouteDefinition.overlay`)
+  /// that opens at [context]'s width: a dialog under an `adaptive` theme from
+  /// its `dialogBreakpoint` up, a sheet otherwise.
+  ///
+  /// Only `adaptive` moves an overlay route: a route has always been a sheet
+  /// whatever `dialog` and `sheet` say, and an app that never asked for
+  /// `adaptive` keeps it so. The starter provider installs this on the router
+  /// at boot; an app that wants another rule calls
+  /// `MagicRoute.useOverlayPresentation` after it.
+  static MagicOverlayPresentation overlayPresentation(BuildContext context) {
+    final bool adaptive =
+        MagicStarter.manager.modalTheme.presentation ==
+        MagicStarterModalPresentation.adaptive;
+
+    return adaptive && presentsDialog(context)
+        ? MagicOverlayPresentation.dialog
+        : MagicOverlayPresentation.sheet;
+  }
+
   /// Presents [builder] as a dialog or a sheet, per the active modal theme's
-  /// `presentation`, read when the call is made.
+  /// `presentation`, read when the call is made (an `adaptive` theme reads the
+  /// screen width then too).
   ///
   /// [dismissible] false keeps the modal open on a scrim tap and, as a sheet,
   /// on a drag down too: the openers that pass it guard only their own Cancel
@@ -37,8 +80,7 @@ abstract final class ModalPresenter {
     ValueListenable<bool>? canDismiss,
     void Function(BuildContext modalContext)? onDismissBlocked,
   }) {
-    if (MagicStarter.manager.modalTheme.presentation ==
-        MagicStarterModalPresentation.sheet) {
+    if (!presentsDialog(context)) {
       return showSheet<T>(
         context,
         builder: builder,

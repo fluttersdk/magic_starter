@@ -1128,6 +1128,11 @@ void main() {
         (t) => t.presentation,
         (t) => t.copyWith(presentation: MagicStarterModalPresentation.dialog),
       ),
+      field<MagicStarterModalTheme>(
+        'dialogBreakpoint',
+        (t) => t.dialogBreakpoint,
+        (t) => t.copyWith(dialogBreakpoint: 'xl'),
+      ),
     ];
 
     const distinctModal = MagicStarterModalTheme(
@@ -1145,6 +1150,7 @@ void main() {
       inputClassName: 'modal-input',
       maxWidth: 321.0,
       presentation: MagicStarterModalPresentation.sheet,
+      dialogBreakpoint: 'md',
     );
 
     /// The same checks for both themes: [original] has every field distinct.
@@ -1199,7 +1205,12 @@ void main() {
               expect(f.read(copied), isNot(f.read(original)), reason: f.name);
               expect(
                 f.read(copied),
-                isIn(['changed', 999.0, MagicStarterModalPresentation.dialog]),
+                isIn([
+                  'changed',
+                  999.0,
+                  MagicStarterModalPresentation.dialog,
+                  'xl',
+                ]),
                 reason: f.name,
               );
             } else {
@@ -1244,6 +1255,14 @@ void main() {
         expect(
           MagicStarterTheme.fromWind(WindThemeData()).modal.presentation,
           MagicStarterModalPresentation.dialog,
+        );
+      });
+
+      test('swaps to a dialog from lg when the presentation is adaptive', () {
+        expect(const MagicStarterModalTheme().dialogBreakpoint, 'lg');
+        expect(
+          MagicStarterTheme.fromWind(WindThemeData()).modal.dialogBreakpoint,
+          'lg',
         );
       });
 

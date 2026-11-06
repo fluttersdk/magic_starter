@@ -26,7 +26,10 @@ import 'bottom_sheet_panel.dart';
 /// same title, description, body, footer and [scrollable] contract instead.
 /// With `MagicStarterModalTheme.presentation` set to
 /// [MagicStarterModalPresentation.sheet] the argument is ignored: the app has
-/// chosen a sheet at every width.
+/// chosen a sheet at every width. With
+/// [MagicStarterModalPresentation.adaptive] it is ignored too, and every call
+/// swaps to the dialog from `MagicStarterModalTheme.dialogBreakpoint`, so one
+/// theme setting serves the starter's own modals and the app's sheets alike.
 ///
 /// ### Example
 /// ```dart
@@ -80,6 +83,8 @@ class MSBottomSheet extends StatelessWidget {
   /// when the call is made. Null (the default) always presents a sheet, and so
   /// does a modal theme whose `presentation` is
   /// [MagicStarterModalPresentation.sheet], which ignores [dialogBreakpoint].
+  /// A theme whose `presentation` is [MagicStarterModalPresentation.adaptive]
+  /// ignores it as well and swaps at its own `dialogBreakpoint`.
   ///
   /// [canDismiss] holds the sheet open for a body with unsaved input: while
   /// its value is false a drag down is off (the handle stays drawn), and a
@@ -111,19 +116,23 @@ class MSBottomSheet extends StatelessWidget {
     ValueListenable<bool>? canDismiss,
     void Function(BuildContext sheetContext)? onDismissBlocked,
   }) {
+    // 1. A `dialog` theme leaves the swap to the argument; `sheet` and
+    //    `adaptive` have chosen for the whole app, so the argument is ignored.
     final String? breakpoint = dialogBreakpoint;
-    final bool sheetEverywhere =
+    final bool asDialog =
         MagicStarter.manager.modalTheme.presentation ==
-        MagicStarterModalPresentation.sheet;
-    if (!sheetEverywhere &&
-        breakpoint != null &&
-        MagicStarterBreakpoints.isAtLeast(
-          context,
-          breakpoint,
-          setting: 'MSBottomSheet.show(dialogBreakpoint:)',
-        )) {
-      // What `MSDialog.show` does, with the guard it does not take; the
-      // presentation here is `dialog`, so the presenter shows a dialog.
+            MagicStarterModalPresentation.dialog
+        ? breakpoint != null &&
+              MagicStarterBreakpoints.isAtLeast(
+                context,
+                breakpoint,
+                setting: 'MSBottomSheet.show(dialogBreakpoint:)',
+              )
+        : ModalPresenter.presentsDialog(context);
+
+    if (asDialog) {
+      // 2. What `MSDialog.show` does, with the guard it does not take; the
+      //    presenter reaches the same answer, so it shows a dialog.
       return ModalPresenter.show<T>(
         context,
         canDismiss: canDismiss,
@@ -154,6 +163,20 @@ class MSBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // An overlay route builds its page's sheet itself, so the route decides
+    // how it is framed: in a dialog route the same title, body and footer
+    // draw as the dialog shell (what `MSDialog` does in a sheet route, the
+    // other way round). Anywhere else, the sheet panel.
+    if (ModalRoute.of(context) is RawDialogRoute) {
+      return MSDialog(
+        title: title,
+        description: description,
+        body: body,
+        footerBuilder: footerBuilder,
+        scrollable: scrollable,
+      );
+    }
+
     return MSBottomSheetPanel(
       title: title,
       description: description,
