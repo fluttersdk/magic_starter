@@ -144,7 +144,7 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 - `magic-framework` — Magic Framework patterns: facades, service providers, IoC, Eloquent ORM, controllers, routing. Use for ANY code touching Magic APIs. Its `references/plugin-starter.md` is this package's own agent-facing reference (facade API, view registry keys, component index); it lives in the `magic` repo, so a change to this package's public surface belongs there too.
 - `wind-ui` — the className syntax, the W-widgets and the theme every screen here is built on.
 
-There is no magic-starter-specific skill. The per-directory conventions live in `.claude/rules/`: `components.md` for the `MS`-prefixed design system, `widgets.md` for the behaviour-carrying widgets, plus `views.md`, `layouts.md`, `controllers.md`, `routes.md`, `cli.md` and `tests.md`.
+There is no magic-starter-specific skill. The per-directory conventions live in `.claude/rules/`: `components.md` for the `MS`-prefixed design system, `modal-presentation.md` for the dialog, sheet and adaptive modal contracts (`MSDialog`, `MSBottomSheet`, the openers, the dismiss guard), `widgets.md` for the behaviour-carrying widgets, plus `views.md`, `layouts.md`, `controllers.md`, `routes.md`, `cli.md` and `tests.md`.
 
 ## CI
 
