@@ -142,7 +142,7 @@ All values are read at runtime via `ConfigRepository` — no hardcoded strings s
 
 ## Feature Toggles
 
-All 23 features default to `false` (opt-in). Enable only what your app needs:
+All 24 features default to `false` (opt-in). Enable only what your app needs:
 
 | Toggle | Description |
 |--------|-------------|
@@ -164,7 +164,8 @@ All 23 features default to `false` (opt-in). Enable only what your app needs:
 | `support_csat` | A thumbs up or down, with an optional comment, on a resolved conversation; asked again after each new resolution. Needs `support` |
 | `support_feedback` | The occasional 0 to 10 card (`MagicStarterFeedbackCard`, placed by the host) and the "Send feedback" page and menu item. Needs `support` |
 | `support_attachments` | Images and PDFs on customer messages (jpg, png, webp, pdf; 3 files, 5 MB each by default). Needs `support` |
-| `support_diagnostics` | Client info and an automatic screenshot of the screen the customer came from, shown to staff only. The screenshot needs the app wrapped once with `MagicStarterScreenCapture.wrap(child)`; routes listed in `diagnostics.deny_capture_routes` are never captured. Needs `support` |
+| `support_client_context` | Client info (app version, build, platform, OS version, locale, timezone) sent with a new conversation, shown to staff only. Needs `support` |
+| `support_chat` | `MagicStarterSupportChatLauncher` (view key `support.chat`), a host-mounted button with an unread badge that opens a floating, non-modal chat panel (`support.chat_panel`) at the bottom right of the screen. Mount it once; client only. Needs `support` |
 | `store_review` | The native store review prompt (`MagicStarterStoreReview.maybeRequest()` at a host milestone, never on the web) and the "Rate us" menu item |
 | `releases` | A "What's new" changelog page at `/settings/changelog` (view key `settings.changelog`), its settings hub row and the `MagicStarterAppVersion` caption, over `magic-starter-laravel`'s `GET releases`. Needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |
 | `app_update` | `MagicStarterAppUpdateBanner`, mounted by the shipped app layout: on the web it offers Reload when a new deploy appears in `version.json`, on a store-installed release build it offers Update when the backend's latest build is higher. The web banner reads only `version.json`; the store banner reads `GET releases` and needs `Features::releases()` on the backend; see [Releases](doc/basics/releases.md) |

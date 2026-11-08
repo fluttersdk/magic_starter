@@ -1,24 +1,19 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show unawaited;
 
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, visibleForTesting;
-import 'package:flutter/material.dart' show CircularProgressIndicator, Icons;
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/magic_starter_support_controller.dart';
 import '../../../models/magic_starter_support_conversation.dart';
+import '../../../support/support_sync.dart';
 import '../../components/button/index.dart';
 import '../../components/error_state/index.dart';
-import '../../components/form_field/index.dart';
 import '../../components/page_scaffold/index.dart';
 import '../../components/skeleton/index.dart';
-import 'magic_starter_support_attachments.dart';
 import 'magic_starter_support_index_view.dart';
-import 'magic_starter_support_message_bubble.dart';
-import 'magic_starter_support_rating.dart';
+import 'magic_starter_support_thread_body.dart';
 
 /// One support conversation as a chat: bubbles by who wrote them, a docked
 /// composer, and what to expect from the AI or the team above it.
@@ -32,6 +27,10 @@ import 'magic_starter_support_rating.dart';
 /// them; behind `support_csat` a resolved conversation asks for a thumbs
 /// rating under the thread. The composer stays on a resolved conversation:
 /// writing again reopens it.
+///
+/// This view is the page chrome around [MagicStarterSupportThreadMessages] and
+/// [MagicStarterSupportComposer]: it owns the route id, the load and the seen
+/// receipt, and the parts draw the conversation.
 class MagicStarterSupportThreadView
     extends MagicStatefulView<MagicStarterSupportController> {
   /// [pickFiles] stands in for the system file picker; it is a parameter only
@@ -54,20 +53,8 @@ class _MagicStarterSupportThreadViewState
           MagicStarterSupportController,
           MagicStarterSupportThreadView
         >
-    with
-        MagicStarterSupportLiveRefresh<MagicStarterSupportThreadView>,
-        MagicStarterSupportAttachmentPicking<MagicStarterSupportThreadView> {
+    with MagicStarterSupportLiveRefresh<MagicStarterSupportThreadView> {
   static const _iconError = Icons.error_outline;
-  static const _iconSend = Icons.send;
-
-  /// The send circle while a reply can go (or is going) and while it cannot.
-  static const String _sendLive = 'bg-primary text-on-primary';
-  static const String _sendIdle = 'bg-surface-container-high text-fg-muted';
-  static const _iconAssistant = Icons.auto_awesome;
-  static const _iconWaiting = Icons.schedule;
-
-  /// How long the typing bubble waits before it admits the AI is slow.
-  static const Duration _slowAfter = Duration(seconds: 45);
 
   /// The conversation id from THIS page's own route.
   ///
@@ -79,49 +66,16 @@ class _MagicStarterSupportThreadViewState
   /// state can be read, and the first resolution starts the load.
   String? _id;
 
-  final TextEditingController _reply = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
-  /// Fires once the AI has been pending for [_slowAfter], counted from the
-  /// moment this screen first saw it pending: the wire carries no timestamp for
-  /// it, and a screen opened on a stranded thread should not claim the AI is
-  /// typing forever.
-  Timer? _slowTimer;
-  bool _slow = false;
-
-  /// The bearer header an attachment image is read with. Null until the token
-  /// has been read, and always null with `support_attachments` off.
-  Map<String, String>? _attachmentHeaders;
-
-  /// Why the last rating was refused. The controller keeps one write error for
-  /// the thread, so the composer would show it too; this one is the rating's.
-  String? _ratingError;
-
-  /// What the thread looked like the last time it was scrolled to its end, so a
-  /// new message, the typing bubble and the slow note each bring the newest
-  /// line into view exactly once.
-  String _scrolledTo = '';
-
-  @override
-  Future<List<MagicFile>> Function(List<String> extensions)?
-  get pickFilesOverride => widget.pickFiles;
+  /// Why the last rating was refused, shared by the messages (which show it
+  /// under the rating) and the composer (which then hides the shared write
+  /// error).
+  final ValueNotifier<String?> _ratingError = ValueNotifier<String?>(null);
 
   @override
   void onInit() {
     controller.forgetWriteError();
-    startLiveRefresh();
-
-    if (MagicStarterConfig.hasSupportAttachmentsFeatures()) {
-      unawaited(_resolveAttachmentHeaders());
-    }
-  }
-
-  /// Reads the token once; an image is then fetched with it, never with a
-  /// credential carried in the url.
-  Future<void> _resolveAttachmentHeaders() async {
-    final headers = await controller.attachmentHeaders();
-
-    if (mounted) setState(() => _attachmentHeaders = headers);
   }
 
   @override
@@ -129,184 +83,52 @@ class _MagicStarterSupportThreadViewState
     super.didChangeDependencies();
     if (_id != null) return;
 
-    _id = MagicRouter.instance.pathParameterOf(context, 'id') ?? '';
-    unawaited(refreshSupport());
+    final String id = MagicRouter.instance.pathParameterOf(context, 'id') ?? '';
+    _id = id;
+    startLiveRefresh(thread: id);
+    unawaited(_open(id));
   }
 
   @override
   void onClose() {
     stopLiveRefresh();
-    _slowTimer?.cancel();
-    _reply.dispose();
     _scroll.dispose();
+    _ratingError.dispose();
   }
 
-  /// Rereads the thread and, when staff wrote since the last read, marks it
-  /// seen.
-  ///
-  /// A thread with nothing unread sends no receipt: this runs on every poll
-  /// and broadcast, and a receipt that changes nothing is still a write. The
-  /// list is reread after a receipt because the index stays mounted under this
-  /// route, and its dot would otherwise outlive the read.
+  /// Points the page at its thread, reads it, and marks it seen when unread.
+  Future<void> _open(String id) async {
+    await controller.loadConversation(id);
+    await _markSeen(id);
+  }
+
+  /// Rereads the thread (and the list, in the same shared read) and, when
+  /// staff wrote since the last read, marks it seen.
   @override
   Future<void> refreshSupport() async {
     final String? id = _id;
     if (id == null) return;
 
-    await controller.loadConversation(id);
-
-    // A read dropped as stale leaves the controller describing whichever
-    // thread is on screen now, so its unread state says nothing about this one.
-    final MagicStarterSupportConversation? loaded = controller.conversation;
-    if (!mounted || loaded == null || loaded.id.toString() != id) return;
-    if (controller.threadStatus != MagicStarterSupportReadStatus.loaded) return;
-    if (!loaded.hasUnread) return;
-
-    final bool seen = await controller.markSeen(id);
-
-    if (seen && mounted) await controller.loadConversations();
+    await MagicStarterSupportSync.instance.refresh();
+    await _markSeen(id);
   }
 
-  /// Whether a reply is in flight. The view's own flag, not the controller's
-  /// `isSubmitting`, which every write shares: a rating being saved must not
-  /// spin the Send circle.
-  bool _sending = false;
+  /// A thread with nothing unread sends no receipt: this runs on every poll
+  /// and broadcast, and a receipt that changes nothing is still a write. The
+  /// shared sync sends at most one per unread state and rereads the list after
+  /// it, because the index stays mounted under this route and its dot would
+  /// otherwise outlive the read. A screen left before its read answered sends
+  /// nothing for it.
+  Future<void> _markSeen(String id) async {
+    if (!mounted) return;
 
-  /// Whether Enter sends. A hardware keyboard (web and desktop) sends on Enter
-  /// and breaks the line on Shift+Enter; a phone's soft keyboard keeps Enter as
-  /// a line break and sends from the button.
-  bool get _enterSends =>
-      kIsWeb ||
-      const {
-        TargetPlatform.macOS,
-        TargetPlatform.windows,
-        TargetPlatform.linux,
-      }.contains(defaultTargetPlatform);
-
-  Future<void> _send() async {
-    final String? id = _id;
-    final String body = _reply.text.trim();
-    final List<MagicFile> files = pickedAttachments;
-    if (id == null || _sending || controller.isSubmitting) return;
-    if (body.isEmpty && files.isEmpty) return;
-
-    _ratingError = null;
-    setState(() => _sending = true);
-    final bool sent;
-    try {
-      sent = await controller.sendMessage(id, body, attachments: files);
-    } finally {
-      // A reply whose answer fails to decode throws past the controller's own
-      // guard; Send must not stay spinning and disabled after it.
-      if (mounted) setState(() => _sending = false);
-    }
-    if (!mounted || !sent) return;
-
-    _reply.clear();
-    clearAttachments();
-  }
-
-  Future<bool> _rate(String rating, String comment) async {
-    final String? id = _id;
-    if (id == null) return false;
-
-    final bool saved = await controller.rate(id, rating, comment: comment);
-
-    if (mounted) {
-      setState(() {
-        _ratingError = saved
-            ? null
-            : controller.getError('rating') ??
-                  controller.getError('comment') ??
-                  controller.writeError;
-      });
-    }
-
-    return saved;
-  }
-
-  /// Opens a PDF through a 60 second signed link: the read credential stays
-  /// the bearer token, and the link is minted only for this one tap.
-  ///
-  /// The web opens it in the current tab: a new window opened after the link
-  /// request is a popup Safari blocks while the launcher still answers `true`,
-  /// and the download route answers as an attachment, so the page stays.
-  Future<void> _openPdf(MagicStarterSupportAttachment attachment) async {
-    final String? id = _id;
-    if (id == null) return;
-
-    final String? url = await controller.attachmentLink(id, attachment.id);
-    if (url != null && await Launch.url(url, webOnlyWindowName: '_self')) {
-      return;
-    }
-
-    Magic.error(
-      trans('magic_starter.titles.support_thread'),
-      trans('magic_starter.support.attachment_open_error'),
-    );
-  }
-
-  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
-    final bool enter =
-        event.logicalKey == LogicalKeyboardKey.enter ||
-        event.logicalKey == LogicalKeyboardKey.numpadEnter;
-    if (!_enterSends || !enter || event is KeyUpEvent) {
-      return KeyEventResult.ignored;
-    }
-
-    // A pending IME composition owns Enter (it commits the candidate), and
-    // Shift+Enter is the line break.
-    if (HardwareKeyboard.instance.isShiftPressed ||
-        _reply.value.composing.isValid) {
-      return KeyEventResult.ignored;
-    }
-
-    if (event is KeyDownEvent) unawaited(_send());
-
-    return KeyEventResult.handled;
-  }
-
-  /// Starts or clears the countdown behind the typing bubble.
-  void _syncSlowClock(bool awaitingAi) {
-    if (!awaitingAi) {
-      _slowTimer?.cancel();
-      _slowTimer = null;
-      _slow = false;
-
-      return;
-    }
-
-    if (_slowTimer != null) return;
-
-    _slowTimer = Timer(_slowAfter, () {
-      if (mounted) setState(() => _slow = true);
-    });
-  }
-
-  /// Brings the newest line into view after the frame that changed the thread.
-  void _keepLatestInView(MagicStarterSupportConversation conversation) {
-    final String signature =
-        '${conversation.id}:${conversation.messages.length}:'
-        '${conversation.awaitingAi}:$_slow';
-    if (signature == _scrolledTo) return;
-
-    _scrolledTo = signature;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scroll.hasClients) return;
-
-      _scroll.jumpTo(_scroll.position.maxScrollExtent);
-    });
+    await MagicStarterSupportSync.instance.markSeenOnce(id);
   }
 
   @override
   Widget build(BuildContext context) {
     final MagicStarterSupportConversation? conversation =
         controller.conversation;
-
-    if (conversation != null) {
-      _syncSlowClock(conversation.awaitingAi);
-      _keepLatestInView(conversation);
-    }
 
     return MSPageScaffold(
       title:
@@ -323,7 +145,13 @@ class _MagicStarterSupportThreadViewState
       backLabel: trans('magic_starter.support.index_title'),
       backFallback: MagicStarterConfig.supportRoute(),
       scrollController: _scroll,
-      footer: conversation == null ? null : _buildComposer(conversation),
+      footer: conversation == null
+          ? null
+          : MagicStarterSupportComposer(
+              conversationId: conversation.id,
+              ratingError: _ratingError,
+              pickFiles: widget.pickFiles,
+            ),
       children: [_buildBody(conversation)],
     );
   }
@@ -366,206 +194,10 @@ class _MagicStarterSupportThreadViewState
           : const MSSkeleton(height: 160);
     }
 
-    // A conversation reads best in a column of its own, centred and capped like
-    // the composer below it, rather than stretched across a wide page.
-    return WDiv(
-      className: 'w-full max-w-3xl mx-auto flex flex-col gap-3.5 lg:gap-4 pb-4',
-      children: [
-        for (final message in conversation.messages) _buildMessage(message),
-        if (conversation.awaitingAi)
-          _slow
-              ? const MagicStarterSupportTakingLongerNote()
-              : MagicStarterSupportTypingBubble(
-                  assistantName: _assistantName(conversation),
-                ),
-        ?_buildRating(conversation),
-      ],
-    );
-  }
-
-  /// The thumbs block, for a resolved conversation that can be rated or already
-  /// carries a rating. Gone as soon as a reply reopens the conversation.
-  Widget? _buildRating(MagicStarterSupportConversation conversation) {
-    if (!MagicStarterConfig.hasSupportCsatFeatures() ||
-        conversation.status != 'resolved' ||
-        !(conversation.canRate || conversation.rating != null)) {
-      return null;
-    }
-
-    return MagicStarterSupportRatingBlock(
-      rating: conversation.rating,
-      onSubmit: _rate,
-      isSubmitting: controller.isSubmitting,
-      error: _ratingError,
-    );
-  }
-
-  /// The name the assistant signed its earlier replies with, if it has replied.
-  String? _assistantName(MagicStarterSupportConversation conversation) {
-    for (final message in conversation.messages.reversed) {
-      if (message.senderType == 'ai' && message.senderName != null) {
-        return message.senderName;
-      }
-    }
-
-    return null;
-  }
-
-  Widget _buildMessage(MagicStarterSupportMessage message) {
-    // The desk's own activity lines (a handoff, a status change) are not a
-    // person speaking, so they read as a divider line, not a bubble.
-    if (message.kind == 'activity' || message.senderType == 'system') {
-      return MagicStarterSupportActivityLine(message);
-    }
-
-    return MagicStarterSupportMessageBubble(
-      message,
-      attachmentHeaders: _attachmentHeaders,
-      onOpenPdf: _openPdf,
-    );
-  }
-
-  Widget _buildComposer(MagicStarterSupportConversation conversation) {
-    return WDiv(
-      key: const ValueKey<String>('support-composer'),
-      className:
-          'w-full max-w-3xl mx-auto flex flex-col gap-2 pt-3 pb-4 lg:pb-5',
-      children: [
-        ?_buildExpectation(conversation),
-        MagicStarterSupportPickedChips(
-          files: pickedAttachments,
-          onRemove: removeAttachment,
-        ),
-        MSFormField(
-          error:
-              controller.getError('body') ??
-              magicStarterSupportAttachmentError(controller) ??
-              (_ratingError == null ? controller.writeError : null),
-          child: Focus(onKeyEvent: _onKey, child: _buildField()),
-        ),
-        if (_enterSends)
-          WText(
-            trans('magic_starter.support.composer_hint'),
-            className: 'hidden lg:flex justify-end text-xs text-fg-disabled',
-          ),
-      ],
-    );
-  }
-
-  /// What to expect next: the AI while the conversation is the AI desk's, the
-  /// team while it waits on a person, and nothing otherwise.
-  Widget? _buildExpectation(MagicStarterSupportConversation conversation) {
-    if (conversation.awaitingAi || conversation.status == 'pending') {
-      return WDiv(
-        className: 'flex flex-row items-center gap-2',
-        children: [
-          WIcon(_iconAssistant, className: 'text-xs text-ai-soft-foreground'),
-          Flexible(
-            child: WText(
-              trans('magic_starter.support.expect_ai'),
-              className: 'text-xs text-ai-soft-foreground',
-            ),
-          ),
-        ],
-      );
-    }
-
-    if (conversation.waitingOnTeam) {
-      return WDiv(
-        className: 'flex flex-row items-center gap-2',
-        children: [
-          WIcon(_iconWaiting, className: 'text-xs text-fg-muted'),
-          Flexible(
-            child: WText(
-              trans('magic_starter.support.expect_team'),
-              className: 'text-xs text-fg-muted',
-            ),
-          ),
-        ],
-      );
-    }
-
-    return null;
-  }
-
-  Widget _buildField() {
-    return WInput(
-      controller: _reply,
-      type: InputType.multiline,
-      minLines: 1,
-      maxLines: 5,
-      placeholder: trans('magic_starter.support.reply_placeholder'),
-      className: '''
-        w-full pl-3.5 pr-1 py-1.5 rounded-3xl border text-sm text-fg
-        bg-surface-container border-color-border
-        focus:border-color-border focus:ring-2 focus:ring-bg-primary
-      ''',
-      prefix: MagicStarterConfig.hasSupportAttachmentsFeatures()
-          ? MagicStarterSupportAttachButton(onTap: pickAttachments)
-          : null,
-      suffix: _buildSendButton(),
-    );
-  }
-
-  Widget _buildSendButton() {
-    return ListenableBuilder(
-      listenable: Listenable.merge([_reply, controller]),
-      builder: (context, _) {
-        final bool sending = _sending;
-        // Another write (a rating) holds the controller: Send cannot go, but
-        // nothing of this reply is in flight, so no spinner.
-        final bool blocked = sending || controller.isSubmitting;
-        final bool ready =
-            !sending &&
-            (_reply.text.trim().isNotEmpty || pickedAttachments.isNotEmpty);
-
-        // One labelled button node: an outer `Semantics(button:)` around the
-        // anchor read as a button holding a second, unnamed one. The 44 px box
-        // is the touch target; the 36 px circle is what paints. The circle
-        // sits at the box's right edge and the field's right padding is 4 px,
-        // the same as the box leaves above and below it, so the circle stands
-        // the same distance from the border on three sides.
-        return WAnchor(
-          key: const ValueKey<String>('support-send'),
-          onTap: blocked ? null : _send,
-          // Says it is not pressable while a write is out, instead of an
-          // enabled button that does nothing.
-          isDisabled: blocked,
-          semanticLabel: trans('magic_starter.support.reply_submit'),
-          child: WDiv(
-            className: 'size-11 flex items-center justify-end',
-            child: WDiv(
-              key: const ValueKey<String>('support-send-circle'),
-              className:
-                  'w-9 h-9 rounded-full flex items-center justify-center '
-                  '${sending || ready ? _sendLive : _sendIdle}',
-              child: sending
-                  ? const _SendSpinner()
-                  : WIcon(_iconSend, className: 'text-base'),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// The send circle's in-flight state: a small spinner in the circle's own
-/// text colour, so it follows the host's `text-on-primary`.
-class _SendSpinner extends StatelessWidget {
-  const _SendSpinner();
-
-  @override
-  Widget build(BuildContext context) {
-    final Color? color = DefaultTextStyle.of(context).style.color;
-
-    return SizedBox(
-      width: 16,
-      height: 16,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: color == null ? null : AlwaysStoppedAnimation<Color>(color),
-      ),
+    return MagicStarterSupportThreadMessages(
+      conversation: conversation,
+      scrollController: _scroll,
+      ratingError: _ratingError,
     );
   }
 }

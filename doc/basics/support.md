@@ -3,6 +3,7 @@
 - [Introduction](#introduction)
 - [Enabling the Desk](#enabling-the-desk)
 - [Screens](#screens)
+- [Chat Popup](#chat-popup)
 - [The AI Desk](#the-ai-desk)
 - [Knowledge Base Articles](#knowledge-base-articles)
 - [Topics](#topics)
@@ -10,7 +11,8 @@
 - [Contact Sales](#contact-sales)
 - [Rating a Resolved Conversation](#rating-a-resolved-conversation)
 - [Attachments](#attachments)
-- [Screenshot and Client Info](#screenshot-and-client-info)
+- [Client Info](#client-info)
+- [Page Context](#page-context)
 - [The Feedback Card](#the-feedback-card)
 - [Store Review](#store-review)
 - [Overriding a Screen](#overriding-a-screen)
@@ -44,7 +46,7 @@ The profile dropdown shows its Support item whenever the feature is on, so a hos
 
 The backend has to enable the same feature (`Features::support()` in `config/magic-starter.php`); with it off the endpoints do not exist and the screens show their error state. The screens below need `magic-starter-laravel` with the AI desk columns (`topic`, `awaiting_ai`, `last_message` and the paginated list); an older backend still requires a `subject`, which the create form no longer sends.
 
-Five further flags build on it. All default to `false`, and the first four need the backend to turn on the feature of the same name (`Features::supportCsat()`, `supportFeedback()`, `supportAttachments()`, `supportDiagnostics()`) because they call routes and fields it adds:
+Six further flags build on it. All default to `false`, and the first four need the backend to turn on the feature of the same name (`Features::supportCsat()`, `supportFeedback()`, `supportAttachments()`, `supportClientContext()`) because they call routes and fields it adds; `support_chat` and `store_review` are client only:
 
 ```dart
 'features': {
@@ -52,7 +54,8 @@ Five further flags build on it. All default to `false`, and the first four need 
   'support_csat': true,
   'support_feedback': true,
   'support_attachments': true,
-  'support_diagnostics': true,
+  'support_client_context': true,
+  'support_chat': true,
   'store_review': true,
 },
 ```
@@ -62,7 +65,8 @@ Five further flags build on it. All default to `false`, and the first four need 
 | `support_csat` | A thumbs rating under a resolved thread |
 | `support_feedback` | `MagicStarterFeedbackCard`, a "Send feedback" page and menu item |
 | `support_attachments` | Image and PDF files on a new conversation and on a reply, and in the thread |
-| `support_diagnostics` | Client info and a previewed screenshot on a new conversation |
+| `support_client_context` | Client info (app version, platform, locale) on a new conversation |
+| `support_chat` | `MagicStarterSupportChatLauncher`, a button with an unread badge that opens a floating chat panel at the bottom right of the screen. Needs `support` |
 | `store_review` | The native review prompt and a "Rate us" menu item (client only; the backend has no counterpart) |
 
 `starter:install --features=support` adds `registerMagicStarterSupportRoutes();` to `route_service_provider.dart`, `starter:uninstall` removes it, and `starter:doctor` warns when the feature is on and the call is missing.
@@ -79,6 +83,51 @@ Five further flags build on it. All default to `false`, and the first four need 
 `/support/new` and `/support/:id` are pushed (`.stacked()`), so the back gesture returns to the list. Opening a thread that has an unread reply sends a seen receipt and clears the dot; a thread with nothing unread sends none.
 
 All three screens share one `MagicStarterSupportController`. A thread read that answers after the reader has already opened another thread is dropped, so a slow response never puts one conversation's messages under another's composer. A page of the list that answers after the list was reloaded is dropped the same way, and a row already held is not added twice when new activity moves it between two page reads.
+
+<a name="chat-popup"></a>
+## Chat Popup
+
+With `support_chat` on (and `support`), a host can mount `MagicStarterSupportChatLauncher` in its shell: a button with an unread count that opens a floating panel with the customer's conversations, one thread or the new-conversation form. Place it once in the shell, such as a sidebar; the panel does not depend on where the button sits:
+
+```dart
+class AppSidebar extends StatelessWidget {
+  const AppSidebar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return WDiv(
+      className: 'flex flex-col gap-1',
+      children: [
+        const MagicStarterSupportChatLauncher(
+          className:
+              'flex flex-row items-center gap-3 px-3 py-2 rounded-lg text-sm text-fg',
+        ),
+      ],
+    );
+  }
+}
+```
+
+The launcher renders nothing unless the flag and `support` are on and a signed-in, non-guest user is present; signing out closes the panel. Mount it once per app: a second launcher would open a second panel. The props are `className` (the trigger's classes; null is a full-width sidebar row; a value replaces the default trigger classes rather than adding to them, so give it a full class list including `flex flex-row`, or the icon stacks above the label), `width` (400) and `height` (520), and `margin` (16), the gap the panel keeps from the screen edges.
+
+The panel floats at the bottom right of the screen, like a chat widget, wherever the launcher sits. It is non-modal: a tap outside does not close it and the page stays interactive. It stays on screen: it is clamped to the safe area, and its height gives way to the keyboard. Escape closes it; opening moves focus into the panel and closing returns it to the launcher. The header has back, the title, "open full page" (closes the panel and goes to `/support`) and close. An empty conversation list opens the new-conversation form.
+
+### Sharing state with the pages
+
+The popup and the `/support` pages run side by side without conflict:
+
+- `MagicStarterSupportSync` owns the one 30 second poll, the one `magic_starter_support` broadcast listener and one refetch after a reconnect, for every open surface. A surface calls `retain()` and `release()`, asks for a thread with `watchThread()` and sends a seen receipt through `markSeenOnce()`. A closed launcher holds no poll.
+- `MagicStarterSupportController` keeps a thread per conversation id (`fetchThread`, `threadFor`, `threadStatusFor`), so the popup and the page can show different threads. A write locks per surface (`surface: 'page'` for the pages, `'chat'` for the panel): a reply on the page and a new conversation in the popup run together, a second tap on the same surface is refused.
+- `MagicStarterSupportChatState` holds whether the panel is open, its mode (list, thread, create) and the active thread, and resets when the session changes.
+- `MagicStarterSupportThreadBody`, `MagicStarterSupportThreadMessages`, `MagicStarterSupportComposer` and `MagicStarterSupportCreateForm` are the route-free parts both the pages and the panel render. They never read a route, never load a thread and never clear errors on mount. A host widget that listens to the controller mixes in `MagicStarterSupportControllerRebuild`.
+
+A host that replaces `support.chat_panel` takes over the shared-refresh retain and release, the thread watch and the seen receipt.
+
+Limit: validation errors and write errors (`getError`, `writeError`) are still held once on the controller, not per surface, so an error one surface raised is visible to the other while both are open. The knowledge-base suggestions on the create form are shared the same way: there is one list, and `forgetArticleSuggestions` runs when a create form mounts, so opening the panel's form clears the suggestions of the form on the page. On native macOS the Escape key inside the composer may be consumed by the text field before it reaches the panel; the web is unaffected.
+
+The copy keys are `magic_starter.support.chat.close`, `.launcher`, `.open_full_page` and `.unread` (`:count unread`). The package ships no Turkish stub: a host adds the keys to each catalogue it ships, and an app with a published `en.json` merges them from `assets/stubs/install/en.stub`.
+
+Not built: a bottom sheet variant for a narrow screen, and a typing presence indicator (the AI typing bubble of the thread is shown). On a layout with no room for the launcher, the `/support` routes remain the way in.
 
 <a name="the-ai-desk"></a>
 ## The AI Desk
@@ -160,32 +209,31 @@ The files go up in the same request as the message. As soon as one is attached t
 
 The defaults match the backend's `support.attachments` (`max_files`, `max_kb`, `types`); a host that changes one changes the other, since the backend enforces its own. An image is read with the bearer token (`MagicStarterSupportController.attachmentHeaders()`), because the file endpoint answers to the token alone. A PDF asks for a 60 second signed url (`attachmentLink()`) and hands it to the system viewer.
 
-<a name="screenshot-and-client-info"></a>
-## Screenshot and Client Info
+<a name="client-info"></a>
+## Client Info
 
-With `support_diagnostics` on, a new conversation carries two things the customer did not type.
+With `support_client_context` on, a new conversation carries the device and app details the customer did not type (`MagicStarterSupportClientContext.collect()`), sent as `client_context[...]`: `app_version`, `build_number`, `platform`, `os_version`, `locale` and `timezone`. Each value is cut to 120 characters, and a value the device cannot tell is left out.
 
-**Client info** (`MagicStarterSupportClientContext.collect()`), sent as `client_context[...]`: `route`, `app_version`, `build_number`, `platform`, `os_version`, `locale` and `timezone`. Each value is cut to 120 characters, the route loses its query and fragment, and a value the device cannot tell is left out.
+<a name="page-context"></a>
+## Page Context
 
-**A screenshot** of the screen the customer left to ask for help, taken once as navigation crosses into a support route (the profile menu's Support item, Contact sales, a link of your own). The create form shows it full width before anything is sent, and "Remove screenshot" keeps it off this conversation and out of memory. It is sent as `screenshot.png` only if kept. Wrap the app once so there is a frame to capture:
-
-```dart
-MagicApplication(
-  builder: (context, child) => MagicStarterScreenCapture.wrap(child!),
-)
-```
-
-`registerMagicStarterSupportRoutes()` adds the observer that tells whether a dialog is open, so it has to run before the router is built, like every route registration.
-
-A screenshot is never taken of a screen on the deny-list, nor while a dialog or popup is open, and a refused capture also empties the held one, so an older picture is never offered for a newer visit. The starter's own list is the profile, security, two-factor challenge, billing and teams routes. An entry matches its path and everything under it, and a `:param` or `*` segment matches any one segment. A host adds the screens that show something private of its own:
+A customer chatting from a monitor page should not have to describe it. `MagicStarter.usePageContext` registers a provider that answers which things the current screen is about, as `MagicStarterSupportPageRef`s: a `kind` and an `id`, a typed pointer and never free text. The package knows no kinds of its own; you choose them, and the backend allows only the kinds it is configured with.
 
 ```dart
-'diagnostics': {
-  'deny_capture_routes': ['/reports/:id', '/vault'],
-},
+MagicStarter.usePageContext(() {
+  final id = MagicRouter.instance.routerConfig.state.pathParameters['monitor'];
+
+  return [
+    if (id != null) MagicStarterSupportPageRef(kind: 'monitor', id: id),
+  ];
+});
 ```
 
-The bytes live in memory only and are dropped on the next sign-in. Turn `support_attachments` on with this flag: the backend serves a screenshot through the attachment endpoint, and one it stores but cannot serve is read by nobody.
+Read the top route through `routerConfig.state`. A page opened from a list is pushed, and `MagicRouter.instance.pathParameter` and the router's `currentConfiguration` keep naming the page underneath it.
+
+The provider is asked when a message is sent, for a new conversation and for every reply, so it answers for the screen behind the Send button, and the references travel as `page_context`. At most three are kept, in order, duplicates dropped, and `kind` and `id` are cut to 64 characters; one with an empty value is left out. The key is omitted when there are none.
+
+The full `/support` pages send nothing as long as your provider returns nothing for those routes, while the chat panel, which floats over another screen, sends that screen's references. A provider that throws is logged as a warning and the message goes without references. Registering again replaces the provider, and there is no feature flag: a registered provider is the opt-in.
 
 <a name="the-feedback-card"></a>
 ## The Feedback Card
@@ -242,6 +290,6 @@ Each screen resolves through the view registry, so a host replaces one the usual
 MagicStarter.view.register('support.thread', () => const MySupportThreadView());
 ```
 
-`support.feedback` joins the three screens above when `support_feedback` is on.
+`support.feedback` joins the three screens above when `support_feedback` is on, and `support.chat` (the launcher) and `support.chat_panel` (the floating panel) when `support_chat` is on.
 
 Copy lives under `magic_starter.support.*`, `magic_starter.nav.support` and `magic_starter.titles.support*`. A host that published its own `en.json` adds those keys from `assets/stubs/install/en.stub`.

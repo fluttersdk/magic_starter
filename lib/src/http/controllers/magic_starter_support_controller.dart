@@ -2,6 +2,7 @@ import 'package:magic/magic.dart';
 
 import '../../configuration/magic_starter_config.dart';
 import '../../models/magic_starter_support_conversation.dart';
+import '../../support/support_page_context.dart';
 
 /// How a support read ended, for the screen to branch on.
 enum MagicStarterSupportReadStatus {
@@ -20,8 +21,28 @@ enum MagicStarterSupportReadStatus {
   failed,
 }
 
-/// Backs the support desk screens: the opener's conversation list, one thread,
-/// and the three writes that touch a thread.
+/// One thread as the controller holds it, keyed by its id.
+class _SupportThread {
+  /// Bumped by every read of this thread; only the newest one publishes, so a
+  /// slow answer cannot replace a newer one for the same id.
+  int read = 0;
+
+  MagicStarterSupportReadStatus status = MagicStarterSupportReadStatus.idle;
+
+  MagicStarterSupportConversation? conversation;
+}
+
+/// Backs the support desk screens: the opener's conversation list, the threads
+/// read so far, and the writes that touch a thread.
+///
+/// ## Threads and surfaces
+///
+/// Threads are held per id, so two surfaces (the `/support/:id` page and a chat
+/// panel) can each show a different thread without overwriting the other. The
+/// page's thread is the one [loadConversation] last pointed at; [conversation]
+/// and [threadStatus] describe it. A write locks per surface: a reply on the
+/// page and a new ticket in the chat run side by side, a second tap on the
+/// same surface is refused.
 ///
 /// ## Why this controller does NOT use `MagicStateMixin`
 ///
@@ -57,10 +78,8 @@ class MagicStarterSupportController extends MagicController
   /// belongs to the previous session and publishes nothing.
   int _sessionGeneration = 0;
 
-  /// Bumped by every [loadConversation]; only the newest thread read
-  /// publishes, so a slow answer for a thread the reader already left cannot
-  /// replace the one on screen, whose composer posts to the newer thread.
-  int _threadRead = 0;
+  /// The surface a write locks when its caller names none.
+  static const String _pageSurface = 'page';
 
   /// Bumped by every [loadConversations]; a page read that started under an
   /// older value belongs to a list that has since been replaced and appends
@@ -72,7 +91,8 @@ class MagicStarterSupportController extends MagicController
   /// changed cannot replace the newer suggestions.
   int _suggestionRead = 0;
 
-  bool _isSubmitting = false;
+  /// The surfaces with a write in flight.
+  final Set<String> _submitting = <String>{};
   bool _isLoadingMore = false;
 
   /// The newest page held in [_conversations], and the last page the backend
@@ -84,9 +104,14 @@ class MagicStarterSupportController extends MagicController
       MagicStarterSupportReadStatus.idle;
   List<MagicStarterSupportConversation> _conversations = const [];
 
-  MagicStarterSupportReadStatus _threadStatus =
-      MagicStarterSupportReadStatus.idle;
-  MagicStarterSupportConversation? _conversation;
+  /// Every thread read this session, by id as a string. Never evicted before
+  /// [resetForSession]: a thread nobody watches any more costs one entry.
+  Map<String, _SupportThread> _threads = <String, _SupportThread>{};
+
+  /// The id of the page's thread, set by [loadConversation]. Kept across
+  /// [resetForSession]: it is where the page is, not session data, and a page
+  /// still open after a team switch reads its thread again under it.
+  String? _activeThreadId;
 
   List<MagicStarterSupportArticle> _articleSuggestions = const [];
 
@@ -111,11 +136,22 @@ class MagicStarterSupportController extends MagicController
   /// (`magic_starter.support.topics`).
   List<String> get topics => MagicStarterConfig.supportTopics();
 
-  MagicStarterSupportReadStatus get threadStatus => _threadStatus;
+  /// How the page's thread read ended; idle before [loadConversation].
+  MagicStarterSupportReadStatus get threadStatus =>
+      _threads[_activeThreadId]?.status ?? MagicStarterSupportReadStatus.idle;
 
-  /// The thread last read, with its messages. Null before the first read and
-  /// whenever [threadStatus] is not loaded.
-  MagicStarterSupportConversation? get conversation => _conversation;
+  /// The page's thread with its messages. Null until it has loaded, and after
+  /// a 404; a reread that fails keeps the copy already shown.
+  MagicStarterSupportConversation? get conversation =>
+      _threads[_activeThreadId]?.conversation;
+
+  /// The thread [id] as last read, or null while it has not loaded.
+  MagicStarterSupportConversation? threadFor(Object id) =>
+      _threads[id.toString()]?.conversation;
+
+  /// How the newest read of thread [id] ended; idle before it was read.
+  MagicStarterSupportReadStatus threadStatusFor(Object id) =>
+      _threads[id.toString()]?.status ?? MagicStarterSupportReadStatus.idle;
 
   /// The articles suggested for what the customer is writing, at most three.
   /// Empty while nothing is suggested, which includes a failed lookup.
@@ -124,13 +160,16 @@ class MagicStarterSupportController extends MagicController
 
   /// Whether the AI still owes the open thread an answer, for the typing
   /// indicator. False when no thread is loaded.
-  bool get isAwaitingAi => _conversation?.awaitingAi ?? false;
+  bool get isAwaitingAi => conversation?.awaitingAi ?? false;
 
   /// The signed-in customer's display name, for the avatar of their own rows.
   String? get viewerName => Auth.user()?.get<String>('name');
 
-  /// Whether a create, reply or seen write is in flight.
-  bool get isSubmitting => _isSubmitting;
+  /// Whether a create, reply or rating from the page is in flight.
+  bool get isSubmitting => isSubmittingFor(_pageSurface);
+
+  /// Whether a write from [surface] is in flight.
+  bool isSubmittingFor(String surface) => _submitting.contains(surface);
 
   /// The message of the last write the backend refused for a reason other than
   /// validation (field errors live in [getError]). Cleared by the next write.
@@ -249,49 +288,66 @@ class MagicStarterSupportController extends MagicController
     refreshUI();
   }
 
-  /// Reads one thread with its messages.
+  /// Points the page at thread [id] and reads it with its messages.
+  ///
+  /// While it loads the page shows the copy of [id] already held, if any, and
+  /// never the thread it pointed at before: that one's composer would post to
+  /// the wrong conversation.
+  Future<void> loadConversation(Object id) async {
+    _activeThreadId = id.toString();
+    await fetchThread(id);
+  }
+
+  /// Reads thread [id] with its messages into [threadFor], without moving the
+  /// page's thread. Answers what it stored, or null when it stored nothing: a
+  /// 404, a failure, a newer read of the same id, or a session change.
   ///
   /// A 404 becomes [MagicStarterSupportReadStatus.notFound] and nothing asks
   /// again: a teammate's conversation answers 404 for the same reason a missing
-  /// one does, and a retry would only repeat the refusal.
-  Future<void> loadConversation(Object id) async {
+  /// one does, and a retry would only repeat the refusal. A failure keeps the
+  /// copy already held, so a blip does not blank a thread on screen.
+  Future<MagicStarterSupportConversation?> fetchThread(Object id) async {
     final generation = _sessionGeneration;
-    final read = ++_threadRead;
+    final key = id.toString();
+    final thread = _threads.putIfAbsent(key, _SupportThread.new);
+    final read = ++thread.read;
+    bool current() => generation == _sessionGeneration && read == thread.read;
 
-    // A different thread must not show the previous one while it loads; the
-    // same thread keeps its messages so a refresh does not blink.
-    if (_conversation?.id.toString() != id.toString()) _conversation = null;
-    _threadStatus = MagicStarterSupportReadStatus.loading;
+    thread.status = MagicStarterSupportReadStatus.loading;
     refreshUI();
 
     try {
       final response = await Http.get('/support/conversations/$id');
-      if (generation != _sessionGeneration || read != _threadRead) return;
+      if (!current()) return null;
 
       if (response.notFound) {
-        _markThreadNotFound();
-        return;
+        _markThreadNotFound(key);
+        return null;
       }
 
       if (!response.successful) {
-        _threadStatus = MagicStarterSupportReadStatus.failed;
+        thread.status = MagicStarterSupportReadStatus.failed;
         refreshUI();
-        return;
+        return null;
       }
 
-      _conversation = MagicStarterSupportConversation.fromMap(
+      final conversation = MagicStarterSupportConversation.fromMap(
         _payload(response) as Map<String, dynamic>,
       );
-      _threadStatus = MagicStarterSupportReadStatus.loaded;
-    } catch (e, stackTrace) {
-      Log.error(
-        '[MagicStarterSupportController.loadConversation] $e\n$stackTrace',
-      );
-      if (generation != _sessionGeneration || read != _threadRead) return;
-      _threadStatus = MagicStarterSupportReadStatus.failed;
-    }
+      thread
+        ..conversation = conversation
+        ..status = MagicStarterSupportReadStatus.loaded;
+      refreshUI();
 
-    refreshUI();
+      return conversation;
+    } catch (e, stackTrace) {
+      Log.error('[MagicStarterSupportController.fetchThread] $e\n$stackTrace');
+      if (!current()) return null;
+      thread.status = MagicStarterSupportReadStatus.failed;
+      refreshUI();
+
+      return null;
+    }
   }
 
   /// Looks up articles for [search] in the app's locale and publishes them as
@@ -359,19 +415,24 @@ class MagicStarterSupportController extends MagicController
   /// [source] names the surface the customer opened it from; the backend
   /// records it, it does not infer it.
   ///
-  /// [attachments] go up one multipart part each, [screenshot] is the
-  /// diagnostics capture (a file named `screenshot.png`) and [clientContext]
-  /// the client info (`route`, `app_version`, `build_number`, `platform`,
-  /// `os_version`, `locale`, `timezone`). Without a file the request stays
-  /// JSON. [body] may be empty when [attachments] carries something.
+  /// [attachments] go up one multipart part each and [clientContext] is the
+  /// client info (`app_version`, `build_number`, `platform`, `os_version`,
+  /// `locale`, `timezone`). Without a file the request stays JSON. [body] may
+  /// be empty when [attachments] carries something.
+  ///
+  /// [surface] is the lock the write takes (see [isSubmittingFor]).
+  ///
+  /// The host's page references for the screen the customer is on are read when
+  /// this is called and go along as `page_context`
+  /// ([MagicStarterSupportPageContext]).
   Future<MagicStarterSupportConversation?> createConversation({
     required String body,
     required String source,
     String? topic,
     String? subject,
     List<MagicFile> attachments = const <MagicFile>[],
-    MagicFile? screenshot,
     Map<String, String>? clientContext,
+    String surface = _pageSurface,
   }) async {
     final response = await _submit(
       '/support/conversations',
@@ -383,9 +444,10 @@ class MagicStarterSupportController extends MagicController
       },
       action: 'createConversation',
       fallbackKey: 'magic_starter.support.create_error',
+      surface: surface,
       attachments: attachments,
-      screenshot: screenshot,
       clientContext: clientContext,
+      pageContext: MagicStarterSupportPageContext.collect(),
     );
     if (response == null) return null;
 
@@ -394,43 +456,54 @@ class MagicStarterSupportController extends MagicController
     );
   }
 
-  /// Posts a reply to [id] and appends it to the loaded thread. Answers whether
-  /// the backend accepted it.
+  /// Posts a reply to [id] and appends it to that thread when it is held.
+  /// Answers whether the backend accepted it.
   ///
   /// [attachments] go up one multipart part each, and [body] may then be
-  /// empty. Without a file the request stays JSON.
+  /// empty. Without a file the request stays JSON. [surface] is the lock the
+  /// write takes (see [isSubmittingFor]).
+  ///
+  /// Like [createConversation], it sends the host's page references for the
+  /// screen the customer is on.
   Future<bool> sendMessage(
     Object id,
     String body, {
     List<MagicFile> attachments = const <MagicFile>[],
+    String surface = _pageSurface,
   }) async {
     final response = await _submit(
       '/support/conversations/$id/messages',
       data: {if (body.isNotEmpty || attachments.isEmpty) 'body': body},
       action: 'sendMessage',
       fallbackKey: 'magic_starter.support.reply_error',
+      surface: surface,
+      thread: id,
       attachments: attachments,
+      pageContext: MagicStarterSupportPageContext.collect(),
     );
     if (response == null) return false;
 
-    final loaded = _conversation;
-    if (loaded != null && loaded.id.toString() == id.toString()) {
-      final Object? payload = _payload(response);
-      if (payload is Map<String, dynamic>) {
-        _conversation = loaded.withMessage(
-          MagicStarterSupportMessage.fromMap(payload),
-        );
-        refreshUI();
-      } else {
-        // The server took the reply but answered something this client cannot
-        // read: read the thread again rather than report a failure the reader
-        // would retry, posting the reply twice.
-        Log.error(
-          '[MagicStarterSupportController.sendMessage] unreadable reply: '
-          '$payload',
-        );
-        await loadConversation(id);
-      }
+    final thread = _threads[id.toString()];
+    final loaded = thread?.conversation;
+    if (thread == null || loaded == null) return true;
+
+    final Object? payload = _payload(response);
+    if (payload is Map<String, dynamic>) {
+      // A read already in flight predates this reply and would erase it.
+      thread.read++;
+      thread.conversation = loaded.withMessage(
+        MagicStarterSupportMessage.fromMap(payload),
+      );
+      refreshUI();
+    } else {
+      // The server took the reply but answered something this client cannot
+      // read: read the thread again rather than report a failure the reader
+      // would retry, posting the reply twice.
+      Log.error(
+        '[MagicStarterSupportController.sendMessage] unreadable reply: '
+        '$payload',
+      );
+      await fetchThread(id);
     }
 
     return true;
@@ -441,8 +514,14 @@ class MagicStarterSupportController extends MagicController
   /// is not resolved; that lands in [getError] under `rating`.
   ///
   /// A blank [comment] is left out. Rating again within one resolution
-  /// overwrites the earlier rating.
-  Future<bool> rate(Object id, String rating, {String? comment}) async {
+  /// overwrites the earlier rating. [surface] is the lock the write takes (see
+  /// [isSubmittingFor]).
+  Future<bool> rate(
+    Object id,
+    String rating, {
+    String? comment,
+    String surface = _pageSurface,
+  }) async {
     final note = comment?.trim();
     final response = await _submit(
       '/support/conversations/$id/rating',
@@ -452,12 +531,16 @@ class MagicStarterSupportController extends MagicController
       },
       action: 'rate',
       fallbackKey: 'magic_starter.support.rating_error',
+      surface: surface,
+      thread: id,
     );
     if (response == null) return false;
 
-    final loaded = _conversation;
-    if (loaded != null && loaded.id.toString() == id.toString()) {
-      _conversation = loaded.withRating(
+    final thread = _threads[id.toString()];
+    final loaded = thread?.conversation;
+    if (thread != null && loaded != null) {
+      thread.read++;
+      thread.conversation = loaded.withRating(
         MagicStarterSupportRating(
           value: rating,
           comment: note == null || note.isEmpty ? null : note,
@@ -514,11 +597,10 @@ class MagicStarterSupportController extends MagicController
       final response = await Http.post('/support/conversations/$id/seen');
 
       if (response.notFound) {
-        // Only the thread on screen turns into not-found; a late receipt for
-        // a thread the reader already left says nothing about this one.
-        if (_conversation?.id.toString() == id.toString()) {
-          _markThreadNotFound();
-        }
+        // Only a thread already held turns into not-found; a receipt says
+        // nothing about any other thread.
+        final key = id.toString();
+        if (_threads.containsKey(key)) _markThreadNotFound(key);
         return false;
       }
 
@@ -554,14 +636,13 @@ class MagicStarterSupportController extends MagicController
     final hadList = _listStatus != MagicStarterSupportReadStatus.idle;
 
     _conversations = const [];
-    _conversation = null;
+    _threads = <String, _SupportThread>{};
     _articleSuggestions = const [];
     _listStatus = MagicStarterSupportReadStatus.idle;
-    _threadStatus = MagicStarterSupportReadStatus.idle;
     _listPage = 0;
     _listLastPage = 0;
     _writeError = null;
-    _isSubmitting = false;
+    _submitting.clear();
     _isLoadingMore = false;
     clearErrors();
     refreshUI();
@@ -569,19 +650,22 @@ class MagicStarterSupportController extends MagicController
     if (hadList) await loadConversations();
   }
 
-  /// Runs one write and answers its response, or null after recording why the
-  /// backend refused it (or why the client did not send it).
+  /// Runs one write under the [surface] lock and answers its response, or null
+  /// after recording why the backend refused it (or why the client did not
+  /// send it). A 404 turns [thread], the conversation the write is about, into
+  /// not-found.
   Future<MagicResponse?> _submit(
     String url, {
     required Map<String, dynamic> data,
     required String action,
     required String fallbackKey,
+    required String surface,
+    Object? thread,
     List<MagicFile> attachments = const <MagicFile>[],
-    MagicFile? screenshot,
     Map<String, String>? clientContext,
+    List<Map<String, String>> pageContext = const <Map<String, String>>[],
   }) async {
-    if (_isSubmitting) return null;
-    _isSubmitting = true;
+    if (!_submitting.add(surface)) return null;
     _writeError = null;
     clearErrors();
     refreshUI();
@@ -600,15 +684,15 @@ class MagicStarterSupportController extends MagicController
         url,
         data: data,
         attachments: attachments,
-        screenshot: screenshot,
         clientContext: clientContext ?? const <String, String>{},
+        pageContext: pageContext,
       );
 
       if (response.successful) return response;
 
       // 3. Record why the backend said no.
       if (response.notFound) {
-        _markThreadNotFound();
+        if (thread != null) _markThreadNotFound(thread.toString());
       } else if (response.isValidationError) {
         setErrorsFromResponse(response);
       } else {
@@ -622,7 +706,7 @@ class MagicStarterSupportController extends MagicController
 
       return null;
     } finally {
-      _isSubmitting = false;
+      _submitting.remove(surface);
       refreshUI();
     }
   }
@@ -630,18 +714,19 @@ class MagicStarterSupportController extends MagicController
   /// One key per file: magic's Dio driver turns each `files` key into exactly
   /// one multipart part, and the backend reads `attachments[0]`..`[2]`. The
   /// client info is flattened to `client_context[key]` fields for the same
-  /// reason; the JSON path keeps it as a nested map.
+  /// reason, and the page references to `page_context[i][key]`; the JSON path
+  /// keeps both nested. The one place either is added to a body, and a body
+  /// without references carries no `page_context` key.
   Future<MagicResponse> _send(
     String url, {
     required Map<String, dynamic> data,
     required List<MagicFile> attachments,
-    required MagicFile? screenshot,
     required Map<String, String> clientContext,
+    required List<Map<String, String>> pageContext,
   }) {
     final files = <String, dynamic>{
       for (var i = 0; i < attachments.length; i++)
         'attachments[$i]': attachments[i],
-      'screenshot': ?screenshot,
     };
 
     if (files.isEmpty) {
@@ -650,6 +735,7 @@ class MagicStarterSupportController extends MagicController
         data: {
           ...data,
           if (clientContext.isNotEmpty) 'client_context': clientContext,
+          if (pageContext.isNotEmpty) 'page_context': pageContext,
         },
       );
     }
@@ -660,6 +746,9 @@ class MagicStarterSupportController extends MagicController
         ...data,
         for (final field in clientContext.entries)
           'client_context[${field.key}]': field.value,
+        for (var i = 0; i < pageContext.length; i++)
+          for (final field in pageContext[i].entries)
+            'page_context[$i][${field.key}]': field.value,
       },
       files: files,
     );
@@ -711,9 +800,10 @@ class MagicStarterSupportController extends MagicController
     return (await file.readAsBytes())?.length;
   }
 
-  void _markThreadNotFound() {
-    _conversation = null;
-    _threadStatus = MagicStarterSupportReadStatus.notFound;
+  void _markThreadNotFound(String key) {
+    _threads.putIfAbsent(key, _SupportThread.new)
+      ..conversation = null
+      ..status = MagicStarterSupportReadStatus.notFound;
     refreshUI();
   }
 

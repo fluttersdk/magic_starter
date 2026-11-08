@@ -8,6 +8,7 @@ import '../http/magic_starter_guest_claim.dart';
 import '../magic_starter_manager.dart';
 import '../models/magic_starter_team.dart';
 import '../models/magic_starter_nav_item.dart';
+import '../support/support_page_ref.dart';
 import '../ui/magic_starter_page_chrome.dart';
 import '../ui/magic_starter_view_registry.dart';
 
@@ -378,6 +379,31 @@ class MagicStarter {
 
   /// The registered social login bridge, or `null` when none is.
   static MagicStarterSocialAuth? get socialAuth => manager.socialAuth;
+
+  /// Register what the support desk may tell the team about the screen the
+  /// customer is on.
+  ///
+  /// [provider] is asked each time a support message is sent (the chat panel's
+  /// and the full pages' alike), so it answers for the screen behind the Send
+  /// button: return nothing where there is nothing to point at. At most three
+  /// references are sent, and the backend accepts only the kinds it is
+  /// configured with. A second call replaces the first, and a provider that
+  /// throws costs the message nothing but its references.
+  ///
+  /// ```dart
+  /// MagicStarter.usePageContext(() {
+  ///   final id = MagicRouter.instance.routerConfig.state.pathParameters['monitor'];
+  ///
+  ///   return [
+  ///     if (id != null) MagicStarterSupportPageRef(kind: 'monitor', id: id),
+  ///   ];
+  /// });
+  /// ```
+  static void usePageContext(
+    List<MagicStarterSupportPageRef> Function() provider,
+  ) {
+    manager.pageContextProvider = provider;
+  }
 
   /// Locale options for language selection.
   static List<SelectOption<String>> get localeOptions => manager.localeOptions;

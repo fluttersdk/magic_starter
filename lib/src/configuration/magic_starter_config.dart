@@ -41,7 +41,8 @@ class MagicStarterConfig {
   static const bool _defaultSupportCsat = false;
   static const bool _defaultSupportFeedback = false;
   static const bool _defaultSupportAttachments = false;
-  static const bool _defaultSupportDiagnostics = false;
+  static const bool _defaultSupportClientContext = false;
+  static const bool _defaultSupportChat = false;
   static const bool _defaultStoreReview = false;
   static const bool _defaultReleases = false;
   static const bool _defaultAppUpdate = false;
@@ -270,14 +271,29 @@ class MagicStarterConfig {
         _defaultSupportAttachments;
   }
 
-  /// Returns whether a new conversation carries client info and an auto
-  /// screenshot (`magic_starter.features.support_diagnostics`).
-  static bool hasSupportDiagnosticsFeatures() {
+  /// Returns whether a new conversation carries the client context: app and
+  /// build version, platform, OS, locale and timezone
+  /// (`magic_starter.features.support_client_context`). Needs
+  /// [hasSupportFeatures].
+  static bool hasSupportClientContextFeatures() {
     return Config.get<bool>(
-          'magic_starter.features.support_diagnostics',
-          _defaultSupportDiagnostics,
+          'magic_starter.features.support_client_context',
+          _defaultSupportClientContext,
         ) ??
-        _defaultSupportDiagnostics;
+        _defaultSupportClientContext;
+  }
+
+  /// Returns whether the support chat launcher and its floating panel are
+  /// enabled (`magic_starter.features.support_chat`). Needs
+  /// [hasSupportFeatures]: false whenever the support desk itself is off.
+  static bool hasSupportChatFeatures() {
+    if (!hasSupportFeatures()) return false;
+
+    return Config.get<bool>(
+          'magic_starter.features.support_chat',
+          _defaultSupportChat,
+        ) ??
+        _defaultSupportChat;
   }
 
   /// Returns whether the native store review prompt is enabled
@@ -354,17 +370,6 @@ class MagicStarterConfig {
           _defaultSupportAttachmentExtensions,
         ) ??
         _defaultSupportAttachmentExtensions;
-  }
-
-  /// Returns the route patterns where the auto screenshot is never captured
-  /// (`magic_starter.diagnostics.deny_capture_routes`), such as a screen that
-  /// shows a password or a payment. Empty by default.
-  static List<String> diagnosticsDenyCaptureRoutes() {
-    return Config.get<List<String>>(
-          'magic_starter.diagnostics.deny_capture_routes',
-          const <String>[],
-        ) ??
-        const <String>[];
   }
 
   /// Returns the App Store id the "Rate us" action opens

@@ -1,4 +1,4 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
@@ -7,6 +7,7 @@ import 'package:magic/magic.dart';
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/magic_starter_support_controller.dart';
 import '../../../models/magic_starter_support_conversation.dart';
+import '../../../support/support_sync.dart';
 import '../../components/button/index.dart';
 import '../../components/card/index.dart';
 import '../../components/empty_state/index.dart';
@@ -16,80 +17,52 @@ import '../../components/segmented_control/index.dart';
 import '../../components/skeleton/index.dart';
 import 'magic_starter_support_message_bubble.dart';
 
-/// Keeps a support screen current without the customer reloading it.
-///
-/// The backend broadcasts `support.conversation.updated` on the private user
-/// channel `App.Models.User.{id}`; the screen refetches when it arrives. A 30
-/// second poll runs beside it whatever the socket says, so the screen never
-/// depends on a socket to be correct: a connected socket is not a subscribed
-/// one, and a socket that pings with no channel joined reports itself healthy.
+/// Keeps a support screen current without the customer reloading it, through
+/// the one [MagicStarterSupportSync] every support surface shares: the poll,
+/// the broadcast listener and the reconnect refetch live there, once, however
+/// many screens are mounted.
 ///
 /// Shared by the index and the thread view and defined here rather than
-/// duplicated in both. It subscribes through [BroadcastListeners] and not
-/// through `Echo.private(...).listen(...)` directly: the user channel is shared
-/// with the notification bell, and `listen` replaces a same-event handler, so a
-/// second owner of the channel would silently deafen the first.
+/// duplicated in both.
 mixin MagicStarterSupportLiveRefresh<T extends StatefulWidget> on State<T> {
-  /// How often a screen rereads, socket or not.
-  static const Duration pollInterval = Duration(seconds: 30);
+  Object? _watchedThread;
 
-  static const String _alias = 'magic_starter_support';
-  static const String _event = 'support.conversation.updated';
-
-  Timer? _pollTimer;
-  BroadcastListenerToken? _broadcastToken;
-
-  /// Rereads whatever this screen shows.
+  /// Rereads whatever this screen shows, through [MagicStarterSupportSync] so
+  /// screens mounted together share one read. Runs after every poll tick,
+  /// broadcast and reconnect.
   Future<void> refreshSupport();
 
-  /// Starts the poll and, when a broadcast driver is configured, the channel
-  /// listener. Call from `onInit`.
-  void startLiveRefresh() {
-    _pollTimer = Timer.periodic(pollInterval, (_) => _refresh());
+  /// Joins the shared live refresh, also rereading [thread] on every tick when
+  /// given. Call once, from `onInit` or once the thread id is known.
+  void startLiveRefresh({Object? thread}) {
+    final MagicStarterSupportSync sync = MagicStarterSupportSync.instance;
 
-    if (!_broadcastingEnabled()) return;
+    sync
+      ..retain()
+      ..addListener(_refresh);
 
-    // Reverb has no replay: whatever was published while the socket was down is
-    // gone, and only a read recovers it.
-    BroadcastListeners.channel(_alias, _userChannel, onReconnect: _refresh);
-    _broadcastToken = BroadcastListeners.add(_alias, _event, (_) => _refresh());
-
-    unawaited(
-      BroadcastListeners.sync().catchError((Object error) {
-        Log.error('[MagicStarterSupportLiveRefresh] sync failed: $error');
-      }),
-    );
+    if (thread == null) return;
+    _watchedThread = thread;
+    sync.watchThread(thread);
   }
 
-  /// Stops the poll and the listener. Call from `onClose`.
+  /// Leaves the shared live refresh. Call from `onClose`.
   void stopLiveRefresh() {
-    _pollTimer?.cancel();
-    _pollTimer = null;
+    final MagicStarterSupportSync sync = MagicStarterSupportSync.instance;
 
-    final BroadcastListenerToken? token = _broadcastToken;
-    if (token != null) BroadcastListeners.remove(token);
-    _broadcastToken = null;
+    sync
+      ..removeListener(_refresh)
+      ..release();
+
+    final Object? thread = _watchedThread;
+    if (thread != null) sync.unwatchThread(thread);
+    _watchedThread = null;
   }
 
   void _refresh() {
     if (!mounted) return;
 
     unawaited(refreshSupport());
-  }
-
-  /// The null driver accepts a subscription and delivers nothing, so it counts
-  /// as no driver and is never subscribed to.
-  bool _broadcastingEnabled() {
-    final String? driver = Config.get<String>('broadcasting.default');
-
-    return driver != null && driver.isNotEmpty && driver != 'null';
-  }
-
-  /// The signed-in user's private channel, or null while no identity resolved.
-  String? _userChannel() {
-    final String? id = Auth.id()?.toString();
-
-    return (id == null || id.isEmpty) ? null : 'App.Models.User.$id';
   }
 }
 
@@ -101,6 +74,21 @@ String magicStarterSupportTopicLabel(String topic) {
   final String key = 'magic_starter.support.topic.$topic';
 
   return Lang.has(key) ? trans(key) : topic;
+}
+
+/// The one-line preview of a conversation's last message, `Ayse: body`, with
+/// the viewer's own lines prefixed "You".
+String magicStarterSupportLastMessagePreview(
+  MagicStarterSupportLastMessage last,
+) {
+  final String? author = switch (last.senderType) {
+    'customer' => trans('magic_starter.support.sender.customer'),
+    'ai' => last.senderName ?? trans('magic_starter.support.sender.ai'),
+    'staff' => last.senderName ?? trans('magic_starter.support.sender.staff'),
+    _ => null,
+  };
+
+  return author == null ? last.bodyPreview : '$author: ${last.bodyPreview}';
 }
 
 /// A conversation's status as the customer reads it.
@@ -224,7 +212,7 @@ class _MagicStarterSupportIndexViewState
   void onClose() => stopLiveRefresh();
 
   @override
-  Future<void> refreshSupport() => controller.loadConversations();
+  Future<void> refreshSupport() => MagicStarterSupportSync.instance.refresh();
 
   void _openThread(MagicStarterSupportConversation conversation) {
     MagicRoute.to(MagicStarterConfig.supportThreadPath(conversation.id));
@@ -376,7 +364,7 @@ class _MagicStarterSupportIndexViewState
               ),
               if (last != null)
                 WText(
-                  _preview(last),
+                  magicStarterSupportLastMessagePreview(last),
                   className: conversation.hasUnread
                       ? 'text-sm text-fg truncate'
                       : 'text-sm text-fg-muted truncate',
@@ -426,18 +414,6 @@ class _MagicStarterSupportIndexViewState
         : last?.senderName;
 
     return MagicStarterSupportSenderAvatar(senderType: senderType, name: name);
-  }
-
-  /// `Ayse: body`, with the viewer's own lines prefixed "You".
-  String _preview(MagicStarterSupportLastMessage last) {
-    final String? author = switch (last.senderType) {
-      'customer' => trans('magic_starter.support.sender.customer'),
-      'ai' => last.senderName ?? trans('magic_starter.support.sender.ai'),
-      'staff' => last.senderName ?? trans('magic_starter.support.sender.staff'),
-      _ => null,
-    };
-
-    return author == null ? last.bodyPreview : '$author: ${last.bodyPreview}';
   }
 
   Widget _buildLoadMore() {

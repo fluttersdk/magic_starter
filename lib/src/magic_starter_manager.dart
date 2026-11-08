@@ -12,6 +12,7 @@ import 'http/magic_starter_guest_claim.dart';
 import 'models/magic_starter_auth_user.dart';
 import 'models/magic_starter_nav_item.dart';
 import 'models/magic_starter_team.dart';
+import 'support/support_page_ref.dart';
 import 'ui/layouts/magic_starter_app_layout.dart';
 import 'ui/layouts/magic_starter_guest_layout.dart';
 import 'ui/widgets/magic_starter_confirm_dialog.dart';
@@ -38,6 +39,8 @@ import 'ui/views/settings/security/magic_starter_connected_accounts_view.dart';
 import 'ui/views/settings/security/magic_starter_password_view.dart';
 import 'ui/views/settings/security/magic_starter_sessions_view.dart';
 import 'ui/views/settings/security/magic_starter_two_factor_view.dart';
+import 'ui/views/support/chat/magic_starter_support_chat_launcher.dart';
+import 'ui/views/support/chat/magic_starter_support_chat_panel.dart';
 import 'ui/views/support/magic_starter_feedback_view.dart';
 import 'ui/views/support/magic_starter_support_create_view.dart';
 import 'ui/views/support/magic_starter_support_index_view.dart';
@@ -273,6 +276,11 @@ class MagicStarterManager {
   /// The app's social login bridge. While set and the `social_login` feature
   /// is on, login and register offer its providers.
   MagicStarterSocialAuth? socialAuth;
+
+  /// What the host says the customer is looking at, asked each time a support
+  /// message is sent. Null while the host registers none, which sends no page
+  /// context.
+  List<MagicStarterSupportPageRef> Function()? pageContextProvider;
 
   /// Navigation theme configuration. Holds color/className overrides for the
   /// app layout navigation elements (active item, brand, bottom nav, avatar).
@@ -703,6 +711,19 @@ class MagicStarterManager {
           () => const MagicStarterFeedbackView(),
         );
       }
+
+      // The chat: a host mounts `support.chat` where it wants the launcher,
+      // and the launcher resolves its panel through `support.chat_panel`.
+      if (MagicStarterConfig.hasSupportChatFeatures()) {
+        _registerDefault(
+          'support.chat',
+          () => const MagicStarterSupportChatLauncher(),
+        );
+        _registerDefault(
+          'support.chat_panel',
+          () => const MagicStarterSupportChatPanel(),
+        );
+      }
     }
 
     // Notification screens are NOT registered here. They belong to
@@ -788,6 +809,7 @@ class MagicStarterManager {
     headerBuilder = null;
     sidebarFooterBuilder = null;
     socialAuth = null;
+    pageContextProvider = null;
     navigationTheme = const MagicStarterNavigationTheme();
     modalTheme = const MagicStarterModalTheme();
     formTheme = const MagicStarterFormTheme();

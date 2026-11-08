@@ -7,8 +7,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'app_build.dart';
 
 /// The client info a new support conversation carries behind
-/// `support_diagnostics`: where the customer was, which build they run, on
-/// what, and in which language and timezone.
+/// `support_client_context`: which build the customer runs, on what, and in
+/// which language and timezone.
 ///
 /// Keys match the backend's `client_context[...]` fields. Each value is cut to
 /// the backend's 120 characters, and a value the device cannot tell is left
@@ -19,16 +19,15 @@ class MagicStarterSupportClientContext {
   /// The longest value the backend stores.
   static const int maxLength = 120;
 
-  /// Collects the client info for a conversation opened after [route].
+  /// Collects the client info for a new conversation.
   ///
-  /// [route] loses its query and fragment here; a query can carry a token. The
-  /// app version is read from the platform, and an unreadable one is logged
-  /// and left out: diagnostics never stand between a customer and support.
-  static Future<Map<String, String>> collect({required String route}) async {
+  /// The app version is read from the platform, and an unreadable one is
+  /// logged and left out: the client context never stands between a customer
+  /// and support.
+  static Future<Map<String, String>> collect() async {
     final PackageInfo? package = await MagicStarterAppBuild.info();
 
     final Map<String, String?> context = <String, String?>{
-      'route': Uri.parse(route).path,
       'app_version': package?.version,
       'build_number': package?.buildNumber,
       'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
