@@ -5,14 +5,10 @@ import '../configuration/magic_starter_config.dart';
 import '../facades/magic_starter.dart';
 import '../http/controllers/magic_starter_feedback_controller.dart';
 import '../http/controllers/magic_starter_support_controller.dart';
-import '../support/screen_capture.dart';
 import '../ui/widgets/magic_starter_hide_bottom_nav.dart';
 import 'layout_ids.dart';
 
 /// Full path of the "Send feedback" page (`support_feedback`).
-///
-/// Lives under the support prefix, so arriving on it counts as entering
-/// support for [MagicStarterScreenCapture].
 String magicStarterSupportFeedbackRoute() =>
     '${MagicStarterConfig.supportRoute()}/feedback';
 
@@ -49,18 +45,8 @@ Widget _supportView(String key) {
 /// The view keys (`support.index`, `support.create`, `support.thread`, and
 /// `support.feedback` behind its flag) have default builders;
 /// `MagicStarter.view.register(...)` replaces one.
-///
-/// Behind `support_diagnostics` this also adds
-/// [MagicStarterScreenCapture.observer] to the router, which is why it has to
-/// run before the router is built, as every route registration does.
 void registerMagicStarterSupportRoutes() {
   if (!MagicStarterConfig.hasSupportFeatures()) return;
-
-  final observer = MagicStarterScreenCapture.observer;
-  if (MagicStarterConfig.hasSupportDiagnosticsFeatures() &&
-      !MagicRouter.instance.observers.contains(observer)) {
-    MagicRouter.instance.addObserver(observer);
-  }
 
   MagicRoute.group(
     middleware: ['auth'],

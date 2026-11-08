@@ -884,14 +884,22 @@ void main() {
 
     test('a 404 on a reply also resolves the thread to not-found', () async {
       final fake = Http.fake((request) {
+        if (request.method == 'GET') {
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(id: 99),
+          });
+        }
+
         return Http.response(<String, dynamic>{'message': ''}, 404);
       });
 
+      await controller.loadConversation(99);
       final sent = await controller.sendMessage(99, 'hello');
 
       expect(sent, isFalse);
       expect(controller.threadStatus, MagicStarterSupportReadStatus.notFound);
-      fake.assertSentCount(1);
+      expect(controller.conversation, isNull);
+      fake.assertSentCount(2);
     });
 
     test('resetForSession drops the previous session rows', () async {
@@ -913,11 +921,276 @@ void main() {
     });
   });
 
-  group('MagicStarterSupportController attachments and diagnostics', () {
+  group('MagicStarterSupportController keyed threads', () {
+    /// Answers a thread read with that id and [messages] lines of its own.
+    MagicResponse threadAnswer(int id, {int messages = 1}) {
+      return Http.response(<String, dynamic>{
+        'data': conversationJson(
+          id: id,
+          messages: <Map<String, dynamic>>[
+            for (var i = 1; i <= messages; i++)
+              messageJson(id: i, body: 'Thread $id line $i'),
+          ],
+        ),
+      });
+    }
+
+    test('two threads fetched in sequence both stay readable', () async {
+      Http.fake((request) {
+        return threadAnswer(request.url.endsWith('/1') ? 1 : 2);
+      });
+
+      final first = await controller.fetchThread(1);
+      final second = await controller.fetchThread('2');
+
+      expect(first!.id, 1);
+      expect(second!.id, 2);
+      expect(controller.threadFor('1')!.id, 1);
+      expect(controller.threadFor(2)!.id, 2);
+      expect(
+        controller.conversation,
+        isNull,
+        reason: 'fetchThread never moves the page',
+      );
+      expect(controller.threadStatus, MagicStarterSupportReadStatus.idle);
+    });
+
+    test('threadStatusFor follows each thread by its own id', () async {
+      final pending = Completer<MagicResponse>();
+      Http.fake((MagicRequest request) async {
+        if (request.url.endsWith('/1')) return pending.future;
+        if (request.url.endsWith('/3')) {
+          return Http.response(<String, dynamic>{}, 404);
+        }
+
+        return threadAnswer(2);
+      });
+
+      expect(controller.threadStatusFor(1), MagicStarterSupportReadStatus.idle);
+
+      await controller.loadConversation(2);
+      final first = controller.fetchThread(1);
+      await pumpEventQueue();
+      await controller.fetchThread(3);
+
+      expect(
+        controller.threadStatusFor('1'),
+        MagicStarterSupportReadStatus.loading,
+      );
+      expect(
+        controller.threadStatusFor(2),
+        MagicStarterSupportReadStatus.loaded,
+      );
+      expect(
+        controller.threadStatusFor(3),
+        MagicStarterSupportReadStatus.notFound,
+      );
+      expect(
+        controller.threadStatus,
+        MagicStarterSupportReadStatus.loaded,
+        reason: 'the page follows its own thread, not the newest read',
+      );
+
+      pending.complete(threadAnswer(1));
+      await first;
+
+      expect(
+        controller.threadStatusFor(1),
+        MagicStarterSupportReadStatus.loaded,
+      );
+    });
+
+    test('a read of another thread keeps the page on its own', () async {
+      Http.fake((request) {
+        return threadAnswer(request.url.endsWith('/1') ? 1 : 2);
+      });
+
+      await controller.loadConversation(2);
+      await controller.fetchThread(1);
+
+      expect(controller.conversation!.id, 2);
+      expect(controller.threadStatus, MagicStarterSupportReadStatus.loaded);
+    });
+
+    test(
+      'a late answer for an older read of the same thread is dropped',
+      () async {
+        final older = Completer<MagicResponse>();
+        var reads = 0;
+        Http.fake((MagicRequest request) async {
+          reads++;
+          if (reads == 1) return older.future;
+
+          return threadAnswer(7, messages: 3);
+        });
+
+        final first = controller.fetchThread(7);
+        await controller.fetchThread(7);
+        older.complete(threadAnswer(7));
+
+        expect(await first, isNull);
+        expect(controller.threadFor(7)!.messages, hasLength(3));
+      },
+    );
+
+    test('a poll that started before a reply cannot erase it', () async {
+      final poll = Completer<MagicResponse>();
+      var reads = 0;
+      Http.fake((MagicRequest request) async {
+        if (request.method == 'POST') {
+          return Http.response(<String, dynamic>{
+            'data': messageJson(id: 9, body: 'My reply'),
+          }, 201);
+        }
+
+        reads++;
+        if (reads == 2) return poll.future;
+
+        return threadAnswer(7);
+      });
+
+      await controller.fetchThread(7);
+      final late = controller.fetchThread(7);
+      await pumpEventQueue();
+      expect(await controller.sendMessage(7, 'My reply'), isTrue);
+
+      poll.complete(threadAnswer(7));
+
+      expect(await late, isNull);
+      expect(controller.threadFor(7)!.messages.last.body, 'My reply');
+      expect(controller.threadFor(7)!.messages, hasLength(2));
+    });
+
+    test('a poll that started before a rating cannot erase it', () async {
+      final poll = Completer<MagicResponse>();
+      var reads = 0;
+      Http.fake((MagicRequest request) async {
+        if (request.method == 'POST') return Http.response(<String, dynamic>{});
+
+        reads++;
+        if (reads == 2) return poll.future;
+
+        return threadAnswer(7);
+      });
+
+      await controller.fetchThread(7);
+      final late = controller.fetchThread(7);
+      await pumpEventQueue();
+      expect(await controller.rate(7, 'up'), isTrue);
+
+      poll.complete(threadAnswer(7));
+
+      expect(await late, isNull);
+      expect(controller.threadFor(7)!.rating!.value, 'up');
+    });
+
+    test('a reply to A while the page shows B lands on A', () async {
+      Http.fake((request) {
+        if (request.method == 'POST') {
+          expect(request.url, '/support/conversations/1/messages');
+
+          return Http.response(<String, dynamic>{
+            'data': messageJson(id: 9, body: 'From the chat'),
+          }, 201);
+        }
+
+        return threadAnswer(request.url.endsWith('/1') ? 1 : 2);
+      });
+
+      await controller.fetchThread(1);
+      await controller.loadConversation(2);
+      final sent = await controller.sendMessage(
+        1,
+        'From the chat',
+        surface: 'chat',
+      );
+
+      expect(sent, isTrue);
+      expect(controller.threadFor(1)!.messages.last.body, 'From the chat');
+      expect(controller.threadFor(1)!.messages, hasLength(2));
+      expect(controller.conversation!.id, 2);
+      expect(controller.conversation!.messages, hasLength(1));
+    });
+
+    test('a rating lands on the thread it names', () async {
+      Http.fake((request) {
+        if (request.method == 'POST') return Http.response(<String, dynamic>{});
+
+        return threadAnswer(request.url.endsWith('/1') ? 1 : 2);
+      });
+
+      await controller.fetchThread(1);
+      await controller.loadConversation(2);
+      expect(await controller.rate(1, 'up', surface: 'chat'), isTrue);
+
+      expect(controller.threadFor(1)!.rating!.value, 'up');
+      expect(controller.conversation!.rating, isNull);
+    });
+
+    test('a write on the chat does not block one on the page, and a second '
+        'tap on the page is refused', () async {
+      final chatReply = Completer<MagicResponse>();
+      final pageReply = Completer<MagicResponse>();
+      final posts = <String>[];
+      Http.fake((MagicRequest request) async {
+        if (request.method == 'GET') return threadAnswer(7);
+
+        posts.add(request.url);
+        if (request.url == '/support/conversations') return chatReply.future;
+
+        return pageReply.future;
+      });
+      await controller.loadConversation(7);
+
+      final chat = controller.createConversation(
+        body: 'New one',
+        source: 'chat',
+        surface: 'chat',
+      );
+      final page = controller.sendMessage(7, 'A reply');
+      await pumpEventQueue();
+
+      expect(controller.isSubmittingFor('chat'), isTrue);
+      expect(controller.isSubmittingFor('page'), isTrue);
+      expect(controller.isSubmitting, isTrue);
+      expect(posts, <String>[
+        '/support/conversations',
+        '/support/conversations/7/messages',
+      ]);
+
+      expect(await controller.sendMessage(7, 'A reply'), isFalse);
+      expect(posts, hasLength(2), reason: 'the double tap sent nothing');
+
+      pageReply.complete(
+        Http.response(<String, dynamic>{
+          'data': messageJson(id: 2, body: 'A reply'),
+        }, 201),
+      );
+      expect(await page, isTrue);
+      expect(controller.isSubmitting, isFalse);
+      expect(controller.isSubmittingFor('chat'), isTrue);
+
+      chatReply.complete(
+        Http.response(<String, dynamic>{'data': conversationJson(id: 8)}, 201),
+      );
+      expect((await chat)!.id, 8);
+      expect(controller.isSubmittingFor('chat'), isFalse);
+    });
+
+    test('resetForSession drops every keyed thread', () async {
+      Http.fake((request) => threadAnswer(1));
+
+      await controller.fetchThread(1);
+      await controller.resetForSession();
+
+      expect(controller.threadFor(1), isNull);
+    });
+  });
+
+  group('MagicStarterSupportController attachments and client context', () {
     test('createConversation with files uploads one part per file', () async {
       final first = pickedFile('error.png', mimeType: 'image/png');
       final second = pickedFile('invoice.pdf', mimeType: 'application/pdf');
-      final screenshot = pickedFile('screenshot.png', mimeType: 'image/png');
 
       final fake = Http.fake((request) {
         expect(request.method, 'POST');
@@ -926,8 +1199,7 @@ void main() {
         expect(request.data['source'], 'in_app');
         expect(request.data['attachments[0]'], same(first));
         expect(request.data['attachments[1]'], same(second));
-        expect(request.data['screenshot'], same(screenshot));
-        expect(request.data['client_context[route]'], '/monitors');
+        expect(request.data['client_context[platform]'], 'ios');
         expect(request.data['client_context[app_version]'], '1.4.0');
         expect(request.data, isNot(contains('attachments')));
         expect(request.data, isNot(contains('client_context')));
@@ -941,9 +1213,8 @@ void main() {
         body: 'See the attachment',
         source: 'in_app',
         attachments: <MagicFile>[first, second],
-        screenshot: screenshot,
         clientContext: <String, String>{
-          'route': '/monitors',
+          'platform': 'ios',
           'app_version': '1.4.0',
         },
       );
@@ -957,7 +1228,7 @@ void main() {
         expect(request.data, <String, dynamic>{
           'body': 'Hello',
           'source': 'in_app',
-          'client_context': <String, String>{'route': '/monitors'},
+          'client_context': <String, String>{'platform': 'ios'},
         });
 
         return Http.response(<String, dynamic>{
@@ -968,28 +1239,7 @@ void main() {
       final created = await controller.createConversation(
         body: 'Hello',
         source: 'in_app',
-        clientContext: <String, String>{'route': '/monitors'},
-      );
-
-      expect(created, isNotNull);
-    });
-
-    test('a screenshot alone is enough to take the upload path', () async {
-      final screenshot = pickedFile('screenshot.png', mimeType: 'image/png');
-
-      Http.fake((request) {
-        expect(request.data['screenshot'], same(screenshot));
-        expect(request.data, isNot(contains('attachments[0]')));
-
-        return Http.response(<String, dynamic>{
-          'data': conversationJson(),
-        }, 201);
-      });
-
-      final created = await controller.createConversation(
-        body: 'Hello',
-        source: 'in_app',
-        screenshot: screenshot,
+        clientContext: <String, String>{'platform': 'ios'},
       );
 
       expect(created, isNotNull);
@@ -1011,7 +1261,6 @@ void main() {
         expect(request.url, '/support/conversations/7/messages');
         expect(request.data['attachments[0]'], same(photo));
         expect(request.data, isNot(contains('body')));
-        expect(request.data, isNot(contains('screenshot')));
 
         return Http.response(<String, dynamic>{
           'data': <String, dynamic>{
@@ -1232,8 +1481,17 @@ void main() {
     });
 
     test('a 404 on rating resolves the thread to not-found', () async {
-      Http.fake((request) => Http.response(<String, dynamic>{}, 404));
+      Http.fake((request) {
+        if (request.method == 'GET') {
+          return Http.response(<String, dynamic>{
+            'data': conversationJson(id: 99, status: 'resolved'),
+          });
+        }
 
+        return Http.response(<String, dynamic>{}, 404);
+      });
+
+      await controller.loadConversation(99);
       expect(await controller.rate(99, 'up'), isFalse);
       expect(controller.threadStatus, MagicStarterSupportReadStatus.notFound);
     });
@@ -1282,6 +1540,161 @@ void main() {
       Http.fake((request) => Http.response(<String, dynamic>{}, 403));
 
       expect(await controller.attachmentLink(7, 'a1'), isNull);
+    });
+  });
+
+  group('MagicStarterSupportController page context', () {
+    const List<MagicStarterSupportPageRef> monitorPage =
+        <MagicStarterSupportPageRef>[
+          MagicStarterSupportPageRef(kind: 'monitor', id: '42'),
+          MagicStarterSupportPageRef(kind: 'incident', id: '7'),
+        ];
+
+    /// Answers every request with a created conversation or message and keeps
+    /// what was sent, so a test asserts on the request rather than inside the
+    /// handler (the controller would swallow a failed `expect` as a failed
+    /// write).
+    List<MagicRequest> recordRequests() {
+      final sent = <MagicRequest>[];
+
+      Http.fake((request) {
+        sent.add(request);
+
+        return Http.response(<String, dynamic>{
+          'data': request.url.endsWith('/messages')
+              ? messageJson(id: 2, body: 'Any update?')
+              : conversationJson(),
+        }, 201);
+      });
+
+      return sent;
+    }
+
+    tearDown(MagicStarterSupportPageContext.resetForTesting);
+
+    test('createConversation sends page_context in the JSON body', () async {
+      MagicStarter.usePageContext(() => monitorPage);
+      final sent = recordRequests();
+
+      await controller.createConversation(body: 'Hello', source: 'in_app');
+
+      expect(sent.single.data, <String, dynamic>{
+        'body': 'Hello',
+        'source': 'in_app',
+        'page_context': <Map<String, String>>[
+          <String, String>{'kind': 'monitor', 'id': '42'},
+          <String, String>{'kind': 'incident', 'id': '7'},
+        ],
+      });
+    });
+
+    test('sendMessage sends page_context in the JSON body', () async {
+      MagicStarter.usePageContext(() => monitorPage);
+      final sent = recordRequests();
+
+      await controller.sendMessage(7, 'Any update?');
+
+      expect(sent.single.data, <String, dynamic>{
+        'body': 'Any update?',
+        'page_context': <Map<String, String>>[
+          <String, String>{'kind': 'monitor', 'id': '42'},
+          <String, String>{'kind': 'incident', 'id': '7'},
+        ],
+      });
+    });
+
+    test('reads the provider at Send, not at registration', () async {
+      var current = 'monitor';
+      MagicStarter.usePageContext(
+        () => <MagicStarterSupportPageRef>[
+          MagicStarterSupportPageRef(kind: current, id: '1'),
+        ],
+      );
+      final sent = recordRequests();
+
+      current = 'incident';
+      await controller.sendMessage(7, 'Any update?');
+
+      expect(sent.single.data['page_context'], <Map<String, String>>[
+        <String, String>{'kind': 'incident', 'id': '1'},
+      ]);
+    });
+
+    test('a provider that returns nothing leaves the bodies as they '
+        'were', () async {
+      MagicStarter.usePageContext(() => const <MagicStarterSupportPageRef>[]);
+      final sent = recordRequests();
+
+      await controller.createConversation(body: 'Hello', source: 'in_app');
+      await controller.sendMessage(7, 'Any update?');
+
+      expect(sent, hasLength(2));
+      expect(sent.first.data, <String, dynamic>{
+        'body': 'Hello',
+        'source': 'in_app',
+      });
+      expect(sent.last.data, <String, dynamic>{'body': 'Any update?'});
+    });
+
+    test('without a provider the bodies are as they were', () async {
+      final sent = recordRequests();
+
+      await controller.createConversation(body: 'Hello', source: 'in_app');
+
+      expect(sent.single.data, isNot(contains('page_context')));
+    });
+
+    test('a multipart body flattens page_context[i][kind] and [id]', () async {
+      MagicStarter.usePageContext(() => monitorPage);
+      final sent = recordRequests();
+
+      await controller.createConversation(
+        body: 'See the attachment',
+        source: 'in_app',
+        attachments: <MagicFile>[
+          pickedFile('error.png', mimeType: 'image/png'),
+        ],
+      );
+      await controller.sendMessage(
+        7,
+        'Here it is',
+        attachments: <MagicFile>[pickedFile('a.pdf')],
+      );
+
+      for (final request in sent) {
+        expect(request.data['page_context[0][kind]'], 'monitor');
+        expect(request.data['page_context[0][id]'], '42');
+        expect(request.data['page_context[1][kind]'], 'incident');
+        expect(request.data['page_context[1][id]'], '7');
+        expect(request.data, isNot(contains('page_context')));
+      }
+      expect(sent, hasLength(2));
+    });
+
+    test('a throwing provider still sends the message without the '
+        'key', () async {
+      final logs = Log.fake();
+      MagicStarter.usePageContext(() => throw StateError('no route yet'));
+      final sent = recordRequests();
+
+      final delivered = await controller.sendMessage(7, 'Any update?');
+
+      expect(delivered, isTrue);
+      expect(sent.single.data, <String, dynamic>{'body': 'Any update?'});
+      expect(
+        logs.entries.where((entry) => entry.level == 'warning'),
+        hasLength(1),
+      );
+    });
+
+    test('a rating carries no page context', () async {
+      MagicStarter.usePageContext(() => monitorPage);
+      final sent = recordRequests();
+
+      await controller.rate(7, 'up');
+
+      expect(sent.single.url, '/support/conversations/7/rating');
+      expect(sent.single.data, <String, dynamic>{'rating': 'up'});
     });
   });
 

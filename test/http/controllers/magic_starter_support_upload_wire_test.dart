@@ -78,6 +78,7 @@ void main() {
 
   tearDown(() async {
     controller.dispose();
+    MagicStarterSupportPageContext.resetForTesting();
     Http.unfake();
     await server.close(force: true);
     MagicApp.reset();
@@ -106,6 +107,14 @@ void main() {
     return header.firstMatch(body)?.group(0);
   }
 
+  /// Every part name in [body].
+  List<String> partNames(String body) {
+    return RegExp(
+      'content-disposition: form-data; name="([^"]+)"',
+      caseSensitive: false,
+    ).allMatches(body).map((RegExpMatch m) => m.group(1)!).toList();
+  }
+
   test('createConversation sends one part per file on the real wire', () async {
     final MagicStarterSupportConversation? created = await controller
         .createConversation(
@@ -115,9 +124,8 @@ void main() {
             file('error.png', 'image/png', 'PNGDATA'),
             file('invoice.pdf', 'application/pdf', 'PDFDATA'),
           ],
-          screenshot: file('screenshot.png', 'image/png', 'SHOTDATA'),
           clientContext: <String, String>{
-            'route': '/monitors',
+            'platform': 'ios',
             'app_version': '1.4.0',
           },
         );
@@ -139,18 +147,102 @@ void main() {
     expect(second, contains('filename="invoice.pdf"'));
     expect(second!.toLowerCase(), contains('content-type: application/pdf'));
 
-    final String? screenshot = partHeader(request.body, 'screenshot');
-    expect(screenshot, isNotNull, reason: 'screenshot part is missing');
-    expect(screenshot, contains('filename="screenshot.png"'));
-    expect(screenshot!.toLowerCase(), contains('content-type: image/png'));
-
     expect(partHeader(request.body, 'attachments[2]'), isNull);
-    expect(partHeader(request.body, 'client_context[route]'), isNotNull);
+    expect(partHeader(request.body, 'client_context[platform]'), isNotNull);
     expect(partHeader(request.body, 'client_context[app_version]'), isNotNull);
-    expect(request.body, contains('/monitors'));
+    expect(
+      partNames(request.body),
+      unorderedEquals(<String>[
+        'body',
+        'source',
+        'attachments[0]',
+        'attachments[1]',
+        'client_context[platform]',
+        'client_context[app_version]',
+      ]),
+      reason: 'no part beyond the text, files and client info is sent',
+    );
     expect(request.body, contains('See the attachments'));
     expect(request.body, contains('PNGDATA'));
     expect(request.body, contains('PDFDATA'));
+  });
+
+  test('a multipart send flattens page_context on the real wire', () async {
+    MagicStarter.usePageContext(
+      () => const <MagicStarterSupportPageRef>[
+        MagicStarterSupportPageRef(kind: 'monitor', id: '42'),
+        MagicStarterSupportPageRef(kind: 'incident', id: '7'),
+      ],
+    );
+
+    await controller.createConversation(
+      body: 'See the attachment',
+      source: 'in_app',
+      attachments: <MagicFile>[file('error.png', 'image/png', 'PNGDATA')],
+    );
+    await controller.sendMessage(
+      7,
+      'And this one',
+      attachments: <MagicFile>[file('invoice.pdf', 'application/pdf', 'PDF')],
+    );
+
+    expect(received, hasLength(2));
+
+    for (final _Received request in received) {
+      expect(request.contentType, startsWith('multipart/form-data'));
+      expect(
+        partNames(request.body),
+        containsAll(<String>[
+          'page_context[0][kind]',
+          'page_context[0][id]',
+          'page_context[1][kind]',
+          'page_context[1][id]',
+        ]),
+      );
+      expect(partNames(request.body), isNot(contains('page_context')));
+      expect(request.body, contains('monitor'));
+      expect(request.body, contains('incident'));
+    }
+  });
+
+  test('a JSON send carries page_context as a list on the real wire', () async {
+    MagicStarter.usePageContext(
+      () => const <MagicStarterSupportPageRef>[
+        MagicStarterSupportPageRef(kind: 'monitor', id: '42'),
+      ],
+    );
+
+    await controller.createConversation(body: 'Hello', source: 'in_app');
+    await controller.sendMessage(7, 'Any update?');
+
+    expect(received, hasLength(2));
+    expect(jsonDecode(received.first.body), <String, dynamic>{
+      'body': 'Hello',
+      'source': 'in_app',
+      'page_context': <Map<String, dynamic>>[
+        <String, dynamic>{'kind': 'monitor', 'id': '42'},
+      ],
+    });
+    expect(jsonDecode(received.last.body), <String, dynamic>{
+      'body': 'Any update?',
+      'page_context': <Map<String, dynamic>>[
+        <String, dynamic>{'kind': 'monitor', 'id': '42'},
+      ],
+    });
+  });
+
+  test('a throwing provider sends the message without the key', () async {
+    Log.fake();
+    MagicStarter.usePageContext(() => throw StateError('no route yet'));
+
+    final MagicStarterSupportConversation? created = await controller
+        .createConversation(body: 'Hello', source: 'in_app');
+
+    expect(created, isNotNull);
+    expect(jsonDecode(received.single.body), <String, dynamic>{
+      'body': 'Hello',
+      'source': 'in_app',
+    });
   });
 
   test('a send without files stays JSON on the real wire', () async {

@@ -1,44 +1,22 @@
-import 'dart:async';
-import 'dart:typed_data';
-
-import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../http/controllers/magic_starter_support_controller.dart';
-import '../../../support/screen_capture.dart';
-import '../../../support/support_client_context.dart';
-import '../../components/button/index.dart';
 import '../../components/card/index.dart';
-import '../../components/form_field/index.dart';
 import '../../components/page_scaffold/index.dart';
-import '../../components/textarea/index.dart';
-import 'magic_starter_support_article_card.dart';
-import 'magic_starter_support_attachments.dart';
-import 'magic_starter_support_index_view.dart';
+import 'magic_starter_support_create_form.dart';
 import 'magic_starter_support_message_bubble.dart';
 
 /// Opens a support conversation: a topic and a first message.
 ///
-/// The customer picks a topic chip and writes one message; the backend derives
-/// the subject from it, so none is asked for. The conversation is recorded as
-/// opened from the app (`in_app`), and the client names neither a team nor a
-/// user; the backend scopes it to whoever is signed in. A refusal stays on this
-/// page with its message under the field it concerns.
+/// The page chrome around [MagicStarterSupportCreateForm]: the scaffold, the
+/// "How it works" column beside the form on a wide screen, and the hop to the
+/// new thread once it is created. A refusal stays on this page with its message
+/// under the field it concerns.
 ///
-/// Behind `support_attachments` the form also takes image and PDF files, which
-/// may stand in for the message text.
-///
-/// Behind `support_diagnostics` the conversation carries the client info
-/// ([MagicStarterSupportClientContext]) and the screenshot
-/// [MagicStarterScreenCapture] took of the screen the customer came from. The
-/// screenshot is shown full width before anything is sent, and removing it
-/// keeps it off this conversation and out of memory.
-///
-/// While the customer writes, up to three knowledge-base articles that match
-/// the message appear above Send. The lookup waits until the message has 12
-/// characters and the typing has paused, and a failed one shows nothing.
+/// What the form takes (files, client info, article suggestions) is documented
+/// on [MagicStarterSupportCreateForm].
 class MagicStarterSupportCreateView
     extends MagicStatefulView<MagicStarterSupportController> {
   /// [pickFiles] stands in for the system file picker; it is a parameter only
@@ -60,125 +38,18 @@ class _MagicStarterSupportCreateViewState
         MagicStatefulViewState<
           MagicStarterSupportController,
           MagicStarterSupportCreateView
-        >
-    with MagicStarterSupportAttachmentPicking<MagicStarterSupportCreateView> {
-  static const Map<String, IconData> _topicIcons = {
-    'billing': Icons.credit_card,
-    'technical': Icons.build_outlined,
-    'account': Icons.person_outline,
-    'sales': Icons.star_outline,
-    'other': Icons.more_horiz,
-  };
-  static const _iconSend = Icons.send;
-  static const _iconAttach = Icons.attach_file;
-  static const _iconRemove = Icons.close;
-
+        > {
   /// Width of the "How it works" column beside the form on a wide screen.
   static const double _sideWidth = 300;
 
-  /// Characters the message needs before articles are looked up.
-  static const int _suggestFrom = 12;
-
-  /// How long typing must pause before the lookup is sent.
-  static const Duration _suggestDelay = Duration(milliseconds: 600);
-
-  final TextEditingController _body = TextEditingController();
-
-  Timer? _suggestTimer;
-
-  /// The trimmed text the last change was judged on, so a cursor move, which
-  /// notifies the controller too, does not restart the pause.
-  String _typed = '';
-
-  String? _topic;
-
-  /// True while the client info is read, before the controller's own
-  /// in-flight guard takes over.
-  bool _collecting = false;
-
-  @override
-  Future<List<MagicFile>> Function(List<String> extensions)?
-  get pickFilesOverride => widget.pickFiles;
+  /// Keeps the form's draft when a resize crosses `lg` and moves it between the
+  /// row and the column.
+  final GlobalKey _formKey = GlobalKey();
 
   @override
   void onInit() {
     controller.forgetWriteError();
-    controller.forgetArticleSuggestions(notify: false);
-    _body.addListener(_onBodyChanged);
   }
-
-  @override
-  void onClose() {
-    _suggestTimer?.cancel();
-    _body.dispose();
-  }
-
-  void _onBodyChanged() {
-    final String text = _body.text.trim();
-    if (text == _typed) return;
-
-    _typed = text;
-    _suggestTimer?.cancel();
-
-    if (text.runes.length < _suggestFrom) {
-      controller.forgetArticleSuggestions();
-      return;
-    }
-
-    _suggestTimer = Timer(
-      _suggestDelay,
-      () => controller.suggestArticles(text),
-    );
-  }
-
-  Future<void> _submit() async {
-    if (_collecting || controller.isSubmitting) return;
-
-    // 1. Diagnostics, when on: the client info and the screenshot kept.
-    final bool diagnostics = MagicStarterConfig.hasSupportDiagnosticsFeatures();
-    Map<String, String>? clientContext;
-    if (diagnostics) {
-      setState(() => _collecting = true);
-      clientContext = await MagicStarterSupportClientContext.collect(
-        route:
-            MagicStarterScreenCapture.holder.route ??
-            MagicStarterConfig.supportCreateRoute(),
-      );
-      if (!mounted) return;
-      setState(() => _collecting = false);
-    }
-
-    // 2. One write carries the message, the files and the diagnostics.
-    final Uint8List? screenshot = diagnostics
-        ? MagicStarterScreenCapture.holder.bytes
-        : null;
-    final conversation = await controller.createConversation(
-      topic: _topic,
-      body: _body.text.trim(),
-      source: 'in_app',
-      attachments: pickedAttachments,
-      screenshot: screenshot == null ? null : _screenshotFile(screenshot),
-      clientContext: clientContext,
-    );
-    if (conversation == null) return;
-
-    // 3. What this conversation carried is never offered to the next one.
-    MagicStarterScreenCapture.holder.clear();
-    MagicRoute.to(MagicStarterConfig.supportThreadPath(conversation.id));
-  }
-
-  /// Named `screenshot.png` with an image mime, which is what the backend's
-  /// extension rule accepts.
-  MagicFile _screenshotFile(Uint8List bytes) {
-    return MagicFile(
-      name: 'screenshot.png',
-      size: bytes.length,
-      mimeType: 'image/png',
-      bytes: bytes,
-    );
-  }
-
-  void _removeScreenshot() => MagicStarterScreenCapture.holder.discard();
 
   @override
   Widget build(BuildContext context) {
@@ -194,251 +65,25 @@ class _MagicStarterSupportCreateViewState
             ? WDiv(
                 className: 'flex flex-row items-start gap-6',
                 children: [
-                  Expanded(child: _buildForm(wide)),
+                  Expanded(child: _buildForm()),
                   SizedBox(width: _sideWidth, child: _buildHowItWorks(wide)),
                 ],
               )
             : WDiv(
                 className: 'flex flex-col gap-4',
-                children: [_buildHowItWorks(wide), _buildForm(wide)],
+                children: [_buildHowItWorks(wide), _buildForm()],
               ),
       ],
     );
   }
 
-  /// Rebuilds when the capture lands: the encode is asynchronous, so the bytes
-  /// can arrive after this page opened.
-  Widget _buildForm(bool wide) {
-    return ListenableBuilder(
-      listenable: MagicStarterScreenCapture.holder.bytesListenable,
-      builder: (context, _) => _buildFormCard(wide),
+  Widget _buildForm() {
+    return MagicStarterSupportCreateForm(
+      key: _formKey,
+      pickFiles: widget.pickFiles,
+      onCreated: (conversation) =>
+          MagicRoute.to(MagicStarterConfig.supportThreadPath(conversation.id)),
     );
-  }
-
-  Widget _buildFormCard(bool wide) {
-    final Uint8List? screenshot =
-        MagicStarterConfig.hasSupportDiagnosticsFeatures()
-        ? MagicStarterScreenCapture.holder.bytes
-        : null;
-
-    return MSCard(
-      child: WDiv(
-        className: 'flex flex-col gap-5',
-        children: [
-          MSFormField(
-            label: trans('magic_starter.support.topic_label'),
-            error: controller.getError('topic'),
-            child: WDiv(
-              className: 'flex flex-row wrap gap-2',
-              children: [
-                for (final topic in controller.topics) _buildChip(topic),
-              ],
-            ),
-          ),
-          MSFormField(
-            label: trans('magic_starter.support.message_label'),
-            error:
-                controller.getError('body') ??
-                controller.writeError ??
-                _unplacedError(),
-            child: WDiv(
-              className: 'flex flex-col gap-1.5',
-              children: [
-                MSTextarea(
-                  controller: _body,
-                  placeholder: trans(
-                    'magic_starter.support.message_placeholder',
-                  ),
-                  minLines: 6,
-                  fullWidth: true,
-                ),
-                _buildCounter(),
-              ],
-            ),
-          ),
-          if (MagicStarterConfig.hasSupportAttachmentsFeatures())
-            _buildAttachments(),
-          if (screenshot != null) _buildScreenshot(screenshot),
-          if (controller.articleSuggestions.isNotEmpty) _buildSuggestions(),
-          _buildFooter(wide),
-        ],
-      ),
-    );
-  }
-
-  /// The generic refusal text when the backend rejected a field this form has
-  /// no place for (a `client_context.*` key, say), so Send never fails silently.
-  String? _unplacedError() {
-    final bool unplaced = controller.validationErrors.keys.any(
-      (key) => !_placedErrorKey(key),
-    );
-
-    return unplaced ? trans('magic_starter.support.create_error') : null;
-  }
-
-  bool _placedErrorKey(String key) {
-    return key == 'topic' ||
-        key == 'body' ||
-        key == 'screenshot' ||
-        key == 'attachments' ||
-        key.startsWith('attachments.');
-  }
-
-  Widget _buildSuggestions() {
-    return WDiv(
-      className: 'flex flex-col gap-2',
-      children: [
-        WText(
-          trans('magic_starter.support.articles_label'),
-          className: 'text-sm font-medium text-fg',
-        ),
-        for (final article in controller.articleSuggestions)
-          MagicStarterSupportArticleCard(article),
-      ],
-    );
-  }
-
-  Widget _buildAttachments() {
-    return MSFormField(
-      label: trans('magic_starter.support.attachments_label'),
-      hint: trans('magic_starter.support.attachments_hint', {
-        'max': MagicStarterConfig.supportAttachmentMaxFiles(),
-        'size': MagicStarterConfig.supportAttachmentMaxBytes() ~/ (1024 * 1024),
-      }),
-      error: magicStarterSupportAttachmentError(controller),
-      child: WDiv(
-        className: 'flex flex-col items-start gap-2',
-        children: [
-          MSButton(
-            key: const ValueKey<String>('support-attach'),
-            intent: ButtonIntent.secondary,
-            onPressed: pickAttachments,
-            child: WDiv(
-              className: 'flex flex-row items-center justify-center gap-2',
-              children: [
-                WIcon(_iconAttach, className: 'text-sm'),
-                WText(trans('magic_starter.support.attach_button')),
-              ],
-            ),
-          ),
-          MagicStarterSupportPickedChips(
-            files: pickedAttachments,
-            onRemove: removeAttachment,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScreenshot(Uint8List bytes) {
-    return MSFormField(
-      label: trans('magic_starter.support.screenshot_label'),
-      hint: trans('magic_starter.support.screenshot_hint'),
-      error: controller.getError('screenshot'),
-      child: WDiv(
-        className: 'flex flex-col items-start gap-2',
-        children: [
-          WDiv(
-            className:
-                'w-full rounded-xl border border-color-border overflow-hidden',
-            child: Image.memory(
-              bytes,
-              key: const ValueKey<String>('support-screenshot'),
-              width: double.infinity,
-              fit: BoxFit.contain,
-              semanticLabel: trans('magic_starter.support.screenshot_label'),
-            ),
-          ),
-          MSButton(
-            key: const ValueKey<String>('support-screenshot-remove'),
-            intent: ButtonIntent.secondary,
-            onPressed: _removeScreenshot,
-            child: WDiv(
-              className: 'flex flex-row items-center justify-center gap-2',
-              children: [
-                WIcon(_iconRemove, className: 'text-sm'),
-                WText(trans('magic_starter.support.screenshot_remove')),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChip(String topic) {
-    final bool selected = topic == _topic;
-    final IconData? icon = _topicIcons[topic];
-
-    final String tone = selected
-        ? 'border-primary-600 dark:border-primary-500 bg-primary-container'
-        : 'border-color-border bg-surface-container-high';
-
-    return WAnchor(
-      key: ValueKey<String>('support-topic-$topic'),
-      onTap: () => setState(() => _topic = topic),
-      child: WDiv(
-        className:
-            'flex flex-row items-center gap-2 h-[38px] px-3.5 rounded-xl '
-            'border $tone',
-        children: [
-          if (icon != null) WIcon(icon, className: 'text-sm text-fg'),
-          WText(
-            magicStarterSupportTopicLabel(topic),
-            className: 'text-sm font-medium text-fg',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCounter() {
-    return ListenableBuilder(
-      listenable: _body,
-      builder: (context, _) => WDiv(
-        className: 'flex flex-row justify-end',
-        child: WText(
-          '${_body.text.runes.length} / ${MagicStarterConfig.supportMessageMaxLength()}',
-          className: 'text-xs text-fg-disabled',
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFooter(bool wide) {
-    final Widget privacy = WText(
-      trans('magic_starter.support.privacy_note'),
-      className: 'text-xs text-fg-muted',
-    );
-    final Widget send = MSButton(
-      onPressed: _submit,
-      isLoading: controller.isSubmitting || _collecting,
-      fullWidth: !wide,
-      child: WDiv(
-        className: 'flex flex-row items-center justify-center gap-2',
-        children: [
-          Flexible(
-            child: WText(
-              trans('magic_starter.support.create_submit'),
-              className: 'text-center',
-            ),
-          ),
-          WIcon(_iconSend, className: 'text-sm'),
-        ],
-      ),
-    );
-
-    if (wide) {
-      return WDiv(
-        className: 'flex flex-row items-center justify-between gap-3',
-        children: [
-          Flexible(child: privacy),
-          send,
-        ],
-      );
-    }
-
-    return WDiv(className: 'flex flex-col gap-3', children: [send, privacy]);
   }
 
   Widget _buildHowItWorks(bool wide) {

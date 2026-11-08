@@ -657,7 +657,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Second page'), findsOneWidget);
 
-      await tester.pump(MagicStarterSupportLiveRefresh.pollInterval);
+      await tester.pump(MagicStarterSupportSync.pollInterval);
       await tester.pumpAndSettle();
 
       expect(find.text('First page'), findsOneWidget);
@@ -2100,7 +2100,7 @@ void main() {
     Map<String, dynamic> imageMessage() => messageJson(
       id: 2,
       senderType: 'staff',
-      body: 'Here is the screenshot',
+      body: 'Here is the error',
       attachments: <Map<String, dynamic>>[attachmentJson()],
     );
 
@@ -2437,7 +2437,7 @@ void main() {
 
       await mount(tester, at: '/support/7');
 
-      expect(find.text('Here is the screenshot'), findsOneWidget);
+      expect(find.text('Here is the error'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('support-attachment-11')),
         findsNothing,
@@ -2793,21 +2793,11 @@ void main() {
     });
   });
 
-  group('diagnostics on the create view', () {
-    const ValueKey<String> screenshot = ValueKey<String>('support-screenshot');
-    const ValueKey<String> removeScreenshot = ValueKey<String>(
-      'support-screenshot-remove',
-    );
-
-    /// A real 1x1 PNG, so the preview decodes what a capture would hold.
-    final Uint8List png = base64Decode(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-    );
-
+  group('client context on the create view', () {
     late List<SentRequest> sent;
 
     setUp(() {
-      Config.set('magic_starter.features.support_diagnostics', true);
+      Config.set('magic_starter.features.support_client_context', true);
       PackageInfo.setMockInitialValues(
         appName: 'Uptizm',
         packageName: 'com.example.app',
@@ -2815,8 +2805,6 @@ void main() {
         buildNumber: '45',
         buildSignature: '',
       );
-      MagicStarterScreenCapture.resetForTesting();
-      MagicStarterScreenCapture.holder.debugHold(png, route: '/monitors/3');
 
       sent = fakeBackend({
         'POST /support/conversations': (_) => ok(
@@ -2829,8 +2817,6 @@ void main() {
         'POST /support/conversations/9/seen': (_) => ok(null),
       });
     });
-
-    tearDown(MagicStarterScreenCapture.resetForTesting);
 
     Future<Map> send(WidgetTester tester) async {
       await tester.enterText(find.byType(EditableText), 'It broke');
@@ -2846,84 +2832,25 @@ void main() {
           as Map;
     }
 
-    testWidgets('shows the screenshot and sends it with the client info', (
-      tester,
-    ) async {
+    testWidgets('sends the client info with the request', (tester) async {
       await mount(tester, at: '/support/new');
-
-      expect(find.byKey(screenshot), findsOneWidget);
 
       final data = await send(tester);
 
-      final MagicFile file = data['screenshot'] as MagicFile;
-      expect(file.name, 'screenshot.png');
-      expect(file.mimeType, 'image/png');
-      expect(data['client_context[route]'], '/monitors/3');
-      expect(data['client_context[app_version]'], '2.3.0');
-      expect(data['client_context[build_number]'], '45');
-      expect(data['client_context[platform]'], isNotEmpty);
-      expect(data['client_context[locale]'], 'en');
-      expect(data['client_context[timezone]'], isNotEmpty);
+      final Map context = data['client_context'] as Map;
+      expect(context['app_version'], '2.3.0');
+      expect(context['build_number'], '45');
+      expect(context['platform'], isNotEmpty);
+      expect(context['locale'], 'en');
+      expect(context['timezone'], isNotEmpty);
     });
 
-    testWidgets('remove drops the screenshot but keeps the client info', (
-      tester,
-    ) async {
+    testWidgets('does not send the route the customer was on', (tester) async {
       await mount(tester, at: '/support/new');
-
-      await tester.tap(find.byKey(removeScreenshot));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(screenshot), findsNothing);
-      expect(MagicStarterScreenCapture.holder.bytes, isNull);
 
       final data = await send(tester);
 
-      expect(data.containsKey('screenshot'), isFalse);
-      expect((data['client_context'] as Map)['route'], '/monitors/3');
-    });
-
-    testWidgets('a sent screenshot is not offered again', (tester) async {
-      await mount(tester, at: '/support/new');
-
-      await send(tester);
-
-      expect(MagicStarterScreenCapture.holder.bytes, isNull);
-    });
-
-    testWidgets('a screenshot that arrives after the page opened is shown', (
-      tester,
-    ) async {
-      MagicStarterScreenCapture.holder.clear();
-      await mount(tester, at: '/support/new');
-      expect(find.byKey(screenshot), findsNothing);
-
-      MagicStarterScreenCapture.holder.debugHold(png, route: '/monitors/3');
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(screenshot), findsOneWidget);
-    });
-
-    testWidgets('a refused screenshot is explained under its preview', (
-      tester,
-    ) async {
-      fakeBackend({
-        'POST /support/conversations': (_) => Http.response(<String, dynamic>{
-          'message': 'The screenshot is too large.',
-          'errors': <String, dynamic>{
-            'screenshot': <String>['The screenshot is too large.'],
-          },
-        }, 422),
-      });
-      await mount(tester, at: '/support/new');
-
-      await tester.enterText(find.byType(EditableText), 'It broke');
-      await tester.pump();
-      await tester.tap(find.text(trans('magic_starter.support.create_submit')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('The screenshot is too large.'), findsOneWidget);
-      expect(find.byKey(screenshot), findsOneWidget);
+      expect((data['client_context'] as Map).containsKey('route'), isFalse);
     });
 
     testWidgets('an error on an unplaced field falls back to the write error', (
@@ -2931,9 +2858,9 @@ void main() {
     ) async {
       fakeBackend({
         'POST /support/conversations': (_) => Http.response(<String, dynamic>{
-          'message': 'The client_context.route field is too long.',
+          'message': 'The client_context.platform field is too long.',
           'errors': <String, dynamic>{
-            'client_context.route': <String>['The route is too long.'],
+            'client_context.platform': <String>['The platform is too long.'],
           },
         }, 422),
       });
@@ -2950,16 +2877,13 @@ void main() {
       );
     });
 
-    testWidgets('sends neither while the flag is off', (tester) async {
-      Config.set('magic_starter.features.support_diagnostics', false);
+    testWidgets('sends no client info while the flag is off', (tester) async {
+      Config.set('magic_starter.features.support_client_context', false);
 
       await mount(tester, at: '/support/new');
 
-      expect(find.byKey(screenshot), findsNothing);
-
       final data = await send(tester);
 
-      expect(data.containsKey('screenshot'), isFalse);
       expect(data.containsKey('client_context'), isFalse);
     });
   });

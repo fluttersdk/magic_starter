@@ -354,6 +354,12 @@
       "attachments_hint": "Images or PDFs, up to :max files of :size MB each.",
       "attachments_label": "Attachments",
       "back_to_list": "Back to conversations",
+      "chat": {
+        "close": "Close chat",
+        "launcher": "Chat with us",
+        "open_full_page": "Open full page",
+        "unread": ":count unread"
+      },
       "composer_hint": "Enter to send, Shift+Enter for a new line",
       "contact_sales_body": "I would like to talk to sales about the :plan plan.",
       "contact_sales_failed_title": "We could not reach sales",
@@ -405,9 +411,6 @@
       "reply_error": "We could not send your reply. Please try again.",
       "reply_placeholder": "Write a reply",
       "reply_submit": "Send",
-      "screenshot_hint": "The screen you came from. It is sent only if you keep it.",
-      "screenshot_label": "Screenshot",
-      "screenshot_remove": "Remove screenshot",
       "sender": {
         "ai": "AI assistant",
         "customer": "You",
