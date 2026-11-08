@@ -31,8 +31,9 @@ const String _surface = 'chat';
 /// shared [MagicStarterSupportSync] (one retain, released on dispose), so an
 /// open panel rereads on each poll tick and broadcast; it never starts a timer
 /// or a listener of its own. Reads go through the keyed thread API, so the
-/// thread shown here never moves the page's thread, and it never clears the
-/// controller's errors.
+/// thread shown here never moves the page's thread, and mounting it never
+/// clears the controller's errors. A write it sends still resets them: the
+/// controller holds validation and write errors once for every surface.
 ///
 /// Registered as `support.chat_panel`; a host replacing it through
 /// `MagicStarter.view.register` takes over all of the above.
