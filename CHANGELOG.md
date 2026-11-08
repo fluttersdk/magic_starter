@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.73] - 2026-11-08
+
 ### Added
 
 - **A support chat popup behind the `support_chat` feature (default off, needs `support`).** `MagicStarterSupportChatLauncher` is a button with an unread-count badge that a host mounts once in its shell (a sidebar, say); it renders nothing unless the flag and `support` are on and a signed-in, non-guest user is present, and signing out closes the panel. It opens `MagicStarterSupportChatPanel`, a non-modal floating panel at the bottom right of the screen (400 by 520 by default, `width` and `height` size it, `margin` sets its 16px gap from the screen edges) with a header (back, title, open full page, close), a list of conversations, a thread and the new-conversation form; an empty list opens the form. The panel stays inside the safe area and above the keyboard wherever the launcher sits, closes on Escape and hands focus back to the launcher. View keys: `support.chat` (the launcher) and `support.chat_panel`, registered only with the flag on. A host that replaces `support.chat_panel` takes over the shared-refresh retain and release, the thread watch and the seen receipt. Needs no backend change. New `en.stub` keys: `magic_starter.support.chat.close`, `.launcher`, `.open_full_page`, `.unread`. Not included: a bottom sheet variant for a narrow screen, a typing presence indicator (the AI typing bubble of the thread is shown). (`lib/src/ui/views/support/chat/`, `lib/src/support/support_chat_state.dart`, `lib/src/configuration/magic_starter_config.dart`, `lib/src/magic_starter_manager.dart`, `assets/stubs/install/en.stub`)
