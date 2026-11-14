@@ -22,8 +22,7 @@ import 'package:magic/magic.dart';
 const WindSlotRecipe upgradeNudgeRecipe = WindSlotRecipe(
   slots: {
     'root': 'rounded-xl border border-color-border bg-surface-container p-4',
-    'tile':
-        'flex flex-row size-8 shrink-0 items-center justify-center rounded-lg bg-primary-container',
+    'tile': 'flex flex-row size-8 shrink-0 items-center justify-center rounded-lg bg-primary-container',
     'message': 'text-sm font-medium text-fg',
     'sub': 'text-xs text-fg-muted',
   },

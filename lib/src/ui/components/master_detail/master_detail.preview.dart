@@ -39,8 +39,7 @@ class _PreviewList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WDiv(
-      className:
-          'flex flex-col rounded-2xl bg-surface-container border border-color-border',
+      className: 'flex flex-col rounded-2xl bg-surface-container border border-color-border',
       children: [
         for (final String item in const ['Milk', 'Coffee', 'Batteries'])
           WDiv(

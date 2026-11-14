@@ -1,7 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:ui' show lerpDouble;
 
-import 'package:flutter/material.dart' show Drawer, Scaffold, Icons;
+import 'package:material_ui/material_ui.dart' show Drawer, Scaffold, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';

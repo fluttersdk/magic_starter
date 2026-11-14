@@ -37,7 +37,7 @@ Or add it manually to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.73
+  magic_starter: ^0.1.0
 ```
 
 Then fetch dependencies:
@@ -112,7 +112,7 @@ final appConfig = {
 The install command also adds the config factory to `Magic.init()` in `lib/main.dart`:
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:magic/magic.dart';
 import 'config/app.dart';
 import 'config/magic_starter.dart'; // injected by install

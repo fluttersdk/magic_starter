@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -97,8 +97,7 @@ class _MagicStarterTeamInvitationAcceptViewState
         children: [
           ?headerSlot,
           WDiv(
-            className:
-                'w-16 h-16 rounded-full bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
+            className: 'w-16 h-16 rounded-full bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
             child: WIcon(
               Icons.group_add_outlined,
               className: 'text-[32px] text-primary',
@@ -129,8 +128,7 @@ class _MagicStarterTeamInvitationAcceptViewState
         children: [
           ?headerSlot,
           WDiv(
-            className:
-                'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
+            className: 'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
             child: WIcon(
               Icons.check_circle_outline,
               className: 'text-[32px] text-green-600 dark:text-green-400',
@@ -164,8 +162,7 @@ class _MagicStarterTeamInvitationAcceptViewState
         children: [
           ?headerSlot,
           WDiv(
-            className:
-                'w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center',
+            className: 'w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center',
             child: WIcon(
               Icons.error_outline,
               className: 'text-[32px] text-red-600 dark:text-red-400',

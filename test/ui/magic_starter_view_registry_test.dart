@@ -240,17 +240,14 @@ void main() {
     // -------------------------------------------------------------------------
 
     group('modal registry', () {
-      test(
-        'registerModal() stores a builder that can be retrieved via makeModal()',
-        () {
-          const expected = SizedBox(key: Key('modal-widget'));
-          registry.registerModal('confirm', () => expected);
+      test('registerModal() stores a builder that can be retrieved via makeModal()', () {
+        const expected = SizedBox(key: Key('modal-widget'));
+        registry.registerModal('confirm', () => expected);
 
-          final Widget result = registry.makeModal('confirm');
+        final Widget result = registry.makeModal('confirm');
 
-          expect(result, same(expected));
-        },
-      );
+        expect(result, same(expected));
+      });
 
       test('hasModal() returns true for registered key', () {
         registry.registerModal('confirm', () => const SizedBox());
@@ -283,18 +280,15 @@ void main() {
         );
       });
 
-      test(
-        'clear() clears modal builders — hasModal() returns false after clear()',
-        () {
-          registry.registerModal('confirm', () => const SizedBox());
-          registry.registerModal('alert', () => const Placeholder());
+      test('clear() clears modal builders — hasModal() returns false after clear()', () {
+        registry.registerModal('confirm', () => const SizedBox());
+        registry.registerModal('alert', () => const Placeholder());
 
-          registry.clear();
+        registry.clear();
 
-          expect(registry.hasModal('confirm'), isFalse);
-          expect(registry.hasModal('alert'), isFalse);
-        },
-      );
+        expect(registry.hasModal('confirm'), isFalse);
+        expect(registry.hasModal('alert'), isFalse);
+      });
 
       test('makeModal() throws after clear()', () {
         registry.registerModal('confirm', () => const SizedBox());

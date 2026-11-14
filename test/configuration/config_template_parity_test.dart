@@ -10,13 +10,13 @@ import 'package:test/test.dart';
 /// second place to forget the key, which is the defect this suite exists to
 /// catch.
 Set<String> _featureKeysReadByConfig() {
-  final String source = File(
-    'lib/src/configuration/magic_starter_config.dart',
-  ).readAsStringSync();
+  final String source = File('lib/src/configuration/magic_starter_config.dart')
+      .readAsStringSync();
 
-  return RegExp(
-    r"'magic_starter\.features\.([a-z_]+)'",
-  ).allMatches(source).map((RegExpMatch match) => match.group(1)!).toSet();
+  return RegExp(r"'magic_starter\.features\.([a-z_]+)'")
+      .allMatches(source)
+      .map((RegExpMatch match) => match.group(1)!)
+      .toSet();
 }
 
 /// The feature keys a config template offers, read out of its `features` map.

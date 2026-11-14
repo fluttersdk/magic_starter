@@ -21,8 +21,7 @@ import 'package:magic/magic.dart';
 const WindSlotRecipe upgradeDialogRecipe = WindSlotRecipe(
   slots: {
     'root': 'flex flex-col items-start gap-4',
-    'tile':
-        'flex flex-row size-10 shrink-0 items-center justify-center rounded-lg bg-primary-container',
+    'tile': 'flex flex-row size-10 shrink-0 items-center justify-center rounded-lg bg-primary-container',
     'message': 'text-base font-medium text-fg',
     'sub': 'text-sm text-fg-muted',
     'actions': 'flex flex-row justify-end gap-3 self-stretch',

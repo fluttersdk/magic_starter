@@ -130,8 +130,7 @@ class MSBottomSheetPanel extends StatelessWidget {
                   child: WDiv(
                     // Semantic alias so the handle re-skins with the theme
                     // instead of hardcoded gray palette utilities.
-                    className:
-                        'w-9 h-1 bg-surface-container-high rounded-full mt-3 mb-1',
+                    className: 'w-9 h-1 bg-surface-container-high rounded-full mt-3 mb-1',
                   ),
                 )
               : null,

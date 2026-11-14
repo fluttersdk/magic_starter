@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart'
     show Listenable, VoidCallback, visibleForTesting;
 import 'package:magic/magic.dart';
+import 'package:magic_socket/magic_socket.dart';
 
 import '../http/controllers/magic_starter_support_controller.dart';
 import '../models/magic_starter_support_conversation.dart';

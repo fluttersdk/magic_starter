@@ -3,7 +3,8 @@ import 'dart:math' as math;
 import 'dart:ui' show FlutterView;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
-import 'package:flutter/material.dart' show Icons, Material, MaterialType;
+import 'package:material_ui/material_ui.dart'
+    show Icons, Material, MaterialType;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';

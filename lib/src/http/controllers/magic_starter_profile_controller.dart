@@ -197,9 +197,9 @@ class MagicStarterProfileController extends MagicController
     final teamIds = _blockingTeamIds(refusal);
     final providers = refusal['team_providers'];
     final provider = providers is Map
-        ? [
-            for (final id in teamIds) providers[id],
-          ].whereType<String>().firstOrNull
+        ? [for (final id in teamIds) providers[id]]
+              .whereType<String>()
+              .firstOrNull
         : null;
 
     final String sentence;

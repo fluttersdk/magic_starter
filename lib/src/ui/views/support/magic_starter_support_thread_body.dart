@@ -1,7 +1,8 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
-import 'package:flutter/material.dart' show CircularProgressIndicator, Icons;
+import 'package:material_ui/material_ui.dart'
+    show CircularProgressIndicator, Icons;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

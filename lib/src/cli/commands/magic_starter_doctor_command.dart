@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:path/path.dart' as p;
 
 /// Where the push external id prefix a report names came from.
@@ -31,10 +31,10 @@ enum PushPrefixSource {
 ///
 /// ## Usage
 /// ```bash
-/// artisan starter:doctor
-/// artisan starter:doctor --verbose
+/// dart run magic:dowel starter:doctor
+/// dart run magic:dowel starter:doctor --verbose
 /// ```
-class MagicStarterDoctorCommand extends ArtisanCommand {
+class MagicStarterDoctorCommand extends DowelCommand {
   @override
   String get signature =>
       'starter:doctor '
@@ -55,7 +55,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
   String getProjectRoot() => FileHelper.findProjectRoot();
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     // 1. Resolve verbosity before running checks.
     final bool verbose = (ctx.input.option('verbose') as bool?) ?? false;
 
@@ -73,7 +73,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
 
     ctx.output.writeln('');
     ctx.output.error(
-      '${missing.length} check(s) failed. Run `artisan starter:install` to fix.',
+      '${missing.length} check(s) failed. Run `dart run magic:dowel starter:install` to fix.',
     );
     return 1;
   }
@@ -108,9 +108,9 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       return false;
     }
 
-    return File(
-      appPath,
-    ).readAsStringSync().contains('MagicStarterServiceProvider');
+    return File(appPath)
+        .readAsStringSync()
+        .contains('MagicStarterServiceProvider');
   }
 
   /// Check that the `magicStarterConfig` factory is wired into `main.dart`.
@@ -151,9 +151,9 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       return false;
     }
 
-    return File(
-      providerPath,
-    ).readAsStringSync().contains('registerMagicStarterAuthRoutes');
+    return File(providerPath)
+        .readAsStringSync()
+        .contains('registerMagicStarterAuthRoutes');
   }
 
   /// Check that an app with the support feature on calls
@@ -174,9 +174,8 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
       return true;
     }
 
-    final bool supportEnabled = RegExp(
-      r"'support'\s*:\s*true",
-    ).hasMatch(_withoutCommentedLines(File(configPath).readAsStringSync()));
+    final bool supportEnabled = RegExp(r"'support'\s*:\s*true")
+        .hasMatch(_withoutCommentedLines(File(configPath).readAsStringSync()));
 
     if (!supportEnabled) {
       return true;
@@ -256,9 +255,8 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
     }
 
     final String content = File(configPath).readAsStringSync();
-    final bool billingEnabled = RegExp(
-      r"'billing'\s*:\s*true",
-    ).hasMatch(content);
+    final bool billingEnabled = RegExp(r"'billing'\s*:\s*true")
+        .hasMatch(content);
 
     if (!billingEnabled) {
       return true;
@@ -571,7 +569,7 @@ class MagicStarterDoctorCommand extends ArtisanCommand {
         buffer.writeln('    Key: magic_starter.features.support');
         buffer.writeln(
           '    Fix: add registerMagicStarterSupportRoutes(); to boot(), or run '
-          '`artisan starter:install --features=support`',
+          '`dart run magic:dowel starter:install --features=support`',
         );
       }
     }

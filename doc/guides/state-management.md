@@ -175,7 +175,7 @@ Does the controller need to be ready before any view renders?
 Use `MagicStatefulView<ControllerType>` for all full-page views. The base class resolves `controller` automatically via `instance` and listens to state changes.
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
@@ -274,7 +274,7 @@ While the state is `loading`, `renderState()` displays a built-in loading indica
 Use a plain `StatefulWidget` with `ProjectController.instance` when you need controller access inside a non-page widget (e.g., a dropdown, a card action, or a sub-widget inside an existing view):
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 
@@ -579,7 +579,7 @@ class ProjectController extends MagicController
 ### View (`lib/src/ui/views/projects/project_list_view.dart`)
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
 

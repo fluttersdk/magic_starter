@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-14
+
+### BREAKING
+
+- **The CLI moved from `fluttersdk_artisan` to `dowel`.** The provider is renamed to `MagicStarterDowelProvider` (`lib/src/cli/starter_dowel_provider.dart`, exported from `package:magic_starter/cli.dart`); re-run `dart run magic:dowel plugin:install magic_starter` to register it under `.dowel/`. The commands are run as `dart run magic:dowel starter:<command>`, and the read-only `starter_doctor` MCP tool routes through `dowel:starter:doctor`. (`lib/src/cli/`, `lib/cli.dart`, `install.yaml`)
+- **Wind moved to `wind_kit` and Material to `material_ui`.** `fluttersdk_wind` is replaced by `wind_kit ^1.12.0`, and every Material import now comes from `package:material_ui/material_ui.dart`, which `material_ui ^1.11.0` provides. `starter:install` writes the `material_ui` import into a host's `main.dart` and `AppServiceProvider`. The SDK floor is Dart 3.13 and Flutter 3.47. (`pubspec.yaml`, `lib/`, `assets/stubs/install/`)
+
+### Changed
+
+- **Now depends on `magic ^0.1.0`, `magic_picker` and `magic_socket`.** `Pick` (attachments, profile photo) comes from `package:magic_picker/magic_picker.dart` and `BroadcastListeners` (support sync) from `package:magic_socket/magic_socket.dart`, since core 0.1.0 no longer ships either. (`pubspec.yaml`, `lib/src/support/support_sync.dart`, `lib/src/ui/views/support/magic_starter_support_attachments.dart`, `lib/src/ui/views/profile/`)
+- **Direct dependencies raised to the latest release.** `path ^1.9.1`, `web ^1.1.2` and dev `test ^1.32.0`. (`pubspec.yaml`)
+
 ## [0.0.73] - 2026-11-08
 
 ### Added

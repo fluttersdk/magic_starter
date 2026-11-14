@@ -144,16 +144,13 @@ void main() {
       expect(controller.isSuccess, isTrue);
     });
 
-    test(
-      'updateNewsletterSubscription — subscribe: calls PUT with correct payload',
-      () async {
-        mockDriver.mockResponse(statusCode: 200, data: {'subscribed': true});
-        await controller.updateNewsletterSubscription(subscribe: true);
-        expect(mockDriver.lastUrl, '/user/newsletter');
-        expect(mockDriver.lastMethod, 'PUT');
-        expect(mockDriver.lastData?['subscribe'], isTrue);
-      },
-    );
+    test('updateNewsletterSubscription — subscribe: calls PUT with correct payload', () async {
+      mockDriver.mockResponse(statusCode: 200, data: {'subscribed': true});
+      await controller.updateNewsletterSubscription(subscribe: true);
+      expect(mockDriver.lastUrl, '/user/newsletter');
+      expect(mockDriver.lastMethod, 'PUT');
+      expect(mockDriver.lastData?['subscribe'], isTrue);
+    });
 
     test('updateNewsletterSubscription — unsubscribe: sends false', () async {
       mockDriver.mockResponse(statusCode: 200, data: {'subscribed': false});

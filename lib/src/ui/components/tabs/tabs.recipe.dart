@@ -23,8 +23,7 @@ Map<String, String> tabsRecipe({
       // sitting on. It read as a grey smudge rather than a selection.
       // `py-3` below `lg` makes a tab the 44 px touch target (12 + 20 + 12);
       // from `lg` up it keeps its 36 px desktop height.
-      'tab':
-          'px-4 py-3 lg:py-2 text-sm font-medium text-fg-muted cursor-pointer selected:text-fg selected:border-b-2 selected:border-primary-600 dark:selected:border-primary-500',
+      'tab': 'px-4 py-3 lg:py-2 text-sm font-medium text-fg-muted cursor-pointer selected:text-fg selected:border-b-2 selected:border-primary-600 dark:selected:border-primary-500',
       'panel': 'pt-4',
     },
   );

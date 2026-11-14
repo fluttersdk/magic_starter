@@ -61,9 +61,8 @@ void main() {
       web.window.history.pushState(null, '', '/a/b/c');
 
       final Uri url = defaultVersionUrl();
-      final Uri expected = Uri.parse(
-        web.document.baseURI,
-      ).resolve('version.json');
+      final Uri expected = Uri.parse(web.document.baseURI)
+          .resolve('version.json');
 
       expect(url.path, expected.path);
       expect(url.queryParameters['cb'], isNotEmpty);

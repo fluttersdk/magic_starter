@@ -1,7 +1,7 @@
 // Magic Starter plugin exports
 
 export 'src/ui/theme/magic_starter_tokens.dart';
-export 'src/cli/starter_artisan_provider.dart';
+export 'src/cli/starter_dowel_provider.dart';
 export 'src/facades/magic_starter.dart';
 export 'src/magic_starter_manager.dart';
 export 'src/contracts/magic_starter_social_auth.dart';
@@ -150,6 +150,7 @@ export 'src/support/app_build.dart';
 /// answer a `PackageInfo`, so an adopter can name it without adding
 /// package_info_plus to their own pubspec.
 export 'package:package_info_plus/package_info_plus.dart' show PackageInfo;
+
 export 'src/support/support_client_context.dart';
 export 'src/support/support_page_context.dart';
 export 'src/support/support_page_ref.dart';

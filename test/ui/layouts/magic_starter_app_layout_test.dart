@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -1028,13 +1028,11 @@ void main() {
       );
       // The banner hides a campaign that is not running, and the fixture's own
       // window is a fixed calendar week, so the window moves around now.
-      final Map<String, dynamic> wire =
-          jsonDecode(
-                File(
-                  '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
-                ).readAsStringSync(),
-              )
-              as Map<String, dynamic>;
+      final Map<String, dynamic> wire = jsonDecode(
+        File(
+          '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
+        ).readAsStringSync(),
+      ) as Map<String, dynamic>;
       final DateTime now = DateTime.now().toUtc();
       (wire['data'] as Map<String, dynamic>)
         ..['starts_at'] = now
@@ -1992,9 +1990,9 @@ void main() {
       // The toggle reads these keys; a host installed from the stub gets them,
       // and without them the labelled form shows the raw key. The widget tests
       // above find the keys themselves, so only this ties them to the stub.
-      final stub =
-          jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
-              as Map<String, dynamic>;
+      final stub = jsonDecode(
+        File('assets/stubs/install/en.stub').readAsStringSync(),
+      ) as Map<String, dynamic>;
       final nav = stub['nav'] as Map<String, dynamic>;
 
       expect(nav['collapse_sidebar'], isA<String>());

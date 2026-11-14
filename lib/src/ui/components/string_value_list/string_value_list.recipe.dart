@@ -39,8 +39,7 @@ const WindSlotRecipe stringValueListRecipe = WindSlotRecipe(
     // size-9 rather than size-4. The glyph inside stays small; what grows is
     // the box around it, because the chips sit in a wrap row and a miss lands
     // on the neighbouring chip's remove control.
-    'remove':
-        'flex flex-row items-center justify-center size-9 shrink-0 rounded-full',
+    'remove': 'flex flex-row items-center justify-center size-9 shrink-0 rounded-full',
   },
   variants: {
     kStringValueListToneAxis: {

@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:path/path.dart' as p;
 
 import '../helpers/magic_starter_config_helper.dart';
-import '../starter_artisan_provider.dart';
+import '../starter_dowel_provider.dart';
 
 /// Publish Magic Starter files into the host application for customization.
 ///
@@ -17,7 +17,7 @@ import '../starter_artisan_provider.dart';
 /// - `--tag=views:auth.login` publishes a single view by registry key
 /// - `--tag=layouts` publishes both layouts
 /// - `--tag=layouts:app` publishes a single layout
-class MagicStarterPublishCommand extends ArtisanCommand {
+class MagicStarterPublishCommand extends DowelCommand {
   // -------------------------------------------------------------------------
   // View and layout file maps
   // -------------------------------------------------------------------------
@@ -78,7 +78,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(ConsoleStyle.banner('Magic Starter', magicStarterVersion));
 
     final projectRoot = getProjectRoot();
@@ -171,7 +171,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   }
 
   List<String> _publishConfig(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -183,7 +183,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   }
 
   List<String> _publishViewsWithScope(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -212,7 +212,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   }
 
   List<String> _publishLayoutsWithScope(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -248,7 +248,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
   /// Publishes all view files by scanning the source directory.
   List<String> _publishAllViews(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -308,7 +308,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
 
   /// Publishes files from a key-to-relative-path map.
   List<String> _publishFileMapEntries(
-    ArtisanContext ctx,
+    DowelContext ctx,
     Map<String, String> fileMap,
     String projectRoot,
     String pluginSourceDir,
@@ -341,7 +341,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   }
 
   List<String> _publishMiddleware(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -370,7 +370,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   }
 
   List<String> _publishLang(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String projectRoot,
     String pluginSourceDir,
     bool force,
@@ -384,7 +384,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   }
 
   List<String> _copyFile(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String sourcePath,
     String destinationPath,
     bool force,
@@ -419,7 +419,7 @@ class MagicStarterPublishCommand extends ArtisanCommand {
   /// `MagicStarter.view.registerLayout()` calls. Idempotent: skips lines that
   /// already exist in the file.
   void _autoWireRegistrations({
-    required ArtisanContext ctx,
+    required DowelContext ctx,
     required String projectRoot,
     required String group,
     String? scope,

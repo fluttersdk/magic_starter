@@ -21,8 +21,7 @@ class TooltipPreview extends StatelessWidget {
           content: const WText('Tooltip above'),
           alignment: PopoverAlignment.topCenter,
           child: WDiv(
-            className:
-                'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
+            className: 'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
             child: const WText('Hover (top)'),
           ),
         ),
@@ -30,8 +29,7 @@ class TooltipPreview extends StatelessWidget {
           content: const WText('Tooltip below'),
           alignment: PopoverAlignment.bottomCenter,
           child: WDiv(
-            className:
-                'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
+            className: 'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
             child: const WText('Hover (bottom)'),
           ),
         ),

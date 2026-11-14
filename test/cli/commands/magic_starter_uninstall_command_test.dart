@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_uninstall_command.dart';
 import 'package:test/test.dart';
 
@@ -22,13 +22,13 @@ class TestMagicStarterUninstallCommand extends MagicStarterUninstallCommand {
   }
 }
 
-/// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
+/// Drives [command.handle] with a programmatic [DowelContext] composed of a
 /// [MapInput] (flags) and a [BufferedOutput] (capturable).
 Future<int> _runUninstall(
   MagicStarterUninstallCommand command, {
   bool force = false,
 }) {
-  final ctx = ArtisanContext.bare(
+  final ctx = DowelContext.bare(
     MapInput(<String, dynamic>{'force': force}),
     BufferedOutput(),
   );
@@ -71,9 +71,8 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String appContent = File(
-        '${tempDir.path}/lib/config/app.dart',
-      ).readAsStringSync();
+      final String appContent = File('${tempDir.path}/lib/config/app.dart')
+          .readAsStringSync();
 
       expect(appContent, isNot(contains('MagicStarterServiceProvider')));
     });
@@ -83,9 +82,8 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String appContent = File(
-        '${tempDir.path}/lib/config/app.dart',
-      ).readAsStringSync();
+      final String appContent = File('${tempDir.path}/lib/config/app.dart')
+          .readAsStringSync();
 
       expect(
         appContent,
@@ -98,9 +96,8 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String mainContent = File(
-        '${tempDir.path}/lib/main.dart',
-      ).readAsStringSync();
+      final String mainContent = File('${tempDir.path}/lib/main.dart')
+          .readAsStringSync();
 
       expect(mainContent, isNot(contains('() => magicStarterConfig,')));
     });
@@ -110,9 +107,8 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String mainContent = File(
-        '${tempDir.path}/lib/main.dart',
-      ).readAsStringSync();
+      final String mainContent = File('${tempDir.path}/lib/main.dart')
+          .readAsStringSync();
 
       expect(
         mainContent,
@@ -125,9 +121,8 @@ void main() {
 
       await _runUninstall(command, force: true);
 
-      final String kernelContent = File(
-        '${tempDir.path}/lib/app/kernel.dart',
-      ).readAsStringSync();
+      final String kernelContent = File('${tempDir.path}/lib/app/kernel.dart')
+          .readAsStringSync();
 
       expect(kernelContent, isNot(contains('EnsureAuthenticated')));
       expect(kernelContent, isNot(contains('RedirectIfAuthenticated')));
@@ -226,9 +221,8 @@ Map<String, dynamic> get appConfig => {
 
       await _runUninstall(command, force: true);
 
-      final String pubspecContent = File(
-        '${tempDir.path}/pubspec.yaml',
-      ).readAsStringSync();
+      final String pubspecContent = File('${tempDir.path}/pubspec.yaml')
+          .readAsStringSync();
 
       expect(pubspecContent, isNot(contains('magic_starter:')));
     });
@@ -269,7 +263,7 @@ Map<String, dynamic> get appConfig => {
 ''');
 
   _writeFile(dir, 'lib/main.dart', '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:magic/magic.dart';
 import 'config/app.dart';
 import 'config/magic_starter.dart';

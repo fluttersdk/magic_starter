@@ -355,7 +355,7 @@ class MagicStarterServiceProvider extends ServiceProvider {
     //
     // Providers boot in order (`Application.boot`) and this one goes last:
     // every doc here prescribes Auth, then Notifications, then Starter, and
-    // artisan's installer appends to the END of the list. So
+    // dowel's installer appends to the END of the list. So
     // `AuthServiceProvider.boot` has already awaited `Auth.restore()`, whose
     // `BaseGuard.setUser` bumped the notifier, and
     // `NotificationServiceProvider.boot` has already attached the driver, on a
@@ -418,19 +418,18 @@ class MagicStarterServiceProvider extends ServiceProvider {
     if (id == null || id.isEmpty) return;
 
     unawaited(
-      Notify.initializePush(
-        '${MagicStarterConfig.pushExternalIdPrefix()}$id',
-      ).catchError((Object error, StackTrace stackTrace) {
-        // Logged rather than rethrown: this runs off a ValueNotifier
-        // callback, where a throw becomes an unhandled async error, and a
-        // push identity the device could not declare is not a reason to
-        // fail the sign-in that triggered it. The manager keeps the intent
-        // and reports itself un-converged, so the next reconcile retries.
-        Log.error(
-          '[MagicStarter] push identity declaration failed: '
-          '$error\n$stackTrace',
-        );
-      }),
+      Notify.initializePush('${MagicStarterConfig.pushExternalIdPrefix()}$id')
+          .catchError((Object error, StackTrace stackTrace) {
+            // Logged rather than rethrown: this runs off a ValueNotifier
+            // callback, where a throw becomes an unhandled async error, and a
+            // push identity the device could not declare is not a reason to
+            // fail the sign-in that triggered it. The manager keeps the intent
+            // and reports itself un-converged, so the next reconcile retries.
+            Log.error(
+              '[MagicStarter] push identity declaration failed: '
+              '$error\n$stackTrace',
+            );
+          }),
     );
   }
 

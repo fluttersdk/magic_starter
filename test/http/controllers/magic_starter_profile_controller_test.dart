@@ -455,31 +455,28 @@ void main() {
     // -----------------------------------------------------------------------
 
     group('doDeleteAccount', () {
-      test(
-        'success (200) — returns true, sends _method DELETE, and calls Auth.logout()',
-        () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {'message': 'Account deleted'},
-          );
+      test('success (200) — returns true, sends _method DELETE, and calls Auth.logout()', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Account deleted'},
+        );
 
-          final result = await controller.doDeleteAccount(
-            proof: {'password': 'mysecretpass'},
-          );
+        final result = await controller.doDeleteAccount(
+          proof: {'password': 'mysecretpass'},
+        );
 
-          expect(result, isTrue);
-          expect(controller.isSuccess, isTrue);
-          expect(mockGuard.logoutCalled, isTrue);
+        expect(result, isTrue);
+        expect(controller.isSuccess, isTrue);
+        expect(mockGuard.logoutCalled, isTrue);
 
-          // Verify POST body contains _method: DELETE.
-          expect(mockDriver.lastMethod, equals('POST'));
-          expect(mockDriver.lastUrl, equals('/user'));
-          expect(
-            mockDriver.lastData,
-            equals({'_method': 'DELETE', 'password': 'mysecretpass'}),
-          );
-        },
-      );
+        // Verify POST body contains _method: DELETE.
+        expect(mockDriver.lastMethod, equals('POST'));
+        expect(mockDriver.lastUrl, equals('/user'));
+        expect(
+          mockDriver.lastData,
+          equals({'_method': 'DELETE', 'password': 'mysecretpass'}),
+        );
+      });
 
       test(
         'immediately adds the flag to the body and signs out on 202',
@@ -666,9 +663,9 @@ void main() {
       String blockedBy(String teams) =>
           _shipped('deletion_blocking_teams').replaceAll(':teams', teams);
 
-      String blockedByCount(int count) => _shipped(
-        'deletion_blocking_teams_count',
-      ).replaceAll(':count', '$count');
+      String blockedByCount(int count) =>
+          _shipped('deletion_blocking_teams_count')
+              .replaceAll(':count', '$count');
 
       void knowTeams(Map<String, String> namesById) {
         MagicStarter.manager.teamResolver = MagicStarterTeamResolverConfig(
@@ -1378,29 +1375,26 @@ void main() {
         );
       });
 
-      test(
-        'success (200) — returns true, calls upload(), and calls Auth.restore()',
-        () async {
-          mockDriver.mockResponse(
-            statusCode: 200,
-            data: {'message': 'Photo updated'},
-          );
+      test('success (200) — returns true, calls upload(), and calls Auth.restore()', () async {
+        mockDriver.mockResponse(
+          statusCode: 200,
+          data: {'message': 'Photo updated'},
+        );
 
-          final result = await controller.doUpdateProfilePhoto(file: testFile);
+        final result = await controller.doUpdateProfilePhoto(file: testFile);
 
-          expect(result, isTrue);
-          expect(controller.isSuccess, isTrue);
-          expect(controller.rxState, isTrue);
-          expect(mockGuard.restoreCalled, isTrue);
+        expect(result, isTrue);
+        expect(controller.isSuccess, isTrue);
+        expect(controller.rxState, isTrue);
+        expect(mockGuard.restoreCalled, isTrue);
 
-          // Verify upload() was called on the driver.
-          expect(mockDriver.uploadCalled, isTrue);
-          expect(mockDriver.lastMethod, equals('UPLOAD'));
-          expect(mockDriver.lastUrl, equals('/user/profile-photo'));
-          expect(mockDriver.lastFiles, isNotNull);
-          expect(mockDriver.lastFiles!['photo'], equals(testFile));
-        },
-      );
+        // Verify upload() was called on the driver.
+        expect(mockDriver.uploadCalled, isTrue);
+        expect(mockDriver.lastMethod, equals('UPLOAD'));
+        expect(mockDriver.lastUrl, equals('/user/profile-photo'));
+        expect(mockDriver.lastFiles, isNotNull);
+        expect(mockDriver.lastFiles!['photo'], equals(testFile));
+      });
 
       test('failure (422) — returns false', () async {
         mockDriver.mockResponse(
@@ -1735,24 +1729,21 @@ void main() {
       });
 
       group('doRevokeSession', () {
-        test(
-          'success (200) — returns true and sends password to /sessions/{tokenId}',
-          () async {
-            mockDriver.mockResponse(
-              statusCode: 200,
-              data: {'message': 'Session revoked successfully.'},
-            );
+        test('success (200) — returns true and sends password to /sessions/{tokenId}', () async {
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {'message': 'Session revoked successfully.'},
+          );
 
-            final result = await controller.doRevokeSession(
-              tokenId: 'tok-abc',
-              proof: {'password': 'mysecretpass'},
-            );
+          final result = await controller.doRevokeSession(
+            tokenId: 'tok-abc',
+            proof: {'password': 'mysecretpass'},
+          );
 
-            expect(result, isTrue);
-            expect(controller.isSuccess, isTrue);
-            expect(mockDriver.lastMethod, equals('POST'));
-          },
-        );
+          expect(result, isTrue);
+          expect(controller.isSuccess, isTrue);
+          expect(mockDriver.lastMethod, equals('POST'));
+        });
 
         test('failure (422) — returns false for wrong password', () async {
           mockDriver.mockResponse(
@@ -1776,25 +1767,22 @@ void main() {
       });
 
       group('doRevokeOtherSessions', () {
-        test(
-          'success (200) — returns true and sends password to /sessions/other',
-          () async {
-            mockDriver.mockResponse(
-              statusCode: 200,
-              data: {'message': 'Other sessions revoked successfully.'},
-            );
+        test('success (200) — returns true and sends password to /sessions/other', () async {
+          mockDriver.mockResponse(
+            statusCode: 200,
+            data: {'message': 'Other sessions revoked successfully.'},
+          );
 
-            final result = await controller.doRevokeOtherSessions(
-              proof: {'password': 'mysecretpass'},
-            );
+          final result = await controller.doRevokeOtherSessions(
+            proof: {'password': 'mysecretpass'},
+          );
 
-            expect(result, isTrue);
-            expect(controller.isSuccess, isTrue);
-            // expect(mockDriver.lastMethod, equals('DELETE'));
-            // expect(mockDriver.lastUrl, equals('/sessions/other'));
-            // expect(mockDriver.lastData, equals({'password': 'mysecretpass'}));
-          },
-        );
+          expect(result, isTrue);
+          expect(controller.isSuccess, isTrue);
+          // expect(mockDriver.lastMethod, equals('DELETE'));
+          // expect(mockDriver.lastUrl, equals('/sessions/other'));
+          // expect(mockDriver.lastData, equals({'password': 'mysecretpass'}));
+        });
 
         test('failure (422) — returns false', () async {
           mockDriver.mockResponse(
@@ -2125,9 +2113,9 @@ class _ShippedCatalogueLoader implements TranslationLoader {
 }
 
 Map<String, dynamic> _shippedSocial() {
-  final stub =
-      jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
-          as Map<String, dynamic>;
+  final stub = jsonDecode(
+    File('assets/stubs/install/en.stub').readAsStringSync(),
+  ) as Map<String, dynamic>;
 
   return stub['social'] as Map<String, dynamic>;
 }

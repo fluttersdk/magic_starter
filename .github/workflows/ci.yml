@@ -7,7 +7,7 @@ on:
     branches: [main, master]
 
 # Two jobs on purpose, because there are two different questions and one job can
-# only answer one of them. `siblings` resolves the fluttersdk packages from their
+# only answer one of them. `siblings` resolves the sibling packages from their
 # working trees, which is what this repo develops against and what a local
 # `pubspec_overrides.yaml` reproduces. `published` resolves them from pub.dev,
 # which is what an adopter actually installs. A CI that only ever cloned the
@@ -28,14 +28,13 @@ jobs:
         with:
           path: magic_starter
 
-      # All six are public repositories in the fluttersdk org. The directory
-      # name is what the override expects, and it differs from the package name
-      # for artisan and the two wind repositories.
-      - name: Check out the fluttersdk siblings
+      # All three are public repositories in the same GitHub org, and the
+      # directory name is what the override expects. `dowel` and `wind_kit`
+      # resolve from pub.dev.
+      - name: Check out the sibling packages
         run: |
           set -euo pipefail
-          for repo in magic magic_notifications magic_payments artisan \
-                      wind wind_diagnostics_contracts; do
+          for repo in magic magic_notifications magic_payments; do
             git clone --depth 1 "https://github.com/fluttersdk/$repo.git" "$repo"
           done
 
@@ -54,12 +53,6 @@ jobs:
               path: ../magic_notifications
             magic_payments:
               path: ../magic_payments
-            fluttersdk_artisan:
-              path: ../artisan
-            fluttersdk_wind:
-              path: ../wind
-            fluttersdk_wind_diagnostics_contracts:
-              path: ../wind_diagnostics_contracts
           YAML
 
       - name: Setup Flutter
@@ -95,7 +88,7 @@ jobs:
     # pub.dev now (magic_payments 0.0.2 closed the last gap), so a red here is
     # never "waiting for a release" and always a floor naming a version an
     # adopter cannot resolve. It caught exactly that three times in one day:
-    # `fluttersdk_wind ^1.6.0`, `magic_notifications ^0.3.2` and `magic ^0.0.12`
+    # the Wind floor `^1.6.0`, `magic_notifications ^0.3.2` and `magic ^0.0.12`
     # each sat red until the sibling published, which is the window in which an
     # adopter would have met `version solving failed` instead.
     #

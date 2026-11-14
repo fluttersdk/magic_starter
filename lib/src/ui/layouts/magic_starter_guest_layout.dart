@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Scaffold;
+import 'package:material_ui/material_ui.dart' show Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 

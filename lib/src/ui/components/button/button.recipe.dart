@@ -101,8 +101,7 @@ WindRecipe buildButtonRecipe(MagicStarterButtonTheme theme) {
         'focus:outline-none focus:ring-2 focus:ring-offset-1',
     variants: {
       kButtonIntentAxis: {
-        'primary':
-            'bg-primary text-on-primary hover:opacity-90 focus:ring-color-border',
+        'primary': 'bg-primary text-on-primary hover:opacity-90 focus:ring-color-border',
         // The border is dropped from the string, not blanked in place, so an
         // empty theme field leaves no doubled space between the other tokens.
         'secondary': [

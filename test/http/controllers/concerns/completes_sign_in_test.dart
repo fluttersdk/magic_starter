@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -137,9 +137,8 @@ void main() {
       final events = <String>[];
       recordAutofillCalls(events);
 
-      await _TestHost(
-        events,
-      ).completeSignIn(_sessionBody(), saveCredentials: true);
+      await _TestHost(events)
+          .completeSignIn(_sessionBody(), saveCredentials: true);
       await tester.pumpAndSettle();
 
       expect(events, ['finishAutofillContext(true)', 'home']);

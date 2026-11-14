@@ -298,17 +298,12 @@ class MagicStarterModalTheme {
     this.titleClassName =
         'text-xl font-semibold text-gray-900 dark:text-white mb-2',
     this.descriptionClassName = 'text-sm text-gray-600 dark:text-gray-400',
-    this.primaryButtonClassName =
-        'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
-    this.secondaryButtonClassName =
-        'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
-    this.dangerButtonClassName =
-        'px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium',
-    this.warningButtonClassName =
-        'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium',
+    this.primaryButtonClassName = 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-sm font-medium',
+    this.secondaryButtonClassName = 'px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium',
+    this.dangerButtonClassName = 'px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium',
+    this.warningButtonClassName = 'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium',
     this.errorClassName = 'text-sm text-red-600 dark:text-red-400',
-    this.inputClassName =
-        'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
+    this.inputClassName = 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary',
     this.maxWidth = 448.0,
     this.presentation = MagicStarterModalPresentation.dialog,
     this.dialogBreakpoint = 'lg',
@@ -448,19 +443,16 @@ class MagicStarterFormTheme {
   final String checkboxLabelClassName;
 
   const MagicStarterFormTheme({
-    this.inputClassName =
-        'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
+    this.inputClassName = 'w-full px-3 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-primary error:border-red-500',
     this.labelClassName =
         'text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
     this.errorClassName = 'text-sm text-red-600 dark:text-red-400',
     this.placeholderClassName = 'text-gray-400 dark:text-gray-500',
     this.primaryButtonClassName =
         'w-full bg-primary hover:bg-primary/80 text-white font-semibold',
-    this.secondaryButtonClassName =
-        'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
+    this.secondaryButtonClassName = 'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
     this.linkClassName = 'text-sm font-medium text-primary',
-    this.checkboxLabelClassName =
-        'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 ml-1',
+    this.checkboxLabelClassName = 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 ml-1',
   });
 
   /// Returns a copy of this theme with the given fields replaced.
@@ -560,8 +552,7 @@ class MagicStarterCardTheme {
   const MagicStarterCardTheme({
     this.surfaceClassName =
         'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
-    this.insetClassName =
-        'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700',
+    this.insetClassName = 'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700',
     this.elevatedClassName = 'bg-white dark:bg-gray-800 shadow-md',
     this.titleClassName = 'text-lg font-semibold text-gray-900 dark:text-white',
     this.titleNoPaddingContainerClassName = 'px-6 pt-6 pb-3',
@@ -703,25 +694,19 @@ class MagicStarterPageHeaderTheme {
   final double compactBarBlurSigma;
 
   const MagicStarterPageHeaderTheme({
-    this.containerClassName =
-        'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
-    this.containerInlineClassName =
-        'w-full flex flex-row items-center justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
+    this.containerClassName = 'w-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
+    this.containerInlineClassName = 'w-full flex flex-row items-center justify-between gap-4 p-2 lg:p-4 border-b border-gray-200 dark:border-gray-700',
     this.titleClassName =
         'text-2xl font-bold text-gray-900 dark:text-white line-clamp-2',
     this.subtitleClassName =
         'text-sm text-gray-600 dark:text-gray-400 line-clamp-2',
     this.actionContainerClassName = 'flex flex-row items-center gap-2',
-    this.backControlClassName =
-        'flex items-center justify-center size-9 text-2xl text-fg-muted hover:text-fg',
+    this.backControlClassName = 'flex items-center justify-center size-9 text-2xl text-fg-muted hover:text-fg',
     this.inlineActions = false,
     this.largeTitle = false,
-    this.largeTitleClassName =
-        'text-4xl lg:text-3xl font-bold text-gray-900 dark:text-white line-clamp-2',
-    this.compactBarClassName =
-        'px-2 bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700',
-    this.compactBarOpaqueClassName =
-        'px-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700',
+    this.largeTitleClassName = 'text-4xl lg:text-3xl font-bold text-gray-900 dark:text-white line-clamp-2',
+    this.compactBarClassName = 'px-2 bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700',
+    this.compactBarOpaqueClassName = 'px-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700',
     this.compactTitleClassName =
         'text-base font-semibold text-gray-900 dark:text-white truncate',
     this.compactBarBlurSigma = 20.0,
@@ -950,16 +935,14 @@ class MagicStarterLayoutTheme {
   final String? notificationBadgeTextClassName;
 
   const MagicStarterLayoutTheme({
-    this.sidebarClassName =
-        'h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700',
+    this.sidebarClassName = 'h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700',
     this.sidebarWidth = 256,
     this.navigationBreakpoint = 'lg',
     this.sidebarExpandedBreakpoint = 'lg',
     this.sidebarCompactWidth = 80,
     this.sidebarCollapsible = false,
     this.sidebarCollapsedByDefault = false,
-    this.headerClassName =
-        'h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between',
+    this.headerClassName = 'h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between',
     this.headerHeight = 64,
     this.contentBackgroundLightColor = 'gray',
     this.contentBackgroundLightShade = 50,
@@ -969,8 +952,7 @@ class MagicStarterLayoutTheme {
     this.drawerBackgroundLightShade = 50,
     this.drawerBackgroundDarkColor = 'gray',
     this.drawerBackgroundDarkShade = 900,
-    this.brandBarClassName =
-        'h-14 px-5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800',
+    this.brandBarClassName = 'h-14 px-5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800',
     this.bottomNavClassName = '',
     this.contentClassName = 'flex-1 min-h-0',
     this.contentScrollPrimary = false,
@@ -1072,24 +1054,20 @@ class MagicStarterAuthTheme {
   final String registrationLinkTextClassName;
 
   const MagicStarterAuthTheme({
-    this.cardClassName =
-        'rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 lg:p-8 flex flex-col items-center',
+    this.cardClassName = 'rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 lg:p-8 flex flex-col items-center',
     this.titleClassName =
         'text-2xl font-bold text-gray-900 dark:text-white text-center',
     this.subtitleClassName =
         'text-sm text-gray-600 dark:text-gray-400 text-center',
-    this.errorBannerClassName =
-        'p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm text-center',
-    this.themeToggleClassName =
-        'p-2 rounded-lg duration-150 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center',
+    this.errorBannerClassName = 'p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm text-center',
+    this.themeToggleClassName = 'p-2 rounded-lg duration-150 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center',
     this.themeToggleIconClassName = 'text-2xl text-gray-500 dark:text-gray-400',
     this.socialDividerClassName = 'flex flex-row items-center my-4',
     this.socialDividerLineClassName =
         'flex-1 h-[1px] bg-gray-200 dark:bg-gray-700',
     this.socialDividerTextClassName =
         'text-sm text-gray-500 dark:text-gray-400',
-    this.guestButtonClassName =
-        'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
+    this.guestButtonClassName = 'w-full bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:opacity-90',
     this.registrationLinkClassName = 'text-sm text-gray-500 dark:text-gray-400',
     this.registrationLinkTextClassName = 'text-sm font-semibold text-primary',
   });

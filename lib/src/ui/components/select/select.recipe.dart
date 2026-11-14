@@ -27,8 +27,7 @@ Map<String, String> selectRecipe({
           'w-full px-3 ${theme.selectSizeClassName} rounded-lg bg-surface-container-high border '
           'border-color-border text-fg flex items-center justify-between gap-2 '
           'focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400',
-      'popup':
-          'bg-surface border border-color-border rounded-lg shadow-md overflow-hidden',
+      'popup': 'bg-surface border border-color-border rounded-lg shadow-md overflow-hidden',
       'item':
           'px-3 py-2 text-sm text-fg hover:bg-surface-container cursor-pointer',
     },

@@ -208,7 +208,7 @@ app with no team features can still sell one.
 > billing view builds Stripe's `successUrl`, `cancelUrl` and the portal `returnUrl` by concatenating
 > this origin with a path, and Stripe rejects a relative url. Leave it unset and checkout fails at
 > Stripe, where the resulting `BillingException` is logged rather than shown, so the customer sees a
-> button that does nothing. `dart run <app>:artisan starter:doctor` reports the missing key.
+> button that does nothing. `dart run magic:dowel starter:doctor` reports the missing key.
 
 The origin is the host app's own web origin, with no trailing slash. It is only read on the web rail;
 a store purchase on iOS or Android never touches it.
@@ -244,7 +244,7 @@ What it declares is the prefix below followed by the authenticated user's id:
 Change it when one OneSignal app serves more than one kind of subject, and change the backend with
 it.
 
-`dart run <app>:artisan starter:doctor` prints the prefix this config resolves to, so the two sides
+`dart run magic:dowel starter:doctor` prints the prefix this config resolves to, so the two sides
 can be read against each other:
 
 ```

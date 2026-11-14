@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -16,9 +16,9 @@ class _ShippedCatalogueLoader implements TranslationLoader {
 
   @override
   Future<Map<String, dynamic>> load(Locale _) async {
-    final stub =
-        jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
-            as Map<String, dynamic>;
+    final stub = jsonDecode(
+      File('assets/stubs/install/en.stub').readAsStringSync(),
+    ) as Map<String, dynamic>;
     final social = stub['social'] as Map<String, dynamic>;
 
     return {

@@ -1,6 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -581,9 +581,8 @@ void main() {
       ),
     );
 
-    final Iterable<SemanticsNode> named = _buttonNodes(
-      tester,
-    ).where((SemanticsNode n) => n.getSemanticsData().label == 'Settings');
+    final Iterable<SemanticsNode> named = _buttonNodes(tester)
+        .where((SemanticsNode n) => n.getSemanticsData().label == 'Settings');
 
     expect(named, hasLength(1));
     // Still icon-only on screen: the name reaches assistive technology, not the
@@ -1214,9 +1213,8 @@ void main() {
       );
 
       expect(
-        _headerNodes(
-          tester,
-        ).map((SemanticsNode n) => n.getSemanticsData().label),
+        _headerNodes(tester)
+            .map((SemanticsNode n) => n.getSemanticsData().label),
         ['Heard'],
       );
       handle.dispose();

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart' show CircularProgressIndicator, Icons;
+import 'package:material_ui/material_ui.dart'
+    show CircularProgressIndicator, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart' show ButtonSize, MSButton;

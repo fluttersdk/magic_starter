@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -46,8 +46,7 @@ class DropdownMenuPreview extends StatelessWidget {
             ),
           ],
           child: WDiv(
-            className:
-                'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
+            className: 'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
             child: const WText('Options'),
           ),
         ),
@@ -61,8 +60,7 @@ class DropdownMenuPreview extends StatelessWidget {
             ),
           ],
           child: WDiv(
-            className:
-                'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
+            className: 'px-4 py-2 rounded-lg bg-surface border border-color-border text-sm',
             child: const WText('With disabled'),
           ),
         ),

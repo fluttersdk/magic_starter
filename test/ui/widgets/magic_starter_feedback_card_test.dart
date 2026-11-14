@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show Tristate;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -14,9 +14,8 @@ class _ShippedLoader implements TranslationLoader {
 
   @override
   Future<Map<String, dynamic>> load(Locale _) async {
-    final raw = File(
-      '${Directory.current.path}/assets/stubs/install/en.stub',
-    ).readAsStringSync();
+    final raw = File('${Directory.current.path}/assets/stubs/install/en.stub')
+        .readAsStringSync();
 
     return _flatten(jsonDecode(raw) as Map<String, dynamic>);
   }
@@ -453,9 +452,10 @@ void main() {
 /// A node carrying `isMergedIntoParent` is folded into its parent and never
 /// sent to assistive technology, so counting one reports a control that does
 /// not exist.
-List<String> _buttonNames(WidgetTester tester) => _buttonNodes(
-  tester,
-).map((SemanticsNode node) => node.getSemanticsData().label).toList();
+List<String> _buttonNames(WidgetTester tester) =>
+    _buttonNodes(tester)
+        .map((SemanticsNode node) => node.getSemanticsData().label)
+        .toList();
 
 List<SemanticsNode> _buttonNodes(WidgetTester tester) {
   final List<SemanticsNode> found = <SemanticsNode>[];

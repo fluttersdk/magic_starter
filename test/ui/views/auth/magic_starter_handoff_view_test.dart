@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -23,9 +23,9 @@ class _ShippedCatalogueLoader implements TranslationLoader {
 
   @override
   Future<Map<String, dynamic>> load(Locale _) async {
-    final Map<String, dynamic> stub =
-        jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
-            as Map<String, dynamic>;
+    final Map<String, dynamic> stub = jsonDecode(
+      File('assets/stubs/install/en.stub').readAsStringSync(),
+    ) as Map<String, dynamic>;
     final Map<String, dynamic> flat = {};
 
     void walk(String prefix, Map<String, dynamic> node) {

@@ -53,25 +53,22 @@ void main() {
         expect(manager.theme.form.primaryButtonClassName, 'custom-btn');
       });
 
-      test(
-        'setting navigationTheme still works and is reflected in theme.navigation',
-        () {
-          const customNav = MagicStarterNavigationTheme(
-            activeItemClassName: 'active:text-amber-500',
-          );
+      test('setting navigationTheme still works and is reflected in theme.navigation', () {
+        const customNav = MagicStarterNavigationTheme(
+          activeItemClassName: 'active:text-amber-500',
+        );
 
-          manager.navigationTheme = customNav;
+        manager.navigationTheme = customNav;
 
-          expect(
-            manager.theme.navigation.activeItemClassName,
-            'active:text-amber-500',
-          );
-          expect(
-            manager.navigationTheme.activeItemClassName,
-            'active:text-amber-500',
-          );
-        },
-      );
+        expect(
+          manager.theme.navigation.activeItemClassName,
+          'active:text-amber-500',
+        );
+        expect(
+          manager.navigationTheme.activeItemClassName,
+          'active:text-amber-500',
+        );
+      });
 
       test('setting theme distributes the dropdown sub-theme', () {
         manager.theme = const MagicStarterTheme(

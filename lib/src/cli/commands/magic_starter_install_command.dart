@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:path/path.dart' as p;
 
 import '../helpers/magic_starter_config_helper.dart';
@@ -15,7 +15,7 @@ import '../helpers/magic_starter_config_helper.dart';
 /// disagree. They describe one dependency from two files, so a disagreement
 /// leaves pub no intersection to solve, and pub answers that by walking
 /// magic_starter backwards to a release that fits rather than by failing.
-const String magicNotificationsConstraint = '^0.3.12';
+const String magicNotificationsConstraint = '^0.4.0';
 
 /// Installs and configures Magic Starter inside a host Magic application.
 ///
@@ -54,7 +54,7 @@ const String magicNotificationsConstraint = '^0.3.12';
 /// [resolveManifestPath] are overridable so a test subclass can pin the
 /// project root + stubs dir + manifest path and stub the `dart format`
 /// side effect.
-class MagicStarterInstallCommand extends ArtisanInstallCommand {
+class MagicStarterInstallCommand extends DowelInstallCommand {
   /// Public default constructor. The provider's `commands()` list constructs
   /// this with no arguments; test fixtures subclass + override the seams.
   MagicStarterInstallCommand();
@@ -78,7 +78,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       'Install and configure Magic Starter in your application';
 
   @override
-  String pluginName(ArtisanContext ctx) => 'magic_starter';
+  String pluginName(DowelContext ctx) => 'magic_starter';
 
   /// Absolute project root path.
   String get projectRoot => getProjectRoot();
@@ -128,11 +128,11 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
   /// every transactional + helper op writes into the resolved host project
   /// (and tests can redirect it at a temp directory).
   @override
-  InstallContext buildContext(ArtisanContext ctx) =>
+  InstallContext buildContext(DowelContext ctx) =>
       InstallContext.real(ctx, projectRoot: projectRoot);
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     final bool force = isForce(ctx);
 
     ctx.output.info('Magic Starter Installer');
@@ -260,7 +260,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
     _stageAppRoutes(installer, force: force);
   }
 
-  Map<String, bool> _resolveFeatureSelections(ArtisanContext ctx) {
+  Map<String, bool> _resolveFeatureSelections(DowelContext ctx) {
     final String? rawFeaturesOption = ctx.input.option('features') as String?;
     final bool hasFeatureFlag = rawFeaturesOption != null;
     final bool nonInteractive = isNonInteractive(ctx) || hasFeatureFlag;
@@ -322,7 +322,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
   ///
   /// Steps:
   /// 1. Add magic_starter config import.
-  /// 2. Add material.dart import (for MaterialColor/Color).
+  /// 2. Add material_ui import (for MaterialColor/Color).
   /// 3. Inject magicStarterConfig factory into configFactories.
   /// 4. Inject WindThemeData with default primary color palette.
   /// 5. Pass windTheme to MagicApplication constructor.
@@ -338,10 +338,10 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
       importStatement: "import 'config/magic_starter.dart';",
     );
 
-    // 2. Ensure material.dart import (needed for MaterialColor, Color).
+    // 2. Ensure material_ui import (needed for MaterialColor, Color).
     ConfigEditor.addImportToFile(
       filePath: mainPath,
-      importStatement: "import 'package:flutter/material.dart';",
+      importStatement: "import 'package:material_ui/material_ui.dart';",
     );
 
     // 3. Inject magicStarterConfig factory into configFactories.
@@ -585,7 +585,7 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
   }
 
   void _replaceAppServiceProvider(
-    ArtisanContext ctx, {
+    DowelContext ctx, {
     required Map<String, bool> features,
     required bool force,
   }) {
@@ -675,14 +675,14 @@ class MagicStarterInstallCommand extends ArtisanInstallCommand {
   /// starter plugin to function. Each injection is idempotent — it checks for
   /// the presence of a marker string before adding code.
   void _injectIntoExistingAppServiceProvider(
-    ArtisanContext ctx, {
+    DowelContext ctx, {
     required String targetPath,
     required Map<String, bool> features,
   }) {
     // 1. Add required imports.
     ConfigEditor.addImportToFile(
       filePath: targetPath,
-      importStatement: "import 'package:flutter/material.dart';",
+      importStatement: "import 'package:material_ui/material_ui.dart';",
     );
     ConfigEditor.addImportToFile(
       filePath: targetPath,
@@ -827,7 +827,7 @@ $teamArgs    );
     return '${content.substring(0, bootBrace)}$code  ${content.substring(bootBrace)}';
   }
 
-  void _createTranslationFile(ArtisanContext ctx, {required bool force}) {
+  void _createTranslationFile(DowelContext ctx, {required bool force}) {
     final String targetPath = '$projectRoot/assets/lang/en.json';
     final String relativePath = targetPath.replaceFirst('$projectRoot/', '');
 
@@ -1162,7 +1162,7 @@ $teamArgs    );
   }
 
   Future<void> _setupNotifications(
-    ArtisanContext ctx, {
+    DowelContext ctx, {
     required Map<String, bool> features,
   }) async {
     if (!(features['notifications'] ?? false)) {
@@ -1183,12 +1183,12 @@ $teamArgs    );
     }
 
     // OneSignal setup needs a user-specific App ID, so it cannot be auto-run
-    // here. magic_notifications also has no standalone entrypoint post
-    // artisan-migration; its installer surfaces through the host app's artisan
-    // binary. Point the operator at the correct command instead of shelling out.
+    // here. magic_notifications also has no standalone entrypoint; its
+    // installer surfaces through the host app's dowel dispatcher. Point the
+    // operator at the correct command instead of shelling out.
     ctx.output.info(
       'Notifications enabled. Complete OneSignal setup by running:\n'
-      '  dart run <app>:artisan notifications:install --app-id=<your-onesignal-app-id>',
+      '  dart run magic:dowel notifications:install --app-id=<your-onesignal-app-id>',
     );
   }
 
@@ -1217,9 +1217,9 @@ $teamArgs    );
           if (rootUri.startsWith('file://')) {
             packageRoot = Uri.parse(rootUri).toFilePath();
           } else if (rootUri.startsWith('../')) {
-            packageRoot = File(
-              packageConfigPath,
-            ).parent.uri.resolve(rootUri).toFilePath();
+            packageRoot = File(packageConfigPath).parent.uri
+                .resolve(rootUri)
+                .toFilePath();
           } else {
             packageRoot = rootUri;
           }

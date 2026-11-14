@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_payments/magic_payments.dart';
@@ -15,9 +15,8 @@ class _ShippedLoader implements TranslationLoader {
 
   @override
   Future<Map<String, dynamic>> load(Locale _) async {
-    final raw = File(
-      '${Directory.current.path}/assets/stubs/install/en.stub',
-    ).readAsStringSync();
+    final raw = File('${Directory.current.path}/assets/stubs/install/en.stub')
+        .readAsStringSync();
 
     return _flatten(jsonDecode(raw) as Map<String, dynamic>);
   }

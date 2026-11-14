@@ -22,8 +22,7 @@ class NavbarPreview extends StatelessWidget {
         MSNavbar(
           brand: const WText('Acme', className: 'text-lg font-bold text-fg'),
           trailing: const WDiv(
-            className:
-                'w-8 h-8 rounded-full bg-surface-container flex items-center justify-center',
+            className: 'w-8 h-8 rounded-full bg-surface-container flex items-center justify-center',
             child: WText('U', className: 'text-sm font-bold text-fg'),
           ),
           children: [
