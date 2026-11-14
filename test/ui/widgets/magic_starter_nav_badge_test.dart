@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -222,9 +222,9 @@ void main() {
       // A host installed from the stub gets the sentence; without it a screen
       // reader would be handed the dotted key. The widget tests above load
       // their own copy, so only this ties the default to the shipped file.
-      final stub =
-          jsonDecode(File('assets/stubs/install/en.stub').readAsStringSync())
-              as Map<String, dynamic>;
+      final stub = jsonDecode(
+        File('assets/stubs/install/en.stub').readAsStringSync(),
+      ) as Map<String, dynamic>;
       final nav = stub['nav'] as Map<String, dynamic>;
       final sentence = nav['badge_count'] as String;
 

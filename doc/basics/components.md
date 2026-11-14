@@ -206,10 +206,10 @@ The `.recipe.dart` file contains a top-level function (e.g. `buildButtonRecipe`,
 
 Every component carries an `MS` prefix (`MSButton`, `MSDialog`, `MSSwitch`, ...),
 so none of the barrel's component exports collide with
-`package:flutter/material.dart`. You can import both without a `hide` clause:
+`package:material_ui/material_ui.dart`. You can import both without a `hide` clause:
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 // No ambiguity: MSSwitch is the component, Switch is Material's.
@@ -222,7 +222,7 @@ import 'package:magic_starter/magic_starter.dart';
 Or hide the specific colliding names:
 
 ```dart
-import 'package:flutter/material.dart' hide MSSwitch, MSDialog, MSCheckbox;
+import 'package:material_ui/material_ui.dart' hide MSSwitch, MSDialog, MSCheckbox;
 import 'package:magic_starter/magic_starter.dart';
 ```
 
@@ -243,10 +243,10 @@ Then fill in brand hex values and fonts, and run the CLI commands:
 
 ```bash
 # Validate your DESIGN.md against the schema
-dart run <app>:artisan design:lint
+dart run magic:dowel design:lint
 
 # Generate the Wind theme from your DESIGN.md
-dart run <app>:artisan design:sync
+dart run magic:dowel design:sync
 ```
 
 `design:sync` regenerates the `WindThemeData(aliases: ...)` map, replacing `MagicStarterTokens.defaultAliases` with your brand-specific values so every component reflects your brand automatically.

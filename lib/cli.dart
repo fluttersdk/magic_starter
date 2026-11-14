@@ -1,23 +1,23 @@
 /// CLI barrel for Magic Starter.
 ///
-/// Exposes ONLY the artisan-CLI surface (MagicStarterArtisanProvider). Does
+/// Exposes ONLY the dowel CLI surface (MagicStarterDowelProvider). Does
 /// NOT export the Flutter runtime barrel (lib/magic_starter.dart), so this
-/// barrel is safe for consumption from pure-Dart artisan dispatchers that must
+/// barrel is safe for consumption from pure-Dart dowel dispatchers that must
 /// not import Flutter or dart:ui.
 ///
-/// Plugin auto-discovery in `fluttersdk_artisan` imports this barrel and
-/// instantiates [MagicStarterArtisanProvider] by convention. Consumer apps
-/// that register Magic Starter's CLI commands in a `bin/artisan.dart` should
-/// import this barrel:
+/// Plugin auto-discovery in `dowel` imports this barrel and instantiates
+/// [MagicStarterDowelProvider] by convention. Consumer apps that register
+/// Magic Starter's CLI commands in a `bin/dispatcher.dart` should import this
+/// barrel:
 ///
 /// ```dart
-/// import 'package:fluttersdk_artisan/artisan.dart';
-/// import 'package:magic_starter/cli.dart' show MagicStarterArtisanProvider;
+/// import 'package:dowel/dowel.dart';
+/// import 'package:magic_starter/cli.dart' show MagicStarterDowelProvider;
 ///
 /// Future<void> main(List<String> args) async {
-///   final registry = ArtisanRegistry()
-///     ..registerProvider(MagicStarterArtisanProvider());
-///   exit(await ArtisanApplication(registry: registry).dispatch(args));
+///   final registry = DowelRegistry()
+///     ..registerProvider(MagicStarterDowelProvider());
+///   exit(await DowelApplication(registry: registry).dispatch(args));
 /// }
 /// ```
 ///
@@ -26,4 +26,4 @@
 /// full Flutter surface.
 library;
 
-export 'src/cli/starter_artisan_provider.dart';
+export 'src/cli/starter_dowel_provider.dart';

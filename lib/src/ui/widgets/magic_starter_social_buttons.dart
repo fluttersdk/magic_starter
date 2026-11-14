@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart' show CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -288,8 +288,7 @@ class _MagicStarterTeamSettingsViewState
                           inviteForm.set('role', value ?? 'member'),
                       labelClassName: formTheme.labelClassName,
                       className: formTheme.inputClassName,
-                      menuClassName:
-                          'bg-surface-container-high border border-color-border',
+                      menuClassName: 'bg-surface-container-high border border-color-border',
                     ),
                     WDiv(
                       className: 'flex justify-end',
@@ -323,16 +322,14 @@ class _MagicStarterTeamSettingsViewState
     final isOwner = role == 'owner';
 
     return WDiv(
-      className:
-          'px-6 py-4 flex items-center justify-between border-b border-color-border-subtle',
+      className: 'px-6 py-4 flex items-center justify-between border-b border-color-border-subtle',
       children: [
         Expanded(
           child: WDiv(
             className: 'flex items-center gap-3 min-w-0',
             children: [
               WDiv(
-                className:
-                    'w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center',
+                className: 'w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center',
                 child: WText(
                   name.isNotEmpty
                       ? name[0].toUpperCase()
@@ -398,16 +395,14 @@ class _MagicStarterTeamSettingsViewState
     final invitationId = invitation['id'];
 
     return WDiv(
-      className:
-          'px-6 py-4 flex items-center justify-between border-b border-color-border-subtle',
+      className: 'px-6 py-4 flex items-center justify-between border-b border-color-border-subtle',
       children: [
         Expanded(
           child: WDiv(
             className: 'flex items-center gap-3 min-w-0',
             children: [
               WDiv(
-                className:
-                    'w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center',
+                className: 'w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center',
                 child: WIcon(
                   Icons.mail_outline,
                   className: 'text-[18px] text-amber-600 dark:text-amber-400',
@@ -435,8 +430,7 @@ class _MagicStarterTeamSettingsViewState
           className: 'flex items-center gap-2',
           children: [
             WDiv(
-              className:
-                  'px-2 py-1 rounded-md bg-surface-container-high text-xs font-medium text-fg-muted',
+              className: 'px-2 py-1 rounded-md bg-surface-container-high text-xs font-medium text-fg-muted',
               child: WText(_roleLabel(role)),
             ),
             WAnchor(

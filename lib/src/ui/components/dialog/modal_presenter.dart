@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart'
+import 'package:material_ui/material_ui.dart'
     as m
     show Colors, MaterialLocalizations, Theme, showDialog;
 import 'package:flutter/widgets.dart';
@@ -131,9 +131,9 @@ abstract final class ModalPresenter {
           localizations.bottomSheetLabel,
         ),
         backgroundColor: m.Colors.transparent,
-        modalBarrierColor: m.Theme.of(
-          context,
-        ).bottomSheetTheme.modalBarrierColor,
+        modalBarrierColor: m.Theme.of(context)
+            .bottomSheetTheme
+            .modalBarrierColor,
         isDismissible: dismissible,
         enableDrag: dismissible,
         canDismiss: canDismiss,

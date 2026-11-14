@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_picker/magic_picker.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';
@@ -473,8 +474,7 @@ class _MagicStarterProfileSettingsViewState
               MagicBuilder<bool>(
                 listenable: _photoLoading,
                 builder: (isLoading) => WDiv(
-                  className:
-                      'flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3',
+                  className: 'flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3',
                   children: [
                     MSButton(
                       intent: ButtonIntent.secondary,
@@ -579,8 +579,7 @@ class _MagicStarterProfileSettingsViewState
               options: finalLocales,
               labelClassName: formTheme.labelClassName,
               className: formTheme.inputClassName,
-              menuClassName:
-                  'bg-surface-container-high border border-color-border rounded-xl shadow-xl',
+              menuClassName: 'bg-surface-container-high border border-color-border rounded-xl shadow-xl',
             ),
           WDiv(
             className: 'flex justify-end',
@@ -725,8 +724,7 @@ class _MagicStarterProfileSettingsViewState
                 children: [
                   WText(
                     trans('magic_starter.email_verification.unverified_title'),
-                    className:
-                        'text-sm font-semibold text-yellow-800 dark:text-yellow-200',
+                    className: 'text-sm font-semibold text-yellow-800 dark:text-yellow-200',
                   ),
                   WText(
                     trans(
@@ -845,8 +843,7 @@ class _MagicStarterProfileSettingsViewState
             children: [
               ..._recoveryCodes.map(
                 (code) => WDiv(
-                  className:
-                      'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
+                  className: 'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
                   child: WText(code),
                 ),
               ),
@@ -1087,8 +1084,7 @@ class _MagicStarterProfileSettingsViewState
     );
 
     return WDiv(
-      className:
-          'flex flex-row items-start gap-3 p-3 rounded-lg bg-surface-container border border-color-border',
+      className: 'flex flex-row items-start gap-3 p-3 rounded-lg bg-surface-container border border-color-border',
       children: [
         WIcon(
           isDesktop ? _iconDesktop : _iconMobile,
@@ -1106,8 +1102,7 @@ class _MagicStarterProfileSettingsViewState
                 ),
                 if (isCurrent)
                   WDiv(
-                    className:
-                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium px-2 py-0.5 rounded-full',
+                    className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium px-2 py-0.5 rounded-full',
                     children: [WText(trans('profile.current_device'))],
                   ),
               ],
@@ -1161,8 +1156,7 @@ class _MagicStarterProfileSettingsViewState
                       trans(
                         'magic_starter.profile.delete_account.guest_upgrade_title',
                       ),
-                      className:
-                          'text-sm font-semibold text-blue-800 dark:text-blue-200',
+                      className: 'text-sm font-semibold text-blue-800 dark:text-blue-200',
                     ),
                     WText(
                       trans(

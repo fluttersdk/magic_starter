@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_picker/magic_picker.dart';
 
 import '../../../configuration/magic_starter_config.dart';
 import '../../../facades/magic_starter.dart';

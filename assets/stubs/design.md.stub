@@ -3,7 +3,7 @@ name: {{ app_name }}
 description: >
   Design system for {{ app_name }}. Single-brand, Wind semantic tokens,
   M3-role palette. Generate the Wind theme with:
-    dart run {{ app_package }}:artisan design:sync
+    dart run magic:dowel design:sync
 colors:
   surface:
     light: "#FFFFFF"

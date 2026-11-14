@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart' show ButtonSize, MSButton;
@@ -63,8 +63,7 @@ class _MagicStarterForgotPasswordViewState
         className: 'flex flex-col items-center gap-4',
         children: [
           WDiv(
-            className:
-                'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
+            className: 'w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center',
             child: WIcon(
               _iconCheck,
               className: 'text-[32px] text-green-600 dark:text-green-400',

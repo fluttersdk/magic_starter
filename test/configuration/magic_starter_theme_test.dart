@@ -981,9 +981,8 @@ void main() {
     /// source, so a field added to the class cannot be left out of the table
     /// below without a test failing.
     Set<String> constructorFields(String className) {
-      final source = File(
-        'lib/src/configuration/magic_starter_theme.dart',
-      ).readAsStringSync();
+      final source = File('lib/src/configuration/magic_starter_theme.dart')
+          .readAsStringSync();
       final start = source.indexOf('  const $className({');
       final end = source.indexOf('\n  });', start);
 

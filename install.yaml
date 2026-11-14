@@ -20,7 +20,7 @@
 #     the manifest publish: section, because that seam is overridable for tests
 #     and resolves the plugin's assets/stubs/ without a consumer .dart_tool.
 #
-# See doc/install_yaml_schema.md (in fluttersdk_artisan) for the full schema.
+# See doc/plugins/install-yaml.md (in dowel) for the full schema.
 
 plugin_name: magic_starter
 
@@ -41,12 +41,12 @@ post_install:
     features disabled by default). If the bootstrap reported a non-zero exit
     above, or `lib/config/magic_starter.dart` is missing, run it by hand:
 
-      dart run <app>:artisan starter:install
+      dart run magic:dowel starter:install
 
-    Then enable features with `dart run <app>:artisan starter:configure`, or
+    Then enable features with `dart run magic:dowel starter:configure`, or
     install with features directly:
 
-      dart run <app>:artisan starter:install --features=registration,teams,sessions
+      dart run magic:dowel starter:install --features=registration,teams,sessions
 
     To skip the automatic scaffold on future installs, pass `--no-bootstrap`
     to `plugin:install`. Finally: `flutter pub get && flutter run`.

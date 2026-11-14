@@ -6,10 +6,10 @@ applyTo: 'lib/src/cli/**/*.dart'
 
 # CLI Commands
 
-- Class hierarchy: `extends ArtisanCommand` (or `extends ArtisanInstallCommand` for install) from `fluttersdk_artisan`
-- Lifecycle: `signature` DSL property (`'name {arg} {--flag}'`) or `configure(ArgParser)` for flags, async `handle(ArtisanContext ctx)` for main logic
+- Class hierarchy: `extends DowelCommand` (or `extends DowelInstallCommand` for install) from `dowel`
+- Lifecycle: `signature` DSL property (`'name {arg} {--flag}'`) or `configure(ArgParser)` for flags, async `handle(DowelContext ctx)` for main logic
 - Boot mode: `CommandBoot.none` (commands run out-of-isolate, no Flutter app instance required)
-- Install command pattern: `extends ArtisanInstallCommand`, drives the `install.yaml` manifest, fluent override for dynamic logic (feature toggles, conditional prompts)
+- Install command pattern: `extends DowelInstallCommand`, drives the `install.yaml` manifest, fluent override for dynamic logic (feature toggles, conditional prompts)
 - Overridable methods for testability: `getProjectRoot()`, `getStubSearchPaths()`, `runDartFormat()`
 - Stub lookup: standardized on `resolveMagicStubsDir().parent.parent`, consistent across plugins
 - File operations via `FileHelper`: `fileExists()`, `findProjectRoot()`, `readFile()`, `writeFile()`

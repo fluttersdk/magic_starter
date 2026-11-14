@@ -737,17 +737,14 @@ void main() {
         expect(mockGuard.logoutCalled, isTrue);
       });
 
-      test(
-        'skips notification cleanup when notification features are disabled',
-        () async {
-          Config.set('magic_starter.features.notifications', false);
+      test('skips notification cleanup when notification features are disabled', () async {
+        Config.set('magic_starter.features.notifications', false);
 
-          await controller.logout();
+        await controller.logout();
 
-          // Auth logout should still be called even without notification cleanup.
-          expect(mockGuard.logoutCalled, isTrue);
-        },
-      );
+        // Auth logout should still be called even without notification cleanup.
+        expect(mockGuard.logoutCalled, isTrue);
+      });
 
       test('completes logout even when notification cleanup throws', () async {
         Config.set('magic_starter.features.notifications', true);

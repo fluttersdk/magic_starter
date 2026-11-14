@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_socket/magic_socket.dart';
 import 'package:magic_starter/magic_starter.dart';
 import 'package:magic_starter/src/ui/views/support/magic_starter_support_article_card.dart';
 import 'package:magic_starter/src/ui/views/support/magic_starter_support_message_bubble.dart';

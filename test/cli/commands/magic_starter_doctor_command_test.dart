@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_doctor_command.dart';
 import 'package:test/test.dart';
 
@@ -240,17 +240,14 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('checkRoutes', () {
-    test(
-      'returns true when registerMagicStarterAuthRoutes is in route_service_provider.dart',
-      () {
-        _writeFile(
-          tempDir,
-          'lib/app/providers/route_service_provider.dart',
-          '  registerMagicStarterAuthRoutes();\n',
-        );
-        expect(command.checkRoutes(tempDir.path), isTrue);
-      },
-    );
+    test('returns true when registerMagicStarterAuthRoutes is in route_service_provider.dart', () {
+      _writeFile(
+        tempDir,
+        'lib/app/providers/route_service_provider.dart',
+        '  registerMagicStarterAuthRoutes();\n',
+      );
+      expect(command.checkRoutes(tempDir.path), isTrue);
+    });
 
     test('returns false when auth routes are absent', () {
       _writeFile(
@@ -271,18 +268,15 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('checkFacadeSetup', () {
-    test(
-      'returns true when the identity contract is in app_service_provider.dart',
-      () {
-        _writeFile(
-          tempDir,
-          'lib/app/providers/app_service_provider.dart',
-          '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
-              '  MagicStarter.useNavigation(mainItems: []);\n',
-        );
-        expect(command.checkFacadeSetup(tempDir.path), isTrue);
-      },
-    );
+    test('returns true when the identity contract is in app_service_provider.dart', () {
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n',
+      );
+      expect(command.checkFacadeSetup(tempDir.path), isTrue);
+    });
 
     test('returns true for an app still wired with the legacy setters', () {
       // This probe accepts exactly what the installer's idempotency guard
@@ -850,15 +844,12 @@ void main() {
       expect(report, contains('FAIL'));
     });
 
-    test(
-      'shows passing result for magic framework when lib/config/app.dart exists',
-      () {
-        _writeFile(tempDir, 'lib/config/app.dart', '// app');
-        final report = command.generateReport();
+    test('shows passing result for magic framework when lib/config/app.dart exists', () {
+      _writeFile(tempDir, 'lib/config/app.dart', '// app');
+      final report = command.generateReport();
 
-        expect(report, contains('Magic Framework'));
-      },
-    );
+      expect(report, contains('Magic Framework'));
+    });
 
     test(
       'shows passing result for starter config when magic_starter.dart exists',
@@ -928,9 +919,8 @@ void main() {
     test(
       'returns empty list when directory exists but contains no dart files',
       () {
-        Directory(
-          '${tempDir.path}/lib/resources/views/starter',
-        ).createSync(recursive: true);
+        Directory('${tempDir.path}/lib/resources/views/starter')
+            .createSync(recursive: true);
         expect(command.getPublishedViews(tempDir.path), isEmpty);
       },
     );
@@ -1129,31 +1119,28 @@ void main() {
       expect(report, contains('Not wired'));
     });
 
-    test(
-      'unwired published views do not affect getMissingRequirements count (warnings only)',
-      () {
-        _setupFullInstall(tempDir);
-        _writeFile(
-          tempDir,
-          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
-          '// login view',
-        );
-        // AppServiceProvider exists but has no registration.
-        _writeFile(
-          tempDir,
-          'lib/app/providers/app_service_provider.dart',
-          "import 'package:magic_starter/magic_starter.dart';\n"
-              'void boot() {\n'
-              '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
-              '  MagicStarter.useNavigation(mainItems: []);\n'
-              '}\n',
-        );
+    test('unwired published views do not affect getMissingRequirements count (warnings only)', () {
+      _setupFullInstall(tempDir);
+      _writeFile(
+        tempDir,
+        'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        '// login view',
+      );
+      // AppServiceProvider exists but has no registration.
+      _writeFile(
+        tempDir,
+        'lib/app/providers/app_service_provider.dart',
+        "import 'package:magic_starter/magic_starter.dart';\n"
+            'void boot() {\n'
+            '  MagicStarter.bootstrap(userFactory: f, onLogout: g, locales: {});\n'
+            '  MagicStarter.useNavigation(mainItems: []);\n'
+            '}\n',
+      );
 
-        // Missing requirements count must stay at 0 — published view warnings
-        // are informational and do not block the health check.
-        expect(command.getMissingRequirements(), isEmpty);
-      },
-    );
+      // Missing requirements count must stay at 0 — published view warnings
+      // are informational and do not block the health check.
+      expect(command.getMissingRequirements(), isEmpty);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -1161,18 +1148,15 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('--verbose flag', () {
-    test(
-      'verbose flag is registered on the parser without throwing ArgParserException',
-      () {
-        // Verify the ArgParser accepts --verbose without raising an exception.
-        // We parse args directly to avoid handle() calling exit().
-        final parser = ArgParser();
-        command.configure(parser);
+    test('verbose flag is registered on the parser without throwing ArgParserException', () {
+      // Verify the ArgParser accepts --verbose without raising an exception.
+      // We parse args directly to avoid handle() calling exit().
+      final parser = ArgParser();
+      command.configure(parser);
 
-        // Should not throw — flag is defined.
-        expect(() => parser.parse(['--verbose']), returnsNormally);
-      },
-    );
+      // Should not throw — flag is defined.
+      expect(() => parser.parse(['--verbose']), returnsNormally);
+    });
 
     test('unknown flag raises ArgParserException', () {
       // The signature DSL does not register a -v abbreviation; verify that

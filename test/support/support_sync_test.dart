@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
+import 'package:magic_socket/magic_socket.dart';
 import 'package:magic_starter/magic_starter.dart';
 
 const String _channel = 'private-App.Models.User.5';
@@ -155,9 +156,8 @@ void main() {
       sync.release();
       await tester.pump();
 
-      BroadcastListeners.subscriptionForTesting(
-        'magic_starter_support',
-      )!.onReconnect!();
+      BroadcastListeners.subscriptionForTesting('magic_starter_support')!
+          .onReconnect!();
       await tester.pump();
 
       expect(ticks, 1);
@@ -165,9 +165,8 @@ void main() {
 
       sync.release();
       sync.release();
-      BroadcastListeners.subscriptionForTesting(
-        'magic_starter_support',
-      )!.onReconnect!();
+      BroadcastListeners.subscriptionForTesting('magic_starter_support')!
+          .onReconnect!();
       await tester.pump();
 
       expect(ticks, 1, reason: 'nobody retains the desk any more');

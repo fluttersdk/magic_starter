@@ -19,29 +19,25 @@ class MagicFormFieldPreview extends StatelessWidget {
           label: 'Email address',
           hint: 'We will never share your email.',
           child: WDiv(
-            className:
-                'h-10 rounded-lg bg-surface-container border border-color-border',
+            className: 'h-10 rounded-lg bg-surface-container border border-color-border',
           ),
         ),
         MSFormField(
           label: 'Password',
           error: 'Password must be at least 8 characters.',
           child: WDiv(
-            className:
-                'h-10 rounded-lg bg-surface-container border border-color-border',
+            className: 'h-10 rounded-lg bg-surface-container border border-color-border',
           ),
         ),
         MSFormField(
           label: 'Name (no hint/error)',
           child: WDiv(
-            className:
-                'h-10 rounded-lg bg-surface-container border border-color-border',
+            className: 'h-10 rounded-lg bg-surface-container border border-color-border',
           ),
         ),
         MSFormField(
           child: WDiv(
-            className:
-                'h-10 rounded-lg bg-surface-container border border-color-border',
+            className: 'h-10 rounded-lg bg-surface-container border border-color-border',
           ),
         ),
       ],

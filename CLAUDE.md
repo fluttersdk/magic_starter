@@ -4,7 +4,7 @@
 
 Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & Notifications — 14 opt-in features, every screen overridable via Wind UI.
 
-**Version:** 0.0.73 · **Dart:** >=3.11.0 · **Flutter:** >=3.41.0
+**Version:** 0.1.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0
 
 ## Commands
 
@@ -19,15 +19,15 @@ Flutter starter kit for the Magic Framework. Pre-built Auth, Profile, Teams & No
 | `dart format .` | Format all code |
 | `dart fix --apply` | Auto-fix lint issues |
 
-### CLI Commands (via host app's artisan)
+### CLI Commands (via host app's dowel dispatcher)
 
 | Command | Description |
 |---------|-------------|
-| `dart run <app>:artisan starter:install` | Scaffold config + provider into consumer project (manifest-driven, hybrid for feature toggles) |
-| `dart run <app>:artisan starter:configure` | Interactively toggle features and update config |
-| `dart run <app>:artisan starter:doctor` | Diagnose project setup and installation issues (also exposed as read-only MCP tool) |
-| `dart run <app>:artisan starter:publish --tag=views:auth.login` | Publish (copy) a view/layout for customization |
-| `dart run <app>:artisan starter:uninstall` | Remove scaffolded files from consumer project |
+| `dart run magic:dowel starter:install` | Scaffold config + provider into consumer project (manifest-driven, hybrid for feature toggles) |
+| `dart run magic:dowel starter:configure` | Interactively toggle features and update config |
+| `dart run magic:dowel starter:doctor` | Diagnose project setup and installation issues (also exposed as read-only MCP tool) |
+| `dart run magic:dowel starter:publish --tag=views:auth.login` | Publish (copy) a view/layout for customization |
+| `dart run magic:dowel starter:uninstall` | Remove scaffolded files from consumer project |
 
 ## Architecture
 
@@ -52,10 +52,10 @@ lib/
     │   ├── views/                 # auth/, profile/, teams/, notifications/
     │   ├── components/            # 46 MS-prefixed design-system components (4-file atomic folders)
     │   └── widgets/               # 7 behaviour-carrying widgets (2 of them aliases of a component)
-    └── cli/                        # Install command + provider (no bin/ — surfaces via host app's artisan)
-        ├── starter_artisan_provider.dart  # 5 commands (install, configure, doctor, publish, uninstall) + read-only mcpTool (starter_doctor)
+    └── cli/                        # Install command + provider (no bin/ — surfaces via host app's dowel dispatcher)
+        ├── starter_dowel_provider.dart  # 5 commands (install, configure, doctor, publish, uninstall) + read-only mcpTool (starter_doctor)
         ├── commands/
-        │   ├── magic_starter_install_command.dart   # ArtisanInstallCommand + install.yaml manifest
+        │   ├── magic_starter_install_command.dart   # DowelInstallCommand + install.yaml manifest
         │   ├── magic_starter_configure_command.dart # Feature toggle configuration
         │   ├── magic_starter_doctor_command.dart    # Diagnose setup issues (exposed as MCP tool)
         │   ├── magic_starter_publish_command.dart   # Publish views for customization
@@ -65,7 +65,7 @@ install.yaml                           # Manifest for static install scaffolding
 assets/stubs/                          # Stub templates for code generation
 ```
 
-**CLI Surface**: Commands surface via the host app's artisan registry, not a standalone bin/. The host app registers `StarterArtisanProvider` in its `artisan.providers`, exposing 5 commands and 1 read-only MCP tool.
+**CLI Surface**: Commands surface via the host app's dowel registry, not a standalone bin/. `dart run magic:dowel plugin:install magic_starter` registers `MagicStarterDowelProvider` under `.dowel/plugins.json`, exposing 5 commands and 1 read-only MCP tool.
 
 **Data flow:** App boot → `MagicStarterServiceProvider.register()` → binds manager + 9 Gate abilities → `boot()` → resolves config, registers default views → Feature-gated routes registered → Controllers handle HTTP via `Http.*` → Views render via `MagicStatefulView` + Wind UI
 
@@ -131,7 +131,7 @@ Every feature, fix, or refactor must go through the red-green-refactor cycle:
 | Hardcoding dialog classNames | All modal classNames must come from `MagicStarter.manager.modalTheme` — never hardcode in widget build methods |
 | Theme sub-theme ordering | `useTheme()` sets all 10 sub-themes at once; individual `useFormTheme()` etc. can override after. Call unified first if using both |
 | Slot not rendering | `MagicStarter.view.slot(viewKey, slotName, builder)` must be called before the view is built. Views call `buildSlot()` at build time |
-| Published view not loading | `dart run <app>:artisan starter:publish` copies views to `lib/resources/views/starter/`. Auto-wire adds `MagicStarter.view.register()` to AppServiceProvider |
+| Published view not loading | `dart run magic:dowel starter:publish` copies views to `lib/resources/views/starter/`. Auto-wire adds `MagicStarter.view.register()` to AppServiceProvider |
 | `Icons.*` in `build()` | Extract as `static const _iconName = Icons.xxx` — required for Flutter web tree-shaking |
 | A page building its own container | Every authenticated page goes through `MSPageScaffold` (or `MSPageContainer` for a bare page). A page that opens with `WDiv(className: 'p-4 lg:p-6 ...')` has invented its own width and padding and will not line up with its neighbours |
 | `MSButton` radius or height hardcoded in a view | Shape, the three sizes and the secondary border come from `MagicStarter.buttonTheme` (`useButtonTheme()`, after `useWindTheme()`, which resets it). A `className: 'py-3 ...'` on a button is appended after the theme and wins, so it breaks a host's standard; the form and auth theme button strings carry no geometry or border for that reason, and the auth views pick the size (`lg` primary, `secondary` `md` for social, guest and step-up). Reach 44 px with `py-[11px]` around `leading-[22px]`, never `min-h-11` alone: the label then sits at the top of the box |
@@ -149,6 +149,6 @@ There is no magic-starter-specific skill. The per-directory conventions live in 
 ## CI
 
 - `ci.yml` runs TWO jobs, because there are two questions and one job answers one of them.
-  - **Lint & Test**: clones the six fluttersdk siblings, writes the `pubspec_overrides.yaml` a developer keeps locally, then `flutter pub get` → `flutter analyze` → `dart format --set-exit-if-changed` → `flutter test --coverage` → codecov. This is also where `skill_reference_stamp_test.dart` FIRES rather than skips, since `../magic` exists here.
+  - **Lint & Test**: clones the three sibling packages (magic, magic_notifications, magic_payments), writes the `pubspec_overrides.yaml` a developer keeps locally, then `flutter pub get` → `flutter analyze` → `dart format --set-exit-if-changed` → `flutter test --coverage` → codecov. This is also where `skill_reference_stamp_test.dart` FIRES rather than skips, since `../magic` exists here.
   - **Published graph**: no clones, no overrides, `flutter pub get` + `flutter analyze` against pub.dev. It is blocking: a red means this package declares a floor an adopter cannot resolve, which happened three times in one day while wind 1.6.1, magic_notifications 0.3.2 and magic 0.0.12 were unpublished.
 - `publish.yml` (tag): validate → OIDC publish to pub.dev → GitHub release from the CHANGELOG section. That last job was missing until 2026-09-17, which is why 0.0.27 and 0.0.28 are on pub.dev with no release page here.

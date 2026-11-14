@@ -38,7 +38,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart' hide Card;
+import 'package:material_ui/material_ui.dart' hide Card;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_payments/magic_payments.dart';
@@ -4601,13 +4601,10 @@ void main() {
       // Every one of these can reach a store build (a toast, or the account
       // deletion refusal), and pointing a store customer at the web is what
       // App Store guideline 3.1.3 forbids.
-      final Map<String, dynamic> stub =
-          jsonDecode(
-                File(
-                  '${Directory.current.path}/assets/stubs/install/en.stub',
-                ).readAsStringSync(),
-              )
-              as Map<String, dynamic>;
+      final Map<String, dynamic> stub = jsonDecode(
+        File('${Directory.current.path}/assets/stubs/install/en.stub')
+            .readAsStringSync(),
+      ) as Map<String, dynamic>;
       final Map<String, dynamic> errors =
           ((stub['magic_starter'] as Map<String, dynamic>)['billing']
                   as Map<String, dynamic>)['errors']
@@ -5550,9 +5547,22 @@ void main() {
         },
       );
       MagicRouter.instance.setInitialLocation('/elsewhere?upgrade=free');
+      // material_ui's default Android transition snapshots the pushed page,
+      // and a 12000 logical pixel surface at the test's pixel ratio is a
+      // bitmap larger than the rasteriser allocates. The transition is not
+      // what this test is about, so it animates the live page instead.
       await tester.pumpWidget(
         MaterialApp.router(
           routerConfig: MagicRouter.instance.routerConfig,
+          theme: ThemeData(
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: <TargetPlatform, PageTransitionsBuilder>{
+                TargetPlatform.android: PredictiveBackPageTransitionsBuilder(
+                  allowSnapshotting: false,
+                ),
+              },
+            ),
+          ),
           builder: (BuildContext context, Widget? child) =>
               WindTheme(data: WindThemeData(), child: child!),
         ),
@@ -6369,13 +6379,10 @@ void main() {
   });
 
   group('campaign tag on a plan card', () {
-    final Map<String, dynamic> percentWire =
-        jsonDecode(
-              File(
-                '${Directory.current.path}/test/fixtures/wire/billing-campaign.json',
-              ).readAsStringSync(),
-            )
-            as Map<String, dynamic>;
+    final Map<String, dynamic> percentWire = jsonDecode(
+      File('${Directory.current.path}/test/fixtures/wire/billing-campaign.json')
+          .readAsStringSync(),
+    ) as Map<String, dynamic>;
 
     /// The wire body with the campaign's discount, product list and window
     /// replaced. The window is open around the real clock by default, because

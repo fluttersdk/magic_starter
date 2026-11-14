@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' hide Radio;
+import 'package:material_ui/material_ui.dart' hide Radio;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';

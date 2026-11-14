@@ -21,7 +21,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-Magic Starter provides five CLI commands that manage the full lifecycle of the plugin inside a host Magic application, from initial scaffolding through configuration, diagnostics, customization, and removal. The commands surface through the host app's `fluttersdk_artisan` dispatcher (run them as `dart run <app>:artisan starter:<command>`): each extends `ArtisanCommand` (install extends `ArtisanInstallCommand`), declares a `signature` DSL string for its arguments and flags, and implements async `handle(ArtisanContext ctx)` for the execution logic.
+Magic Starter provides five CLI commands that manage the full lifecycle of the plugin inside a host Magic application, from initial scaffolding through configuration, diagnostics, customization, and removal. The commands surface through the host app's `dowel` dispatcher (run them as `dart run magic:dowel starter:<command>`): each extends `DowelCommand` (install extends `DowelInstallCommand`), declares a `signature` DSL string for its arguments and flags, and implements async `handle(DowelContext ctx)` for the execution logic.
 
 Every command resolves the host project root via `FileHelper.findProjectRoot()` and validates that the target is a Magic project before proceeding.
 

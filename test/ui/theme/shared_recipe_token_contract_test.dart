@@ -133,9 +133,9 @@ void main() {
   group('shared component recipes only emit resolvable colour tokens', () {
     sharedClassNames.forEach((String origin, String className) {
       test(origin, () {
-        final List<String> unresolvable = colourTokensIn(
-          className,
-        ).where((String token) => !resolves(token)).toList();
+        final List<String> unresolvable = colourTokensIn(className)
+            .where((String token) => !resolves(token))
+            .toList();
 
         expect(
           unresolvable,

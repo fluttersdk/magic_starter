@@ -61,9 +61,8 @@ void main() {
       // assertion below cannot pass on a route list that never carries any.
       expect(authRouteAt('/auth/login')!.middlewares, contains('guest'));
 
-      final List<dynamic> middlewares = authRouteAt(
-        '/auth/handoff',
-      )!.middlewares;
+      final List<dynamic> middlewares = authRouteAt('/auth/handoff')!
+          .middlewares;
 
       expect(middlewares, isNot(contains('guest')));
       expect(middlewares, isNot(contains('auth')));

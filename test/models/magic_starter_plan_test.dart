@@ -26,8 +26,7 @@ void main() {
       'monthly': 34,
       'annual': 29,
       'currency': 'usd',
-      'ai_line':
-          'Full AI incident analysis: evidence, confidence, citations, drafted updates.',
+      'ai_line': 'Full AI incident analysis: evidence, confidence, citations, drafted updates.',
       'features': <String>[
         '50 monitors · 30-second checks',
         '3 status pages · 1,000 subscribers',
@@ -209,37 +208,35 @@ void main() {
           isNotNull,
         );
         expect(
-          tier(
-            'pro',
-          ).storeProductFor(BillingCycle.annual, ManageVia.playStore)?.key,
+          tier('pro')
+              .storeProductFor(BillingCycle.annual, ManageVia.playStore)
+              ?.key,
           'pro_monthly',
           reason: 'pro_annual is sellable but has no Play id',
         );
         expect(
-          tier(
-            'pro',
-          ).storeProductFor(BillingCycle.monthly, ManageVia.appStore)?.key,
+          tier('pro')
+              .storeProductFor(BillingCycle.monthly, ManageVia.appStore)
+              ?.key,
           'pro_monthly',
         );
       });
 
       test('a tier with no product that has an id in this store gets none', () {
         expect(
-          tier(
-            'business',
-          ).storeProductFor(BillingCycle.monthly, ManageVia.playStore),
+          tier('business')
+              .storeProductFor(BillingCycle.monthly, ManageVia.playStore),
           isNull,
         );
         expect(
-          tier(
-            'business',
-          ).storeProductFor(BillingCycle.annual, ManageVia.appStore)?.key,
+          tier('business')
+              .storeProductFor(BillingCycle.annual, ManageVia.appStore)
+              ?.key,
           'business_monthly',
         );
         expect(
-          tier(
-            'free',
-          ).storeProductFor(BillingCycle.monthly, ManageVia.appStore),
+          tier('free')
+              .storeProductFor(BillingCycle.monthly, ManageVia.appStore),
           isNull,
         );
       });

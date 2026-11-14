@@ -57,13 +57,14 @@ void main() {
 
     test('a product without a sellable flag is sellable, and without store ids '
         'names none', () {
-      final MagicStarterProduct product =
-          MagicStarterProduct.fromMap(<String, dynamic>{
-            'key': 'pro_monthly',
-            'type': 'subscription',
-            'tier': 'pro',
-            'cycle': 'monthly',
-          });
+      final MagicStarterProduct product = MagicStarterProduct.fromMap(
+        <String, dynamic>{
+          'key': 'pro_monthly',
+          'type': 'subscription',
+          'tier': 'pro',
+          'cycle': 'monthly',
+        },
+      );
 
       expect(product.sellable, isTrue);
       expect(product.storeIds.appStore, isNull);

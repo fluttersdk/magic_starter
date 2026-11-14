@@ -193,9 +193,9 @@ abstract class MagicStarterConfigHelper {
           }
           // 2. Handle relative paths (../).
           else if (rootUri.startsWith('../')) {
-            parsedPath = File(
-              packageConfigPath,
-            ).parent.parent.uri.resolve(rootUri).toFilePath();
+            parsedPath = File(packageConfigPath).parent.parent.uri
+                .resolve(rootUri)
+                .toFilePath();
           }
           // 3. Handle absolute paths.
           else {

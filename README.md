@@ -67,18 +67,18 @@ Stop rebuilding authentication, profile management, and team features from scrat
 
 ```yaml
 dependencies:
-  magic_starter: ^0.0.73
+  magic_starter: ^0.1.0
 ```
 
 ### 2. Install configuration
 
 ```bash
-dart run <app>:artisan starter:install
+dart run magic:dowel starter:install
 ```
 
 This generates `lib/config/magic_starter.dart`, injects `MagicStarterServiceProvider` into `lib/config/app.dart`, and wires the `magicStarterConfig` factory into `lib/main.dart`.
 
-(If `magic_starter` is not yet registered as a provider in your host app, register `StarterArtisanProvider` in your app's `artisan.providers` list first.)
+(If `magic_starter` is not yet registered as a provider in your host app, run `dart run magic:dowel plugin:install magic_starter` first; it registers `MagicStarterDowelProvider` under `.dowel/plugins.json`.)
 
 ### 3. Boot the provider
 
@@ -234,7 +234,7 @@ WindApp(
 )
 ```
 
-> **`MS` prefix (breaking)**: every design-system component now carries an `MS` prefix (`MSButton`, `MSDialog`, `MSSwitch`, ...). This removes the Material collision entirely, so importing both `package:flutter/material.dart` and `package:magic_starter/magic_starter.dart` no longer needs a `hide` clause. See the [migration table](#migration-ms-prefix) below to update from the pre-`MS` names.
+> **`MS` prefix (breaking)**: every design-system component now carries an `MS` prefix (`MSButton`, `MSDialog`, `MSSwitch`, ...). This removes the Material collision entirely, so importing both `package:material_ui/material_ui.dart` and `package:magic_starter/magic_starter.dart` no longer needs a `hide` clause. See the [migration table](#migration-ms-prefix) below to update from the pre-`MS` names.
 
 ### Component families
 
@@ -648,16 +648,16 @@ Copy a view file directly into your host app for complete control. Changes are p
 
 ```bash
 # Publish a single view
-dart run <app>:artisan starter:publish --tag=views:auth.login
+dart run magic:dowel starter:publish --tag=views:auth.login
 
 # Publish all auth views
-dart run <app>:artisan starter:publish --tag=views:auth
+dart run magic:dowel starter:publish --tag=views:auth
 
 # Run doctor to verify wiring
-dart run <app>:artisan starter:doctor
+dart run magic:dowel starter:doctor
 ```
 
-The publish command copies the view to `lib/resources/views/starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run <app>:artisan starter:doctor` to confirm registration status.
+The publish command copies the view to `lib/resources/views/starter/` and auto-wires it into `AppServiceProvider` so it takes effect immediately. Use `dart run magic:dowel starter:doctor` to confirm registration status.
 
 A published copy is a snapshot: a later release that changes a view does not reach it. When a release changes the view you published, its CHANGELOG entry names the edits to make by hand, or you re-publish with `--force` and re-apply yours.
 
@@ -665,15 +665,15 @@ A published copy is a snapshot: a later release that changes a view does not rea
 
 ## CLI Tools
 
-Run any of these commands via your host app's artisan dispatcher:
+Run any of these commands via your host app's dowel dispatcher:
 
 | Command | Description |
 |---------|-------------|
-| `dart run <app>:artisan starter:install` | Scaffold config, provider, and routes into your Magic project |
-| `dart run <app>:artisan starter:configure` | Interactively toggle features and update config |
-| `dart run <app>:artisan starter:doctor` | Verify installation, check dependencies, diagnose issues |
-| `dart run <app>:artisan starter:publish --tag=views:auth.login` | Publish a specific view/layout for full customization |
-| `dart run <app>:artisan starter:uninstall` | Remove starter config, provider, and routes from your project |
+| `dart run magic:dowel starter:install` | Scaffold config, provider, and routes into your Magic project |
+| `dart run magic:dowel starter:configure` | Interactively toggle features and update config |
+| `dart run magic:dowel starter:doctor` | Verify installation, check dependencies, diagnose issues |
+| `dart run magic:dowel starter:publish --tag=views:auth.login` | Publish a specific view/layout for full customization |
+| `dart run magic:dowel starter:uninstall` | Remove starter config, provider, and routes from your project |
 
 ---
 

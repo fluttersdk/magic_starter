@@ -159,8 +159,7 @@ class _MagicStarterTwoFactorModalState
           WDiv(
             className: 'flex justify-center',
             child: WDiv(
-              className:
-                  'p-3 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-gray-200',
+              className: 'p-3 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-gray-200',
               child: WSvg.string(qrSvg, className: 'preserve-colors w-48 h-48'),
             ),
           ),
@@ -234,8 +233,7 @@ class _MagicStarterTwoFactorModalState
           children: [
             ...recoveryCodes.map(
               (code) => WDiv(
-                className:
-                    'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
+                className: 'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
                 child: WText(code),
               ),
             ),

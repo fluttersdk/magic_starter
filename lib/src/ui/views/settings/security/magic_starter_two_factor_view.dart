@@ -259,8 +259,7 @@ class _MagicStarterTwoFactorViewState
             children: [
               ..._recoveryCodes.map(
                 (code) => WDiv(
-                  className:
-                      'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
+                  className: 'font-mono text-sm bg-surface-container-high text-fg px-2 py-1 rounded',
                   child: WText(code),
                 ),
               ),

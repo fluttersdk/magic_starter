@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -374,8 +374,7 @@ class _MagicStarterSessionsViewState
       subtitle: subtitleText.isNotEmpty ? subtitleText : null,
       trailing: isCurrent
           ? WDiv(
-              className:
-                  'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium px-2 py-0.5 rounded-full',
+              className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium px-2 py-0.5 rounded-full',
               children: [WText(trans('profile.current_device'))],
             )
           : MagicBuilder<bool>(

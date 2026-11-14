@@ -12,8 +12,7 @@ import 'package:magic/magic.dart';
 /// replaces the recipe output (parser last-wins resolves conflicts per family).
 String settingsSectionContainerRecipe({String? className}) {
   return const WindRecipe(
-    base:
-        'w-full bg-surface-container rounded-lg border border-color-border-subtle overflow-hidden flex flex-col',
+    base: 'w-full bg-surface-container rounded-lg border border-color-border-subtle overflow-hidden flex flex-col',
   )(className: className);
 }
 

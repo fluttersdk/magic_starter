@@ -158,15 +158,12 @@ void main() {
         },
       );
 
-      test(
-        'twoFactorChallengeRoute() returns "/auth/two-factor-challenge" by default',
-        () {
-          expect(
-            MagicStarterConfig.twoFactorChallengeRoute(),
-            equals('/auth/two-factor-challenge'),
-          );
-        },
-      );
+      test('twoFactorChallengeRoute() returns "/auth/two-factor-challenge" by default', () {
+        expect(
+          MagicStarterConfig.twoFactorChallengeRoute(),
+          equals('/auth/two-factor-challenge'),
+        );
+      });
 
       test('handoffRoute() returns "/auth/handoff" by default', () {
         expect(MagicStarterConfig.handoffRoute(), equals('/auth/handoff'));

@@ -26,18 +26,15 @@ void main() {
       manager = Magic.make<MagicStarterManager>('magic_starter');
     });
 
-    test(
-      'the default MagicStarterAppLayout renders when no override is registered',
-      () {
-        final Widget resolved = manager.view.makeLayout(
-          'layout.app',
-          child: const SizedBox(),
-        );
+    test('the default MagicStarterAppLayout renders when no override is registered', () {
+      final Widget resolved = manager.view.makeLayout(
+        'layout.app',
+        child: const SizedBox(),
+      );
 
-        expect(resolved, isA<MagicStarterAppLayout>());
-        expect(resolved, isNot(isA<_CustomAppShell>()));
-      },
-    );
+      expect(resolved, isA<MagicStarterAppLayout>());
+      expect(resolved, isNot(isA<_CustomAppShell>()));
+    });
 
     test(
       'a registered override replaces the default, regardless of call order',

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -318,62 +318,59 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Button(fullWidth: true) fills a bounded height too, because the centring '
-    'token aligns on both axes',
-    (tester) async {
-      // A consequence of the centring token, measured rather than assumed after
-      // review raised it. Wind maps `justify-center` to
-      // `MainAxisAlignment.center`, `WButton` turns that into its `Container`'s
-      // `alignment` (`w_button.dart:174-178`), and a `Container` with a non-null
-      // alignment expands to its constraints on BOTH axes, not just the one the
-      // `SizedBox` pinned.
-      //
-      // Under an unbounded height nothing changes, which is every full-width
-      // site in this package (they all sit in a `flex flex-col` card). Under a
-      // fixed-height parent the button now fills it where it used to
-      // shrink-wrap. Pinned here so an adopter meets it in a test rather than in
-      // a footer, and so a later change to the token cannot move it silently.
-      await tester.pumpWidget(
-        wrap(
-          SizedBox(
-            width: 300,
-            height: 120,
-            child: MSButton(
-              fullWidth: true,
-              onPressed: () {},
-              child: const WText('Contact sales'),
-            ),
+  testWidgets('Button(fullWidth: true) fills a bounded height too, because the centring '
+      'token aligns on both axes', (tester) async {
+    // A consequence of the centring token, measured rather than assumed after
+    // review raised it. Wind maps `justify-center` to
+    // `MainAxisAlignment.center`, `WButton` turns that into its `Container`'s
+    // `alignment` (`w_button.dart:174-178`), and a `Container` with a non-null
+    // alignment expands to its constraints on BOTH axes, not just the one the
+    // `SizedBox` pinned.
+    //
+    // Under an unbounded height nothing changes, which is every full-width
+    // site in this package (they all sit in a `flex flex-col` card). Under a
+    // fixed-height parent the button now fills it where it used to
+    // shrink-wrap. Pinned here so an adopter meets it in a test rather than in
+    // a footer, and so a later change to the token cannot move it silently.
+    await tester.pumpWidget(
+      wrap(
+        SizedBox(
+          width: 300,
+          height: 120,
+          child: MSButton(
+            fullWidth: true,
+            onPressed: () {},
+            child: const WText('Contact sales'),
           ),
         ),
-      );
+      ),
+    );
 
-      expect(tester.getSize(find.byType(WButton)).height, 120);
+    expect(tester.getSize(find.byType(WButton)).height, 120);
 
-      // The control: the same button with the height left unbounded keeps its
-      // own, so this is the parent's constraint being filled and not the token
-      // inflating the button everywhere.
-      await tester.pumpWidget(
-        wrap(
-          SizedBox(
-            width: 300,
-            child: WDiv(
-              className: 'flex flex-col',
-              children: <Widget>[
-                MSButton(
-                  fullWidth: true,
-                  onPressed: () {},
-                  child: const WText('Contact sales'),
-                ),
-              ],
-            ),
+    // The control: the same button with the height left unbounded keeps its
+    // own, so this is the parent's constraint being filled and not the token
+    // inflating the button everywhere.
+    await tester.pumpWidget(
+      wrap(
+        SizedBox(
+          width: 300,
+          child: WDiv(
+            className: 'flex flex-col',
+            children: <Widget>[
+              MSButton(
+                fullWidth: true,
+                onPressed: () {},
+                child: const WText('Contact sales'),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
 
-      expect(tester.getSize(find.byType(WButton)).height, lessThan(120));
-    },
-  );
+    expect(tester.getSize(find.byType(WButton)).height, lessThan(120));
+  });
 
   testWidgets('Button fullWidth defaults to false (content-width)', (
     tester,

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_starter/src/cli/commands/magic_starter_publish_command.dart';
 import 'package:test/test.dart';
 
@@ -18,7 +18,7 @@ class TestMagicStarterPublishCommand extends MagicStarterPublishCommand {
   String? getPluginSourceDir() => _pluginSourceDir;
 }
 
-/// Drives [command.handle] with a programmatic [ArtisanContext] composed of a
+/// Drives [command.handle] with a programmatic [DowelContext] composed of a
 /// [MapInput] (flags) and a [BufferedOutput] (capturable).
 ///
 /// [tag] defaults to `'all'` to match the command default. Pass [force] to
@@ -29,7 +29,7 @@ Future<int> _runPublish(
   bool force = false,
   BufferedOutput? output,
 }) {
-  final ctx = ArtisanContext.bare(
+  final ctx = DowelContext.bare(
     MapInput(<String, dynamic>{'tag': tag, 'force': force}),
     output ?? BufferedOutput(),
   );
@@ -169,31 +169,26 @@ void main() {
       expect(readHostFile('assets/lang/en.json'), '{"auth.login":"Login"}');
     });
 
-    test(
-      '--tag=lang skips when destination already exists and no --force',
-      () async {
-        // Step 16b depends on this: an installed app carries a hand-merged
-        // translation catalogue (e.g. Turkish), and re-running `starter:publish`
-        // must never clobber it with the package's English-only stub.
-        createPluginFile(
-          'assets/stubs/install/en.stub',
-          '{"billing":{"title":"new stub content"}}',
-        );
+    test('--tag=lang skips when destination already exists and no --force', () async {
+      // Step 16b depends on this: an installed app carries a hand-merged
+      // translation catalogue (e.g. Turkish), and re-running `starter:publish`
+      // must never clobber it with the package's English-only stub.
+      createPluginFile(
+        'assets/stubs/install/en.stub',
+        '{"billing":{"title":"new stub content"}}',
+      );
 
-        final existing = File('${tempDir.path}/assets/lang/en.json');
-        existing.createSync(recursive: true);
-        existing.writeAsStringSync(
-          '{"billing":{"title":"host-owned content"}}',
-        );
+      final existing = File('${tempDir.path}/assets/lang/en.json');
+      existing.createSync(recursive: true);
+      existing.writeAsStringSync('{"billing":{"title":"host-owned content"}}');
 
-        await _runPublish(command, tag: 'lang');
+      await _runPublish(command, tag: 'lang');
 
-        expect(
-          existing.readAsStringSync(),
-          '{"billing":{"title":"host-owned content"}}',
-        );
-      },
-    );
+      expect(
+        existing.readAsStringSync(),
+        '{"billing":{"title":"host-owned content"}}',
+      );
+    });
 
     test('--tag=middleware copies middleware files', () async {
       createPluginFile(
@@ -549,30 +544,27 @@ void main() {
     // Granular view publishing with --force
     // -------------------------------------------------------------------
 
-    test(
-      '--tag=views:auth.login with --force overwrites existing file',
-      () async {
-        createPluginFile(
-          'lib/src/ui/views/auth/magic_starter_login_view.dart',
-          'new-login-content',
-        );
+    test('--tag=views:auth.login with --force overwrites existing file', () async {
+      createPluginFile(
+        'lib/src/ui/views/auth/magic_starter_login_view.dart',
+        'new-login-content',
+      );
 
-        final existing = File(
-          '${tempDir.path}/lib/resources/views/starter/auth/magic_starter_login_view.dart',
-        );
-        existing.createSync(recursive: true);
-        existing.writeAsStringSync('old-login-content');
+      final existing = File(
+        '${tempDir.path}/lib/resources/views/starter/auth/magic_starter_login_view.dart',
+      );
+      existing.createSync(recursive: true);
+      existing.writeAsStringSync('old-login-content');
 
-        await _runPublish(command, tag: 'views:auth.login', force: true);
+      await _runPublish(command, tag: 'views:auth.login', force: true);
 
-        expect(
-          readHostFile(
-            'lib/resources/views/starter/auth/magic_starter_login_view.dart',
-          ),
-          'new-login-content',
-        );
-      },
-    );
+      expect(
+        readHostFile(
+          'lib/resources/views/starter/auth/magic_starter_login_view.dart',
+        ),
+        'new-login-content',
+      );
+    });
 
     test('--tag=views:auth.login without --force skips existing file', () async {
       createPluginFile(

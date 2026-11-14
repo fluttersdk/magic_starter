@@ -1,6 +1,6 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';
@@ -53,13 +53,12 @@ void main() {
         transitionDuration: _transition,
         reverseTransitionDuration: _transition,
         pageBuilder: (BuildContext context, _, _) => child,
-        transitionsBuilder:
-            (
-              BuildContext context,
-              Animation<double> animation,
-              Animation<double> secondary,
-              Widget child,
-            ) => FadeTransition(opacity: animation, child: child),
+        transitionsBuilder: (
+          BuildContext context,
+          Animation<double> animation,
+          Animation<double> secondary,
+          Widget child,
+        ) => FadeTransition(opacity: animation, child: child),
       ),
     );
     await tester.pumpAndSettle();

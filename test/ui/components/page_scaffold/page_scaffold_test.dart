@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -897,9 +897,10 @@ void main() {
         (w) => w is MSPageHeader && w.size == MSPageHeaderSize.large,
       );
 
-      List<String> headings(WidgetTester tester) => _headerNodes(
-        tester,
-      ).map((SemanticsNode n) => n.getSemanticsData().label).toList();
+      List<String> headings(WidgetTester tester) =>
+          _headerNodes(tester)
+              .map((SemanticsNode n) => n.getSemanticsData().label)
+              .toList();
 
       testWidgets('the large title is the page heading', (tester) async {
         final SemanticsHandle handle = tester.ensureSemantics();

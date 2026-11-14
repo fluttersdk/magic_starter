@@ -1,14 +1,15 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
-import '../starter_artisan_provider.dart';
+import 'package:dowel/dowel.dart';
+
+import '../starter_dowel_provider.dart';
 
 /// CLI command that removes Magic Starter from a host project.
 ///
 /// This command performs a safe reverse of `install` by removing generated
 /// configuration/injection lines and dependency entries while keeping user code
 /// intact whenever possible.
-class MagicStarterUninstallCommand extends ArtisanCommand {
+class MagicStarterUninstallCommand extends DowelCommand {
   @override
   String get signature =>
       'starter:uninstall '
@@ -36,7 +37,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(ConsoleStyle.banner('Magic Starter', magicStarterVersion));
 
     final bool force = (ctx.input.option('force') as bool?) ?? false;
@@ -76,7 +77,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   /// Prints a summary of the planned removals.
-  void _showRemovalSummary(ArtisanContext ctx) {
+  void _showRemovalSummary(DowelContext ctx) {
     ctx.output.info('The following will be removed:');
     ctx.output.info('  • lib/config/magic_starter.dart');
     ctx.output.info('  • magic_starter dependency from pubspec.yaml');
@@ -99,7 +100,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   ///
   /// Each step is isolated with its own error handling so already-clean projects
   /// and partial installations do not crash the command.
-  void _executeUninstall(ArtisanContext ctx) {
+  void _executeUninstall(DowelContext ctx) {
     _safeStep(
       ctx: ctx,
       label: 'Delete config file',
@@ -134,7 +135,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
 
   /// Runs [action] and converts all exceptions into warnings.
   void _safeStep({
-    required ArtisanContext ctx,
+    required DowelContext ctx,
     required String label,
     required void Function() action,
   }) {
@@ -146,7 +147,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   /// Deletes `lib/config/magic_starter.dart` when present.
-  void _deleteConfigFile(ArtisanContext ctx) {
+  void _deleteConfigFile(DowelContext ctx) {
     final String configPath = '$projectRoot/lib/config/magic_starter.dart';
 
     if (!FileHelper.fileExists(configPath)) {
@@ -159,7 +160,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   /// Removes `magic_starter` from `pubspec.yaml`.
-  void _removePubspecDependency(ArtisanContext ctx) {
+  void _removePubspecDependency(DowelContext ctx) {
     final String pubspecPath = '$projectRoot/pubspec.yaml';
 
     if (!FileHelper.fileExists(pubspecPath)) {
@@ -178,7 +179,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   /// Removes Magic Starter import/provider lines from `lib/config/app.dart`.
-  void _removeFromApp(ArtisanContext ctx) {
+  void _removeFromApp(DowelContext ctx) {
     final String appPath = '$projectRoot/lib/config/app.dart';
 
     if (!FileHelper.fileExists(appPath)) {
@@ -212,7 +213,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   /// Removes Magic Starter import/configFactory lines from `lib/main.dart`.
-  void _removeFromMain(ArtisanContext ctx) {
+  void _removeFromMain(DowelContext ctx) {
     final String mainPath = '$projectRoot/lib/main.dart';
 
     if (!FileHelper.fileExists(mainPath)) {
@@ -239,7 +240,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   /// Removes Magic Starter middleware imports and aliases from `lib/app/kernel.dart`.
-  void _removeFromKernel(ArtisanContext ctx) {
+  void _removeFromKernel(DowelContext ctx) {
     final String kernelPath = '$projectRoot/lib/app/kernel.dart';
 
     if (!FileHelper.fileExists(kernelPath)) {
@@ -300,7 +301,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
 
   /// Removes Magic Starter route imports and registrations from
   /// `lib/app/providers/route_service_provider.dart`.
-  void _removeFromRouteServiceProvider(ArtisanContext ctx) {
+  void _removeFromRouteServiceProvider(DowelContext ctx) {
     final String providerPath =
         '$projectRoot/lib/app/providers/route_service_provider.dart';
 
@@ -357,7 +358,7 @@ class MagicStarterUninstallCommand extends ArtisanCommand {
   }
 
   /// Prints manual cleanup instructions for intentionally untouched files.
-  void _showPlatformCleanupInstructions(ArtisanContext ctx) {
+  void _showPlatformCleanupInstructions(DowelContext ctx) {
     ctx.output.writeln('');
     ctx.output.warning('Manual cleanup recommended (not auto-removed):');
     ctx.output.info('  • AppServiceProvider custom MagicStarter integrations');

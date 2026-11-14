@@ -1,7 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:math' show max;
 
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_payments/magic_payments.dart';

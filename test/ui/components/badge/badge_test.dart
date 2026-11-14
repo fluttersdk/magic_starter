@@ -1,5 +1,5 @@
 // hide Flutter's material Badge to avoid the name conflict with our MSBadge.
-import 'package:flutter/material.dart' hide Badge;
+import 'package:material_ui/material_ui.dart' hide Badge;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_starter/magic_starter.dart';

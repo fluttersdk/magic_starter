@@ -557,29 +557,26 @@ void main() {
   });
 
   group('MagicStarterBillingController, the store check has two nulls', () {
-    test(
-      'an unregistered reader is distinguishable from a null answer',
-      () async {
-        final MagicStarterBillingController unregistered = build();
-        final MagicStarterBillingController registered = build(
-          storeFundedTeamReader: () async => null,
-        );
+    test('an unregistered reader is distinguishable from a null answer', () async {
+      final MagicStarterBillingController unregistered = build();
+      final MagicStarterBillingController registered = build(
+        storeFundedTeamReader: () async => null,
+      );
 
-        await unregistered.load();
-        await registered.load();
+      await unregistered.load();
+      await registered.load();
 
-        // Both answers are null, and they mean opposite things: one question was
-        // never asked, the other was asked and came back empty. The gate that
-        // reads this has to refuse the first and permit the second.
-        expect(unregistered.storeFundedTeam, isNull);
-        expect(registered.storeFundedTeam, isNull);
-        expect(unregistered.storeCheckRegistered, isFalse);
-        expect(registered.storeCheckRegistered, isTrue);
+      // Both answers are null, and they mean opposite things: one question was
+      // never asked, the other was asked and came back empty. The gate that
+      // reads this has to refuse the first and permit the second.
+      expect(unregistered.storeFundedTeam, isNull);
+      expect(registered.storeFundedTeam, isNull);
+      expect(unregistered.storeCheckRegistered, isFalse);
+      expect(registered.storeCheckRegistered, isTrue);
 
-        unregistered.dispose();
-        registered.dispose();
-      },
-    );
+      unregistered.dispose();
+      registered.dispose();
+    });
 
     test('a failed read stays registered, so it stays permissive', () async {
       final MagicStarterBillingController controller = build(

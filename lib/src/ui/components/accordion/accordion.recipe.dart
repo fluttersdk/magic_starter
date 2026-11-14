@@ -20,8 +20,7 @@ Map<String, String> accordionRecipe({
       'root': 'w-full border border-color-border rounded-lg overflow-hidden',
       'item': 'bg-surface',
       'header': 'flex flex-row items-center',
-      'trigger':
-          'flex flex-row items-center justify-between px-4 py-3 text-sm font-medium text-fg cursor-pointer hover:bg-surface-container',
+      'trigger': 'flex flex-row items-center justify-between px-4 py-3 text-sm font-medium text-fg cursor-pointer hover:bg-surface-container',
       'panel': 'px-4 pb-4 text-sm text-fg-muted',
     },
   );

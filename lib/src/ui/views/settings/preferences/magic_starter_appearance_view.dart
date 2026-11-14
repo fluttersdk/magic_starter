@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Brightness, Icons;
+import 'package:material_ui/material_ui.dart' show Brightness, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 

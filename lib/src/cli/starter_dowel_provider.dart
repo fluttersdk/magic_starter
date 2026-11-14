@@ -1,4 +1,4 @@
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
 import 'commands/magic_starter_configure_command.dart';
 import 'commands/magic_starter_doctor_command.dart';
@@ -9,24 +9,24 @@ import 'commands/magic_starter_uninstall_command.dart';
 /// Version the `starter:*` command banners print.
 ///
 /// Mirrors the `version` field of this package's `pubspec.yaml`, which stays the
-/// release's single source of truth. `starter_artisan_provider_test.dart` reads
+/// release's single source of truth. `starter_dowel_provider_test.dart` reads
 /// both and fails when they disagree, so a banner cannot drift behind a release
 /// the way the two hand-written `'0.0.1'` literals did: they were written before
 /// the first alpha and were still claiming 0.0.1 twenty-four releases later.
-const String magicStarterVersion = '0.0.73';
+const String magicStarterVersion = '0.1.0';
 
-/// Magic Starter's contribution to the host application's artisan registry.
+/// Magic Starter's contribution to the host application's dowel registry.
 ///
-/// Host apps register this provider in their `appConfig['artisan']['providers']`
-/// list so that `artisan starter:install`, `starter:configure`,
+/// `dart run magic:dowel plugin:install magic_starter` registers this provider
+/// (under `.dowel/plugins.json`) so that `starter:install`, `starter:configure`,
 /// `starter:doctor`, `starter:publish`, and `starter:uninstall` become
-/// discoverable through the unified `artisan` binary.
-class MagicStarterArtisanProvider extends ArtisanServiceProvider {
+/// discoverable through the host app's dowel dispatcher.
+class MagicStarterDowelProvider extends DowelServiceProvider {
   @override
   String get providerName => 'magic_starter';
 
   @override
-  List<ArtisanCommand> commands() => <ArtisanCommand>[
+  List<DowelCommand> commands() => <DowelCommand>[
     MagicStarterInstallCommand(),
     MagicStarterPublishCommand(),
     MagicStarterConfigureCommand(),
@@ -60,7 +60,7 @@ class MagicStarterArtisanProvider extends ArtisanServiceProvider {
         },
         'additionalProperties': false,
       },
-      extensionMethod: 'artisan:starter:doctor',
+      extensionMethod: 'dowel:starter:doctor',
     ),
   ];
 }

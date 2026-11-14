@@ -1,14 +1,14 @@
 import 'dart:io';
 
-import 'package:magic_starter/src/cli/starter_artisan_provider.dart';
+import 'package:magic_starter/src/cli/starter_dowel_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('MagicStarterArtisanProvider', () {
-    late MagicStarterArtisanProvider provider;
+  group('MagicStarterDowelProvider', () {
+    late MagicStarterDowelProvider provider;
 
     setUp(() {
-      provider = MagicStarterArtisanProvider();
+      provider = MagicStarterDowelProvider();
     });
 
     // -------------------------------------------------------------------------
@@ -23,10 +23,10 @@ void main() {
         expect(tools.first.name, equals('starter_doctor'));
       });
 
-      test('starter_doctor tool routes to the artisan dispatcher', () {
+      test('starter_doctor tool routes to the dowel dispatcher', () {
         final tool = provider.mcpTools().first;
 
-        expect(tool.extensionMethod, equals('artisan:starter:doctor'));
+        expect(tool.extensionMethod, equals('dowel:starter:doctor'));
       });
 
       test('starter_doctor tool has a non-empty description', () {
@@ -60,9 +60,8 @@ void main() {
       // were still printing it twenty-four alpha releases later. A literal
       // nothing compares against drifts silently, so the constant they now read
       // is pinned to the one place a release actually changes.
-      final pubspec = File(
-        '${Directory.current.path}/pubspec.yaml',
-      ).readAsStringSync();
+      final pubspec = File('${Directory.current.path}/pubspec.yaml')
+          .readAsStringSync();
       final declared = RegExp(
         r'^version:\s*(\S+)',
         multiLine: true,

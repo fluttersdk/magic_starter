@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:magic/magic.dart';
 
 import '../../../configuration/magic_starter_config.dart';
@@ -56,8 +56,7 @@ class MSTeamSelector extends StatelessWidget {
             'flex flex-row items-center gap-2 mx-3 p-2 rounded-lg ${MagicStarter.navigationTheme.hoverItemClassName}',
         children: [
           WDiv(
-            className:
-                'w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
+            className: 'w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
             child: WText(
               (currentTeam?.name ?? '?')[0].toUpperCase(),
               className: 'text-sm font-bold text-primary',
@@ -174,8 +173,7 @@ class MSTeamSelector extends StatelessWidget {
                 'w-full px-3 py-2.5 flex flex-row items-center gap-3 ${theme.itemClassName}',
             children: [
               WDiv(
-                className:
-                    'w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
+                className: 'w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/10 flex items-center justify-center',
                 child: const WIcon(
                   Icons.add,
                   className: 'text-base text-primary',

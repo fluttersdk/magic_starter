@@ -57,8 +57,7 @@ void main() {
 
       test('useNavigationTheme() stores theme on manager', () {
         const customTheme = MagicStarterNavigationTheme(
-          activeItemClassName:
-              'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
+          activeItemClassName: 'active:text-amber-500 active:bg-amber-500/10 dark:active:text-amber-400 dark:active:bg-amber-400/10',
         );
 
         MagicStarter.useNavigationTheme(customTheme);

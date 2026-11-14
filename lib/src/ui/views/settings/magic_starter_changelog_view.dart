@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -120,9 +120,8 @@ class _MagicStarterChangelogViewState
               ),
               if (publishedAt != null)
                 WText(
-                  Carbon.fromDateTime(
-                    publishedAt.toLocal(),
-                  ).toFormattedDateString(),
+                  Carbon.fromDateTime(publishedAt.toLocal())
+                      .toFormattedDateString(),
                   className: 'text-xs text-fg-muted',
                 ),
             ],

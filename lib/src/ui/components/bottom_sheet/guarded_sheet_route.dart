@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' as m show ModalBottomSheetRoute;
+import 'package:material_ui/material_ui.dart' as m show ModalBottomSheetRoute;
 import 'package:flutter/widgets.dart';
 
 /// The bottom-sheet route every starter sheet is pushed on, so a caller's

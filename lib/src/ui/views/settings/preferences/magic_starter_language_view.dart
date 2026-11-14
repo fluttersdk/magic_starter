@@ -109,8 +109,7 @@ class _MagicStarterLanguageViewState
                   options: _localeOptions(),
                   labelClassName: formTheme.labelClassName,
                   className: formTheme.inputClassName,
-                  menuClassName:
-                      'bg-surface-container border border-color-border rounded-xl shadow-xl',
+                  menuClassName: 'bg-surface-container border border-color-border rounded-xl shadow-xl',
                 ),
               ],
             ),

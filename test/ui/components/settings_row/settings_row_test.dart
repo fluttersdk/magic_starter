@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons, MaterialApp, Scaffold;
+import 'package:material_ui/material_ui.dart' show Icons, MaterialApp, Scaffold;
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
